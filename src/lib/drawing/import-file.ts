@@ -4,7 +4,9 @@
 // (docs/DRAWINGS.md explains why: every free reader is GPL, and this repo is MIT).
 
 import type { DrawingInput } from '../../stores/drawingStore'
-import { DxfError, dwgVersion, parseDxf } from './dxf-parse'
+import { DxfError, dwgVersion, type parseDxf } from './dxf-parse'
+import { readOperators, vectorsToEntities, type Matrix, type PdfOps, type PdfTextItem, type PdfVectors } from './pdf-vectors'
+import { runDrawingJob } from './run-job'
 import type { PageImage } from './types'
 
 export class DrawingImportError extends Error {
@@ -52,10 +54,33 @@ export async function renderPdfPage(bytes: Uint8Array, pageNumber: number): Prom
   }
 }
 
+/** The vectors and text of a page, in the page's own units (y up); empty for a scan. */
+export async function readPdfVectors(bytes: Uint8Array, pageNumber: number): Promise<PdfVectors> {
+  const [pdfjs, worker] = await Promise.all([
+    import('pdfjs-dist'),
+    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+  ])
+  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
+  try {
+    const doc = await task.promise
+    const page = await doc.getPage(pageNumber)
+    const vp = page.getViewport({ scale: 1 })
+    // The viewport is y down from the visible top-left; a sheet is y up from its bottom-left.
+    const v = vp.transform as Matrix
+    const base: Matrix = [v[0], -v[1], v[2], -v[3], v[4], vp.height - v[5]]
+    const [list, text] = await Promise.all([page.getOperatorList(), page.getTextContent()])
+    const { polylines, truncated } = readOperators(list.fnArray, list.argsArray, pdfjs.OPS as unknown as PdfOps, base)
+    return vectorsToEntities(polylines, text.items as PdfTextItem[], base, truncated)
+  } finally {
+    void task.destroy()
+  }
+}
+
 export function rememberPdf(id: string, bytes: Uint8Array): void { pdfSources.set(id, bytes) }
 export function pdfBytes(id: string): Uint8Array | undefined { return pdfSources.get(id) }
 
-export interface ImportedFile { input: DrawingInput; pdf?: Uint8Array }
+export interface ImportedFile { input: DrawingInput; pdf?: Uint8Array; pdfVectors?: { lines: number; texts: number; truncated: boolean } }
 
 export async function importDrawingFile(file: File): Promise<ImportedFile> {
   const bytes = new Uint8Array(await file.arrayBuffer())
@@ -63,15 +88,21 @@ export async function importDrawingFile(file: File): Promise<ImportedFile> {
   const magic = new TextDecoder('latin1').decode(bytes.subarray(0, 8))
   if (magic.startsWith('%PDF-')) {
     const page = await renderPdfPage(bytes, 1)
+    // Vectors are a bonus: a PDF that won't yield them still opens as its picture.
+    const vectors = await readPdfVectors(bytes, 1).catch(() => null)
     return {
       pdf: bytes,
-      input: { name, source: 'pdf', page, entities: [], layers: [{ name: 'Markup', color: '#ff5a5a', visible: true, locked: false }] },
+      input: {
+        name, source: 'pdf', page, entities: vectors?.entities ?? [],
+        layers: [{ name: 'Markup', color: '#ff5a5a', visible: true, locked: false }, ...(vectors?.layers ?? [])],
+      },
+      pdfVectors: vectors ? { lines: vectors.lines, texts: vectors.texts, truncated: vectors.truncated } : undefined,
     }
   }
   const dwg = dwgVersion(bytes)
   if (dwg) throw new DrawingImportError('dwg', dwg)
   try {
-    const r = parseDxf(bytes)
+    const r = await runDrawingJob<ReturnType<typeof parseDxf>>({ kind: 'dxf', bytes })
     return { input: { name, source: 'dxf', layers: r.layers, entities: r.entities, metresPerUnit: r.metresPerUnit, skipped: r.skipped } }
   } catch (err) {
     if (err instanceof DxfError) throw new DrawingImportError(err.code === 'binary' ? 'dxfBinary' : err.code === 'tooBig' ? 'tooBig' : 'notDxf')

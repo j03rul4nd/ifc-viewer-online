@@ -1,23 +1,25 @@
 // ─── Drawings dock ────────────────────────────────────────────────────────────
 // The sheets next to the model: DXF and PDF as references, plans and sections
-// cut from the IFC, markup, alignment, export. Lazy, because pdf.js and this
-// whole pane mean nothing to someone who never opens a sheet. See docs/DRAWINGS.md.
+// cut from the IFC and the scan, markup, alignment, export. Lazy, because pdf.js
+// and this whole pane mean nothing to someone who never opens a sheet. This file
+// owns the frame and the canvas; the inspector is DrawingPanels. See docs/DRAWINGS.md.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../../lib/viewer'
-import { useDrawingStore, type DrawingTool } from '../../stores/drawingStore'
+import { useDrawingStore, withIds, type DrawingTool } from '../../stores/drawingStore'
 import { useUIStore } from '../../stores/uiStore'
 import { useTwinDeviceStore } from '../../stores/twinDeviceStore'
 import { bindingState, deviceKey, effectOf } from '../../lib/twin/devices'
 import { trackFeatureUsed } from '../../lib/analytics'
 import { downloadFile } from '../../lib/share-file'
-import { DrawingImportError, importDrawingFile, pdfBytes, rememberPdf, renderPdfPage } from '../../lib/drawing/import-file'
-import { buildCut, SKIP_CATEGORIES, type CutPlane } from '../../lib/drawing/plan-cut'
-import { drawingToDxf, drawingToPdf, drawingToSvg, pdfHasUnencodable, type PaperSize, type PdfImage, PAPER } from '../../lib/drawing/export'
+import { DrawingImportError, importDrawingFile, pdfBytes, readPdfVectors, rememberPdf, renderPdfPage } from '../../lib/drawing/import-file'
+import { drawingToDxf, drawingToPdf, drawingToSvg, pdfHasUnencodable, type PdfImage } from '../../lib/drawing/export'
+import { loadSheets, saveSheets } from '../../lib/drawing/persist'
 import { createDrawingOverlay, type DrawingOverlay } from '../../lib/drawing/overlay-3d'
-import { IDENTITY, LAYER_PALETTE, robustBounds, type Drawing, type Pt } from '../../lib/drawing/types'
+import { IDENTITY, robustBounds, type Drawing, type Pt } from '../../lib/drawing/types'
 import DrawingCanvas, { type CanvasHandle, type LiveMarker } from './DrawingCanvas'
+import { btn, CreatePanel, cutPlan, field, INSPECTOR_TABS, LayersPanel, OutputPanel, ScenePanel, SheetPanel, type InspectorTab, type OutputOptions } from './DrawingPanels'
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -40,8 +42,13 @@ const TOOLS: { id: DrawingTool; glyph: string }[] = [
   { id: 'align', glyph: 'M3 3a1.5 1.5 0 1 0 0 .01M11 11a1.5 1.5 0 1 0 0 .01M4 4l6 6' },
 ]
 
-const btn = 'h-7 px-2 rounded-md text-[11px] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-40 whitespace-nowrap'
-const field = 'h-7 px-1.5 rounded-md text-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] min-w-0'
+const TAB_KEY = 'ifc-drawings-tab:v1'
+const readTab = (): InspectorTab => {
+  try { const v = localStorage.getItem(TAB_KEY) as InspectorTab | null; return v && INSPECTOR_TABS.includes(v) ? v : 'create' } catch { return 'create' }
+}
+
+/** `?drawings=plan`: a link that opens with the first plan cut, for articles and demos. */
+const deepLink = () => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('drawings'))
 
 export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
   const { t } = useTranslation('drawings')
@@ -53,6 +60,9 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [side, setSide] = useState(true)
+  const [tab, setTabState] = useState<InspectorTab>(readTab)
+  const setTab = (next: InspectorTab) => { setTabState(next); setSide(true); try { localStorage.setItem(TAB_KEY, next) } catch { /* a convenience */ } }
+  const [pdfInfo, setPdfInfo] = useState<Record<string, { lines: number; texts: number }>>({})
   const [ask, setAsk] = useState<{ kind: 'text'; at: Pt } | { kind: 'length'; units: number } | null>(null)
   const [askValue, setAskValue] = useState('')
 
@@ -70,6 +80,11 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
           const r = await importDrawingFile(file)
           const id = useDrawingStore.getState().addDrawing(r.input)
           if (r.pdf) rememberPdf(id, r.pdf)
+          if (r.pdfVectors) {
+            const { lines, texts, truncated } = r.pdfVectors
+            setPdfInfo((m) => ({ ...m, [id]: { lines, texts } }))
+            if (truncated) setNotice(t('import.pdfTruncated'))
+          }
           trackFeatureUsed({ feature: 'drawing_import' })
           const skipped = Object.entries(r.input.skipped ?? {})
           if (skipped.length) setNotice(t('import.skipped', { list: skipped.map(([k, n]) => `${k} ×${n}`).join(', ') }))
@@ -88,52 +103,68 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
     if (pendingCount) void open(useDrawingStore.getState().takePendingFiles())
   }, [pendingCount, open])
 
-  // ── Generate from the IFC
-  const [levels, setLevels] = useState<{ name: string; y: number }[]>([])
-  const [levelIdx, setLevelIdx] = useState(0)
-  const [cutHeight, setCutHeight] = useState(1.2)
-  const [cutKind, setCutKind] = useState<'plan' | 'sectionX' | 'sectionY'>('plan')
-  const [cutPos, setCutPos] = useState(50)
-  const [hasModels, setHasModels] = useState(false)
-
+  // ── Saved in this browser
+  const [storageFailed, setStorageFailed] = useState(false)
+  const hydrated = useRef(!!deepLink()) // a demo link neither reads nor overwrites someone's sheets
   useEffect(() => {
-    const api = viewerApiRef.current
-    setHasModels(!!api?.drawingSceneBounds())
-    if (api) void api.getStoreyLevels().then((l) => setLevels(l)).catch(() => setLevels([]))
-    // Re-read when the pane opens or the sheet changes: models come and go.
-  }, [viewerApiRef, s.activeId, s.panelOpen])
+    if (hydrated.current) return
+    let dead = false
+    void loadSheets().then((list) => {
+      if (dead) return
+      for (const x of list) if (x.pdf) rememberPdf(x.drawing.id, x.pdf)
+      useDrawingStore.getState().hydrate(list.map((x) => x.drawing))
+    }).catch(() => setStorageFailed(true)).finally(() => { hydrated.current = true })
+    return () => { dead = true }
+  }, [])
+  const saved = useRef(new Map<string, Drawing>())
+  useEffect(() => {
+    if (deepLink()) return
+    const id = setTimeout(() => {
+      if (!hydrated.current) return
+      const list = useDrawingStore.getState().drawings
+      const put = list.filter((d) => saved.current.get(d.id) !== d).map((drawing) => ({ drawing, pdf: pdfBytes(drawing.id), order: list.indexOf(drawing) }))
+      if (!put.length && saved.current.size === list.length) return
+      saveSheets(put, list.map((d) => d.id))
+        .then(() => { saved.current = new Map(list.map((d) => [d.id, d])); setStorageFailed(false) })
+        .catch(() => setStorageFailed(true))
+    }, 800)
+    return () => clearTimeout(id)
+  }, [s.drawings])
 
-  const generate = async () => {
-    const api = viewerApiRef.current
-    const box = api?.drawingSceneBounds()
-    if (!api || !box) return
+  const run = useCallback(async (work: () => Promise<void>) => {
     setBusy(true); setError(null); setNotice(null)
-    try {
-      const frac = cutPos / 100
-      const level = levels[levelIdx]
-      const plane: CutPlane = cutKind === 'plan'
-        ? { kind: 'plan', y: (level?.y ?? box.min.y) + cutHeight }
-        : cutKind === 'sectionX'
-          ? { kind: 'sectionX', x: box.min.x + (box.max.x - box.min.x) * frac }
-          : { kind: 'sectionY', z: box.min.z + (box.max.z - box.min.z) * frac }
-      const soups = await api.collectDrawingSoups(SKIP_CATEGORIES)
-      const cut = buildCut(soups, plane)
-      if (!cut.entities.length) { setError(t('errors.emptyCut')); return }
-      const st = useDrawingStore.getState()
-      const name = cutKind === 'plan'
-        ? t('generate.planName', { level: level?.name ?? '', height: cutHeight })
-        : t('generate.sectionName', { axis: cutKind === 'sectionX' ? 'X' : 'Y', pos: Math.round(cutPos) })
-      // A section lives in its own plane: sheets of the plan must not lie over it.
-      if (cutKind !== 'plan') for (const d of st.drawings) st.patch(d.id, { visible: false })
-      st.addDrawing({
-        name, source: cutKind === 'plan' ? 'plan' : 'section', layers: cut.layers, entities: cut.entities,
-        metresPerUnit: 1, placement: IDENTITY, elevation: cutKind === 'plan' ? Math.round((level?.y ?? box.min.y) * 1000) / 1000 : 0,
-      })
-      trackFeatureUsed({ feature: 'drawing_generate' })
-    } catch (err) {
+    // A frame for "working" to paint: the soups are read on this thread.
+    await new Promise((r) => setTimeout(r, 30))
+    try { await work() } catch (err) {
       setError(t('errors.cutFailed', { detail: err instanceof Error ? err.message : String(err) }))
     } finally { setBusy(false) }
-  }
+  }, [t])
+  const shared = { viewerApiRef, active, busy, run, fail: setError, say: setNotice }
+
+  // ── Deep link: the plan appears by itself once the models are in
+  useEffect(() => {
+    if (deepLink() !== 'plan') return
+    let dead = false
+    let tries = 0
+    const tick = async () => {
+      if (dead) return
+      const api = viewerApiRef.current
+      const box = api?.drawingSceneBounds()
+      if (!api || !box) { if (tries++ < 180) setTimeout(() => void tick(), 1000); return }
+      const levels = await api.getStoreyLevels().catch(() => [])
+      const baseY = levels[0]?.y ?? box.min.y
+      await run(async () => {
+        const c = await cutPlan(api, baseY + 1.2, { beyond: 2.5, poche: true })
+        if (dead || !c.entities.length) return
+        const st = useDrawingStore.getState()
+        const id = st.addDrawing({ name: t('generate.planName', { level: levels[0]?.name ?? '', height: 1.2 }), source: 'plan', layers: c.layers, entities: c.entities, metresPerUnit: 1, placement: IDENTITY, elevation: baseY })
+        st.patch(id, { in3d: true })
+        setTab('scene')
+      })
+    }
+    void tick()
+    return () => { dead = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 3D overlay
   const overlay = useRef<DrawingOverlay | null>(null)
@@ -211,30 +242,10 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
     setAsk(null); setAskValue('')
   }
 
-  // ── Layers
-  const addLayer = () => {
-    if (!active) return
-    let n = active.layers.length
-    let name = `${t('layers.new')} ${n}`
-    while (active.layers.some((l) => l.name === name)) name = `${t('layers.new')} ${++n}`
-    s.edit(active.id, (d) => ({ layers: [...d.layers, { name, color: LAYER_PALETTE[n % LAYER_PALETTE.length], visible: true, locked: false }] }))
-    s.setActiveLayer(name)
-  }
-  const patchLayer = (name: string, p: Partial<Drawing['layers'][number]>) => {
-    if (active) s.edit(active.id, (d) => ({ layers: d.layers.map((l) => (l.name === name ? { ...l, ...p } : l)) }))
-  }
-  const deleteLayer = (name: string) => {
-    if (!active || active.layers.length < 2) return
-    s.edit(active.id, (d) => ({ layers: d.layers.filter((l) => l.name !== name), entities: d.entities.filter((e) => e.layer !== name) }))
-    if (s.activeLayer === name) s.setActiveLayer(active.layers.find((l) => l.name !== name)?.name ?? null)
-  }
-
   // ── Export
-  const [paper, setPaper] = useState<PaperSize>('A3')
-  const [title, setTitle] = useState('')
-  const [project, setProject] = useState('')
-  const [author, setAuthor] = useState('')
-  const sheetOpts = () => ({ paper, title: title || active?.name || '', project, author, date: new Date().toISOString().slice(0, 10) })
+  const [output, setOutput] = useState<OutputOptions>({ paper: 'A3', title: '', project: '', author: '' })
+  const sheetOptsFor = (d: Drawing) => ({ paper: output.paper, title: output.title || d.name, project: output.project, author: output.author, date: new Date().toISOString().slice(0, 10) })
+  const sheetOpts = () => sheetOptsFor(active!)
   const exportAs = async (kind: 'dxf' | 'svg' | 'pdf') => {
     if (!active) return
     setNotice(null)
@@ -253,6 +264,21 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
     }
     trackFeatureUsed({ feature: 'drawing_export' })
   }
+  /** Every sheet, as PDF and DXF, numbered in sheet order: what a handover asks for. */
+  const exportAll = () => run(async () => {
+    const { zipSync } = await import('fflate')
+    const files: Record<string, Uint8Array> = {}
+    const enc = new TextEncoder()
+    const list = useDrawingStore.getState().drawings
+    for (const [i, d] of list.entries()) {
+      const base = `${String(i + 1).padStart(2, '0')}-${d.name.replace(/[^\p{L}\p{N}._ -]+/gu, '_') || 'sheet'}`
+      files[`${base}.pdf`] = drawingToPdf(d, sheetOptsFor(d), d.page ? await pageToJpeg(d.page.url) : undefined)
+      files[`${base}.dxf`] = enc.encode(drawingToDxf(d))
+    }
+    const bytes = zipSync(files, { level: 6 })
+    downloadFile(new Blob([bytes.slice().buffer as ArrayBuffer], { type: 'application/zip' }), `${output.project.replace(/[^\p{L}\p{N}._ -]+/gu, '_') || 'sheets'}.zip`)
+    trackFeatureUsed({ feature: 'drawing_export_all' })
+  })
 
   const changePage = async (delta: number) => {
     if (!active?.page) return
@@ -260,7 +286,20 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
     const next = active.page.pageNumber + delta
     if (!bytes || next < 1 || next > active.page.pageCount) return
     setBusy(true)
-    try { s.patch(active.id, { page: await renderPdfPage(bytes, next) }) } catch (err) { setError(String(err)) } finally { setBusy(false) }
+    try {
+      const page = await renderPdfPage(bytes, next)
+      const vectors = await readPdfVectors(bytes, next).catch(() => null)
+      s.patch(active.id, { page })
+      // The page's vectors go with the page; what the user drew on Markup stays.
+      s.edit(active.id, (d) => {
+        const own = d.entities.filter((e) => e.layer !== 'PDF lines' && e.layer !== 'PDF text')
+        return {
+          entities: [...own, ...withIds(vectors?.entities ?? [])],
+          layers: [...d.layers.filter((l) => l.name !== 'PDF lines' && l.name !== 'PDF text'), ...(vectors?.layers ?? [])],
+        }
+      })
+      if (vectors) setPdfInfo((m) => ({ ...m, [active.id]: { lines: vectors.lines, texts: vectors.texts } }))
+    } catch (err) { setError(String(err)) } finally { setBusy(false) }
   }
 
   const startResize = (e: React.PointerEvent) => {
@@ -282,20 +321,22 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
     >
       {onResize && <div onPointerDown={startResize} className="absolute left-0 top-0 bottom-0 w-1.5 -ml-0.5 cursor-col-resize z-10" style={{ touchAction: 'none' }} />}
 
-      <header className="shrink-0 flex flex-wrap items-center gap-1 p-1.5 border-b border-[var(--border)]">
-        <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--text-faint)] mr-1">{t('title')}</span>
-        <select aria-label={t('sheet')} className={`${field} flex-1 max-w-[220px]`} value={s.activeId ?? ''} onChange={(e) => s.setActive(e.target.value)}>
-          {s.drawings.length === 0 && <option value="">{t('none')}</option>}
-          {s.drawings.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
+      <header className="shrink-0 flex items-center gap-1 px-1.5 h-9 border-b border-[var(--border)]">
+        <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--text-faint)] mr-1 max-sm:hidden">{t('title')}</span>
+        <div role="tablist" aria-label={t('sheet')} className="flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {s.drawings.length === 0 && <span className="text-[11px] text-[var(--text-faint)] px-1">{t('none')}</span>}
+          {s.drawings.map((d) => (
+            <button
+              key={d.id} type="button" role="tab" aria-selected={d.id === s.activeId} title={d.name} onClick={() => s.setActive(d.id)}
+              className={`shrink-0 max-w-[150px] truncate h-7 px-2 rounded-md text-[11px] ${d.id === s.activeId ? 'bg-[var(--surface-2)] text-[var(--text)]' : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]'} ${d.visible ? '' : 'opacity-50'}`}
+            >{d.name}</button>
+          ))}
+        </div>
         <button type="button" className={btn} onClick={() => fileInput.current?.click()}>{t('import.button')}</button>
         <input ref={fileInput} type="file" hidden multiple accept=".dxf,.dwg,.pdf" data-testid="drawing-file"
           onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; if (f.length) void open(f) }} />
-        <button type="button" className={btn} title={t('blank')} onClick={() => s.addDrawing({ name: t('blankName', { n: s.drawings.length + 1 }), source: 'blank', layers: [], entities: [], metresPerUnit: 1, placement: IDENTITY })}>+</button>
-        <button type="button" className={btn} onClick={() => canvas.current?.fit()}>{t('fit')}</button>
-        <button type="button" className={btn} aria-pressed={s.paper} onClick={() => s.setPaper(!s.paper)}>{s.paper ? t('dark') : t('paper')}</button>
-        <button type="button" className={btn} aria-pressed={side} onClick={() => setSide(!side)}>{t('panel')}</button>
-        <button type="button" aria-label={t('close')} className={`${btn} ml-auto`} onClick={() => s.setPanelOpen(false)}>×</button>
+        <button type="button" className={btn} title={t('blank')} aria-label={t('blank')} onClick={() => s.addDrawing({ name: t('blankName', { n: s.drawings.length + 1 }), source: 'blank', layers: [], entities: [], metresPerUnit: 1, placement: IDENTITY })}>+</button>
+        <button type="button" aria-label={t('close')} className={btn} onClick={() => s.setPanelOpen(false)}>×</button>
       </header>
 
       <div role="toolbar" aria-label={t('tools.label')} className="shrink-0 flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-[var(--border)]">
@@ -349,108 +390,36 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
         </div>
 
         {side && (
-          <aside className="shrink-0 w-[230px] max-md:w-full max-md:max-h-[38%] overflow-y-auto border-l max-md:border-l-0 max-md:border-t border-[var(--border)] text-[11px]">
-            <Section title={t('generate.title')}>
-              {!hasModels && <p className="text-[var(--text-faint)]">{t('generate.needModel')}</p>}
-              <select aria-label={t('generate.kind')} className={`${field} w-full mb-1`} value={cutKind} onChange={(e) => setCutKind(e.target.value as typeof cutKind)}>
-                <option value="plan">{t('generate.plan')}</option>
-                <option value="sectionX">{t('generate.sectionX')}</option>
-                <option value="sectionY">{t('generate.sectionY')}</option>
-              </select>
-              {cutKind === 'plan' ? (
-                <div className="flex gap-1 mb-1">
-                  <select aria-label={t('generate.level')} className={`${field} flex-1`} value={levelIdx} onChange={(e) => setLevelIdx(Number(e.target.value))}>
-                    {levels.length === 0 && <option value={0}>{t('generate.base')}</option>}
-                    {levels.map((l, i) => <option key={`${l.name}-${i}`} value={i}>{l.name}</option>)}
-                  </select>
-                  <label className="flex items-center gap-1" title={t('generate.height')}>
-                    <input aria-label={t('generate.height')} type="number" step="0.1" className={`${field} w-14`} value={cutHeight} onChange={(e) => setCutHeight(Number(e.target.value) || 0)} onKeyDown={(e) => e.stopPropagation()} /> m
-                  </label>
-                </div>
-              ) : (
-                <input aria-label={t('generate.position')} type="range" min={0} max={100} value={cutPos} onChange={(e) => setCutPos(Number(e.target.value))} className="w-full mb-1" />
-              )}
-              <button type="button" className={`${btn} w-full`} disabled={!hasModels || busy} onClick={() => void generate()}>{t('generate.run')}</button>
-            </Section>
-
-            {active && (
-              <Section title={t('sheetSection')}>
-                <div className="flex flex-col gap-1">
-                  <label className="flex items-center gap-1.5"><input type="checkbox" checked={active.visible} onChange={(e) => s.patch(active.id, { visible: e.target.checked })} /> {t('visible')}</label>
-                  {active.source !== 'section' && (
-                    <label className="flex items-center gap-1.5"><input type="checkbox" checked={active.in3d} onChange={(e) => s.patch(active.id, { in3d: e.target.checked })} /> {t('in3d')}</label>
-                  )}
-                  {active.in3d && (
-                    <label className="flex items-center gap-1">{t('elevation')}
-                      <input type="number" step="0.5" className={`${field} w-16`} value={active.elevation} onChange={(e) => s.patch(active.id, { elevation: Number(e.target.value) || 0 })} onKeyDown={(e) => e.stopPropagation()} /> m
-                    </label>
-                  )}
-                  <label className="flex items-center gap-1.5"><input type="checkbox" checked={s.liveData} onChange={(e) => s.setLiveData(e.target.checked)} /> {t('live', { count: markers.length })}</label>
-                  {active.page && active.page.pageCount > 1 && (
-                    <div className="flex items-center gap-1">
-                      <button type="button" className={btn} onClick={() => void changePage(-1)} disabled={active.page.pageNumber <= 1}>‹</button>
-                      <span>{t('page', { n: active.page.pageNumber, total: active.page.pageCount })}</span>
-                      <button type="button" className={btn} onClick={() => void changePage(1)} disabled={active.page.pageNumber >= active.page.pageCount}>›</button>
-                    </div>
-                  )}
-                  <p className="text-[var(--text-faint)]">{active.metresPerUnit ? t('units', { value: active.metresPerUnit.toPrecision(4) }) : t('noUnits')}</p>
-                  <div className="flex flex-wrap gap-1">
-                    <button type="button" className={btn} onClick={() => s.edit(active.id, (d) => ({ placement: { ...IDENTITY, scale: d.metresPerUnit ?? 1 } }))}>{t('fileCoords')}</button>
-                    <button type="button" className={btn} onClick={() => s.removeDrawing(active.id)}>{t('remove')}</button>
-                  </div>
-                </div>
-              </Section>
-            )}
-
-            {active && (
-              <Section title={t('layers.title', { count: active.layers.length })} action={<button type="button" className={btn} onClick={addLayer}>+</button>}>
-                <ul className="flex flex-col gap-0.5 max-h-[240px] overflow-y-auto">
-                  {active.layers.map((l) => (
-                    <li key={l.name} className={`flex items-center gap-1 rounded px-0.5 ${s.activeLayer === l.name ? 'bg-[var(--surface-2)]' : ''}`}>
-                      <input type="checkbox" aria-label={t('layers.visible', { name: l.name })} checked={l.visible} onChange={(e) => patchLayer(l.name, { visible: e.target.checked })} />
-                      <input type="color" aria-label={t('layers.color', { name: l.name })} value={l.color} onChange={(e) => patchLayer(l.name, { color: e.target.value })} className="w-4 h-4 p-0 border-0 bg-transparent shrink-0" />
-                      <button type="button" className="flex-1 min-w-0 truncate text-left" title={l.name} onClick={() => s.setActiveLayer(l.name)}>{l.name}</button>
-                      <button type="button" aria-label={t('layers.lock', { name: l.name })} aria-pressed={l.locked} className={l.locked ? 'text-[var(--accent)]' : 'text-[var(--text-faint)]'} onClick={() => patchLayer(l.name, { locked: !l.locked })}>{l.locked ? '■' : '□'}</button>
-                      <button type="button" aria-label={t('layers.delete', { name: l.name })} className="text-[var(--text-faint)] hover:text-[var(--danger)]" onClick={() => deleteLayer(l.name)}>×</button>
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            )}
-
-            {active && (
-              <Section title={t('export.title')}>
-                <div className="flex flex-col gap-1">
-                  <input aria-label={t('export.sheetTitle')} placeholder={t('export.sheetTitle')} className={field} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
-                  <input aria-label={t('export.project')} placeholder={t('export.project')} className={field} value={project} onChange={(e) => setProject(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
-                  <input aria-label={t('export.author')} placeholder={t('export.author')} className={field} value={author} onChange={(e) => setAuthor(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
-                  <select aria-label={t('export.paper')} className={field} value={paper} onChange={(e) => setPaper(e.target.value as PaperSize)}>
-                    {(Object.keys(PAPER) as PaperSize[]).map((p) => <option key={p}>{p}</option>)}
-                  </select>
-                  <div className="flex gap-1">
-                    <button type="button" className={`${btn} flex-1`} onClick={() => void exportAs('dxf')}>DXF</button>
-                    <button type="button" className={`${btn} flex-1`} onClick={() => void exportAs('svg')}>SVG</button>
-                    <button type="button" className={`${btn} flex-1`} onClick={() => void exportAs('pdf')}>PDF</button>
-                  </div>
-                </div>
-              </Section>
-            )}
+          <aside className="shrink-0 w-[286px] max-md:w-full max-md:max-h-[42%] flex flex-col border-l max-md:border-l-0 max-md:border-t border-[var(--border)] text-[11px]">
+            <div role="tablist" aria-label={t('inspector')} className="shrink-0 grid grid-cols-5 border-b border-[var(--border)]">
+              {INSPECTOR_TABS.map((id) => (
+                <button
+                  key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+                  className={`h-8 px-0.5 truncate text-[10.5px] border-b-2 ${tab === id ? 'border-[var(--accent)] text-[var(--text)]' : 'border-transparent text-[var(--text-dim)] hover:text-[var(--text)]'}`}
+                >{t(`tabs.${id}`)}</button>
+              ))}
+            </div>
+            <div role="tabpanel" className="flex-1 min-h-0 overflow-y-auto">
+              {tab === 'scene' && <ScenePanel {...shared} markerCount={markers.length} />}
+              {tab === 'create' && <CreatePanel {...shared} />}
+              {tab === 'layers' && <LayersPanel {...shared} />}
+              {tab === 'sheet' && <SheetPanel {...shared} onPage={(d) => void changePage(d)} pdfInfo={active ? pdfInfo[active.id] : undefined} />}
+              {tab === 'output' && <OutputPanel {...shared} options={output} setOptions={setOutput} onExport={(k) => void exportAs(k)} onExportAll={() => void exportAll()} sheetCount={s.drawings.length} />}
+            </div>
           </aside>
         )}
       </div>
-    </section>
-  )
-}
 
-function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="p-2 border-b border-[var(--border)]">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--text-faint)] truncate">{title}</h3>
-        {action}
-      </div>
-      {children}
-    </div>
+      <footer className="shrink-0 flex items-center gap-1 px-1.5 h-8 border-t border-[var(--border)] text-[10.5px] text-[var(--text-dim)]">
+        {active && <span className="truncate" title={t('status.layer')}>{s.activeLayer ?? '—'}</span>}
+        {active && <span className="font-mono text-[var(--text-faint)] max-sm:hidden">{active.entities.length.toLocaleString()}</span>}
+        {storageFailed && <span className="text-[var(--danger)] truncate">{t('status.notSaved')}</span>}
+        <span className="ml-auto" />
+        <button type="button" className={btn} onClick={() => canvas.current?.fit()}>{t('fit')}</button>
+        <button type="button" className={btn} aria-pressed={s.paper} onClick={() => s.setPaper(!s.paper)}>{s.paper ? t('dark') : t('paper')}</button>
+        <button type="button" className={btn} aria-pressed={side} onClick={() => setSide(!side)}>{t('panel')}</button>
+      </footer>
+    </section>
   )
 }
 

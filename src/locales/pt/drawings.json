@@ -19,7 +19,8 @@
   },
   "import": {
     "button": "Abrir DXF / PDF",
-    "skipped": "Não lido deste ficheiro: {{list}}."
+    "skipped": "Não lido deste ficheiro: {{list}}.",
+    "pdfTruncated": "Esta página tem mais linhas do que é possível ler: algumas faltam no snap e no DXF."
   },
   "errors": {
     "dwg": "{{name}} é um DWG (AutoCAD {{detail}}). O DWG ainda não abre aqui. Guarde-o como DXF: no AutoCAD, Guardar como → DXF, ou converta-o no seu computador com o ODA File Converter gratuito, e abra o DXF.",
@@ -30,7 +31,8 @@
     "pdfBroken": "Não foi possível ler {{name}} como PDF: {{detail}}",
     "unknown": "Não foi possível abrir {{name}}: {{detail}}",
     "emptyCut": "Esse corte não atravessa geometria. Experimente outro nível ou altura.",
-    "cutFailed": "O corte falhou: {{detail}}"
+    "cutFailed": "O corte falhou: {{detail}}",
+    "emptyScan": "Esse corte não atravessa nenhum ponto. Tente outra altura ou um corte mais espesso."
   },
   "tools": {
     "label": "Ferramentas de desenho",
@@ -82,8 +84,6 @@
     "sectionName": "Secção {{axis}} {{pos}}%"
   },
   "sheetSection": "Este desenho",
-  "visible": "Mostrar",
-  "in3d": "Mostrar na vista 3D",
   "elevation": "Altura",
   "live": "Dispositivos em direto ({{count}})",
   "page": "Página {{n}} de {{total}}",
@@ -97,7 +97,14 @@
     "visible": "Mostrar {{name}}",
     "color": "Cor de {{name}}",
     "lock": "Bloquear {{name}}",
-    "delete": "Apagar {{name}} e o seu conteúdo"
+    "delete": "Apagar {{name}} e o seu conteúdo",
+    "add": "Nova",
+    "search": "Buscar camadas",
+    "allOn": "Mostrar todas",
+    "allOff": "Ocultar todas",
+    "isolate": "Mostrar só {{name}}",
+    "makeActive": "Desenhar em {{name}}",
+    "more": "Mais {{count}}: busque para reduzir a lista."
   },
   "export": {
     "title": "Exportar",
@@ -106,6 +113,91 @@
     "author": "Desenhado por",
     "paper": "Tamanho do papel",
     "dxfNoPage": "O DXF leva as linhas e textos adicionados, não a página do PDF.",
-    "pdfLatin": "Este PDF só escreve texto latino: outros alfabetos aparecem como “?”. O SVG conserva-os."
+    "pdfLatin": "Este PDF só escreve texto latino: outros alfabetos aparecem como “?”. O SVG conserva-os.",
+    "all": "As {{count}} folhas (ZIP: PDF + DXF)"
+  },
+  "inspector": "Inspetor",
+  "noSheet": "Abra ou crie uma folha primeiro.",
+  "tabs": {
+    "scene": "Cena",
+    "create": "Criar",
+    "layers": "Camadas",
+    "sheet": "Folha",
+    "output": "Saída"
+  },
+  "scene": {
+    "title": "Nesta cena",
+    "frame": "Enquadrar tudo",
+    "empty": "Ainda não há nada. Solte no visualizador um IFC, uma nuvem (LAS, LAZ, PLY…) ou um DXF: eles compartilham uma cena e um sistema de coordenadas.",
+    "models": "Modelos IFC ({{count}})",
+    "scans": "Nuvens de pontos ({{count}})",
+    "show": "Mostrar {{name}}",
+    "sheets": "Folhas ({{count}})",
+    "noSheets": "Ainda não há folhas. Corte uma em Criar ou abra um arquivo.",
+    "stack": "Empilhar em 3D",
+    "in3d": "Em 3D"
+  },
+  "create": {
+    "what": "O que criar",
+    "plan": {
+      "title": "Planta",
+      "blurb": "Corta o IFC em uma altura, com o que fica abaixo."
+    },
+    "section": {
+      "title": "Corte",
+      "blurb": "Um corte vertical com o que fica atrás."
+    },
+    "set": {
+      "title": "Conjunto de pranchas",
+      "blurb": "Uma planta por pavimento, de uma vez.",
+      "count": "{{count}} pavimentos encontrados.",
+      "none": "Nenhum pavimento nos modelos carregados.",
+      "run": "Gerar todas as plantas"
+    },
+    "scan": {
+      "title": "Planta a partir da nuvem",
+      "blurb": "Corte a nuvem de pontos e compare com o modelo.",
+      "need": "Carregue antes uma nuvem de pontos nesta cena.",
+      "cloud": "Nuvem de pontos",
+      "thickness": "Espessura do corte (m)",
+      "cell": "Célula da malha (m)",
+      "against": "Comparar com o modelo",
+      "tolerance": "Tolerância (m)"
+    },
+    "compare": {
+      "title": "Comparar folhas",
+      "blurb": "O que foi adicionado e removido entre revisões.",
+      "need": "Abra duas folhas para comparar.",
+      "before": "Antes",
+      "after": "Depois",
+      "run": "Comparar"
+    },
+    "beyond": "Mostrar além do corte (m)",
+    "poche": "Preencher paredes e estrutura cortadas",
+    "done": "{{count}} entidades em {{seconds}} s.",
+    "setDone": "{{count}} folhas em {{seconds}} s.",
+    "scanName": "Corte da nuvem +{{height}} m",
+    "scanReport": "Nuvem x modelo: {{matches}}% dentro de {{tolerance}} mm, {{check}}% a verificar, {{differs}}% difere. Medido na nuvem como foi carregada: depende de como foi alinhada.",
+    "scanPlain": "{{count}} pontos no corte.",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "{{added}} segmentos adicionados, {{removed}} removidos, {{same}} sem alteração."
+  },
+  "place": {
+    "title": "Posição no modelo",
+    "anchored": "Cortada nesta cena: já está sobre o modelo.",
+    "scale": "Metros por unidade",
+    "rotation": "Rotação (°)",
+    "look": "Aparência",
+    "opacity": "Opacidade"
+  },
+  "stats": {
+    "source": "Origem",
+    "entities": "Entidades",
+    "vectors": "Linhas / texto do PDF",
+    "scanned": "Esta página não tem linhas vetoriais: provavelmente é uma digitalização. Use-a como imagem e defina a escala à mão."
+  },
+  "status": {
+    "layer": "Camada ativa: as novas linhas vão aqui",
+    "notSaved": "Não salvo neste navegador"
   }
 }

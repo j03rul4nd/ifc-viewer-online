@@ -56,7 +56,7 @@ export function createDrawingOverlay(scene: THREE.Scene, requestRender: () => vo
       const g = new THREE.BufferGeometry()
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
       g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
-      const lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true }))
+      const lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: (d.opacity ?? 1) < 1, opacity: d.opacity ?? 1 }))
       lines.frustumCulled = false
       group.add(lines)
     }
@@ -69,7 +69,7 @@ export function createDrawingOverlay(scene: THREE.Scene, requestRender: () => vo
       g.setAttribute('position', new THREE.Float32BufferAttribute([...corner(0, 0), ...corner(w, 0), ...corner(w, h), ...corner(0, h)], 3))
       g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2))
       g.setIndex([0, 1, 2, 0, 2, 3])
-      const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }))
+      const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true, opacity: 0.85 * (d.opacity ?? 1) }))
       mesh.frustumCulled = false
       group.add(mesh)
     }
@@ -82,7 +82,7 @@ export function createDrawingOverlay(scene: THREE.Scene, requestRender: () => vo
       const ids = new Set(wanted.map((d) => d.id))
       for (const [id, e] of entries) if (!ids.has(id)) { free(e.group); entries.delete(id) }
       for (const d of wanted) {
-        const key = `${d.elevation}|${d.placement.scale}|${d.placement.rotation}|${d.placement.x}|${d.placement.y}`
+        const key = `${d.opacity ?? 1}|${d.elevation}|${d.placement.scale}|${d.placement.rotation}|${d.placement.x}|${d.placement.y}`
         const stamp = [d.entities, d.layers, d.page, key]
         const old = entries.get(d.id)
         const same = old && (old.key as unknown[]).every((v, i) => v === stamp[i])

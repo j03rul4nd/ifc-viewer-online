@@ -19,7 +19,8 @@
   },
   "import": {
     "button": "DXF / PDF を開く",
-    "skipped": "このファイルから読み取れなかったもの: {{list}}。"
+    "skipped": "このファイルから読み取れなかったもの: {{list}}。",
+    "pdfTruncated": "このページは読み取れる線の上限を超えています。一部はスナップと DXF に含まれません。"
   },
   "errors": {
     "dwg": "{{name}} は DWG (AutoCAD {{detail}}) です。ここではまだ DWG を開けません。DXF で保存してください。AutoCAD の「名前を付けて保存 → DXF」か、無料の ODA File Converter でお使いのコンピューター上で変換し、DXF を開きます。",
@@ -30,7 +31,8 @@
     "pdfBroken": "{{name}} を PDF として読めませんでした: {{detail}}",
     "unknown": "{{name}} を開けませんでした: {{detail}}",
     "emptyCut": "この切断面はジオメトリを通りません。別のレベルや高さを試してください。",
-    "cutFailed": "切断に失敗しました: {{detail}}"
+    "cutFailed": "切断に失敗しました: {{detail}}",
+    "emptyScan": "そのスライスは点を通っていません。別の高さか、より厚いスライスを試してください。"
   },
   "tools": {
     "label": "作図ツール",
@@ -82,8 +84,6 @@
     "sectionName": "断面 {{axis}} {{pos}}%"
   },
   "sheetSection": "この図面",
-  "visible": "表示",
-  "in3d": "3D ビューに表示",
   "elevation": "高さ",
   "live": "ライブデバイス ({{count}})",
   "page": "{{n}} / {{total}} ページ",
@@ -97,7 +97,14 @@
     "visible": "{{name}} を表示",
     "color": "{{name}} の色",
     "lock": "{{name}} をロック",
-    "delete": "{{name}} と内容を削除"
+    "delete": "{{name}} と内容を削除",
+    "add": "新規",
+    "search": "レイヤーを検索",
+    "allOn": "すべて表示",
+    "allOff": "すべて非表示",
+    "isolate": "{{name}} のみ表示",
+    "makeActive": "{{name}} に描く",
+    "more": "ほかに {{count}} 件:検索して絞り込んでください。"
   },
   "export": {
     "title": "書き出し",
@@ -106,6 +113,91 @@
     "author": "作図者",
     "paper": "用紙サイズ",
     "dxfNoPage": "DXF には追加した線と文字が入り、PDF のページは入りません。",
-    "pdfLatin": "この PDF はラテン文字のみ書き出します。他の文字は「?」になります。SVG では保持されます。"
+    "pdfLatin": "この PDF はラテン文字のみ書き出します。他の文字は「?」になります。SVG では保持されます。",
+    "all": "全 {{count}} シート(ZIP:PDF + DXF)"
+  },
+  "inspector": "インスペクター",
+  "noSheet": "先にシートを開くか作成してください。",
+  "tabs": {
+    "scene": "シーン",
+    "create": "作成",
+    "layers": "レイヤー",
+    "sheet": "シート",
+    "output": "出力"
+  },
+  "scene": {
+    "title": "このシーン内",
+    "frame": "すべて表示",
+    "empty": "まだ何もありません。IFC、点群(LAS、LAZ、PLY…)、DXF をビューアにドロップしてください。1 つのシーンと座標系を共有します。",
+    "models": "IFC モデル({{count}})",
+    "scans": "点群({{count}})",
+    "show": "{{name}} を表示",
+    "sheets": "シート({{count}})",
+    "noSheets": "シートはまだありません。「作成」で切断するか、ファイルを開いてください。",
+    "stack": "3D で積み重ねる",
+    "in3d": "3D"
+  },
+  "create": {
+    "what": "作成するもの",
+    "plan": {
+      "title": "平面図",
+      "blurb": "IFC を指定の高さで切断し、下にあるものも表示します。"
+    },
+    "section": {
+      "title": "断面図",
+      "blurb": "垂直に切断し、奥にあるものも表示します。"
+    },
+    "set": {
+      "title": "図面セット",
+      "blurb": "階ごとの平面図を一度に作成します。",
+      "count": "{{count}} 階が見つかりました。",
+      "none": "読み込んだモデルに階がありません。",
+      "run": "すべての平面図を生成"
+    },
+    "scan": {
+      "title": "点群から平面図",
+      "blurb": "点群を切断してモデルと比較します。",
+      "need": "先にこのシーンに点群を読み込んでください。",
+      "cloud": "点群",
+      "thickness": "スライス厚さ(m)",
+      "cell": "グリッドセル(m)",
+      "against": "モデルと比較",
+      "tolerance": "許容差(m)"
+    },
+    "compare": {
+      "title": "シートを比較",
+      "blurb": "改訂間で追加・削除されたもの。",
+      "need": "比較するシートを 2 枚開いてください。",
+      "before": "変更前",
+      "after": "変更後",
+      "run": "比較"
+    },
+    "beyond": "切断面の先を表示(m)",
+    "poche": "切断された壁と構造を塗りつぶす",
+    "done": "{{count}} 要素、{{seconds}} 秒。",
+    "setDone": "{{count}} シート、{{seconds}} 秒。",
+    "scanName": "点群スライス +{{height}} m",
+    "scanReport": "点群とモデル:{{matches}}% が {{tolerance}} mm 以内、{{check}}% は要確認、{{differs}}% は相違。読み込んだ状態の点群で測定しており、位置合わせに左右されます。",
+    "scanPlain": "スライス内の点:{{count}}。",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "追加 {{added}}、削除 {{removed}}、変更なし {{same}} セグメント。"
+  },
+  "place": {
+    "title": "モデル内の位置",
+    "anchored": "このシーンで切断:すでにモデル上にあります。",
+    "scale": "単位あたりのメートル",
+    "rotation": "回転(°)",
+    "look": "外観",
+    "opacity": "不透明度"
+  },
+  "stats": {
+    "source": "ソース",
+    "entities": "要素",
+    "vectors": "PDF の線 / テキスト",
+    "scanned": "このページにはベクター線がありません。スキャンの可能性があります。画像として使い、縮尺を手動で設定してください。"
+  },
+  "status": {
+    "layer": "現在のレイヤー:新しい線はここに描かれます",
+    "notSaved": "このブラウザに保存されていません"
   }
 }

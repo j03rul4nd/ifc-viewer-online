@@ -2020,7 +2020,9 @@ export default function App() {
   const dualViewerRect = dualLayout?.viewer ?? null
   // The drawings pane takes its share of the window the way a split does: the
   // viewer's box shrinks, the renderer resizes, no model reloads.
-  const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && !embedChrome.embed
+  const drawingsLink = useMemo(() => new URLSearchParams(window.location.search).has('drawings'), [])
+  useEffect(() => { if (drawingsLink) useDrawingStore.getState().setPanelOpen(true) }, [drawingsLink])
+  const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && (!embedChrome.embed || drawingsLink)
   const [drawingsWidth, setDrawingsWidth] = useState(() => Math.round((typeof window === 'undefined' ? 1200 : window.innerWidth) * 0.5))
   const drawingsStacked = !isDesktop
   const drawingsDockStyle = useMemo<React.CSSProperties | null>(() => {

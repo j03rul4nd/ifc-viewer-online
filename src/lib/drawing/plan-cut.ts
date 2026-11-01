@@ -1,7 +1,8 @@
 // ─── Plans and sections from triangles ────────────────────────────────────────
 // Slice triangle soups with a plane and chain the pieces into polylines, one
-// layer per IFC class. This is the honest part of a plan: what the cut goes
-// through. It does not yet project what lies below the cut (see docs/DRAWINGS.md).
+// layer per IFC class. What the plane goes through is the heavy line, filled;
+// what lies beyond it, within a depth, is projected as the thin one. Beyond lines
+// are crease and boundary edges, without hidden-line removal (docs/DRAWINGS.md).
 //
 // Coordinates: soups are in scene space (Y up). A plan's drawing space is IFC XY
 // in metres (x, −z), so a generated plan needs no alignment: its placement is
@@ -126,21 +127,109 @@ const LAYER_COLORS: Record<string, string> = {
   IFCFURNISHINGELEMENT: '#3fd0d0', IFCFURNITURE: '#3fd0d0', IFCROOF: '#b6b6b6', IFCMEMBER: '#d9a066', IFCPLATE: '#7fb3d5',
 }
 
+/** Classes whose cut gets a solid fill: walls and structure, as a draughtsman would. */
+const POCHE = /^IFC(WALL|COLUMN|SLAB|BEAM|ROOF|FOOTING|PILE)/
+
+export interface BuildCutOptions {
+  /** Metres beyond the plane to project as thin lines. 0 or absent: the cut only. */
+  beyond?: number
+  /** Fill closed cut outlines of structural classes. */
+  poche?: boolean
+}
+
+const BEYOND_COLOR = '#7a8296'
+const POCHE_COLOR = '#3a4152'
+export const BEYOND_LAYER = 'BEYOND'
+export const POCHE_LAYER = 'POCHE'
+
+/**
+ * Crease and boundary edges beyond the plane, flattened. An edge shared by two
+ * coplanar triangles is the tessellation, not the object: dropping those is what
+ * makes this read as a drawing rather than a wireframe.
+ */
+export function projectBeyond(tri: Float32Array, plane: CutPlane, depth: number, out: number[], creaseCos = Math.cos(Math.PI / 6)): void {
+  const axis = plane.kind === 'plan' ? 1 : plane.kind === 'sectionX' ? 0 : 2
+  const value = plane.kind === 'plan' ? plane.y : plane.kind === 'sectionX' ? plane.x : plane.z
+  // A plan looks down; a section looks towards decreasing position.
+  const lo = value - depth
+  const hi = value
+  const flat = plane.kind === 'plan'
+    ? (x: number, _y: number, z: number): [number, number] => [x, -z]
+    : plane.kind === 'sectionX'
+      ? (_x: number, y: number, z: number): [number, number] => [-z, y]
+      : (x: number, y: number): [number, number] => [x, y]
+  const key = (i: number) => `${Math.round(tri[i] * 500)},${Math.round(tri[i + 1] * 500)},${Math.round(tri[i + 2] * 500)}`
+  const edges = new Map<string, { a: number; b: number; nx: number; ny: number; nz: number }>()
+  for (let i = 0; i + 8 < tri.length; i += 9) {
+    const a0 = tri[i + axis]; const a1 = tri[i + 3 + axis]; const a2 = tri[i + 6 + axis]
+    if (Math.max(a0, a1, a2) < lo || Math.min(a0, a1, a2) > hi) continue
+    const ux = tri[i + 3] - tri[i]; const uy = tri[i + 4] - tri[i + 1]; const uz = tri[i + 5] - tri[i + 2]
+    const vx = tri[i + 6] - tri[i]; const vy = tri[i + 7] - tri[i + 1]; const vz = tri[i + 8] - tri[i + 2]
+    let nx = uy * vz - uz * vy; let ny = uz * vx - ux * vz; let nz = ux * vy - uy * vx
+    const nl = Math.hypot(nx, ny, nz)
+    if (nl < 1e-12) continue
+    nx /= nl; ny /= nl; nz /= nl
+    for (const [p, q] of [[i, i + 3], [i + 3, i + 6], [i + 6, i]]) {
+      const kp = key(p); const kq = key(q)
+      if (kp === kq) continue
+      const k = kp < kq ? `${kp}|${kq}` : `${kq}|${kp}`
+      const seen = edges.get(k)
+      if (!seen) { edges.set(k, { a: p, b: q, nx, ny, nz }); continue }
+      // Coplanar, whichever the winding: the tessellation's own edge.
+      if (Math.abs(seen.nx * nx + seen.ny * ny + seen.nz * nz) >= creaseCos) edges.delete(k)
+    }
+  }
+  for (const e of edges.values()) {
+    let t0 = 0; let t1 = 1
+    const pa = tri[e.a + axis]; const pb = tri[e.b + axis]
+    const d = pb - pa
+    if (Math.abs(d) < 1e-12) { if (pa < lo || pa > hi) continue } else {
+      const ta = (lo - pa) / d; const tb = (hi - pa) / d
+      t0 = Math.max(t0, Math.min(ta, tb)); t1 = Math.min(t1, Math.max(ta, tb))
+      if (t0 >= t1) continue
+    }
+    const at = (t: number) => flat(
+      tri[e.a] + (tri[e.b] - tri[e.a]) * t,
+      tri[e.a + 1] + (tri[e.b + 1] - tri[e.a + 1]) * t,
+      tri[e.a + 2] + (tri[e.b + 2] - tri[e.a + 2]) * t,
+    )
+    const [x1, y1] = at(t0); const [x2, y2] = at(t1)
+    // End-on to the sheet: an edge along the view is a point.
+    if (Math.hypot(x2 - x1, y2 - y1) < 0.002) continue
+    out.push(x1, y1, x2, y2)
+  }
+}
+
 /** Cut per-category soups into entities and their layers. */
-export function buildCut(soups: Iterable<[string, Float32Array[]]>, plane: CutPlane): { layers: Layer[]; entities: NewEntity[] } {
+export function buildCut(soups: Iterable<[string, Float32Array[]]>, plane: CutPlane, options: BuildCutOptions = {}): { layers: Layer[]; entities: NewEntity[] } {
   const layers: Layer[] = []
   const entities: NewEntity[] = []
+  const poche: NewEntity[] = []
+  const beyond: NewEntity[] = []
   for (const [category, chunks] of soups) {
     const seg: number[] = []
     for (const c of chunks) sliceTriangles(c, plane, seg)
-    if (!seg.length) continue
     const name = categoryLayer(category)
+    if (options.beyond && options.beyond > 0) {
+      const far: number[] = []
+      for (const c of chunks) projectBeyond(c, plane, options.beyond, far)
+      for (const c of chainSegments(far)) {
+        if (c.points.length >= 2) beyond.push({ kind: 'polyline', layer: BEYOND_LAYER, color: null, points: c.points, closed: c.closed })
+      }
+    }
+    if (!seg.length) continue
     if (!layers.some((l) => l.name === name)) {
       layers.push({ name, color: LAYER_COLORS[name] ?? LAYER_PALETTE[layers.length % LAYER_PALETTE.length], visible: true, locked: false })
     }
     for (const c of chainSegments(seg)) {
-      if (c.points.length >= 2) entities.push({ kind: 'polyline', layer: name, color: null, points: c.points, closed: c.closed })
+      if (c.points.length < 2) continue
+      entities.push({ kind: 'polyline', layer: name, color: null, points: c.points, closed: c.closed })
+      if (options.poche && c.closed && c.points.length >= 3 && POCHE.test(name)) poche.push({ kind: 'fill', layer: POCHE_LAYER, color: null, points: c.points })
     }
   }
-  return { layers, entities }
+  // Layers draw in order: what is beyond first, the cut on top.
+  const under: Layer[] = []
+  if (beyond.length) under.push({ name: BEYOND_LAYER, color: BEYOND_COLOR, visible: true, locked: false })
+  if (poche.length) under.push({ name: POCHE_LAYER, color: POCHE_COLOR, visible: true, locked: false })
+  return { layers: [...under, ...layers], entities: [...beyond, ...poche, ...entities] }
 }

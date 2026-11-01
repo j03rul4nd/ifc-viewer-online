@@ -146,6 +146,8 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
   const hover = useRef<Pt | null>(null)
   const snapped = useRef(false)
   const frame = useRef(0)
+  /** Until the user moves the view, it follows the pane as it opens and resizes. */
+  const touched = useRef(false)
   const [cursorText, setCursorText] = useState('')
 
   const drawings = useDrawingStore((s) => s.drawings)
@@ -201,19 +203,19 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
         if (img.complete && img.naturalWidth) {
           ctx.save()
           ctx.translate(0, d.page.height); ctx.scale(1, -1)
-          if (d.id !== L.activeId) ctx.globalAlpha = 0.6
+          ctx.globalAlpha = (d.opacity ?? 1) * (d.id === L.activeId ? 1 : 0.6)
           ctx.drawImage(img, 0, 0, d.page.width, d.page.height)
           ctx.restore()
         }
       }
       ctx.transform(1, 0, 0, 1, cx, cy)
       ctx.lineWidth = 1 / k
-      ctx.globalAlpha = d.id === L.activeId ? 1 : 0.75
+      ctx.globalAlpha = (d.opacity ?? 1) * (d.id === L.activeId ? 1 : 0.75)
       for (const layer of d.layers) {
         if (!layer.visible) continue
         const lp = paths.get(layer.name)
         if (!lp) continue
-        for (const [c, path] of lp.fill) { ctx.fillStyle = ink(c || layer.color); ctx.fill(path) }
+        for (const [c, path] of lp.fill) { ctx.fillStyle = ink(c || layer.color); ctx.fill(path, 'evenodd') }
         for (const [c, path] of lp.stroke) { ctx.strokeStyle = ink(c || layer.color); ctx.stroke(path) }
       }
       ctx.setTransform(...base)
@@ -341,15 +343,15 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
       size.current = { w: Math.max(r.width, 1), h: Math.max(r.height, 1), dpr }
       canvas.width = Math.round(r.width * dpr)
       canvas.height = Math.round(r.height * dpr)
-      draw()
+      if (touched.current) draw(); else fit()
     })
     ro.observe(box)
     return () => { ro.disconnect(); cancelAnimationFrame(frame.current); frame.current = 0 }
-  }, [draw])
+  }, [draw, fit])
 
   useEffect(schedule, [drawings, activeId, selectedId, paper, tool, markers, camera, schedule])
   useEffect(() => { pending.current = []; schedule() }, [tool, activeId, schedule])
-  useEffect(() => { fit() }, [activeId, fit]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { touched.current = false; fit() }, [activeId, fit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Nearest endpoint of any visible sheet within 10 px, in model space. */
   const snapPoint = (m: Pt): { p: Pt; hit: boolean } => {
@@ -438,7 +440,7 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
     }
     const s = useDrawingStore.getState()
     const panIt = s.tool === 'pan' || e.button === 1 || e.button === 2
-    if (panIt) { dragging.current = { kind: 'pan', sx: x, sy: y, vx: view.current.x, vy: view.current.y }; return }
+    if (panIt) { touched.current = true; dragging.current = { kind: 'pan', sx: x, sy: y, vx: view.current.x, vy: view.current.y }; return }
     const d = activeSheet()
     const raw = fromScreen(x, y)
     if (s.tool === 'select') {
@@ -447,6 +449,7 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
       dragging.current = hit
         ? { kind: 'move', sx: x, sy: y, vx: 0, vy: 0, origin: raw }
         : { kind: 'pan', sx: x, sy: y, vx: view.current.x, vy: view.current.y }
+      touched.current = true
       return
     }
     if (!d) return
@@ -522,6 +525,7 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
   }
 
   const onWheel = (e: React.WheelEvent) => {
+    touched.current = true
     const { x, y } = localXY(e)
     const before = fromScreen(x, y)
     view.current.zoom *= Math.exp(-e.deltaY * 0.0015)

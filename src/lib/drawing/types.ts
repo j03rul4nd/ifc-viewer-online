@@ -52,7 +52,7 @@ export interface PageImage {
   pageCount: number
 }
 
-export type DrawingSource = 'dxf' | 'pdf' | 'plan' | 'section' | 'blank'
+export type DrawingSource = 'dxf' | 'pdf' | 'plan' | 'section' | 'blank' | 'scan' | 'diff'
 
 export interface Drawing {
   id: string
@@ -68,6 +68,8 @@ export interface Drawing {
   /** Also drawn in the 3D scene, at this height (metres, IFC Z). */
   in3d: boolean
   elevation: number
+  /** How strongly it reads over other sheets, 0–1. Absent: fully. */
+  opacity?: number
   /** Entity types the importer could not read, with counts. Reported, never hidden. */
   skipped: Record<string, number>
 }

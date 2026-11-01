@@ -76,12 +76,14 @@ interface DrawingState {
   select(id: number | null): void
   setPaper(paper: boolean): void
   setLiveData(on: boolean): void
-  patch(id: string, p: Partial<Pick<Drawing, 'visible' | 'in3d' | 'elevation' | 'name' | 'page'>>): void
+  patch(id: string, p: Partial<Pick<Drawing, 'visible' | 'in3d' | 'elevation' | 'name' | 'page' | 'opacity'>>): void
   /** Undoable: every change to a sheet's content or placement goes through here. */
   edit(id: string, change: (d: Drawing) => Partial<Pick<Drawing, 'entities' | 'layers' | 'placement' | 'metresPerUnit'>>): void
   addEntities(id: string, list: NewEntity[]): void
   undoEdit(): void
   redoEdit(): void
+  /** Sheets saved in this browser come back, ids and all. */
+  hydrate(list: Drawing[]): void
 }
 
 const snap = (d: Drawing): Snapshot => ({ entities: d.entities, layers: d.layers, placement: d.placement, metresPerUnit: d.metresPerUnit })
@@ -106,7 +108,11 @@ export const useDrawingStore = create<DrawingState>()((set, get) => ({
   addDrawing(input) {
     const id = `drawing-${seq++}`
     const s = get()
-    const layers = input.layers.length ? input.layers : [{ name: '0', color: LAYER_PALETTE[0], visible: true, locked: false }]
+    // A generated sheet is someone else's geometry: markup goes on a layer of its own.
+    const generated = ['plan', 'section', 'scan', 'diff'].includes(input.source)
+    const layers = !input.layers.length
+      ? [{ name: '0', color: LAYER_PALETTE[0], visible: true, locked: false }]
+      : generated ? [...input.layers, { name: 'Markup', color: '#ffb020', visible: true, locked: false }] : input.layers
     const drawing: Drawing = {
       id, name: input.name, source: input.source, layers,
       entities: withIds(input.entities), page: input.page,
@@ -115,7 +121,7 @@ export const useDrawingStore = create<DrawingState>()((set, get) => ({
       visible: true, in3d: false, elevation: input.elevation ?? 0,
       skipped: input.skipped ?? {},
     }
-    set({ drawings: [...s.drawings, drawing], activeId: id, activeLayer: layers[0].name, selectedId: null, tool: 'select' })
+    set({ drawings: [...s.drawings, drawing], activeId: id, activeLayer: generated && input.layers.length ? 'Markup' : layers[0].name, selectedId: null, tool: 'select' })
     return id
   },
   removeDrawing(id) {
@@ -163,6 +169,21 @@ export const useDrawingStore = create<DrawingState>()((set, get) => ({
         redo: { ...s.redo, [id]: [...(s.redo[id] ?? []), snap(d)] },
         selectedId: null,
       }
+    })
+  },
+  hydrate(list) {
+    if (!list.length) return
+    set((s) => {
+      const have = new Set(s.drawings.map((d) => d.id))
+      const fresh = list.filter((d) => !have.has(d.id))
+      for (const d of fresh) {
+        seq = Math.max(seq, Number(d.id.split('-')[1]) + 1 || seq)
+        for (const e of d.entities) if (e.id >= entitySeq) entitySeq = e.id + 1
+      }
+      const drawings = [...fresh, ...s.drawings]
+      const activeId = s.activeId ?? drawings[drawings.length - 1]?.id ?? null
+      const active = drawings.find((d) => d.id === activeId)
+      return { drawings, activeId, activeLayer: s.activeLayer ?? active?.layers[0]?.name ?? null }
     })
   },
   redoEdit() {

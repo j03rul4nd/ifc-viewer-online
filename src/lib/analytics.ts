@@ -565,6 +565,11 @@ export function trackFeatureUsed(props: {
     | 'drawing_generate'
     | 'drawing_export'
     | 'drawing_dwg_refused'
+    | 'drawing_export_all'
+    | 'drawing_scene_stack'
+    | 'drawing_sheet_set'
+    | 'drawing_scan_slice'
+    | 'drawing_compare'
 }): void {
   track('feature_used', props)
 }

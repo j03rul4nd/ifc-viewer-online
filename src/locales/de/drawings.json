@@ -19,7 +19,8 @@
   },
   "import": {
     "button": "DXF / PDF öffnen",
-    "skipped": "Aus dieser Datei nicht gelesen: {{list}}."
+    "skipped": "Aus dieser Datei nicht gelesen: {{list}}.",
+    "pdfTruncated": "Diese Seite hat mehr Linien, als gelesen werden können: Einige fehlen beim Fangen und in der DXF."
   },
   "errors": {
     "dwg": "{{name}} ist eine DWG (AutoCAD {{detail}}). DWG lässt sich hier noch nicht öffnen. Speichern Sie sie als DXF: in AutoCAD über Speichern unter → DXF, oder konvertieren Sie sie lokal mit dem kostenlosen ODA File Converter, und öffnen Sie dann die DXF.",
@@ -30,7 +31,8 @@
     "pdfBroken": "{{name}} konnte nicht als PDF gelesen werden: {{detail}}",
     "unknown": "{{name}} konnte nicht geöffnet werden: {{detail}}",
     "emptyCut": "Dieser Schnitt trifft keine Geometrie. Versuchen Sie eine andere Ebene oder Höhe.",
-    "cutFailed": "Der Schnitt ist fehlgeschlagen: {{detail}}"
+    "cutFailed": "Der Schnitt ist fehlgeschlagen: {{detail}}",
+    "emptyScan": "Dieser Schnitt trifft keine Punkte. Versuchen Sie eine andere Höhe oder einen dickeren Schnitt."
   },
   "tools": {
     "label": "Zeichenwerkzeuge",
@@ -82,8 +84,6 @@
     "sectionName": "Schnitt {{axis}} {{pos}} %"
   },
   "sheetSection": "Diese Zeichnung",
-  "visible": "Anzeigen",
-  "in3d": "In der 3D-Ansicht anzeigen",
   "elevation": "Höhe",
   "live": "Live-Geräte ({{count}})",
   "page": "Seite {{n}} von {{total}}",
@@ -97,7 +97,14 @@
     "visible": "{{name}} anzeigen",
     "color": "Farbe von {{name}}",
     "lock": "{{name}} sperren",
-    "delete": "{{name}} samt Inhalt löschen"
+    "delete": "{{name}} samt Inhalt löschen",
+    "add": "Neu",
+    "search": "Ebenen suchen",
+    "allOn": "Alle zeigen",
+    "allOff": "Alle ausblenden",
+    "isolate": "Nur {{name}} zeigen",
+    "makeActive": "Auf {{name}} zeichnen",
+    "more": "{{count}} weitere: Suchen Sie, um die Liste einzugrenzen."
   },
   "export": {
     "title": "Exportieren",
@@ -106,6 +113,91 @@
     "author": "Gezeichnet von",
     "paper": "Papierformat",
     "dxfNoPage": "Die DXF enthält die hinzugefügten Linien und Texte, nicht die PDF-Seite.",
-    "pdfLatin": "Dieses PDF schreibt nur lateinischen Text: andere Schriften erscheinen als „?“. SVG behält sie."
+    "pdfLatin": "Dieses PDF schreibt nur lateinischen Text: andere Schriften erscheinen als „?“. SVG behält sie.",
+    "all": "Alle {{count}} Blätter (ZIP: PDF + DXF)"
+  },
+  "inspector": "Inspektor",
+  "noSheet": "Öffnen oder erstellen Sie zuerst ein Blatt.",
+  "tabs": {
+    "scene": "Szene",
+    "create": "Erstellen",
+    "layers": "Ebenen",
+    "sheet": "Blatt",
+    "output": "Ausgabe"
+  },
+  "scene": {
+    "title": "In dieser Szene",
+    "frame": "Alles einpassen",
+    "empty": "Noch nichts da. Legen Sie ein IFC, einen Scan (LAS, LAZ, PLY…) oder eine DXF auf den Viewer: Sie teilen sich eine Szene und ein Koordinatensystem.",
+    "models": "IFC-Modelle ({{count}})",
+    "scans": "Punktwolken ({{count}})",
+    "show": "{{name}} anzeigen",
+    "sheets": "Blätter ({{count}})",
+    "noSheets": "Noch keine Blätter. Schneiden Sie eines unter „Erstellen“ oder öffnen Sie eine Datei.",
+    "stack": "In 3D stapeln",
+    "in3d": "In 3D"
+  },
+  "create": {
+    "what": "Was erstellen",
+    "plan": {
+      "title": "Grundriss",
+      "blurb": "Schneidet das IFC auf einer Höhe, mit dem, was darunter liegt."
+    },
+    "section": {
+      "title": "Schnitt",
+      "blurb": "Ein vertikaler Schnitt mit dem, was dahinter liegt."
+    },
+    "set": {
+      "title": "Plansatz",
+      "blurb": "Ein Grundriss je Geschoss, in einem Durchgang.",
+      "count": "{{count}} Geschosse gefunden.",
+      "none": "Keine Geschosse in den geladenen Modellen.",
+      "run": "Alle Grundrisse erzeugen"
+    },
+    "scan": {
+      "title": "Plan aus dem Scan",
+      "blurb": "Punktwolke schneiden und mit dem Modell vergleichen.",
+      "need": "Laden Sie zuerst eine Punktwolke in diese Szene.",
+      "cloud": "Punktwolke",
+      "thickness": "Schnittdicke (m)",
+      "cell": "Rasterzelle (m)",
+      "against": "Mit dem Modell vergleichen",
+      "tolerance": "Toleranz (m)"
+    },
+    "compare": {
+      "title": "Blätter vergleichen",
+      "blurb": "Was zwischen Revisionen hinzukam und wegfiel.",
+      "need": "Öffnen Sie zwei Blätter zum Vergleichen.",
+      "before": "Vorher",
+      "after": "Nachher",
+      "run": "Vergleichen"
+    },
+    "beyond": "Hinter dem Schnitt zeigen (m)",
+    "poche": "Geschnittene Wände und Tragwerk füllen",
+    "done": "{{count}} Elemente in {{seconds}} s.",
+    "setDone": "{{count}} Blätter in {{seconds}} s.",
+    "scanName": "Scan-Schnitt +{{height}} m",
+    "scanReport": "Scan gegen Modell: {{matches}} % innerhalb {{tolerance}} mm, {{check}} % prüfen, {{differs}} % weicht ab. Gemessen am Scan wie geladen, hängt also von seiner Ausrichtung ab.",
+    "scanPlain": "{{count}} Punkte im Schnitt.",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "{{added}} Segmente hinzugefügt, {{removed}} entfernt, {{same}} unverändert."
+  },
+  "place": {
+    "title": "Position im Modell",
+    "anchored": "In dieser Szene geschnitten: liegt bereits auf dem Modell.",
+    "scale": "Meter je Einheit",
+    "rotation": "Drehung (°)",
+    "look": "Darstellung",
+    "opacity": "Deckkraft"
+  },
+  "stats": {
+    "source": "Quelle",
+    "entities": "Elemente",
+    "vectors": "PDF-Linien / Text",
+    "scanned": "Diese Seite hat keine Vektorlinien, vermutlich ein Scan. Nutzen Sie sie als Bild und setzen Sie den Maßstab von Hand."
+  },
+  "status": {
+    "layer": "Aktive Ebene: neue Linien landen hier",
+    "notSaved": "In diesem Browser nicht gespeichert"
   }
 }
