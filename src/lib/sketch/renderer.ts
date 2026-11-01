@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { intersectPlane, planeFromNormal, planeNormal } from './plane'
+import type { LayerFilters } from './filters'
 import type { EndpointCandidate } from './ink'
 import type { ContextItem, ContextPoints } from './storage'
 import { isAppendOf, ribbonSize, VERTEX_STRIDE, writeRibbon, type RibbonBuffers } from './ribbon'
@@ -29,6 +30,7 @@ const RIBBON_VERTEX = /* glsl */ `
   attribute float side;
   attribute float lineWidth;
   attribute vec4 color;
+  uniform float uSoft;
   uniform vec2 uResolution;
   uniform float uFadeNear;
   uniform float uFadeFar;
@@ -47,7 +49,7 @@ const RIBBON_VERTEX = /* glsl */ `
     float len = length(dir);
     dir = len > 1e-6 ? dir / len : vec2(1.0, 0.0);
     // One extra pixel for the antialiased edge the fragment shader fades out.
-    float w = lineWidth + 1.0;
+    float w = lineWidth + 1.0 + uSoft * 2.0;
     vec2 offset = vec2(-dir.y, dir.x) * side * w / uResolution.y;
     offset.x /= aspect.x;
     clip.xy += offset * clip.w;
@@ -64,17 +66,35 @@ const RIBBON_VERTEX = /* glsl */ `
 const RIBBON_FRAGMENT = /* glsl */ `
   uniform float uOpacity;
   uniform float uPremultiply;
+  uniform float uSoft;
+  uniform float uHue;
+  uniform float uSaturation;
+  uniform float uBrightness;
+  uniform float uGrain;
+  uniform float uDuoOn;
+  uniform vec3 uDuoA;
+  uniform vec3 uDuoB;
   varying vec4 vColor;
   varying float vSide;
   varying float vWidth;
   float noise(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   void main() {
-    float edge = 1.0 - smoothstep(1.0 - 2.0 / vWidth, 1.0, abs(vSide));
+    float edge = 1.0 - smoothstep(1.0 - (2.0 + uSoft * 2.0) / vWidth, 1.0, abs(vSide));
+    vec3 rgb = vColor.rgb;
+    if (uHue != 0.0) {
+      float c = cos(uHue), s = sin(uHue), k = (1.0 - c) / 3.0, q = 0.57735 * s;
+      rgb = mat3(c + k, k + q, k - q, k - q, c + k, k + q, k + q, k - q, c + k) * rgb;
+    }
+    float grey = dot(rgb, vec3(0.299, 0.587, 0.114));
+    rgb = mix(vec3(grey), rgb, uSaturation);
+    if (uDuoOn > 0.5) rgb = mix(uDuoA, uDuoB, grey);
+    rgb *= uBrightness;
     float alpha = vColor.a * edge * uOpacity;
     // Only the pencil has this alpha band: its tooth comes from the paper, in screen space.
     if (vColor.a > 0.5 && vColor.a < 0.95 && vWidth < 40.0) alpha *= 0.55 + 0.45 * noise(floor(gl_FragCoord.xy / 1.5));
+    if (uGrain > 0.0) alpha *= 1.0 - uGrain + uGrain * noise(floor(gl_FragCoord.xy / 1.5));
     if (alpha < 0.004) discard;
-    gl_FragColor = vec4(vColor.rgb * mix(1.0, alpha, uPremultiply), alpha);
+    gl_FragColor = vec4(rgb * mix(1.0, alpha, uPremultiply), alpha);
   }
 `
 
@@ -132,6 +152,8 @@ class RibbonBatch {
   private interleaved: THREE.InterleavedBuffer | null = null
   readonly geometry = new THREE.BufferGeometry()
   readonly mesh: THREE.Mesh
+  /** Only on a layer with a glow filter. */
+  glow: THREE.Mesh | null = null
 
   constructor(material: THREE.Material) {
     this.mesh = new THREE.Mesh(this.geometry, material)
@@ -229,6 +251,22 @@ function setBlend(material: THREE.ShaderMaterial, blend: LayerBlend): void {
     material.blendDst = blend === 'multiply' ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor
   }
   material.needsUpdate = true
+}
+
+const rawColor = (hex: string, into: THREE.Vector3): void => {
+  const n = parseInt(hex.slice(1), 16)
+  into.set(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
+}
+
+function setFilters(material: THREE.ShaderMaterial, f: LayerFilters | undefined): void {
+  const u = material.uniforms
+  u.uSoft.value = f?.soft ?? 0
+  u.uHue.value = ((f?.hue ?? 0) * Math.PI) / 180
+  u.uSaturation.value = f?.saturation ?? 1
+  u.uBrightness.value = f?.brightness ?? 1
+  u.uGrain.value = f?.grain ?? 0
+  u.uDuoOn.value = f?.duotone ? 1 : 0
+  if (f?.duotone) { rawColor(f.duotone[0], u.uDuoA.value); rawColor(f.duotone[1], u.uDuoB.value) }
 }
 
 function buildPoints(item: ContextPoints): THREE.Points {
@@ -339,6 +377,8 @@ export class SketchRenderer {
         uFadeFar: shared?.uFadeFar ?? { value: 30 },
         uOpacity: { value: 1 },
         uPremultiply: { value: 0 },
+        uSoft: { value: 0 }, uHue: { value: 0 }, uSaturation: { value: 1 }, uBrightness: { value: 1 }, uGrain: { value: 0 },
+        uDuoOn: { value: 0 }, uDuoA: { value: new THREE.Vector3() }, uDuoB: { value: new THREE.Vector3(1, 1, 1) },
       },
     })
   }
@@ -498,12 +538,32 @@ export class SketchRenderer {
       const material = batch.mesh.material as THREE.ShaderMaterial
       material.uniforms.uOpacity.value = layer.opacity ?? 1
       setBlend(material, layer.blend ?? 'normal')
+      setFilters(material, layer.filters)
+      // The halo: the same geometry again, wide and soft, under the line.
+      const glow = layer.filters?.glow ?? 0
+      if (glow > 0 && !batch.glow) {
+        batch.glow = new THREE.Mesh(batch.geometry, this.ribbonMaterial())
+        batch.glow.frustumCulled = false
+        this.scene.add(batch.glow)
+      }
+      if (batch.glow) {
+        const haloMaterial = batch.glow.material as THREE.ShaderMaterial
+        setFilters(haloMaterial, layer.filters)
+        haloMaterial.uniforms.uSoft.value = glow
+        haloMaterial.uniforms.uOpacity.value = (layer.opacity ?? 1) * 0.55
+        batch.glow.visible = layer.visible && glow > 0
+        batch.glow.renderOrder = 9 + index
+      }
       batch.mesh.renderOrder = 10 + index
     })
     for (const [id, batch] of this.batches) {
       if (seen.has(id)) continue
       this.scene.remove(batch.mesh)
       ;(batch.mesh.material as THREE.Material).dispose()
+      if (batch.glow) {
+        this.scene.remove(batch.glow)
+        ;(batch.glow.material as THREE.Material).dispose()
+      }
       batch.dispose()
       this.batches.delete(id)
     }

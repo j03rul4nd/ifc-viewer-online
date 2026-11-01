@@ -31,7 +31,10 @@
     "fix": "Verso di me",
     "picked": "Piano impostato dal disegno.",
     "pickedSurface": "Piano impostato su quella faccia.",
-    "pickNothing": "Qui non c'è nulla a cui allinearsi. Tocca un tratto o una faccia del modello."
+    "pickNothing": "Qui non c'è nulla a cui allinearsi. Tocca un tratto o una faccia del modello.",
+    "auto": "Auto",
+    "back": "Piano indietro",
+    "forward": "Piano avanti"
   },
   "view": {
     "label": "Vista",
@@ -45,7 +48,8 @@
     "views": "Viste salvate",
     "remove": "Rimuovi vista",
     "orbitHint": "Trascina per orbitare",
-    "roll": "Ruota la tela"
+    "roll": "Ruota la tela",
+    "home": "Home"
   },
   "layers": {
     "label": "Livelli",
@@ -108,7 +112,20 @@
     "top": "Pianta",
     "front": "Prospetto",
     "liveEmpty": "Disegna qualcosa e apparirà qui visto dall'alto e di fronte.",
-    "window": "Apri in un'altra finestra"
+    "window": "Apri in un'altra finestra",
+    "board": "Bacheca",
+    "pin": "Fissa",
+    "palette": "Tavolozza",
+    "paletteDone": "Colori aggiunti ai recenti.",
+    "capture": "Cattura vista",
+    "captureName": "Vista",
+    "boardEmpty": "Aggiungi immagini nell'elenco e disponile qui: il tuo brainstorming, in un unico posto.",
+    "through": "Ricalca attraverso",
+    "unpin": "Sgancia",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Riduci",
+    "fit": "Inquadra",
+    "resize": "Ridimensiona"
   },
   "context": {
     "load": "Schizza su un modello (GLB)",
@@ -158,7 +175,8 @@
     "entry": "Inizio tratto",
     "exit": "Fine tratto",
     "snap": "Unisci estremità",
-    "opacity": "Opacità"
+    "opacity": "Opacità",
+    "anchor": "Parti dalle estremità"
   },
   "pen": {
     "label": "Penna",
@@ -306,5 +324,20 @@
     "bottom-left": "In basso a sinistra",
     "bottom-right": "In basso a destra",
     "local": "Salvato solo in questo browser: cancellandone i dati si perde."
+  },
+  "filters": {
+    "label": "Filtri",
+    "none": "Nessuno",
+    "blueprint": "Cianografia",
+    "wash": "Acquerello",
+    "chalk": "Gesso",
+    "neon": "Neon",
+    "faded": "Sbiadito",
+    "hue": "Tonalità",
+    "saturation": "Saturazione",
+    "brightness": "Luminosità",
+    "soft": "Bordo morbido",
+    "grain": "Grana",
+    "glow": "Alone"
   }
 }

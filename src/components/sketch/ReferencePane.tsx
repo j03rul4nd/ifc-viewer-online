@@ -6,7 +6,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { placeReference } from '../../hooks/sketch/actions'
+import { captureViewAsReference, paletteFrom, placeReference, togglePin } from '../../hooks/sketch/actions'
+import ReferenceBoard from './ReferenceBoard'
 import { activePage, forgetImage, newId, patchPlaced, removePlaced, setBackground } from '../../lib/sketch/document'
 import { fitOrtho, PAPER } from '../../lib/sketch/renderer'
 import { deleteImage, readImageFile, saveImage } from '../../lib/sketch/storage'
@@ -15,13 +16,13 @@ import { useSketchStore } from '../../stores/sketchStore'
 import type { Tx } from './SketchStudio'
 
 export default function ReferencePane({ tx }: { tx: Tx }) {
-  const [view, setView] = useState<'images' | 'live'>('images')
+  const [view, setView] = useState<'images' | 'board' | 'live'>('images')
   const set = useSketchStore((s) => s.set)
   return (
     <div className="h-full flex flex-col min-h-0" style={{ background: 'var(--sk-panel)', touchAction: 'pan-y' }}>
       <header className="flex items-center gap-1 p-1.5 shrink-0 border-b" style={{ borderColor: 'var(--sk-line)' }}>
         <div role="tablist" aria-label={tx('refs.label')} className="flex flex-1 min-w-0 gap-1">
-          {(['images', 'live'] as const).map((v) => (
+          {(['images', 'board', 'live'] as const).map((v) => (
             <button
               key={v} role="tab" type="button" aria-selected={view === v} onClick={() => setView(v)}
               className="flex-1 min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate"
@@ -37,7 +38,7 @@ export default function ReferencePane({ tx }: { tx: Tx }) {
         </button>
         <button type="button" aria-label={tx('refs.close')} title={tx('refs.close')} onClick={() => set({ refsOpen: false })} className="w-9 h-9 shrink-0 rounded-lg text-[16px]">×</button>
       </header>
-      <div className="flex-1 min-h-0">{view === 'images' ? <StudioImages tx={tx} /> : <LiveViews tx={tx} />}</div>
+      <div className="flex-1 min-h-0">{view === 'images' ? <StudioImages tx={tx} /> : view === 'board' ? <ReferenceBoard tx={tx} /> : <LiveViews tx={tx} />}</div>
     </div>
   )
 }
@@ -59,6 +60,9 @@ function StudioImages({ tx }: { tx: Tx }) {
     <ImageList
       tx={tx} images={images} placed={placed} onAdd={add}
       onPlace={(image) => placeReference(image, tx)}
+      onPin={togglePin}
+      onPalette={(image) => { void paletteFrom(image).then(() => useSketchStore.getState().flash(tx('refs.paletteDone'))) }}
+      onCapture={() => { void captureViewAsReference(tx('refs.captureName')) }}
       onBackground={(image) => useSketchStore.getState().edit((doc) => setBackground(doc, { imageId: image.id }))}
       onDelete={(image) => {
         const s = useSketchStore.getState()
@@ -78,9 +82,12 @@ interface ListProps {
   onPlace: (image: ReferenceImage) => void
   onDelete: (image: ReferenceImage) => void
   onBackground?: (image: ReferenceImage) => void
+  onCapture?: () => void
+  onPin?: (image: ReferenceImage) => void
+  onPalette?: (image: ReferenceImage) => void
 }
 
-export function ImageList({ tx, images, placed, onAdd, onPlace, onDelete, onBackground }: ListProps) {
+export function ImageList({ tx, images, placed, onAdd, onPlace, onDelete, onBackground, onCapture, onPin, onPalette }: ListProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,11 +109,12 @@ export function ImageList({ tx, images, placed, onAdd, onPlace, onDelete, onBack
       <div className="flex gap-1 shrink-0">
         <button type="button" onClick={() => fileRef.current?.click()} className="flex-1 min-w-0 h-10 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-active)', color: 'var(--sk-on-active)' }}>{tx('refs.add')}</button>
         <button type="button" onClick={() => cameraRef.current?.click()} className="flex-1 min-w-0 h-10 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('refs.camera')}</button>
+        {onCapture && <button type="button" onClick={onCapture} className="flex-1 min-w-0 h-10 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('refs.capture')}</button>}
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={pick} />
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
       </div>
       {images.length === 0 && <p className="m-auto max-w-[240px] px-3 text-center text-[12px]" style={{ color: 'var(--sk-dim)' }}>{tx('refs.empty')}</p>}
-      {images.map((image) => <ImageCard key={image.id} tx={tx} image={image} placed={placed} onPlace={onPlace} onDelete={onDelete} onBackground={onBackground} />)}
+      {images.map((image) => <ImageCard key={image.id} tx={tx} image={image} placed={placed} onPlace={onPlace} onDelete={onDelete} onBackground={onBackground} onPin={onPin} onPalette={onPalette} />)}
     </div>
   )
 }
@@ -121,14 +129,16 @@ function useObjectUrl(blob: Blob): string {
   return url
 }
 
-function ImageCard({ tx, image, placed, onPlace, onDelete, onBackground }: { image: ReferenceImage } & Pick<ListProps, 'tx' | 'placed' | 'onPlace' | 'onDelete' | 'onBackground'>) {
+function ImageCard({ tx, image, placed, onPlace, onDelete, onBackground, onPin, onPalette }: { image: ReferenceImage } & Pick<ListProps, 'tx' | 'placed' | 'onPlace' | 'onDelete' | 'onBackground' | 'onPin' | 'onPalette'>) {
   const url = useObjectUrl(image.blob)
   const inScene = placed.filter((item) => item.imageId === image.id)
   const s = useSketchStore.getState()
   return (
     <figure className="m-0 rounded-lg overflow-hidden border shrink-0" style={{ borderColor: 'var(--sk-line)' }}>
       <img src={url || undefined} alt={image.name} className="block w-full h-auto" draggable={false} style={{ WebkitTouchCallout: 'none' }} />
-      <figcaption className="flex items-center gap-1 p-1">
+      <figcaption className="flex flex-wrap items-center gap-1 p-1">
+        {onPin && <button type="button" aria-pressed={!!image.pin} onClick={() => onPin(image)} className="min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate" style={{ background: image.pin ? 'var(--sk-active)' : 'var(--sk-soft)', color: image.pin ? 'var(--sk-on-active)' : undefined }}>{tx('refs.pin')}</button>}
+        {onPalette && <button type="button" onClick={() => onPalette(image)} className="min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('refs.palette')}</button>}
         <button type="button" onClick={() => onPlace(image)} className="flex-1 min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('refs.place')}</button>
         {onBackground && <button type="button" onClick={() => onBackground(image)} className="min-w-0 h-9 px-2 rounded-lg text-[12px] font-medium truncate" style={{ background: 'var(--sk-soft)' }}>{tx('background.use')}</button>}
         <button type="button" aria-label={tx('refs.delete')} title={tx('refs.delete')} onClick={() => onDelete(image)} className="w-9 h-9 shrink-0 rounded-lg text-[15px]">×</button>

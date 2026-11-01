@@ -15,11 +15,12 @@ import {
 } from '../../lib/sketch/document'
 import type { BrandCorner } from '../../lib/sketch/brand'
 import { BUILTIN_BRUSHES } from '../../lib/sketch/brushes'
+import { FILTER_PRESETS } from '../../lib/sketch/filters'
 import type { Symmetry } from '../../lib/sketch/edit'
 import type { PressureCurve, StrokeTip } from '../../lib/sketch/ink'
 import { isBindable, KEY_ACTIONS, keyFor, rebind, type KeyAction } from '../../lib/sketch/keymap'
 import { saveDoc } from '../../lib/sketch/storage'
-import { offsetPlane, rotatePlane, type PlanePreset } from '../../lib/sketch/plane'
+import { offsetPlane, planeNormal, rotatePlane, type PlanePreset } from '../../lib/sketch/plane'
 import type { GridPattern, LayerBlend, PaperKind } from '../../lib/sketch/types'
 import { useSketchStore, type PanelTab, type SketchTool } from '../../stores/sketchStore'
 import type { Tx } from './SketchStudio'
@@ -252,6 +253,11 @@ function NudgeSlider({ label, onDelta }: { label: string; onDelta: (pixels: numb
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 
+const FILTER_RANGE = {
+  hue: [-180, 180, 5, 0], saturation: [0, 2, 0.05, 1], brightness: [0.3, 1.8, 0.05, 1],
+  soft: [0, 12, 0.5, 0], grain: [0, 1, 0.05, 0], glow: [0, 24, 1, 0],
+} as const
+
 const SWATCHES = ['#17130F', '#FFFFFF', '#C8322B', '#1F5FBF']
 const WIDTHS = [1.5, 3, 6, 11]
 
@@ -350,6 +356,7 @@ function InkTab({ tx }: { tx: Tx }) {
   const symmetry = useSketchStore((s) => s.symmetry)
   const eraser = useSketchStore((s) => s.eraser)
   const brandColors = useSketchStore((s) => s.brand.colors)
+  const anchorStart = useSketchStore((s) => s.anchorStart)
   const color = useSketchStore((s) => s.color)
   const width = useSketchStore((s) => s.width)
   const ink = useSketchStore((s) => s.ink)
@@ -392,6 +399,7 @@ function InkTab({ tx }: { tx: Tx }) {
         <Slider label={tx('ink.entry')} value={ink.entryTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ entryTaper: v })} />
         <Slider label={tx('ink.exit')} value={ink.exitTaper} min={0} max={1} step={0.05} onChange={(v) => setInk({ exitTaper: v })} />
         <Toggle label={tx('ink.snap')} checked={snapEnds} onChange={(v) => setPrefs({ snapEnds: v })} />
+        <Toggle label={tx('ink.anchor')} checked={anchorStart} onChange={(v) => setPrefs({ anchorStart: v })} />
       </Section>
       <Section title={tx('tip.label')}>
         <div className="grid grid-cols-2 gap-1">
@@ -527,6 +535,14 @@ function LayersTab({ tx }: { tx: Tx }) {
       <div className="grid grid-cols-2 gap-1 mt-1" role="group" aria-label={tx('blend.label')}>
         {(['normal', 'multiply', 'screen', 'add'] as LayerBlend[]).map((b) => <Chip key={b} active={(active.blend ?? 'normal') === b} onClick={() => edit((doc) => patchLayer(doc, active.id, { blend: b }))}>{tx(`blend.${b}`)}</Chip>)}
       </div>
+      <h4 className="text-[11px] font-medium mt-3 mb-1" style={{ color: 'var(--sk-dim)' }}>{tx('filters.label')}</h4>
+      <div className="grid grid-cols-3 gap-1">
+        {Object.keys(FILTER_PRESETS).map((name) => <Chip key={name} onClick={() => edit((doc) => patchLayer(doc, active.id, { filters: FILTER_PRESETS[name] }))}>{tx(`filters.${name}`)}</Chip>)}
+      </div>
+      {(['hue', 'saturation', 'brightness', 'soft', 'grain', 'glow'] as const).map((key) => {
+        const [min, max, step, neutral] = FILTER_RANGE[key]
+        return <Slider key={key} label={tx(`filters.${key}`)} value={active.filters?.[key] ?? neutral} min={min} max={max} step={step} onChange={(v) => touch((doc) => patchLayer(doc, active.id, { filters: { ...active.filters, [key]: v } }))} />
+      })}
       <div className="flex gap-1 mt-1">
         <Chip onClick={() => edit(duplicateLayer)}>{tx('layers.duplicate')}</Chip>
         <Chip onClick={() => edit(mergeLayerDown)}>{tx('layers.merge')}</Chip>
@@ -577,7 +593,7 @@ function FileTab({ tx, regular }: { tx: Tx; regular: boolean }) {
         <div className="grid grid-cols-2 gap-1">
           <Chip onClick={startMeeting}>{tx('meeting.start')}</Chip>
           <Chip onClick={() => { window.open('/sketch?pane=audience', '_blank') }}>{tx('meeting.audience')}</Chip>
-          <Chip onClick={() => { void copySketchLink().then((r) => flash(tx(`meeting.link-${r}`))) }}>{tx('meeting.link')}</Chip>
+          <div className="col-span-2 flex"><Chip onClick={() => { void copySketchLink().then((r) => flash(tx(`meeting.link-${r}`))) }}>{tx('meeting.link')}</Chip></div>
         </div>
         <p className="mt-2 text-[11px] leading-4" style={{ color: 'var(--sk-dim)' }}>{tx('meeting.hint')}</p>
       </Section>
@@ -664,6 +680,37 @@ const SHORTCUTS = [
   ['Space', 'pan'], ['Shift+Space', 'orbit'], ['Ctrl+Space', 'zoom'], ['Shift', 'lineFrom'], ['Tab', 'hide'], ['Ctrl+Z · Y', 'undo'], ['Ctrl+D', 'deselect'],
 ] as const
 
+/**
+ * The plane in one tap, next to the drawing. Choosing it was a trip to a panel, and
+ * it is what you change most in 3D. The arrow pair pushes it along its normal.
+ */
+export function PlaneBar({ tx, regular }: { tx: Tx; regular: boolean }) {
+  const autoPlane = useSketchStore((s) => s.autoPlane)
+  const plane = useSketchStore((s) => s.plane)
+  const engine = useSketchStore((s) => s.engine)
+  const railSide = useSketchStore((s) => s.railSide)
+  const railOpen = useSketchStore((s) => s.railOpen)
+  const { setPrefs } = useSketchStore.getState()
+  const n = planeNormal(plane)
+  const current = Math.abs(n[1]) > 0.99 ? 'ground' : Math.abs(n[2]) > 0.99 ? 'front' : Math.abs(n[0]) > 0.99 ? 'side' : null
+  const side = regular && railOpen ? 268 : regular ? 60 : 8
+  return (
+    <div
+      role="group" aria-label={tx('plane.label')} className="absolute z-10 flex items-center gap-0.5 p-1 rounded-xl border max-w-[calc(100%-16px)] overflow-x-auto"
+      style={{ ...glass, top: 'calc(max(8px, env(safe-area-inset-top)) + 48px)', [railSide]: side, touchAction: 'pan-x' }}
+    >
+      <Chip grow={false} active={autoPlane} onClick={() => setPrefs({ autoPlane: !autoPlane })}>{tx('plane.auto')}</Chip>
+      {(['ground', 'front', 'side'] as PlanePreset[]).map((name) => (
+        <Chip key={name} grow={false} active={!autoPlane && current === name} onClick={() => { setPrefs({ autoPlane: false }); setPlanePreset(name) }}>{tx(`plane.${name}`)}</Chip>
+      ))}
+      <Chip grow={false} onClick={() => { setPrefs({ autoPlane: false }); planeFacingMe() }}>{tx('plane.facing')}</Chip>
+      <IconButton size={36} label={tx('plane.back')} icon="down" onClick={() => setPlane(offsetPlane(plane, -40 * (engine?.worldPerPixel() ?? 0.02)))} />
+      <IconButton size={36} label={tx('plane.forward')} icon="up" onClick={() => setPlane(offsetPlane(plane, 40 * (engine?.worldPerPixel() ?? 0.02)))} />
+      <Chip grow={false} onClick={() => { applyOrbit({ ...useSketchStore.getState().orbit, ...VIEW_ANGLES.iso, roll: 0 }); fitAll() }}>{tx('view.home')}</Chip>
+    </div>
+  )
+}
+
 /** Tap an action, press a key. A key already in use swaps, so nothing is left without one. */
 function KeyEditor({ tx }: { tx: Tx }) {
   const keys = useSketchStore((s) => s.keys)
@@ -742,6 +789,7 @@ export function SelectionBar({ tx, regular }: { tx: Tx; regular: boolean }) {
 }
 
 const TOOLS: SketchTool[] = ['pen', 'pencil', 'marker', 'line', 'eraser', 'lasso', 'reshape', 'picker', 'pick']
+const COMPACT_TOOLS: SketchTool[] = ['pen', 'pencil', 'line', 'eraser', 'lasso']
 const TABS: PanelTab[] = ['ink', 'plane', 'view', 'layers', 'file']
 
 function TabStrip({ tx }: { tx: Tx }) {
@@ -810,12 +858,14 @@ export function StudioControls({ tx, regular, short }: { tx: Tx; regular: boolea
     <>
       {sheetOpen && (
         <div className="absolute z-20 left-2 right-2 rounded-xl border flex flex-col overflow-hidden" style={{ ...glass, bottom: 'calc(max(8px, env(safe-area-inset-bottom)) + 52px)', height: short ? 'calc(100% - 116px)' : '58%' }}>
+          <div className="flex flex-wrap gap-0.5 p-1 border-b shrink-0" style={{ borderColor: 'var(--sk-line)' }}>{toolRow}</div>
           <TabStrip tx={tx} />
           <TabBody tx={tx} regular={false} />
         </div>
       )}
       <div className="absolute z-20 left-2 right-2 h-12 px-1 rounded-xl border flex items-center justify-between overflow-x-auto" style={{ ...glass, bottom: 'max(8px, env(safe-area-inset-bottom))', touchAction: 'pan-x' }}>
-        {toolRow}
+        {/* What the thumb reaches for most. The rest are in the sheet, so More never scrolls away. */}
+        {toolRow.filter((_, i) => COMPACT_TOOLS.includes(TOOLS[i]))}
         <button type="button" aria-label={tx('color')} onClick={() => { setPrefs({ tab: 'ink' }); set({ sheetOpen: !sheetOpen, refsOpen: false }) }} className="shrink-0 w-10 h-10 grid place-items-center">
           <span className="w-6 h-6 rounded-full border" style={{ background: color, borderColor: 'var(--sk-line)' }} />
         </button>

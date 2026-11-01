@@ -41,13 +41,17 @@ interface Prefs {
   eraser: 'part' | 'stroke'
   brushes: BrushPreset[]
   keys: KeyOverrides
+  /** Draw on the axis plane most facing the view, chosen as each stroke starts. */
+  autoPlane: boolean
+  /** A stroke that starts on a line end carries the plane there. */
+  anchorStart: boolean
 }
 
 const KEY = 'ifc-sketch:prefs:v1'
 const DEFAULTS: Prefs = {
   tool: 'pen', color: '#17130F', width: 3, ink: DEFAULT_INK, snapEnds: true,
   fingerDraw: true, railSide: 'left', railOpen: true, tab: 'ink',
-  opacity: 1, colorB: '#FFFFFF', recent: [], symmetry: 'off', eraser: 'part', brushes: [], keys: {},
+  opacity: 1, colorB: '#FFFFFF', recent: [], symmetry: 'off', eraser: 'part', brushes: [], keys: {}, autoPlane: false, anchorStart: true,
 }
 
 function loadPrefs(): Prefs {
@@ -127,9 +131,9 @@ export const useSketchStore = create<SketchState>()((set, get) => ({
 
   setPrefs: (patch) => {
     set(patch)
-    const { tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes, keys } = get()
+    const { tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes, keys, autoPlane, anchorStart } = get()
     try {
-      localStorage.setItem(KEY, JSON.stringify({ tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes, keys }))
+      localStorage.setItem(KEY, JSON.stringify({ tool, color, width, ink, snapEnds, fingerDraw, railSide, railOpen, tab, opacity, colorB, recent, symmetry, eraser, brushes, keys, autoPlane, anchorStart }))
     } catch { /* private mode: the session still works */ }
   },
   setInk: (patch) => get().setPrefs({ ink: { ...get().ink, ...patch } }),

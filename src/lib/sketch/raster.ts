@@ -3,6 +3,7 @@
 // fills it for layered and transparent exports at any size. WebGL's canvas has
 // a paper background and the viewport's size, so it cannot serve those.
 
+import { filterPixels, isNeutral } from './filters'
 import { BRUSH_ALPHA, strokeWidthAt } from './ribbon'
 import type { SketchLayer, Stroke, Vec3 } from './types'
 
@@ -84,5 +85,10 @@ export function renderLayerCanvas(layer: SketchLayer, width: number, height: num
   const ctx = canvas.getContext('2d')
   // PSD carries layer opacity as its own value: the pixels stay at full strength.
   if (ctx) paintLayer(ctx, layer, project, scale, 1)
+  if (ctx && canvas.width && canvas.height && !isNeutral(layer.filters)) {
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    filterPixels(image.data, canvas.width, canvas.height, layer.filters!, scale)
+    ctx.putImageData(image, 0, 0)
+  }
   return canvas
 }

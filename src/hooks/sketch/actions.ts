@@ -10,12 +10,13 @@ import { exportBlenderScript, exportObj } from '../../lib/sketch/export-blender'
 import { encodePsd } from '../../lib/sketch/export-psd'
 import { exportSvg } from '../../lib/sketch/export-svg'
 import { add, dot, planeFromNormal, planeNormal, scale, type PlanePreset, presetPlane } from '../../lib/sketch/plane'
+import { extractPalette } from '../../lib/sketch/filters'
 import { COMPOSITE_OP, paintLayer, renderLayerCanvas } from '../../lib/sketch/raster'
 import { encodeOra } from '../../lib/sketch/export-ora'
 import { encodeSketchLink, SAFE_LINK_LENGTH } from '../../lib/sketch/share-link'
 import { PAPER } from '../../lib/sketch/renderer'
 import { fitIntoCard, LINKEDIN_SHARE_URL, shareImage, SHARE_SIZE, type ShareOutcome, type ShareTarget } from '../../lib/sketch/share'
-import { saveBrand, saveContext, saveOutbox, type ContextItem } from '../../lib/sketch/storage'
+import { readImageFile, saveBrand, saveContext, saveImage, saveOutbox, type ContextItem } from '../../lib/sketch/storage'
 import { SKETCH_CHANNEL, type HandoffMessage } from '../../lib/sketch/handoff'
 import type { OrbitState, ReferenceImage, SketchPlane, Stroke, Vec3 } from '../../lib/sketch/types'
 import { useSketchStore as store } from '../../stores/sketchStore'
@@ -154,6 +155,41 @@ export function placeReference(image: ReferenceImage, tx: Tx): void {
   const width = height * (image.width / image.height)
   state().edit((doc) => placeImage(doc, { id: newId(), imageId: image.id, plane: state().plane, width, height, opacity: 0.6 }))
   state().flash(tx('refs.placed'))
+}
+
+export function updateReference(id: string, patch: Partial<ReferenceImage>): void {
+  const images = state().images.map((i) => (i.id === id ? { ...i, ...patch } : i))
+  state().set({ images })
+  const image = images.find((i) => i.id === id)
+  if (image) void saveImage(image)
+}
+
+/** Float it over the drawing, or put it away. */
+export function togglePin(image: ReferenceImage): void {
+  const offset = state().images.filter((i) => i.pin).length * 28
+  updateReference(image.id, { pin: image.pin ? undefined : { x: 280 + offset, y: 112 + offset, width: 260, opacity: 1, through: false } })
+}
+
+/** The colours of a reference, into the recent ones. */
+export async function paletteFrom(image: ReferenceImage): Promise<void> {
+  const bitmap = await createImageBitmap(image.blob)
+  const canvas = document.createElement('canvas')
+  canvas.width = 64
+  canvas.height = Math.max(1, Math.round((64 * bitmap.height) / bitmap.width))
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  if (ctx) state().setPrefs({ recent: extractPalette(ctx.getImageData(0, 0, canvas.width, canvas.height).data, 8) })
+}
+
+/** What is on screen now, as a reference: a model angle or an earlier idea to keep in view. */
+export async function captureViewAsReference(name: string): Promise<void> {
+  const blob = await state().engine?.toBlob('image/jpeg')
+  if (!blob) return
+  const file = new File([blob], `${name}.jpg`, { type: 'image/jpeg' })
+  const image = await readImageFile(file, newId())
+  if (!image) return
+  state().set({ saveFailed: !(await saveImage(image)), images: [...state().images, image] })
 }
 
 // ── Selection and colour ─────────────────────────────────────────────────────

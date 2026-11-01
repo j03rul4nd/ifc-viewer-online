@@ -51,6 +51,8 @@ export const CANCEL_WINDOW_MS = 160
 /** A multi-finger tap: all up this soon, having barely moved. */
 const TAP_MS = 260
 const TAP_SLOP_PX = 14
+/** Movement before two fingers commit to orbit or pinch. */
+const LOCK_PX = 10
 /** Bigger than any fingertip reports; ignored once a pen is in use. */
 const PALM_SIZE_PX = 44
 
@@ -69,6 +71,10 @@ export class GestureArbiter {
   private lastX = 0
   private lastY = 0
   private anchorY = 0
+  private twoFinger: 'orbit' | 'pinch' | null = null
+  private lockX = 0
+  private lockY = 0
+  private lockSpread = 0
 
   /** Off once a pen appears. The user may also set it by hand. */
   fingerDraw = true
@@ -217,6 +223,10 @@ export class GestureArbiter {
     this.mode = 'gesture'
     this.gestureStart = timeMs
     this.gestureMoved = 0
+    this.twoFinger = null
+    this.lockX = 0
+    this.lockY = 0
+    this.lockSpread = 0
     this.peakFingers = this.touches.size
     this.anchor()
   }
@@ -249,10 +259,26 @@ export class GestureArbiter {
     const fingers = this.touches.size
     if (fingers >= 3) {
       if (dx || dy) out.push({ type: 'pan', dx, dy })
-    } else {
+    } else if (fingers === 1) {
       if (dx || dy) out.push({ type: 'orbit', dx, dy })
-      if (fingers === 2 && this.lastDistance > 1 && c.spread > 1 && c.spread !== this.lastDistance) {
-        out.push({ type: 'zoom', factor: c.spread / this.lastDistance, x: c.x, y: c.y })
+    } else {
+      // Two fingers mean one thing at a time. Orbiting while pinching is what makes
+      // people lose their place, so the start of the gesture decides and it holds.
+      const spreadChange = Math.abs(c.spread - this.lastDistance)
+      if (!this.twoFinger) {
+        // Net, not summed: fingers report one at a time, so each step of a plain drag
+        // looks like a small pinch that the next step undoes.
+        this.lockX += dx
+        this.lockY += dy
+        this.lockSpread += c.spread - this.lastDistance
+        const moved = Math.hypot(this.lockX, this.lockY), spread = Math.abs(this.lockSpread)
+        if (moved + spread > LOCK_PX) this.twoFinger = spread >= moved * 0.7 ? 'pinch' : 'orbit'
+      }
+      if (this.twoFinger === 'orbit' && (dx || dy)) out.push({ type: 'orbit', dx, dy })
+      if (this.twoFinger === 'pinch') {
+        // As on a map: the pinch can travel too.
+        if (dx || dy) out.push({ type: 'pan', dx, dy })
+        if (this.lastDistance > 1 && c.spread > 1 && spreadChange > 0) out.push({ type: 'zoom', factor: c.spread / this.lastDistance, x: c.x, y: c.y })
       }
     }
     this.lastX = c.x

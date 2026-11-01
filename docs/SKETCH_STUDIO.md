@@ -68,6 +68,37 @@ Not here, on purpose: clipping masks and alpha lock. They work on a layer's pixe
 and strokes here are lines in 3D with no fixed pixels. Bitmap brush tips would need
 textured ribbons. Bezier nodes with handles would need a different stroke format.
 
+## Drawing in 3D by touch
+
+Feather's approach is to repeat 2D drawing over 3D navigation; its reviews show the
+cost is losing your place when rotating. So the plane is one tap away instead of in a
+panel, and the app does the rest:
+
+- **Plane bar** next to the drawing: Auto, ground, front, side, facing me, push it
+  back or forward, and Home to recover from being lost.
+- **Auto**: each stroke lands on the axis plane most facing you.
+- **Anchor**: a stroke starting on a line end carries the plane there, so the next
+  wall grows out of the corner.
+- **Two fingers commit**: the first 10 px decide orbit or pinch, and it holds. A pinch
+  can travel, like a map.
+
+## Layer filters
+
+Non-destructive, on the layer: hue, saturation, brightness, soft edge, grain, glow,
+duotone, and presets. Live in the shader, baked into pixels on PNG, PSD and ORA. SVG
+and Blender keep the plain line. Soft is a soft line edge live and a real blur on
+export, so they differ slightly.
+
+## References while drawing
+
+- **List** and **Board**: a free surface to arrange a brainstorm, PureRef style, by
+  dragging, resizing and pinching with buttons or the wheel. Positions are kept.
+- **Pin**: any image floats over the drawing, movable, resizable, with its own opacity
+  and *Trace through*, which lets the pen pass through it.
+- **Capture this view**: a model angle or an earlier idea becomes a reference.
+- **Palette**: a reference's main colours go to the recent colours.
+- Also: as background, placed on a plane in 3D, the window for Split View.
+
 ## Backgrounds
 
 Paper kinds, any colour (the tools adapt to stay readable), a dots, grid, lines or

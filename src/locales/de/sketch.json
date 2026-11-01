@@ -31,7 +31,10 @@
     "fix": "Zu mir",
     "picked": "Ebene aus der Zeichnung gesetzt.",
     "pickedSurface": "Ebene auf diese Fläche gesetzt.",
-    "pickNothing": "Hier gibt es nichts zum Ausrichten. Tippen Sie auf einen Strich oder eine Modellfläche."
+    "pickNothing": "Hier gibt es nichts zum Ausrichten. Tippen Sie auf einen Strich oder eine Modellfläche.",
+    "auto": "Auto",
+    "back": "Ebene zurück",
+    "forward": "Ebene vor"
   },
   "view": {
     "label": "Ansicht",
@@ -45,7 +48,8 @@
     "views": "Gespeicherte Ansichten",
     "remove": "Ansicht entfernen",
     "orbitHint": "Zum Drehen ziehen",
-    "roll": "Leinwand drehen"
+    "roll": "Leinwand drehen",
+    "home": "Start"
   },
   "layers": {
     "label": "Ebenen",
@@ -108,7 +112,20 @@
     "top": "Grundriss",
     "front": "Ansicht",
     "liveEmpty": "Zeichnen Sie etwas, und es erscheint hier von oben und von vorne.",
-    "window": "In anderem Fenster öffnen"
+    "window": "In anderem Fenster öffnen",
+    "board": "Board",
+    "pin": "Anheften",
+    "palette": "Palette",
+    "paletteDone": "Farben zu den letzten hinzugefügt.",
+    "capture": "Ansicht aufnehmen",
+    "captureName": "Ansicht",
+    "boardEmpty": "Fügen Sie Bilder in der Liste hinzu und ordnen Sie sie hier an: Ihr Brainstorming an einem Ort.",
+    "through": "Durchzeichnen",
+    "unpin": "Lösen",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "fit": "Einpassen",
+    "resize": "Größe ändern"
   },
   "context": {
     "load": "Über ein Modell skizzieren (GLB)",
@@ -158,7 +175,8 @@
     "entry": "Strichanfang",
     "exit": "Strichende",
     "snap": "Enden verbinden",
-    "opacity": "Deckkraft"
+    "opacity": "Deckkraft",
+    "anchor": "An Enden beginnen"
   },
   "pen": {
     "label": "Stift",
@@ -306,5 +324,20 @@
     "bottom-left": "Unten links",
     "bottom-right": "Unten rechts",
     "local": "Nur in diesem Browser gespeichert: Beim Löschen seiner Daten geht es verloren."
+  },
+  "filters": {
+    "label": "Filter",
+    "none": "Keiner",
+    "blueprint": "Blaupause",
+    "wash": "Lavierung",
+    "chalk": "Kreide",
+    "neon": "Neon",
+    "faded": "Verblasst",
+    "hue": "Farbton",
+    "saturation": "Sättigung",
+    "brightness": "Helligkeit",
+    "soft": "Weiche Kante",
+    "grain": "Körnung",
+    "glow": "Leuchten"
   }
 }

@@ -31,7 +31,10 @@
     "fix": "Vers moi",
     "picked": "Plan défini depuis le dessin.",
     "pickedSurface": "Plan défini sur cette face.",
-    "pickNothing": "Rien sur quoi s'aligner ici. Touchez un trait ou une face du modèle."
+    "pickNothing": "Rien sur quoi s'aligner ici. Touchez un trait ou une face du modèle.",
+    "auto": "Auto",
+    "back": "Plan arrière",
+    "forward": "Plan avant"
   },
   "view": {
     "label": "Vue",
@@ -45,7 +48,8 @@
     "views": "Vues enregistrées",
     "remove": "Retirer la vue",
     "orbitHint": "Faites glisser pour orbiter",
-    "roll": "Pivoter le canevas"
+    "roll": "Pivoter le canevas",
+    "home": "Accueil"
   },
   "layers": {
     "label": "Calques",
@@ -108,7 +112,20 @@
     "top": "Plan",
     "front": "Élévation",
     "liveEmpty": "Dessinez : le dessin apparaît ici vu de dessus et de face.",
-    "window": "Ouvrir dans une autre fenêtre"
+    "window": "Ouvrir dans une autre fenêtre",
+    "board": "Tableau",
+    "pin": "Épingler",
+    "palette": "Palette",
+    "paletteDone": "Couleurs ajoutées aux récentes.",
+    "capture": "Capturer la vue",
+    "captureName": "Vue",
+    "boardEmpty": "Ajoutez des images dans la liste et organisez-les ici : votre brainstorming, au même endroit.",
+    "through": "Calquer au travers",
+    "unpin": "Détacher",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "fit": "Cadrer",
+    "resize": "Redimensionner"
   },
   "context": {
     "load": "Dessiner sur un modèle (GLB)",
@@ -158,7 +175,8 @@
     "entry": "Début du tracé",
     "exit": "Fin du tracé",
     "snap": "Joindre les extrémités",
-    "opacity": "Opacité"
+    "opacity": "Opacité",
+    "anchor": "Partir des extrémités"
   },
   "pen": {
     "label": "Stylet",
@@ -306,5 +324,20 @@
     "bottom-left": "Bas gauche",
     "bottom-right": "Bas droite",
     "local": "Enregistré dans ce navigateur uniquement : effacer ses données le supprime."
+  },
+  "filters": {
+    "label": "Filtres",
+    "none": "Aucun",
+    "blueprint": "Bleu d'architecte",
+    "wash": "Lavis",
+    "chalk": "Craie",
+    "neon": "Néon",
+    "faded": "Délavé",
+    "hue": "Teinte",
+    "saturation": "Saturation",
+    "brightness": "Luminosité",
+    "soft": "Bord doux",
+    "grain": "Grain",
+    "glow": "Halo"
   }
 }

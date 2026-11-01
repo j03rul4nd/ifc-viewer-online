@@ -31,7 +31,10 @@
     "fix": "Cap a mi",
     "picked": "Pla fixat des del dibuix.",
     "pickedSurface": "Pla fixat en aquesta cara.",
-    "pickNothing": "Aquí no hi ha res on alinear-se. Toca un traç o una cara del model."
+    "pickNothing": "Aquí no hi ha res on alinear-se. Toca un traç o una cara del model.",
+    "auto": "Auto",
+    "back": "Pla enrere",
+    "forward": "Pla endavant"
   },
   "view": {
     "label": "Vista",
@@ -45,7 +48,8 @@
     "views": "Vistes desades",
     "remove": "Treu la vista",
     "orbitHint": "Arrossega per orbitar",
-    "roll": "Gira el llenç"
+    "roll": "Gira el llenç",
+    "home": "Inici"
   },
   "layers": {
     "label": "Capes",
@@ -108,7 +112,20 @@
     "top": "Planta",
     "front": "Alçat",
     "liveEmpty": "Dibuixa alguna cosa i apareixerà aquí vista des de dalt i de front.",
-    "window": "Obre en una altra finestra"
+    "window": "Obre en una altra finestra",
+    "board": "Tauler",
+    "pin": "Fixa",
+    "palette": "Paleta",
+    "paletteDone": "Colors afegits als recents.",
+    "capture": "Captura la vista",
+    "captureName": "Vista",
+    "boardEmpty": "Afegeix imatges a la llista i ordena-les aquí: la teva pluja d'idees, en un sol lloc.",
+    "through": "Calca a través",
+    "unpin": "Deixa anar",
+    "zoomIn": "Apropa",
+    "zoomOut": "Allunya",
+    "fit": "Enquadra",
+    "resize": "Redimensiona"
   },
   "context": {
     "load": "Esbossa sobre un model (GLB)",
@@ -158,7 +175,8 @@
     "entry": "Inici del traç",
     "exit": "Final del traç",
     "snap": "Uneix els extrems",
-    "opacity": "Opacitat"
+    "opacity": "Opacitat",
+    "anchor": "Comença als extrems"
   },
   "pen": {
     "label": "Llapis",
@@ -306,5 +324,20 @@
     "bottom-left": "Baix esquerra",
     "bottom-right": "Baix dreta",
     "local": "Desat només en aquest navegador: si n'esborres les dades, es perd."
+  },
+  "filters": {
+    "label": "Filtres",
+    "none": "Cap",
+    "blueprint": "Plànol blau",
+    "wash": "Aiguada",
+    "chalk": "Guix",
+    "neon": "Neó",
+    "faded": "Esvaït",
+    "hue": "To",
+    "saturation": "Saturació",
+    "brightness": "Brillantor",
+    "soft": "Vora suau",
+    "grain": "Gra",
+    "glow": "Halo"
   }
 }
