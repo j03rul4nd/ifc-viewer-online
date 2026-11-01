@@ -816,7 +816,20 @@
       "addCondition": "+ Condition",
       "opacity": "Opacité",
       "importReplace": "Cela remplace vos {{sources}} sources et {{bindings}} liaisons. Continuer ?",
-      "operated": "État d'exploitation"
+      "operated": "État d'exploitation",
+      "fiware": {
+        "kind": "Type de source",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL du Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio ou Stellio. Il doit autoriser les requêtes de ce site (CORS) et utiliser https.",
+        "type": "Type d’entité",
+        "tenant": "Tenant (facultatif)",
+        "context": "Contexte JSON-LD (facultatif)",
+        "contextHint": "Donne aux attributs leurs noms courts.",
+        "servicePath": "Service path (facultatif)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "En cours… {{s}} s",
     "announce": "Toujours en attente de {{host}}",
     "announceGeneric": "Toujours en cours"
+  },
+  "portLibrary": {
+    "intro": "Clôtures, grues, mobilier urbain et monuments modélisés par le Port de Barcelone. Ouvrez-en un dans la visionneuse et ajoutez-le à votre scène.",
+    "search": "Rechercher des objets",
+    "all": "Tous",
+    "count_one": "{{count}} objet",
+    "count_other": "{{count}} objets",
+    "empty": "Aucun objet ne correspond à cette recherche.",
+    "onPortSite": "{{size}} · à télécharger sur le site du Port",
+    "credit": "Bibliothèque d’objets du",
+    "categories": {
+      "fences": "Clôtures",
+      "port": "Éléments portuaires",
+      "road": "Éléments de voirie",
+      "equipment": "Équipement portuaire",
+      "operation": "Moyens d’exploitation",
+      "transport": "Moyens de transport",
+      "furniture": "Mobilier urbain",
+      "monument": "Monuments"
+    }
   }
 }

@@ -816,7 +816,20 @@
       "addCondition": "+ เงื่อนไข",
       "opacity": "ความทึบ",
       "importReplace": "การดำเนินการนี้จะแทนที่ {{sources}} แหล่งข้อมูลและ {{bindings}} การผูก ดำเนินการต่อหรือไม่?",
-      "operated": "สถานะการทำงาน"
+      "operated": "สถานะการทำงาน",
+      "fiware": {
+        "kind": "ประเภทแหล่งข้อมูล",
+        "kindApi": "REST API",
+        "kindBroker": "โบรกเกอร์ FIWARE",
+        "broker": "URL ของ Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio หรือ Stellio ต้องอนุญาตคำขอจากเว็บไซต์นี้ (CORS) และใช้ https",
+        "type": "ประเภทเอนทิตี",
+        "tenant": "Tenant (ไม่บังคับ)",
+        "context": "บริบท JSON-LD (ไม่บังคับ)",
+        "contextHint": "กำหนดชื่อย่อให้แอตทริบิวต์",
+        "servicePath": "Service path (ไม่บังคับ)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "กำลังทำงาน… {{s}} วินาที",
     "announce": "ยังรอ {{host}} อยู่",
     "announceGeneric": "ยังทำงานอยู่"
+  },
+  "portLibrary": {
+    "intro": "รั้ว เครน เฟอร์นิเจอร์ริมทาง และอนุสรณ์สถานที่ท่าเรือบาร์เซโลนาสร้างแบบจำลองไว้ เปิดในตัวดูแล้วเพิ่มลงในฉากของคุณได้",
+    "search": "ค้นหาวัตถุ",
+    "all": "ทั้งหมด",
+    "count_one": "{{count}} วัตถุ",
+    "count_other": "{{count}} วัตถุ",
+    "empty": "ไม่พบวัตถุที่ตรงกับการค้นหา",
+    "onPortSite": "{{size}} · ดาวน์โหลดจากเว็บไซต์ท่าเรือ",
+    "credit": "คลังวัตถุจาก",
+    "categories": {
+      "fences": "รั้ว",
+      "port": "องค์ประกอบท่าเรือ",
+      "road": "องค์ประกอบถนน",
+      "equipment": "อุปกรณ์ท่าเรือ",
+      "operation": "อุปกรณ์ปฏิบัติการ",
+      "transport": "ยานพาหนะขนส่ง",
+      "furniture": "เฟอร์นิเจอร์ริมทาง",
+      "monument": "อนุสรณ์สถาน"
+    }
   }
 }

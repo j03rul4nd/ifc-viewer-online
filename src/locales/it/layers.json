@@ -816,7 +816,20 @@
       "addCondition": "+ Condizione",
       "opacity": "Opacità",
       "importReplace": "Questo sostituisce le tue {{sources}} fonti e {{bindings}} collegamenti. Continuare?",
-      "operated": "Stato operativo"
+      "operated": "Stato operativo",
+      "fiware": {
+        "kind": "Tipo di fonte",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL del Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio o Stellio. Deve consentire le richieste da questo sito (CORS) e usare https.",
+        "type": "Tipo di entità",
+        "tenant": "Tenant (facoltativo)",
+        "context": "Contesto JSON-LD (facoltativo)",
+        "contextHint": "Dà agli attributi i loro nomi brevi.",
+        "servicePath": "Service path (facoltativo)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "Elaborazione… {{s}} s",
     "announce": "Ancora in attesa di {{host}}",
     "announceGeneric": "Elaborazione ancora in corso"
+  },
+  "portLibrary": {
+    "intro": "Recinzioni, gru, arredo urbano e monumenti modellati dal Porto di Barcellona. Aprine uno nel visualizzatore e aggiungilo alla tua scena.",
+    "search": "Cerca oggetti",
+    "all": "Tutti",
+    "count_one": "{{count}} oggetto",
+    "count_other": "{{count}} oggetti",
+    "empty": "Nessun oggetto corrisponde alla ricerca.",
+    "onPortSite": "{{size}} · da scaricare sul sito del Porto",
+    "credit": "Libreria di oggetti del",
+    "categories": {
+      "fences": "Recinzioni",
+      "port": "Elementi portuali",
+      "road": "Elementi stradali",
+      "equipment": "Attrezzature portuali",
+      "operation": "Mezzi operativi",
+      "transport": "Mezzi di trasporto",
+      "furniture": "Arredo urbano",
+      "monument": "Monumenti"
+    }
   }
 }

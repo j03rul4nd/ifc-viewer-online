@@ -816,7 +816,20 @@
       "addCondition": "+ Condition",
       "opacity": "Opacity",
       "importReplace": "This replaces your {{sources}} sources and {{bindings}} bindings. Continue?",
-      "operated": "Operating state"
+      "operated": "Operating state",
+      "fiware": {
+        "kind": "Source type",
+        "kindApi": "REST API",
+        "kindBroker": "FIWARE broker",
+        "broker": "Context Broker URL",
+        "brokerHint": "Orion, Orion-LD, Scorpio or Stellio. It must allow requests from this site (CORS) and use https.",
+        "type": "Entity type",
+        "tenant": "Tenant (optional)",
+        "context": "JSON-LD context (optional)",
+        "contextHint": "Gives attributes their short names.",
+        "servicePath": "Service path (optional)",
+        "api": "API"
+      }
     }
   },
   "add": {
@@ -899,5 +912,25 @@
     "generic": "Working… {{s}} s",
     "announce": "Still waiting for {{host}}",
     "announceGeneric": "Still working"
+  },
+  "portLibrary": {
+    "intro": "Fences, cranes, street furniture and monuments modelled by the Port de Barcelona. Open any of them in the viewer and add it to your scene.",
+    "search": "Search objects",
+    "all": "All",
+    "count_one": "{{count}} object",
+    "count_other": "{{count}} objects",
+    "empty": "No object matches that search.",
+    "onPortSite": "{{size}} · download on the Port site",
+    "credit": "Object library by the",
+    "categories": {
+      "fences": "Fences",
+      "port": "Port elements",
+      "road": "Road elements",
+      "equipment": "Port equipment",
+      "operation": "Operations",
+      "transport": "Transport",
+      "furniture": "Street furniture",
+      "monument": "Monuments"
+    }
   }
 }

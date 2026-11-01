@@ -14,6 +14,7 @@
 // files a project is split into. A binding is resolved against EVERY loaded
 // model, so the same rule paints the element in whichever file it lives.
 
+import { ngsiEntities, ngsiRecord, type NgsiConfig } from './ngsi'
 import { flattenProperties, type FlatProp } from './flatten-props'
 import { testFilter, type Filter } from '../layers/style-groups'
 import { isGelfs, gelfsRecords } from '../layers/records'
@@ -47,6 +48,8 @@ export interface DeviceSource {
    * WebSocket listener (mqtt-ws.ts) and every message is `{ topic, …payload }`.
    */
   topics?: string[]
+  /** A FIWARE broker: what `url` was built from, and the headers it needs (ngsi.ts). */
+  ngsi?: NgsiConfig
 }
 
 export type MetricValue = string | number | boolean | null
@@ -67,8 +70,8 @@ export function cleanTopics(v: unknown): string[] | undefined {
 }
 
 /** A source as it is written to a file or a scene: no secrets, no runtime state. */
-export function portableSource({ id, name, url, intervalS, mapping, enabled, topics }: DeviceSource): DeviceSource {
-  return { id, name, url, intervalS, mapping, enabled, ...(topics?.length ? { topics } : {}) }
+export function portableSource({ id, name, url, intervalS, mapping, enabled, topics, ngsi }: DeviceSource): DeviceSource {
+  return { id, name, url, intervalS, mapping, enabled, ...(topics?.length ? { topics } : {}), ...(ngsi ? { ngsi } : {}) }
 }
 
 /** Key of a device across sources. */
@@ -105,6 +108,14 @@ export function parseReadings(
   opts: { requireId?: boolean } = {},
 ): Reading[] {
   const { listPath, idField, timeField } = source.mapping
+  // A broker's entities say who they are and when; only an explicit path overrides that.
+  const entities = listPath ? null : ngsiEntities(body)
+  if (entities) {
+    return entities.map((e) => {
+      const record = ngsiRecord(e)
+      return { sourceId: source.id, deviceId: String(record.id), props: flattenProperties(record), at: parseTime(record.observedAt) ?? receivedAt }
+    })
+  }
   // Known shapes whose answer lies deeper than a rule can reach get the same
   // summary their data layer gets: a GELFS charging location becomes
   // "state: available, ports_available: 2" (records.ts) instead of a status
