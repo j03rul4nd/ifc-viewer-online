@@ -13,3 +13,5 @@ test/fixtures/**/*.ifc text eol=lf
 public/sdk/ifc-viewer.es.js -text
 public/sdk/ifc-viewer.es.d.ts -text
 public/sdk/[0-9]*/** -text
+# Served byte-exact from the models Worker (npm run deploy:models).
+public/models/** -text
