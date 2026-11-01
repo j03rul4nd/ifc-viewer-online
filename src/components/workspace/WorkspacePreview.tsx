@@ -21,8 +21,10 @@ import { SCENARIOS, scenarioData, type Scenario, type TicketKind } from './sampl
 import { SoonChip } from './Soon'
 import { ChevronRight } from 'lucide-react'
 import { SECTIONS, canUse, sectionFromPath, type PaidPlan, type SectionActions, type SectionId, type SectionDef } from './registry'
+import { usePaidLive, usePaidQuery } from '../../hooks/usePaidQuery'
+import { paidApi, type ApiMe } from '../../lib/cloud/paid-client'
 import { Banner, Primary, Quiet, Skeleton, fmtInt, NAV_EVENT, notifyNav } from './ui'
-import { AccessContext, PERSONAS, SAMPLE_POLICIES, accessFor, canSee, type PersonaId } from './roles'
+import { AccessContext, PERSONAS, SAMPLE_POLICIES, accessFor, canSee, type Action, type PersonaId } from './roles'
 import { previewProvider, type CheckoutItem, type CheckoutOutcome } from '../../lib/pricing/checkout'
 import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
@@ -86,7 +88,14 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   }, [])
   const limit = PERSONAS.find((p) => p.id === persona)!.projects
   const data = useMemo(() => { const d = scenarioData(scenario); return { ...d, projects: limit === null ? d.projects : d.projects.slice(0, limit), account: { ...d.account, plan: previewPlan } } }, [scenario, previewPlan, limit])
-  const access = useMemo(() => accessFor(persona, policies, setPolicies), [persona, policies])
+  // Live, what this person may do comes from the API; the screen only follows it.
+  const me = usePaidQuery<ApiMe | null>(() => paidApi.me(), null)
+  const access = useMemo(() => {
+    const preview = accessFor(persona, policies, setPolicies)
+    if (me.source !== 'live' || !me.data) return preview
+    const allowed = new Set(me.data.can)
+    return { ...preview, role: me.data.role, can: (a: Action) => allowed.has(a) }
+  }, [persona, policies, me.source, me.data])
   const top = useRef<HTMLDivElement>(null)
   const provider = useMemo(() => previewProvider(checkoutOutcome), [checkoutOutcome])
 
@@ -125,7 +134,10 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     },
   }), [go])
 
-  const plan = data.account.plan
+  // Live (API connected): the API enforces plan and role per call, so the shell
+  // locks nothing and each screen shows the API's own answer.
+  const live = usePaidLive()
+  const plan = live ? 'team' : data.account.plan
   const current = SECTIONS.find((s) => s.id === section)!
   const visible = SECTIONS.filter((s) => canSee(s.id, access.can))
   const tabs = visible.filter((s) => !s.secondary)
@@ -158,7 +170,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     <div ref={top} className="min-h-[100dvh] bg-[var(--bg)] text-[var(--text)]">
       <header className="sticky top-0 z-20 flex items-center gap-2 sm:gap-3 px-4 sm:px-6 h-[48px] border-b border-[var(--border)] bg-[var(--bg)] pt-[env(safe-area-inset-top)] box-content">
         <button onClick={onNavigateHome} className="text-[13.5px] font-semibold truncate">{tx("IFC Viewer Online")}</button>
-        <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-dim)] whitespace-nowrap">{tx("Design preview · sample data")}</span>
+        <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-dim)] whitespace-nowrap">{tx(live ? "Preview" : "Design preview · sample data")}</span>
         <span className="flex-1" />
         <details className="relative">
           <summary className="list-none cursor-pointer text-[11.5px] px-2 h-[28px] flex items-center rounded-[6px] border border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text)]">{tx("Preview")}</summary>

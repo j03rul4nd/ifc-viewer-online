@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { paidApi, type ApiAutomation, type ApiBacktest } from '../../../lib/cloud/paid-client'
+import { usePaidQuery } from '../../../hooks/usePaidQuery'
 import type { SectionProps } from '../registry'
 import { DataList, Dialog, Field, Head, Panel, Primary, Quiet, SectionLabel, Tabs, Toggle, fmtInt, inputClass } from '../ui'
 import { SoonBanner } from '../Soon'
@@ -36,6 +38,24 @@ export function wouldFire(r: Pick<Rule, 'trigger' | 'cond' | 'value' | 'contains
   }).map((h) => h.name)
 }
 
+const API_TRIGGER = { version: 'version.validated', delivery: 'delivery.validated', overdue: 'issue.overdue' } as const
+const API_COND: Record<Cond, (v: number) => Record<string, unknown>> = {
+  score_below: (v) => ({ score_below: v }), score_drop: (v) => ({ score_drop_at_least: v }), clean: (v) => ({ score_at_least: v, no_failed_specs: true }), overdue_days: (v) => ({ days_overdue_at_least: v }),
+}
+const conditionsOf = (r: Pick<Rule, 'cond' | 'value' | 'contains'>) => ({ ...API_COND[r.cond](r.value), ...(r.contains.trim() ? { name_contains: r.contains.trim() } : {}) })
+const actionOf = (r: Pick<Rule, 'act' | 'name'>): Record<string, unknown> => (
+  r.act === 'issue' ? { type: 'create_issue', title: '{{name}}: {{score}}', priority: 'high', due_days: 3 }
+    : r.act === 'notify' ? { type: 'notify', message: `${r.name}: {{name}} ({{score}})` }
+      : r.act === 'share' ? { type: 'share_version' } : { type: 'escalate_issue', priority: 'high' })
+
+/** A rule as the API keeps it, in the shape the list and the form use. */
+export function ruleFromApi(a: ApiAutomation): Rule {
+  const c = a.conditions as Record<string, number | string | boolean | undefined>
+  const t = (a.actions[0]?.type as string | undefined) ?? 'notify'
+  const cond: Cond = c.score_drop_at_least !== undefined ? 'score_drop' : c.no_failed_specs ? 'clean' : c.days_overdue_at_least !== undefined ? 'overdue_days' : 'score_below'
+  return { id: a.id, name: a.name, trigger: a.trigger === 'version.validated' ? 'version' : a.trigger === 'delivery.validated' ? 'delivery' : 'overdue', cond, value: Number(c.score_drop_at_least ?? c.score_at_least ?? c.days_overdue_at_least ?? c.score_below ?? 0), contains: String(c.name_contains ?? ''), act: t === 'create_issue' ? 'issue' : t === 'share_version' ? 'share' : t === 'escalate_issue' ? 'escalate' : 'notify', minutes: a.minutes_saved, on: a.enabled, runs: a.runs_30d ?? 0 }
+}
+
 const BLANK: Omit<Rule, 'id' | 'on' | 'runs'> = { name: '', trigger: 'version', cond: 'score_below', value: 80, contains: '', act: 'issue', minutes: 15 }
 
 /** The coordinator's routine, built once. Tried on real history before it runs; never publishes by itself. */
@@ -63,12 +83,38 @@ export default function Automations(_: SectionProps) {
   const minutes = rules.reduce((a, r) => a + r.runs * r.minutes, 0)
   const set = <K extends keyof Rule>(k: K, v: Rule[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d))
   const setTrigger = (t: Trigger) => setDraft((d) => (d ? { ...d, trigger: t, cond: CONDS_FOR[t][0], act: ACTS_FOR[t][0] } : d))
-  const hits = draft ? wouldFire(draft) : []
+  const q = usePaidQuery(() => paidApi.automations(), { automations: [] as ApiAutomation[] })
+  const live = q.source === 'live'
+  useEffect(() => { if (live) setRules(q.data.automations.map(ruleFromApi)) }, [live, q.data])
+  const [real, setReal] = useState<ApiBacktest | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  useEffect(() => {
+    setReal(null)
+    if (!live || !draft || draft.trigger === 'overdue') return
+    const trigger = API_TRIGGER[draft.trigger]
+    const t = setTimeout(() => { void paidApi.backtest(trigger, conditionsOf(draft), draft.minutes).then((r) => { if (r.ok) setReal(r.value) }) }, 400)
+    return () => clearTimeout(t)
+  }, [live, draft])
+  const hits = real ? real.examples.map((e) => e.name) : draft ? wouldFire(draft) : []
+  const hitCount = real ? real.would_fire : hits.length
+  const toggle = (r: Rule, on: boolean) => {
+    setRules((all) => all.map((x) => (x.id === r.id ? { ...x, on } : x)))
+    if (live) void paidApi.patchAutomation(r.id, { enabled: on }).then((x) => { if (!x.ok) { setErr(x.error.message ?? x.error.code); q.reload() } })
+  }
+  const create = async (d: NonNullable<typeof draft>) => {
+    if (live) {
+      const r = await paidApi.createAutomation({ name: d.name.trim(), enabled: true, trigger: API_TRIGGER[d.trigger], conditions: conditionsOf(d), actions: [actionOf(d)], minutes_saved: d.minutes })
+      if (!r.ok) { setErr(r.error.message ?? r.error.code); return }
+      q.reload()
+    } else setRules((all) => [...all, { ...d, id: `r${Date.now().toString(36)}`, on: true, runs: 0 }])
+    setErr(null); setDraft(null)
+  }
 
   return (
     <>
       <Head title={tx('Automations')} sub={tx('The routine checks and chasing of a BIM coordinator, done every time, by rules you own.')} action={<Primary onClick={() => setDraft(BLANK)}>{tx('New automation')}</Primary>} />
-      <SoonBanner section="automations" />
+      <SoonBanner section="automations" source={q.source} error={q.error} />
+      {err && <p role="alert" className="mt-3 text-[12.5px] text-[var(--danger)]">{err}</p>}
 
       <div className="mt-6 mb-8">
         <SectionLabel>{tx('Running now')}</SectionLabel>
@@ -79,7 +125,7 @@ export default function Automations(_: SectionProps) {
             { key: 'runs', header: tx('In 30 days'), cell: (r) => <span className="text-[12.5px] tabular-nums">{fmtInt(r.runs)}</span> },
             { key: 'each', header: tx('Saves each time'), hideOnPhone: true, cell: (r) => <span className="text-[12.5px] tabular-nums whitespace-nowrap">{r.minutes} min</span> },
           ]}
-          actions={(r) => <Toggle checked={r.on} label={r.name} onChange={(on) => setRules((all) => all.map((x) => (x.id === r.id ? { ...x, on } : x)))} />} />
+          actions={(r) => <Toggle checked={r.on} label={r.name} onChange={(on) => toggle(r, on)} />} />
       </div>
 
       <SectionLabel>{tx('Start from your situation')}</SectionLabel>
@@ -96,7 +142,7 @@ export default function Automations(_: SectionProps) {
 
       {draft && (
         <Dialog title={draft.name || tx('New automation')} size="lg" onClose={() => setDraft(null)}
-          footer={<><Quiet onClick={() => setDraft(null)}>{tx('Cancel')}</Quiet><Primary disabled={draft.name.trim().length < 3} onClick={() => { setRules((all) => [...all, { ...draft, id: `r${Date.now().toString(36)}`, on: true, runs: 0 }]); setDraft(null) }}>{tx('Turn on')}</Primary></>}>
+          footer={<><Quiet onClick={() => setDraft(null)}>{tx('Cancel')}</Quiet><Primary disabled={draft.name.trim().length < 3} onClick={() => void create(draft)}>{tx('Turn on')}</Primary></>}>
           <div className="flex flex-col gap-4">
             <Field label={tx('Name')}><input className={inputClass} value={draft.name} onChange={(e) => set('name', e.target.value)} /></Field>
             <Field label={tx('When')}>
@@ -115,7 +161,7 @@ export default function Automations(_: SectionProps) {
             <Field label={tx('Minutes this saves each time')} hint={tx('Your estimate. It feeds the value report, which shows it as an assumption.')}><input className={`${inputClass} tabular-nums`} inputMode="numeric" value={draft.minutes} onChange={(e) => set('minutes', Number(e.target.value.replace(/\D/g, '')))} /></Field>
             {draft.trigger !== 'overdue' && (
               <Panel className="p-3 min-w-0">
-                <p className="text-[12.5px] font-medium">{tx('On your last 90 days this would have fired {{n}} times', { n: hits.length })}</p>
+                <p className="text-[12.5px] font-medium">{tx('On your last 90 days this would have fired {{n}} times', { n: hitCount })}</p>
                 {hits.length > 0 && <p className="mt-1 text-[12px] text-[var(--text-dim)] [overflow-wrap:anywhere]">{hits.join(', ')}</p>}
               </Panel>
             )}
