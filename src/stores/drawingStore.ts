@@ -25,6 +25,7 @@ export interface DrawingInput {
   skipped?: Record<string, number>
   placement?: Placement
   elevation?: number
+  lineWeight?: number
 }
 
 /**
@@ -118,7 +119,7 @@ export const useDrawingStore = create<DrawingState>()((set, get) => ({
       entities: withIds(input.entities), page: input.page,
       placement: input.placement ?? initialPlacement(input, s.drawings),
       metresPerUnit: input.metresPerUnit ?? null,
-      visible: true, in3d: false, elevation: input.elevation ?? 0,
+      visible: true, in3d: false, elevation: input.elevation ?? 0, lineWeight: input.lineWeight,
       skipped: input.skipped ?? {},
     }
     set({ drawings: [...s.drawings, drawing], activeId: id, activeLayer: generated && input.layers.length ? 'Markup' : layers[0].name, selectedId: null, tool: 'select' })

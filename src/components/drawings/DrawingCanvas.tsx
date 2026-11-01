@@ -209,7 +209,8 @@ export default forwardRef<CanvasHandle, Props>(function DrawingCanvas({ markers,
         }
       }
       ctx.transform(1, 0, 0, 1, cx, cy)
-      ctx.lineWidth = 1 / k
+      // A scan slice is runs of grid cells: a cell wide, and never thinner than visible.
+      ctx.lineWidth = d.lineWeight ? Math.max(d.lineWeight, 2 / k) : 1 / k
       ctx.globalAlpha = (d.opacity ?? 1) * (d.id === L.activeId ? 1 : 0.75)
       for (const layer of d.layers) {
         if (!layer.visible) continue

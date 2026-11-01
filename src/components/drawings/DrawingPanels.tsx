@@ -259,7 +259,7 @@ export function CreatePanel({ viewerApiRef, busy, run, fail, say }: PanelShared)
     if (!r.entities.length) { fail(t('errors.emptyScan')); return }
     s.addDrawing({
       name: t('create.scanName', { height: Math.round(y * 100) / 100 }), source: 'scan', layers: r.layers, entities: r.entities,
-      metresPerUnit: 1, placement: IDENTITY, elevation: Math.round(baseY * 1000) / 1000,
+      metresPerUnit: 1, placement: IDENTITY, elevation: Math.round(baseY * 1000) / 1000, lineWeight: cell,
     })
     const pct = (n: number) => Math.round((n / Math.max(r.report.cells, 1)) * 100)
     say(reference
@@ -295,7 +295,8 @@ export function CreatePanel({ viewerApiRef, busy, run, fail, say }: PanelShared)
       <label className="flex items-center gap-1.5 min-h-[26px] text-[var(--text-dim)]"><input type="checkbox" checked={poche} onChange={(e) => setPoche(e.target.checked)} /> {t('create.poche')}</label>
     </>
   )
-  const canScan = clouds.some((c) => c.status === 'ready' || c.pointCount > 0)
+  // Not while it is still arriving: a slice of half a cloud reads as half a building.
+  const canScan = clouds.some((c) => c.status === 'ready')
 
   return (
     <>

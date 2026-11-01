@@ -70,6 +70,8 @@ export interface Drawing {
   elevation: number
   /** How strongly it reads over other sheets, 0–1. Absent: fully. */
   opacity?: number
+  /** Line width in drawing units, when lines stand for an area: a scan slice's grid cell. */
+  lineWeight?: number
   /** Entity types the importer could not read, with counts. Reported, never hidden. */
   skipped: Record<string, number>
 }

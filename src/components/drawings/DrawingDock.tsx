@@ -113,7 +113,7 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
       if (dead) return
       for (const x of list) if (x.pdf) rememberPdf(x.drawing.id, x.pdf)
       useDrawingStore.getState().hydrate(list.map((x) => x.drawing))
-    }).catch(() => setStorageFailed(true)).finally(() => { hydrated.current = true })
+    }).catch(() => setStorageFailed(true)).finally(() => { if (!dead) hydrated.current = true })
     return () => { dead = true }
   }, [])
   const saved = useRef(new Map<string, Drawing>())
