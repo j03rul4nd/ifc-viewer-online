@@ -13,6 +13,12 @@ interface Template { id: string; kind: Kind; name: string; body: string; vars: T
 
 const GATEWAY = 'https://api.ifcvieweronline.eu/mw/'
 const QUOTA_GB_HOURS = 250
+const INCLUDED_MIN = 60
+const HOUR_EUR = 120
+const PACK_GB_HOURS = 1000
+const PACK_EUR = 90
+const ENTRY_MONTH_EUR = 390
+const ENTRY_SETUP_EUR = 1500
 
 /** Mirrors lib/middleware-templates in the API: the terms are signed in this exact wording. */
 const TERMS = [
@@ -29,6 +35,11 @@ const SAMPLE: Service[] = [
   { id: 'stations', name: 'Stations collector', kind: 'cron', source: 'Collect an API into your database', schedule: '*/5 * * * *', hosts: ['data.renfe.example'], status: 'idle', gbHours: 21 },
   { id: 'own', name: 'Delay predictor', kind: 'cron', source: 'Your container', schedule: '0 * * * *', hosts: [], status: 'review', gbHours: 0 },
 ]
+
+type ChargeStatus = 'pending' | 'invoiced' | 'paid'
+interface Charge { id: string; label: string; eur: number; status: ChargeStatus }
+
+const eur = (n: number): string => `${fmtInt(n)} €`
 
 const COLOR: Record<Status, string> = { running: 'var(--ok)', idle: 'var(--text-faint)', stopped: 'var(--text-faint)', failed: 'var(--danger)', review: 'var(--warn)' }
 
@@ -52,11 +63,21 @@ export default function Middleware({ actions }: SectionProps) {
   const [signing, setSigning] = useState<Template | null | 'terms'>(null)
   const [using, setUsing] = useState<Template | null>(null)
   const [cap, setCap] = useState('')
+  const [charges, setCharges] = useState<Charge[]>(() => [
+    { id: 'annual', label: tx('Connect, one year'), eur: 4680, status: 'paid' },
+    { id: 'setup', label: tx('Setup'), eur: 1500, status: 'paid' },
+    { id: 'support', label: tx('Support, 30 min'), eur: 60, status: 'invoiced' },
+  ])
+  const [packs, setPacks] = useState(0)
+  const [usedMin, setUsedMin] = useState(45)
+  const [asking, setAsking] = useState(false)
+  const [requesting, setRequesting] = useState(false)
   const STATUS: Record<Status, string> = { running: tx('Running'), idle: tx('Waiting for its schedule'), stopped: tx('Stopped'), failed: tx('Failed'), review: tx('In review by our team') }
   const used = services.reduce((a, s) => a + s.gbHours, 0)
-  const limit = Math.min(QUOTA_GB_HOURS, Number(cap) > 0 ? Number(cap) : Infinity)
+  const limit = Math.min(QUOTA_GB_HOURS + packs * PACK_GB_HOURS, Number(cap) > 0 ? Number(cap) : Infinity)
   const pct = Math.min(100, Math.round((used / limit) * 100))
   const set = (id: string, status: Status): void => setServices((all) => all.map((s) => (s.id === id ? { ...s, status } : s)))
+  const CHARGE: Record<ChargeStatus, string> = { pending: tx('To invoice'), invoiced: tx('Invoiced'), paid: tx('Paid') }
   const apis = services.filter((s) => s.kind === 'api')
   const choose = (t: Template): void => { if (signed) setUsing(t); else setSigning(t) }
 
@@ -65,8 +86,9 @@ export default function Middleware({ actions }: SectionProps) {
       <Head title={tx('Middleware')} sub={tx('Feed the digital twin from your own data, through containers we verified. The database stays yours.')} />
       <SoonBanner section="middleware" />
       <div className="mb-8">
-        <Banner tone="info" title={tx('Enabled by agreement')} action={<Quiet onClick={() => actions.contact('question', 'middleware')}>{tx('Talk to us')}</Quiet>}>
-          {tx('We switch this on after talking to your team, as an Enterprise feature or an extra on your plan.')}
+        <Banner tone="info" title={tx('Enabled by agreement')} action={<Quiet onClick={() => setRequesting(true)}>{tx('Request access')}</Quiet>}>
+          {tx('We switch this on after talking to your team, as an Enterprise feature or an extra on your plan.')}{' '}
+          {tx('From {{monthly}} a month on a yearly contract, plus {{setup}} setup.', { monthly: eur(ENTRY_MONTH_EUR), setup: eur(ENTRY_SETUP_EUR) })}
         </Banner>
       </div>
 
@@ -141,6 +163,30 @@ export default function Middleware({ actions }: SectionProps) {
         <CopyField label={tx('Metrics endpoint')} value="https://api.ifcvieweronline.eu/middleware/metrics" />
       </Panel>
 
+      <SectionLabel>{tx('Support and invoices')}</SectionLabel>
+      <div className="grid gap-3 sm:grid-cols-2 mb-3">
+        <Panel className="p-4 min-w-0 flex flex-col gap-2">
+          <p className="text-[12px] text-[var(--text-dim)]">{tx('Support this month')}</p>
+          <p className="text-[20px] font-semibold tabular-nums">{tx('{{left}} of {{total}} min left', { left: Math.max(0, INCLUDED_MIN - usedMin), total: INCLUDED_MIN })}</p>
+          <p className="flex-1 text-[12px] leading-[1.45] text-[var(--text-faint)]">{tx('Beyond that, {{rate}} an hour, only if you accept it first.', { rate: eur(HOUR_EUR) })}</p>
+          <div className="pt-1"><Quiet onClick={() => setAsking(true)}>{tx('Ask for support')}</Quiet></div>
+        </Panel>
+        <Panel className="p-4 min-w-0 flex flex-col gap-2">
+          <p className="text-[12px] text-[var(--text-dim)]">{tx('More compute')}</p>
+          <p className="text-[20px] font-semibold tabular-nums">{fmtInt(PACK_GB_HOURS)} GB·h</p>
+          <p className="flex-1 text-[12px] leading-[1.45] text-[var(--text-faint)]">{tx('{{price}} on your next invoice. Only for this month.', { price: eur(PACK_EUR) })}</p>
+          <div className="pt-1"><Quiet onClick={() => { setPacks((n) => n + 1); setCharges((all) => [{ id: `pack-${Date.now().toString(36)}`, label: `${fmtInt(PACK_GB_HOURS)} GB·h`, eur: PACK_EUR, status: 'pending' }, ...all]) }}>{tx('Add to this month')}</Quiet></div>
+        </Panel>
+      </div>
+      <div className="mb-8">
+        <DataList rows={charges} rowKey={(c) => c.id} primaryHeader={tx('Charge')}
+          primary={(c) => <p className="font-medium [overflow-wrap:anywhere]">{c.label}</p>}
+          columns={[
+            { key: 'amount', header: tx('Amount'), cell: (c) => <span className="text-[12.5px] tabular-nums whitespace-nowrap">{eur(c.eur)}</span> },
+            { key: 'state', header: tx('Status'), cell: (c) => <span className="text-[12.5px]">{CHARGE[c.status]}</span> },
+          ]} />
+      </div>
+
       <SectionLabel>{tx('Signed terms')}</SectionLabel>
       <Panel className="p-4 mb-8 flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
         <p className="flex-1 text-[13px] leading-[1.5] text-[var(--text-dim)] [overflow-wrap:anywhere]">{signed ? tx('Signed by {{name}} for {{company}}.', signed) : tx('Not signed yet. Required before the first service.')}</p>
@@ -148,8 +194,74 @@ export default function Middleware({ actions }: SectionProps) {
       </Panel>
 
       {signing && <SignTerms signed={signed} onClose={() => setSigning(null)} onSign={(s) => { setSigned(s); const next = signing; setSigning(null); if (next !== 'terms') setUsing(next) }} />}
+      {asking && <AskSupport left={INCLUDED_MIN - usedMin} onClose={() => setAsking(false)} onSent={() => { setUsedMin((m) => m + 15); setAsking(false) }} />}
+      {requesting && <RequestAccess onClose={() => setRequesting(false)} onTalk={() => { setRequesting(false); actions.contact('question', 'middleware') }} />}
       {using && <UseTemplate template={using} onClose={() => setUsing(null)} onAdd={(s) => { setServices((all) => [...all, s]); setUsing(null) }} />}
     </>
+  )
+}
+
+function AskSupport({ left, onClose, onSent }: { left: number; onClose: () => void; onSent: () => void }) {
+  const tx = useTx()
+  const [subject, setSubject] = useState('')
+  const [message, setMessage] = useState('')
+  const [accept, setAccept] = useState(false)
+  const over = left <= 0
+  const ready = subject.trim().length >= 3 && message.trim().length >= 10 && (!over || accept)
+  return (
+    <Dialog title={tx('Ask for support')} onClose={onClose}
+      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={onSent}>{tx('Send')}</Primary></>}>
+      <div className="flex flex-col gap-4">
+        {over && <Banner tone="warn" title={tx('Your included time is used up')}>{tx('Beyond that, {{rate}} an hour, only if you accept it first.', { rate: eur(HOUR_EUR) })}</Banner>}
+        <Field label={tx('Subject')}><input className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} /></Field>
+        <Field label={tx('Message')}><textarea className={inputClass} rows={4} value={message} onChange={(e) => setMessage(e.target.value)} /></Field>
+        {over && (
+          <label className="flex items-start gap-2.5 text-[13px] leading-[1.5]">
+            <input type="checkbox" className="mt-1" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
+            <span>{tx('I accept the hourly rate for this request. Only who manages billing can accept it.')}</span>
+          </label>
+        )}
+      </div>
+    </Dialog>
+  )
+}
+
+/** Mirrors qualify() in the API: says at once when this is not the right tool, before a meeting costs anyone an hour. */
+function RequestAccess({ onClose, onTalk }: { onClose: () => void; onTalk: () => void }) {
+  const tx = useTx()
+  const [company, setCompany] = useState('')
+  const [useCase, setUseCase] = useState('')
+  const [twin, setTwin] = useState(false)
+  const [yearly, setYearly] = useState(false)
+  const [band, setBand] = useState('1k_5k')
+  const [sent, setSent] = useState(false)
+  const fits = twin && yearly && band !== 'under_1k'
+  const ready = company.trim().length >= 2 && useCase.trim().length >= 20
+  if (sent) return (
+    <Dialog title={fits ? tx('We have your request') : tx('This is probably not the right fit')} onClose={onClose}
+      footer={<>{!fits && <Quiet onClick={onTalk}>{tx('Talk to us')}</Quiet>}<Primary onClick={onClose}>{tx('Close')}</Primary></>}>
+      <p className="text-[13px] leading-[1.5] text-[var(--text-dim)]">{fits ? tx('We will write to you to arrange a meeting.') : tx('We connect data to a digital twin, on a yearly contract, with our team behind it. If you only need to move data between systems, a general ETL tool will cost you less.')}</p>
+    </Dialog>
+  )
+  return (
+    <Dialog title={tx('Request access')} onClose={onClose}
+      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={() => setSent(true)}>{tx('Send')}</Primary></>}>
+      <div className="flex flex-col gap-4">
+        <p className="text-[12.5px] leading-[1.5] text-[var(--text-dim)]">{tx('From {{monthly}} a month on a yearly contract, plus {{setup}} setup.', { monthly: eur(ENTRY_MONTH_EUR), setup: eur(ENTRY_SETUP_EUR) })}</p>
+        <Field label={tx('Organization')}><input className={inputClass} autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} /></Field>
+        <Field label={tx('What should reach the twin?')}><textarea className={inputClass} rows={3} value={useCase} onChange={(e) => setUseCase(e.target.value)} /></Field>
+        <Field label={tx('Yearly budget')}>
+          <select className={inputClass} value={band} onChange={(e) => setBand(e.target.value)}>
+            <option value="under_1k">{tx('Under {{amount}}', { amount: eur(1000) })}</option>
+            <option value="1k_5k">{`${eur(1000)} – ${eur(5000)}`}</option>
+            <option value="5k_20k">{`${eur(5000)} – ${eur(20000)}`}</option>
+            <option value="over_20k">{tx('Over {{amount}}', { amount: eur(20000) })}</option>
+          </select>
+        </Field>
+        <label className="flex items-start gap-2.5 text-[13px] leading-[1.5]"><input type="checkbox" className="mt-1" checked={twin} onChange={(e) => setTwin(e.target.checked)} /><span>{tx('The data will feed a digital twin')}</span></label>
+        <label className="flex items-start gap-2.5 text-[13px] leading-[1.5]"><input type="checkbox" className="mt-1" checked={yearly} onChange={(e) => setYearly(e.target.checked)} /><span>{tx('A yearly contract paid in advance works for us')}</span></label>
+      </div>
+    </Dialog>
   )
 }
 
