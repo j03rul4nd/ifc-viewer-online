@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "Adicionar o meu esboço"
   },
   "cover": {
     "open": "Estúdio de capas — capas, slides e posts a partir do modelo",
@@ -1100,7 +1101,9 @@
         "grow": "Crescer",
         "stack": "Empilhar",
         "crown": "Coroar"
-      }
+      },
+      "sketch": "Esboço",
+      "sketchHint": "O seu último esboço 3D enviado do estúdio; abre o estúdio se não houver nenhum"
     }
   },
   "mobileMenu": "Capturar",

@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "Ajouter mon croquis"
   },
   "cover": {
     "open": "Studio de couvertures — couvertures, diapositives et posts depuis le modèle",
@@ -1100,7 +1101,9 @@
         "grow": "Croître",
         "stack": "Empiler",
         "crown": "Couronner"
-      }
+      },
+      "sketch": "Croquis",
+      "sketchHint": "Votre dernier croquis 3D envoyé depuis le studio ; ouvre le studio s'il n'y en a pas"
     }
   },
   "mobileMenu": "Capturer",

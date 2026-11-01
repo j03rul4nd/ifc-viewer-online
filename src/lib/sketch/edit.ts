@@ -57,6 +57,22 @@ export function rotateOnPlane(plane: SketchPlane, center: Vec3, angle: number) {
   }
 }
 
+/**
+ * Pull a stroke by one of its points. What is near follows with a smooth falloff,
+ * as when reshaping a curve by its node; the far end stays.
+ */
+export function reshapeStroke(stroke: Stroke, index: number, delta: Vec3, radius: number): Stroke {
+  const points = stroke.points.slice()
+  const ax = points[index * 4], ay = points[index * 4 + 1], az = points[index * 4 + 2]
+  for (let i = 0; i < points.length; i += 4) {
+    const d = Math.hypot(points[i] - ax, points[i + 1] - ay, points[i + 2] - az) / radius
+    if (d >= 2.5) continue
+    const k = Math.exp(-d * d * 1.5)
+    points[i] += delta[0] * k; points[i + 1] += delta[1] * k; points[i + 2] += delta[2] * k
+  }
+  return { ...stroke, points }
+}
+
 export function strokesCenter(strokes: readonly Stroke[]): Vec3 {
   let x = 0, y = 0, z = 0, n = 0
   for (const s of strokes) {

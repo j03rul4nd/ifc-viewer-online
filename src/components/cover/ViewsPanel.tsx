@@ -40,6 +40,7 @@ interface Props {
   onEvolution: () => void
   onAnatomy: () => void
   onCutout: () => void
+  onSketch: () => void
   /** Visible models — the coordination capture needs two or more. */
   modelCount: number
   /** Each visible model's discipline (guessed or set by hand), for the coordination capture. */
@@ -103,6 +104,7 @@ export default function ViewsPanel(p: Props) {
             ['night', p.onNight, 'Sparkles'],
             ['anatomy', p.onAnatomy, 'Ruler'],
             ['cutout', p.onCutout, 'Palette'],
+            ['sketch', p.onSketch, 'Palette'],
           ] as const).map(([kind, run, icon]) => {
             const Icon = Icons[icon]
             return (

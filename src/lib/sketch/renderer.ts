@@ -11,7 +11,7 @@ import { intersectPlane, planeFromNormal, planeNormal } from './plane'
 import type { EndpointCandidate } from './ink'
 import type { ContextItem, ContextPoints } from './storage'
 import { isAppendOf, ribbonSize, VERTEX_STRIDE, writeRibbon, type RibbonBuffers } from './ribbon'
-import type { OrbitState, PaperKind, PlacedImage, SketchLayer, SketchPlane, Stroke, Vec3 } from './types'
+import type { GridPattern, LayerBlend, OrbitState, PaperKind, PlacedImage, SketchBackground, SketchLayer, SketchPlane, Stroke, Vec3 } from './types'
 
 export const PAPER: Record<PaperKind, { bg: string; ink: string; grid: string; plane: string }> = {
   warm: { bg: '#E4D6CC', ink: '#17130F', grid: '#3A2E26', plane: '#6E5A4C' },
@@ -63,6 +63,7 @@ const RIBBON_VERTEX = /* glsl */ `
 
 const RIBBON_FRAGMENT = /* glsl */ `
   uniform float uOpacity;
+  uniform float uPremultiply;
   varying vec4 vColor;
   varying float vSide;
   varying float vWidth;
@@ -73,7 +74,7 @@ const RIBBON_FRAGMENT = /* glsl */ `
     // Only the pencil has this alpha band: its tooth comes from the paper, in screen space.
     if (vColor.a > 0.5 && vColor.a < 0.95 && vWidth < 40.0) alpha *= 0.55 + 0.45 * noise(floor(gl_FragCoord.xy / 1.5));
     if (alpha < 0.004) discard;
-    gl_FragColor = vec4(vColor.rgb, alpha);
+    gl_FragColor = vec4(vColor.rgb * mix(1.0, alpha, uPremultiply), alpha);
   }
 `
 
@@ -96,6 +97,7 @@ const PLANE_FRAGMENT = /* glsl */ `
   uniform float uRadius;
   uniform float uFill;
   uniform float uDots;
+  uniform float uPattern;
   varying vec3 vWorld;
   void main() {
     // A guide seen nearly edge-on is a smear of dots: let it go before it gets in the way.
@@ -108,8 +110,13 @@ const PLANE_FRAGMENT = /* glsl */ `
     float px = max(fwidth(p.x), fwidth(p.y));
     float dotMask = 1.0 - smoothstep(px * 1.1, px * 2.2, length(cell));
     float axis = (1.0 - smoothstep(px * 0.5, px * 1.4, abs(p.x))) + (1.0 - smoothstep(px * 0.5, px * 1.4, abs(p.y)));
-    float a = uFill + uDots * (dotMask * 0.6 + min(axis, 1.0) * 0.35);
-    vec3 col = mix(uTint, uDot, clamp(dotMask + axis, 0.0, 1.0));
+    // 0 dots, 1 grid, 2 lines, 3 plain.
+    vec2 toLine = abs(fract(p / uSpacing + 0.5) - 0.5) * uSpacing;
+    float gridLine = 1.0 - smoothstep(px * 0.4, px * 1.3, min(toLine.x, toLine.y));
+    float ruled = 1.0 - smoothstep(px * 0.4, px * 1.3, toLine.y);
+    float mark = uPattern < 0.5 ? dotMask : uPattern < 1.5 ? gridLine * 0.5 : uPattern < 2.5 ? ruled * 0.5 : 0.0;
+    float a = uFill + uDots * (mark * 0.6 + min(axis, 1.0) * 0.35);
+    vec3 col = mix(uTint, uDot, clamp(mark + axis, 0.0, 1.0));
     gl_FragColor = vec4(col, a * fall * smoothstep(0.04, 0.3, facing));
   }
 `
@@ -204,8 +211,24 @@ function planeUniforms(tint: string, dotColor: string, fill: number, dots: numbe
   return {
     uOrigin: { value: new THREE.Vector3() }, uU: { value: new THREE.Vector3(1, 0, 0) }, uV: { value: new THREE.Vector3(0, 1, 0) },
     uTint: { value: raw(tint) }, uDot: { value: raw(dotColor) },
-    uSpacing: { value: 1 }, uRadius: { value: 10 }, uFill: { value: fill }, uDots: { value: dots },
+    uSpacing: { value: 1 }, uRadius: { value: 10 }, uFill: { value: fill }, uDots: { value: dots }, uPattern: { value: 0 },
   }
+}
+
+/** Blends that need premultiplied colour get it, so a soft edge does not brighten. */
+function setBlend(material: THREE.ShaderMaterial, blend: LayerBlend): void {
+  if (material.userData.blend === blend) return
+  material.userData.blend = blend
+  material.uniforms.uPremultiply.value = blend === 'normal' ? 0 : 1
+  if (blend === 'normal') {
+    material.blending = THREE.NormalBlending
+  } else {
+    material.blending = THREE.CustomBlending
+    material.blendEquation = THREE.AddEquation
+    material.blendSrc = blend === 'multiply' ? THREE.DstColorFactor : blend === 'screen' ? THREE.OneMinusDstColorFactor : THREE.OneFactor
+    material.blendDst = blend === 'multiply' ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor
+  }
+  material.needsUpdate = true
 }
 
 function buildPoints(item: ContextPoints): THREE.Points {
@@ -260,6 +283,7 @@ export class SketchRenderer {
   onContextRestored: (() => void) | null = null
   private contextLost = false
   private paper: PaperKind = 'warm'
+  private background: SketchBackground | undefined
   private readonly handleLost = () => {
     this.contextLost = true
     this.onContextLost?.()
@@ -268,7 +292,7 @@ export class SketchRenderer {
     // three re-creates its GPU state; the buffers upload again from their arrays.
     this.contextLost = false
     // The clear colour is GL state and went with the context.
-    this.setPaper(this.paper)
+    this.setBackground(this.paper, this.background)
     this.onContextRestored?.()
     this.invalidate()
   }
@@ -314,6 +338,7 @@ export class SketchRenderer {
         uFadeNear: shared?.uFadeNear ?? { value: 10 },
         uFadeFar: shared?.uFadeFar ?? { value: 30 },
         uOpacity: { value: 1 },
+        uPremultiply: { value: 0 },
       },
     })
   }
@@ -332,12 +357,38 @@ export class SketchRenderer {
   get camera(): THREE.Camera { return this.orbit.mode === 'perspective' ? this.perspective : this.ortho }
   get orbitState(): OrbitState { return this.orbit }
 
+  /** The colour of the sheet, a colour of one's own winning over the paper's. */
+  setBackground(paper: PaperKind, background?: SketchBackground): void {
+    const pattern: GridPattern = background?.pattern ?? 'dots'
+    const index = { dots: 0, grid: 1, lines: 2, plain: 3 }[pattern]
+    this.background = background
+    this.setPaper(paper)
+    for (const mesh of [this.planeMesh, this.groundMesh]) (mesh.material as THREE.ShaderMaterial).uniforms.uPattern.value = index
+    this.invalidate()
+  }
+
+  /** A picture behind everything. Null clears it. */
+  async setBackgroundImage(id: string | null, blob: Blob | undefined): Promise<void> {
+    if (!id) {
+      this.scene.background = null
+      this.invalidate()
+      return
+    }
+    const texture = await this.textureFor(id, blob)
+    if (texture && !this.disposed) {
+      this.scene.background = texture
+      this.invalidate()
+    }
+  }
+
   setPaper(paper: PaperKind): void {
     this.paper = paper
     const p = PAPER[paper]
-    this.renderer.setClearColor(new THREE.Color(p.bg), 1)
+    this.renderer.setClearColor(new THREE.Color(this.background?.color ?? p.bg), 1)
     const set = (mesh: THREE.Mesh, fill: number, dots: number) => {
+      const pattern = (mesh.material as THREE.ShaderMaterial).uniforms.uPattern
       Object.assign((mesh.material as THREE.ShaderMaterial).uniforms, planeUniforms(p.plane, p.grid, fill, dots), {
+        uPattern: pattern,
         uOrigin: (mesh.material as THREE.ShaderMaterial).uniforms.uOrigin,
         uU: (mesh.material as THREE.ShaderMaterial).uniforms.uU,
         uV: (mesh.material as THREE.ShaderMaterial).uniforms.uV,
@@ -384,6 +435,7 @@ export class SketchRenderer {
       cam.position.copy(eye)
       cam.up.set(0, 1, 0)
       cam.lookAt(toV(target))
+      if (this.orbit.roll) cam.rotateZ(this.orbit.roll)
     }
     this.perspective.aspect = aspect
     this.perspective.near = Math.max(distance / 500, 0.005)
@@ -443,7 +495,9 @@ export class SketchRenderer {
       }
       batch.sync(layer.strokes)
       batch.mesh.visible = layer.visible
-      ;(batch.mesh.material as THREE.ShaderMaterial).uniforms.uOpacity.value = layer.opacity ?? 1
+      const material = batch.mesh.material as THREE.ShaderMaterial
+      material.uniforms.uOpacity.value = layer.opacity ?? 1
+      setBlend(material, layer.blend ?? 'normal')
       batch.mesh.renderOrder = 10 + index
     })
     for (const [id, batch] of this.batches) {

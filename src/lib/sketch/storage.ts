@@ -4,6 +4,7 @@
 // Failures resolve to null or false: the studio must keep drawing in a private
 // window, and says so instead of pretending the work was saved.
 
+import type { SketchBrand } from './brand'
 import { isSketchDoc } from './document'
 import type { ReferenceImage, SketchDoc } from './types'
 
@@ -84,6 +85,48 @@ export async function loadContext(): Promise<ContextItem[]> {
 export async function saveContext(items: ContextItem[]): Promise<boolean> {
   try {
     await run<unknown>(DOCS, 'readwrite', (s) => (items.length ? s.put(items, CONTEXT) : s.delete(CONTEXT)) as IDBRequest<unknown>)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** A finished sketch waiting for the viewer's Clip Studio or cover studio to take it. */
+export interface SketchOutbox { image?: Blob; video?: Blob; width: number; height: number }
+
+const OUTBOX = 'outbox'
+
+export async function saveOutbox(outbox: SketchOutbox): Promise<boolean> {
+  try {
+    const current = await loadOutbox()
+    await run<unknown>(DOCS, 'readwrite', (s) => s.put({ ...current, ...outbox }, OUTBOX) as IDBRequest<unknown>)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function loadOutbox(): Promise<SketchOutbox | null> {
+  try {
+    return (await run<unknown>(DOCS, 'readonly', (s) => s.get(OUTBOX) as IDBRequest<unknown>) as SketchOutbox | undefined) ?? null
+  } catch {
+    return null
+  }
+}
+
+const BRAND = 'brand'
+
+export async function loadBrand(): Promise<SketchBrand | null> {
+  try {
+    return (await run<unknown>(DOCS, 'readonly', (s) => s.get(BRAND) as IDBRequest<unknown>) as SketchBrand | undefined) ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function saveBrand(brand: SketchBrand): Promise<boolean> {
+  try {
+    await run<unknown>(DOCS, 'readwrite', (s) => s.put(brand, BRAND) as IDBRequest<unknown>)
     return true
   } catch {
     return false

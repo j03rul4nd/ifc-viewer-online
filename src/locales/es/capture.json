@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Vista previa: toca un texto o imagen para seleccionarlo, arrástralo para moverlo, arrastra la esquina para cambiar el tamaño, toca dos veces un texto para editarlo. Toca la imagen vacía para reproducir.",
       "resize": "Cambiar tamaño"
-    }
+    },
+    "addSketch": "Añadir mi boceto"
   },
   "cover": {
     "open": "Estudio de portadas — portadas, diapositivas y posts del modelo",
@@ -1100,7 +1101,9 @@
         "grow": "Crecer",
         "stack": "Apilar",
         "crown": "Coronar"
-      }
+      },
+      "sketch": "Boceto",
+      "sketchHint": "Tu último boceto 3D enviado desde el estudio; abre el estudio si no hay ninguno"
     }
   },
   "mobileMenu": "Capturar",

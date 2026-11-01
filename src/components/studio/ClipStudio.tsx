@@ -7,6 +7,7 @@
 // Lazy-loaded; nothing here (or Mediabunny) reaches the main bundle until the
 // studio opens.
 
+import { loadOutbox } from '../../lib/sketch'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -222,6 +223,21 @@ export default function ClipStudio() {
           <Icons.Upload size={14} aria-hidden="true" /> {t('studio.importMedia')}
         </button>
         <input ref={fileRef} type="file" accept="video/*,image/*" multiple hidden onChange={(e) => { void onFiles(e.target.files); e.target.value = '' }} />
+        <button
+          type="button" className="studio-btn" disabled={!!job}
+          onClick={() => {
+            void loadOutbox().then((outbox) => {
+              // Nothing sent yet: the studio is where to make one.
+              if (!outbox?.image && !outbox?.video) { window.open('/sketch', '_blank'); return }
+              const files: File[] = []
+              if (outbox.image) files.push(new File([outbox.image], 'sketch.png', { type: 'image/png' }))
+              if (outbox.video) files.push(new File([outbox.video], `sketch-replay.${outbox.video.type.includes('mp4') ? 'mp4' : 'webm'}`, { type: outbox.video.type }))
+              run(async () => addFiles(files))
+            })
+          }}
+        >
+          <Icons.Upload size={14} aria-hidden="true" /> {t('studio.addSketch')}
+        </button>
         {capturedClip && (
           <button type="button" className="studio-btn" disabled={!!job} onClick={() => run(() => addCaptureBlob(capturedClip.blob, t('editor.preview')))}>
             <Icons.Film size={14} aria-hidden="true" /> {t('studio.addCapture')}

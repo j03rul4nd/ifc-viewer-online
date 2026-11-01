@@ -11,7 +11,9 @@
     "eraser": "橡皮擦",
     "pick": "从图中设置平面",
     "lasso": "套索",
-    "picker": "吸取颜色"
+    "picker": "吸取颜色",
+    "reshape": "调整线条形状",
+    "laser": "激光笔"
   },
   "color": "颜色",
   "customColor": "自定义颜色",
@@ -42,7 +44,8 @@
     "save": "保存",
     "views": "已保存的视图",
     "remove": "移除视图",
-    "orbitHint": "拖动以环绕"
+    "orbitHint": "拖动以环绕",
+    "roll": "旋转画布"
   },
   "layers": {
     "label": "图层",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "3D 线条 (OBJ)",
     "psdHint": "PSD 在 Krita、Clip Studio 和 Sketchbook 中保留图层。在 Procreate 中请从图库导入以保留图层。",
-    "pngClear": "透明 PNG"
+    "pngClear": "透明 PNG",
+    "ora": "Krita、GIMP (ORA)"
   },
   "webgl": "此设备无法启动 3D 绘图。",
   "gpuLost": "系统已收回图形芯片。您的绘图是安全的，会自动恢复。",
@@ -165,7 +169,8 @@
     "try": "用手写笔画一条线进行测试。",
     "noPen": "这不是手写笔。鼠标模式下的数位板会这样显示。",
     "noPressure": "此手写笔未报告压感。请检查数位板驱动；在 Windows 上启用 Windows Ink。",
-    "reading": "压感 {{pressure}} % · 倾斜 {{tilt}}°"
+    "reading": "压感 {{pressure}} % · 倾斜 {{tilt}}°",
+    "custom": "自定义"
   },
   "share": {
     "label": "分享",
@@ -225,5 +230,81 @@
     "hide": "隐藏界面",
     "undo": "撤销、重做",
     "deselect": "取消选择"
+  },
+  "tip": {
+    "label": "笔尖",
+    "round": "圆形",
+    "flat": "扁平笔尖",
+    "dash": "虚线",
+    "bristle": "鬃毛"
+  },
+  "blend": {
+    "label": "混合",
+    "normal": "正常",
+    "multiply": "正片叠底",
+    "screen": "滤色",
+    "add": "相加"
+  },
+  "background": {
+    "color": "纸张颜色",
+    "pattern": "参考线",
+    "dots": "点",
+    "grid": "网格",
+    "lines": "横线",
+    "plain": "无",
+    "use": "用作背景",
+    "clearImage": "移除图片",
+    "imageHint": "任何参考图片都可以放在绘图后面。"
+  },
+  "studios": {
+    "label": "封面和 Clip Studio",
+    "image": "发送此视图",
+    "video": "发送过程视频",
+    "sent": "已发送。请在查看器的封面工作室或 Clip Studio 中添加。"
+  },
+  "meeting": {
+    "label": "会议",
+    "start": "演示",
+    "end": "结束",
+    "audience": "观众窗口",
+    "link": "复制只读链接",
+    "link-copied": "链接已复制。它打开此页面，不会跟随后续更改。",
+    "link-too-long": "此页面太长，无法放入链接。请发送草图文件。",
+    "link-failed": "无法复制链接。",
+    "hint": "在 Meet、Zoom 或 Teams 中共享观众窗口，或投到投影仪。它在此电脑上跟随您。",
+    "readOnly": "只读副本",
+    "keep": "保留副本",
+    "badLink": "无法打开该链接。"
+  },
+  "keymap": {
+    "pen": "钢笔",
+    "pencil": "铅笔",
+    "marker": "马克笔",
+    "line": "直线",
+    "eraser": "橡皮擦",
+    "lasso": "套索",
+    "picker": "吸色",
+    "reshape": "调整形状",
+    "laser": "激光笔",
+    "swap": "交换颜色",
+    "defaults": "默认颜色",
+    "sizeDown": "缩小",
+    "sizeUp": "放大",
+    "rollLeft": "向左旋转",
+    "rollRight": "向右旋转"
+  },
+  "brand": {
+    "label": "您的品牌",
+    "name": "公司",
+    "logo": "上传徽标",
+    "removeLogo": "移除徽标",
+    "colors": "颜色",
+    "removeColor": "移除颜色",
+    "mark": "为图片署名",
+    "top-left": "左上",
+    "top-right": "右上",
+    "bottom-left": "左下",
+    "bottom-right": "右下",
+    "local": "仅保存在此浏览器中：清除其数据会将其删除。"
   }
 }

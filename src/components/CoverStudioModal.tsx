@@ -13,6 +13,7 @@
 // persisted document) over lib/cover/ (templates, design layer, colour,
 // photo finish, facts, captions, recipes — all pure and tested).
 
+import { loadOutbox } from '../lib/sketch'
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
@@ -589,6 +590,14 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           onEvolution={() => void cap.captureEvolution().then(addShots)}
           onAnatomy={() => void cap.captureAnatomy().then(addShots)}
           onCutout={() => void cap.captureCutout().then(addShots)}
+          onSketch={() => {
+            void loadOutbox().then(async (outbox) => {
+              // Nothing sent yet: the studio is where to make one.
+              if (!outbox?.image) { window.open('/sketch', '_blank'); return }
+              const image = await createImageBitmap(outbox.image)
+              addShots([{ id: `sketch-${Date.now()}`, label: 'Sketch', image }])
+            })
+          }}
           modelCount={models.filter((m) => m.visible).length}
           modelDisciplines={models.filter((m) => m.visible).map((m) => ({ id: m.id, fileName: m.fileName, discipline: discOverrides[m.id] ?? disciplineOf(m), manual: m.id in discOverrides }))}
           setDiscipline={(id, d) => setDiscOverrides((o) => {

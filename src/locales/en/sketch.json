@@ -11,7 +11,9 @@
     "eraser": "Eraser",
     "pick": "Set plane from the drawing",
     "lasso": "Lasso",
-    "picker": "Sample a colour"
+    "picker": "Sample a colour",
+    "reshape": "Reshape a line",
+    "laser": "Laser"
   },
   "color": "Colour",
   "customColor": "Custom colour",
@@ -42,7 +44,8 @@
     "save": "Save",
     "views": "Saved views",
     "remove": "Remove view",
-    "orbitHint": "Drag to orbit"
+    "orbitHint": "Drag to orbit",
+    "roll": "Rotate the canvas"
   },
   "layers": {
     "label": "Layers",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "3D lines (OBJ)",
     "psdHint": "PSD opens with layers in Krita, Clip Studio and Sketchbook. In Procreate, import it from the Gallery to keep them.",
-    "pngClear": "Transparent PNG"
+    "pngClear": "Transparent PNG",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "This device could not start 3D drawing.",
   "gpuLost": "The graphics chip was taken away. Your drawing is safe and returns by itself.",
@@ -165,7 +169,8 @@
     "try": "Draw a line with your pen to test it.",
     "noPen": "That was not a pen. A drawing tablet in mouse mode shows up like this.",
     "noPressure": "This pen reports no pressure. Check your tablet driver; on Windows, enable Windows Ink.",
-    "reading": "Pressure {{pressure}} % · tilt {{tilt}}°"
+    "reading": "Pressure {{pressure}} % · tilt {{tilt}}°",
+    "custom": "Custom"
   },
   "share": {
     "label": "Share",
@@ -225,5 +230,81 @@
     "hide": "Hide the interface",
     "undo": "Undo, redo",
     "deselect": "Deselect"
+  },
+  "tip": {
+    "label": "Tip",
+    "round": "Round",
+    "flat": "Flat nib",
+    "dash": "Dashes",
+    "bristle": "Bristle"
+  },
+  "blend": {
+    "label": "Blend",
+    "normal": "Normal",
+    "multiply": "Multiply",
+    "screen": "Screen",
+    "add": "Add"
+  },
+  "background": {
+    "color": "Sheet colour",
+    "pattern": "Guide",
+    "dots": "Dots",
+    "grid": "Grid",
+    "lines": "Lines",
+    "plain": "Plain",
+    "use": "As background",
+    "clearImage": "Remove the picture",
+    "imageHint": "Any reference image can go behind the drawing."
+  },
+  "studios": {
+    "label": "Cover and Clip Studio",
+    "image": "Send this view",
+    "video": "Send the replay",
+    "sent": "Sent. In the viewer, add it from the cover studio or Clip Studio."
+  },
+  "meeting": {
+    "label": "Meetings",
+    "start": "Present",
+    "end": "End",
+    "audience": "Audience window",
+    "link": "Copy read-only link",
+    "link-copied": "Link copied. It opens this page, without following later changes.",
+    "link-too-long": "This page is too long for a link. Send the sketch file instead.",
+    "link-failed": "The link could not be copied.",
+    "hint": "Share the audience window in Meet, Zoom or Teams, or put it on a projector. It follows you on this computer.",
+    "readOnly": "Read-only copy",
+    "keep": "Keep a copy",
+    "badLink": "That link could not be opened."
+  },
+  "keymap": {
+    "pen": "Pen",
+    "pencil": "Pencil",
+    "marker": "Marker",
+    "line": "Line",
+    "eraser": "Eraser",
+    "lasso": "Lasso",
+    "picker": "Sample",
+    "reshape": "Reshape",
+    "laser": "Laser",
+    "swap": "Swap colours",
+    "defaults": "Default colours",
+    "sizeDown": "Smaller",
+    "sizeUp": "Bigger",
+    "rollLeft": "Rotate left",
+    "rollRight": "Rotate right"
+  },
+  "brand": {
+    "label": "Your brand",
+    "name": "Company",
+    "logo": "Upload logo",
+    "removeLogo": "Remove logo",
+    "colors": "Colours",
+    "removeColor": "Remove colour",
+    "mark": "Sign images",
+    "top-left": "Top left",
+    "top-right": "Top right",
+    "bottom-left": "Bottom left",
+    "bottom-right": "Bottom right",
+    "local": "Saved in this browser only: clearing its data deletes it."
   }
 }

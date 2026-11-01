@@ -24,7 +24,7 @@ const escapeXml = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&a
 export function exportSvg(layers: readonly SketchLayer[], width: number, height: number, background: string, project: Project): string {
   const body = layers
     .filter((l) => l.visible)
-    .map((l) => `<g id="${escapeXml(`layer-${l.name}`)}"${(l.opacity ?? 1) < 1 ? ` opacity="${l.opacity}"` : ''}>${l.strokes.map((s) => strokePath(s, project)).join('')}</g>`)
+    .map((l) => `<g id="${escapeXml(`layer-${l.name}`)}"${(l.opacity ?? 1) < 1 ? ` opacity="${l.opacity}"` : ''}${l.blend && l.blend !== 'normal' ? ` style="mix-blend-mode:${l.blend === 'add' ? 'plus-lighter' : l.blend}"` : ''}>${l.strokes.map((s) => strokePath(s, project)).join('')}</g>`)
     .join('')
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="${background}"/>${body}</svg>`
 }

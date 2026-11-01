@@ -5,11 +5,12 @@
 import { useEffect } from 'react'
 import { activePage, forgetImage, replacePresent, setPageThumb, startHistory } from '../../lib/sketch/document'
 import { SKETCH_CHANNEL, type HandoffMessage } from '../../lib/sketch/handoff'
+import { decodeSketchLink } from '../../lib/sketch/share-link'
 import { SaveQueue } from '../../lib/sketch/save-queue'
-import { deleteImage, loadContext, loadDoc, loadImages, saveDoc } from '../../lib/sketch/storage'
+import { deleteImage, loadBrand, loadContext, loadDoc, loadImages, saveDoc } from '../../lib/sketch/storage'
 import type { SketchDoc } from '../../lib/sketch/types'
 import { useSketchStore } from '../../stores/sketchStore'
-import { placeReference, showContext } from './actions'
+import { applyOrbit, placeReference, showContext } from './actions'
 
 const store = useSketchStore
 const SAVE_DELAY_MS = 700
@@ -23,10 +24,13 @@ const whenIdle = (work: () => void): void => {
 }
 
 /** `handoff`: read once from the URL by the studio. */
-export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: (key: string) => string): void {
+export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: (key: string) => string, mode: 'edit' | 'audience' | 'link' = 'edit'): void {
   useEffect(() => {
+    const readOnly = mode !== 'edit'
+    store.getState().set({ readOnly })
     const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(SKETCH_CHANNEL)
-    const queue = new SaveQueue<SketchDoc>(saveDoc, (ok) => {
+    const queue = new SaveQueue<SketchDoc>(async (doc) => (readOnly ? true : saveDoc(doc)), (ok) => {
+      if (readOnly) return
       store.getState().set({ saveFailed: !ok })
       if (ok) channel?.postMessage('saved' satisfies Message)
     })
@@ -36,9 +40,15 @@ export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: 
     let thumbTimer = 0
     store.getState().set({ preparing: handoff === 'waiting' })
 
-    void Promise.all([loadDoc(), loadImages()]).then(([doc, images]) => {
+    // A link's sketch stays out of the reader's own: their saved work is not touched.
+    const initial = mode === 'link'
+      ? decodeSketchLink(location.hash.match(/s=([\w-]+)/)?.[1] ?? '')
+      : loadDoc()
+    void loadBrand().then((brand) => { if (alive && brand) store.getState().set({ brand }) })
+    void Promise.all([initial, loadImages()]).then(([doc, images]) => {
       if (!alive) return
       if (doc) store.getState().set({ history: startHistory(doc) })
+      else if (mode === 'link') store.getState().flash(tx('meeting.badLink'))
       store.getState().set({ images })
       loaded = true
     })
@@ -72,9 +82,26 @@ export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: 
     const onHide = () => { if (document.visibilityState === 'hidden' && loaded) queue.push(store.getState().history.present) }
     document.addEventListener('visibilitychange', onHide)
 
+    // The presenter's camera, page and laser go to the audience window.
+    const presenting = channel ? store.subscribe((s, prev) => {
+      if (!s.meeting || readOnly) return
+      if (s.orbit === prev.orbit && s.laser === prev.laser && s.history.present.activePageId === prev.history.present.activePageId) return
+      channel.postMessage({ type: 'view', orbit: s.orbit, pageId: s.history.present.activePageId, laser: s.laser } satisfies Message)
+    }) : () => undefined
+
     if (channel) {
       channel.onmessage = (e: MessageEvent<Message>) => {
         const s = store.getState()
+        if (mode === 'link') return
+        if (mode === 'audience' && e.data !== 'saved') {
+          if (e.data.type === 'view') {
+            const { orbit, pageId, laser } = e.data
+            applyOrbit(orbit)
+            s.set({ laser })
+            if (s.history.present.activePageId !== pageId) s.touch((doc) => ({ ...doc, activePageId: pageId }))
+          }
+          return
+        }
         if (e.data === 'saved') {
           if (s.drawing) return
           void Promise.all([loadDoc(), loadImages()]).then(([doc, images]) => {
@@ -92,6 +119,9 @@ export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: 
             s.set({ preparing: false })
             if (e.data.type === 'context-ready') adopt(true)
             else s.flash(tx(e.data.reason === 'too-big' ? 'context.tooBig' : 'context.failed'))
+            break
+          case 'view':
+          case 'outbox':
             break
           case 'images-changed':
             void loadImages().then((images) => { if (alive) store.getState().set({ images }) })
@@ -113,6 +143,7 @@ export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: 
     return () => {
       alive = false
       waitEngine()
+      presenting()
       unsubscribe()
       window.clearTimeout(saveTimer)
       window.clearTimeout(thumbTimer)
@@ -120,5 +151,5 @@ export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: 
       if (loaded) queue.push(store.getState().history.present)
       void queue.flushed().then(() => channel?.close())
     }
-  }, [handoff, tx])
+  }, [handoff, mode, tx])
 }

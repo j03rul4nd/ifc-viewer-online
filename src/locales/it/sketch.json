@@ -11,7 +11,9 @@
     "eraser": "Gomma",
     "pick": "Imposta il piano dal disegno",
     "lasso": "Lazo",
-    "picker": "Preleva un colore"
+    "picker": "Preleva un colore",
+    "reshape": "Rimodella una linea",
+    "laser": "Laser"
   },
   "color": "Colore",
   "customColor": "Colore personalizzato",
@@ -42,7 +44,8 @@
     "save": "Salva",
     "views": "Viste salvate",
     "remove": "Rimuovi vista",
-    "orbitHint": "Trascina per orbitare"
+    "orbitHint": "Trascina per orbitare",
+    "roll": "Ruota la tela"
   },
   "layers": {
     "label": "Livelli",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "Linee 3D (OBJ)",
     "psdHint": "Il PSD si apre con i livelli in Krita, Clip Studio e Sketchbook. In Procreate importalo dalla Galleria per conservarli.",
-    "pngClear": "PNG trasparente"
+    "pngClear": "PNG trasparente",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "Questo dispositivo non ha potuto avviare il disegno 3D.",
   "gpuLost": "Il sistema ha ritirato il chip grafico. Il disegno è al sicuro e torna da solo.",
@@ -165,7 +169,8 @@
     "try": "Traccia una linea con la penna per provarla.",
     "noPen": "Non era una penna. Una tavoletta in modalità mouse appare così.",
     "noPressure": "Questa penna non segnala la pressione. Controlla il driver della tavoletta; su Windows attiva Windows Ink.",
-    "reading": "Pressione {{pressure}} % · inclinazione {{tilt}}°"
+    "reading": "Pressione {{pressure}} % · inclinazione {{tilt}}°",
+    "custom": "Personale"
   },
   "share": {
     "label": "Condividi",
@@ -225,5 +230,81 @@
     "hide": "Nascondi l'interfaccia",
     "undo": "Annulla, ripeti",
     "deselect": "Deseleziona"
+  },
+  "tip": {
+    "label": "Punta",
+    "round": "Tonda",
+    "flat": "Pennino piatto",
+    "dash": "Tratteggio",
+    "bristle": "Setole"
+  },
+  "blend": {
+    "label": "Fusione",
+    "normal": "Normale",
+    "multiply": "Moltiplica",
+    "screen": "Scherma",
+    "add": "Somma"
+  },
+  "background": {
+    "color": "Colore del foglio",
+    "pattern": "Guida",
+    "dots": "Punti",
+    "grid": "Griglia",
+    "lines": "Righe",
+    "plain": "Liscio",
+    "use": "Come sfondo",
+    "clearImage": "Rimuovi l'immagine",
+    "imageHint": "Qualsiasi immagine di riferimento può stare dietro al disegno."
+  },
+  "studios": {
+    "label": "Copertina e Clip Studio",
+    "image": "Invia questa vista",
+    "video": "Invia il processo",
+    "sent": "Inviato. Nel visualizzatore, aggiungilo dallo studio copertine o da Clip Studio."
+  },
+  "meeting": {
+    "label": "Riunioni",
+    "start": "Presenta",
+    "end": "Termina",
+    "audience": "Finestra del pubblico",
+    "link": "Copia link di lettura",
+    "link-copied": "Link copiato. Apre questa pagina, senza seguire le modifiche successive.",
+    "link-too-long": "Questa pagina è troppo lunga per un link. Invia il file dello schizzo.",
+    "link-failed": "Impossibile copiare il link.",
+    "hint": "Condividi la finestra del pubblico in Meet, Zoom o Teams, o su un proiettore. Ti segue su questo computer.",
+    "readOnly": "Copia di sola lettura",
+    "keep": "Tieni una copia",
+    "badLink": "Impossibile aprire il link."
+  },
+  "keymap": {
+    "pen": "Penna",
+    "pencil": "Matita",
+    "marker": "Pennarello",
+    "line": "Linea",
+    "eraser": "Gomma",
+    "lasso": "Lazo",
+    "picker": "Preleva",
+    "reshape": "Rimodella",
+    "laser": "Laser",
+    "swap": "Scambia i colori",
+    "defaults": "Colori predefiniti",
+    "sizeDown": "Più piccolo",
+    "sizeUp": "Più grande",
+    "rollLeft": "Ruota a sinistra",
+    "rollRight": "Ruota a destra"
+  },
+  "brand": {
+    "label": "Il tuo marchio",
+    "name": "Azienda",
+    "logo": "Carica logo",
+    "removeLogo": "Rimuovi logo",
+    "colors": "Colori",
+    "removeColor": "Rimuovi colore",
+    "mark": "Firma le immagini",
+    "top-left": "In alto a sinistra",
+    "top-right": "In alto a destra",
+    "bottom-left": "In basso a sinistra",
+    "bottom-right": "In basso a destra",
+    "local": "Salvato solo in questo browser: cancellandone i dati si perde."
   }
 }

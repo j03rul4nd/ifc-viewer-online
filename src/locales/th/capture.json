@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "เพิ่มภาพร่างของฉัน"
   },
   "cover": {
     "open": "สตูดิโอปก — สร้างปก สไลด์ และโพสต์จากโมเดล",
@@ -1100,7 +1101,9 @@
         "grow": "เติบโต",
         "stack": "ซ้อน",
         "crown": "ยอด"
-      }
+      },
+      "sketch": "ภาพร่าง",
+      "sketchHint": "ภาพร่าง 3 มิติล่าสุดที่ส่งจากสตูดิโอ หากไม่มีจะเปิดสตูดิโอ"
     }
   },
   "mobileMenu": "จับภาพ",

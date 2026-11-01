@@ -11,7 +11,9 @@
     "eraser": "Radierer",
     "pick": "Ebene aus der Zeichnung setzen",
     "lasso": "Lasso",
-    "picker": "Farbe aufnehmen"
+    "picker": "Farbe aufnehmen",
+    "reshape": "Linie umformen",
+    "laser": "Laser"
   },
   "color": "Farbe",
   "customColor": "Eigene Farbe",
@@ -42,7 +44,8 @@
     "save": "Speichern",
     "views": "Gespeicherte Ansichten",
     "remove": "Ansicht entfernen",
-    "orbitHint": "Zum Drehen ziehen"
+    "orbitHint": "Zum Drehen ziehen",
+    "roll": "Leinwand drehen"
   },
   "layers": {
     "label": "Ebenen",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "3D-Linien (OBJ)",
     "psdHint": "PSD öffnet mit Ebenen in Krita, Clip Studio und Sketchbook. In Procreate über die Galerie importieren, um sie zu behalten.",
-    "pngClear": "Transparentes PNG"
+    "pngClear": "Transparentes PNG",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "Dieses Gerät konnte das 3D-Zeichnen nicht starten.",
   "gpuLost": "Das System hat den Grafikchip entzogen. Ihre Zeichnung ist sicher und kommt von selbst zurück.",
@@ -165,7 +169,8 @@
     "try": "Ziehen Sie mit dem Stift eine Linie, um ihn zu testen.",
     "noPen": "Das war kein Stift. Ein Grafiktablett im Mausmodus erscheint so.",
     "noPressure": "Dieser Stift meldet keinen Druck. Prüfen Sie den Tablett-Treiber; unter Windows Windows Ink aktivieren.",
-    "reading": "Druck {{pressure}} % · Neigung {{tilt}}°"
+    "reading": "Druck {{pressure}} % · Neigung {{tilt}}°",
+    "custom": "Eigene"
   },
   "share": {
     "label": "Teilen",
@@ -225,5 +230,81 @@
     "hide": "Oberfläche ausblenden",
     "undo": "Rückgängig, wiederholen",
     "deselect": "Auswahl aufheben"
+  },
+  "tip": {
+    "label": "Spitze",
+    "round": "Rund",
+    "flat": "Flache Feder",
+    "dash": "Striche",
+    "bristle": "Borsten"
+  },
+  "blend": {
+    "label": "Mischen",
+    "normal": "Normal",
+    "multiply": "Multiplizieren",
+    "screen": "Negativ multiplizieren",
+    "add": "Addieren"
+  },
+  "background": {
+    "color": "Blattfarbe",
+    "pattern": "Hilfslinien",
+    "dots": "Punkte",
+    "grid": "Raster",
+    "lines": "Linien",
+    "plain": "Leer",
+    "use": "Als Hintergrund",
+    "clearImage": "Bild entfernen",
+    "imageHint": "Jedes Referenzbild kann hinter die Zeichnung."
+  },
+  "studios": {
+    "label": "Cover und Clip Studio",
+    "image": "Diese Ansicht senden",
+    "video": "Prozess senden",
+    "sent": "Gesendet. Fügen Sie es im Viewer aus dem Cover Studio oder Clip Studio hinzu."
+  },
+  "meeting": {
+    "label": "Besprechungen",
+    "start": "Präsentieren",
+    "end": "Beenden",
+    "audience": "Publikumsfenster",
+    "link": "Nur-Lese-Link kopieren",
+    "link-copied": "Link kopiert. Er öffnet diese Seite, ohne spätere Änderungen.",
+    "link-too-long": "Diese Seite ist zu lang für einen Link. Senden Sie die Skizzendatei.",
+    "link-failed": "Der Link konnte nicht kopiert werden.",
+    "hint": "Teilen Sie das Publikumsfenster in Meet, Zoom oder Teams oder zeigen Sie es am Beamer. Es folgt Ihnen auf diesem Computer.",
+    "readOnly": "Schreibgeschützte Kopie",
+    "keep": "Kopie behalten",
+    "badLink": "Dieser Link konnte nicht geöffnet werden."
+  },
+  "keymap": {
+    "pen": "Stift",
+    "pencil": "Bleistift",
+    "marker": "Marker",
+    "line": "Linie",
+    "eraser": "Radierer",
+    "lasso": "Lasso",
+    "picker": "Farbe aufnehmen",
+    "reshape": "Umformen",
+    "laser": "Laser",
+    "swap": "Farben tauschen",
+    "defaults": "Standardfarben",
+    "sizeDown": "Kleiner",
+    "sizeUp": "Größer",
+    "rollLeft": "Nach links drehen",
+    "rollRight": "Nach rechts drehen"
+  },
+  "brand": {
+    "label": "Ihre Marke",
+    "name": "Firma",
+    "logo": "Logo hochladen",
+    "removeLogo": "Logo entfernen",
+    "colors": "Farben",
+    "removeColor": "Farbe entfernen",
+    "mark": "Bilder signieren",
+    "top-left": "Oben links",
+    "top-right": "Oben rechts",
+    "bottom-left": "Unten links",
+    "bottom-right": "Unten rechts",
+    "local": "Nur in diesem Browser gespeichert: Beim Löschen seiner Daten geht es verloren."
   }
 }

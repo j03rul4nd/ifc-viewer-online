@@ -11,7 +11,9 @@
     "eraser": "Borrador",
     "pick": "Fijar plano desde el dibujo",
     "lasso": "Lazo",
-    "picker": "Tomar un color"
+    "picker": "Tomar un color",
+    "reshape": "Remodelar una línea",
+    "laser": "Láser"
   },
   "color": "Color",
   "customColor": "Color personalizado",
@@ -42,7 +44,8 @@
     "save": "Guardar",
     "views": "Vistas guardadas",
     "remove": "Quitar vista",
-    "orbitHint": "Arrastra para orbitar"
+    "orbitHint": "Arrastra para orbitar",
+    "roll": "Girar el lienzo"
   },
   "layers": {
     "label": "Capas",
@@ -133,7 +136,8 @@
     "blender": "Blender (.py)",
     "obj": "Líneas 3D (OBJ)",
     "psdHint": "El PSD abre con capas en Krita, Clip Studio y Sketchbook. En Procreate, impórtalo desde la Galería para conservarlas.",
-    "pngClear": "PNG transparente"
+    "pngClear": "PNG transparente",
+    "ora": "Krita, GIMP (ORA)"
   },
   "webgl": "Este dispositivo no pudo iniciar el dibujo en 3D.",
   "gpuLost": "El sistema retiró el chip gráfico. Tu dibujo está a salvo y vuelve solo.",
@@ -165,7 +169,8 @@
     "try": "Traza una línea con tu lápiz para probarlo.",
     "noPen": "Eso no era un lápiz. Una tableta en modo ratón se ve así.",
     "noPressure": "Este lápiz no informa de presión. Revisa el controlador de la tableta; en Windows, activa Windows Ink.",
-    "reading": "Presión {{pressure}} % · inclinación {{tilt}}°"
+    "reading": "Presión {{pressure}} % · inclinación {{tilt}}°",
+    "custom": "Propia"
   },
   "share": {
     "label": "Compartir",
@@ -225,5 +230,81 @@
     "hide": "Ocultar la interfaz",
     "undo": "Deshacer, rehacer",
     "deselect": "Quitar selección"
+  },
+  "tip": {
+    "label": "Punta",
+    "round": "Redonda",
+    "flat": "Plumilla plana",
+    "dash": "Guiones",
+    "bristle": "Cerdas"
+  },
+  "blend": {
+    "label": "Fusión",
+    "normal": "Normal",
+    "multiply": "Multiplicar",
+    "screen": "Trama",
+    "add": "Sumar"
+  },
+  "background": {
+    "color": "Color de la hoja",
+    "pattern": "Guía",
+    "dots": "Puntos",
+    "grid": "Cuadrícula",
+    "lines": "Líneas",
+    "plain": "Lisa",
+    "use": "Como fondo",
+    "clearImage": "Quitar la imagen",
+    "imageHint": "Cualquier imagen de referencia puede ir detrás del dibujo."
+  },
+  "studios": {
+    "label": "Portada y Clip Studio",
+    "image": "Enviar esta vista",
+    "video": "Enviar el proceso",
+    "sent": "Enviado. En el visor, añádelo desde el estudio de portadas o el Clip Studio."
+  },
+  "meeting": {
+    "label": "Reuniones",
+    "start": "Presentar",
+    "end": "Terminar",
+    "audience": "Ventana de audiencia",
+    "link": "Copiar enlace de lectura",
+    "link-copied": "Enlace copiado. Abre esta página, sin seguir los cambios posteriores.",
+    "link-too-long": "Esta página es demasiado larga para un enlace. Envía el archivo de boceto.",
+    "link-failed": "No se pudo copiar el enlace.",
+    "hint": "Comparte la ventana de audiencia en Meet, Zoom o Teams, o ponla en un proyector. Te sigue en este ordenador.",
+    "readOnly": "Copia de solo lectura",
+    "keep": "Guardar una copia",
+    "badLink": "No se pudo abrir ese enlace."
+  },
+  "keymap": {
+    "pen": "Pluma",
+    "pencil": "Lápiz",
+    "marker": "Rotulador",
+    "line": "Línea",
+    "eraser": "Borrador",
+    "lasso": "Lazo",
+    "picker": "Tomar color",
+    "reshape": "Remodelar",
+    "laser": "Láser",
+    "swap": "Intercambiar colores",
+    "defaults": "Colores por defecto",
+    "sizeDown": "Más pequeño",
+    "sizeUp": "Más grande",
+    "rollLeft": "Girar a la izquierda",
+    "rollRight": "Girar a la derecha"
+  },
+  "brand": {
+    "label": "Tu marca",
+    "name": "Empresa",
+    "logo": "Subir logo",
+    "removeLogo": "Quitar logo",
+    "colors": "Colores",
+    "removeColor": "Quitar color",
+    "mark": "Firmar imágenes",
+    "top-left": "Arriba izquierda",
+    "top-right": "Arriba derecha",
+    "bottom-left": "Abajo izquierda",
+    "bottom-right": "Abajo derecha",
+    "local": "Guardado solo en este navegador: si borras sus datos, se pierde."
   }
 }

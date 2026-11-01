@@ -3,7 +3,7 @@
 // therefore a list of earlier documents, and holding a hundred of them costs
 // little more than holding one.
 
-import type { PaperKind, PlacedImage, SavedView, SketchDoc, SketchLayer, SketchPage, Stroke } from './types'
+import type { LayerBlend, PaperKind, SketchBackground, PlacedImage, SavedView, SketchDoc, SketchLayer, SketchPage, Stroke } from './types'
 
 export const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -121,7 +121,7 @@ export function addLayer(doc: SketchDoc, name: string): SketchDoc {
   return updatePage(doc, (page) => ({ ...page, layers: [...page.layers, layer], activeLayerId: layer.id }))
 }
 
-export function patchLayer(doc: SketchDoc, id: string, patch: Partial<Pick<SketchLayer, 'visible' | 'locked' | 'name' | 'opacity'>>): SketchDoc {
+export function patchLayer(doc: SketchDoc, id: string, patch: Partial<Pick<SketchLayer, 'visible' | 'locked' | 'name' | 'opacity' | 'blend'>>): SketchDoc {
   return updatePage(doc, (page) => updateLayer(page, id, (l) => ({ ...l, ...patch })))
 }
 
@@ -175,10 +175,16 @@ export const removePlaced = (doc: SketchDoc, id: string): SketchDoc =>
 
 /** Removes an image from the library: nothing may keep pointing at missing bytes. */
 export function forgetImage(doc: SketchDoc, imageId: string): SketchDoc {
-  return { ...doc, pages: doc.pages.map((p) => (p.placed.some((i) => i.imageId === imageId) ? { ...p, placed: p.placed.filter((i) => i.imageId !== imageId) } : p)) }
+  const background = doc.background?.imageId === imageId ? { ...doc.background, imageId: undefined } : doc.background
+  return { ...doc, background, pages: doc.pages.map((p) => (p.placed.some((i) => i.imageId === imageId) ? { ...p, placed: p.placed.filter((i) => i.imageId !== imageId) } : p)) }
 }
 
-export const setPaper = (doc: SketchDoc, paper: PaperKind): SketchDoc => ({ ...doc, paper })
+export const setBackground = (doc: SketchDoc, patch: SketchBackground): SketchDoc => ({ ...doc, background: { ...doc.background, ...patch } })
+
+export type { LayerBlend }
+
+/** Choosing a paper also drops a colour of one's own. */
+export const setPaper = (doc: SketchDoc, paper: PaperKind): SketchDoc => ({ ...doc, paper, background: doc.background && { ...doc.background, color: undefined } })
 
 // ── History ──────────────────────────────────────────────────────────────────
 
