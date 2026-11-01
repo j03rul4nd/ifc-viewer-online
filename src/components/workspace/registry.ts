@@ -6,7 +6,7 @@
 
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles } from 'lucide-react'
+import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles, Boxes } from 'lucide-react'
 import type { WorkspaceData, TicketKind } from './sample-data'
 import type { CheckoutItem } from '../../lib/pricing/checkout'
 import Overview from './sections/Overview'
@@ -26,9 +26,10 @@ import Reception from './sections/Reception'
 import Integrations from './sections/Integrations'
 import Api from './sections/Api'
 import Ai from './sections/Ai'
+import Middleware from './sections/Middleware'
 
 export type SectionId = 'overview' | 'projects' | 'jobs' | 'certificates' | 'team' | 'billing' | 'settings' | 'privacy' | 'support' | 'scenes' | 'data'
-  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai'
+  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai' | 'middleware'
 
 /** Plans in rank order; a section is open to its plan and every plan above. */
 export const PLAN_RANK = { pro: 1, team: 2 } as const
@@ -79,6 +80,7 @@ export const SECTIONS: SectionDef[] = [
   { id: 'reception', label: 'Reception', icon: Inbox, requires: 'team', secondary: true, soon: true, pitch: 'Receive supplier models that already meet your requirements, and see who delivers well.', Component: Reception },
   { id: 'integrations', label: 'Integrations', icon: Blocks, requires: 'pro', secondary: true, soon: true, Component: Integrations },
   { id: 'api', label: 'API', icon: Code2, requires: 'pro', secondary: true, soon: true, Component: Api },
+  { id: 'middleware', label: 'Middleware', icon: Boxes, requires: 'team', secondary: true, soon: true, pitch: 'Run your APIs, cron jobs and ETLs next to your database, and feed the twin from them.', Component: Middleware },
   { id: 'ai', label: 'AI credits', short: 'AI', icon: Sparkles, requires: 'pro', secondary: true, soon: true, Component: Ai },
   { id: 'billing', label: 'Credits & billing', short: 'Billing', icon: CreditCard, requires: 'pro', group: 'account', Component: Billing },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, requires: 'pro', secondary: true, group: 'account', Component: Settings },
