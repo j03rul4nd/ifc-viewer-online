@@ -10,7 +10,7 @@ import { SaveQueue } from '../../lib/sketch/save-queue'
 import { deleteImage, loadBrand, loadContext, loadDoc, loadImages, saveDoc } from '../../lib/sketch/storage'
 import type { SketchDoc } from '../../lib/sketch/types'
 import { useSketchStore } from '../../stores/sketchStore'
-import { applyOrbit, placeReference, showContext } from './actions'
+import { applyOrbit, fitAll, placeReference, showContext } from './actions'
 
 const store = useSketchStore
 const SAVE_DELAY_MS = 700
@@ -49,6 +49,17 @@ export function useSketchPersistence(handoff: 'none' | 'waiting' | 'ready', tx: 
       if (!alive) return
       if (doc) store.getState().set({ history: startHistory(doc) })
       else if (mode === 'link') store.getState().flash(tx('meeting.badLink'))
+      // A link carries no camera, so frame what it brought.
+      if (doc && mode === 'link') {
+        if (store.getState().engine) fitAll()
+        else {
+          const stop = store.subscribe((s) => {
+            if (!s.engine) return
+            stop()
+            fitAll()
+          })
+        }
+      }
       store.getState().set({ images })
       loaded = true
     })

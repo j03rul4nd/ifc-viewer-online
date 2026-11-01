@@ -391,7 +391,7 @@ function postImages(post: BlogPost): SearchImage[] {
         width: block.width,
         height: block.height,
       })
-    } else if (block.type === 'tool-demo' || block.type === 'spatial-demo') {
+    } else if (block.type === 'tool-demo' || block.type === 'spatial-demo' || block.type === 'sketch-demo') {
       // A live demo shows its poster until the reader starts it — for a
       // crawler, the poster is the picture of the demo. The twin posts'
       // only capture of the full scene is one of these.
@@ -541,6 +541,8 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
     }
     case 'spatial-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /><figcaption>${esc(block.readyLabel ?? block.title)}</figcaption></figure></section>`
+    case 'sketch-demo':
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="500" loading="lazy" decoding="async" /></figure><p><a href="/sketch">${esc(block.labels.open)}</a></p></section>`
     case 'tool-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /></figure><p><a href="/${prefix}">${esc(editorialCopy(langOf(prefix)).post.openInteractiveViewer)}</a></p></section>`
     case 'video': {
