@@ -91,6 +91,10 @@ export const PAID_FEATURE_DEFS: PaidFeatureDef[] = [
   { id: 'api_credits', code: 'DEV', family: 'api', plan: 'developer', status: 'preview', server: true, section: 'api',
     title: 'Hosted API with credits', pitch: '5,000 credits a month, then €0.01 a credit. Validate, store and compare by API.' },
 
+  { id: 'automations', code: 'AU', family: 'api', plan: 'team', status: 'preview', server: true, section: 'automations',
+    title: 'Automations', pitch: 'The routine checks and chasing of a BIM coordinator, done every time, by rules you own.' },
+  { id: 'value_report', code: 'VR', family: 'api', plan: 'team', status: 'preview', server: true, section: 'value',
+    title: 'Value report', pitch: 'Hours and money saved, on measured counts, ready for the board.' },
   { id: 'data_middleware', code: 'MW', family: 'api', plan: 'enterprise', status: 'preview', server: true, section: 'middleware',
     title: 'Data middleware', pitch: 'Verified containers that feed the twin from your data. By agreement: Enterprise, or an extra on your plan.' },
 
