@@ -9,6 +9,7 @@ import { MEASURE_POSTS_EN } from './blog-measure-en.ts'
 import { FOLDABLE_POSTS_EN } from './blog-foldable-en.ts'
 import { TRACKING_POSTS_EN } from './blog-tracking-en.ts'
 import { SKETCH_POSTS_EN } from './blog-sketch-en.ts'
+import { DRAWINGS_POSTS_EN } from './blog-drawings-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -203,6 +204,7 @@ export type ContentBlock =
       type: 'tool-demo'
       demo:
         | 'compare-versions'
+        | 'drawings-scene'
         | 'video-generator'
         | 'cover-generator'
         | 'sun-study'
@@ -377,6 +379,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
   ...MEASURE_POSTS_EN,
   ...TRACKING_POSTS_EN,
   ...SKETCH_POSTS_EN,
+  ...DRAWINGS_POSTS_EN,
   ...FOLDABLE_POSTS_EN,
   ...FLOOD_POSTS_EN,
   ...SHANGHAI_POSTS_EN,

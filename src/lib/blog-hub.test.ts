@@ -35,6 +35,8 @@ describe('blog hub discovery', () => {
     const results = filterBlogPosts(BLOG_POSTS, { journey: spatial })
     expect(results.map((post) => post.slug)).toEqual(expect.arrayContaining([
       'ifc-point-cloud-browser-scan-to-bim',
+      'ifc-point-cloud-plans-live-data-one-scene',
+      'check-point-cloud-against-ifc-floor-plan',
       'real-time-lidar-web-digital-twin-mcap',
       'ifc-video-3d-terrain-construction-progress',
       'warehouse-ifc-moving-lidar-digital-twin',
@@ -61,7 +63,7 @@ describe('blog hub discovery', () => {
       'city-open-data-browser-test',
       'real-time-city-data-freshness-test',
     ]))
-    expect(results).toHaveLength(29)
+    expect(results).toHaveLength(31)
   })
 
   it('filters by category and sorts short reads first', () => {

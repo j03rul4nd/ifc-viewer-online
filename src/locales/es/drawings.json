@@ -1,0 +1,203 @@
+{
+  "title": "Planos",
+  "sheet": "Plano",
+  "none": "Aún no hay planos",
+  "blank": "Plano en blanco nuevo",
+  "blankName": "Plano {{n}}",
+  "fit": "Encuadrar",
+  "paper": "Papel",
+  "dark": "Oscuro",
+  "panel": "Panel",
+  "close": "Cerrar planos",
+  "undo": "Deshacer",
+  "redo": "Rehacer",
+  "working": "Trabajando…",
+  "dismiss": "Cerrar",
+  "empty": {
+    "title": "Tus planos, junto al modelo",
+    "body": "Abre un DXF o un PDF, o corta una planta del IFC. Los ficheros se quedan en este navegador."
+  },
+  "import": {
+    "button": "Abrir DXF / PDF",
+    "skipped": "No leído de este fichero: {{list}}.",
+    "pdfTruncated": "Esta página tiene más líneas de las que se pueden leer: algunas faltan en el forzado y en el DXF."
+  },
+  "errors": {
+    "dwg": "{{name}} es un DWG (AutoCAD {{detail}}). Aún no se puede abrir DWG aquí. Guárdalo como DXF: en AutoCAD, Guardar como → DXF, o conviértelo en tu ordenador con el ODA File Converter gratuito, y abre el DXF.",
+    "dxfBinary": "{{name}} es un DXF binario. Guárdalo de nuevo como DXF ASCII y abre ese.",
+    "notDxf": "{{name}} no es un DXF ni un PDF que este visor pueda leer.",
+    "tooBig": "{{name}} se expande a demasiadas entidades para dibujarlas en un navegador.",
+    "pdfPassword": "{{name}} está protegido con contraseña. Quítala e inténtalo de nuevo.",
+    "pdfBroken": "{{name}} no se pudo leer como PDF: {{detail}}",
+    "unknown": "{{name}} no se pudo abrir: {{detail}}",
+    "emptyCut": "Ese corte no atraviesa ninguna geometría. Prueba con otro nivel o altura.",
+    "cutFailed": "El corte ha fallado: {{detail}}",
+    "emptyScan": "Ese corte no atraviesa ningún punto. Prueba otra altura o un corte más grueso."
+  },
+  "tools": {
+    "label": "Herramientas de dibujo",
+    "select": "Seleccionar y mover",
+    "pan": "Desplazar",
+    "line": "Línea",
+    "polyline": "Polilínea",
+    "rect": "Rectángulo",
+    "circle": "Círculo",
+    "text": "Texto",
+    "dimension": "Cota",
+    "calibrate": "Fijar la escala",
+    "align": "Alinear con el modelo"
+  },
+  "hints": {
+    "select": "Clic para seleccionar, arrastra para mover, Supr para borrar.",
+    "pan": "Arrastra para desplazar, rueda para acercar.",
+    "line": "Clic en dos puntos.",
+    "polyline": "Clic en los puntos; doble clic o Intro para terminar.",
+    "rect": "Clic en dos esquinas.",
+    "circle": "Clic en el centro y luego en el borde.",
+    "text": "Clic donde va el texto.",
+    "dimension": "Clic en dos puntos para medirlos y rotularlos.",
+    "calibrate": "Clic en los extremos de una longitud conocida.",
+    "align": "Clic en este plano y luego en el mismo punto de la referencia. Dos veces."
+  },
+  "ask": {
+    "text": "Texto",
+    "length": "Longitud real (m)",
+    "ok": "Aceptar",
+    "cancel": "Cancelar"
+  },
+  "calibrate": {
+    "done": "Escala fijada: 1 unidad = {{value}} m."
+  },
+  "generate": {
+    "title": "Desde el IFC",
+    "needModel": "Carga un modelo para cortar plantas y secciones.",
+    "kind": "Qué cortar",
+    "plan": "Planta",
+    "sectionX": "Sección por X",
+    "sectionY": "Sección por Y",
+    "level": "Nivel",
+    "base": "Base del modelo",
+    "height": "Altura de corte sobre el nivel",
+    "position": "Posición de la sección",
+    "run": "Generar",
+    "planName": "Planta {{level}} +{{height}} m",
+    "sectionName": "Sección {{axis}} {{pos}}%"
+  },
+  "sheetSection": "Este plano",
+  "elevation": "Altura",
+  "live": "Dispositivos en vivo ({{count}})",
+  "page": "Página {{n}} de {{total}}",
+  "units": "1 unidad = {{value}} m",
+  "noUnits": "Sin escala: usa Fijar la escala o Alinear.",
+  "fileCoords": "Coordenadas del fichero",
+  "remove": "Cerrar plano",
+  "layers": {
+    "title": "Capas ({{count}})",
+    "new": "Capa",
+    "visible": "Mostrar {{name}}",
+    "color": "Color de {{name}}",
+    "lock": "Bloquear {{name}}",
+    "delete": "Borrar {{name}} y lo que contiene",
+    "add": "Nueva",
+    "search": "Buscar capas",
+    "allOn": "Mostrar todas",
+    "allOff": "Ocultar todas",
+    "isolate": "Mostrar solo {{name}}",
+    "makeActive": "Dibujar en {{name}}",
+    "more": "{{count}} más: busca para acotar la lista."
+  },
+  "export": {
+    "title": "Exportar",
+    "sheetTitle": "Título del plano",
+    "project": "Proyecto",
+    "author": "Dibujado por",
+    "paper": "Tamaño de papel",
+    "dxfNoPage": "El DXF lleva las líneas y textos añadidos, no la página del PDF.",
+    "pdfLatin": "Este PDF solo escribe texto latino: otros alfabetos salen como “?”. El SVG los conserva.",
+    "all": "Las {{count}} hojas (ZIP: PDF + DXF)"
+  },
+  "inspector": "Inspector",
+  "noSheet": "Abre o crea una hoja primero.",
+  "tabs": {
+    "scene": "Escena",
+    "create": "Crear",
+    "layers": "Capas",
+    "sheet": "Hoja",
+    "output": "Salida"
+  },
+  "scene": {
+    "title": "En esta escena",
+    "frame": "Encuadrar todo",
+    "empty": "Aún no hay nada. Suelta en el visor un IFC, una nube (LAS, LAZ, PLY…) o un DXF: comparten una escena y un mismo sistema de coordenadas.",
+    "models": "Modelos IFC ({{count}})",
+    "scans": "Nubes de puntos ({{count}})",
+    "show": "Mostrar {{name}}",
+    "sheets": "Hojas ({{count}})",
+    "noSheets": "Aún no hay hojas. Corta una en Crear o abre un fichero.",
+    "stack": "Apilar en 3D",
+    "in3d": "En 3D"
+  },
+  "create": {
+    "what": "Qué crear",
+    "plan": {
+      "title": "Planta",
+      "blurb": "Corta el IFC a una altura, con lo que queda debajo."
+    },
+    "section": {
+      "title": "Sección",
+      "blurb": "Un corte vertical con lo que queda detrás."
+    },
+    "set": {
+      "title": "Juego de planos",
+      "blurb": "Una planta por nivel, de una vez.",
+      "count": "{{count}} plantas encontradas.",
+      "none": "No hay plantas en los modelos cargados.",
+      "run": "Generar todas las plantas"
+    },
+    "scan": {
+      "title": "Plano desde la nube",
+      "blurb": "Corta la nube de puntos y compárala con el modelo.",
+      "need": "Carga antes una nube de puntos en esta escena.",
+      "cloud": "Nube de puntos",
+      "thickness": "Grosor del corte (m)",
+      "cell": "Celda de la malla (m)",
+      "against": "Comparar con el modelo",
+      "tolerance": "Tolerancia (m)"
+    },
+    "compare": {
+      "title": "Comparar hojas",
+      "blurb": "Qué se añadió y qué se quitó entre revisiones.",
+      "need": "Abre dos hojas para comparar.",
+      "before": "Antes",
+      "after": "Después",
+      "run": "Comparar"
+    },
+    "beyond": "Mostrar tras el corte (m)",
+    "poche": "Rellenar muros y estructura cortados",
+    "done": "{{count}} entidades en {{seconds}} s.",
+    "setDone": "{{count}} hojas en {{seconds}} s.",
+    "scanName": "Corte de nube +{{height}} m",
+    "scanReport": "Nube frente a modelo: {{matches}} % dentro de {{tolerance}} mm, {{check}} % por revisar, {{differs}} % difiere. Medido sobre la nube tal como está cargada: depende de cómo se haya alineado.",
+    "scanPlain": "{{count}} puntos en el corte.",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "{{added}} segmentos añadidos, {{removed}} quitados, {{same}} sin cambios."
+  },
+  "place": {
+    "title": "Posición en el modelo",
+    "anchored": "Cortada en esta escena: ya está sobre el modelo.",
+    "scale": "Metros por unidad",
+    "rotation": "Rotación (°)",
+    "look": "Aspecto",
+    "opacity": "Opacidad"
+  },
+  "stats": {
+    "source": "Origen",
+    "entities": "Entidades",
+    "vectors": "Líneas / texto del PDF",
+    "scanned": "Esta página no tiene líneas vectoriales: probablemente sea un escaneo. Úsala como imagen y fija la escala a mano."
+  },
+  "status": {
+    "layer": "Capa activa: las líneas nuevas van aquí",
+    "notSaved": "No guardado en este navegador"
+  }
+}

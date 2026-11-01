@@ -19,6 +19,7 @@ import { editorialCopy } from '../../lib/blog-editorial-copy'
 
 export type ToolDemoId =
   | 'compare-versions'
+  | 'drawings-scene'
   | 'video-generator'
   | 'cover-generator'
   | 'sun-study'
@@ -65,6 +66,8 @@ interface DemoConfig {
    */
   scene?: { path: string; expect: number }
   params?: Record<string, string>
+  /** Params that name an asset, to resolve to absolute URLs. */
+  assetParams?: string[]
   /** The SDK command run when the models are in (and by the action button). */
   command?: Cmd
   /** Further commands the action button steps through, after `command`. */
@@ -90,6 +93,14 @@ interface DemoConfig {
 }
 
 const DEMOS: Record<ToolDemoId, DemoConfig> = {
+  // docs/DRAWINGS.md: the plan cuts itself once the model is in, and the page keeps
+  // its hands off the reader's saved sheets.
+  'drawings-scene': {
+    models: [`${POBLENOU}/BCN-IVO-ZZ-XX-M3-A-0001.ifc`],
+    params: { scan: `${POBLENOU}/poblenou-site-scan.las`, drawings: 'plan' },
+    assetParams: ['scan'],
+    tall: true,
+  },
   'compare-versions': {
     models: [`${POBLENOU}/p02/BCN-IVO-ZZ-XX-M3-A-0001.ifc`],
     command: {
@@ -218,7 +229,7 @@ export default function ToolDemo({
     }
     const bg = !config.bg || config.bg === 'auto' ? (lightPage ? 'paper' : 'studio') : config.bg
     url.searchParams.set('bg', bg)
-    for (const [k, v] of Object.entries(config.params ?? {})) url.searchParams.set(k, v)
+    for (const [k, v] of Object.entries(config.params ?? {})) url.searchParams.set(k, config.assetParams?.includes(k) ? absoluteAsset(v) : v)
     if (lang) url.searchParams.set('lang', lang)
     return url.href
   }, [config, lightPage, lang])

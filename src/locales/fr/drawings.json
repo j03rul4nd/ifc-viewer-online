@@ -1,0 +1,203 @@
+{
+  "title": "Plans",
+  "sheet": "Plan",
+  "none": "Aucun plan pour l'instant",
+  "blank": "Nouveau plan vierge",
+  "blankName": "Plan {{n}}",
+  "fit": "Cadrer",
+  "paper": "Papier",
+  "dark": "Sombre",
+  "panel": "Panneau",
+  "close": "Fermer les plans",
+  "undo": "Annuler",
+  "redo": "Rétablir",
+  "working": "En cours…",
+  "dismiss": "Fermer",
+  "empty": {
+    "title": "Vos plans, à côté du modèle",
+    "body": "Ouvrez un DXF ou un PDF, ou coupez un plan dans l'IFC. Les fichiers restent dans ce navigateur."
+  },
+  "import": {
+    "button": "Ouvrir DXF / PDF",
+    "skipped": "Non lu dans ce fichier : {{list}}.",
+    "pdfTruncated": "Cette page a plus de lignes que ce qui peut être lu : certaines manquent à l’accrochage et au DXF."
+  },
+  "errors": {
+    "dwg": "{{name}} est un DWG (AutoCAD {{detail}}). Le DWG ne s'ouvre pas encore ici. Enregistrez-le en DXF : dans AutoCAD, Enregistrer sous → DXF, ou convertissez-le sur votre ordinateur avec ODA File Converter (gratuit), puis ouvrez le DXF.",
+    "dxfBinary": "{{name}} est un DXF binaire. Réenregistrez-le en DXF ASCII et ouvrez celui-ci.",
+    "notDxf": "{{name}} n'est ni un DXF ni un PDF lisible par ce visualiseur.",
+    "tooBig": "{{name}} génère trop d'entités pour être dessiné dans un navigateur.",
+    "pdfPassword": "{{name}} est protégé par un mot de passe. Retirez-le et réessayez.",
+    "pdfBroken": "{{name}} n'a pas pu être lu comme PDF : {{detail}}",
+    "unknown": "{{name}} n'a pas pu être ouvert : {{detail}}",
+    "emptyCut": "Cette coupe ne traverse aucune géométrie. Essayez un autre niveau ou une autre hauteur.",
+    "cutFailed": "La coupe a échoué : {{detail}}",
+    "emptyScan": "Cette tranche ne traverse aucun point. Essayez une autre hauteur ou une tranche plus épaisse."
+  },
+  "tools": {
+    "label": "Outils de dessin",
+    "select": "Sélectionner et déplacer",
+    "pan": "Panoramique",
+    "line": "Ligne",
+    "polyline": "Polyligne",
+    "rect": "Rectangle",
+    "circle": "Cercle",
+    "text": "Texte",
+    "dimension": "Cote",
+    "calibrate": "Définir l'échelle",
+    "align": "Aligner sur le modèle"
+  },
+  "hints": {
+    "select": "Cliquez pour sélectionner, glissez pour déplacer, Suppr pour effacer.",
+    "pan": "Glissez pour vous déplacer, molette pour zoomer.",
+    "line": "Cliquez deux points.",
+    "polyline": "Cliquez les points ; double-clic ou Entrée pour finir.",
+    "rect": "Cliquez deux coins.",
+    "circle": "Cliquez le centre, puis le bord.",
+    "text": "Cliquez où placer le texte.",
+    "dimension": "Cliquez deux points pour les mesurer et les annoter.",
+    "calibrate": "Cliquez les deux extrémités d'une longueur connue.",
+    "align": "Cliquez sur ce plan, puis au même endroit sur la référence. Deux fois."
+  },
+  "ask": {
+    "text": "Texte",
+    "length": "Longueur réelle (m)",
+    "ok": "OK",
+    "cancel": "Annuler"
+  },
+  "calibrate": {
+    "done": "Échelle définie : 1 unité = {{value}} m."
+  },
+  "generate": {
+    "title": "Depuis l'IFC",
+    "needModel": "Chargez un modèle pour couper plans et sections.",
+    "kind": "Que couper",
+    "plan": "Plan d'étage",
+    "sectionX": "Coupe selon X",
+    "sectionY": "Coupe selon Y",
+    "level": "Niveau",
+    "base": "Base du modèle",
+    "height": "Hauteur de coupe au-dessus du niveau",
+    "position": "Position de la coupe",
+    "run": "Générer",
+    "planName": "Plan {{level}} +{{height}} m",
+    "sectionName": "Coupe {{axis}} {{pos}} %"
+  },
+  "sheetSection": "Ce plan",
+  "elevation": "Hauteur",
+  "live": "Appareils en direct ({{count}})",
+  "page": "Page {{n}} sur {{total}}",
+  "units": "1 unité = {{value}} m",
+  "noUnits": "Pas d'échelle : utilisez Définir l'échelle ou Aligner.",
+  "fileCoords": "Coordonnées du fichier",
+  "remove": "Fermer le plan",
+  "layers": {
+    "title": "Calques ({{count}})",
+    "new": "Calque",
+    "visible": "Afficher {{name}}",
+    "color": "Couleur de {{name}}",
+    "lock": "Verrouiller {{name}}",
+    "delete": "Supprimer {{name}} et son contenu",
+    "add": "Nouveau",
+    "search": "Chercher un calque",
+    "allOn": "Tout afficher",
+    "allOff": "Tout masquer",
+    "isolate": "Afficher seulement {{name}}",
+    "makeActive": "Dessiner sur {{name}}",
+    "more": "{{count}} de plus : cherchez pour réduire la liste."
+  },
+  "export": {
+    "title": "Exporter",
+    "sheetTitle": "Titre du plan",
+    "project": "Projet",
+    "author": "Dessiné par",
+    "paper": "Format de papier",
+    "dxfNoPage": "Le DXF contient les lignes et textes ajoutés, pas la page du PDF.",
+    "pdfLatin": "Ce PDF n'écrit que du texte latin : les autres écritures apparaissent en « ? ». Le SVG les conserve.",
+    "all": "Les {{count}} feuilles (ZIP : PDF + DXF)"
+  },
+  "inspector": "Inspecteur",
+  "noSheet": "Ouvrez ou créez d’abord une feuille.",
+  "tabs": {
+    "scene": "Scène",
+    "create": "Créer",
+    "layers": "Calques",
+    "sheet": "Feuille",
+    "output": "Sortie"
+  },
+  "scene": {
+    "title": "Dans cette scène",
+    "frame": "Tout cadrer",
+    "empty": "Rien pour l’instant. Déposez sur la visionneuse un IFC, un nuage (LAS, LAZ, PLY…) ou un DXF : ils partagent une scène et un même système de coordonnées.",
+    "models": "Modèles IFC ({{count}})",
+    "scans": "Nuages de points ({{count}})",
+    "show": "Afficher {{name}}",
+    "sheets": "Feuilles ({{count}})",
+    "noSheets": "Aucune feuille. Coupez-en une dans Créer ou ouvrez un fichier.",
+    "stack": "Empiler en 3D",
+    "in3d": "En 3D"
+  },
+  "create": {
+    "what": "Que créer",
+    "plan": {
+      "title": "Plan d’étage",
+      "blurb": "Coupe l’IFC à une hauteur, avec ce qui se trouve dessous."
+    },
+    "section": {
+      "title": "Coupe",
+      "blurb": "Une coupe verticale avec ce qui se trouve derrière."
+    },
+    "set": {
+      "title": "Jeu de plans",
+      "blurb": "Un plan par niveau, en une fois.",
+      "count": "{{count}} niveaux trouvés.",
+      "none": "Aucun niveau dans les modèles chargés.",
+      "run": "Générer tous les plans"
+    },
+    "scan": {
+      "title": "Plan depuis le nuage",
+      "blurb": "Coupez le nuage de points et comparez-le au modèle.",
+      "need": "Chargez d’abord un nuage de points dans cette scène.",
+      "cloud": "Nuage de points",
+      "thickness": "Épaisseur de la tranche (m)",
+      "cell": "Maille de la grille (m)",
+      "against": "Comparer au modèle",
+      "tolerance": "Tolérance (m)"
+    },
+    "compare": {
+      "title": "Comparer des feuilles",
+      "blurb": "Ce qui a été ajouté et retiré entre révisions.",
+      "need": "Ouvrez deux feuilles à comparer.",
+      "before": "Avant",
+      "after": "Après",
+      "run": "Comparer"
+    },
+    "beyond": "Afficher au-delà de la coupe (m)",
+    "poche": "Remplir murs et structure coupés",
+    "done": "{{count}} entités en {{seconds}} s.",
+    "setDone": "{{count}} feuilles en {{seconds}} s.",
+    "scanName": "Tranche du nuage +{{height}} m",
+    "scanReport": "Nuage et modèle : {{matches}} % à moins de {{tolerance}} mm, {{check}} % à vérifier, {{differs}} % diffère. Mesuré sur le nuage tel que chargé : cela dépend de son alignement.",
+    "scanPlain": "{{count}} points dans la tranche.",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "{{added}} segments ajoutés, {{removed}} retirés, {{same}} inchangés."
+  },
+  "place": {
+    "title": "Position dans le modèle",
+    "anchored": "Coupée dans cette scène : elle est déjà sur le modèle.",
+    "scale": "Mètres par unité",
+    "rotation": "Rotation (°)",
+    "look": "Apparence",
+    "opacity": "Opacité"
+  },
+  "stats": {
+    "source": "Source",
+    "entities": "Entités",
+    "vectors": "Lignes / texte PDF",
+    "scanned": "Cette page n’a pas de lignes vectorielles : c’est sans doute un scan. Utilisez-la comme image et fixez l’échelle à la main."
+  },
+  "status": {
+    "layer": "Calque actif : les nouvelles lignes vont ici",
+    "notSaved": "Non enregistré dans ce navigateur"
+  }
+}

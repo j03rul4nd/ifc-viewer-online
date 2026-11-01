@@ -1,0 +1,203 @@
+{
+  "title": "Drawings",
+  "sheet": "Sheet",
+  "none": "No sheets yet",
+  "blank": "New blank sheet",
+  "blankName": "Sheet {{n}}",
+  "fit": "Fit",
+  "paper": "Paper",
+  "dark": "Dark",
+  "panel": "Panel",
+  "close": "Close drawings",
+  "undo": "Undo",
+  "redo": "Redo",
+  "working": "Working…",
+  "dismiss": "Dismiss",
+  "empty": {
+    "title": "Your drawings, next to the model",
+    "body": "Open a DXF or a PDF, or cut a plan from the IFC. Files stay in this browser."
+  },
+  "import": {
+    "button": "Open DXF / PDF",
+    "skipped": "Not read from this file: {{list}}.",
+    "pdfTruncated": "This page has more lines than can be read: some are missing from snapping and the DXF."
+  },
+  "errors": {
+    "dwg": "{{name}} is a DWG (AutoCAD {{detail}}). DWG can't be opened here yet. Save it as DXF: in AutoCAD use Save As → DXF, or convert it on your computer with the free ODA File Converter, then open the DXF.",
+    "dxfBinary": "{{name}} is a binary DXF. Save it again as ASCII DXF and open that.",
+    "notDxf": "{{name}} is not a DXF or PDF this viewer can read.",
+    "tooBig": "{{name}} expands to too many entities to draw in a browser.",
+    "pdfPassword": "{{name}} is protected with a password. Remove it and try again.",
+    "pdfBroken": "{{name}} could not be read as a PDF: {{detail}}",
+    "unknown": "{{name}} could not be opened: {{detail}}",
+    "emptyCut": "That cut goes through no geometry. Try another level or height.",
+    "cutFailed": "The cut failed: {{detail}}",
+    "emptyScan": "That slice goes through no points. Try another height or a thicker slice."
+  },
+  "tools": {
+    "label": "Drawing tools",
+    "select": "Select and move",
+    "pan": "Pan",
+    "line": "Line",
+    "polyline": "Polyline",
+    "rect": "Rectangle",
+    "circle": "Circle",
+    "text": "Text",
+    "dimension": "Dimension",
+    "calibrate": "Set the scale",
+    "align": "Align to the model"
+  },
+  "hints": {
+    "select": "Click to select, drag to move, Delete to remove.",
+    "pan": "Drag to pan, wheel to zoom.",
+    "line": "Click two points.",
+    "polyline": "Click points; double click or Enter to finish.",
+    "rect": "Click two corners.",
+    "circle": "Click the centre, then the edge.",
+    "text": "Click where the text goes.",
+    "dimension": "Click two points to measure and label them.",
+    "calibrate": "Click both ends of a length you know.",
+    "align": "Click on this sheet, then the same spot on the reference. Twice."
+  },
+  "ask": {
+    "text": "Text",
+    "length": "Real length (m)",
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+  "calibrate": {
+    "done": "Scale set: 1 unit = {{value}} m."
+  },
+  "generate": {
+    "title": "From the IFC",
+    "needModel": "Load a model to cut plans and sections.",
+    "kind": "What to cut",
+    "plan": "Floor plan",
+    "sectionX": "Section across X",
+    "sectionY": "Section across Y",
+    "level": "Level",
+    "base": "Model base",
+    "height": "Cut height above the level",
+    "position": "Section position",
+    "run": "Generate",
+    "planName": "Plan {{level}} +{{height}} m",
+    "sectionName": "Section {{axis}} {{pos}}%"
+  },
+  "sheetSection": "This sheet",
+  "elevation": "Height",
+  "live": "Live devices ({{count}})",
+  "page": "Page {{n}} of {{total}}",
+  "units": "1 unit = {{value}} m",
+  "noUnits": "No scale yet: use Set the scale or Align.",
+  "fileCoords": "File coordinates",
+  "remove": "Close sheet",
+  "layers": {
+    "title": "Layers ({{count}})",
+    "new": "Layer",
+    "visible": "Show {{name}}",
+    "color": "Colour of {{name}}",
+    "lock": "Lock {{name}}",
+    "delete": "Delete {{name}} and what is on it",
+    "add": "New",
+    "search": "Search layers",
+    "allOn": "Show all",
+    "allOff": "Hide all",
+    "isolate": "Show only {{name}}",
+    "makeActive": "Draw on {{name}}",
+    "more": "{{count}} more: search to narrow the list."
+  },
+  "export": {
+    "title": "Export",
+    "sheetTitle": "Sheet title",
+    "project": "Project",
+    "author": "Drawn by",
+    "paper": "Paper size",
+    "dxfNoPage": "The DXF carries the lines and text you added, not the PDF page.",
+    "pdfLatin": "This PDF writes Latin text only: characters from other scripts appear as “?”. SVG keeps them.",
+    "all": "All {{count}} sheets (ZIP: PDF + DXF)"
+  },
+  "inspector": "Inspector",
+  "noSheet": "Open or create a sheet first.",
+  "tabs": {
+    "scene": "Scene",
+    "create": "Create",
+    "layers": "Layers",
+    "sheet": "Sheet",
+    "output": "Output"
+  },
+  "scene": {
+    "title": "In this scene",
+    "frame": "Frame all",
+    "empty": "Nothing here yet. Drop an IFC, a scan (LAS, LAZ, PLY…) or a DXF on the viewer: they share one scene and one coordinate system.",
+    "models": "IFC models ({{count}})",
+    "scans": "Point clouds ({{count}})",
+    "show": "Show {{name}}",
+    "sheets": "Sheets ({{count}})",
+    "noSheets": "No sheets yet. Cut one in Create or open a file.",
+    "stack": "Stack in 3D",
+    "in3d": "In 3D"
+  },
+  "create": {
+    "what": "What to make",
+    "plan": {
+      "title": "Floor plan",
+      "blurb": "Cut the IFC at a height, with what lies below."
+    },
+    "section": {
+      "title": "Section",
+      "blurb": "A vertical cut with what lies beyond."
+    },
+    "set": {
+      "title": "Sheet set",
+      "blurb": "One plan per storey, in one go.",
+      "count": "{{count}} storeys found.",
+      "none": "No storeys found in the loaded models.",
+      "run": "Generate all plans"
+    },
+    "scan": {
+      "title": "Plan from the scan",
+      "blurb": "Slice the point cloud; check it against the model.",
+      "need": "Load a point cloud in this scene first.",
+      "cloud": "Point cloud",
+      "thickness": "Slice thickness (m)",
+      "cell": "Grid cell (m)",
+      "against": "Check against the model",
+      "tolerance": "Tolerance (m)"
+    },
+    "compare": {
+      "title": "Compare sheets",
+      "blurb": "What was added and removed between revisions.",
+      "need": "Open two sheets to compare.",
+      "before": "Before",
+      "after": "After",
+      "run": "Compare"
+    },
+    "beyond": "Show beyond the cut (m)",
+    "poche": "Fill cut walls and structure",
+    "done": "{{count}} entities in {{seconds}} s.",
+    "setDone": "{{count}} sheets in {{seconds}} s.",
+    "scanName": "Scan slice +{{height}} m",
+    "scanReport": "Scan against model: {{matches}}% within {{tolerance}} mm, {{check}}% to check, {{differs}}% differs. Measured on the scan as loaded, so it depends on how it was aligned.",
+    "scanPlain": "{{count}} points in the slice.",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "{{added}} segments added, {{removed}} removed, {{same}} unchanged."
+  },
+  "place": {
+    "title": "Position in the model",
+    "anchored": "Cut from this scene: it already sits on the model.",
+    "scale": "Metres per unit",
+    "rotation": "Rotation (°)",
+    "look": "Appearance",
+    "opacity": "Opacity"
+  },
+  "stats": {
+    "source": "Source",
+    "entities": "Entities",
+    "vectors": "PDF lines / text",
+    "scanned": "No vector lines in this page: probably a scan. Use it as a picture and set the scale by hand."
+  },
+  "status": {
+    "layer": "Active layer: new lines go here",
+    "notSaved": "Not saved in this browser"
+  }
+}

@@ -153,6 +153,7 @@ import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
 import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
+import { useDrawingStore } from './stores/drawingStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
 import { useModelGroups } from './hooks/useModelGroups'
@@ -187,6 +188,8 @@ const TimeBar = React.lazy(() => import('./components/TimeBar'))
 // Video resources are a separate lazy chunk: no media/Three implementation is
 // downloaded until the tool is opened.
 const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
+// Drawings pane: pdf.js and the 2D canvas load only when it first opens.
+const DrawingDock = React.lazy(() => import('./components/drawings/DrawingDock'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel, type DemoSet } from './demo-models/models'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -1099,6 +1102,7 @@ export default function App() {
     devices:     <Icons.Devices size={15} />,
     layers:      <Icons.DataLayers size={15} />,
     video:       <Icons.Video size={15} />,
+    drawings:    <Icons.Sheet size={15} />,
   }), [])
   const railLabels = useMemo(() => ({
     properties:  tSidebar('title'),
@@ -1114,6 +1118,7 @@ export default function App() {
     devices:     tLayers('devices.entry'),
     layers:      tLayers('title'),
     video:       tVideo('title'),
+    drawings:    tToolbar('drawings'),
   }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers, tVideo])
   // Read here rather than from the destructured block below, which is declared
   // after this point in the component.
@@ -1234,6 +1239,7 @@ export default function App() {
     // App-only entries (not host PanelIds): once there is a layer or a clip.
     layers:      !clientMode && layerCount > 0,
     video:       isVideoEnabled() && !clientMode && videoCount > 0,
+    drawings:    !clientMode && !embedChrome.embed,
   }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount, layerCount, videoCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
@@ -2012,6 +2018,19 @@ export default function App() {
   // read its segment from here (index.css, "Overlays in a split") and stay off
   // the hinge, without each one having to know the layout exists.
   const dualViewerRect = dualLayout?.viewer ?? null
+  // The drawings pane takes its share of the window the way a split does: the
+  // viewer's box shrinks, the renderer resizes, no model reloads.
+  const drawingsLink = useMemo(() => new URLSearchParams(window.location.search).has('drawings'), [])
+  useEffect(() => { if (drawingsLink) useDrawingStore.getState().setPanelOpen(true) }, [drawingsLink])
+  const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && (!embedChrome.embed || drawingsLink)
+  const [drawingsWidth, setDrawingsWidth] = useState(() => Math.round((typeof window === 'undefined' ? 1200 : window.innerWidth) * 0.5))
+  const drawingsStacked = !isDesktop
+  const drawingsDockStyle = useMemo<React.CSSProperties | null>(() => {
+    if (!drawingsOpen) return null
+    if (dualLayout) return { left: dualLayout.pane.x, top: dualLayout.pane.y, width: dualLayout.pane.width, height: dualLayout.pane.height }
+    if (drawingsStacked) return { left: 0, right: 0, bottom: 0, height: '55dvh' }
+    return { right: 0, top: 0, bottom: 0, width: drawingsWidth }
+  }, [drawingsOpen, dualLayout, drawingsStacked, drawingsWidth])
   const dualPaneRect = dualLayout?.pane ?? null
   useLayoutEffect(() => {
     const root = document.documentElement
@@ -2161,6 +2180,8 @@ export default function App() {
       scene: !embedChrome.embed,
       // The analysis panel reads weather files; it is not mounted in client mode.
       weather: isSolarEnabled() && !clientMode,
+      drawings: !clientMode && !embedChrome.embed,
+      drawingsOpen: useDrawingStore.getState().panelOpen,
     })
     // A scene replaces everything, so it is handled alone: loading the other
     // files first and then reloading would throw them away silently.
@@ -2210,6 +2231,7 @@ export default function App() {
     // GeoJSON never waits for the IFC dialog: a layer re-anchors on its own
     // when the model's placement arrives (vector-runner rebuilds on it).
     if (plan.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(plan.vector)
+    if (plan.drawings.length > 0) useDrawingStore.getState().enqueueFiles(plan.drawings)
     // BCF topics join the ones already open (never replace a session's issues).
     if (plan.bcf.length > 0) {
       void (async () => {
@@ -4949,8 +4971,19 @@ export default function App() {
               // Above the pane, because the results drawer lives in this
               // stacking context and is placed over the pane (index.css).
               zIndex: 22,
-            } : undefined}
+            } : drawingsOpen ? (drawingsStacked
+              ? { bottom: '55dvh' }
+              : { right: drawingsWidth }) : undefined}
           >
+            {drawingsDockStyle && (
+          <React.Suspense fallback={null}>
+            <DrawingDock
+              viewerApiRef={viewerApiRef}
+              style={drawingsDockStyle}
+              onResize={drawingsStacked || dualLayout ? undefined : (px) => setDrawingsWidth(Math.max(320, Math.min(window.innerWidth - 320, px)))}
+            />
+          </React.Suspense>
+            )}
             {effectiveChrome.showToolbar && (
               // Phones: the toolbar floats over the scene (capsules, see
               // Toolbar) instead of taking a 44px band; the scene gets the

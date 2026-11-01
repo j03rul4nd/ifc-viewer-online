@@ -27,6 +27,7 @@
   "section": "หน้าตัด",
   "clippingPlanes": "ระนาบตัด — หน้าตัด",
   "plans": "แปลน",
+  "drawings": "แบบแปลน",
   "floorPlanViews": "มุมมองแปลนชั้น — หน้าตัดชั้น",
   "export": "ส่งออก",
   "exportModels": "ส่งออก {{count}} โมเดล",

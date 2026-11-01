@@ -561,6 +561,15 @@ export function trackFeatureUsed(props: {
     | 'ebook_download'
     | 'batch_fix_preview'
     | 'validation_only'
+    | 'drawing_import'
+    | 'drawing_generate'
+    | 'drawing_export'
+    | 'drawing_dwg_refused'
+    | 'drawing_export_all'
+    | 'drawing_scene_stack'
+    | 'drawing_sheet_set'
+    | 'drawing_scan_slice'
+    | 'drawing_compare'
 }): void {
   track('feature_used', props)
 }

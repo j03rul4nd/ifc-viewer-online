@@ -43,6 +43,7 @@ export const Download = (p: IconProps) => <Icon {...p}><path d="M12 4v12M12 16l-
 export const Layers = (p: IconProps) => <Icon {...p}><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5M2 12l10 5 10-5" /></Icon>
 export const Building = (p: IconProps) => <Icon {...p}><rect x="4" y="3" width="16" height="18" rx="1" /><path d="M9 8h0M15 8h0M9 12h0M15 12h0M9 16h0M15 16h0" /></Icon>
 export const Sparkles = (p: IconProps) => <Icon {...p}><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" /></Icon>
+export const Sheet = (p: IconProps) => <Icon {...p}><path d="M3 5h18v14H3z" /><path d="M14 15h7M14 15v4M7 15l3-6 3 3" /></Icon>
 export const Ruler = (p: IconProps) => <Icon {...p}><path d="M3 17l14-14 4 4L7 21z" /><path d="M7.5 8.5l2 2M10.5 5.5l2 2M4.5 11.5l2 2" /></Icon>
 export const ArrowRight = (p: IconProps) => <Icon {...p} d="M5 12h14M13 5l7 7-7 7" />
 export const Menu = (p: IconProps) => <Icon {...p} d="M4 7h16M4 12h16M4 17h16" />

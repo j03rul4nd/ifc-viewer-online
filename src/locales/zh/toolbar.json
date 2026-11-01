@@ -27,6 +27,7 @@
   "section": "剖切",
   "clippingPlanes": "剖切平面 — 截面",
   "plans": "平面图",
+  "drawings": "图纸",
   "floorPlanViews": "楼层平面视图 — 楼层截面",
   "export": "导出",
   "exportModels": "导出 {{count}} 个模型",

@@ -27,6 +27,7 @@
   "section": "Coupe",
   "clippingPlanes": "Plans de coupe — sections",
   "plans": "Plans",
+  "drawings": "Plans techniques",
   "floorPlanViews": "Vues de plans d'étage — sections par niveau",
   "export": "Exporter",
   "exportModels": "Exporter {{count}} modèles",
