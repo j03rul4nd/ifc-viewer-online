@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { paidApi, type ApiMwAccount, type ApiMwOverview, type ApiMwService } from '../../../lib/cloud/paid-client'
+import { usePaidQuery } from '../../../hooks/usePaidQuery'
 import type { SectionProps } from '../registry'
 import { Banner, CopyField, DataList, Danger, Dialog, Dot, Field, Head, Panel, Primary, Quiet, SectionLabel, fmtInt, inputClass } from '../ui'
 import { SoonBanner } from '../Soon'
@@ -41,6 +43,8 @@ interface Charge { id: string; label: string; eur: number; status: ChargeStatus 
 
 const eur = (n: number): string => `${fmtInt(n)} €`
 
+const liveStatus = (s: ApiMwService): Status => (s.review_status === 'pending' ? 'review' : s.status === 'running' || s.status === 'idle' || s.status === 'failed' ? s.status : 'stopped')
+
 const COLOR: Record<Status, string> = { running: 'var(--ok)', idle: 'var(--text-faint)', stopped: 'var(--text-faint)', failed: 'var(--danger)', review: 'var(--warn)' }
 
 /** By agreement with us. Verified templates take variables; a customer's own container takes a review. */
@@ -72,11 +76,31 @@ export default function Middleware({ actions }: SectionProps) {
   const [usedMin, setUsedMin] = useState(45)
   const [asking, setAsking] = useState(false)
   const [requesting, setRequesting] = useState(false)
+  const over = usePaidQuery<ApiMwOverview | null>(() => paidApi.middleware(), null)
+  const acct = usePaidQuery<ApiMwAccount | null>(() => paidApi.mwAccount(), null)
+  const consent = usePaidQuery<{ version: string; signed: { signer_name: string; company: string } | null } | null>(() => paidApi.mwConsent(), null)
+  const live = over.source === 'live'
+  const [err, setErr] = useState<string | null>(null)
+  const done = (r: { ok: boolean; error?: { code: string; message?: string } }): void => { setErr(r.ok ? null : r.error?.message ?? r.error?.code ?? null); over.reload(); acct.reload() }
+  useEffect(() => {
+    if (live && over.data) setServices(over.data.services.map((x) => ({ id: x.id, name: x.name, kind: x.kind === 'api' ? 'api' : 'cron', source: x.template_id ?? 'Your container', schedule: x.schedule ?? '', hosts: x.declared_hosts, status: liveStatus(x), gbHours: over.data!.usage.by_service.find((u) => u.service_id === x.id)?.gb_hours ?? 0 })))
+  }, [live, over.data])
+  useEffect(() => { if (consent.source === 'live' && consent.data?.signed) setSigned({ name: consent.data.signed.signer_name, company: consent.data.signed.company }) }, [consent.source, consent.data])
+  useEffect(() => {
+    if (acct.source !== 'live' || !acct.data) return
+    setUsedMin(acct.data.support.used_minutes)
+    setCharges(acct.data.charges.map((c) => ({ id: c.id, label: c.description, eur: Math.round(c.amount_cents / 100), status: c.status })))
+  }, [acct.source, acct.data])
+  const included = acct.data?.support.included_minutes ?? INCLUDED_MIN
+  const hourEur = acct.data ? Math.round(acct.data.support.hour_cents / 100) : HOUR_EUR
   const STATUS: Record<Status, string> = { running: tx('Running'), idle: tx('Waiting for its schedule'), stopped: tx('Stopped'), failed: tx('Failed'), review: tx('In review by our team') }
   const used = services.reduce((a, s) => a + s.gbHours, 0)
-  const limit = Math.min(QUOTA_GB_HOURS + packs * PACK_GB_HOURS, Number(cap) > 0 ? Number(cap) : Infinity)
+  const limit = Math.min(live && over.data?.quota ? over.data.quota.gbHours : QUOTA_GB_HOURS + packs * PACK_GB_HOURS, Number(cap) > 0 ? Number(cap) : Infinity)
   const pct = Math.min(100, Math.round((used / limit) * 100))
-  const set = (id: string, status: Status): void => setServices((all) => all.map((s) => (s.id === id ? { ...s, status } : s)))
+  const set = (id: string, status: Status): void => {
+    if (live) { void paidApi.mwAction(id, status === 'stopped' ? 'stop' : 'start').then(done); return }
+    setServices((all) => all.map((s) => (s.id === id ? { ...s, status } : s)))
+  }
   const CHARGE: Record<ChargeStatus, string> = { pending: tx('To invoice'), invoiced: tx('Invoiced'), paid: tx('Paid') }
   const apis = services.filter((s) => s.kind === 'api')
   const choose = (t: Template): void => { if (signed) setUsing(t); else setSigning(t) }
@@ -84,7 +108,8 @@ export default function Middleware({ actions }: SectionProps) {
   return (
     <>
       <Head title={tx('Middleware')} sub={tx('Feed the digital twin from your own data, through containers we verified. The database stays yours.')} />
-      <SoonBanner section="middleware" />
+      <SoonBanner section="middleware" source={over.source} error={over.error} />
+      {err && <p role="alert" className="mt-3 text-[12.5px] text-[var(--danger)]">{err}</p>}
       <div className="mb-8">
         <Banner tone="info" title={tx('Enabled by agreement')} action={<Quiet onClick={() => setRequesting(true)}>{tx('Request access')}</Quiet>}>
           {tx('We switch this on after talking to your team, as an Enterprise feature or an extra on your plan.')}{' '}
@@ -125,7 +150,7 @@ export default function Middleware({ actions }: SectionProps) {
               {s.status !== 'review' && (s.status === 'running'
                 ? <Quiet onClick={() => set(s.id, 'stopped')}>{tx('Stop')}</Quiet>
                 : <Quiet onClick={() => set(s.id, s.kind === 'api' ? 'running' : 'idle')}>{tx('Start')}</Quiet>)}
-              <Danger onClick={() => setServices((all) => all.filter((x) => x.id !== s.id))}>{tx('Remove')}</Danger>
+              <Danger onClick={() => { if (live) void paidApi.mwDelete(s.id).then(done); else setServices((all) => all.filter((x) => x.id !== s.id)) }}>{tx('Remove')}</Danger>
             </div>
           )} />
       </div>
@@ -167,15 +192,15 @@ export default function Middleware({ actions }: SectionProps) {
       <div className="grid gap-3 sm:grid-cols-2 mb-3">
         <Panel className="p-4 min-w-0 flex flex-col gap-2">
           <p className="text-[12px] text-[var(--text-dim)]">{tx('Support this month')}</p>
-          <p className="text-[20px] font-semibold tabular-nums">{tx('{{left}} of {{total}} min left', { left: Math.max(0, INCLUDED_MIN - usedMin), total: INCLUDED_MIN })}</p>
-          <p className="flex-1 text-[12px] leading-[1.45] text-[var(--text-faint)]">{tx('Beyond that, {{rate}} an hour, only if you accept it first.', { rate: eur(HOUR_EUR) })}</p>
+          <p className="text-[20px] font-semibold tabular-nums">{tx('{{left}} of {{total}} min left', { left: Math.max(0, included - usedMin), total: included })}</p>
+          <p className="flex-1 text-[12px] leading-[1.45] text-[var(--text-faint)]">{tx('Beyond that, {{rate}} an hour, only if you accept it first.', { rate: eur(hourEur) })}</p>
           <div className="pt-1"><Quiet onClick={() => setAsking(true)}>{tx('Ask for support')}</Quiet></div>
         </Panel>
         <Panel className="p-4 min-w-0 flex flex-col gap-2">
           <p className="text-[12px] text-[var(--text-dim)]">{tx('More compute')}</p>
           <p className="text-[20px] font-semibold tabular-nums">{fmtInt(PACK_GB_HOURS)} GB·h</p>
           <p className="flex-1 text-[12px] leading-[1.45] text-[var(--text-faint)]">{tx('{{price}} on your next invoice. Only for this month.', { price: eur(PACK_EUR) })}</p>
-          <div className="pt-1"><Quiet onClick={() => { setPacks((n) => n + 1); setCharges((all) => [{ id: `pack-${Date.now().toString(36)}`, label: `${fmtInt(PACK_GB_HOURS)} GB·h`, eur: PACK_EUR, status: 'pending' }, ...all]) }}>{tx('Add to this month')}</Quiet></div>
+          <div className="pt-1"><Quiet onClick={() => { if (live) { void paidApi.mwPack().then(done); return } setPacks((n) => n + 1); setCharges((all) => [{ id: `pack-${Date.now().toString(36)}`, label: `${fmtInt(PACK_GB_HOURS)} GB·h`, eur: PACK_EUR, status: 'pending' }, ...all]) }}>{tx('Add to this month')}</Quiet></div>
         </Panel>
       </div>
       <div className="mb-8">
@@ -193,15 +218,15 @@ export default function Middleware({ actions }: SectionProps) {
         <Quiet onClick={() => setSigning('terms')}>{signed ? tx('Read the terms') : tx('Read and sign')}</Quiet>
       </Panel>
 
-      {signing && <SignTerms signed={signed} onClose={() => setSigning(null)} onSign={(s) => { setSigned(s); const next = signing; setSigning(null); if (next !== 'terms') setUsing(next) }} />}
-      {asking && <AskSupport left={INCLUDED_MIN - usedMin} onClose={() => setAsking(false)} onSent={() => { setUsedMin((m) => m + 15); setAsking(false) }} />}
+      {signing && <SignTerms signed={signed} onClose={() => setSigning(null)} onSign={(s) => { if (live && consent.data) void paidApi.mwSign(s.name, s.company, consent.data.version).then(done); setSigned(s); const next = signing; setSigning(null); if (next !== 'terms') setUsing(next) }} />}
+      {asking && <AskSupport left={included - usedMin} onClose={() => setAsking(false)} onSent={(b) => { if (live) void paidApi.mwTicket(b).then(done); else setUsedMin((m) => m + 15); setAsking(false) }} />}
       {requesting && <RequestAccess onClose={() => setRequesting(false)} onTalk={() => { setRequesting(false); actions.contact('question', 'middleware') }} />}
-      {using && <UseTemplate template={using} onClose={() => setUsing(null)} onAdd={(s) => { setServices((all) => [...all, s]); setUsing(null) }} />}
+      {using && <UseTemplate template={using} onClose={() => setUsing(null)} onAdd={(s, b) => { if (live) void paidApi.mwCreate(b).then(done); else setServices((all) => [...all, s]); setUsing(null) }} />}
     </>
   )
 }
 
-function AskSupport({ left, onClose, onSent }: { left: number; onClose: () => void; onSent: () => void }) {
+function AskSupport({ left, onClose, onSent }: { left: number; onClose: () => void; onSent: (b: { subject: string; message: string; accept_overage?: boolean }) => void }) {
   const tx = useTx()
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
@@ -210,7 +235,7 @@ function AskSupport({ left, onClose, onSent }: { left: number; onClose: () => vo
   const ready = subject.trim().length >= 3 && message.trim().length >= 10 && (!over || accept)
   return (
     <Dialog title={tx('Ask for support')} onClose={onClose}
-      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={onSent}>{tx('Send')}</Primary></>}>
+      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={() => onSent({ subject: subject.trim(), message: message.trim(), ...(over ? { accept_overage: accept } : {}) })}>{tx('Send')}</Primary></>}>
       <div className="flex flex-col gap-4">
         {over && <Banner tone="warn" title={tx('Your included time is used up')}>{tx('Beyond that, {{rate}} an hour, only if you accept it first.', { rate: eur(HOUR_EUR) })}</Banner>}
         <Field label={tx('Subject')}><input className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} /></Field>
@@ -245,7 +270,7 @@ function RequestAccess({ onClose, onTalk }: { onClose: () => void; onTalk: () =>
   )
   return (
     <Dialog title={tx('Request access')} onClose={onClose}
-      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={() => setSent(true)}>{tx('Send')}</Primary></>}>
+      footer={<><Quiet onClick={onClose}>{tx('Cancel')}</Quiet><Primary disabled={!ready} onClick={() => { void paidApi.mwRequest({ company: company.trim(), use_case: useCase.trim(), needs_twin: twin, accepts_annual: yearly, budget_band: band, sources: 1 }); setSent(true) }}>{tx('Send')}</Primary></>}>
       <div className="flex flex-col gap-4">
         <p className="text-[12.5px] leading-[1.5] text-[var(--text-dim)]">{tx('From {{monthly}} a month on a yearly contract, plus {{setup}} setup.', { monthly: eur(ENTRY_MONTH_EUR), setup: eur(ENTRY_SETUP_EUR) })}</p>
         <Field label={tx('Organization')}><input className={inputClass} autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} /></Field>
@@ -294,7 +319,7 @@ function SignTerms({ signed, onClose, onSign }: { signed: { name: string; compan
   )
 }
 
-function UseTemplate({ template: t, onClose, onAdd }: { template: Template; onClose: () => void; onAdd: (s: Service) => void }) {
+function UseTemplate({ template: t, onClose, onAdd }: { template: Template; onClose: () => void; onAdd: (s: Service, b: { name: string; template: string; schedule?: string; env: Record<string, string>; allowed_origins?: string[] }) => void }) {
   const tx = useTx()
   const [name, setName] = useState(t.name)
   const [values, setValues] = useState<Record<string, string>>({})
@@ -309,7 +334,7 @@ function UseTemplate({ template: t, onClose, onAdd }: { template: Template; onCl
     if (invalid) return
     let host: string[] = []
     try { host = values.SOURCE_URL ? [new URL(values.SOURCE_URL).hostname] : [] } catch { /* checked above */ }
-    onAdd({ id: `${t.id}-${Date.now().toString(36)}`, name: name.trim(), kind: t.kind, source: t.id === 'fetch-to-postgres' ? 'Collect an API into your database' : t.id === 'postgres-read-api' ? 'Read-only API over your table' : 'Cached API over a public source', schedule: t.kind === 'cron' ? schedule.trim() : '', hosts: host, status: 'stopped', gbHours: 0 })
+    onAdd({ id: `${t.id}-${Date.now().toString(36)}`, name: name.trim(), kind: t.kind, source: t.id === 'fetch-to-postgres' ? 'Collect an API into your database' : t.id === 'postgres-read-api' ? 'Read-only API over your table' : 'Cached API over a public source', schedule: t.kind === 'cron' ? schedule.trim() : '', hosts: host, status: 'stopped', gbHours: 0 }, { name: name.trim(), template: t.id, env: Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim())), ...(t.kind === 'cron' ? { schedule: schedule.trim() } : { allowed_origins: origins.split(',').map((o) => o.trim()).filter(Boolean) }) })
   }
   return (
     <Dialog title={t.name} onClose={onClose} size="lg"

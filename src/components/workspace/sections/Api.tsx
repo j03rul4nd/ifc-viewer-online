@@ -4,6 +4,9 @@ import { quoteApi } from '../../../lib/plans/api-cost'
 import { fmtEur } from '../../../lib/pricing/checkout'
 import { Head, Panel, Field, inputClass, CopyField, fmtInt, SectionLabel } from '../ui'
 import { SoonBanner } from '../Soon'
+import { paidApi } from '../../../lib/cloud/paid-client'
+import { usePaidQuery } from '../../../hooks/usePaidQuery'
+import { SAMPLE_CREDITS } from '../api-samples'
 import { useTx } from '../i18n'
 
 /** P9 / Developer: hosted API usage, keys and a cost estimate. */
@@ -13,16 +16,18 @@ export default function Api(_: SectionProps) {
   const [avgMb, setAvgMb] = useState(60)
   const [storedGb, setStoredGb] = useState(20)
   const q = quoteApi({ files, avgMb, storedGb })
-  const used = 1840
+  const credits = usePaidQuery(() => paidApi.credits(), SAMPLE_CREDITS)
+  const included = credits.data.monthly.api || 5000
+  const used = Math.max(0, included - credits.data.balances.api)
   return (
     <>
       <Head title={tx('API')} sub={tx('The client SDK is free and has no limits. Hosted calls — validating on our servers, storing, comparing — use credits.')} />
-      <SoonBanner section="api" />
+      <SoonBanner section="api" source={credits.source} error={credits.error} />
       <div className="grid gap-4 lg:grid-cols-2 mb-6">
         <Panel className="p-5">
           <p className="text-[12px] text-[var(--text-faint)]">{tx('This month')}</p>
-          <p className="text-[22px] font-semibold tabular-nums mt-1">{fmtInt(used)} <span className="text-[13px] font-normal text-[var(--text-dim)]">/ {fmtInt(5000)} {tx('credits')}</span></p>
-          <div className="h-1.5 rounded-full bg-[var(--surface-2)] mt-3 overflow-hidden"><div className="h-full bg-[var(--accent)]" style={{ width: `${(used / 5000) * 100}%` }} /></div>
+          <p className="text-[22px] font-semibold tabular-nums mt-1">{fmtInt(used)} <span className="text-[13px] font-normal text-[var(--text-dim)]">/ {fmtInt(included)} {tx('credits')}</span></p>
+          <div className="h-1.5 rounded-full bg-[var(--surface-2)] mt-3 overflow-hidden"><div className="h-full bg-[var(--accent)]" style={{ width: `${Math.min(100, (used / included) * 100)}%` }} /></div>
           <p className="text-[12px] text-[var(--text-dim)] mt-3">{tx('Over the included credits, each one costs €0.01. Set a monthly cap so it never surprises you.')}</p>
         </Panel>
         <Panel className="p-5 space-y-3">

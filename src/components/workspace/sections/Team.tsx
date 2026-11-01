@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { paidApi, type ApiRole } from '../../../lib/cloud/paid-client'
+import { usePaidQuery } from '../../../hooks/usePaidQuery'
+import { SoonBanner } from '../Soon'
 import type { SectionProps } from '../registry'
 import { Head, Primary, Quiet, Panel, SectionLabel, DataList, Dialog, Field, Tabs, inputClass, fmtInt, type Column } from '../ui'
 import { ACTIONS, DEFAULTS, GRANTABLE, PAID_ROLES, ROLES, toggled, useAccess, type Action, type Role } from '../roles'
@@ -35,15 +38,37 @@ export default function Team({ data }: SectionProps) {
     'version.publish': tx('Publish versions'), 'version.review': tx('Approve versions'), 'standard.edit': tx('Change the house standard'), 'audit.read': tx('Read the audit log'), 'reception.manage': tx('Manage suppliers and deliveries'),
     'automations.manage': tx('Build automations'), 'value.read': tx('See the value report'), 'webhooks.manage': tx('Connect integrations'), 'middleware.manage': tx('Run data containers'), 'members.manage': tx('Manage people and roles'), billing: tx('Handle billing'),
   }
+  const q = usePaidQuery(() => paidApi.members(), { members: [], seats: { paid: SEATS, used: 0 } })
+  const roles = usePaidQuery(() => paidApi.policies(), { roles: [] })
+  const versions = usePaidQuery(() => paidApi.versions(), { versions: [] })
+  const live = q.source === 'live'
+  const [err, setErr] = useState<string | null>(null)
+  useEffect(() => { if (live) setMembers(q.data.members.map((m) => ({ id: m.user_id, name: m.user_id, email: '', role: m.role, lastActive: m.since.slice(0, 10), projects: null }))) }, [live, q.data])
+  useEffect(() => {
+    if (roles.source !== 'live') return
+    setPolicies({ ...policies, ...Object.fromEntries(roles.data.roles.map((r) => [r.role, r.can as Action[]])) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roles.source, roles.data])
+  const report = (r: { ok: boolean; error?: { code: string; message?: string } }) => setErr(r.ok ? null : r.error?.code === 'no_seat' ? tx('All paid seats are in use. Add a seat in Credits & billing, or invite a reviewer.') : r.error?.message ?? r.error?.code ?? null)
+  const changeRole = (m: Member, to: Role) => {
+    setMembers(members.map((x) => (x.id === m.id ? { ...x, role: to } : x)))
+    if (live) void paidApi.setRole(m.id, to as ApiRole).then((r) => { report(r); q.reload() })
+  }
+  const flip = (r: Role, a: Action) => {
+    const next = toggled(policies, r, a)
+    setPolicies(next)
+    if (live) void paidApi.setPolicy(r as ApiRole, [...next[r]]).then((x) => { report(x); roles.reload() })
+  }
   const paid = (r: Role) => PAID_ROLES.includes(r)
+  const seats = live ? q.data.seats.paid : SEATS
   const used = members.filter((m) => paid(m.role)).length
-  const full = paid(role) && used >= SEATS
-  const canTake = (m: Member, r: Role) => m.role === r || !paid(r) || paid(m.role) || used < SEATS
+  const full = paid(role) && used >= seats
+  const canTake = (m: Member, r: Role) => m.role === r || !paid(r) || paid(m.role) || used < seats
   const others = (m: Member) => m.role !== 'owner' || members.some((x) => x.id !== m.id && x.role === 'owner')
 
   const columns: Column<Member>[] = [
     { key: 'role', header: tx('Role'), cell: (m) => (!others(m) ? ROLE.owner : (
-      <select aria-label={tx('Role of {{name}}', { name: m.name })} className={`${inputClass} !h-[32px] w-auto`} value={m.role} onChange={(e) => setMembers(members.map((x) => (x.id === m.id ? { ...x, role: e.target.value as Role } : x)))}>
+      <select aria-label={tx('Role of {{name}}', { name: m.name })} className={`${inputClass} !h-[32px] w-auto`} value={m.role} onChange={(e) => changeRole(m, e.target.value as Role)}>
         {ROLES.map((r) => <option key={r} value={r} disabled={!canTake(m, r)}>{ROLE[r]}</option>)}
       </select>
     )) },
@@ -58,11 +83,13 @@ export default function Team({ data }: SectionProps) {
 
   return (
     <>
-      <Head title={tx('Team')} sub={data.account.org} action={<Primary onClick={() => setInviting(true)}>{tx('Invite a colleague')}</Primary>} />
+      <Head title={tx('Team')} sub={data.account.org} action={live ? undefined : <Primary onClick={() => setInviting(true)}>{tx('Invite a colleague')}</Primary>} />
+      {live && <SoonBanner section="team" source={q.source} error={q.error} />}
+      {err && <p role="alert" className="mb-3 text-[12.5px] text-[var(--danger)]">{err}</p>}
 
       <Panel className="p-4 sm:p-5 mb-6 grid gap-4 sm:grid-cols-[auto_1fr] sm:gap-8">
         <div>
-          <p className="text-[28px] font-semibold tabular-nums tracking-[-0.02em] leading-none">{fmtInt(used)}<span className="text-[15px] font-normal text-[var(--text-dim)]"> / {SEATS}</span></p>
+          <p className="text-[28px] font-semibold tabular-nums tracking-[-0.02em] leading-none">{fmtInt(used)}<span className="text-[15px] font-normal text-[var(--text-dim)]"> / {seats}</span></p>
           <p className="mt-1.5 text-[13px] text-[var(--text-dim)]">{tx('Paid seats')}</p>
         </div>
         <p className="text-[13px] text-[var(--text-dim)] sm:self-center max-w-[560px]">{tx('Owner, admins and editors use a seat. Reviewers, viewers and guests are free, so whoever checks the work or reads the numbers never needs a licence.')}</p>
@@ -97,7 +124,7 @@ export default function Team({ data }: SectionProps) {
                     {EDITABLE.map((r) => (
                       <td key={r} className="px-2 py-2 text-center">
                         {GRANTABLE[r].includes(a)
-                          ? <input type="checkbox" aria-label={`${ROLE[r]}: ${ACTION[a]}`} checked={policies[r].includes(a)} onChange={() => setPolicies(toggled(policies, r, a))} />
+                          ? <input type="checkbox" aria-label={`${ROLE[r]}: ${ACTION[a]}`} checked={policies[r].includes(a)} onChange={() => flip(r, a)} />
                           : <span className="text-[var(--text-faint)]" aria-label={tx('Not available')}>—</span>}
                       </td>
                     ))}
@@ -109,7 +136,7 @@ export default function Team({ data }: SectionProps) {
         </>
       )}
 
-      {scoping && <ProjectAccess member={scoping} projects={data.projects.map((p) => p.name)} onClose={() => setScoping(null)} onSave={(projects) => { setMembers(members.map((x) => (x.id === scoping.id ? { ...x, projects } : x))); setScoping(null) }} />}
+      {scoping && <ProjectAccess member={scoping} projects={live ? [...new Set(versions.data.versions.map((v) => v.container.split('-')[0]))] : data.projects.map((p) => p.name)} onClose={() => setScoping(null)} onSave={(projects) => { setMembers(members.map((x) => (x.id === scoping.id ? { ...x, projects } : x))); if (live) void paidApi.setMemberProjects(scoping.id, projects ?? []).then(report); setScoping(null) }} />}
 
       {inviting && (
         <Dialog title={tx('Invite a colleague')} onClose={() => setInviting(false)}
