@@ -22,6 +22,7 @@ import { SoonChip } from './Soon'
 import { ChevronRight } from 'lucide-react'
 import { SECTIONS, canUse, sectionFromPath, type PaidPlan, type SectionActions, type SectionId, type SectionDef } from './registry'
 import { Banner, Primary, Quiet, Skeleton, fmtInt, NAV_EVENT, notifyNav } from './ui'
+import { AccessContext, PERSONAS, SAMPLE_POLICIES, accessFor, canSee, type PersonaId } from './roles'
 import { previewProvider, type CheckoutItem, type CheckoutOutcome } from '../../lib/pricing/checkout'
 import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
@@ -66,6 +67,8 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const [section, setSection] = useState<SectionId>(() => (typeof location !== 'undefined' ? sectionFromPath(location.pathname) : 'overview'))
   const [scenario, setScenario] = useState<Scenario>('active')
   const [previewPlan, setPreviewPlan] = useState<PaidPlan>('pro')
+  const [persona, setPersona] = useState<PersonaId>('owner')
+  const [policies, setPolicies] = useState(SAMPLE_POLICIES)
   const [checkoutOutcome, setCheckoutOutcome] = useState<CheckoutOutcome['status']>('paid')
   const [jobOpen, setJobOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -81,7 +84,9 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     addEventListener(NAV_EVENT, sync)
     return () => { removeEventListener('popstate', sync); removeEventListener(NAV_EVENT, sync) }
   }, [])
-  const data = useMemo(() => { const d = scenarioData(scenario); return { ...d, account: { ...d.account, plan: previewPlan } } }, [scenario, previewPlan])
+  const limit = PERSONAS.find((p) => p.id === persona)!.projects
+  const data = useMemo(() => { const d = scenarioData(scenario); return { ...d, projects: limit === null ? d.projects : d.projects.slice(0, limit), account: { ...d.account, plan: previewPlan } } }, [scenario, previewPlan, limit])
+  const access = useMemo(() => accessFor(persona, policies, setPolicies), [persona, policies])
   const top = useRef<HTMLDivElement>(null)
   const provider = useMemo(() => previewProvider(checkoutOutcome), [checkoutOutcome])
 
@@ -122,10 +127,11 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
 
   const plan = data.account.plan
   const current = SECTIONS.find((s) => s.id === section)!
-  const tabs = SECTIONS.filter((s) => !s.secondary)
-  const more = SECTIONS.filter((s) => s.secondary)
-  const work = SECTIONS.filter((s) => s.group !== 'account')
-  const account = SECTIONS.filter((s) => s.group === 'account')
+  const visible = SECTIONS.filter((s) => canSee(s.id, access.can))
+  const tabs = visible.filter((s) => !s.secondary)
+  const more = visible.filter((s) => s.secondary)
+  const work = visible.filter((s) => s.group !== 'account')
+  const account = visible.filter((s) => s.group === 'account')
   const initials = data.account.name.split(' ').map((w) => w[0]).slice(0, 2).join('')
   const moreActive = more.some((s) => s.id === section)
   const soonActive = !!SECTIONS.find((s) => s.id === section)?.soon
@@ -137,6 +143,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
       {rich(tx('Your projects and credits are safe. Check your connection; if it keeps failing, <0>tell us</0> — the report includes what we need.'), [(c) => <button className="text-[var(--accent)] hover:underline" onClick={() => setContact({ kind: 'bug' })}>{c}</button>])}
     </Banner>
   )
+  else if (!canSee(section, access.can)) body = <Banner tone="info" title={tx('Your role does not include this')} action={<Quiet onClick={() => go('overview')}>{tx('Go to overview')}</Quiet>}>{tx('Ask an admin of your company if you need it: they decide what each role can do.')}</Banner>
   else if (!canUse(plan, current)) body = <LockedSection section={current} current={plan} period={data.account.billing} onUpgrade={setCheckout} />
   else body = <current.Component key={section} data={data} actions={actions} />
 
@@ -147,6 +154,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const offerTour = pageTour && !seen.has(pageTour.id) && !tour ? pageTour : undefined
   const status = data.account.status
   return (
+    <AccessContext.Provider value={access}>
     <div ref={top} className="min-h-[100dvh] bg-[var(--bg)] text-[var(--text)]">
       <header className="sticky top-0 z-20 flex items-center gap-2 sm:gap-3 px-4 sm:px-6 h-[48px] border-b border-[var(--border)] bg-[var(--bg)] pt-[env(safe-area-inset-top)] box-content">
         <button onClick={onNavigateHome} className="text-[13.5px] font-semibold truncate">{tx("IFC Viewer Online")}</button>
@@ -160,6 +168,12 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
               <select value={previewPlan} onChange={(e) => setPreviewPlan(e.target.value as PaidPlan)} className="mt-1 w-full h-[32px] bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-1.5 text-[12.5px] text-[var(--text)]">
                 <option value="pro">{tx("Pro")}</option>
                 <option value="team">{tx("Team")}</option>
+              </select>
+            </label>
+            <label className="block text-[11.5px] text-[var(--text-faint)]">
+              {tx("See it as")}
+              <select value={persona} onChange={(e) => setPersona(e.target.value as PersonaId)} className="mt-1 w-full h-[32px] bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-1.5 text-[12.5px] text-[var(--text)]">
+                {PERSONAS.map((p) => <option key={p.id} value={p.id}>{tx(p.label)}</option>)}
               </select>
             </label>
             <label className="block text-[11.5px] text-[var(--text-faint)]">
@@ -188,7 +202,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
               <p className="text-[11.5px] text-[var(--text-faint)] truncate" title={data.account.email}>{data.account.email}</p>
               <p className="mt-1 text-[11.5px] text-[var(--text-dim)]">{data.account.plan === 'team' ? tx("Team") : tx("Pro")} · {tx('{{n}} credits', { n: fmtInt(data.account.credits.balance) })}</p>
             </div>
-            {[...account, SECTIONS.find((s) => s.id === 'billing')!].map((s) => (
+            {[...account.filter((s) => s.id !== 'billing'), ...visible.filter((s) => s.id === 'billing')].map((s) => (
               <button key={s.id} onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; go(s.id) }}
                 className="w-full text-left px-4 h-[36px] text-[13px] hover:bg-[var(--surface-2)] flex items-center gap-2.5"><s.icon size={15} aria-hidden className="text-[var(--text-dim)]" />{tx(s.label)}</button>
             ))}
@@ -209,7 +223,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
         <nav aria-label={tx("Workspace")} className="hidden md:flex md:flex-col md:shrink-0 md:sticky md:top-[48px] md:self-start md:h-[calc(100dvh-48px)] md:py-5 md:px-2 lg:px-3 md:gap-0.5 md:items-center lg:items-stretch lg:w-[200px]">
           {/* Rail (tablet): icons only. Sidebar (desktop): grouped, unbuilt screens folded away. */}
           <div className="flex flex-col gap-0.5 items-center lg:hidden">
-            {SECTIONS.filter((s) => !s.soon && s.group !== 'account').map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="rail" />)}
+            {visible.filter((s) => !s.soon && s.group !== 'account').map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="rail" />)}
           </div>
           <div className="hidden lg:flex flex-col gap-0.5">
             {work.filter((s) => !s.soon && canUse(plan, s)).map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={false} go={go} variant="side" />)}
@@ -290,5 +304,6 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
       {contact && <ContactDialog kind={contact.kind} refId={contact.ref} section={section} onClose={() => setContact(null)} />}
       {checkout && <CheckoutDialog item={checkout} provider={provider} onClose={() => setCheckout(null)} />}
     </div>
+    </AccessContext.Provider>
   )
 }
