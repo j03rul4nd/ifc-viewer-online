@@ -105,9 +105,7 @@ Everything above is free and costs no server. Backend, dark, in `ifc-cloud-api` 
 (`FEATURE_DRAWINGS`, `FEATURE_DRAWING_CONVERT`): **Pro** sheets in the cloud with
 revisions and a CSV register, and DWG to DXF in credits; **Team** the same shared, with
 roles and guests per project. There is no client code calling it yet. Costs and when to
-switch it on: `docs-planning/22-planos-tecnicos-recursos-y-roi.md`. Whether the sheet
-set or the scan check should start in Pro (option C) is Joel's decision to make before
-this is public: nothing free is ever taken back.
+switch it on: `docs-planning/22-planos-tecnicos-recursos-y-roi.md`. The sheet set and the scan check stay free (Joel, 2026-11-02).
 
 ## Phases
 
