@@ -308,7 +308,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
     faqs: [
       {
         q: "¿Cómo boceto sobre mi modelo IFC?",
-        a: "Abre el modelo en el visor y elige Ver y luego Boceto 3D. El estudio se abre en otra pestaña con el modelo de fondo. Con la herramienta de plano, pulsa una cara para colocar en ella el plano de dibujo, y dibuja.",
+        a: "Abre el modelo en el visor y elige Vista y luego Boceto 3D. El estudio se abre en otra pestaña con el modelo de fondo. Con la herramienta de plano, pulsa una cara para colocar en ella el plano de dibujo, y dibuja.",
       },
       {
         q: "¿Se sube mi modelo?",
@@ -396,7 +396,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
             body: "Suelta uno o varios IFC en el visor. Varios modelos viajan juntos.",
           },
           {
-            title: "Ver y luego Boceto 3D",
+            title: "Vista y luego Boceto 3D",
             body: "El estudio se abre en otra pestaña con tus modelos como fondo que puedes girar, mostrar u ocultar.",
           },
           {
@@ -466,7 +466,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
           " en Blender, pero no ofrecemos esa conversión. Tampoco se puede dibujar en vivo entre varias personas. Los modelos muy grandes dependen de la memoria de tu dispositivo, y aún no lo hemos probado en tablets físicas.",
         ],
       },
-      { type: "tool", id: "viewer", why: "Abre tu IFC y elige Ver y luego Boceto 3D." },
+      { type: "tool", id: "viewer", why: "Abre tu IFC y elige Vista y luego Boceto 3D." },
     ],
     lang: "es",
     translationKey: "sketch-over-ifc-bim-model-redline",
@@ -519,7 +519,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
       },
       {
         q: "¿Puedo bocetar sobre mi propia ciudad o activo?",
-        a: "Sí, si lo tienes como modelo o escaneo abierto en el visor: elige Ver y luego Boceto 3D. Aparece como fondo sobre el que dibujar.",
+        a: "Sí, si lo tienes como modelo o escaneo abierto en el visor: elige Vista y luego Boceto 3D. Aparece como fondo sobre el que dibujar.",
       },
       {
         q: "¿Es esto un análisis estructural o de inundación?",

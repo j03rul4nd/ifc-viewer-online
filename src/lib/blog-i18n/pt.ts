@@ -306,7 +306,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
     faqs: [
       {
         q: "Como esboço sobre meu modelo IFC?",
-        a: "Abra o modelo no visualizador e escolha Ver e depois Esboço 3D. O estúdio abre em outra aba com o modelo ao fundo. Com a ferramenta de plano, pressione uma face para colocar nela o plano de desenho e desenhe.",
+        a: "Abra o modelo no visualizador e escolha Exibir e depois Esboço 3D. O estúdio abre em outra aba com o modelo ao fundo. Com a ferramenta de plano, pressione uma face para colocar nela o plano de desenho e desenhe.",
       },
       {
         q: "Meu modelo é enviado?",
@@ -394,7 +394,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             body: "Solte um ou vários IFC no visualizador. Vários modelos viajam juntos.",
           },
           {
-            title: "Ver e depois Esboço 3D",
+            title: "Exibir e depois Esboço 3D",
             body: "O estúdio abre em outra aba com seus modelos como fundo que você pode girar, mostrar ou ocultar.",
           },
           {
@@ -464,7 +464,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           " no Blender, mas não oferecemos essa conversão. Também não é possível desenhar ao vivo com várias pessoas. Modelos muito grandes dependem da memória do seu dispositivo, e ainda não testamos em tablets físicos.",
         ],
       },
-      { type: "tool", id: "viewer", why: "Abra seu IFC e escolha Ver e depois Esboço 3D." },
+      { type: "tool", id: "viewer", why: "Abra seu IFC e escolha Exibir e depois Esboço 3D." },
     ],
     lang: "pt",
     translationKey: "sketch-over-ifc-bim-model-redline",
@@ -517,7 +517,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
       {
         q: "Posso esboçar sobre minha própria cidade ou ativo?",
-        a: "Sim, se você o tiver como modelo ou escaneamento aberto no visualizador: escolha Ver e depois Esboço 3D. Ele aparece como fundo para desenhar por cima.",
+        a: "Sim, se você o tiver como modelo ou escaneamento aberto no visualizador: escolha Exibir e depois Esboço 3D. Ele aparece como fundo para desenhar por cima.",
       },
       {
         q: "Isto é uma análise estrutural ou de inundação?",

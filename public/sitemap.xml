@@ -1214,6 +1214,11 @@
 
   <!-- Digital twin builder (AGV warehouse, import tracker) -->
   <url>
+    <loc>https://www.ifcvieweronline.eu/sketch/</loc>
+    <lastmod>2026-11-01</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.ifcvieweronline.eu/twin-builder/</loc>
     <lastmod>2026-10-28</lastmod>
     <changefreq>monthly</changefreq>

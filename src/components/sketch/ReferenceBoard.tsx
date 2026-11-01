@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { togglePin, updateReference } from '../../hooks/sketch/actions'
+import { pinchView, type Fingers } from '../../lib/sketch/pinch'
 import type { ReferenceImage } from '../../lib/sketch/types'
 import { useSketchStore } from '../../stores/sketchStore'
 import type { Tx } from './SketchStudio'
@@ -18,6 +19,17 @@ export default function ReferenceBoard({ tx }: { tx: Tx }) {
   const [view, setView] = useState({ x: 8, y: 8, zoom: 0.5 })
   const pan = useRef<{ x: number; y: number } | null>(null)
   const box = useRef<HTMLDivElement>(null)
+  // Every finger on the board, seen before a card or the pan can claim it.
+  const touches = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<Fingers | null>(null)
+  const local = (e: React.PointerEvent) => {
+    const r = box.current!.getBoundingClientRect()
+    return { x: e.clientX - r.left, y: e.clientY - r.top }
+  }
+  const fingers = (): Fingers | null => {
+    const [a, b] = [...touches.current.values()]
+    return a && b ? { a, b } : null
+  }
 
   useEffect(() => {
     const el = box.current
@@ -43,6 +55,27 @@ export default function ReferenceBoard({ tx }: { tx: Tx }) {
   return (
     <div
       ref={box} className="relative h-full overflow-hidden" style={{ touchAction: 'none', background: 'var(--sk-soft)' }}
+      onPointerDownCapture={(e) => {
+        if (e.pointerType !== 'touch') return
+        touches.current.set(e.pointerId, local(e))
+        pinch.current = fingers()
+        if (pinch.current) {
+          pan.current = null
+          e.stopPropagation()
+        }
+      }}
+      onPointerMoveCapture={(e) => {
+        if (!touches.current.has(e.pointerId)) return
+        touches.current.set(e.pointerId, local(e))
+        const now = fingers()
+        if (!pinch.current || !now) return
+        const from = pinch.current
+        pinch.current = now
+        setView((v) => pinchView(v, from, now))
+        e.stopPropagation()
+      }}
+      onPointerUpCapture={(e) => { touches.current.delete(e.pointerId); pinch.current = fingers() }}
+      onPointerCancelCapture={(e) => { touches.current.delete(e.pointerId); pinch.current = fingers() }}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); pan.current = { x: e.clientX, y: e.clientY } }}
       onPointerMove={(e) => {
         if (!pan.current) return

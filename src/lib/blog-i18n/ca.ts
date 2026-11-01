@@ -306,7 +306,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
     faqs: [
       {
         q: "Com esbosso sobre el meu model IFC?",
-        a: "Obre el model al visor i tria Veure i després Esbós 3D. L’estudi s’obre en una altra pestanya amb el model de fons. Amb l’eina de pla, prem una cara per col·locar-hi el pla de dibuix, i dibuixa.",
+        a: "Obre el model al visor i tria Vista i després Esbós 3D. L’estudi s’obre en una altra pestanya amb el model de fons. Amb l’eina de pla, prem una cara per col·locar-hi el pla de dibuix, i dibuixa.",
       },
       {
         q: "Es puja el meu model?",
@@ -394,7 +394,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
             body: "Deixa anar un o diversos IFC al visor. Diversos models viatgen junts.",
           },
           {
-            title: "Veure i després Esbós 3D",
+            title: "Vista i després Esbós 3D",
             body: "L’estudi s’obre en una altra pestanya amb els teus models com a fons que pots girar, mostrar o amagar.",
           },
           {
@@ -464,7 +464,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           " a Blender, però no oferim aquesta conversió. Tampoc no es pot dibuixar en viu entre diverses persones. Els models molt grans depenen de la memòria del teu dispositiu, i encara no ho hem provat en tauletes físiques.",
         ],
       },
-      { type: "tool", id: "viewer", why: "Obre el teu IFC i tria Veure i després Esbós 3D." },
+      { type: "tool", id: "viewer", why: "Obre el teu IFC i tria Vista i després Esbós 3D." },
     ],
     lang: "ca",
     translationKey: "sketch-over-ifc-bim-model-redline",
@@ -517,7 +517,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       },
       {
         q: "Puc esbossar sobre la meva ciutat o actiu?",
-        a: "Sí, si el tens com a model o escaneig obert al visor: tria Veure i després Esbós 3D. Apareix com a fons sobre el qual dibuixar.",
+        a: "Sí, si el tens com a model o escaneig obert al visor: tria Vista i després Esbós 3D. Apareix com a fons sobre el qual dibuixar.",
       },
       {
         q: "És això una anàlisi estructural o d’inundació?",

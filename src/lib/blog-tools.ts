@@ -24,7 +24,7 @@ export interface BlogTool {
 export const BLOG_TOOLS: BlogTool[] = [
   {
     id: 'sketch', icon: 'share',
-    href: { en: '/sketch' },
+    href: { en: '/sketch/' },
     terms: ['3d sketch', 'sketching', 'draw in 3d', 'redline', 'croquis', 'boceto', 'skizze', 'esboço', 'schizzo', '草图', 'スケッチ', 'ภาพร่าง'],
     copy: {
       en: { name: '3D sketch studio', action: 'Open the studio', blurb: 'Draw in 3D with a pen or a finger, over your models if you like. Free, in the browser, no account.' },
