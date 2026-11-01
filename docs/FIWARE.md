@@ -52,6 +52,7 @@ Not supported: writing back to the broker, temporal queries, and creating subscr
 
 ## Status
 
-Tested against a local stand-in that follows the NGSI-LD response format, not yet against
-a real Orion-LD or Scorpio. We state protocol compatibility only: FIWARE's name and logo
+Tested end to end against a real Orion-LD (`fiware/orion-ld`, on MongoDB 4.4; MongoDB 6
+crashes it) behind a CORS proxy. In our test Orion-LD itself sent no CORS headers, even with
+`-corsOrigin`, so expect to need that proxy. NGSIv2 and Scorpio are not tested yet. We state protocol compatibility only: FIWARE's name and logo
 have their own rules (see its Brand Guide), and no certification has been requested.
