@@ -113,7 +113,7 @@ const MAP_MAX_POLAR_RAD = maxPolarFor('surface')
 /** Frames between sweeps that bring freshly streamed tiles and layers into the subsurface view. */
 const SUBSURFACE_SWEEP_FRAMES = 10
 /** Client-side ceiling on a building query, longer than the worker's own. */
-const BUILDINGS_TIMEOUT_MS = 45_000
+const BUILDINGS_TIMEOUT_MS = 120_000
 
 /**
  * Cache key for one Overpass query. Four decimals is ~11 m — far finer than the
