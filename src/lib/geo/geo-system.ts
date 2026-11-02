@@ -93,6 +93,7 @@ import { waterExposureAt, type WaterExposure } from './water-exposure'
 import { buildCurrentParticles, setLiveCurrent } from './current-particles'
 import { buildBeachEdgeLayer, pavedNearFor, seaBeaches } from './beach-edge'
 import { carveGround, planBeachWalls } from './beach-carve'
+import { carvePonds, pondLevelM } from './pond-carve'
 import { fetchMarine, marineAt, type MarineNow } from './marine-feed'
 import {
   applyMode as applySubsurfaceMode, assessBurial, buildPitWalls, cutPlanes, cutRect, maxPolarFor,
@@ -3735,10 +3736,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (typeof t.setGroundOverride !== 'function') return
     t.setGroundOverride(null)
     const mToN = metresToNormalized(anchorLat)
+    const ponds = pondCarveFor(t, features, mToN)
     const sea = seaDistanceFor(features, { mToN } as Parameters<typeof seaDistanceFor>[1])
-    if (!sea) return
-    const beaches = seaBeaches(features, sea)
-    if (beaches.length === 0) return
+    const beaches = sea ? seaBeaches(features, sea) : []
+    if (!sea || beaches.length === 0) {
+      if (ponds) t.setGroundOverride(ponds)
+      return
+    }
     const o = latLonToNormalized(beaches[0].ring![0].lat, beaches[0].ring![0].lon)
     const toLocal = (q: { lat: number; lon: number }) => {
       const n = latLonToNormalized(q.lat, q.lon)
@@ -3748,9 +3752,32 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const groundM = (x: number, y: number) => t.sampleGroundM(o.nx + x * mToN, o.ny + y * mToN)
     const seaM = (x: number, y: number) => sea(o.nx + x * mToN, o.ny + y * mToN)
     const walls = planBeachWalls(rings, groundM, seaM, pavedNearFor(features, toLocal))
-    if (walls.length === 0) return
+    if (walls.length === 0) {
+      if (ponds) t.setGroundOverride(ponds)
+      return
+    }
     const carve = carveGround(walls, rings)
-    t.setGroundOverride((nx, ny, h) => carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h))
+    t.setGroundOverride((nx, ny, h) => {
+      const beach = carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h)
+      return ponds ? ponds(nx, ny, beach) : beach
+    })
+  }
+
+  /** The bed of every inland pond, held under its water (pond-carve). Null when there is none. */
+  function pondCarveFor(
+    t: TerrainPatch, features: ReadonlyArray<OsmFeature>, mToN: number,
+  ): ((nx: number, ny: number, h: number) => number) | null {
+    const ponds = features.filter((f) => f.kind === 'water' && f.ring && f.ring.length >= 3
+      && !f.isSea && !f.waterCourse && !f.waterJoin)
+    if (ponds.length === 0) return null
+    const o = latLonToNormalized(ponds[0].ring![0].lat, ponds[0].ring![0].lon)
+    const rings = ponds.map((f) => f.ring!.map((q) => {
+      const n = latLonToNormalized(q.lat, q.lon)
+      return { x: (n.nx - o.nx) / mToN, y: (n.ny - o.ny) / mToN }
+    }))
+    const groundM = (x: number, y: number) => t.sampleGroundM(o.nx + x * mToN, o.ny + y * mToN)
+    const carve = carvePonds(rings, rings.map((r) => pondLevelM(r, groundM)))
+    return (nx, ny, h) => carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h)
   }
 
   function flyToAerial(): void {

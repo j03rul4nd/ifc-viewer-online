@@ -937,7 +937,7 @@ describe('what is not on the surface is not drawn', () => {
     // infrastructure to be drawn BELOW the surface, not scenery to be deleted —
     // and deleting it at parse time, before the cache, meant no layer toggle
     // could ever bring it back.
-    expect(out.map((f) => f.id)).toEqual(['w1', 'w4'])
+    expect(out.map((f) => f.id).filter((id) => !id.endsWith('-sidewalk'))).toEqual(['w1', 'w4'])
     expect(out[0].vertical?.structure).toBe('tunnel')
   })
 

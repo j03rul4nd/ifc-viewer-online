@@ -44,6 +44,8 @@ const losses: FeatureLoss[] = []
 const FEATURES = parseOsmFeatures(
   { elements: ELEMENTS }, { bbox: BOX, onDrop: (l) => losses.push(l) },
 ) as OsmFeature[]
+/** What the mappers drew, without the pavements the parser adds (sidewalks.ts). */
+const MAPPED = FEATURES.filter((f) => !f.id.endsWith('-sidewalk'))
 const CENSUS = censusFeatures(ELEMENTS, FEATURES, losses)
 const probe = (key: string) => CENSUS.probes.find((p) => p.key === key)!
 
@@ -213,7 +215,7 @@ describe('Port Vell benchmark · a way is allowed to mean several things', () =>
     // landuse nothing claims — which take their material from their own path
     // rather than from `surface`. Pinned rather than rounded up: the gap is
     // real and this is where it will be visible when it is worth closing.
-    const carried = FEATURES.filter((f) => f.style.surface !== undefined)
+    const carried = MAPPED.filter((f) => f.style.surface !== undefined)
     expect(carried).toHaveLength(80)
 
     const paving = FEATURES.filter((f) => f.style.surface === 'paving_stones')
@@ -249,7 +251,7 @@ describe('Port Vell benchmark · a way is allowed to mean several things', () =>
     // The orthogonality that already worked, pinned so it keeps working: 7
     // bridge ways and 6 tunnel ways in this box, every one of them still in the
     // street network rather than promoted out of it.
-    const carried = FEATURES.filter((f) => f.vertical && f.vertical.structure !== 'ground')
+    const carried = MAPPED.filter((f) => f.vertical && f.vertical.structure !== 'ground')
     expect(carried.length).toBeGreaterThanOrEqual(11)
     expect(carried.every((f) => f.kind === 'road' || f.kind === 'rail')).toBe(true)
   })
@@ -323,7 +325,7 @@ describe('Port Vell benchmark · a square is a square', () => {
     expect(promenade.ring!.length).toBeGreaterThan(3)
 
     // Every closed pedestrian way in the box is now an area, and there are six.
-    const areas = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking && !f.style.court)
+    const areas = MAPPED.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking && !f.style.court)
     expect(areas).toHaveLength(5)   // the sixth is the Rambla de Mar, claimed as a pier
   })
 
@@ -332,7 +334,7 @@ describe('Port Vell benchmark · a square is a square', () => {
     // Over terrain those seven corners are one flat plate across a third of a
     // kilometre; the fill has to be split against the DEM like every other
     // ground surface in the scene.
-    const plaza = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking && !f.style.court)
+    const plaza = MAPPED.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking && !f.style.court)
     const flat = buildLinearLayer(plaza, 'road', OPTS)!
     const hilly = buildLinearLayer(plaza, 'road', {
       ...OPTS,
