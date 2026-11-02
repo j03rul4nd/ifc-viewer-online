@@ -893,10 +893,11 @@ function* buildDetailedSurface(
       : 0
     // The shore distance drives the foam and the shallows, which are metres
     // wide. Interpolated over a starved mesh's long triangles it draws them as
-    // fans across the open water; such a surface is better left uniform.
+    // fans across the open water; such a surface is better left uniform — as
+    // OPEN water. Zero meant "on the shore": the whole basin foamed white.
     const starved = isWater && longestEdge(mesh.points, mesh.faces) > DETAIL_EDGE_M[layer] * 3
     const shoreDist = isWater
-      ? (starved ? new Array<number>(mesh.points.length).fill(0) : distanceToRings(mesh.points, boundaries))
+      ? (starved ? new Array<number>(mesh.points.length).fill(OPEN_WATER_SHORE_M) : distanceToRings(mesh.points, boundaries))
       : null
     const shoreOfSand = layer === 'sand' ? seaDistanceFor(features, frame) : null
     const course = isWater ? waterSurfacesFor(features, frame).get(f.id) : undefined
@@ -1364,6 +1365,9 @@ export const MAX_LINEAR = 3000
  * coplanar by nature, so the order here IS the draw order: greenery, then
  * asphalt over it, then ballast over that, then the rails on top.
  */
+/** Shore distance given to a starved water mesh, metres: past every foam and shallows band. */
+export const OPEN_WATER_SHORE_M = 1000
+
 const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 }
 
 /**
