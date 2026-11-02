@@ -45,6 +45,8 @@ import { outsetRing } from './plaza-paving'
 /** How far a partly-described outline is set back inside itself, metres. */
 const OUTLINE_INSET_M = 0.25
 import { shanghaiBridgeWidth } from './shanghai-bridges'
+import { sidewalkWidthM, SIDEWALK_TONE } from './sidewalks'
+import { isBarcelona } from './barcelona-barris'
 import { hydrologyQueryParts } from './osm-hydro'
 import {
   buildHydroNetwork, joinPatches, structureOf, waterRegimeOf,
@@ -871,6 +873,7 @@ export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   // A surface car park is paved ground — the bus apron by the cruise
   // terminals, the lots along the Moll de Barcelona — and it is only ever an area.
   if (isSurfaceParking(t)) return true
+  if (t['place'] === 'square') return true
   return t['highway'] === 'pedestrian'
 }
 
@@ -1259,6 +1262,8 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (t['public_transport'] === 'platform' && t['railway'] !== undefined) return 'rail'
 
   if (ROAD_VALUES.has(t['highway'] ?? '') || (t['area:highway'] && t['area:highway'] !== 'no')) return 'road'
+  // A square mapped only as a place is still a paved floor (isPavedArea).
+  if (t['place'] === 'square') return 'road'
   if (isPavedArtwork(t)) return 'road'
   if (isSurfaceParking(t)) return 'road'
   if (t['leisure'] === 'playground' || isHardPitch(t)) return 'road'
@@ -1992,6 +1997,17 @@ export function parseOsmFeatures(
           // metro tunnel is often named only by its line's ref.
           name: el.tags?.['name'] ?? el.tags?.['ref'],
         })
+        // The pavement either side, as a floor under the carriageway (sidewalks).
+        const vertical = readVerticalTags(el.tags)
+        const pavementM = kind === 'road' && style.roadClass !== 'pedestrian' && vertical.structure === 'ground'
+          ? sidewalkWidthM(el.tags, isBarcelona(pts[0].lat, pts[0].lon)) : null
+        const pavement = pavementM ? bufferWaterway(pts, roadWidth(el.tags) + 2 * pavementM) : null
+        if (pavement) {
+          out.push({
+            id: `w${el.id}-sidewalk`, kind, ring: pavement, height,
+            style: { ...style, roadClass: 'pedestrian', surface: 'paving_stones', tone: SIDEWALK_TONE, crossing: undefined },
+          })
+        }
         continue
       }
 
