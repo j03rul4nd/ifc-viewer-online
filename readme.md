@@ -14,6 +14,7 @@ No account. No file size limit. Your models never leave your machine.
 [![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-3b82f6?style=for-the-badge)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-8b5cf6?style=for-the-badge)](CONTRIBUTING.md)
+[![MCP server](https://img.shields.io/badge/MCP-server-e11d48?style=for-the-badge)](mcp/README.md)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
 
 ![React](https://img.shields.io/badge/React_18-20232a?logo=react&logoColor=61dafb)

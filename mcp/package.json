@@ -1,0 +1,24 @@
+{
+  "name": "ifc-viewer-mcp",
+  "version": "1.0.0",
+  "mcpName": "io.github.j03rul4nd/ifc-viewer-mcp",
+  "description": "MCP server for IFC/BIM: validate IFC files, check IDS, get a Health Score on your own machine, and open models, drawings, 3D sketches and digital twins in a free browser 3D viewer.",
+  "keywords": ["mcp", "model-context-protocol", "ifc", "bim", "ids", "3d-viewer", "digital-twin", "fiware", "dxf", "openbim", "claude"],
+  "homepage": "https://www.ifcvieweronline.eu/mcp-server/",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "ifc-viewer-mcp": "dist/index.js" },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@xmldom/xmldom": "^0.9.8",
+    "web-ifc": "0.0.77",
+    "zod": "^3.25.76"
+  }
+}
