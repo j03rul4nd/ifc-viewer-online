@@ -947,7 +947,7 @@ export function buildEmbedUrl(o: EmbedUrlOptions): string {
   if (o.lang) u.searchParams.set('lang', o.lang)
   if (o.accent) u.searchParams.set('accent', o.accent.replace(/^#/, ''))
   if (o.panels) u.searchParams.set('panels', o.panels.join(','))
-  if (o.start) u.searchParams.set(...EMBED_START_LINKS[o.start])
+  if (o.start) { const [k, v] = EMBED_START_LINKS[o.start]; u.searchParams.set(k, v) }
   return u.toString()
 }
 
