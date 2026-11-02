@@ -265,6 +265,18 @@ function projectRing(ring: ReadonlyArray<LatLonPoint>): THREE.Vector2[] {
  * polygons collapse to nothing (this cost us ~89 % of buildings once — see
  * building-mesh). Indices are topological, so they apply to the normalized ring.
  */
+/** Triangulate an outer ring with holes; indices run over [outer, ...holes] flattened. */
+function triangulateWithHoles(outer: THREE.Vector2[], holes: THREE.Vector2[][], mToN: number): number[][] | null {
+  const o = outer[0]
+  const metric = (r: THREE.Vector2[]) => r.map((p) => new THREE.Vector2((p.x - o.x) / mToN, (p.y - o.y) / mToN))
+  try {
+    const faces = THREE.ShapeUtils.triangulateShape(metric(outer), holes.map(metric))
+    return faces.length > 0 ? faces : null
+  } catch {
+    return null
+  }
+}
+
 function triangulate(
   ring: THREE.Vector2[], mToN: number, holes: ReadonlyArray<THREE.Vector2[]> = [],
 ): number[][] | null {
@@ -1095,11 +1107,14 @@ export function buildBridgeLayer(
   const positions: number[] = []
   let count = 0
 
-  const pushDeck = (poly: THREE.Vector2[], topZ: number, bottomZ: number): void => {
-    const faces = triangulate(poly, mToN)
+  const pushDeck = (poly: THREE.Vector2[], topZ: number, bottomZ: number, holes: THREE.Vector2[][] = []): void => {
+    // An outline with holes is a ring of deck — the Lujiazui circular footbridge
+    // — and triangulating its outer ring alone lidded the whole roundabout.
+    const ring = holes.length > 0 ? [...poly, ...holes.flat()] : poly
+    const faces = holes.length > 0 ? triangulateWithHoles(poly, holes, mToN) : triangulate(poly, mToN)
     if (!faces) return
     for (const [a, b, c] of faces) {
-      for (const idx of [a, b, c]) positions.push(poly[idx].x, poly[idx].y, topZ)
+      for (const idx of [a, b, c]) positions.push(ring[idx].x, ring[idx].y, topZ)
     }
     // Soffit. `triangulate` leaves the ring CCW, so the top faces +z and the
     // same winding reversed faces −z. Without it the simple path — whose
@@ -1107,14 +1122,16 @@ export function buildBridgeLayer(
     // and looking up at a bridge from the quay under it is exactly the view
     // that makes a bridge read as a bridge.
     for (const [a, b, c] of faces) {
-      for (const idx of [c, b, a]) positions.push(poly[idx].x, poly[idx].y, bottomZ)
+      for (const idx of [c, b, a]) positions.push(ring[idx].x, ring[idx].y, bottomZ)
     }
     // Sides, so the deck has visible thickness rather than being a decal.
-    for (let i = 0; i < poly.length; i++) {
-      const p0 = poly[i]
-      const p1 = poly[(i + 1) % poly.length]
-      positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, bottomZ, p1.x, p1.y, topZ)
-      positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, topZ, p0.x, p0.y, topZ)
+    for (const edge of [poly, ...holes]) {
+      for (let i = 0; i < edge.length; i++) {
+        const p0 = edge[i]
+        const p1 = edge[(i + 1) % edge.length]
+        positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, bottomZ, p1.x, p1.y, topZ)
+        positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, topZ, p0.x, p0.y, topZ)
+      }
     }
   }
 
@@ -1161,7 +1178,7 @@ export function buildBridgeLayer(
       for (const quad of bufferCentreline(line, half)) pushDeck(quad, topZ, bottomZ)
       count++
     } else {
-      pushDeck(line, topZ, bottomZ)
+      pushDeck(line, topZ, bottomZ, (f.holes ?? []).filter((h) => h.length >= 3).map(projectRing))
       count++
     }
   }
