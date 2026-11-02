@@ -12,6 +12,273 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_ES_PACK: BlogPost[] = [
   {
+    slug: "ifc-mcp-server-claude-bim-3d-viewer",
+    date: "2026-11-02",
+    dateModified: "2026-11-02",
+    author: "IFC Viewer Team",
+    category: "Herramientas y comparativas",
+    categorySlug: "tools",
+    title: "Un servidor MCP de IFC para Claude: valida modelos BIM y ábrelos en 3D",
+    seoTitle: "Servidor MCP de IFC para Claude: valida BIM y míralo en 3D",
+    seoDescription: "Instala un servidor MCP gratuito para que Claude valide archivos IFC, compruebe IDS, dé un Health Score y abra modelos, planos y gemelos digitales en 3D.",
+    excerpt: "Pregunta a Claude si un modelo está listo para entregar y recibe una respuesta con nota, los elementos que fallan y un enlace para verlos en 3D. Las comprobaciones se ejecutan en tu propio equipo.",
+    readTimeMin: 6,
+    heroImage: "blog/images/ifc-mcp-server-3d-viewer-health-score.jpg",
+    heroAlt: "Modelo IFC de un edificio en el visor 3D del navegador con su Health Score y las incidencias de validación, abierto desde un enlace creado por un asistente de IA",
+    keywords: [
+      "servidor MCP IFC",
+      "servidor MCP BIM",
+      "servidor MCP visor 3D",
+      "Claude IFC",
+      "validar IFC con IA",
+      "comprobar IDS con IA",
+      "Model Context Protocol BIM",
+      "Claude Desktop BIM",
+      "gemelo digital MCP",
+      "DXF MCP",
+      "IFC MCP server",
+      "BIM MCP server",
+      "MCP server 3D viewer",
+      "validate IFC with AI",
+      "IDS check AI",
+      "digital twin MCP",
+    ],
+    faqs: [
+      {
+        q: "¿Qué es un servidor MCP de IFC?",
+        a: "Un pequeño programa que da a un asistente de IA herramientas para archivos IFC mediante el Model Context Protocol. Este permite a Claude o a cualquier cliente MCP validar un modelo, comprobarlo contra un IDS, leer planos DXF y abrir modelos, planos, bocetos y gemelos digitales en un visor 3D del navegador.",
+      },
+      {
+        q: "¿Es gratis?",
+        a: "Sí. Es código abierto con licencia MIT, no necesita cuenta ni clave de API y se ejecuta con npx. El visor 3D al que enlaza también es gratuito.",
+      },
+      {
+        q: "¿Se suben mis archivos IFC?",
+        a: "No. La validación, el IDS y la lectura de DXF se ejecutan en Node.js en tu equipo, con el mismo motor que el visor del navegador. Solo la herramienta FIWARE se conecta al exterior, y únicamente al broker que indiques.",
+      },
+      {
+        q: "¿Con qué clientes funciona?",
+        a: "Con cualquier cliente que ejecute servidores MCP locales por stdio: Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, Cline y otros. Todos usan el mismo comando: npx -y ifc-viewer-mcp.",
+      },
+      {
+        q: "¿Puede Claude abrir mi IFC local en el visor 3D?",
+        a: "No directamente. El navegador tiene que descargar el archivo, así que el enlace del visor necesita una URL pública. Con un archivo local, Claude lo valida en tu equipo y tú lo arrastras a la página del visor para ver las incidencias en 3D.",
+      },
+      {
+        q: "¿Da el mismo Health Score que la web?",
+        a: "Sí. Incluye el validador y el cálculo de puntuación del propio visor, así que la nota, el recuento de incidencias y las guías de corrección coinciden con lo que muestra el navegador para el mismo archivo y las mismas reglas.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "El Model Context Protocol (MCP) permite que un asistente de IA llame a herramientas en tu ordenador. El servidor MCP de IFC Viewer Online da a Claude y a otros asistentes diez herramientas para trabajo BIM: validar un IFC y puntuarlo, comprobarlo contra un IDS, leer un DXF y abrir modelos, planos, bocetos 3D y gemelos digitales en vivo en un visor 3D gratuito del navegador.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Se instala con un comando: npx -y ifc-viewer-mcp. Gratis, MIT, sin cuenta.",
+          "La validación, el IDS y el DXF se ejecutan en tu equipo; los archivos no se suben.",
+          "El mismo Health Score y las mismas reglas que el visor del navegador, con enlaces a guías de corrección.",
+          "Los enlaces abren modelos, planos, bocetos y gemelos urbanos en 3D, listos para compartir o incrustar.",
+        ],
+      },
+      { type: "h2", text: "¿Cómo instalo el servidor MCP de IFC?" },
+      {
+        type: "p",
+        text: "Necesitas Node.js 20 o posterior. Todos los clientes arrancan el servidor con el mismo comando, npx -y ifc-viewer-mcp, que lo descarga la primera vez.",
+      },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Claude Code",
+            body: "Ejecuta claude mcp add ifc-viewer -- npx -y ifc-viewer-mcp en una terminal. Las herramientas estarán disponibles en la siguiente sesión.",
+          },
+          {
+            title: "Claude Desktop",
+            body: "Abre Settings, luego Developer y luego Edit config, y añade el bloque de abajo a claude_desktop_config.json. Reinicia Claude.",
+          },
+          {
+            title: "Cursor, VS Code, Windsurf, Cline",
+            body: "Añade un servidor con el comando npx y los argumentos -y e ifc-viewer-mcp en los ajustes MCP del cliente. El JSON es el mismo.",
+          },
+        ],
+      },
+      {
+        type: "code",
+        lang: "json",
+        text: "{\n  \"mcpServers\": {\n    \"ifc-viewer\": { \"command\": \"npx\", \"args\": [\"-y\", \"ifc-viewer-mcp\"] }\n  }\n}",
+      },
+      { type: "h2", text: "¿Qué herramientas le da a Claude?" },
+      {
+        type: "table",
+        headers: ["Herramienta", "Qué devuelve", "Dónde se ejecuta"],
+        rows: [
+          [
+            "validate_ifc",
+            "Health Score 0–100, recuento de incidencias, reglas que más restan, incidencias con guías de corrección",
+            "Tu equipo",
+          ],
+          ["list_validation_rules", "Cada regla con su categoría, gravedad y norma", "Tu equipo"],
+          [
+            "check_ids",
+            "Aprobado o fallido por especificación IDS, con los elementos que fallan",
+            "Tu equipo",
+          ],
+          ["open_in_3d_viewer", "Enlace al visor y un iframe para incrustar", "Navegador"],
+          ["open_drawings", "Modelo con una planta cortada a su lado", "Navegador"],
+          ["read_dxf", "Capas, número de entidades, extensión, unidades y textos", "Tu equipo"],
+          ["open_3d_sketch", "El estudio de bocetos 3D", "Navegador"],
+          ["list_digital_twins", "Gemelos urbanos en vivo y el creador de gemelos", "Navegador"],
+          [
+            "read_fiware_entities",
+            "Entidades de un broker FIWARE como registros planos",
+            "De tu equipo al broker",
+          ],
+          ["search_port_library", "Objetos IFC del Port de Barcelona con enlaces 3D", "Tu equipo"],
+        ],
+      },
+      { type: "h2", text: "¿Cómo valido un archivo IFC con Claude?" },
+      {
+        type: "p",
+        text: "Dale a Claude una ruta o una URL y pregunta. validate_ifc aplica el conjunto de reglas del visor —esquema, estructura espacial, nombres, GlobalId, ISO 19650, clasificación, MEP— y devuelve el Health Score junto con lo que más puntos ha restado.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "Validate C:/projects/duplex/ARC.ifc and tell me the three things that cost the most points.",
+      },
+      {
+        type: "p",
+        text: "Con el ejemplo Duplex devuelve un Health Score de 77 con 168 incidencias, encabezadas por 119 elementos sin tipo, 21 espacios sin superficie y 12 elementos sin material, cada una con un enlace a su guía de corrección. Un modelo con URL pública recibe además un enlace que lo abre en el visor con las mismas incidencias.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-mcp-server-3d-viewer-health-score.jpg",
+        width: 1600,
+        height: 900,
+        alt: "Modelo IFC Duplex en el visor 3D con el distintivo del Health Score y el panel de validación con las incidencias por regla",
+        caption: "El enlace de validate_ifc u open_in_3d_viewer: el mismo modelo, la misma nota y las mismas incidencias en el navegador.",
+      },
+      { type: "h2", text: "¿Puede comprobar un modelo contra requisitos IDS?" },
+      {
+        type: "p",
+        text: [
+          "Sí. check_ids recibe el IFC y un archivo .ids (una ruta, una URL o el propio XML) y devuelve, para cada especificación, si se cumple, cuántos elementos aplican y cuáles fallan y por qué. Usa el mismo motor IDS 1.0 que el visor del navegador; consulta la ",
+          { text: "guía de IDS", to: "ids-information-delivery-specification-guide" },
+          ".",
+        ],
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "Check model.ifc against requirements.ids and list the walls that fail, with their GlobalId.",
+      },
+      { type: "h2", text: "¿Cómo abro un modelo en 3D desde un chat?" },
+      {
+        type: "p",
+        text: "Pídelo. open_in_3d_viewer crea un enlace con las opciones que indiques: varios modelos como una escena federada, colocados en el mapa de la ciudad, vistos desde arriba, con una clase IFC aislada o con una nube de puntos al lado. También devuelve un iframe para una wiki, una intranet o un panel.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "Open https://example.com/site/ARC.ifc and STR.ifc on the map, seen from the top, and give me an embed for our wiki.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Por qué el visor necesita una URL pública",
+        text: "El visor 3D se ejecuta en el navegador y descarga el archivo él mismo, así que el enlace funciona con archivos en un servidor público que permita peticiones de otros orígenes. Un archivo local se valida en tu equipo; para verlo, abre el visor y arrastra el archivo a la página.",
+      },
+      { type: "h2", text: "¿Puede trabajar con planos técnicos?" },
+      {
+        type: "p",
+        text: [
+          "De dos formas. read_dxf te dice qué contiene un DXF —capas, número de entidades, tamaño en metros y los textos que lleva, como nombres de estancias— sin abrir un programa de CAD. open_drawings abre el modelo con una planta ya cortada de él, donde puedes soltar un DXF o un PDF, alinearlo y exportar DXF, SVG o PDF, como se explica en ",
+          {
+            text: "abrir planos DXF y PDF junto a un modelo IFC",
+            to: "open-dxf-pdf-plans-next-to-ifc-model-online",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "What layers are in ground-floor.dxf, how big is it, and which rooms are labelled?",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-mcp-server-drawings-floor-plan.jpg",
+        width: 1600,
+        height: 900,
+        alt: "Modelo IFC en 3D junto a una planta cortada de él en el panel de planos",
+        caption: "open_drawings: la planta se corta del modelo al abrir la página.",
+      },
+      { type: "h2", text: "¿Puede empezar un boceto 3D?" },
+      {
+        type: "p",
+        text: [
+          "open_3d_sketch enlaza al estudio de bocetos, donde dibujas en 3D con un lápiz, un dedo o un ratón y exportas SVG, PSD, ORA o un script de Blender. Tiene una disposición en dos paneles para plegables. Más en ",
+          { text: "dibujar en 3D online", to: "3d-sketching-online-draw-in-3d" },
+          ".",
+        ],
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-mcp-server-3d-sketch-studio.jpg",
+        width: 1600,
+        height: 900,
+        alt: "Estudio de bocetos 3D en el navegador con trazos dibujados en el espacio alrededor de una rejilla",
+        caption: "El estudio de bocetos al que enlaza open_3d_sketch.",
+      },
+      { type: "h2", text: "¿Qué herramientas de gemelo digital hay?" },
+      {
+        type: "p",
+        text: "list_digital_twins devuelve los gemelos urbanos que vienen con el visor —Barcelona, Helsinki y dos en Tokio—, cada uno con un enlace y un enlace para incrustar, además del creador de gemelos para tu propio almacén o gemelo de importaciones. read_fiware_entities lee un context broker FIWARE por NGSI-LD o NGSIv2 y devuelve registros planos, la forma que el panel del gemelo vincula a los elementos IFC. search_port_library busca objetos en la biblioteca IFC del Port de Barcelona, como grúas y bolardos, con un enlace para ver cada uno en 3D.",
+      },
+      {
+        type: "code",
+        lang: "text",
+        text: "Show me a live digital twin of Barcelona, then find a crane in the Port de Barcelona library and open it in 3D.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-mcp-server-barcelona-digital-twin.jpg",
+        width: 1600,
+        height: 900,
+        alt: "La plaça de Catalunya de Barcelona como gemelo digital 3D con edificios IFC sobre el mapa de la ciudad y datos abiertos en vivo",
+        caption: "La escena de Barcelona de list_digital_twins, con bicis, cargadores, tráfico y calidad del aire en vivo.",
+      },
+      {
+        type: "image",
+        src: "blog/images/ifc-mcp-server-port-barcelona-crane.jpg",
+        width: 1600,
+        height: 900,
+        alt: "Modelo IFC de una grúa del Port de Barcelona, de su biblioteca BIM abierta, en el visor 3D",
+        caption: "Una grúa de search_port_library (Port de Barcelona, CC BY 4.0).",
+      },
+      { type: "h2", text: "¿Qué no hace?" },
+      {
+        type: "ul",
+        items: [
+          "No edita ni corrige archivos IFC; informa y enlaza a guías de corrección.",
+          "No sube nada ni guarda historial; cada llamada empieza de cero.",
+          "No puede abrir un archivo local en el visor del navegador; para eso hace falta una URL pública o arrastrarlo.",
+          "Detecta los DWG pero no los lee; guárdalo antes como DXF.",
+        ],
+      },
+      {
+        type: "tool",
+        id: "viewer",
+        why: "Abre el visor para ver cualquier modelo que compruebe el asistente.",
+      },
+    ],
+    lang: "es",
+    translationKey: "ifc-mcp-server-claude-bim-3d-viewer",
+  },
+  {
     slug: "open-dxf-pdf-plans-next-to-ifc-model-online",
     date: "2026-11-02",
     dateModified: "2026-11-02",
