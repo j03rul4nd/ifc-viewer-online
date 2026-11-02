@@ -10,6 +10,7 @@ import { FOLDABLE_POSTS_EN } from './blog-foldable-en.ts'
 import { TRACKING_POSTS_EN } from './blog-tracking-en.ts'
 import { SKETCH_POSTS_EN } from './blog-sketch-en.ts'
 import { DRAWINGS_POSTS_EN } from './blog-drawings-en.ts'
+import { MCP_POSTS_EN } from './blog-mcp-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -372,6 +373,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...MCP_POSTS_EN,
   ...TWIN_CLUSTER2_POSTS_EN,
   ...HAZARD_POSTS_EN,
   ...TWIN_CLUSTER_POSTS_EN,

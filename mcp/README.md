@@ -10,7 +10,7 @@ validate IFC files, check them against IDS, get a Health Score, and open models,
 
 Validation, IDS and DXF reading run **on your machine**: files are not uploaded anywhere. Free, no account, no API key.
 
-Guide with examples: <https://www.ifcvieweronline.eu/mcp-server/>
+Guide with examples: <https://www.ifcvieweronline.eu/blog/ifc-mcp-server-claude-bim-3d-viewer/>
 
 ## Install
 

@@ -31,6 +31,7 @@ import type { ValidatorOutMessage }            from '../workers/validator.worker
 
 // The quality score lives in its own module so it runs outside the browser
 // (the local MCP server scores models with it); re-exported for the app.
+import { calculateQualityScore } from './quality-score'
 export { explainQualityScore, calculateQualityScore, __scoreWeights } from './quality-score'
 export type { ScoreContribution } from './quality-score'
 
