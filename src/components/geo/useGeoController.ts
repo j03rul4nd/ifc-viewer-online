@@ -356,7 +356,7 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
   /** Facade detail — re-extrudes from the cached features, never refetches. */
   const setContextDetail = useCallback((level: BuildingDetail, opts?: { auto?: boolean }): void => {
     const s = useGeoStore.getState()
-    s.setContextDetail(level)
+    s.setContextDetail(level, !opts?.auto)
     // A level chosen by hand supersedes an automatic step-down: the notice
     // offering the old level back would now be offering something else.
     if (!opts?.auto) s.setAutoDowngrade(null)
