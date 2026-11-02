@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "io.github.j03rul4nd/ifc-viewer-mcp",
   "title": "IFC Viewer Online",
-  "description": "IFC/BIM 3D viewer tools: validate IFC, check IDS, Health Score, drawings, 3D sketch and digital twins.",
+  "description": "IFC/BIM with a 3D viewer: validate IFC, check IDS, Health Score, drawings, digital twins.",
   "websiteUrl": "https://www.ifcvieweronline.eu/blog/ifc-mcp-server-claude-bim-3d-viewer/",
   "repository": {
     "url": "https://github.com/j03rul4nd/ifc-viewer-online",
