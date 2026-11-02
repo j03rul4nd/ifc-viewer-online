@@ -18,6 +18,7 @@
 
 import { bboxAround, DATA_SOURCE_TAG, fetchOverpassWithMirrors } from '../lib/geo/buildings'
 import { fetchOmtFallback } from '../lib/geo/omt-fallback'
+import { fetchOsmApiElements, osmCacheKey, readOsmCache, writeOsmCache } from '../lib/geo/osm-api-source'
 import {
   newFootprints, extractCovers, clearsModelPlan,
   type OvertureExtract, type OvertureFootprint, fuseOvertureAttributes, overtureFootprintTags,
@@ -30,6 +31,8 @@ import { extractHydrology, type Hydrology } from '../lib/geo/osm-hydro'
 const QUERY_TIMEOUT_S = 25
 /** Client-side budget, longer than the server's so we see its error, not ours. */
 const FETCH_TIMEOUT_MS = 35_000
+/** The whole chain must fit inside BUILDINGS_TIMEOUT_MS, with the tiles still to come. */
+const OSM_API_TIMEOUT_MS = 45_000
 /**
  * Cap on elements returned; a dense centre must not stream tens of megabytes.
  * Raised from the buildings-only era because ONE query now serves every layer.
@@ -90,16 +93,28 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     const bbox = bboxAround(req.lat, req.lon, req.halfSizeM)
     const query = buildFeaturesQuery(bbox, QUERY_TIMEOUT_S, MAX_ELEMENTS)
 
+    const cacheKey = osmCacheKey(req.lat, req.lon, req.halfSizeM)
     let json: unknown
     let fallback = false
     try {
       if (req.forceFallback) throw new Error('Overpass skipped (forced fallback)')
-      json = await fetchOverpassWithMirrors(query, FETCH_TIMEOUT_MS)
+      json = await readOsmCache(cacheKey)
+      if (!json) {
+        json = await fetchOverpassWithMirrors(query, FETCH_TIMEOUT_MS)
+        void writeOsmCache(cacheKey, json)
+      }
     } catch (overpassErr) {
       // Overpass is busy, rate-limited or down. Build the city from the
       // basemap's own vector tiles instead (same OSM data, coarser tags) —
       // a thinner city, labelled as such, rather than no city at all.
       try {
+        if (req.forceFallback) throw overpassErr
+        json = { elements: await fetchOsmApiElements(bbox, OSM_API_TIMEOUT_MS) }
+        void writeOsmCache(cacheKey, json)
+      } catch {
+        json = null
+      }
+      if (!json) try {
         json = { elements: await fetchOmtFallback(bbox) }
         fallback = true
       } catch (fallbackErr) {
