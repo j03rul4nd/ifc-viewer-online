@@ -94,6 +94,8 @@
     "forceLang": "Forza lingua ({{lang}})",
     "heightLabel": "Altezza (px)",
     "accentLabel": "Colore accento",
+    "startLabel": "Apri con",
+    "start": { "none": "Nient’altro", "drawings": "Pianta accanto al modello", "map": "Sulla mappa", "underground": "Vista sotterranea (raggi X)", "solar": "Analisi solare (anno)", "flood": "Allagamento da pioggia (temporale)" },
     "iframeTab": "iframe",
     "urlTab": "Link",
     "copy": "Copia negli appunti",

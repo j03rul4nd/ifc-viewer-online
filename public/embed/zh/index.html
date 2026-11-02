@@ -92,6 +92,11 @@
           <option value="">默认（深色）</option><option value="white">白色</option><option value="paper">纸张</option><option value="blueprint">蓝图</option><option value="sky">天空</option>
         </select>
 
+        <label class="f">打开时</label>
+        <select id="start">
+          <option value="">无附加</option><option value="drawings=plan">模型旁的平面图</option><option value="map=1">在地图上</option><option value="map=xray">地下视图（透视）</option><option value="analysis=year:passive">日照分析（全年）</option><option value="flood=storm">降雨内涝（暴雨）</option>
+        </select>
+
         <label class="f">查看器语言</label>
         <select id="lang">
           <option value="">自动</option>
@@ -140,9 +145,11 @@
       if (!$('validate').checked) u.searchParams.set('validate', '0');
       if ($('panel').checked) u.searchParams.set('panel', '1');
       const accent = $('accent').value.replace(/^#/, '');
-      if (accent && accent.toLowerCase() !== '5e6ad2') u.searchParams.set('accent', accent);
+      if (accent && accent.toLowerCase() !== '0a8481') u.searchParams.set('accent', accent);
       if ($('bg').value) u.searchParams.set('bg', $('bg').value);
       if ($('lang').value) u.searchParams.set('lang', $('lang').value);
+      const start = $('start').value.split('=');
+      if (start[0]) u.searchParams.set(start[0], start[1]);
       return u.toString();
     }
 
@@ -193,7 +200,7 @@
       document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
       render();
     }));
-    ['model', 'validate', 'panel', 'accent', 'bg', 'lang', 'height'].forEach((id) => {
+    ['model', 'validate', 'panel', 'accent', 'bg', 'start', 'lang', 'height'].forEach((id) => {
       $(id).addEventListener('input', render);
       $(id).addEventListener('change', render);
     });

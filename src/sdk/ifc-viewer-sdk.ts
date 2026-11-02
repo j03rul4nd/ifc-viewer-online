@@ -12,7 +12,7 @@
 // "just works". Override with the `baseUrl` option if you serve it elsewhere.
 //
 // Pin a version in production — the file at a versioned path never changes:
-//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js"
+//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js"
 
 import { appBaseUrlFor } from './base-url'
 
@@ -138,9 +138,10 @@ export interface IfcViewerOptions {
    * Put the model on the map once it loads, from its own georeference. `true`
    * for the map alone, or the layers to add. Map tiles and OpenStreetMap come
    * from third parties — see {@link IfcViewer.setSiteContext} on consent.
-   * Since v1.11.0.
+   * Since v1.11.0. `'xray'` / `'cut'` open the underground view (tunnels,
+   * metro stations) since v1.19.0.
    */
-  map?: boolean | Array<'terrain' | 'buildings' | 'showcase'>
+  map?: boolean | Array<'terrain' | 'buildings' | 'showcase' | 'xray' | 'cut'>
   /**
    * Open the sun study at this SITE-LOCAL time once the model loads:
    * `'06-21T18:00'` (every year) or `'2026-12-21T09:30'`. Only honoured when
@@ -178,6 +179,35 @@ export interface IfcViewerOptions {
    * `ui: 'article'` implies it. Since v1.14.0.
    */
   wheel?: 'always' | 'ctrl'
+
+  // ── Deep links (since v1.19.0) ─────────────────────────────────────────────
+  /**
+   * Once the model is validated, open this rule's group and show its elements
+   * in 3D — `'RULE_MISSING_TYPE'`. Mirrors `?rule=`.
+   */
+  rule?: string
+  /**
+   * Run a rain-flood once the models are in: a storm (`'shower'`, `'storm'`,
+   * `'intense'`, `'extreme'`), optionally with a cell size, edges and soil —
+   * `'storm,1m,closed,loam'`. Mirrors `?flood=`.
+   */
+  flood?: string
+  /**
+   * Run the solar analysis once every model is in — `'year:passive'`,
+   * `'hot:base21'`, `'summer:sun:fine'`. The climate is never fetched without
+   * a click unless it is cached. Mirrors `?analysis=`.
+   */
+  analysis?: string
+  /** Study the sun and climate at this place instead of the model's own: `{ lat, lon }`. Mirrors `?site=`. */
+  site?: { lat: number; lon: number }
+  /** Show (`true`) or hide (`false`) the scene explorer over the canvas. Omit for the preset's default. Mirrors `?explore=`. */
+  explore?: boolean
+  /**
+   * Open the technical-drawings pane beside the model. `'plan'` also cuts the
+   * first floor plan. Nothing is read from or saved to the reader's own
+   * sheets. Mirrors `?drawings=`.
+   */
+  drawings?: boolean | 'plan'
 
   // ── Article kit (since v1.15.0) ────────────────────────────────────────────
   /**
@@ -1230,7 +1260,7 @@ type Listener<T> = (payload: T) => void
 // of EN 14351-1 windows and external doors — and EIR rules gain `where`
 // (only elements with a property value) and `optional`. Pinned builds at
 // /sdk/<version>/.
-const SDK_VERSION = '1.18.0'
+const SDK_VERSION = '1.19.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -2745,6 +2775,12 @@ export class IfcViewer {
     if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
     if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
     if (this.opts.turntable) url.searchParams.set('turntable', this.opts.turntable === true ? '1' : String(this.opts.turntable))
+    if (this.opts.rule) url.searchParams.set('rule', this.opts.rule)
+    if (this.opts.flood) url.searchParams.set('flood', this.opts.flood)
+    if (this.opts.analysis) url.searchParams.set('analysis', this.opts.analysis)
+    if (this.opts.site) url.searchParams.set('site', `${this.opts.site.lat},${this.opts.site.lon}`)
+    if (this.opts.explore !== undefined) url.searchParams.set('explore', this.opts.explore ? '1' : '0')
+    if (this.opts.drawings) url.searchParams.set('drawings', this.opts.drawings === true ? '1' : this.opts.drawings)
     return url.toString()
   }
 
@@ -3093,7 +3129,7 @@ export class IfcViewerElement extends HTMLElement {
             const v = (this.getAttribute('map') ?? '').trim()
             if (v === '' || v === '1' || v === 'true') return true
             if (v === '0' || v === 'false') return undefined
-            return v.split(',').map((t) => t.trim()).filter(Boolean) as Array<'terrain' | 'buildings' | 'showcase'>
+            return v.split(',').map((t) => t.trim()).filter(Boolean) as Array<'terrain' | 'buildings' | 'showcase' | 'xray' | 'cut'>
           })()
         : undefined,
       solar: attr('solar'),
@@ -3114,6 +3150,16 @@ export class IfcViewerElement extends HTMLElement {
       turntable: this.hasAttribute('turntable')
         ? (Number(this.getAttribute('turntable')) > 0 ? Number(this.getAttribute('turntable')) : boolAttr('turntable'))
         : undefined,
+      // Deep links (v1.19): <ifc-viewer rule="RULE_MISSING_TYPE" drawings="plan" site="41.38,2.17">
+      rule: attr('rule'),
+      flood: attr('flood'),
+      analysis: attr('analysis'),
+      site: (() => {
+        const [lat, lon] = (attr('site') ?? '').split(',').map(Number)
+        return Number.isFinite(lat) && Number.isFinite(lon) && attr('site') ? { lat, lon } : undefined
+      })(),
+      explore: boolAttr('explore'),
+      drawings: attr('drawings') === 'plan' ? 'plan' : boolAttr('drawings') || undefined,
       pauseOffscreen: boolAttr('pause-offscreen'),
       fullscreenButton: boolAttr('fullscreen-button'),
       height: this.hasAttribute('aspect-ratio') ? undefined : '100%',

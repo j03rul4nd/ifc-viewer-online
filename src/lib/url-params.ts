@@ -917,7 +917,19 @@ export interface EmbedUrlOptions {
    * empty array has to be serialised rather than skipped as falsy.
    */
   panels?: PanelId[]
+  /** One deep link the embed opens with (see EMBED_START_LINKS). */
+  start?: EmbedStart
 }
+
+/** What an embed can open with, and the query each one adds. */
+export const EMBED_START_LINKS = {
+  drawings: ['drawings', 'plan'],
+  map: ['map', '1'],
+  underground: ['map', 'xray'],
+  solar: ['analysis', 'year:passive'],
+  flood: ['flood', 'storm'],
+} as const satisfies Record<string, readonly [string, string]>
+export type EmbedStart = keyof typeof EMBED_START_LINKS
 
 /** Serialize options into a shareable app URL with embed params. */
 export function buildEmbedUrl(o: EmbedUrlOptions): string {
@@ -935,6 +947,7 @@ export function buildEmbedUrl(o: EmbedUrlOptions): string {
   if (o.lang) u.searchParams.set('lang', o.lang)
   if (o.accent) u.searchParams.set('accent', o.accent.replace(/^#/, ''))
   if (o.panels) u.searchParams.set('panels', o.panels.join(','))
+  if (o.start) u.searchParams.set(...EMBED_START_LINKS[o.start])
   return u.toString()
 }
 

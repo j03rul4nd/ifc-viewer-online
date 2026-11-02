@@ -92,6 +92,11 @@
           <option value="">Predefinido (escuro)</option><option value="white">Branco</option><option value="paper">Papel</option><option value="blueprint">Planta</option><option value="sky">Céu</option>
         </select>
 
+        <label class="f">Abrir com</label>
+        <select id="start">
+          <option value="">Nada mais</option><option value="drawings=plan">Planta ao lado do modelo</option><option value="map=1">No mapa</option><option value="map=xray">Vista subterrânea (raio X)</option><option value="analysis=year:passive">Análise solar (ano)</option><option value="flood=storm">Inundação por chuva (tempestade)</option>
+        </select>
+
         <label class="f">Idioma do visualizador</label>
         <select id="lang">
           <option value="">Auto</option>
@@ -140,9 +145,11 @@
       if (!$('validate').checked) u.searchParams.set('validate', '0');
       if ($('panel').checked) u.searchParams.set('panel', '1');
       const accent = $('accent').value.replace(/^#/, '');
-      if (accent && accent.toLowerCase() !== '5e6ad2') u.searchParams.set('accent', accent);
+      if (accent && accent.toLowerCase() !== '0a8481') u.searchParams.set('accent', accent);
       if ($('bg').value) u.searchParams.set('bg', $('bg').value);
       if ($('lang').value) u.searchParams.set('lang', $('lang').value);
+      const start = $('start').value.split('=');
+      if (start[0]) u.searchParams.set(start[0], start[1]);
       return u.toString();
     }
 
@@ -193,7 +200,7 @@
       document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
       render();
     }));
-    ['model', 'validate', 'panel', 'accent', 'bg', 'lang', 'height'].forEach((id) => {
+    ['model', 'validate', 'panel', 'accent', 'bg', 'start', 'lang', 'height'].forEach((id) => {
       $(id).addEventListener('input', render);
       $(id).addEventListener('change', render);
     });

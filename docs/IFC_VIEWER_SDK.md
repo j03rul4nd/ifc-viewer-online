@@ -14,7 +14,7 @@ WASM weight is loaded by the iframe, not your bundle.
   `public/sdk/<version>/ifc-viewer.es.js`, and `public/sdk/versions.json` (also runs as part of `npm run build`)
 - Live demo + web docs: `/<base>/sdk/` (served from `public/sdk/index.html`)
 
-> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js`.
+> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js`.
 > See [Versions, caching and compatibility](#versions-caching-and-compatibility).
 
 ## Quick start
@@ -49,7 +49,8 @@ Zero JavaScript — drop a tag into any page or dashboard:
 ```
 
 Attributes: `model`, `ui`, `lang`, `accent`, `validate`, `panel`, `base-url`, and since
-v1.18 `toolbar`, `tools`, `auto-frame`. Events are
+v1.18 `toolbar`, `tools`, `auto-frame`, and since v1.19 `rule`, `flood`,
+`analysis`, `site` (`"lat,lon"`), `explore`, `drawings`. Events are
 re-dispatched as DOM `CustomEvent`s named `ifcviewer:<type>` (`detail` = payload), and
 the underlying `IfcViewer` is on the element's `.viewer`:
 
@@ -84,11 +85,17 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `height` / `width` | number \| string              | `'100%'`    | iframe size (number → px). |
 | `model`    | string                                | —           | Auto-load this public IFC URL once ready. |
 | `background` | preset \| `#rrggbb` \| `#top,#bottom` \| `{ top, bottom? }` | — | Scene background from the first frame (v1.11). Not saved as the visitor's preference. |
-| `map`      | `true` \| `('terrain'\|'buildings'\|'showcase')[]` | — | Put the model on the map once it loads (v1.11). Your page declares tile consent — see [Presentation](#presentation-look-sun-map-v111). |
+| `map`      | `true` \| `('terrain'\|'buildings'\|'showcase'\|'xray'\|'cut')[]` | — | Put the model on the map once it loads (v1.11). `'xray'` / `'cut'` open the underground view (v1.19). Your page declares tile consent — see [Presentation](#presentation-look-sun-map-v111). |
 | `solar` / `moon` | `'MM-DDTHH:MM'` / boolean         | —           | Open the sun study at this site-local time once loaded (v1.11). |
 | `scans`    | string[]                              | —           | Point cloud URLs to load alongside the model (v1.11). |
 | `layers`   | string                                | —           | Data-layer setup to open: URL of a JSON exported from the Data layers panel — live sources, styles, groups, alerts; never keys. Mirrors `?layers=` (v1.16). Also `<ifc-viewer layers="…">`. |
 | `scene`    | string                                | —           | Scene document to open: URL of a `.scene.json` — models, data layers, live device bindings, map, background, camera ([`SCENE_FORMAT.md`](./SCENE_FORMAT.md)). Mirrors `?scene=` (v1.17). Also `<ifc-viewer scene="…">`. |
+| `rule`     | string                                | —           | Once validated, open this rule's group and show its elements in 3D — `'RULE_MISSING_TYPE'`. Mirrors `?rule=` (v1.19). |
+| `flood`    | string                                | —           | Run a rain-flood once the models are in — `'extreme'`, `'storm,1m,closed,loam'`. Mirrors `?flood=` (v1.19). |
+| `analysis` | string                                | —           | Run the solar analysis once the models are in — `'year:passive'`, `'hot:base21'`. Mirrors `?analysis=` (v1.19). |
+| `site`     | `{ lat, lon }`                        | the model's | Study sun and climate at this place. Mirrors `?site=` (v1.19). |
+| `explore`  | boolean                               | preset      | Show or hide the scene explorer over the canvas. Mirrors `?explore=` (v1.19). |
+| `drawings` | `true` \| `'plan'`                    | —           | Open the technical-drawings pane beside the model; `'plan'` also cuts the first floor plan. Mirrors `?drawings=` (v1.19). |
 | `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). A backstop: the viewer now answers every load it accepts with `model-loaded` or `model-error`, including parse failures and cancellations. |
 | `onReady` / `onModelLoaded` / `onModelError` / `onProgress` | function | — | Convenience callbacks (same as `.on(...)`). |
 
@@ -558,6 +565,10 @@ viewer.on("element-selected", (e) => {
 
 ### Changelog
 
+- **1.19.0** — deep links as options: `rule`, `flood`, `analysis`, `site`,
+  `explore`, `drawings`, and `map: ['xray' | 'cut']` for the underground view,
+  each also an `<ifc-viewer>` attribute. No new commands or events: the
+  viewer already answered these as URL parameters.
 - **1.18.0** — catalogue objects in a host app. `getElement()` returns the
   `globalId` (it was always null) and the type's data (`typeName`,
   `typeProperties` with units, `effectivePropertySets`; IFC4 types and IFC2x3

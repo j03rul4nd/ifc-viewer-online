@@ -94,6 +94,8 @@
     "forceLang": "言語を固定 ({{lang}})",
     "heightLabel": "高さ (px)",
     "accentLabel": "アクセントカラー",
+    "startLabel": "開くときに",
+    "start": { "none": "追加なし", "drawings": "モデル横に平面図", "map": "地図上に", "underground": "地下ビュー（透視）", "solar": "日射解析（年間）", "flood": "豪雨浸水（嵐）" },
     "iframeTab": "iframe",
     "urlTab": "リンク",
     "copy": "クリップボードにコピー",

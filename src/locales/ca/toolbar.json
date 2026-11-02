@@ -94,6 +94,8 @@
     "forceLang": "Força l'idioma ({{lang}})",
     "heightLabel": "Alçada (px)",
     "accentLabel": "Color d'accent",
+    "startLabel": "Obre amb",
+    "start": { "none": "Res més", "drawings": "Planta al costat del model", "map": "Al mapa", "underground": "Vista subterrània (raigs X)", "solar": "Anàlisi solar (any)", "flood": "Inundació per pluja (tempesta)" },
     "iframeTab": "iframe",
     "urlTab": "Enllaç",
     "copy": "Copia al porta-retalls",

@@ -94,6 +94,8 @@
     "forceLang": "强制语言 ({{lang}})",
     "heightLabel": "高度 (px)",
     "accentLabel": "强调色",
+    "startLabel": "打开时",
+    "start": { "none": "无附加", "drawings": "模型旁的平面图", "map": "在地图上", "underground": "地下视图（透视）", "solar": "日照分析（全年）", "flood": "降雨内涝（暴雨）" },
     "iframeTab": "iframe",
     "urlTab": "链接",
     "copy": "复制到剪贴板",

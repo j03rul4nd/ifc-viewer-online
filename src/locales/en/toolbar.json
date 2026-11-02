@@ -96,6 +96,8 @@
     "forceLang": "Force language ({{lang}})",
     "heightLabel": "Height (px)",
     "accentLabel": "Accent colour",
+    "startLabel": "Open with",
+    "start": { "none": "Nothing extra", "drawings": "Floor-plan drawing beside the model", "map": "On the map", "underground": "Underground view (x-ray)", "solar": "Solar analysis (year)", "flood": "Rain-flood (storm)" },
     "iframeTab": "iframe",
     "urlTab": "Link",
     "copy": "Copy to clipboard",

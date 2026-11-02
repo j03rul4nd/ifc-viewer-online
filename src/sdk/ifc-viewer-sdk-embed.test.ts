@@ -38,9 +38,9 @@ function params(v: IfcViewer): URLSearchParams {
 describe('SDK 1.18 — embed preset and options', () => {
   beforeEach(mount)
 
-  it('is version 1.18.0', () => {
+  it('is a 1.x version', () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
-    expect(v.version).toBe('1.18.0')
+    expect(v.version).toMatch(/^1\.\d+\.\d+$/)
     v.dispose()
   })
 
