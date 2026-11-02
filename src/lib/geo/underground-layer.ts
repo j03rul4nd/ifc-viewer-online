@@ -280,6 +280,9 @@ export function buildUndergroundLayer(
  * Lines a little above the ground, in each system's colour. Same skip rule as
  * the layer: inside an IFC's plan, the IFC's own outline says it better.
  */
+/** Longest trace segment, metres: short enough to follow the ground under it. */
+const TRACE_STEP_M = 10
+
 export function buildUndergroundTraces(
   features: ReadonlyArray<OsmFeature>,
   opts: UndergroundLayerOptions,
@@ -300,9 +303,17 @@ export function buildUndergroundTraces(
     for (let i = 0; i < n; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length]
       if (opts.skip?.((a.nx + b.nx) / 2, (a.ny + b.ny) / 2)) continue
-      positions.push(a.nx - ox, a.ny - oy, frame.groundZ(a.nx, a.ny) + lift)
-      positions.push(b.nx - ox, b.ny - oy, frame.groundZ(b.nx, b.ny) + lift)
-      colors.push(col.r, col.g, col.b, col.r, col.g, col.b)
+      // Split to the ground's grain: a mapped tunnel can run a kilometre between
+      // two vertices, and a straight chord that long floats over the river it
+      // passes under and over every dip and deck on the way.
+      const steps = Math.min(400, Math.max(1, Math.ceil(Math.hypot(b.nx - a.nx, b.ny - a.ny) / (TRACE_STEP_M * frame.mToN))))
+      for (let k = 0; k < steps; k++) {
+        const x0 = a.nx + (b.nx - a.nx) * (k / steps), y0 = a.ny + (b.ny - a.ny) * (k / steps)
+        const x1 = a.nx + (b.nx - a.nx) * ((k + 1) / steps), y1 = a.ny + (b.ny - a.ny) * ((k + 1) / steps)
+        positions.push(x0 - ox, y0 - oy, frame.groundZ(x0, y0) + lift)
+        positions.push(x1 - ox, y1 - oy, frame.groundZ(x1, y1) + lift)
+        colors.push(col.r, col.g, col.b, col.r, col.g, col.b)
+      }
     }
   }
   if (positions.length === 0) return null
