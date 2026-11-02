@@ -309,7 +309,9 @@ export function buildUndergroundTraces(
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
-  const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9, depthTest: false })
+  // Depth-tested: drawn over everything, a line on the street read as a cable in
+  // the air across the rooftops. 0.4 m above the ground still clears the paving.
+  const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 })
   material.userData.subsurfaceOwned = true
   const lines = new THREE.LineSegments(geometry, material)
   lines.position.set(ox, oy, 0)

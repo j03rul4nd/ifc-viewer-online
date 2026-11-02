@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { OsmFeature } from './osm-features'
 import { createGroundFrame } from './ground-frame'
 import {
-  buildUndergroundLayer, depthProfile, fullDepthM, LAYER_STEP_M, portalEnds, selectUnderground,
+  buildUndergroundLayer, buildUndergroundTraces, depthProfile, fullDepthM, LAYER_STEP_M, portalEnds, selectUnderground,
   TYPICAL_DEPTH_M, type UndergroundWay,
 } from './underground-layer'
 
@@ -86,6 +86,11 @@ describe('buildUndergroundLayer', () => {
     for (let i = 0; i < pos.count; i++) maxZ = Math.max(maxZ, pos.getZ(i))
     // The roof of an 18 m-deep, 5.5 m-tall tube is still 12.5 m under the ground.
     expect(maxZ / frame.mToN).toBeCloseTo(-(TYPICAL_DEPTH_M.metro - 5.5), 3)
+  })
+
+  it('hides the surface trace behind buildings instead of drawing it over the roofs', () => {
+    const traces = buildUndergroundTraces([metro], { frame })!
+    expect((traces.material as import('three').Material).depthTest).toBe(true)
   })
 
   it('leaves out what stands inside a model’s footprint', () => {
