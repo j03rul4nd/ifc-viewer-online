@@ -412,7 +412,8 @@ interface GeoStore {
   ) => void
   /** Toggle one OSM layer (persisted). */
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
-  setContextDetail: (d: BuildingDetail) => void
+  /** `persist: false` is for an automatic step-down: it must not outlive the session. */
+  setContextDetail: (d: BuildingDetail, persist?: boolean) => void
   setContextTone: (t: ContextTone) => void
   setMapLook: (id: string) => void
   setLookTuning: (patch: Partial<LookTuning>) => void
@@ -673,8 +674,8 @@ export const useGeoStore = create<GeoStore>()(
         set({ hiddenFeatures: [] }, false, 'showAllFeatures')
       },
 
-      setContextDetail: (d) => {
-        lsSet(LS_DETAIL, d)
+      setContextDetail: (d, persist = true) => {
+        if (persist) lsSet(LS_DETAIL, d)
         set({ contextDetail: d }, false, 'setContextDetail')
       },
 

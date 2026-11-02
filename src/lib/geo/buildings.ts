@@ -377,8 +377,64 @@ export function approximateAreaM2(ring: ReadonlyArray<{ lat: number; lon: number
 
 // ── Query construction ─────────────────────────────────────────────────────────
 
-/** Overpass endpoint. Kept as a constant so it is one line to repoint. */
-export const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter'
+/**
+ * Overpass mirrors, in order of preference. One host is not enough: when the
+ * main one is down the map falls back to vector tiles, which carry no OSM ids
+ * or monument tags, so landmarks, arches and detailed parks silently vanish.
+ */
+export const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+] as const
+
+/** The mirror that last answered: no point waiting on a dead one twice. */
+let preferredMirror = 0
+
+export function resetOverpassMirrorForTest(): void { preferredMirror = 0 }
+
+/**
+ * One Overpass query, across the mirrors, within one time budget. An attempt
+ * gets half of what is left (the last gets all of it), so a mirror that hangs
+ * cannot use up the budget of the ones behind it.
+ */
+export async function fetchOverpassWithMirrors(query: string, budgetMs: number): Promise<unknown> {
+  const deadline = Date.now() + budgetMs
+  const n = OVERPASS_ENDPOINTS.length
+  let lastError: unknown = new Error('Overpass: no mirror tried')
+  for (let i = 0; i < n; i++) {
+    const index = (preferredMirror + i) % n
+    const left = deadline - Date.now()
+    if (left <= 0) break
+    // AbortController rather than a bare race: a hung request must actually be
+    // cancelled, not merely ignored while it keeps the connection open.
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), i === n - 1 ? left : left / 2)
+    try {
+      const res = await fetch(OVERPASS_ENDPOINTS[index], {
+        method: 'POST',
+        // Overpass expects the QL in a form body; this is the documented shape.
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: controller.signal,
+      })
+      // 429/504 are Overpass telling us it is busy, so another mirror may answer.
+      if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`)
+      const json: unknown = await res.json()
+      // A busy Overpass answers 200 with an empty body and a `remark`. Treated
+      // as success it becomes "nothing is mapped here", which the caller CACHES.
+      const remark = overpassRemarkError(json)
+      if (remark) throw new Error(`Overpass: ${remark}`)
+      preferredMirror = index
+      return json
+    } catch (err) {
+      lastError = err
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  throw lastError
+}
 
 export const BUILDINGS_ATTRIBUTION = '© OpenStreetMap contributors (ODbL)'
 

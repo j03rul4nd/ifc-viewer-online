@@ -36,7 +36,7 @@ import { buildVehicleLayer } from './props-scene'
 import { buildBarrierLayerSliced, buildFurnitureLayerSliced, buildPlacedSignalLayerSliced } from './street-furniture'
 import { buildMarinaBoatLayer, buildLakeBoatLayer } from './marina-boats'
 import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
-import { landmarksIn, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
+import { landmarksIn, landmarksByPosition, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
 import { barcelonaFabricSliced, barcelonaFacadeAt } from './barcelona-fabric'
 import { capSquareKiosks, capParkPavilions } from './plaza-paving'
 import { buildPigeonLayer } from './pigeons'
@@ -2286,12 +2286,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const dLon = dLat / Math.cos((p.lat * Math.PI) / 180)
       return { south: p.lat - dLat, north: p.lat + dLat, west: p.lon - dLon, east: p.lon + dLon }
     })()
-    const landmarks = contextDetail === 'showcase' ? landmarksIn(suppressed, landmarkArea) : []
+    const byPosition = contextDetail === 'showcase' && osmCache?.fallback
+      ? landmarksByPosition(suppressed, landmarkArea) : null
+    const landmarks = byPosition?.landmarks
+      ?? (contextDetail === 'showcase' ? landmarksIn(suppressed, landmarkArea) : [])
     if (landmarks.length > 0) ensureLandmarks(landmarks)
     const loadedLandmarks = landmarks
       .filter((l) => landmarkGeometry.has(l.asset))
       .map((l) => ({ landmark: l, geometry: landmarkGeometry.get(l.asset)! }))
-    const replaced = replacedFeatureIds(loadedLandmarks.map((l) => l.landmark))
+    const replaced = byPosition
+      ? (loadedLandmarks.length > 0 ? byPosition.replaced : new Set<string>())
+      : replacedFeatureIds(loadedLandmarks.map((l) => l.landmark))
     const features = replaced.size > 0 ? suppressed.filter((f) => !replaced.has(f.id)) : suppressed
 
     // THE SAND BELOW ITS WALL (beach-carve): the ground the layers will sit on

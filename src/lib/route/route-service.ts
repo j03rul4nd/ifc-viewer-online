@@ -15,7 +15,7 @@
 import * as THREE from 'three'
 import type { Anchor, GeoPoint, RouteLeg, RouteMode, RoutePlan } from '../measure/measure-types'
 import { createIndoorPlanner, type IndoorPlanner, type V3 } from './indoor'
-import { OVERPASS_ENDPOINT, overpassRemarkError } from '../geo/buildings'
+import { fetchOverpassWithMirrors } from '../geo/buildings'
 import {
   buildNetwork, overpassStreetsQuery, routeBox, routeOnNetwork, type LatLon, type OverpassJson, type StreetNetwork,
 } from './osm-network'
@@ -53,23 +53,7 @@ const MAX_STREET_M = 25_000
 
 /** One Overpass query from the page (same shape as the map's worker): POST, timeout, "busy" is an error. */
 export async function fetchOverpassJson(query: string, timeoutMs = 95_000): Promise<OverpassJson> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(OVERPASS_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: controller.signal,
-    })
-    if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`)
-    const json = await res.json() as OverpassJson
-    const remark = overpassRemarkError(json)
-    if (remark) throw new Error(`Overpass: ${remark}`)
-    return json
-  } finally {
-    clearTimeout(timer)
-  }
+  return await fetchOverpassWithMirrors(query, timeoutMs) as OverpassJson
 }
 
 export function createRouteService(deps: RouteDeps) {

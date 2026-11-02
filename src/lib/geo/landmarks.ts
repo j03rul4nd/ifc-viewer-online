@@ -141,6 +141,38 @@ export function landmarksIn(
   return LANDMARKS.filter((l) => found.has(l))
 }
 
+/** Is the point inside the closed ring? */
+function ringContains(ring: readonly LatLonPoint[], p: LatLonPoint): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j]
+    if ((a.lat > p.lat) !== (b.lat > p.lat)
+      && p.lon < ((b.lon - a.lon) * (p.lat - a.lat)) / (b.lat - a.lat) + a.lon) inside = !inside
+  }
+  return inside
+}
+
+/**
+ * Vector-tile surroundings have no OSM ids, so no landmark can be found by id.
+ * Position still finds them: every landmark inside the loaded area, plus the
+ * tile buildings standing on their origins, which the models replace.
+ */
+export function landmarksByPosition(
+  features: ReadonlyArray<Pick<OsmFeature, 'id' | 'kind' | 'ring'>>,
+  area: LandmarkArea,
+): { landmarks: Landmark[]; replaced: Set<string> } {
+  const landmarks = LANDMARKS.filter(({ origin: { lat, lon } }) =>
+    lat >= area.south && lat <= area.north && lon >= area.west && lon <= area.east)
+  const replaced = new Set<string>()
+  for (const l of landmarks) {
+    if (l.anchorOnly) continue
+    for (const f of features) {
+      if (f.kind === 'building' && f.ring && ringContains(f.ring, l.origin)) replaced.add(f.id)
+    }
+  }
+  return { landmarks, replaced }
+}
+
 function url(asset: string): string {
   const base = (import.meta.env?.BASE_URL ?? '/') as string
   return `${base}models/landmarks/${asset}.glb`.replace('//', '/')
