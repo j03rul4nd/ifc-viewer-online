@@ -7,7 +7,7 @@ const TIMEOUT_MS = 15_000
 
 export type Res<T> = { ok: true; value: T; error?: undefined } | { ok: false; error: string; value?: undefined }
 
-async function request<T>(token: string, path: string, method = 'GET', body?: unknown): Promise<Res<T>> {
+export async function adminRequest<T>(token: string, path: string, method = 'GET', body?: unknown): Promise<Res<T>> {
   const base = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replace(/\/$/, '')
   if (!base) return { ok: false, error: 'La API no está configurada.' }
   const controller = new AbortController()
@@ -44,23 +44,23 @@ const P = '/admin/middleware'
 export const adminMw = {
   async load(t: string, hourCost: number): Promise<Res<AdminMwData>> {
     const [all, tickets, charges, margins, deals] = await Promise.all([
-      request<{ services: AdminService[] }>(t, P), request<{ tickets: AdminTicket[] }>(t, `${P}/tickets`), request<AdminMwData['charges']>(t, `${P}/charges`),
-      request<AdminMwData['margins']>(t, `${P}/margins?hour_cost=${hourCost}`), request<AdminMwData['deals']>(t, `${P}/deals`),
+      adminRequest<{ services: AdminService[] }>(t, P), adminRequest<{ tickets: AdminTicket[] }>(t, `${P}/tickets`), adminRequest<AdminMwData['charges']>(t, `${P}/charges`),
+      adminRequest<AdminMwData['margins']>(t, `${P}/margins?hour_cost=${hourCost}`), adminRequest<AdminMwData['deals']>(t, `${P}/deals`),
     ])
     for (const r of [all, tickets, charges, margins, deals]) if (!r.ok) return { ok: false, error: r.error }
     return { ok: true, value: { services: all.value!.services, tickets: tickets.value!.tickets, charges: charges.value!, margins: margins.value!, deals: deals.value! } }
   },
-  logs: (t: string, id: string) => request<{ available: boolean; lines: LogLine[] }>(t, `${P}/services/${id}/logs`),
-  review: (t: string, id: string, decision: 'approved' | 'rejected', note: string) => request<unknown>(t, `${P}/services/${id}/review`, 'POST', { decision, note }),
-  closeTicket: (t: string, id: string) => request<unknown>(t, `${P}/tickets/${id}/close`, 'POST'),
-  logTime: (t: string, ws: string, b: { minutes: number; category: string; note: string; ticket_id?: string }) => request<unknown>(t, `${P}/${ws}/time`, 'POST', b),
-  createDeal: (t: string, company: string) => request<unknown>(t, `${P}/deals`, 'POST', { company }),
-  loseDeal: (t: string, id: string, lost_reason: string, alt_price_note: string) => request<unknown>(t, `${P}/deals/${id}`, 'PATCH', { status: 'lost', lost_reason, ...(alt_price_note ? { alt_price_note } : {}) }),
+  logs: (t: string, id: string) => adminRequest<{ available: boolean; lines: LogLine[] }>(t, `${P}/services/${id}/logs`),
+  review: (t: string, id: string, decision: 'approved' | 'rejected', note: string) => adminRequest<unknown>(t, `${P}/services/${id}/review`, 'POST', { decision, note }),
+  closeTicket: (t: string, id: string) => adminRequest<unknown>(t, `${P}/tickets/${id}/close`, 'POST'),
+  logTime: (t: string, ws: string, b: { minutes: number; category: string; note: string; ticket_id?: string }) => adminRequest<unknown>(t, `${P}/${ws}/time`, 'POST', b),
+  createDeal: (t: string, company: string) => adminRequest<unknown>(t, `${P}/deals`, 'POST', { company }),
+  loseDeal: (t: string, id: string, lost_reason: string, alt_price_note: string) => adminRequest<unknown>(t, `${P}/deals/${id}`, 'PATCH', { status: 'lost', lost_reason, ...(alt_price_note ? { alt_price_note } : {}) }),
   async quote(t: string, b: object): Promise<Res<AdminQuote>> {
-    const r = await request<{ quote: AdminQuote }>(t, `${P}/quote`, 'POST', b)
+    const r = await adminRequest<{ quote: AdminQuote }>(t, `${P}/quote`, 'POST', b)
     return r.ok ? { ok: true, value: r.value.quote } : r
   },
-  win: (t: string, id: string, b: object) => request<unknown>(t, `${P}/deals/${id}/win`, 'POST', b),
-  raise: (t: string) => request<unknown>(t, `${P}/prices/raise`, 'POST'),
-  charge: (t: string, id: string, status: 'invoiced' | 'paid' | 'void', invoice_ref?: string) => request<unknown>(t, `${P}/charges/${id}`, 'PATCH', { status, ...(invoice_ref ? { invoice_ref } : {}) }),
+  win: (t: string, id: string, b: object) => adminRequest<unknown>(t, `${P}/deals/${id}/win`, 'POST', b),
+  raise: (t: string) => adminRequest<unknown>(t, `${P}/prices/raise`, 'POST'),
+  charge: (t: string, id: string, status: 'invoiced' | 'paid' | 'void', invoice_ref?: string) => adminRequest<unknown>(t, `${P}/charges/${id}`, 'PATCH', { status, ...(invoice_ref ? { invoice_ref } : {}) }),
 }

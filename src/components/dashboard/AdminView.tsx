@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { useCloudAccountStore } from '../../stores/cloudAccountStore'
 import AdminMiddleware from './AdminMiddleware'
+import AdminFinance from './AdminFinance'
 import {
   getAdminOverview, listAdminUsers, getAdminUser, patchAdminUser, deleteAdminUser,
   getAdminUserIdentity, getAdminUserExport,
@@ -40,7 +41,7 @@ interface AdminViewProps {
   theme?: 'dark' | 'light'
 }
 
-type Tab = 'overview' | 'users' | 'orgs' | 'workspaces' | 'plans' | 'audit' | 'middleware'
+type Tab = 'overview' | 'users' | 'orgs' | 'workspaces' | 'plans' | 'audit' | 'middleware' | 'finance'
 type Gate = 'loading' | 'ok' | 'denied' | 'offline'
 interface AuditFilter { targetType?: string; targetId?: string }
 
@@ -134,6 +135,7 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
   }
 
   const tabs: { id: Tab; label: string }[] = [
+    { id: 'finance', label: 'Finanzas' },
     { id: 'middleware', label: 'Middleware' },
     { id: 'overview', label: t('admin.tabOverview') },
     { id: 'users', label: t('admin.tabUsers') },
@@ -184,6 +186,7 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
         {tab === 'orgs' && <OrgsTab {...shared} />}
         {tab === 'workspaces' && <WorkspacesTab {...shared} />}
         {tab === 'plans' && <PlansTab {...shared} reloadPlans={reloadPlans} />}
+        {tab === 'finance' && getToken && <AdminFinance token={getToken} />}
         {tab === 'middleware' && getToken && <AdminMiddleware token={getToken} />}
         {tab === 'audit' && <AuditTab call={call} card={card} ghost={ghost} filter={auditFilter} setFilter={setAuditFilter} />}
       </div>
