@@ -1,0 +1,263 @@
+{% comment %}
+  IFC Viewer section. Copy to your theme's sections/ folder, then add
+  "3D IFC model" in the theme editor. Upload the .ifc in Content > Files and
+  paste its link, or paste any public https link to an .ifc file or a scene.
+  Reference: https://www.ifcvieweronline.eu/sdk/ (embed parameters).
+{% endcomment %}
+{%- comment -%} viewer-url:start {%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  if block
+    assign s = block.settings
+  endif
+  assign query = 'embed=1'
+  assign models = ''
+  assign parts = s.model | split: ','
+  for part in parts
+    assign url = part | strip
+    assign head = url | slice: 0, 8 | downcase
+    if head == 'https://'
+      if models != ''
+        assign models = models | append: ','
+      endif
+      assign models = models | append: url
+    endif
+  endfor
+  assign scene = s.scene | strip
+  assign scene_head = scene | slice: 0, 8 | downcase
+  if scene_head != 'https://'
+    assign scene = ''
+  endif
+  if models != ''
+    assign enc = models | url_encode
+    assign query = query | append: '&model=' | append: enc
+  endif
+  if scene != ''
+    assign enc = scene | url_encode
+    assign query = query | append: '&scene=' | append: enc
+  endif
+  if s.ui != 'minimal'
+    assign query = query | append: '&ui=' | append: s.ui
+  endif
+  if s.view != 'iso' or scene == ''
+    assign query = query | append: '&view=' | append: s.view
+  endif
+  if s.validate == false
+    assign query = query | append: '&validate=0'
+  endif
+  if s.map != 'off'
+    assign query = query | append: '&map=' | append: s.map
+  endif
+  if s.drawings
+    assign query = query | append: '&drawings=plan'
+  endif
+  if s.lang != 'auto'
+    assign query = query | append: '&lang=' | append: s.lang
+  endif
+  assign accent = s.accent | remove: '#' | strip | downcase
+  if accent.size == 6
+    assign accent_ok = true
+    assign chars = accent | split: ''
+    for c in chars
+      unless '0123456789abcdef' contains c
+        assign accent_ok = false
+      endunless
+    endfor
+    if accent_ok
+      assign query = query | append: '&accent=' | append: accent
+    endif
+  endif
+  assign viewer_src = 'https://www.ifcvieweronline.eu/?' | append: query
+  assign title = s.title | default: 'Interactive 3D IFC model'
+-%}
+{%- comment -%} viewer-url:end {%- endcomment -%}
+<div class="page-width">
+  {%- if models != '' or scene != '' -%}
+    <iframe src="{{ viewer_src | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
+  {%- elsif request.design_mode -%}
+    <p>IFC Viewer Online: paste an https link to an .ifc file (Content &gt; Files) or to a scene.</p>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "3D IFC model",
+  "settings": [
+    {
+      "type": "text",
+      "id": "model",
+      "label": "IFC file link",
+      "info": "https link to an .ifc file. Several links separated by commas load as one federated model."
+    },
+    {
+      "type": "text",
+      "id": "scene",
+      "label": "Scene link",
+      "info": "Optional. A saved scene brings its own models, camera and layers."
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Accessible title",
+      "default": "Interactive 3D IFC model"
+    },
+    {
+      "type": "range",
+      "id": "height",
+      "label": "Height",
+      "min": 300,
+      "max": 900,
+      "step": 20,
+      "unit": "px",
+      "default": 600
+    },
+    {
+      "type": "select",
+      "id": "ui",
+      "label": "Viewer layout",
+      "default": "article",
+      "options": [
+        {
+          "value": "article",
+          "label": "Article (clean, scroll-friendly)"
+        },
+        {
+          "value": "minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "full",
+          "label": "Full viewer"
+        },
+        {
+          "value": "client",
+          "label": "Client review"
+        },
+        {
+          "value": "kiosk",
+          "label": "Kiosk (model only)"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "view",
+      "label": "Starting view",
+      "default": "iso",
+      "options": [
+        {
+          "value": "iso",
+          "label": "Isometric"
+        },
+        {
+          "value": "top",
+          "label": "Top"
+        },
+        {
+          "value": "front",
+          "label": "Front"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "validate",
+      "label": "Show the Health Score",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "drawings",
+      "label": "Show the floor plan beside the model",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "map",
+      "label": "Place the model on the map",
+      "default": "off",
+      "options": [
+        {
+          "value": "off",
+          "label": "Off"
+        },
+        {
+          "value": "1",
+          "label": "Map"
+        },
+        {
+          "value": "terrain,buildings",
+          "label": "Map with terrain and buildings"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "lang",
+      "label": "Language",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Visitor's language"
+        },
+        {
+          "value": "en",
+          "label": "English"
+        },
+        {
+          "value": "es",
+          "label": "Español"
+        },
+        {
+          "value": "ca",
+          "label": "Català"
+        },
+        {
+          "value": "de",
+          "label": "Deutsch"
+        },
+        {
+          "value": "fr",
+          "label": "Français"
+        },
+        {
+          "value": "it",
+          "label": "Italiano"
+        },
+        {
+          "value": "pt",
+          "label": "Português"
+        },
+        {
+          "value": "ja",
+          "label": "日本語"
+        },
+        {
+          "value": "zh",
+          "label": "中文"
+        },
+        {
+          "value": "th",
+          "label": "ไทย"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "accent",
+      "label": "Accent colour",
+      "info": "Optional hex colour, e.g. #2f6f5e."
+    }
+  ],
+  "target": "section"
+}
+{% endschema %}
