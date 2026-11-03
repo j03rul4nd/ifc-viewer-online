@@ -22,7 +22,8 @@ Two ways to put IFC Viewer Online on a Shopify store.
 
 ## 2. Theme app extension (for the Shopify App Store)
 
-`theme-app-extension/` holds the same two blocks as app blocks, built from the sections:
+`app/` is a theme-only Shopify CLI app (no backend, no scopes). Its extension
+`app/extensions/ifc-viewer/` holds the same two blocks as app blocks, built from the sections:
 
 ```bash
 node integrations/shopify/build-extension.mjs
@@ -49,5 +50,15 @@ this is **on hold until there is revenue**. What is ready:
 - Screenshots: reuse `integrations/wordpress/wp-org-assets/screenshot-*.png` (1600×900
   crops) and the icon `icon-256x256.png` (App Store asks for 1200×1200, re-export).
 
-Still missing before submitting: the Shopify CLI app wrapper (`shopify app init`, with
-this folder as `extensions/ifc-viewer`), a development store test, and the fee decision.
+To publish (needs Joel's Partner account, which only he can create):
+
+```bash
+cd integrations/shopify/app
+npm install
+npm run check        # Theme Check: passes with no offenses
+npm run config:link  # creates the app in the Partner Dashboard, fills client_id
+npm run dev          # preview on a development store (free)
+npm run deploy       # releases the extension; App Store listing is a separate step
+```
+
+Still missing before submitting: a development store test and the fee decision.
