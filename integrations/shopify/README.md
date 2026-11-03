@@ -39,6 +39,15 @@ so one block in the product template covers the whole catalogue. Changing the
 variant swaps the model and the **Download BIM model (IFC)** link. Create the
 metafield definition in **Settings → Custom data → Products / Variants**.
 
+- **Fast pages:** the viewer loads on click (default) or when scrolled into view, over
+  the product image; until then the block adds no iframe.
+- **More downloads:** a list metafield (`custom.bim_files`, files or URLs) adds links
+  for RFA, DWG, datasheet PDF and so on.
+- **Technical data:** every metafield in the `bim` namespace (width, U-value, fire
+  rating…) shows as a table row.
+- **Analytics:** publishes the customer events `ifc_viewer_opened` and
+  `ifc_model_downloaded` for the store's pixels.
+
 ### Listing checklist (not submitted)
 
 Publishing needs a Shopify Partner account (free) and, to list on the App Store, the

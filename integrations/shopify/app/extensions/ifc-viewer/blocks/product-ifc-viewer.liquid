@@ -1,7 +1,8 @@
 {% comment %}
   App-only product block: each product (and each variant) brings its own IFC
   file from a metafield, so one block in the product template serves the whole
-  catalogue. Not part of the copy-paste sections.
+  catalogue. The viewer loads on click (or when scrolled into view), so the
+  product page stays as fast as without it. Not part of the copy-paste sections.
 {% endcomment %}
 {%- liquid
   assign s = block.settings
@@ -47,29 +48,85 @@
       endif
     endif
   endfor
-  assign enc = current_model | url_encode
   assign title = s.title | default: product.title
+
+  assign files_key = s.files_key | strip
+  assign files = ''
+  if files_key != ''
+    assign files = product.metafields[ns][files_key].value
+  endif
+  assign specs_ns = s.specs_namespace | strip
 -%}
 {%- if current_model != '' -%}
-  <div class="ifcvo-product" data-base="{{ base | escape }}" data-models="{{ '{' | append: map | append: '}' | escape }}">
-    <iframe src="{{ base | append: '&model=' | append: enc | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
+  <div class="ifcvo-product" data-base="{{ base | escape }}" data-models="{{ '{' | append: map | append: '}' | escape }}" data-load="{{ s.load }}" data-title="{{ title | escape }}" data-model="{{ current_model | escape }}">
+    <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:12px;overflow:hidden;background:#11161a">
+      {%- if product.featured_media -%}
+        {{ product.featured_media | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '', style: 'width:100%;height:100%;object-fit:contain;opacity:.55' }}
+      {%- endif -%}
+      <button type="button" class="ifcvo-open" style="position:absolute;inset:0;margin:auto;width:max-content;height:max-content;padding:12px 20px;border:0;border-radius:999px;background:#fff;color:#11161a;font:inherit;font-weight:600;cursor:pointer">{{ s.open_label | escape }}</button>
+    </div>
     {%- if s.download -%}
       <p style="margin:8px 0 0"><a class="ifcvo-download" href="{{ current_model | escape }}" download rel="noopener">{{ s.download_label | escape }}</a></p>
+    {%- endif -%}
+    {%- if files != blank -%}
+      <ul class="ifcvo-files" style="margin:8px 0 0;padding-left:18px">
+        {%- for f in files -%}
+          {%- assign furl = f.url | default: f | strip -%}
+          {%- assign fname = furl | split: '?' | first | split: '/' | last -%}
+          <li><a href="{{ furl | escape }}" download rel="noopener" data-file="{{ fname | escape }}">{{ fname | escape }}</a></li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+    {%- if specs_ns != '' and product.metafields[specs_ns] != blank -%}
+      <table class="ifcvo-specs" style="margin:12px 0 0;border-collapse:collapse;width:100%">
+        <caption style="text-align:left;font-weight:600;padding-bottom:4px">{{ s.specs_label | escape }}</caption>
+        {%- for pair in product.metafields[specs_ns] -%}
+          <tr><th scope="row" style="text-align:left;font-weight:400;padding:4px 8px 4px 0;border-top:1px solid rgba(0,0,0,.1)">{{ pair[0] | replace: '_', ' ' | capitalize | escape }}</th><td style="padding:4px 0;border-top:1px solid rgba(0,0,0,.1)">{{ pair[1].value | escape }}</td></tr>
+        {%- endfor -%}
+      </table>
     {%- endif -%}
   </div>
   <script>
     (function () {
       var root = document.currentScript.previousElementSibling
       var models = JSON.parse(root.dataset.models)
-      var frame = root.querySelector('iframe')
+      var stage = root.querySelector('.ifcvo-stage')
       var link = root.querySelector('.ifcvo-download')
+      var model = root.dataset.model
+      var frame = null
+      // Customer events, so the merchant's analytics pixels can count opens and downloads.
+      function track(name, data) {
+        try { window.Shopify && Shopify.analytics && Shopify.analytics.publish(name, data) } catch (e) {}
+      }
+      function src() { return root.dataset.base + '&model=' + encodeURIComponent(model) }
+      function open() {
+        if (frame) return
+        frame = document.createElement('iframe')
+        frame.src = src()
+        frame.title = root.dataset.title
+        frame.allow = 'fullscreen'
+        frame.style.cssText = 'border:0;width:100%;height:100%;display:block'
+        stage.replaceChildren(frame)
+        track('ifc_viewer_opened', { model: model })
+      }
       function show(id) {
         var url = models[id]
-        if (!url) return
-        var src = root.dataset.base + '&model=' + encodeURIComponent(url)
-        if (frame.src !== src) frame.src = src
+        if (!url || url === model) return
+        model = url
+        if (frame) frame.src = src()
         if (link) link.href = url
       }
+      root.querySelector('.ifcvo-open').addEventListener('click', open)
+      if (root.dataset.load === 'visible' && 'IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) { io.disconnect(); open() }
+        }, { rootMargin: '200px' })
+        io.observe(root)
+      }
+      root.addEventListener('click', function (e) {
+        var a = e.target.closest('a[download]')
+        if (a) track('ifc_model_downloaded', { file: a.dataset.file || model })
+      })
       // Themes update the cart form's variant id after the picker changes.
       document.addEventListener('change', function () {
         setTimeout(function () {
@@ -94,6 +151,11 @@
     { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
     { "type": "text", "id": "title", "label": "Accessible title", "info": "Defaults to the product title." },
     { "type": "range", "id": "height", "label": "Height", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
+    { "type": "select", "id": "load", "label": "Load the 3D viewer", "default": "click", "info": "On click keeps the product page as fast as without the viewer.", "options": [
+      { "value": "click", "label": "When the visitor clicks" },
+      { "value": "visible", "label": "When it scrolls into view" }
+    ] },
+    { "type": "text", "id": "open_label", "label": "Button text", "default": "View in 3D" },
     { "type": "select", "id": "ui", "label": "Viewer layout", "default": "article", "options": [
       { "value": "article", "label": "Article (clean, scroll-friendly)" },
       { "value": "minimal", "label": "Minimal" },
@@ -111,13 +173,22 @@
       { "value": "auto", "label": "Visitor's language" },
       { "value": "en", "label": "English" },
       { "value": "es", "label": "Español" },
+      { "value": "ca", "label": "Català" },
       { "value": "de", "label": "Deutsch" },
       { "value": "fr", "label": "Français" },
       { "value": "it", "label": "Italiano" },
-      { "value": "pt", "label": "Português" }
+      { "value": "pt", "label": "Português" },
+      { "value": "ja", "label": "日本語" },
+      { "value": "zh", "label": "中文" },
+      { "value": "th", "label": "ไทย" }
     ] },
+    { "type": "header", "content": "Downloads" },
     { "type": "checkbox", "id": "download", "label": "Show a download link for the IFC file", "default": true },
-    { "type": "text", "id": "download_label", "label": "Download link text", "default": "Download BIM model (IFC)" }
+    { "type": "text", "id": "download_label", "label": "Download link text", "default": "Download BIM model (IFC)" },
+    { "type": "text", "id": "files_key", "label": "More files metafield key", "default": "bim_files", "info": "List of files or URLs in the same namespace: RFA, DWG, datasheet PDF…" },
+    { "type": "header", "content": "Technical data" },
+    { "type": "text", "id": "specs_namespace", "label": "Specification metafield namespace", "default": "bim", "info": "Every metafield in this namespace shows as a row (dimensions, U-value, fire rating…). Leave empty to hide." },
+    { "type": "text", "id": "specs_label", "label": "Table title", "default": "Technical data" }
   ]
 }
 {% endschema %}
