@@ -1,0 +1,123 @@
+{% comment %}
+  App-only product block: each product (and each variant) brings its own IFC
+  file from a metafield, so one block in the product template serves the whole
+  catalogue. Not part of the copy-paste sections.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.namespace | strip | default: 'custom'
+  assign key = s.key | strip | default: 'ifc_model'
+
+  assign base = 'https://www.ifcvieweronline.eu/?embed=1&ui=' | append: s.ui | append: '&view=' | append: s.view
+  if s.validate == false
+    assign base = base | append: '&validate=0'
+  endif
+  if s.drawings
+    assign base = base | append: '&drawings=plan'
+  endif
+  if s.lang != 'auto'
+    assign base = base | append: '&lang=' | append: s.lang
+  endif
+
+  assign field = product.metafields[ns][key].value
+  assign product_model = field.url | default: field | strip
+  assign head = product_model | slice: 0, 8 | downcase
+  if head != 'https://'
+    assign product_model = ''
+  endif
+
+  assign current = product.selected_or_first_available_variant
+  assign map = ''
+  assign current_model = product_model
+  for variant in product.variants
+    assign vfield = variant.metafields[ns][key].value
+    assign vmodel = vfield.url | default: vfield | strip
+    assign vhead = vmodel | slice: 0, 8 | downcase
+    if vhead != 'https://'
+      assign vmodel = product_model
+    endif
+    if vmodel != ''
+      if map != ''
+        assign map = map | append: ','
+      endif
+      assign vjson = vmodel | json
+      assign map = map | append: '"' | append: variant.id | append: '":' | append: vjson
+      if variant.id == current.id
+        assign current_model = vmodel
+      endif
+    endif
+  endfor
+  assign enc = current_model | url_encode
+  assign title = s.title | default: product.title
+-%}
+{%- if current_model != '' -%}
+  <div class="ifcvo-product" data-base="{{ base | escape }}" data-models="{{ '{' | append: map | append: '}' | escape }}">
+    <iframe src="{{ base | append: '&model=' | append: enc | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
+    {%- if s.download -%}
+      <p style="margin:8px 0 0"><a class="ifcvo-download" href="{{ current_model | escape }}" download rel="noopener">{{ s.download_label | escape }}</a></p>
+    {%- endif -%}
+  </div>
+  <script>
+    (function () {
+      var root = document.currentScript.previousElementSibling
+      var models = JSON.parse(root.dataset.models)
+      var frame = root.querySelector('iframe')
+      var link = root.querySelector('.ifcvo-download')
+      function show(id) {
+        var url = models[id]
+        if (!url) return
+        var src = root.dataset.base + '&model=' + encodeURIComponent(url)
+        if (frame.src !== src) frame.src = src
+        if (link) link.href = url
+      }
+      // Themes update the cart form's variant id after the picker changes.
+      document.addEventListener('change', function () {
+        setTimeout(function () {
+          var input = document.querySelector('form[action*="/cart/add"] [name="id"]')
+          if (input) show(input.value)
+        }, 0)
+      })
+    })()
+  </script>
+{%- elsif request.design_mode -%}
+  <p>IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file).</p>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Product IFC model",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "paragraph", "content": "Reads the IFC file from a product or variant metafield (URL or file). A variant without its own file shows the product's." },
+    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
+    { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
+    { "type": "text", "id": "title", "label": "Accessible title", "info": "Defaults to the product title." },
+    { "type": "range", "id": "height", "label": "Height", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
+    { "type": "select", "id": "ui", "label": "Viewer layout", "default": "article", "options": [
+      { "value": "article", "label": "Article (clean, scroll-friendly)" },
+      { "value": "minimal", "label": "Minimal" },
+      { "value": "client", "label": "Client review" },
+      { "value": "kiosk", "label": "Kiosk (model only)" }
+    ] },
+    { "type": "select", "id": "view", "label": "Starting view", "default": "iso", "options": [
+      { "value": "iso", "label": "Isometric" },
+      { "value": "front", "label": "Front" },
+      { "value": "top", "label": "Top" }
+    ] },
+    { "type": "checkbox", "id": "validate", "label": "Show the Health Score", "default": true },
+    { "type": "checkbox", "id": "drawings", "label": "Show the floor plan beside the model", "default": false },
+    { "type": "select", "id": "lang", "label": "Language", "default": "auto", "options": [
+      { "value": "auto", "label": "Visitor's language" },
+      { "value": "en", "label": "English" },
+      { "value": "es", "label": "Español" },
+      { "value": "de", "label": "Deutsch" },
+      { "value": "fr", "label": "Français" },
+      { "value": "it", "label": "Italiano" },
+      { "value": "pt", "label": "Português" }
+    ] },
+    { "type": "checkbox", "id": "download", "label": "Show a download link for the IFC file", "default": true },
+    { "type": "text", "id": "download_label", "label": "Download link text", "default": "Download BIM model (IFC)" }
+  ]
+}
+{% endschema %}

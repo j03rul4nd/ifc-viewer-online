@@ -31,6 +31,14 @@ node integrations/shopify/build-extension.mjs
 
 `scripts/shopify-integration.test.ts` checks the blocks are up to date.
 
+### Product block (app only)
+
+`app/extensions/ifc-viewer/blocks/product-ifc-viewer.liquid` reads the IFC file
+from a product or variant metafield (default `custom.ifc_model`, type URL or file),
+so one block in the product template covers the whole catalogue. Changing the
+variant swaps the model and the **Download BIM model (IFC)** link. Create the
+metafield definition in **Settings → Custom data → Products / Variants**.
+
 ### Listing checklist (not submitted)
 
 Publishing needs a Shopify Partner account (free) and, to list on the App Store, the
@@ -39,12 +47,14 @@ this is **on hold until there is revenue**. What is ready:
 
 - App name: **IFC Viewer Online — 3D BIM models**
 - Tagline: Show interactive 3D IFC models and their Health Score on product pages.
-- Description: Add a 3D IFC (BIM) model to any page with a theme block. Visitors orbit,
+- Description: Give every building product its BIM page. Each product and variant
+  shows its own 3D IFC model from a metafield, with a download link for architects and
+  engineers and the model's Health Score. Add a 3D IFC (BIM) model to any page with a theme block. Visitors orbit,
   section and inspect the model in the browser; the file is opened by the visitor's
   browser, not by a server. Federated models, floor plan beside the model, map placement,
   10 languages. Also includes the shipment tracking globe block.
 - Category: Store design → Product display / 3D & AR.
-- Pricing: Free.
+- Pricing: Starter plan with a 14-day trial (proposed, see the planning notes).
 - Privacy policy: https://www.ifcvieweronline.eu/privacy
 - Support: the contact in https://www.ifcvieweronline.eu/terms
 - Screenshots: reuse `integrations/wordpress/wp-org-assets/screenshot-*.png` (1600×900
