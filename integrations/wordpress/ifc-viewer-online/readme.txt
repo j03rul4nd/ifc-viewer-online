@@ -1,5 +1,5 @@
 === IFC Viewer Online ===
-Contributors: ifcvieweronline
+Contributors: j03rul4nd
 Tags: ifc, bim, 3d, viewer, digital twin
 Requires at least: 6.1
 Tested up to: 7.1
