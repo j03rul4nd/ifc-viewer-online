@@ -5,12 +5,12 @@
 	"title": "IFC Viewer",
 	"category": "embed",
 	"icon": "building",
-	"description": "Embed an interactive 3D IFC (BIM) model with its Health Score.",
-	"keywords": [ "ifc", "bim", "3d", "model", "viewer" ],
+	"description": "Embed interactive 3D IFC (BIM) models: Health Score, federated models, point clouds, the map, sun studies, plan cuts and digital twin scenes.",
+	"keywords": [ "ifc", "bim", "3d", "model", "viewer", "digital twin", "point cloud" ],
 	"textdomain": "ifc-viewer-online",
 	"supports": { "html": false, "align": [ "wide", "full" ] },
 	"attributes": {
-		"attachment": { "type": "number", "default": 0 },
+		"attachment": { "type": [ "number", "string" ], "default": 0 },
 		"model": { "type": "string", "default": "" },
 		"name": { "type": "string", "default": "" },
 		"height": { "type": "number", "default": 600 },
@@ -22,7 +22,18 @@
 		"lang": { "type": "string", "default": "" },
 		"accent": { "type": "string", "default": "" },
 		"bg": { "type": "string", "default": "" },
-		"title": { "type": "string", "default": "" }
+		"title": { "type": "string", "default": "" },
+		"align": { "type": "string" },
+		"scan": { "type": "string", "default": "" },
+		"scene": { "type": "string", "default": "" },
+		"map": { "type": "string", "default": "" },
+		"look": { "type": "string", "default": "" },
+		"solar": { "type": "string", "default": "" },
+		"moon": { "type": "string", "default": "" },
+		"analysis": { "type": "string", "default": "" },
+		"site": { "type": "string", "default": "" },
+		"drawings": { "type": "string", "default": "" },
+		"explore": { "type": "string", "default": "" }
 	},
 	"editorScript": "ifcvo-block-editor"
 }

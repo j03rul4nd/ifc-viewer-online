@@ -184,7 +184,7 @@ Put the viewer in a blog, a CDE panel, a dashboard or an internal tool. The mode
 
 A small, dependency-free ES module (iframe + `postMessage`). It can read stats, issues and validation results, take screenshots, run an IDS check (`checkIds(idsXml)`), drive scenes, layers and devices, and listen for `ready`, `model-loaded`, `validation-completed` and `element-selected`. Reference: [`docs/IFC_VIEWER_SDK.md`](docs/IFC_VIEWER_SDK.md) · live docs at [`/sdk/`](https://www.ifcvieweronline.eu/sdk/).
 
-**3. WordPress**: a plugin to embed the viewer in posts and pages, in [`integrations/wordpress/`](integrations/wordpress/).
+**3. WordPress**: a plugin (block + `[ifc_viewer]` shortcode) to embed one or several models, point clouds, the map, sun studies, a plan cut or a digital twin scene in posts and pages, in [`integrations/wordpress/`](integrations/wordpress/).
 
 ---
 

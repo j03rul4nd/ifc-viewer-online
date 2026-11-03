@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       IFC Viewer Online
  * Plugin URI:        https://www.ifcvieweronline.eu/
- * Description:       Embed interactive 3D IFC (BIM) models in posts and pages, with the Health Score, measurement and validation of IFC Viewer Online. Block and [ifc_viewer] shortcode.
- * Version:           1.0.0
+ * Description:       Embed interactive 3D IFC (BIM) models in posts and pages: Health Score, federated models, point clouds, the model on the map, sun studies, plan cuts and digital twin scenes. Block and [ifc_viewer] shortcode.
+ * Version:           1.1.0
  * Requires at least: 6.1
  * Requires PHP:      7.4
  * Author:            IFC Viewer Online
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IFCVO_VERSION', '1.0.0' );
+define( 'IFCVO_VERSION', '1.1.0' );
 define( 'IFCVO_APP_URL', 'https://www.ifcvieweronline.eu/' );
 define( 'IFCVO_APP_ORIGIN', 'https://www.ifcvieweronline.eu' );
 
@@ -40,6 +40,14 @@ function ifcvo_param_rules() {
 		'lang'      => array( 'en', 'es', 'ca', 'de', 'fr', 'it', 'pt', 'ja', 'zh', 'th' ),
 		'accent'    => '/^#?[0-9a-fA-F]{6}$/',
 		'bg'        => '/^(white|paper|blueprint|sky|studio|[0-9a-fA-F]{6}(,[0-9a-fA-F]{6})?)$/',
+		'map'       => '/^(1|0|[a-z]+(,[a-z]+){0,7})$/',
+		'look'      => '/^[a-z]+(\.\.[a-z]+)?$/',
+		'solar'     => '/^(\d{4}-)?\d{2}-\d{2}T\d{2}:\d{2}$/',
+		'moon'      => array( '1', '0' ),
+		'analysis'  => '/^[a-zA-Z0-9:,=.\-]{1,60}$/',
+		'site'      => '/^-?\d{1,2}(\.\d+)?,-?\d{1,3}(\.\d+)?$/',
+		'drawings'  => array( 'plan' ),
+		'explore'   => array( '1', '0' ),
 	);
 }
 
@@ -59,50 +67,101 @@ function ifcvo_default_atts() {
 		'accent'     => '',
 		'bg'         => '',
 		'title'      => '',
+		'scan'       => '',
+		'scene'      => '',
+		'map'        => '',
+		'look'       => '',
+		'solar'      => '',
+		'moon'       => '',
+		'analysis'   => '',
+		'site'       => '',
+		'drawings'   => '',
+		'explore'    => '',
 	);
 }
 
+/** "a, b,,c" → array( 'a', 'b', 'c' ). Block and shortcode both give lists as comma-separated text. */
+function ifcvo_list( $value ) {
+	return array_values( array_filter( array_map( 'trim', explode( ',', (string) $value ) ), 'strlen' ) );
+}
+
+/** The CORS-enabled route for an IFC attachment of this site, or '' when it is not one. */
+function ifcvo_attachment_route( $attachment_id ) {
+	return $attachment_id && ifcvo_is_ifc_attachment( $attachment_id ) ? rest_url( 'ifc-viewer-online/v1/file/' . $attachment_id ) : '';
+}
+
 /**
- * A model URL the viewer can fetch: an attachment of this site (served through
- * the CORS-enabled REST route below) or any https URL.
+ * The model URLs the viewer can fetch, each with its display name: attachments of
+ * this site (served through the CORS-enabled REST route below) and https URLs.
+ * Several models load together as one federated scene.
  */
-function ifcvo_resolve_model_url( $atts ) {
-	$attachment_id = absint( $atts['attachment'] );
-	if ( $attachment_id && ifcvo_is_ifc_attachment( $attachment_id ) ) {
-		return rest_url( 'ifc-viewer-online/v1/file/' . $attachment_id );
+function ifcvo_resolve_models( $atts ) {
+	$models = array();
+	foreach ( ifcvo_list( $atts['attachment'] ) as $id ) {
+		$route = ifcvo_attachment_route( absint( $id ) );
+		if ( $route ) {
+			// The route URL ends in "file/<id>", so give the viewer the real file name.
+			$models[] = array( $route, wp_basename( (string) get_attached_file( absint( $id ) ) ) );
+		}
 	}
-	$url = trim( (string) $atts['model'] );
-	if ( '' === $url ) {
-		return '';
+	foreach ( ifcvo_list( $atts['model'] ) as $url ) {
+		// A URL of this site's own uploads goes through the REST route too, so the
+		// viewer (another origin) is allowed to read it.
+		$id    = attachment_url_to_postid( $url );
+		$route = ifcvo_attachment_route( $id );
+		if ( $route ) {
+			$models[] = array( $route, wp_basename( (string) get_attached_file( $id ) ) );
+			continue;
+		}
+		$url = esc_url_raw( $url, array( 'https' ) );
+		if ( $url ) {
+			$models[] = array( $url, '' );
+		}
 	}
-	// A URL of this site's own uploads goes through the REST route too, so the
-	// viewer (another origin) is allowed to read it.
-	$attachment_id = attachment_url_to_postid( $url );
-	if ( $attachment_id && ifcvo_is_ifc_attachment( $attachment_id ) ) {
-		return rest_url( 'ifc-viewer-online/v1/file/' . $attachment_id );
+	$names = ifcvo_list( sanitize_text_field( (string) $atts['name'] ) );
+	foreach ( $models as $i => $model ) {
+		if ( isset( $names[ $i ] ) ) {
+			$models[ $i ][1] = $names[ $i ];
+		}
 	}
-	$url = esc_url_raw( $url, array( 'https' ) );
-	return $url ? $url : '';
+	return array_slice( $models, 0, 12 );
+}
+
+/** https URLs only, for the point clouds and the scene document. */
+function ifcvo_https_list( $value, $max ) {
+	$urls = array();
+	foreach ( ifcvo_list( $value ) as $url ) {
+		$url = esc_url_raw( $url, array( 'https' ) );
+		if ( $url ) {
+			$urls[] = $url;
+		}
+	}
+	return array_slice( $urls, 0, $max );
 }
 
 /** Build the viewer URL from validated attributes only. */
 function ifcvo_build_embed_url( $atts ) {
-	$model = ifcvo_resolve_model_url( $atts );
-	if ( '' === $model ) {
+	$models = ifcvo_resolve_models( $atts );
+	$scene  = ifcvo_https_list( $atts['scene'], 1 );
+	// A scene document brings its own models.
+	if ( ! $models && ! $scene ) {
 		return '';
 	}
-	$query = array(
-		'model' => $model,
-		'embed' => '1',
-	);
-	$name = sanitize_text_field( (string) $atts['name'] );
-	// The REST route URL ends in "file/<id>", so give the viewer the real file name.
-	if ( '' === $name && false !== strpos( $model, 'ifc-viewer-online/v1/file/' ) ) {
-		$attachment_id = (int) substr( $model, strrpos( $model, '/' ) + 1 );
-		$name          = wp_basename( (string) get_attached_file( $attachment_id ) );
+	$query = array( 'embed' => '1' );
+	if ( $models ) {
+		$query['model'] = implode( ',', wp_list_pluck( $models, 0 ) );
+		$names          = wp_list_pluck( $models, 1 );
+		if ( array_filter( $names, 'strlen' ) ) {
+			// Names are parallel to the models, so a model without one keeps an empty slot.
+			$query['name'] = implode( ',', str_replace( ',', ' ', $names ) );
+		}
 	}
-	if ( '' !== $name ) {
-		$query['name'] = $name;
+	if ( $scene ) {
+		$query['scene'] = $scene[0];
+	}
+	$scan = ifcvo_https_list( $atts['scan'], 4 );
+	if ( $scan ) {
+		$query['scan'] = implode( ',', $scan );
 	}
 	foreach ( ifcvo_param_rules() as $key => $rule ) {
 		$value = trim( (string) $atts[ $key ] );
@@ -117,10 +176,12 @@ function ifcvo_build_embed_url( $atts ) {
 			$value = ltrim( $value, '#' );
 		}
 		// The viewer's defaults need no parameter.
-		if ( 'validate' === $key && '1' === $value ) {
+		// Explicit parameters win over the scene's, so the block's default view would
+		// replace the camera the scene was saved with.
+		if ( $scene && 'view' === $key && 'iso' === $value ) {
 			continue;
 		}
-		if ( 'ui' === $key && 'minimal' === $value ) {
+		if ( ( 'validate' === $key && '1' === $value ) || ( 'ui' === $key && 'minimal' === $value ) || ( 'map' === $key && '0' === $value ) ) {
 			continue;
 		}
 		$query[ $key ] = $value;
@@ -129,23 +190,29 @@ function ifcvo_build_embed_url( $atts ) {
 }
 
 /** The iframe markup shared by the shortcode and the block. */
-function ifcvo_render( $atts ) {
+function ifcvo_render( $atts, $wrapper = 'class="ifcvo-embed"' ) {
 	$atts = shortcode_atts( ifcvo_default_atts(), (array) $atts, 'ifc_viewer' );
 	$src  = ifcvo_build_embed_url( $atts );
 	if ( '' === $src ) {
 		if ( current_user_can( 'edit_posts' ) ) {
-			return '<p class="ifcvo-notice">' . esc_html__( 'IFC Viewer Online: choose an IFC file from the Media Library or give an https URL to an .ifc file.', 'ifc-viewer-online' ) . '</p>';
+			return '<p class="ifcvo-notice">' . esc_html__( 'IFC Viewer Online: choose an IFC file from the Media Library, or give an https URL to an .ifc file or to a scene.', 'ifc-viewer-online' ) . '</p>';
 		}
 		return '';
 	}
 	$height = max( 200, min( 2000, absint( $atts['height'] ) ) );
 	$title  = '' !== trim( (string) $atts['title'] ) ? $atts['title'] : __( 'Interactive 3D IFC model', 'ifc-viewer-online' );
 	return sprintf(
-		'<div class="ifcvo-embed"><iframe src="%1$s" width="100%%" height="%2$d" style="border:0;border-radius:12px;max-width:100%%;display:block" loading="lazy" allow="fullscreen" title="%3$s"></iframe></div>',
+		'<div %4$s><iframe src="%1$s" width="100%%" height="%2$d" style="border:0;border-radius:12px;max-width:100%%;display:block" loading="lazy" allow="fullscreen" title="%3$s"></iframe></div>',
 		esc_url( $src ),
 		$height,
-		esc_attr( $title )
+		esc_attr( $title ),
+		$wrapper
 	);
+}
+
+/** The block adds its wrapper attributes (wide and full alignment, extra classes). */
+function ifcvo_render_block( $atts ) {
+	return ifcvo_render( $atts, get_block_wrapper_attributes( array( 'class' => 'ifcvo-embed' ) ) );
 }
 
 add_shortcode( 'ifc_viewer', 'ifcvo_render' );
@@ -161,7 +228,7 @@ function ifcvo_register_block() {
 	);
 	register_block_type(
 		__DIR__ . '/block.json',
-		array( 'render_callback' => 'ifcvo_render' )
+		array( 'render_callback' => 'ifcvo_render_block' )
 	);
 }
 add_action( 'init', 'ifcvo_register_block' );
@@ -248,7 +315,9 @@ function ifcvo_serve_file( WP_REST_Request $request ) {
 	header( 'Content-Disposition: inline; filename="' . rawurlencode( wp_basename( $path ) ) . '"' );
 	header( 'Cache-Control: public, max-age=3600' );
 	header( 'X-Content-Type-Options: nosniff' );
-	// Stream without loading the whole model into memory.
+	// Stream without loading the whole model into memory: WP_Filesystem has no
+	// streaming read, and get_contents() would hold a 500 MB model in memory.
+	// phpcs:disable WordPress.WP.AlternativeFunctions
 	$handle = fopen( $path, 'rb' );
 	if ( $handle ) {
 		while ( ! feof( $handle ) ) {
@@ -257,5 +326,6 @@ function ifcvo_serve_file( WP_REST_Request $request ) {
 		}
 		fclose( $handle );
 	}
+	// phpcs:enable WordPress.WP.AlternativeFunctions
 	exit;
 }
