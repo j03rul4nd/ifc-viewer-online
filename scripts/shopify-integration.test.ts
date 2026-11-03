@@ -85,6 +85,10 @@ describe('Shopify product block (app only)', () => {
     expect(source).toContain('variant.metafields[ns][key]')
   })
 
+  it('keeps braces out of Liquid output tags (Shopify rejects them)', () => {
+    expect(source).not.toMatch(/\{\{[^}]*'[{}]'/)
+  })
+
   it('creates no iframe until the visitor asks for the viewer', () => {
     expect(source).not.toContain('<iframe')
     expect(schema.settings.find((s) => s.id === 'load')!.default).toBe('click')

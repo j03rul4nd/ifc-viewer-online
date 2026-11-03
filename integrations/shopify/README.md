@@ -66,8 +66,7 @@ this is **on hold until there is revenue**. What is ready:
 - Pricing: Starter plan with a 14-day trial (proposed, see the planning notes).
 - Privacy policy: https://www.ifcvieweronline.eu/privacy
 - Support: the contact in https://www.ifcvieweronline.eu/terms
-- Screenshots: reuse `integrations/wordpress/wp-org-assets/screenshot-*.png` (1600×900
-  crops) and the icon `icon-256x256.png` (App Store asks for 1200×1200, re-export).
+- Images: `listing/` (icon 1200×1200, feature image and two screenshots 1600×900), made by `node integrations/shopify/listing/make-assets.mjs`.
 
 To publish (needs Joel's Partner account, which only he can create):
 
