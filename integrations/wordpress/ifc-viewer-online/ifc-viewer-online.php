@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       IFC Viewer Online
- * Plugin URI:        https://www.ifcvieweronline.eu/
+ * Plugin URI:        https://github.com/j03rul4nd/ifc-viewer-online/tree/main/integrations/wordpress
  * Description:       Embed interactive 3D IFC (BIM) models in posts and pages: Health Score, federated models, point clouds, the model on the map, sun studies, plan cuts and digital twin scenes. Block and [ifc_viewer] shortcode.
  * Version:           1.1.0
  * Requires at least: 6.1
