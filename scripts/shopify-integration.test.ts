@@ -84,4 +84,14 @@ describe('Shopify product block (app only)', () => {
     expect(source).toContain("form[action*=\"/cart/add\"] [name=\"id\"]")
     expect(source).toContain('variant.metafields[ns][key]')
   })
+
+  it('creates no iframe until the visitor asks for the viewer', () => {
+    expect(source).not.toContain('<iframe')
+    expect(schema.settings.find((s) => s.id === 'load')!.default).toBe('click')
+  })
+
+  it('publishes customer events for opens and downloads', () => {
+    expect(source).toContain("track('ifc_viewer_opened'")
+    expect(source).toContain("track('ifc_model_downloaded'")
+  })
 })
