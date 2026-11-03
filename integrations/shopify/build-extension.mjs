@@ -16,7 +16,7 @@ export function toAppBlock(source) {
 }
 
 export function blockPath(name) {
-  return path.join(here, 'theme-app-extension', 'blocks', name)
+  return path.join(here, 'app', 'extensions', 'ifc-viewer', 'blocks', name)
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

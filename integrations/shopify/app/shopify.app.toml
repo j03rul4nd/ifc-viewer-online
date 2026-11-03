@@ -1,0 +1,19 @@
+# Theme-only app: it adds two app blocks and needs no backend, data or scopes.
+# Fill client_id after creating the app in the Partner Dashboard
+# (`npm run config:link` writes it for you).
+name = "IFC Viewer Online"
+client_id = ""
+application_url = "https://www.ifcvieweronline.eu/"
+embedded = false
+
+[access_scopes]
+scopes = ""
+
+[auth]
+redirect_urls = ["https://www.ifcvieweronline.eu/"]
+
+[webhooks]
+api_version = "2025-10"
+
+[build]
+include_config_on_deploy = true
