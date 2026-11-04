@@ -109,25 +109,16 @@ await shoot('screenshot-1-product-page.png', slide('One block. Every product.',
 
 const tram = await capture(viewer('tram', '&bg=paper'), 1000, 1280)
 const bench = await capture(viewer('bench', '&bg=paper'), 1000, 1280)
-await shoot('screenshot-2-variants.png', slide('Each variant, its own model.',
+await shoot('screenshot-5-variants.png', slide('Each variant, its own model.',
   'Switch the variant and the 3D model and download link follow. Variants without a file show the product’s.',
   `<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%">
   <div><div style="font-size:17px;font-weight:600;margin-bottom:10px">Variant: Shelter, 4 bays</div>${img(tram, 640, 14, 1.9)}</div>
   <div><div style="font-size:17px;font-weight:600;margin-bottom:10px">Variant: Bench with lamps</div>${img(bench, 640, 14, 2.6)}</div></div>`))
 
-await shoot('screenshot-3-downloads.png', slide('What specifiers come for.',
-  'IFC download, more files from a list metafield (RFA, DWG, PDF) and a technical data table from your own metafields.',
-  `<div style="background:#fff;border-radius:14px;padding:44px 52px;width:100%;font-size:20px;color:${ink}">
-  <div style="font-size:30px;font-weight:650;margin-bottom:26px">Curtain wall system CW-50</div>
-  <div style="color:${accent};font-weight:650;font-size:22px;margin-bottom:12px">Download BIM model (IFC)</div>
-  <div style="color:${muted};line-height:1.9;margin-bottom:30px">↓ cw-50-revit-family.rfa<br>↓ cw-50-details.dwg<br>↓ cw-50-datasheet.pdf</div>
-  <div style="font-weight:650;margin-bottom:8px">Technical data</div>
-  <table style="width:100%;border-collapse:collapse">${rows([['U-value', '1.1 W/m²K'], ['Fire rating', 'EI 30'], ['Acoustic insulation', '42 dB'], ['Max. height', '4,200 mm'], ['Profile depth', '150 mm']])}</table></div>`))
-
 const phone = await capture(viewer('station', '&bg=paper'), 390, 520, { drag: [-60, -10], zoom: 0 })
 const phoneCard = (inner) => `<div style="width:370px;background:#fff;border-radius:28px;overflow:hidden;border:10px solid ${ink}">${inner}
   <div style="padding:18px;font-size:15px"><div style="font-weight:650;font-size:19px;margin-bottom:6px">Station canopy kit</div><div style="color:${accent};font-weight:600">Download BIM model (IFC)</div></div></div>`
-await shoot('screenshot-4-mobile.png', slide('Fast on phones.',
+await shoot('screenshot-6-mobile.png', slide('Fast on phones.',
   'The viewer opens on tap over your product image, so the page loads as fast as without it.',
   `<div style="display:flex;gap:36px;align-items:center;justify-content:center;width:100%">
   ${phoneCard(`<div style="height:520px;position:relative;background:#f4f3ef;display:grid;place-items:center">
@@ -162,13 +153,58 @@ async function inspect() {
   await page.close()
   return `data:image/png;base64,${png}`
 }
-const inspected = await inspect()
-await shoot('screenshot-5-inspect.png', `<body style="margin:0;${font};width:1600px;height:900px;overflow:hidden;background:${concrete};color:${ink}">
+/** A caption strip over the full viewer, for shots where the whole UI is the point. */
+const wide = (title, body, shot) => `<body style="margin:0;${font};width:1600px;height:900px;overflow:hidden;background:${concrete};color:${ink}">
 <div style="height:150px;display:flex;align-items:center;gap:28px;padding:0 72px">
   <div style="width:40px;height:4px;background:${accent}"></div>
-  <h1 style="margin:0;font-size:46px;font-weight:650;letter-spacing:-0.02em">Every element, every property.</h1>
-  <p style="margin:0 0 0 auto;max-width:520px;font-size:21px;line-height:1.45;color:${muted}">Model tree, IFC data, materials and the Health Score, on the real site.</p>
+  <h1 style="margin:0;font-size:46px;font-weight:650;letter-spacing:-0.02em">${title}</h1>
+  <p style="margin:0 0 0 auto;max-width:520px;font-size:21px;line-height:1.45;color:${muted}">${body}</p>
 </div>
-<div style="margin:0 56px;height:750px;overflow:hidden;border-radius:14px 14px 0 0"><img src="${inspected}" style="width:100%;display:block"></div></body>`)
+<div style="margin:0 56px;height:750px;overflow:hidden;border-radius:14px 14px 0 0"><img src="${shot}" style="width:100%;display:block"></div></body>`
+
+await shoot('screenshot-2-inspect.png', wide('Every element, every property.',
+  'Model tree, IFC data, materials and the Health Score, on the real site.', await inspect()))
+
+// Hotel Vela in the full viewer: issues sent to BCF with their viewpoints, then a
+// distance measured on the model and the walls checked against an IDS file.
+async function coordinate() {
+  const page = await ctx.newPage()
+  await page.setViewportSize({ width: 1600, height: 900 })
+  await page.goto(`https://www.ifcvieweronline.eu/?model=${encodeURIComponent(B + MODELS.vela)}`)
+  await wait(35000)
+  for (const x of await page.getByRole('button', { name: 'Dismiss' }).all()) await x.click().catch(() => {})
+  // Each issue goes to BCF with a viewpoint; the panel then switches to the BCF tab.
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole('button', { name: 'Issues', exact: true }).first().click().catch(() => {})
+    await wait(1200)
+    await page.getByRole('button', { name: 'Add to BCF' }).nth(i).click().catch(() => {})
+    await wait(2000)
+  }
+  const bcf = (await page.screenshot()).toString('base64')
+  await page.getByRole('button', { name: 'Measure' }).first().click()
+  await wait(1000)
+  await page.mouse.click(776, 388); await wait(800) // podium roof corner
+  await page.mouse.click(1150, 300); await wait(1500) // tower edge
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: /^Check/ }).first().click()
+  await page.getByText('Check against IDS…').click()
+  await wait(1500)
+  await page.getByText('Walls fire rating').click() // a sample .ids built into the viewer
+  await wait(1000)
+  await page.getByRole('button', { name: 'Run check' }).click()
+  await wait(8000)
+  await page.getByRole('button', { name: 'View results' }).click()
+  await wait(3000)
+  await page.getByText('Walls declare a FireRating').first().click() // list the failing walls
+  await wait(1500)
+  const ids = (await page.screenshot()).toString('base64')
+  await page.close()
+  return { bcf: `data:image/png;base64,${bcf}`, ids: `data:image/png;base64,${ids}` }
+}
+const vela2 = await coordinate()
+await shoot('screenshot-3-measure-ids.png', wide('Measure it. Check it.',
+  'Distances with ΔX, ΔY, ΔZ and slope; an IDS check lists every wall without a fire rating and how to fix it.', vela2.ids))
+await shoot('screenshot-4-bcf.png', wide('Send issues to BCF.',
+  'Each issue becomes a BCF topic with its viewpoint, ready for Revit, ArchiCAD or your CDE.', vela2.bcf))
 
 await browser.close()
