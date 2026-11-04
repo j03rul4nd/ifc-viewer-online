@@ -229,7 +229,11 @@
     "switch": "Switch provider"
   },
   "attribution": {
-    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres.",
+    "show": "Afficher les crédits de la carte",
+    "hide": "Masquer les crédits de la carte",
+    "title": "Crédits de la carte",
+    "licence": "Données cartographiques OpenStreetMap, disponibles sous licence ODbL."
   },
   "quick": {
     "view": "View",

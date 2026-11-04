@@ -228,7 +228,11 @@
     "switch": "Cambiar proveedor"
   },
   "attribution": {
-    "vertical": "Las alturas son aproximadas — los datums verticales del IFC y del terreno pueden diferir en metros."
+    "vertical": "Las alturas son aproximadas — los datums verticales del IFC y del terreno pueden diferir en metros.",
+    "show": "Ver créditos del mapa",
+    "hide": "Ocultar créditos del mapa",
+    "title": "Créditos del mapa",
+    "licence": "Datos del mapa de OpenStreetMap, disponibles bajo la licencia ODbL."
   },
   "quick": {
     "view": "Vista",
