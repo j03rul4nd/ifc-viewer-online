@@ -68,3 +68,68 @@ export function riverfrontPromenades(
   }
   return out
 }
+
+/** A footway this close to the water runs along its edge, metres: it gets the railing and the lamps. */
+export const EDGE_REACH_M = 15
+/** Spacing of the lamps along a waterfront edge, metres. */
+export const LAMP_SPACING_M = 25
+
+/** The polyline moved sideways by `offsetM` metres (positive to the left of travel). */
+function offsetLine(pts: ReadonlyArray<LatLonPoint>, offsetM: number): LatLonPoint[] {
+  return pts.map((p, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)]
+    const kLon = K_LAT * Math.cos((p.lat * Math.PI) / 180)
+    const dx = (b.lon - a.lon) * kLon, dy = (b.lat - a.lat) * K_LAT
+    const len = Math.hypot(dx, dy) || 1
+    return { lat: p.lat + (dx / len) * offsetM / K_LAT, lon: p.lon - (dy / len) * offsetM / kLon }
+  })
+}
+
+function pointsAlong(pts: ReadonlyArray<LatLonPoint>, stepM: number): LatLonPoint[] {
+  const out: LatLonPoint[] = []
+  let carry = stepM / 2
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i]
+    const kLon = K_LAT * Math.cos((a.lat * Math.PI) / 180)
+    const len = Math.hypot((b.lat - a.lat) * K_LAT, (b.lon - a.lon) * kLon)
+    let t = carry
+    while (t <= len && out.length < 200) {
+      out.push({ lat: a.lat + ((b.lat - a.lat) * t) / len, lon: a.lon + ((b.lon - a.lon) * t) / len })
+      t += stepM
+    }
+    carry = t - len
+  }
+  return out
+}
+
+/**
+ * The river edge of a waterfront promenade: a railing along the water side of
+ * every footway that runs on the edge, and lamps along it. The Bund maps its
+ * flood wall and its trees, but not the balustrade or the lamps that line it,
+ * and without them the terrace ends in nothing.
+ */
+export function waterfrontEdge(
+  features: ReadonlyArray<OsmFeature>,
+  styles: { railing: OsmFeature['style']; lamp: OsmFeature['style'] },
+): OsmFeature[] {
+  const water = features.filter(isOpenWater)
+  if (water.length === 0) return []
+  const near = (p: LatLonPoint) => Math.min(...water.map((w) => distanceToRingM(p, w.ring!)))
+  const out: OsmFeature[] = []
+  const flat = { heightM: 0, minHeightM: 0, estimated: true }
+  for (const f of features) {
+    if (!f.id.endsWith('-promenade')) continue
+    const source = features.find((x) => x.id === f.id.slice(0, -'-promenade'.length))
+    if (!source?.ring || source.ring.length < 2) continue
+    const mid = source.ring[Math.floor(source.ring.length / 2)]
+    if (near(mid) > EDGE_REACH_M) continue
+    const left = offsetLine(source.ring, PROMENADE_WIDTH_M / 2)
+    const right = offsetLine(source.ring, -PROMENADE_WIDTH_M / 2)
+    const edge = near(left[Math.floor(left.length / 2)]) < near(right[Math.floor(right.length / 2)]) ? left : right
+    out.push({ id: `${source.id}-railing`, kind: 'barrier', ring: edge, height: flat, style: styles.railing, widthM: 0.08 })
+    pointsAlong(edge, LAMP_SPACING_M).forEach((point, k) => out.push({
+      id: `${source.id}-lamp-${k}`, kind: 'furniture', point, height: flat, style: styles.lamp,
+    }))
+  }
+  return out
+}
