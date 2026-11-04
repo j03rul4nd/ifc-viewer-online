@@ -229,7 +229,11 @@
     "switch": "Switch provider"
   },
   "attribution": {
-    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres.",
+    "show": "Mostra els crèdits del mapa",
+    "hide": "Amaga els crèdits del mapa",
+    "title": "Crèdits del mapa",
+    "licence": "Dades del mapa d'OpenStreetMap, disponibles sota la llicència ODbL."
   },
   "quick": {
     "view": "View",

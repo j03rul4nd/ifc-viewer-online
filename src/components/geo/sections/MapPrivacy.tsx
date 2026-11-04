@@ -8,11 +8,13 @@ import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '../../../stores/geoStore'
 import { useGeoCtl } from '../useGeoController'
 import { Caption, Notice } from '../ui'
+import { MapCreditsList } from '../MapAttribution'
 
 export function MapPrivacy() {
   const { t } = useTranslation('geo')
   const ctl = useGeoCtl()
   const consentGiven = useGeoStore((s) => s.consentGiven)
+  const attributions = useGeoStore((s) => s.attributions)
   if (!consentGiven) return null
   return (
     <>
@@ -20,6 +22,8 @@ export function MapPrivacy() {
       <Notice action={{ label: t('privacy.revoke'), onClick: () => { void ctl.revokeConsent() } }}>
         {t('privacy.body')}
       </Notice>
+      <Caption>{t('attribution.title')}</Caption>
+      <MapCreditsList attributions={attributions} />
     </>
   )
 }

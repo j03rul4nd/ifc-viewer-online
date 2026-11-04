@@ -228,7 +228,11 @@
     "switch": "Switch provider"
   },
   "attribution": {
-    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres.",
+    "show": "Show map credits",
+    "hide": "Hide map credits",
+    "title": "Map credits",
+    "licence": "Map data from OpenStreetMap, available under the ODbL."
   },
   "quick": {
     "view": "View",

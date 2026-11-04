@@ -229,7 +229,11 @@
     "switch": "Switch provider"
   },
   "attribution": {
-    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres.",
+    "show": "显示地图署名",
+    "hide": "隐藏地图署名",
+    "title": "地图署名",
+    "licence": "地图数据来自 OpenStreetMap，依据 ODbL 许可提供。"
   },
   "quick": {
     "view": "View",

@@ -229,7 +229,11 @@
     "switch": "Switch provider"
   },
   "attribution": {
-    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres.",
+    "show": "地図のクレジットを表示",
+    "hide": "地図のクレジットを隠す",
+    "title": "地図のクレジット",
+    "licence": "地図データは OpenStreetMap によるもので、ODbL の下で提供されています。"
   },
   "quick": {
     "view": "View",
