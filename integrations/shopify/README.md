@@ -48,6 +48,27 @@ metafield definition in **Settings → Custom data → Products / Variants**.
 - **Analytics:** publishes the customer events `ifc_viewer_opened` and
   `ifc_model_downloaded` for the store's pixels.
 
+### Blocks outside the 3D scene (app only)
+
+The product block mounts the viewer through the SDK (`assets/ifcvo.js`). Four more
+app blocks attach to it and can go in any section or column of the theme:
+
+| Block | What the visitor gets |
+|---|---|
+| **IFC model explorer** | The elements grouped by IFC class, a search box; click to select and frame, "Only" to isolate a class |
+| **IFC element details** | The selected element's class, type, storey, property and quantity sets |
+| **IFC views and tour** | Up to four camera buttons and a self-running guided tour with captions |
+| **IFC Health Score** | The file's score, errors and warnings, checked in the visitor's browser |
+
+They inherit the theme's font and text colour. Each block has an accent colour (empty
+uses the theme's button colour), a corner radius and an optional frame; the viewer
+block adds a scene background from presets or two brand colours. With the viewer
+set to "Kiosk", the explorer and details blocks replace the viewer's own panels, so
+the page follows the store's design instead of the viewer's.
+
+Customer events for the store's pixels: `ifc_viewer_opened`, `ifc_model_downloaded`,
+`ifc_element_viewed`, `ifc_tour_started`.
+
 ### Listing checklist (not submitted)
 
 Publishing needs a Shopify Partner account (free) and, to list on the App Store, the

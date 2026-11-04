@@ -2,23 +2,14 @@
   App-only product block: each product (and each variant) brings its own IFC
   file from a metafield, so one block in the product template serves the whole
   catalogue. The viewer loads on click (or when scrolled into view), so the
-  product page stays as fast as without it. Not part of the copy-paste sections.
+  product page stays as fast as without it. The explorer, element details,
+  views and Health Score blocks drive this viewer from anywhere on the page.
+  Not part of the copy-paste sections.
 {% endcomment %}
 {%- liquid
   assign s = block.settings
   assign ns = s.namespace | strip | default: 'custom'
   assign key = s.key | strip | default: 'ifc_model'
-
-  assign base = 'https://www.ifcvieweronline.eu/?embed=1&ui=' | append: s.ui | append: '&view=' | append: s.view
-  if s.validate == false
-    assign base = base | append: '&validate=0'
-  endif
-  if s.drawings
-    assign base = base | append: '&drawings=plan'
-  endif
-  if s.lang != 'auto'
-    assign base = base | append: '&lang=' | append: s.lang
-  endif
 
   assign field = product.metafields[ns][key].value
   assign product_model = field.url | default: field | strip
@@ -56,10 +47,24 @@
     assign files = product.metafields[ns][files_key].value
   endif
   assign specs_ns = s.specs_namespace | strip
+
+  assign stage_bg = '#11161a'
+  case s.background
+    when 'white'
+      assign stage_bg = '#ffffff'
+    when 'paper'
+      assign stage_bg = '#f4f3ef'
+    when 'brand'
+      assign stage_bg = s.bg_bottom | default: s.bg_top
+  endcase
 -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if current_model != '' -%}
-  <div class="ifcvo-product" data-base="{{ base | escape }}" data-models="{{ map | escape }}" data-load="{{ s.load }}" data-title="{{ title | escape }}" data-model="{{ current_model | escape }}">
-    <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:12px;overflow:hidden;background:#11161a">
+  <div class="ifcvo-product" data-ifcvo-viewer data-models="{{ map | escape }}" data-model="{{ current_model | escape }}"
+    data-load="{{ s.load }}" data-title="{{ title | escape }}" data-ui="{{ s.ui }}" data-view="{{ s.view }}"
+    data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
+    data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}">
+    <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:{{ s.radius }}px;overflow:hidden;background:{{ stage_bg }}">
       {%- if product.featured_media -%}
         {{ product.featured_media | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '', style: 'width:100%;height:100%;object-fit:contain;opacity:.55' }}
       {%- endif -%}
@@ -86,57 +91,7 @@
       </table>
     {%- endif -%}
   </div>
-  <script>
-    (function () {
-      var root = document.currentScript.previousElementSibling
-      // Variant id -> model pairs; the braces are added here, outside Liquid.
-      var models = JSON.parse('{' + root.dataset.models + '}')
-      var stage = root.querySelector('.ifcvo-stage')
-      var link = root.querySelector('.ifcvo-download')
-      var model = root.dataset.model
-      var frame = null
-      // Customer events, so the merchant's analytics pixels can count opens and downloads.
-      function track(name, data) {
-        try { window.Shopify && Shopify.analytics && Shopify.analytics.publish(name, data) } catch (e) {}
-      }
-      function src() { return root.dataset.base + '&model=' + encodeURIComponent(model) }
-      function open() {
-        if (frame) return
-        frame = document.createElement('iframe')
-        frame.src = src()
-        frame.title = root.dataset.title
-        frame.allow = 'fullscreen'
-        frame.style.cssText = 'border:0;width:100%;height:100%;display:block'
-        stage.replaceChildren(frame)
-        track('ifc_viewer_opened', { model: model })
-      }
-      function show(id) {
-        var url = models[id]
-        if (!url || url === model) return
-        model = url
-        if (frame) frame.src = src()
-        if (link) link.href = url
-      }
-      root.querySelector('.ifcvo-open').addEventListener('click', open)
-      if (root.dataset.load === 'visible' && 'IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) { io.disconnect(); open() }
-        }, { rootMargin: '200px' })
-        io.observe(root)
-      }
-      root.addEventListener('click', function (e) {
-        var a = e.target.closest('a[download]')
-        if (a) track('ifc_model_downloaded', { file: a.dataset.file || model })
-      })
-      // Themes update the cart form's variant id after the picker changes.
-      document.addEventListener('change', function () {
-        setTimeout(function () {
-          var input = document.querySelector('form[action*="/cart/add"] [name="id"]')
-          if (input) show(input.value)
-        }, 0)
-      })
-    })()
-  </script>
+  <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 {%- elsif request.design_mode -%}
   <p>IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file).</p>
 {%- endif -%}
@@ -161,7 +116,7 @@
       { "value": "article", "label": "Article (clean, scroll-friendly)" },
       { "value": "minimal", "label": "Minimal" },
       { "value": "client", "label": "Client review" },
-      { "value": "kiosk", "label": "Kiosk (model only)" }
+      { "value": "kiosk", "label": "Kiosk (model only, pair with the explorer block)" }
     ] },
     { "type": "select", "id": "view", "label": "Starting view", "default": "iso", "options": [
       { "value": "iso", "label": "Isometric" },
@@ -169,7 +124,6 @@
       { "value": "top", "label": "Top" }
     ] },
     { "type": "checkbox", "id": "validate", "label": "Show the Health Score", "default": true },
-    { "type": "checkbox", "id": "drawings", "label": "Show the floor plan beside the model", "default": false },
     { "type": "select", "id": "lang", "label": "Language", "default": "auto", "options": [
       { "value": "auto", "label": "Visitor's language" },
       { "value": "en", "label": "English" },
@@ -183,6 +137,18 @@
       { "value": "zh", "label": "中文" },
       { "value": "th", "label": "ไทย" }
     ] },
+    { "type": "header", "content": "Brand" },
+    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Selection and buttons inside the viewer." },
+    { "type": "select", "id": "background", "label": "Scene background", "default": "studio", "options": [
+      { "value": "studio", "label": "Studio (dark)" },
+      { "value": "white", "label": "White" },
+      { "value": "paper", "label": "Paper" },
+      { "value": "sky", "label": "Sky" },
+      { "value": "brand", "label": "My brand colours" }
+    ] },
+    { "type": "color", "id": "bg_top", "label": "Background top", "default": "#ffffff", "visible_if": "{{ block.settings.background == 'brand' }}" },
+    { "type": "color", "id": "bg_bottom", "label": "Background bottom", "default": "#e9e7e1", "visible_if": "{{ block.settings.background == 'brand' }}" },
+    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
     { "type": "header", "content": "Downloads" },
     { "type": "checkbox", "id": "download", "label": "Show a download link for the IFC file", "default": true },
     { "type": "text", "id": "download_label", "label": "Download link text", "default": "Download BIM model (IFC)" },
