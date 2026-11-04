@@ -45,7 +45,7 @@ const FEATURES = parseOsmFeatures(
   { elements: ELEMENTS }, { bbox: BOX, onDrop: (l) => losses.push(l) },
 ) as OsmFeature[]
 /** What the mappers drew, without the floors the parser adds (sidewalks.ts, riverfront-promenade.ts). */
-const MAPPED = FEATURES.filter((f) => !f.id.endsWith('-sidewalk') && !f.id.endsWith('-promenade'))
+const MAPPED = FEATURES.filter((f) => !f.id.endsWith('-sidewalk') && !f.id.startsWith('promenade-'))
 const CENSUS = censusFeatures(ELEMENTS, FEATURES, losses)
 const probe = (key: string) => CENSUS.probes.find((p) => p.key === key)!
 
