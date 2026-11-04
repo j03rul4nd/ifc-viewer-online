@@ -43,30 +43,192 @@ function isOpenWater(f: OsmFeature): boolean {
 
 /**
  * The footways that pave a waterfront: pedestrian, at ground level, near open
- * water and not tagged with an unpaved surface. `buffer` turns a centreline into a ring.
+ * water and not tagged with an unpaved surface.
+ */
+export function promenadeFootways(features: ReadonlyArray<OsmFeature>): OsmFeature[] {
+  const water = features.filter(isOpenWater)
+  if (water.length === 0) return []
+  return features.filter((f) => {
+    if (f.kind !== 'road' || f.widthM === undefined || !f.ring || f.ring.length < 2) return false
+    if (f.style.roadClass !== 'pedestrian' || f.style.crossing) return false
+    if (f.vertical && f.vertical.structure !== 'ground') return false
+    if (f.style.surface && UNPAVED.has(f.style.surface)) return false
+    const mid = f.ring[Math.floor(f.ring.length / 2)]
+    return water.some((w) => distanceToRingM(mid, w.ring!) <= PROMENADE_REACH_M)
+  })
+}
+
+/** Grid cell of the union, metres: finer than any gap worth keeping between two paths. */
+const UNION_CELL_M = 1.5
+/** Cells per side of one traced tile: 60 m, small enough to follow the ground. */
+const UNION_TILE_CELLS = 40
+
+/**
+ * The promenade floors: one polygon per connected stretch of waterfront, not
+ * one per footway. Overlapping floors at the same height fight for the depth
+ * buffer, and the Bund's parallel paths drew as shards of light and dark; the
+ * union, taken on a grid and traced back into rings, is a single surface.
  */
 export function riverfrontPromenades(
   features: ReadonlyArray<OsmFeature>,
   buffer: (pts: ReadonlyArray<LatLonPoint>, widthM: number) => LatLonPoint[] | null,
 ): OsmFeature[] {
-  const water = features.filter(isOpenWater)
-  if (water.length === 0) return []
-  const out: OsmFeature[] = []
-  for (const f of features) {
-    if (f.kind !== 'road' || f.widthM === undefined || !f.ring || f.ring.length < 2) continue
-    if (f.style.roadClass !== 'pedestrian' || f.style.crossing) continue
-    if (f.vertical && f.vertical.structure !== 'ground') continue
-    const mid = f.ring[Math.floor(f.ring.length / 2)]
-    if (!water.some((w) => distanceToRingM(mid, w.ring!) <= PROMENADE_REACH_M)) continue
-    if (f.style.surface && UNPAVED.has(f.style.surface)) continue
-    const ring = buffer(f.ring, PROMENADE_WIDTH_M)
-    if (!ring) continue
-    out.push({
-      id: `${f.id}-promenade`, kind: 'road', ring, height: f.height,
-      style: { ...f.style, roadClass: 'pedestrian', surface: 'paving_stones', tone: PROMENADE_TONE, crossing: undefined },
-    })
+  const paths = promenadeFootways(features)
+  const rings = paths.map((p) => buffer(p.ring!, PROMENADE_WIDTH_M))
+    .filter((r): r is LatLonPoint[] => !!r && r.length >= 3)
+  if (rings.length === 0) return []
+  const style = {
+    ...paths[0].style, roadClass: 'pedestrian' as const, surface: 'paving_stones' as const,
+    tone: PROMENADE_TONE, crossing: undefined,
+  }
+  // Never over the water: a floor reaching past the bank follows the DEM down
+  // to the river and folds into near-vertical panels along the edge.
+  const water = features.filter(isOpenWater).map((w) => w.ring!)
+  return unionRings(rings, water).map((u, k) => ({
+    id: `promenade-${k}`, kind: 'road' as const, ring: u.ring,
+    ...(u.holes.length > 0 ? { holes: u.holes } : {}),
+    height: { heightM: 0, minHeightM: 0, estimated: true }, style,
+  }))
+}
+
+type XY = { x: number; y: number }
+
+function inLocalRing(p: XY, r: ReadonlyArray<XY>): boolean {
+  let inside = false
+  for (let a = 0, b = r.length - 1; a < r.length; b = a++) {
+    if ((r[a].y > p.y) !== (r[b].y > p.y) && p.x < ((r[b].x - r[a].x) * (p.y - r[a].y)) / (r[b].y - r[a].y) + r[a].x) inside = !inside
+  }
+  return inside
+}
+
+/**
+ * Union of polygons as outer rings with their holes, taken on a UNION_CELL_M
+ * grid, minus whatever lies inside `exclude`.
+ */
+export function unionRings(
+  rings: ReadonlyArray<ReadonlyArray<LatLonPoint>>,
+  exclude: ReadonlyArray<ReadonlyArray<LatLonPoint>> = [],
+): Array<{ ring: LatLonPoint[]; holes: LatLonPoint[][] }> {
+  const o = rings[0][0]
+  const kLon = K_LAT * Math.cos((o.lat * Math.PI) / 180)
+  const local = rings.map((r) => r.map((p) => ({ x: (p.lon - o.lon) * kLon, y: (p.lat - o.lat) * K_LAT })))
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (const r of local) for (const p of r) {
+    x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y)
+  }
+  const c = UNION_CELL_M
+  x0 -= c; y0 -= c
+  const nx = Math.ceil((x1 - x0) / c) + 2, ny = Math.ceil((y1 - y0) / c) + 2
+  if (nx * ny > 4_000_000) return []
+  const grid = new Uint8Array(nx * ny)
+  for (const r of local) {
+    let rx0 = Infinity, ry0 = Infinity, rx1 = -Infinity, ry1 = -Infinity
+    for (const p of r) { rx0 = Math.min(rx0, p.x); ry0 = Math.min(ry0, p.y); rx1 = Math.max(rx1, p.x); ry1 = Math.max(ry1, p.y) }
+    for (let j = Math.max(0, Math.floor((ry0 - y0) / c)); j <= Math.min(ny - 1, Math.ceil((ry1 - y0) / c)); j++) {
+      for (let i = Math.max(0, Math.floor((rx0 - x0) / c)); i <= Math.min(nx - 1, Math.ceil((rx1 - x0) / c)); i++) {
+        if (grid[j * nx + i]) continue
+        if (inLocalRing({ x: x0 + (i + 0.5) * c, y: y0 + (j + 0.5) * c }, r)) grid[j * nx + i] = 1
+      }
+    }
+  }
+  // Close the grid by one cell: two strips that nearly touch are one terrace,
+  // and a sliver of ground between them is the kind of gap that reads as a crack.
+  close(grid, nx, ny)
+  for (const r of exclude.map((e) => e.map((p) => ({ x: (p.lon - o.lon) * kLon, y: (p.lat - o.lat) * K_LAT })))) {
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      if (grid[j * nx + i] && inLocalRing({ x: x0 + (i + 0.5) * c, y: y0 + (j + 0.5) * c }, r)) grid[j * nx + i] = 0
+    }
+  }
+  const filled = (i: number, j: number) => i >= 0 && j >= 0 && i < nx && j < ny && grid[j * nx + i] === 1
+  const key = (i: number, j: number) => j * (nx + 1) + i
+  const corner = (k: number): XY => ({ x: x0 + (k % (nx + 1)) * c, y: y0 + Math.floor(k / (nx + 1)) * c })
+  const area = (r: ReadonlyArray<XY>) => {
+    let s2 = 0
+    for (let a = 0, b = r.length - 1; a < r.length; b = a++) s2 += (r[b].x - r[a].x) * (r[b].y + r[a].y)
+    return s2 / 2
+  }
+  const toLL = (r: ReadonlyArray<XY>) => r.map((p) => ({ lat: o.lat + p.y / K_LAT, lon: o.lon + p.x / kLon }))
+  const out: Array<{ ring: LatLonPoint[]; holes: LatLonPoint[][] }> = []
+  // Traced TILE BY TILE. One polygon a kilometre long is more than the paved
+  // area builder will subdivide against the ground, and its long triangles
+  // spanned the drop from the terrace to the river as near-vertical shards.
+  for (let tj = 0; tj < ny; tj += UNION_TILE_CELLS) for (let ti = 0; ti < nx; ti += UNION_TILE_CELLS) {
+    const at = (i: number, j: number) => i >= ti && j >= tj && i < ti + UNION_TILE_CELLS && j < tj + UNION_TILE_CELLS && filled(i, j)
+    // Boundary edges, counter-clockwise round each filled cell, keyed by their start corner.
+    const next = new Map<number, number[]>()
+    const add = (a: number, b: number) => { const l = next.get(a); if (l) l.push(b); else next.set(a, [b]) }
+    for (let j = tj; j < Math.min(ny, tj + UNION_TILE_CELLS); j++) for (let i = ti; i < Math.min(nx, ti + UNION_TILE_CELLS); i++) {
+      if (!at(i, j)) continue
+      if (!at(i, j - 1)) add(key(i, j), key(i + 1, j))
+      if (!at(i + 1, j)) add(key(i + 1, j), key(i + 1, j + 1))
+      if (!at(i, j + 1)) add(key(i + 1, j + 1), key(i, j + 1))
+      if (!at(i - 1, j)) add(key(i, j + 1), key(i, j))
+    }
+    const loops: XY[][] = []
+    for (const startKey of [...next.keys()]) {
+      while ((next.get(startKey)?.length ?? 0) > 0) {
+        const loop: XY[] = []
+        let cur = startKey
+        for (let guard = 0; guard < 200_000; guard++) {
+          const list = next.get(cur)
+          if (!list || list.length === 0) break
+          loop.push(corner(cur))
+          cur = list.pop()!
+          if (cur === startKey) break
+        }
+        if (loop.length >= 4) loops.push(simplify(loop, 0.9))
+      }
+    }
+    const outers = loops.filter((l) => l.length >= 3 && area(l) > 0)
+    const holes = loops.filter((l) => l.length >= 3 && area(l) < 0)
+    for (const ring of outers) out.push({ ring: toLL(ring), holes: holes.filter((h) => inLocalRing(h[0], ring)).map(toLL) })
   }
   return out
+}
+
+/** Morphological closing (dilate, then erode) by one cell, in place. */
+function close(grid: Uint8Array, nx: number, ny: number): void {
+  const pass = (src: Uint8Array, keep: (sum: number) => boolean): Uint8Array => {
+    const out = new Uint8Array(src.length)
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      let sum = 0
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const a = i + di, b = j + dj
+        if (a >= 0 && b >= 0 && a < nx && b < ny) sum += src[b * nx + a]
+      }
+      out[j * nx + i] = keep(sum) ? 1 : 0
+    }
+    return out
+  }
+  const dilated = pass(grid, (s) => s > 0)
+  // Erode against a full neighbourhood; the border counts as empty, which the padding allows.
+  grid.set(pass(dilated, (s) => s === 9))
+}
+
+/** Douglas–Peucker on a closed ring, tolerance in metres. */
+function simplify(ring: XY[], tol: number): XY[] {
+  if (ring.length < 4) return ring
+  const keep = new Uint8Array(ring.length)
+  let far = 0
+  for (let i = 1; i < ring.length; i++) {
+    if (Math.hypot(ring[i].x - ring[0].x, ring[i].y - ring[0].y) > Math.hypot(ring[far].x - ring[0].x, ring[far].y - ring[0].y)) far = i
+  }
+  keep[0] = 1
+  keep[far] = 1
+  const stack: Array<[number, number]> = [[0, far], [far, ring.length]]
+  while (stack.length) {
+    const [a, b] = stack.pop()!
+    const pa = ring[a], pb = ring[b % ring.length]
+    const dx = pb.x - pa.x, dy = pb.y - pa.y
+    const l = Math.hypot(dx, dy) || 1
+    let worst = -1, wd = tol
+    for (let i = a + 1; i < b; i++) {
+      const d = Math.abs(dy * (ring[i].x - pa.x) - dx * (ring[i].y - pa.y)) / l
+      if (d > wd) { wd = d; worst = i }
+    }
+    if (worst >= 0) { keep[worst] = 1; stack.push([a, worst], [worst, b]) }
+  }
+  return ring.filter((_, i) => keep[i])
 }
 
 /** A footway this close to the water runs along its edge, metres: it gets the railing and the lamps. */
@@ -117,10 +279,8 @@ export function waterfrontEdge(
   const near = (p: LatLonPoint) => Math.min(...water.map((w) => distanceToRingM(p, w.ring!)))
   const out: OsmFeature[] = []
   const flat = { heightM: 0, minHeightM: 0, estimated: true }
-  for (const f of features) {
-    if (!f.id.endsWith('-promenade')) continue
-    const source = features.find((x) => x.id === f.id.slice(0, -'-promenade'.length))
-    if (!source?.ring || source.ring.length < 2) continue
+  for (const source of promenadeFootways(features)) {
+    if (!source.ring || source.ring.length < 2) continue
     const mid = source.ring[Math.floor(source.ring.length / 2)]
     if (near(mid) > EDGE_REACH_M) continue
     const left = offsetLine(source.ring, PROMENADE_WIDTH_M / 2)

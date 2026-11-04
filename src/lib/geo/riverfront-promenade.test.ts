@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseOsmFeatures } from './osm-features'
+import { parseOsmFeatures, pointInLatLonRing } from './osm-features'
 
 // A river 100 m wide running north–south, its west bank at lon 121.4900.
 const river = {
@@ -17,7 +17,7 @@ const footway = (id: number, lon: number, tags: Record<string, string> = {}) => 
 describe('riverfront promenade', () => {
   it('paves a footway on the waterfront as a floor', () => {
     const f = parseOsmFeatures({ elements: [river, footway(2, 121.4897)] })
-    const floor = f.find((x) => x.id === 'w2-promenade')
+    const floor = f.find((x) => x.id.startsWith('promenade-'))
     expect(floor?.kind).toBe('road')
     expect(floor?.widthM).toBeUndefined()
     expect(floor?.style.roadClass).toBe('pedestrian')
@@ -25,7 +25,7 @@ describe('riverfront promenade', () => {
 
   it('leaves a footway far from the water a footway', () => {
     const f = parseOsmFeatures({ elements: [river, footway(3, 121.4870)] })
-    expect(f.some((x) => x.id === 'w3-promenade')).toBe(false)
+    expect(f.some((x) => x.id.startsWith('promenade-'))).toBe(false)
   })
 
   it('paves a waterfront mapped as a park, as the Bund is', () => {
@@ -34,17 +34,17 @@ describe('riverfront promenade', () => {
       { lat: 31.243, lon: 121.4890 }, { lat: 31.237, lon: 121.4890 },
     ] }
     const f = parseOsmFeatures({ elements: [river, park, footway(7, 121.4897)] })
-    expect(f.some((x) => x.id === 'w7-promenade')).toBe(true)
+    expect(f.some((x) => x.id.startsWith('promenade-'))).toBe(true)
   })
 
   it('leaves an unpaved riverside path unpaved', () => {
     const f = parseOsmFeatures({ elements: [river, footway(8, 121.4897, { surface: 'dirt' })] })
-    expect(f.some((x) => x.id === 'w8-promenade')).toBe(false)
+    expect(f.some((x) => x.id.startsWith('promenade-'))).toBe(false)
   })
 
   it('does not pave a passage that runs under the waterfront', () => {
     const f = parseOsmFeatures({ elements: [river, footway(4, 121.4897, { tunnel: 'yes', layer: '-1' })] })
-    expect(f.some((x) => x.id === 'w4-promenade')).toBe(false)
+    expect(f.some((x) => x.id.startsWith('promenade-'))).toBe(false)
   })
 })
 
@@ -63,7 +63,26 @@ describe('waterfront edge', () => {
 
   it('gives no railing to a promenade path back from the edge', () => {
     const f = parseOsmFeatures({ elements: [river, footway(10, 121.4895)] })
-    expect(f.some((x) => x.id === 'w10-promenade')).toBe(true)
+    expect(f.some((x) => x.id.startsWith('promenade-'))).toBe(true)
     expect(f.some((x) => x.id === 'w10-railing')).toBe(false)
+  })
+})
+
+describe('promenade union', () => {
+  it('covers the ground between parallel paths exactly once, with no overlapping strips', () => {
+    const f = parseOsmFeatures({ elements: [river, footway(11, 121.4897), footway(12, 121.4896), footway(13, 121.4895)] })
+    const floors = f.filter((x) => x.id.startsWith('promenade-'))
+    for (const lat of [31.2385, 31.2400, 31.2415]) for (const lon of [121.48955, 121.48965]) {
+      expect(floors.filter((x) => pointInLatLonRing({ lat, lon }, x.ring!)).length).toBe(1)
+    }
+  })
+})
+
+describe('promenade floor and the water', () => {
+  it('stops the floor at the bank instead of running it over the river', () => {
+    const f = parseOsmFeatures({ elements: [river, footway(14, 121.4899)] })
+    const floor = f.find((x) => x.id.startsWith('promenade-'))!
+    // The bank is at lon 121.4900; nothing of the floor may lie past it.
+    expect(Math.max(...floor.ring!.map((p) => p.lon))).toBeLessThanOrEqual(121.49002)
   })
 })
