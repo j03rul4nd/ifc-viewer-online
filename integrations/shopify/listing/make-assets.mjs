@@ -165,22 +165,14 @@ const wide = (title, body, shot) => `<body style="margin:0;${font};width:1600px;
 await shoot('screenshot-2-inspect.png', wide('Every element, every property.',
   'Model tree, IFC data, materials and the Health Score, on the real site.', await inspect()))
 
-// Hotel Vela in the full viewer: issues sent to BCF with their viewpoints, then a
-// distance measured on the model and the walls checked against an IDS file.
+// Hotel Vela in the full viewer: a distance measured on the model and the walls
+// checked against an IDS file.
 async function coordinate() {
   const page = await ctx.newPage()
   await page.setViewportSize({ width: 1600, height: 900 })
   await page.goto(`https://www.ifcvieweronline.eu/?model=${encodeURIComponent(B + MODELS.vela)}`)
   await wait(35000)
   for (const x of await page.getByRole('button', { name: 'Dismiss' }).all()) await x.click().catch(() => {})
-  // Each issue goes to BCF with a viewpoint; the panel then switches to the BCF tab.
-  for (let i = 0; i < 3; i++) {
-    await page.getByRole('button', { name: 'Issues', exact: true }).first().click().catch(() => {})
-    await wait(1200)
-    await page.getByRole('button', { name: 'Add to BCF' }).nth(i).click().catch(() => {})
-    await wait(2000)
-  }
-  const bcf = (await page.screenshot()).toString('base64')
   await page.getByRole('button', { name: 'Measure' }).first().click()
   await wait(1000)
   await page.mouse.click(776, 388); await wait(800) // podium roof corner
@@ -199,12 +191,65 @@ async function coordinate() {
   await wait(1500)
   const ids = (await page.screenshot()).toString('base64')
   await page.close()
-  return { bcf: `data:image/png;base64,${bcf}`, ids: `data:image/png;base64,${ids}` }
+  return `data:image/png;base64,${ids}`
 }
 const vela2 = await coordinate()
 await shoot('screenshot-3-measure-ids.png', wide('Measure it. Check it.',
-  'Distances with ΔX, ΔY, ΔZ and slope; an IDS check lists every wall without a fire rating and how to fix it.', vela2.ids))
+  'Distances with ΔX, ΔY, ΔZ and slope; an IDS check lists every wall without a fire rating and how to fix it.', vela2))
+// The Shanghai skyline again, with one issue of each of three rules sent to BCF,
+// so the topic list shows different problems, each with its own viewpoint.
+async function bcfTopics() {
+  const models = ['shanghai-tower/SHA-IVO-SHANGHAI-TOWER-A-0001.ifc', 'oriental-pearl/SHA-IVO-ORIENTAL-PEARL-A-0001.ifc', 'swfc/SHA-IVO-SWFC-A-0001.ifc']
+  const page = await ctx.newPage()
+  await page.setViewportSize({ width: 1600, height: 900 })
+  await page.goto(`https://www.ifcvieweronline.eu/?model=${models.map((m) => encodeURIComponent(B + m)).join(',')}&map=terrain,buildings,showcase`)
+  await page.getByRole('button', { name: 'Enable map' }).click({ timeout: 30000 }).catch(() => {})
+  await wait(70000)
+  for (const x of await page.getByRole('button', { name: /close|dismiss/i }).all()) await x.click({ timeout: 1000 }).catch(() => {})
+  // One issue per class group: the first "Add to BCF" under each group header.
+  for (let group = 0; group < 3; group++) {
+    await page.getByRole('button', { name: 'Issues', exact: true }).first().click().catch(() => {})
+    await wait(1000)
+    // Grouped by IFC class, each group's first issue comes from a different rule.
+    await page.getByRole('button', { name: 'Class', exact: true }).last().click().catch(() => {})
+    await wait(800)
+    // The issue list's own "Expand all" (the tree has one too).
+    await page.getByRole('button', { name: 'Expand all' }).last().click().catch(() => {})
+    await wait(1000)
+    const picked = await page.evaluate((g) => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT)
+      const firsts = []
+      let header = null
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const text = (n.innerText || '').trim()
+        const line = text.split(/\n/)[0]
+        // Group headers are in capitals (by CSS), e.g. "IFCSPACE".
+        if (n.childElementCount <= 2 && /^[A-Z][A-Z ]{6,}$/.test(line) && line !== 'HOW TO FIX' && n.offsetParent) header = line
+        if (n.tagName === 'BUTTON' && [n.getAttribute('aria-label'), n.title, text].includes('Add to BCF') && header && !firsts.some((f) => f.header === header)) firsts.push({ header, n })
+      }
+      const f = firsts[g]
+      if (!f) return null
+      f.n.click()
+      return f.header
+    }, group)
+    if (!picked) break
+    await wait(2500)
+  }
+  await page.getByRole('button', { name: /^BCF/ }).last().click().catch(() => {})
+  await wait(1500)
+  // Raise the validation panel's grip (the row of dots) so the topic list fits.
+  const [gx, gy] = [977, 568]
+  await page.mouse.move(gx, gy); await page.mouse.down()
+  await page.mouse.move(gx, 360, { steps: 20 }); await page.mouse.up()
+  await wait(2000)
+  // The listing is about BIM coordination; that optional button is not part of it.
+  await page.evaluate(() => { for (const b of document.querySelectorAll('button')) if (b.textContent.includes('Copy for AI')) b.style.display = 'none' })
+  await wait(500)
+  const png = (await page.screenshot()).toString('base64')
+  await page.close()
+  return `data:image/png;base64,${png}`
+}
 await shoot('screenshot-4-bcf.png', wide('Send issues to BCF.',
-  'Each issue becomes a BCF topic with its viewpoint, ready for Revit, ArchiCAD or your CDE.', vela2.bcf))
+  'Each issue becomes a BCF topic with its viewpoint, ready for Revit, ArchiCAD or your CDE.', await bcfTopics()))
 
 await browser.close()
