@@ -45,6 +45,7 @@ import { outsetRing } from './plaza-paving'
 /** How far a partly-described outline is set back inside itself, metres. */
 const OUTLINE_INSET_M = 0.25
 import { shanghaiBridgeWidth } from './shanghai-bridges'
+import { riverfrontPromenades } from './riverfront-promenade'
 import { sidewalkWidthM, SIDEWALK_TONE } from './sidewalks'
 import { isBarcelona } from './barcelona-barris'
 import { hydrologyQueryParts } from './osm-hydro'
@@ -2110,6 +2111,8 @@ export function parseOsmFeatures(
   }
 
   out.push(...stitchWaterNetwork(out, structures))
+  // The floor of a waterfront promenade, from its footways (riverfront-promenade).
+  out.push(...riverfrontPromenades(out, bufferWaterway))
 
   return supersedeOutlinesWithParts(out)
 }
