@@ -47,3 +47,23 @@ describe('riverfront promenade', () => {
     expect(f.some((x) => x.id === 'w4-promenade')).toBe(false)
   })
 })
+
+describe('waterfront edge', () => {
+  it('lines the river side of an edge footway with a railing and lamps', () => {
+    const f = parseOsmFeatures({ elements: [river, footway(9, 121.4899)] })
+    const railing = f.find((x) => x.id === 'w9-railing')
+    expect(railing?.kind).toBe('barrier')
+    expect(railing?.style.barrier).toBe('handrail')
+    // On the water side: east of the footway, towards the bank at lon 121.4900.
+    expect(railing!.ring![0].lon).toBeGreaterThan(121.4899)
+    const lamps = f.filter((x) => x.id.startsWith('w9-lamp-'))
+    expect(lamps.length).toBeGreaterThan(10)
+    expect(lamps[0].style.furniture).toBe('street_lamp')
+  })
+
+  it('gives no railing to a promenade path back from the edge', () => {
+    const f = parseOsmFeatures({ elements: [river, footway(10, 121.4895)] })
+    expect(f.some((x) => x.id === 'w10-promenade')).toBe(true)
+    expect(f.some((x) => x.id === 'w10-railing')).toBe(false)
+  })
+})
