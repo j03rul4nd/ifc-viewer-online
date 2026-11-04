@@ -60,8 +60,11 @@ describe('Shopify sections', () => {
   })
 })
 
+const ext = path.join(dir, 'app/extensions/ifc-viewer')
+const runtime = fs.readFileSync(path.join(ext, 'assets/ifcvo.js'), 'utf8')
+
 describe('Shopify product block (app only)', () => {
-  const source = fs.readFileSync(path.join(dir, 'app/extensions/ifc-viewer/blocks/product-ifc-viewer.liquid'), 'utf8')
+  const source = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
   const schema = schemaOf(source) as ReturnType<typeof schemaOf> & { enabled_on?: { templates: string[] } }
 
   it('is a product-template app block with valid settings', () => {
@@ -81,8 +84,14 @@ describe('Shopify product block (app only)', () => {
   })
 
   it('switches the model when the variant changes', () => {
-    expect(source).toContain("form[action*=\"/cart/add\"] [name=\"id\"]")
     expect(source).toContain('variant.metafields[ns][key]')
+    expect(runtime).toContain('form[action*="/cart/add"] [name="id"]')
+    expect(runtime).toContain('viewer.addFromUrl(url)')
+  })
+
+  it('loads the shared runtime and marks itself as the page viewer', () => {
+    expect(source).toContain("'ifcvo.js' | asset_url")
+    expect(source).toContain('data-ifcvo-viewer')
   })
 
   it('keeps braces out of Liquid output tags (Shopify rejects them)', () => {
@@ -95,7 +104,46 @@ describe('Shopify product block (app only)', () => {
   })
 
   it('publishes customer events for opens and downloads', () => {
-    expect(source).toContain("track('ifc_viewer_opened'")
-    expect(source).toContain("track('ifc_model_downloaded'")
+    expect(runtime).toContain("track('ifc_viewer_opened'")
+    expect(runtime).toContain("track('ifc_model_downloaded'")
+  })
+})
+
+describe('Shopify companion blocks (app only)', () => {
+  const companions = ['ifc-explorer.liquid', 'ifc-element-details.liquid', 'ifc-views.liquid', 'ifc-health-score.liquid']
+  const panels = runtime.match(/const PANELS = \{ ([^}]+) \}/)![1].split(', ')
+
+  for (const name of companions) {
+    const source = fs.readFileSync(path.join(ext, 'blocks', name), 'utf8')
+    const schema = schemaOf(source)
+
+    it(`${name}: valid settings, brand controls and a panel the runtime knows`, () => {
+      expect(schema.target).toBe('section')
+      const ids = schema.settings.filter((s) => s.id).map((s) => s.id)
+      expect(new Set(ids).size).toBe(ids.length)
+      for (const s of schema.settings) {
+        if (s.options) expect(s.options.map((o) => o.value)).toContain(s.default)
+      }
+      expect(ids).toEqual(expect.arrayContaining(['accent', 'radius', 'frame']))
+      const panel = source.match(/data-ifcvo-panel="([a-z]+)"/)![1]
+      expect(panels).toContain(panel)
+      expect(source).toContain("'ifcvo.js' | asset_url")
+      expect(source).not.toMatch(/\{\{[^}]*'[{}]'/)
+    })
+  }
+
+  it('views offer only camera views the SDK accepts', () => {
+    const schema = schemaOf(fs.readFileSync(path.join(ext, 'blocks/ifc-views.liquid'), 'utf8'))
+    const sdk = fs.readFileSync(path.resolve(__dirname, '../src/sdk/ifc-viewer-sdk.ts'), 'utf8')
+    const views = sdk.match(/export type CameraView = ([^\n]+)/)![1].match(/'([a-z]+)'/g)!.map((v) => v.slice(1, -1))
+    for (const s of schema.settings.filter((x) => x.id?.startsWith('view_'))) {
+      for (const { value } of s.options!) if (value !== 'none') expect(views).toContain(value)
+    }
+  })
+
+  it('the explorer lists elements, not property sets or types', () => {
+    const pattern = new RegExp(runtime.match(/const NOT_ELEMENTS = \/(.+)\/i/)![1], 'i')
+    for (const c of ['IFCPROPERTYSINGLEVALUE', 'IFCPROPERTYSET', 'IFCWALLTYPE', 'IFCMATERIALLAYERSETUSAGE', 'IFCELEMENTQUANTITY', 'IFCRELAGGREGATES']) expect(pattern.test(c)).toBe(true)
+    for (const c of ['IFCWALL', 'IFCCURTAINWALL', 'IFCSPACE', 'IFCDOOR', 'IFCBUILDINGSTOREY']) expect(pattern.test(c)).toBe(false)
   })
 })

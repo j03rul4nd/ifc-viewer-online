@@ -1,0 +1,67 @@
+/* IFC Viewer Online theme blocks. They inherit the theme's font and text
+   colour; the accent and corner radius come from each block's settings and
+   default to the theme's own button colour where the theme defines one. */
+.ifcvo-panel {
+  --ifcvo-accent: rgb(var(--color-button, 10 132 129));
+  --ifcvo-radius: 12px;
+  --ifcvo-line: color-mix(in srgb, currentColor 14%, transparent);
+  --ifcvo-soft: color-mix(in srgb, currentColor 6%, transparent);
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--ifcvo-line);
+  border-radius: var(--ifcvo-radius);
+  padding: 16px;
+}
+.ifcvo-panel.ifcvo-flat { border: 0; padding: 0; }
+.ifcvo-panel h3 { margin: 0 0 12px; font-size: 1.05em; font-weight: 600; }
+.ifcvo-muted { opacity: .7; margin: 0; }
+.ifcvo-title { font-weight: 600; margin: 0 0 8px; }
+
+.ifcvo-btn, .ifcvo-chip, .ifcvo-row {
+  font: inherit; color: inherit; cursor: pointer; background: none;
+  border: 1px solid var(--ifcvo-line); border-radius: calc(var(--ifcvo-radius) * .66);
+}
+.ifcvo-btn { padding: 9px 14px; }
+.ifcvo-btn:hover, .ifcvo-chip:hover, .ifcvo-row:hover { border-color: var(--ifcvo-accent); }
+.ifcvo-btn.is-on, .ifcvo-chip.is-on { background: var(--ifcvo-accent); border-color: var(--ifcvo-accent); color: #fff; }
+.ifcvo-btn:focus-visible, .ifcvo-chip:focus-visible, .ifcvo-row:focus-visible, .ifcvo-search:focus-visible {
+  outline: 2px solid var(--ifcvo-accent); outline-offset: 2px;
+}
+
+.ifcvo-search {
+  width: 100%; box-sizing: border-box; font: inherit; color: inherit; background: none;
+  border: 1px solid var(--ifcvo-line); border-radius: calc(var(--ifcvo-radius) * .66);
+  padding: 9px 12px; margin-bottom: 10px;
+}
+.ifcvo-body { max-height: var(--ifcvo-max-height, 420px); overflow: auto; }
+.ifcvo-group { border-top: 1px solid var(--ifcvo-line); }
+.ifcvo-group > summary {
+  display: flex; align-items: center; gap: 8px; padding: 9px 2px; cursor: pointer; list-style: none;
+}
+.ifcvo-group > summary::-webkit-details-marker { display: none; }
+.ifcvo-group > summary::before { content: '›'; transition: transform .15s; display: inline-block; width: .8em; }
+.ifcvo-group[open] > summary::before { transform: rotate(90deg); }
+.ifcvo-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ifcvo-count { opacity: .6; font-variant-numeric: tabular-nums; }
+.ifcvo-chip { padding: 3px 9px; font-size: .85em; }
+.ifcvo-rows { list-style: none; margin: 0 0 8px; padding: 0 0 0 1.2em; }
+.ifcvo-row { display: block; width: 100%; text-align: left; border-color: transparent; padding: 5px 8px; overflow-wrap: anywhere; }
+.ifcvo-row.is-on { border-color: var(--ifcvo-accent); background: var(--ifcvo-soft); }
+.ifcvo-more { opacity: .6; padding: 4px 8px; }
+
+.ifcvo-panel table { width: 100%; border-collapse: collapse; margin: 0 0 8px; }
+.ifcvo-panel th, .ifcvo-panel td { text-align: left; padding: 5px 0; border-top: 1px solid var(--ifcvo-line); vertical-align: top; }
+.ifcvo-panel th { font-weight: 400; opacity: .7; padding-right: 12px; width: 45%; }
+
+.ifcvo-views { display: flex; flex-wrap: wrap; gap: 8px; }
+.ifcvo-caption { margin: 10px 0 0; min-height: 1.4em; opacity: .8; }
+
+.ifcvo-score { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.ifcvo-score-num {
+  font-size: 2.2em; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+  border: 3px solid currentColor; border-radius: 50%; width: 2.1em; height: 2.1em; display: grid; place-items: center;
+}
+.ifcvo-excellent { color: #1d8a5b; }
+.ifcvo-good { color: var(--ifcvo-accent); }
+.ifcvo-fair { color: #b7791f; }
+.ifcvo-poor { color: #c0392b; }
