@@ -102,5 +102,13 @@
   "authTitle": "El teu compte reuneix projectes, certificats i facturació",
   "authPoint1": "El visor i el validador continuen gratis i sense compte",
   "authPoint2": "El que obres al navegador es queda al navegador",
-  "authPoint3": "Els teus fitxers només arriben als nostres servidors si fas servir una funció al núvol"
+  "authPoint3": "Els teus fitxers només arriben als nostres servidors si fas servir una funció al núvol",
+  "legacy": {
+    "title": "Hem millorat el teu compte",
+    "body1": "Estem introduint canvis al producte i millorant els plans per als usuaris registrats. El nostre full de ruta és donar-te un servei millor, i per això hem passat els comptes a un nou sistema de producció.",
+    "body2": "El teu compte i el teu correu s’han conservat. Si abans entraves amb contrasenya, ara entra amb Google o amb el codi que t’enviem per correu; si vols, pots crear una contrasenya nova des del teu perfil.",
+    "body3": "Sentim les molèsties d’haver de tornar a iniciar sessió tot i que ja tenies compte. Gràcies per continuar amb nosaltres.",
+    "ok": "Entesos",
+    "signInHint": "Ja tenies compte? Hem canviat de sistema i el teu compte es conserva: entra amb Google o amb el codi que t’enviem per correu. La teva contrasenya anterior ja no serveix."
+  }
 }

@@ -230,5 +230,13 @@
   "authTitle": "Your account keeps projects, certificates and billing together",
   "authPoint1": "The viewer and validator stay free, with no account",
   "authPoint2": "Files you open in the browser stay in the browser",
-  "authPoint3": "Your files reach our servers only when you run a cloud feature"
+  "authPoint3": "Your files reach our servers only when you run a cloud feature",
+  "legacy": {
+    "title": "We have upgraded your account",
+    "body1": "We are making changes to the product and improving the plans for registered users. Our roadmap is to give you a better service, and to do that we have moved accounts to a new production system.",
+    "body2": "Your account and email have been kept. If you used to sign in with a password, sign in with Google or with the code we email you; you can set a new password from your profile if you like.",
+    "body3": "Sorry for the trouble of signing in again even though you already had an account. Thank you for staying with us.",
+    "ok": "Got it",
+    "signInHint": "Already had an account? We have moved to a new system and your account is kept: sign in with Google or with the code we email you. Your old password no longer works."
+  }
 }

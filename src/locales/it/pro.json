@@ -102,5 +102,13 @@
   "authTitle": "Il tuo account riunisce progetti, certificati e fatturazione",
   "authPoint1": "Il visualizzatore e il validatore restano gratuiti e senza account",
   "authPoint2": "Ciò che apri nel browser resta nel browser",
-  "authPoint3": "I tuoi file arrivano ai nostri server solo se usi una funzione cloud"
+  "authPoint3": "I tuoi file arrivano ai nostri server solo se usi una funzione cloud",
+  "legacy": {
+    "title": "Abbiamo migliorato il tuo account",
+    "body1": "Stiamo introducendo modifiche al prodotto e migliorando i piani per gli utenti registrati. La nostra roadmap è offrirti un servizio migliore, e per questo abbiamo spostato gli account su un nuovo sistema di produzione.",
+    "body2": "Il tuo account e la tua email sono stati conservati. Se prima accedevi con una password, ora accedi con Google o con il codice che ti inviamo via email; se vuoi, puoi creare una nuova password dal tuo profilo.",
+    "body3": "Ci scusiamo per il disagio di dover accedere di nuovo anche se avevi già un account. Grazie per restare con noi.",
+    "ok": "Ho capito",
+    "signInHint": "Avevi già un account? Abbiamo cambiato sistema e il tuo account è conservato: accedi con Google o con il codice che ti inviamo via email. La tua vecchia password non funziona più."
+  }
 }

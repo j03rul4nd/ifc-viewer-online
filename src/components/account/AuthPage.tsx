@@ -60,6 +60,9 @@ export default function AuthPage({ kind, onNavigateHome, onNavigateWelcome, them
             </section>
           )}
           <div className={`rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-3 justify-self-center ${wide ? 'w-full max-w-[880px]' : 'max-w-full'}`}>
+            {status !== 'signed-in' && (
+              <p className="px-2 pt-1 pb-2 max-w-[400px] text-[12px] leading-snug text-[var(--text-muted)]">{t('legacy.signInHint')}</p>
+            )}
             {kind === 'signin' && status !== 'signed-in' && (
               <SignIn routing="hash" withSignUp oauthFlow="redirect" fallbackRedirectUrl="/welcome" signUpUrl="/sign-up" appearance={appearance} />
             )}
