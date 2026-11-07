@@ -113,57 +113,128 @@
   },
   "requests": {
     "entryTitle": "Pedir una función",
-    "entryHint": "Cuéntanos qué te falta y por qué pagarías: decide lo próximo que construimos.",
+    "entryHint": "¿Qué te ayudaría más? Un toque basta, y decide lo próximo que construimos.",
     "entryCta": "Pedir",
-    "title": "Pedir una función",
-    "intro": "Lo leo yo, Joel, el fundador. Lo que nos pidáis los usuarios registrados decide lo próximo que construimos.",
-    "needLabel": "¿Qué necesitas resolver?",
-    "needHint": "Cuéntanos el problema, no solo la solución: qué intentas hacer y dónde te atascas.",
-    "needPlaceholder": "Ej.: Necesito exportar las incidencias de un modelo por planta para mandarlas al constructor…",
-    "areaLabel": "Área",
-    "area": {
-      "validation": "Validación e IDS",
-      "viewer": "Visor y medición",
-      "map": "Mapa, GIS y gemelo",
-      "export": "Exportar e informes",
-      "team": "Trabajo en equipo",
-      "other": "Otra"
+    "title": "¿Qué te ayudaría más?",
+    "intro": "Elige una opción y envía: con eso basta. Lo leo yo, Joel, y decide lo próximo que construimos.",
+    "feature": {
+      "big_files": {
+        "title": "Abrir archivos muy grandes",
+        "hint": "Modelos de más de 400 MB que hoy no caben en el navegador"
+      },
+      "versions": {
+        "title": "Proyectos en la nube con versiones",
+        "hint": "Ver qué cambió al subir una versión nueva"
+      },
+      "client_link": {
+        "title": "Compartir con mi cliente",
+        "hint": "Un enlace al modelo y al informe, sin instalar nada"
+      },
+      "bcf_team": {
+        "title": "Incidencias BCF con mi equipo",
+        "hint": "Asignar, estados, plazos y vistas guardadas"
+      },
+      "auto_check": {
+        "title": "Validar cada entrega automáticamente",
+        "hint": "Con el estándar de mi empresa (IDS, EIR, nombres)"
+      },
+      "cloud_drives": {
+        "title": "Abrir desde Google Drive, OneDrive o Dropbox",
+        "hint": "Y guardar allí sin descargar"
+      },
+      "batch_tools": {
+        "title": "Herramientas en lote",
+        "hint": "Editar, renombrar o dividir muchos IFC a la vez"
+      },
+      "other": {
+        "title": "Otra cosa",
+        "hint": "Cuéntanos qué necesitas"
+      }
     },
+    "needLabel": "Algo más (opcional)",
+    "needLabelOther": "¿Qué necesitas?",
+    "needPlaceholder": "Ej.: lo necesito para mandar el modelo al cliente cada viernes",
+    "needPlaceholderOther": "Cuéntanos qué intentas hacer y dónde te atascas",
+    "moreToggle": "Contar más (1 minuto, opcional)",
     "frequencyLabel": "¿Cada cuánto te pasa?",
     "frequency": {
       "daily": "Cada día",
       "weekly": "Cada semana",
       "sometimes": "De vez en cuando"
     },
-    "payLabel": "¿Pagarías por tenerlo?",
-    "pay": {
-      "no": "No",
-      "up10": "Sí, hasta 10 €/mes",
-      "up20": "Hasta 20 €/mes",
-      "up50": "Hasta 50 €/mes",
-      "more": "Más, o por empresa"
+    "todayLabel": "¿Cómo lo resuelves hoy?",
+    "today": {
+      "nothing": "No lo resuelvo",
+      "manual": "A mano o con Excel",
+      "paid_tool": "Pago otra herramienta",
+      "free_tool": "Con otra herramienta gratis"
     },
-    "workaroundLabel": "¿Cómo lo resuelves hoy? (opcional)",
-    "workaroundPlaceholder": "Otra herramienta, Excel, a mano…",
-    "contactOk": "Podéis escribirme para entender mejor lo que necesito.",
-    "privacy": "Guardamos tu petición junto a tu cuenta y tu email para entenderla y, si lo permites, escribirte. No la publicamos ni la compartimos.",
+    "todayToolPlaceholder": "¿Cuál? (p. ej. Solibri, BIMcollab)",
+    "payerLabel": "Si existiera, ¿quién lo pagaría?",
+    "payer": {
+      "me": "Yo",
+      "company": "Mi empresa",
+      "nobody": "Nadie: no hay presupuesto"
+    },
+    "roleLabel": "Tu perfil",
+    "role": {
+      "bim": "BIM manager o coordinador",
+      "architect": "Arquitectura",
+      "engineer": "Ingeniería",
+      "contractor": "Constructora",
+      "owner": "Promotor o mantenimiento",
+      "developer": "Desarrollo de software",
+      "student": "Estudiante",
+      "other": "Otro"
+    },
+    "teamLabel": "Tamaño del equipo",
+    "team": {
+      "solo": "Solo yo",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Más de 50"
+    },
+    "commitLabel": "¿Te apuntas?",
+    "beta": "Quiero probarlo antes que nadie (te escribiré para darte acceso)",
+    "call": "Puedo hablar 15 minutos por videollamada",
+    "contactOk": "Podéis escribirme a mi email sobre esta petición.",
+    "privacy": "Guardamos tu respuesta con tu cuenta y tu email para entenderla y, si lo pides, escribirte. No la publicamos ni la compartimos.",
     "send": "Enviar",
     "sending": "Enviando…",
     "cancel": "Cancelar",
     "done": "Cerrar",
     "thanksTitle": "Gracias, lo tenemos",
-    "thanksContact": "Lo leo en persona. Si necesito entenderlo mejor, te escribiré a tu email.",
+    "thanksContact": "Lo leo en persona y te escribiré a tu email.",
     "thanksNoContact": "Lo leo en persona y cuenta para decidir lo próximo que construimos.",
+    "thanksStatus": "En «Tus peticiones» verás en qué estado está y mi respuesta.",
+    "mineLink": "Tus peticiones · {{count}}",
+    "mineTitle": "Tus peticiones",
+    "newRequest": "Nueva petición",
+    "replyFrom": "Joel:",
+    "status": {
+      "new": "Recibida",
+      "reviewing": "En estudio",
+      "planned": "Planificada",
+      "building": "En desarrollo",
+      "shipped": "Ya disponible",
+      "declined": "Ahora no"
+    },
     "directMail": "¿Prefieres escribir directamente?",
     "error": {
-      "missing": "Describe lo que necesitas (al menos 10 caracteres) y elige área, frecuencia y si pagarías.",
+      "missing": "Elige una opción (si es «Otra cosa», escribe qué necesitas).",
       "unauthorized": "Tu sesión ha caducado. Vuelve a iniciar sesión y envíalo de nuevo.",
-      "need_too_short": "Cuéntanos un poco más (al menos 10 caracteres).",
+      "need_too_short": "Cuéntanos en unas palabras qué necesitas.",
       "daily_limit": "Has enviado 5 peticiones hoy. Mañana puedes enviar más, o escríbenos a hola@ifcvieweronline.eu.",
       "rate_limited": "Demasiados intentos seguidos. Espera un minuto.",
-      "unavailable": "No se ha podido enviar ahora mismo. Inténtalo de nuevo en un momento.",
+      "unavailable": "No se ha podido ahora mismo. Inténtalo de nuevo en un momento.",
       "network": "Sin conexión. Comprueba tu red y vuelve a intentarlo.",
       "invalid": "Revisa el formulario e inténtalo de nuevo."
-    }
+    },
+    "tellUs": "Cuéntanos tu caso",
+    "somethingElse": "¿Te falta otra cosa? Dínoslo",
+    "nudgeTitle": "¿Qué te ayudaría más?",
+    "nudgeBody": "Una pregunta, 10 segundos. Lo que nos digáis decide lo próximo que construimos.",
+    "nudgeCta": "Responder",
+    "nudgeDismiss": "Cerrar"
   }
 }

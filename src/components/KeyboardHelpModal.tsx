@@ -99,7 +99,7 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
       size="md"
       footer={isAccountEnabled() ? (
         <button
-          onClick={() => { onClose(); openFeatureRequest() }}
+          onClick={() => { onClose(); openFeatureRequest('help') }}
           className="mr-auto min-h-[32px] px-3 rounded-[8px] border border-[var(--border)] text-[12px] text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
         >
           {tPro('requests.entryTitle')}

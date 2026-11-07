@@ -852,6 +852,28 @@ export function trackServerProcessingInterest(props: { file_size_mb: number }): 
   track('server_processing_interest', props)
 }
 
+/** The "what would help you most" form opened. `source` = entry point, never PII. */
+export function trackFeatureRequestOpened(props: { source: string }): void {
+  track('feature_request_opened', props)
+}
+
+/**
+ * A feature request was sent. The choice and the buying signals only — never
+ * the free text, the tool name or anything that identifies the user.
+ */
+export function trackFeatureRequestSubmitted(props: {
+  feature: string
+  source: string
+  detailed: boolean
+  frequency: string
+  today: string
+  payer: string
+  beta: boolean
+  call: boolean
+}): void {
+  track('feature_request_submitted', props)
+}
+
 /** Fired client-side when the post-checkout entitlement poll confirms the plan. */
 export function trackCheckoutCompleted(props: { plan: 'pro' | 'org' }): void {
   track('checkout_completed', props)

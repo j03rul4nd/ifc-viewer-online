@@ -108,7 +108,7 @@ function corsHeaders(origin) {
   if (!ALLOWED_ORIGINS.includes(origin)) return null
   return {
     'Access-Control-Allow-Origin':  origin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age':       '86400',
   }
@@ -959,22 +959,38 @@ async function handleLeadsExport(request, url, env) {
 
 // ── Feature requests from registered users ──────────────────────────────────
 //
-// Signed-in users tell us what they need and whether they would pay for it.
+// Signed-in users tell us what would help them most and how they cope today.
 // Only a valid Clerk session token from the production instance is accepted:
 // the user id comes from the token, never from the body, so nobody can post
 // as someone else and there are no anonymous requests to wade through. The
 // email comes from the token's `email` claim (instance config: session.claims).
 //
-// Stored in the LEADS KV namespace under their own prefix; read back only by
-// the user ids in FEEDBACK_ADMIN_IDS, through GET /requests.
+// Stored in the LEADS KV namespace:
+//   request:<created_at>:<rand>              the request (status + reply live here)
+//   request-by:<user_id>:<created_at>:<rand> index, so a user can list their own
+//   request-count:<user_id>:<day>            daily counter (expires)
+//
+//   POST  /requests            a signed-in user files one
+//   GET   /requests?mine=1     a signed-in user's own, with status and our reply
+//   GET   /requests            all of them, admins only (FEEDBACK_ADMIN_IDS)
+//   PATCH /requests?id=<id>    admin sets status and the reply the user sees
 
 const REQUEST_PREFIX = 'request:'
+const REQUEST_BY_PREFIX = 'request-by:'
 const REQUEST_COUNT_PREFIX = 'request-count:'
 const REQUESTS_PER_DAY = 5
 const DEFAULT_CLERK_ISSUER = 'https://clerk.ifcvieweronline.eu'
-const REQUEST_AREAS = ['validation', 'viewer', 'map', 'export', 'team', 'other']
+// What would help most: the paid features on the roadmap (docs-planning 19/20),
+// in the user's words, plus a free answer. One tap is a complete request.
+const REQUEST_FEATURES = ['big_files', 'versions', 'client_link', 'bcf_team', 'auto_check', 'cloud_drives', 'batch_tools', 'other']
 const REQUEST_FREQUENCIES = ['daily', 'weekly', 'sometimes']
-const REQUEST_PAY = ['no', 'up10', 'up20', 'up50', 'more']
+// Behaviour, not stated price: how they cope today and who holds the budget.
+const REQUEST_TODAY = ['nothing', 'manual', 'paid_tool', 'free_tool']
+const REQUEST_PAYERS = ['me', 'company', 'nobody']
+const REQUEST_ROLES = ['bim', 'architect', 'engineer', 'contractor', 'owner', 'developer', 'student', 'other']
+const REQUEST_TEAMS = ['solo', '2-10', '11-50', '51+']
+const REQUEST_STATUSES = ['new', 'reviewing', 'planned', 'building', 'shipped', 'declined']
+const REQUEST_ID_RE = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z:[0-9a-f]{8}$/
 const CLOCK_SKEW_S = 60
 
 const b64urlBytes = (s) => {
@@ -1026,6 +1042,11 @@ function bearer(request) {
   return auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
 }
 
+function isRequestAdmin(env, claims) {
+  const admins = String(env.FEEDBACK_ADMIN_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+  return !!claims && admins.includes(claims.sub)
+}
+
 async function handleRequestPost(request, env, cors) {
   if (!cors) return jsonResponse({ ok: false, error: 'Forbidden' }, 403)
   const claims = await verifyClerkToken(bearer(request), env)
@@ -1042,17 +1063,28 @@ async function handleRequestPost(request, env, cors) {
     created_at: new Date().toISOString(),
     user_id: claims.sub,
     email: isValidEmail(String(claims.email ?? '').toLowerCase()) ? String(claims.email).toLowerCase() : '',
+    feature: pick(body?.feature, REQUEST_FEATURES),
     need: cleanText(body?.need, 2000),
-    area: pick(body?.area, REQUEST_AREAS),
+    // Optional detail. Empty string = not answered.
     frequency: pick(body?.frequency, REQUEST_FREQUENCIES),
-    pay: pick(body?.pay, REQUEST_PAY),
-    workaround: cleanText(body?.workaround, 1000),
-    contact_ok: body?.contact_ok === true,
+    today: pick(body?.today, REQUEST_TODAY),
+    today_tool: cleanText(body?.today_tool, 120),
+    payer: pick(body?.payer, REQUEST_PAYERS),
+    // Commitments: the honest buying signals.
+    beta: body?.beta === true,
+    call: body?.call === true,
+    contact_ok: body?.contact_ok === true || body?.beta === true || body?.call === true,
+    role: pick(body?.role, REQUEST_ROLES),
+    team: pick(body?.team, REQUEST_TEAMS),
+    source: cleanText(body?.source, 40).replace(/[^\w:.-]/g, ''),
     lang: cleanText(body?.lang, 8),
     plan: cleanText(body?.plan, 20),
+    status: 'new',
+    reply: '',
+    updated_at: '',
   }
-  if (req.need.length < 10) return jsonResponse({ ok: false, error: 'need_too_short' }, 400, cors)
-  if (!req.area || !req.frequency || !req.pay) return jsonResponse({ ok: false, error: 'invalid' }, 400, cors)
+  if (!req.feature) return jsonResponse({ ok: false, error: 'invalid' }, 400, cors)
+  if (req.feature === 'other' && req.need.length < 5) return jsonResponse({ ok: false, error: 'need_too_short' }, 400, cors)
   if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, cors)
 
   const day = req.created_at.slice(0, 10)
@@ -1061,31 +1093,88 @@ async function handleRequestPost(request, env, cors) {
   if (count >= REQUESTS_PER_DAY) return jsonResponse({ ok: false, error: 'daily_limit' }, 429, cors)
   await env.LEADS.put(countKey, String(count + 1), { expirationTtl: 2 * 86_400 })
 
-  const key = `${REQUEST_PREFIX}${req.created_at}:${crypto.randomUUID().slice(0, 8)}`
-  await env.LEADS.put(key, JSON.stringify(req))
-  return jsonResponse({ ok: true }, 200, cors)
+  const id = `${req.created_at}:${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`
+  await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(req))
+  await env.LEADS.put(`${REQUEST_BY_PREFIX}${req.user_id}:${id}`, id)
+  return jsonResponse({ ok: true, id }, 200, cors)
 }
 
-/** GET /requests — Authorization: Bearer <Clerk session token of an admin>. */
-async function handleRequestsList(request, env, cors) {
-  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
-  const claims = await verifyClerkToken(bearer(request), env)
-  const admins = String(env.FEEDBACK_ADMIN_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
-  // 404, not 403: the endpoint does not exist for anyone else.
-  if (!claims || !admins.includes(claims.sub)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
-  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
-  const requests = []
+async function listByPrefix(env, prefix) {
+  const keys = []
   let cursor
   do {
-    const page = await env.LEADS.list({ prefix: REQUEST_PREFIX, cursor })
-    for (const k of page.keys) {
-      const raw = await env.LEADS.get(k.name)
-      if (raw) { try { requests.push({ id: k.name.slice(REQUEST_PREFIX.length), ...JSON.parse(raw) }) } catch { /* skip */ } }
-    }
+    const page = await env.LEADS.list({ prefix, cursor })
+    for (const k of page.keys) keys.push(k.name)
     cursor = page.list_complete ? undefined : page.cursor
   } while (cursor)
-  requests.sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-  return jsonResponse({ ok: true, requests }, 200, noStore)
+  return keys
+}
+
+async function readRequest(env, id) {
+  const raw = await env.LEADS.get(`${REQUEST_PREFIX}${id}`)
+  if (!raw) return null
+  try { return { id, ...JSON.parse(raw) } } catch { return null }
+}
+
+const newestFirst = (a, b) => (a.created_at < b.created_at ? 1 : -1)
+
+/** GET /requests[?mine=1] — Authorization: Bearer <Clerk session token>. */
+async function handleRequestsList(request, url, env, cors) {
+  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+
+  if (url.searchParams.get('mine') === '1') {
+    if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, noStore)
+    const ids = (await listByPrefix(env, `${REQUEST_BY_PREFIX}${claims.sub}:`))
+      .map((k) => k.slice(REQUEST_BY_PREFIX.length + claims.sub.length + 1))
+    const requests = []
+    for (const id of ids) {
+      const r = await readRequest(env, id)
+      // What the user may see of their own request: no email, no internal fields.
+      if (r && r.user_id === claims.sub) {
+        requests.push({ id, created_at: r.created_at, feature: r.feature, need: r.need, status: r.status || 'new', reply: r.reply || '', updated_at: r.updated_at || '' })
+      }
+    }
+    return jsonResponse({ ok: true, requests: requests.sort(newestFirst) }, 200, noStore)
+  }
+
+  // 404, not 403: the full list does not exist for anyone else.
+  if (!isRequestAdmin(env, claims)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  const requests = []
+  for (const key of await listByPrefix(env, REQUEST_PREFIX)) {
+    const r = await readRequest(env, key.slice(REQUEST_PREFIX.length))
+    if (r) requests.push({ status: 'new', reply: '', ...r })
+  }
+  return jsonResponse({ ok: true, requests: requests.sort(newestFirst) }, 200, noStore)
+}
+
+/** PATCH /requests?id=<id> {status?, reply?} — admins only. */
+async function handleRequestPatch(request, url, env, cors) {
+  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (!isRequestAdmin(env, claims)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+  const id = url.searchParams.get('id') ?? ''
+  if (!REQUEST_ID_RE.test(id)) return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  const raw = await env.LEADS.get(`${REQUEST_PREFIX}${id}`)
+  if (!raw) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  }
+  const current = JSON.parse(raw)
+  if (body?.status !== undefined && !REQUEST_STATUSES.includes(body.status)) {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  }
+  const next = {
+    ...current,
+    status: body?.status ?? current.status ?? 'new',
+    reply: body?.reply !== undefined ? cleanText(body.reply, 1000) : (current.reply ?? ''),
+    updated_at: new Date().toISOString(),
+  }
+  await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(next))
+  return jsonResponse({ ok: true, request: { id, ...next } }, 200, noStore)
 }
 
 // ── Router ──────────────────────────────────────────────────────────────────
@@ -1156,11 +1245,11 @@ export default {
       }
 
       // Feature requests from signed-in users, and the admin's read-back
-      if (url.pathname === '/requests' && (request.method === 'POST' || request.method === 'GET')) {
+      if (url.pathname === '/requests' && ['POST', 'GET', 'PATCH'].includes(request.method)) {
         const reqCors = corsHeaders(origin) ?? (/^http:\/\/localhost:\d+$/.test(origin) ? { 'Access-Control-Allow-Origin': origin } : null)
-        return request.method === 'POST'
-          ? await handleRequestPost(request, env, reqCors)
-          : await handleRequestsList(request, env, reqCors)
+        if (request.method === 'POST') return await handleRequestPost(request, env, reqCors)
+        if (request.method === 'PATCH') return await handleRequestPatch(request, url, env, reqCors)
+        return await handleRequestsList(request, url, env, reqCors)
       }
 
       // Email capture

@@ -113,57 +113,128 @@
   },
   "requests": {
     "entryTitle": "提出功能需求",
-    "entryHint": "告诉我们缺少什么、你愿意为什么付费：这决定我们接下来做什么。",
+    "entryHint": "什么对你帮助最大？点一下就够了，它决定我们接下来做什么。",
     "entryCta": "提需求",
-    "title": "提出功能需求",
-    "intro": "我是创始人 Joel，每条需求都由我亲自阅读。注册用户提出的需求决定我们接下来做什么。",
-    "needLabel": "你需要解决什么问题？",
-    "needHint": "请描述问题，而不只是解决方案：你想做什么、卡在哪里。",
-    "needPlaceholder": "例如：我需要按楼层导出模型的问题，发给施工方…",
-    "areaLabel": "领域",
-    "area": {
-      "validation": "校验与 IDS",
-      "viewer": "查看器与测量",
-      "map": "地图、GIS 与孪生",
-      "export": "导出与报告",
-      "team": "团队协作",
-      "other": "其他"
+    "title": "什么对你帮助最大？",
+    "intro": "选一项然后发送，就完成了。我是创始人 Joel，每条都亲自阅读，它决定我们接下来做什么。",
+    "feature": {
+      "big_files": {
+        "title": "打开超大文件",
+        "hint": "目前浏览器装不下的 400 MB 以上模型"
+      },
+      "versions": {
+        "title": "带版本的云端项目",
+        "hint": "上传新版本时查看有哪些变化"
+      },
+      "client_link": {
+        "title": "与客户分享",
+        "hint": "模型和报告的链接，无需安装"
+      },
+      "bcf_team": {
+        "title": "与团队管理 BCF 问题",
+        "hint": "指派、状态、期限和保存的视图"
+      },
+      "auto_check": {
+        "title": "自动检查每次交付",
+        "hint": "按公司标准（IDS、EIR、命名规则）"
+      },
+      "cloud_drives": {
+        "title": "从 Google Drive、OneDrive 或 Dropbox 打开",
+        "hint": "并直接保存回去，无需下载"
+      },
+      "batch_tools": {
+        "title": "批量工具",
+        "hint": "一次编辑、重命名或拆分多个 IFC"
+      },
+      "other": {
+        "title": "其他",
+        "hint": "告诉我们你需要什么"
+      }
     },
+    "needLabel": "还有什么（可选）",
+    "needLabelOther": "你需要什么？",
+    "needPlaceholder": "例如：我需要每周五把模型发给客户",
+    "needPlaceholderOther": "说说你想做什么、卡在哪里",
+    "moreToggle": "多说几句（1 分钟，可选）",
     "frequencyLabel": "多久遇到一次？",
     "frequency": {
       "daily": "每天",
       "weekly": "每周",
       "sometimes": "偶尔"
     },
-    "payLabel": "你愿意为此付费吗？",
-    "pay": {
-      "no": "不愿意",
-      "up10": "愿意，每月最多 10 欧元",
-      "up20": "每月最多 20 欧元",
-      "up50": "每月最多 50 欧元",
-      "more": "更多，或按公司计费"
+    "todayLabel": "你现在怎么处理？",
+    "today": {
+      "nothing": "还没解决",
+      "manual": "手工或用 Excel",
+      "paid_tool": "付费使用其他工具",
+      "free_tool": "用其他免费工具"
     },
-    "workaroundLabel": "你现在怎么解决？（可选）",
-    "workaroundPlaceholder": "其他工具、Excel、手工…",
-    "contactOk": "可以发邮件联系我，进一步了解我的需求。",
-    "privacy": "我们会将你的需求与账户和邮箱一起保存，用于理解需求，并在你允许时联系你。我们不会公开或分享。",
+    "todayToolPlaceholder": "哪个工具？（例如 Solibri、BIMcollab）",
+    "payerLabel": "如果有了，谁来付费？",
+    "payer": {
+      "me": "我自己",
+      "company": "我的公司",
+      "nobody": "没人：没有预算"
+    },
+    "roleLabel": "你的角色",
+    "role": {
+      "bim": "BIM 经理或协调员",
+      "architect": "建筑设计",
+      "engineer": "工程",
+      "contractor": "施工单位",
+      "owner": "业主或运维",
+      "developer": "软件开发",
+      "student": "学生",
+      "other": "其他"
+    },
+    "teamLabel": "团队规模",
+    "team": {
+      "solo": "只有我",
+      "2-10": "2–10 人",
+      "11-50": "11–50 人",
+      "51+": "50 人以上"
+    },
+    "commitLabel": "要加入吗？",
+    "beta": "我想抢先试用（我会通过邮件发给你访问方式）",
+    "call": "我可以进行 15 分钟视频通话",
+    "contactOk": "可以就这条需求给我发邮件。",
+    "privacy": "我们会将你的回答与账户和邮箱一起保存，用于理解需求，并在你要求时联系你。我们不会公开或分享。",
     "send": "发送",
     "sending": "发送中…",
     "cancel": "取消",
     "done": "关闭",
     "thanksTitle": "谢谢，已收到",
-    "thanksContact": "我会亲自阅读。如需进一步了解，我会给你发邮件。",
+    "thanksContact": "我会亲自阅读，并给你发邮件。",
     "thanksNoContact": "我会亲自阅读，它会影响我们接下来做什么。",
+    "thanksStatus": "在“你的需求”中可以看到进展和我的回复。",
+    "mineLink": "你的需求 · {{count}}",
+    "mineTitle": "你的需求",
+    "newRequest": "新需求",
+    "replyFrom": "Joel：",
+    "status": {
+      "new": "已收到",
+      "reviewing": "评估中",
+      "planned": "已排期",
+      "building": "开发中",
+      "shipped": "已上线",
+      "declined": "暂不考虑"
+    },
     "directMail": "想直接写信？",
     "error": {
-      "missing": "请描述你的需求（至少 10 个字符），并选择领域、频率以及是否愿意付费。",
+      "missing": "请选择一项（选“其他”时请写下你的需求）。",
       "unauthorized": "会话已过期。请重新登录后再发送。",
-      "need_too_short": "请再多说一点（至少 10 个字符）。",
+      "need_too_short": "请用几句话说明你的需求。",
       "daily_limit": "你今天已发送 5 条需求。明天可以继续发送，或写信至 hola@ifcvieweronline.eu。",
       "rate_limited": "尝试次数过多，请稍等一分钟。",
-      "unavailable": "暂时无法发送，请稍后再试。",
+      "unavailable": "暂时没有成功，请稍后再试。",
       "network": "网络已断开。请检查网络后重试。",
       "invalid": "请检查表单后重试。"
-    }
+    },
+    "tellUs": "说说你的情况",
+    "somethingElse": "还缺别的？告诉我们",
+    "nudgeTitle": "什么对你帮助最大？",
+    "nudgeBody": "一个问题，10 秒钟。你们的回答决定我们接下来做什么。",
+    "nudgeCta": "回答",
+    "nudgeDismiss": "关闭"
   }
 }
