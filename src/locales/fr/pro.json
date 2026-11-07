@@ -110,5 +110,60 @@
     "body3": "Désolés pour le désagrément de devoir vous reconnecter alors que vous aviez déjà un compte. Merci de rester avec nous.",
     "ok": "Compris",
     "signInHint": "Vous aviez déjà un compte ? Nous avons changé de système et votre compte est conservé : connectez-vous avec Google ou avec le code envoyé par e-mail. Votre ancien mot de passe ne fonctionne plus."
+  },
+  "requests": {
+    "entryTitle": "Demander une fonction",
+    "entryHint": "Dites-nous ce qui manque et ce pour quoi vous paieriez : cela décide de ce que nous construisons ensuite.",
+    "entryCta": "Demander",
+    "title": "Demander une fonction",
+    "intro": "Je lis chaque demande moi-même (Joel, le fondateur). Ce que demandent les utilisateurs inscrits décide de ce que nous construisons ensuite.",
+    "needLabel": "Que devez-vous résoudre ?",
+    "needHint": "Décrivez le problème, pas seulement la solution : ce que vous essayez de faire et où vous bloquez.",
+    "needPlaceholder": "Ex. : je dois exporter les anomalies d’une maquette par niveau pour les envoyer à l’entreprise…",
+    "areaLabel": "Domaine",
+    "area": {
+      "validation": "Validation et IDS",
+      "viewer": "Visionneuse et mesure",
+      "map": "Carte, SIG et jumeau",
+      "export": "Export et rapports",
+      "team": "Travail en équipe",
+      "other": "Autre"
+    },
+    "frequencyLabel": "À quelle fréquence ?",
+    "frequency": {
+      "daily": "Tous les jours",
+      "weekly": "Toutes les semaines",
+      "sometimes": "De temps en temps"
+    },
+    "payLabel": "Paieriez-vous pour l’avoir ?",
+    "pay": {
+      "no": "Non",
+      "up10": "Oui, jusqu’à 10 €/mois",
+      "up20": "Jusqu’à 20 €/mois",
+      "up50": "Jusqu’à 50 €/mois",
+      "more": "Plus, ou par entreprise"
+    },
+    "workaroundLabel": "Comment le faites-vous aujourd’hui ? (facultatif)",
+    "workaroundPlaceholder": "Un autre outil, Excel, à la main…",
+    "contactOk": "Vous pouvez m’écrire pour mieux comprendre mon besoin.",
+    "privacy": "Nous conservons votre demande avec votre compte et votre e-mail pour la comprendre et, si vous l’acceptez, vous écrire. Nous ne la publions ni ne la partageons jamais.",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "cancel": "Annuler",
+    "done": "Fermer",
+    "thanksTitle": "Merci, c’est reçu",
+    "thanksContact": "Je la lis personnellement. Si j’ai besoin de mieux comprendre, je vous écrirai par e-mail.",
+    "thanksNoContact": "Je la lis personnellement, et elle compte pour décider de ce que nous construisons ensuite.",
+    "directMail": "Vous préférez écrire directement ?",
+    "error": {
+      "missing": "Décrivez votre besoin (au moins 10 caractères) et choisissez le domaine, la fréquence et si vous paieriez.",
+      "unauthorized": "Votre session a expiré. Reconnectez-vous et renvoyez-la.",
+      "need_too_short": "Dites-nous-en un peu plus (au moins 10 caractères).",
+      "daily_limit": "Vous avez envoyé 5 demandes aujourd’hui. Vous pourrez en envoyer d’autres demain, ou écrivez à hola@ifcvieweronline.eu.",
+      "rate_limited": "Trop de tentatives d’affilée. Patientez une minute.",
+      "unavailable": "L’envoi a échoué pour le moment. Réessayez dans un instant.",
+      "network": "Hors ligne. Vérifiez votre connexion et réessayez.",
+      "invalid": "Vérifiez le formulaire et réessayez."
+    }
   }
 }

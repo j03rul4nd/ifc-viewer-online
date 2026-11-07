@@ -19,6 +19,12 @@ OG_IMAGE_URL = "https://www.ifcvieweronline.eu/og-image.png"
 # Shared links expire after this many days (advisory, see worker.js). Default 90.
 REPORT_MAX_AGE_DAYS = "90"
 
+# Feature requests (POST/GET /requests): Clerk production instance whose session
+# tokens are accepted, and the Clerk user ids allowed to read them back (comma-
+# separated; ids are pseudonymous, not emails).
+CLERK_ISSUER       = "https://clerk.ifcvieweronline.eu"
+FEEDBACK_ADMIN_IDS = "user_3LmQIZhfjNlCn5seaan6KVrLAnX"
+
 # ── Rate limiting (Workers Rate Limiting API) ───────────────────────────────────
 # Per-IP token buckets. `period` must be 10 or 60 (seconds). `namespace_id` is any
 # integer unique to this Worker. Requires a recent Wrangler. If these bindings are

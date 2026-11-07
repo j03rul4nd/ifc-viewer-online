@@ -110,5 +110,60 @@
     "body3": "很抱歉，即使你已有账户也需要重新登录，给你带来不便。感谢你一直以来的支持。",
     "ok": "知道了",
     "signInHint": "已有账户？我们已迁移到新系统，你的账户仍然保留：请使用 Google 或我们通过邮件发送的验证码登录。原来的密码已无法使用。"
+  },
+  "requests": {
+    "entryTitle": "提出功能需求",
+    "entryHint": "告诉我们缺少什么、你愿意为什么付费：这决定我们接下来做什么。",
+    "entryCta": "提需求",
+    "title": "提出功能需求",
+    "intro": "我是创始人 Joel，每条需求都由我亲自阅读。注册用户提出的需求决定我们接下来做什么。",
+    "needLabel": "你需要解决什么问题？",
+    "needHint": "请描述问题，而不只是解决方案：你想做什么、卡在哪里。",
+    "needPlaceholder": "例如：我需要按楼层导出模型的问题，发给施工方…",
+    "areaLabel": "领域",
+    "area": {
+      "validation": "校验与 IDS",
+      "viewer": "查看器与测量",
+      "map": "地图、GIS 与孪生",
+      "export": "导出与报告",
+      "team": "团队协作",
+      "other": "其他"
+    },
+    "frequencyLabel": "多久遇到一次？",
+    "frequency": {
+      "daily": "每天",
+      "weekly": "每周",
+      "sometimes": "偶尔"
+    },
+    "payLabel": "你愿意为此付费吗？",
+    "pay": {
+      "no": "不愿意",
+      "up10": "愿意，每月最多 10 欧元",
+      "up20": "每月最多 20 欧元",
+      "up50": "每月最多 50 欧元",
+      "more": "更多，或按公司计费"
+    },
+    "workaroundLabel": "你现在怎么解决？（可选）",
+    "workaroundPlaceholder": "其他工具、Excel、手工…",
+    "contactOk": "可以发邮件联系我，进一步了解我的需求。",
+    "privacy": "我们会将你的需求与账户和邮箱一起保存，用于理解需求，并在你允许时联系你。我们不会公开或分享。",
+    "send": "发送",
+    "sending": "发送中…",
+    "cancel": "取消",
+    "done": "关闭",
+    "thanksTitle": "谢谢，已收到",
+    "thanksContact": "我会亲自阅读。如需进一步了解，我会给你发邮件。",
+    "thanksNoContact": "我会亲自阅读，它会影响我们接下来做什么。",
+    "directMail": "想直接写信？",
+    "error": {
+      "missing": "请描述你的需求（至少 10 个字符），并选择领域、频率以及是否愿意付费。",
+      "unauthorized": "会话已过期。请重新登录后再发送。",
+      "need_too_short": "请再多说一点（至少 10 个字符）。",
+      "daily_limit": "你今天已发送 5 条需求。明天可以继续发送，或写信至 hola@ifcvieweronline.eu。",
+      "rate_limited": "尝试次数过多，请稍等一分钟。",
+      "unavailable": "暂时无法发送，请稍后再试。",
+      "network": "网络已断开。请检查网络后重试。",
+      "invalid": "请检查表单后重试。"
+    }
   }
 }

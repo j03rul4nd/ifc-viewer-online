@@ -110,5 +110,60 @@
     "body3": "Sentim les molèsties d’haver de tornar a iniciar sessió tot i que ja tenies compte. Gràcies per continuar amb nosaltres.",
     "ok": "Entesos",
     "signInHint": "Ja tenies compte? Hem canviat de sistema i el teu compte es conserva: entra amb Google o amb el codi que t’enviem per correu. La teva contrasenya anterior ja no serveix."
+  },
+  "requests": {
+    "entryTitle": "Demanar una funció",
+    "entryHint": "Explica’ns què et falta i per què pagaries: decideix el que construïm a continuació.",
+    "entryCta": "Demanar",
+    "title": "Demanar una funció",
+    "intro": "Ho llegeixo jo, en Joel, el fundador. El que ens demaneu els usuaris registrats decideix el que construïm a continuació.",
+    "needLabel": "Què necessites resoldre?",
+    "needHint": "Explica’ns el problema, no només la solució: què intentes fer i on t’encalles.",
+    "needPlaceholder": "Ex.: Necessito exportar les incidències d’un model per planta per enviar-les al constructor…",
+    "areaLabel": "Àrea",
+    "area": {
+      "validation": "Validació i IDS",
+      "viewer": "Visor i mesura",
+      "map": "Mapa, GIS i bessó",
+      "export": "Exportar i informes",
+      "team": "Treball en equip",
+      "other": "Una altra"
+    },
+    "frequencyLabel": "Cada quant et passa?",
+    "frequency": {
+      "daily": "Cada dia",
+      "weekly": "Cada setmana",
+      "sometimes": "De tant en tant"
+    },
+    "payLabel": "Pagaries per tenir-ho?",
+    "pay": {
+      "no": "No",
+      "up10": "Sí, fins a 10 €/mes",
+      "up20": "Fins a 20 €/mes",
+      "up50": "Fins a 50 €/mes",
+      "more": "Més, o per empresa"
+    },
+    "workaroundLabel": "Com ho resols avui? (opcional)",
+    "workaroundPlaceholder": "Una altra eina, Excel, a mà…",
+    "contactOk": "Em podeu escriure per entendre millor el que necessito.",
+    "privacy": "Desem la teva petició amb el teu compte i el teu correu per entendre-la i, si ho permets, escriure’t. No la publiquem ni la compartim.",
+    "send": "Enviar",
+    "sending": "Enviant…",
+    "cancel": "Cancel·lar",
+    "done": "Tancar",
+    "thanksTitle": "Gràcies, ho tenim",
+    "thanksContact": "Ho llegeixo personalment. Si necessito entendre-ho millor, t’escriuré al correu.",
+    "thanksNoContact": "Ho llegeixo personalment i compta per decidir el que construïm a continuació.",
+    "directMail": "Prefereixes escriure directament?",
+    "error": {
+      "missing": "Descriu el que necessites (almenys 10 caràcters) i tria àrea, freqüència i si pagaries.",
+      "unauthorized": "La sessió ha caducat. Torna a iniciar sessió i envia-ho de nou.",
+      "need_too_short": "Explica’ns una mica més (almenys 10 caràcters).",
+      "daily_limit": "Avui has enviat 5 peticions. Demà en pots enviar més, o escriu-nos a hola@ifcvieweronline.eu.",
+      "rate_limited": "Massa intents seguits. Espera un minut.",
+      "unavailable": "Ara mateix no s’ha pogut enviar. Torna-ho a provar d’aquí a un moment.",
+      "network": "Sense connexió. Comprova la xarxa i torna-ho a provar.",
+      "invalid": "Revisa el formulari i torna-ho a provar."
+    }
   }
 }

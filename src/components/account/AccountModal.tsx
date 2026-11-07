@@ -14,7 +14,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { SignIn, useClerk } from '@clerk/react'
-import { useCloudAccountStore } from '../../stores/cloudAccountStore'
+import { useCloudAccountStore, openFeatureRequest } from '../../stores/cloudAccountStore'
 import { useEntitlement } from '../../hooks/useEntitlement'
 import {
   createApiKey, createCheckout, createPortal as createBillingPortal,
@@ -299,6 +299,17 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   </button>
                   <button onClick={() => void signOut?.()} className={smallBtn}>{t('signOut')}</button>
                 </div>
+              </section>
+
+              {/* ── Request a feature ────────────────────────────────────────── */}
+              <section className="rounded-xl border border-[rgba(10,132,129,0.4)] bg-[rgba(10,132,129,0.08)] p-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium text-[var(--text)]">{t('requests.entryTitle')}</p>
+                  <p className="text-[11px] leading-snug text-[var(--text-faint)]">{t('requests.entryHint')}</p>
+                </div>
+                <button onClick={() => { onClose(); openFeatureRequest() }} className={`shrink-0 ${smallBtn}`}>
+                  {t('requests.entryCta')}
+                </button>
               </section>
 
               {/* ── Plan / billing ───────────────────────────────────────────── */}

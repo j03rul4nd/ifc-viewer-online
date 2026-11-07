@@ -4,6 +4,7 @@
 
 import React, { useEffect, useCallback } from 'react'
 import { Modal } from './Modal'
+import { isAccountEnabled, openFeatureRequest } from '../stores/cloudAccountStore'
 import { useTranslation } from 'react-i18next'
 
 // ── Key chip ──────────────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = tRaw as (key: string) => string
   const { t: tMeasureRaw } = useTranslation('measurement')
+  const { t: tPro } = useTranslation('pro')
   const tm = tMeasureRaw as (key: string) => string
 
   // '?' also closes — the same key that opens it. Escape, focus and the rest
@@ -90,7 +92,20 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
   const Mod   = isMac ? '⌘' : 'Ctrl'
 
   return (
-    <Modal open={open} onClose={onClose} title={t('shortcuts.title')} size="md">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t('shortcuts.title')}
+      size="md"
+      footer={isAccountEnabled() ? (
+        <button
+          onClick={() => { onClose(); openFeatureRequest() }}
+          className="mr-auto min-h-[32px] px-3 rounded-[8px] border border-[var(--border)] text-[12px] text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
+        >
+          {tPro('requests.entryTitle')}
+        </button>
+      ) : undefined}
+    >
 
         {/* Content — 2-column grid on sm+ */}
         <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">

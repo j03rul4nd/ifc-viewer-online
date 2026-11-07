@@ -74,11 +74,14 @@ function georefKeyOf(g: { epsgCode: string | null; eastings: number | null; nort
 /** [x, y, z] (scene documents, `?camera=`) → the viewer's {x, y, z}. */
 const vec3 = (a: [number, number, number]): { x: number; y: number; z: number } => ({ x: a[0], y: a[1], z: a[2] })
 
-const ADMIN_USER_IDS = new Set(['user_3GP6gqE5WAmVzHobM0BosBk9A58'])
+const ADMIN_USER_IDS = new Set(['user_3LmQIZhfjNlCn5seaan6KVrLAnX', 'user_3GP6gqE5WAmVzHobM0BosBk9A58'])
 
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
 // @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
 const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
+// "Request a feature" (signed-in users) and its founder read-back. Clerk-free.
+const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
+const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
@@ -736,6 +739,7 @@ export default function App() {
         if (rel === '/sign-up' || rel.startsWith('/sign-up/')) return 'signup'
         if (rel === '/account' || rel.startsWith('/account/')) return 'account'
         if (rel === '/dashboard' || rel.startsWith('/dashboard/')) return 'dashboard'
+        if (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/')) return 'feedbackAdmin'
         if (rel === '/admin' || rel.startsWith('/admin/')) return 'admin'
       }
     }
@@ -873,6 +877,8 @@ export default function App() {
         setRoute('account')
       } else if (isAccountEnabled() && (rel === '/dashboard' || rel.startsWith('/dashboard/'))) {
         setRoute('dashboard')
+      } else if (isAccountEnabled() && (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/'))) {
+        setRoute('feedbackAdmin')
       } else if (isAccountEnabled() && (rel === '/admin' || rel.startsWith('/admin/'))) {
         setRoute('admin')
       } else {
@@ -896,6 +902,7 @@ export default function App() {
   // never bounced later.
   const accountStatus = useCloudAccountStore((s) => s.status)
   const accountUserId = useCloudAccountStore((s) => s.userId)
+  const featureRequestOpen = useCloudAccountStore((s) => s.featureRequestOpen)
   const isSupremeAdmin = accountStatus === 'signed-in' && !!accountUserId && ADMIN_USER_IDS.has(accountUserId)
   useEffect(() => {
     if (accountStatus !== 'signed-in' || !accountUserId) return
@@ -2694,6 +2701,7 @@ export default function App() {
   const handleSpaNavigate = useCallback((path: string): void => {
     history.pushState(null, '', path)
     if (path.startsWith('/dashboard')) setRoute('dashboard')
+    else if (path.startsWith('/admin/feedback')) setRoute('feedbackAdmin')
     else if (path.startsWith('/admin')) setRoute('admin')
     else if (path.startsWith('/sign-in')) setRoute('signin')
     else if (path.startsWith('/sign-up')) setRoute('signup')
@@ -4862,6 +4870,20 @@ export default function App() {
           </motion.div>
         )}
 
+        {route === 'feedbackAdmin' && (
+          <motion.div
+            key="feedback-admin"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyFeedbackAdminView onBack={() => handleSpaNavigate('/dashboard')} onSignIn={() => handleSpaNavigate('/sign-in')} theme={landingTheme} />
+            </React.Suspense>
+          </motion.div>
+        )}
+
         {route === 'landing' && (
           <motion.div
             key="landing"
@@ -5657,6 +5679,12 @@ export default function App() {
       {/* ── Personalized invite — post-aha Mom-Test nudge (viewer) ── */}
       {route === 'viewer' && invite && feedbackNudgeOpen && (
         <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
+      )}
+
+      {featureRequestOpen && (
+        <React.Suspense fallback={null}>
+          <LazyFeatureRequestModal />
+        </React.Suspense>
       )}
 
       {/* ── Global toast notifications ── */}

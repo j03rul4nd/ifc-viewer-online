@@ -109,7 +109,7 @@ function corsHeaders(origin) {
   return {
     'Access-Control-Allow-Origin':  origin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age':       '86400',
   }
 }
@@ -957,6 +957,137 @@ async function handleLeadsExport(request, url, env) {
   })
 }
 
+// ── Feature requests from registered users ──────────────────────────────────
+//
+// Signed-in users tell us what they need and whether they would pay for it.
+// Only a valid Clerk session token from the production instance is accepted:
+// the user id comes from the token, never from the body, so nobody can post
+// as someone else and there are no anonymous requests to wade through. The
+// email comes from the token's `email` claim (instance config: session.claims).
+//
+// Stored in the LEADS KV namespace under their own prefix; read back only by
+// the user ids in FEEDBACK_ADMIN_IDS, through GET /requests.
+
+const REQUEST_PREFIX = 'request:'
+const REQUEST_COUNT_PREFIX = 'request-count:'
+const REQUESTS_PER_DAY = 5
+const DEFAULT_CLERK_ISSUER = 'https://clerk.ifcvieweronline.eu'
+const REQUEST_AREAS = ['validation', 'viewer', 'map', 'export', 'team', 'other']
+const REQUEST_FREQUENCIES = ['daily', 'weekly', 'sometimes']
+const REQUEST_PAY = ['no', 'up10', 'up20', 'up50', 'more']
+const CLOCK_SKEW_S = 60
+
+const b64urlBytes = (s) => {
+  const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4))
+  return Uint8Array.from(b, (c) => c.charCodeAt(0))
+}
+const b64urlJson = (s) => JSON.parse(new TextDecoder().decode(b64urlBytes(s)))
+
+let jwksCache = { issuer: '', at: 0, keys: [] }
+async function clerkKeys(issuer) {
+  if (jwksCache.issuer === issuer && Date.now() - jwksCache.at < 3_600_000) return jwksCache.keys
+  const res = await fetch(`${issuer}/.well-known/jwks.json`)
+  if (!res.ok) throw new Error(`jwks ${res.status}`)
+  const { keys } = await res.json()
+  jwksCache = { issuer, at: Date.now(), keys: Array.isArray(keys) ? keys : [] }
+  return jwksCache.keys
+}
+
+/** Verifies a Clerk session JWT (RS256). Returns its claims, or null. */
+async function verifyClerkToken(token, env) {
+  if (typeof token !== 'string') return null
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  try {
+    const header = b64urlJson(parts[0])
+    const claims = b64urlJson(parts[1])
+    if (header.alg !== 'RS256') return null
+    const issuer = env.CLERK_ISSUER || DEFAULT_CLERK_ISSUER
+    if (claims.iss !== issuer) return null
+    const now = Math.floor(Date.now() / 1000)
+    if (typeof claims.exp !== 'number' || claims.exp < now - CLOCK_SKEW_S) return null
+    if (typeof claims.nbf === 'number' && claims.nbf > now + CLOCK_SKEW_S) return null
+    if (claims.azp && !ALLOWED_ORIGINS.includes(claims.azp)) return null
+    if (typeof claims.sub !== 'string' || !claims.sub.startsWith('user_')) return null
+    const jwk = (await clerkKeys(issuer)).find((k) => k.kid === header.kid)
+    if (!jwk) return null
+    const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])
+    const ok = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5', key, b64urlBytes(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+    )
+    return ok ? claims : null
+  } catch {
+    return null
+  }
+}
+
+function bearer(request) {
+  const auth = request.headers.get('Authorization') ?? ''
+  return auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+}
+
+async function handleRequestPost(request, env, cors) {
+  if (!cors) return jsonResponse({ ok: false, error: 'Forbidden' }, 403)
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, cors)
+  if (!(await underLimit(env.SUBSCRIBE_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'rate_limited' }, 429, { ...cors, 'Retry-After': '60' })
+  }
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, cors)
+  }
+  const pick = (v, allowed) => (allowed.includes(v) ? v : '')
+  const req = {
+    created_at: new Date().toISOString(),
+    user_id: claims.sub,
+    email: isValidEmail(String(claims.email ?? '').toLowerCase()) ? String(claims.email).toLowerCase() : '',
+    need: cleanText(body?.need, 2000),
+    area: pick(body?.area, REQUEST_AREAS),
+    frequency: pick(body?.frequency, REQUEST_FREQUENCIES),
+    pay: pick(body?.pay, REQUEST_PAY),
+    workaround: cleanText(body?.workaround, 1000),
+    contact_ok: body?.contact_ok === true,
+    lang: cleanText(body?.lang, 8),
+    plan: cleanText(body?.plan, 20),
+  }
+  if (req.need.length < 10) return jsonResponse({ ok: false, error: 'need_too_short' }, 400, cors)
+  if (!req.area || !req.frequency || !req.pay) return jsonResponse({ ok: false, error: 'invalid' }, 400, cors)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, cors)
+
+  const day = req.created_at.slice(0, 10)
+  const countKey = `${REQUEST_COUNT_PREFIX}${req.user_id}:${day}`
+  const count = Number(await env.LEADS.get(countKey)) || 0
+  if (count >= REQUESTS_PER_DAY) return jsonResponse({ ok: false, error: 'daily_limit' }, 429, cors)
+  await env.LEADS.put(countKey, String(count + 1), { expirationTtl: 2 * 86_400 })
+
+  const key = `${REQUEST_PREFIX}${req.created_at}:${crypto.randomUUID().slice(0, 8)}`
+  await env.LEADS.put(key, JSON.stringify(req))
+  return jsonResponse({ ok: true }, 200, cors)
+}
+
+/** GET /requests — Authorization: Bearer <Clerk session token of an admin>. */
+async function handleRequestsList(request, env, cors) {
+  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
+  const claims = await verifyClerkToken(bearer(request), env)
+  const admins = String(env.FEEDBACK_ADMIN_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+  // 404, not 403: the endpoint does not exist for anyone else.
+  if (!claims || !admins.includes(claims.sub)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+  const requests = []
+  let cursor
+  do {
+    const page = await env.LEADS.list({ prefix: REQUEST_PREFIX, cursor })
+    for (const k of page.keys) {
+      const raw = await env.LEADS.get(k.name)
+      if (raw) { try { requests.push({ id: k.name.slice(REQUEST_PREFIX.length), ...JSON.parse(raw) }) } catch { /* skip */ } }
+    }
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+  requests.sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+  return jsonResponse({ ok: true, requests }, 200, noStore)
+}
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -1022,6 +1153,14 @@ export default {
       }
       if (url.pathname === '/leads' && request.method === 'GET') {
         return await handleLeadsExport(request, url, env)
+      }
+
+      // Feature requests from signed-in users, and the admin's read-back
+      if (url.pathname === '/requests' && (request.method === 'POST' || request.method === 'GET')) {
+        const reqCors = corsHeaders(origin) ?? (/^http:\/\/localhost:\d+$/.test(origin) ? { 'Access-Control-Allow-Origin': origin } : null)
+        return request.method === 'POST'
+          ? await handleRequestPost(request, env, reqCors)
+          : await handleRequestsList(request, env, reqCors)
       }
 
       // Email capture

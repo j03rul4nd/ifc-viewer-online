@@ -110,5 +110,60 @@
     "body3": "Ci scusiamo per il disagio di dover accedere di nuovo anche se avevi già un account. Grazie per restare con noi.",
     "ok": "Ho capito",
     "signInHint": "Avevi già un account? Abbiamo cambiato sistema e il tuo account è conservato: accedi con Google o con il codice che ti inviamo via email. La tua vecchia password non funziona più."
+  },
+  "requests": {
+    "entryTitle": "Chiedi una funzione",
+    "entryHint": "Dicci cosa manca e per cosa pagheresti: decide cosa costruiamo dopo.",
+    "entryCta": "Chiedi",
+    "title": "Chiedi una funzione",
+    "intro": "Le leggo io, Joel, il fondatore. Quello che chiedono gli utenti registrati decide cosa costruiamo dopo.",
+    "needLabel": "Cosa devi risolvere?",
+    "needHint": "Raccontaci il problema, non solo la soluzione: cosa cerchi di fare e dove ti blocchi.",
+    "needPlaceholder": "Es.: devo esportare le anomalie di un modello per piano da inviare all’impresa…",
+    "areaLabel": "Area",
+    "area": {
+      "validation": "Validazione e IDS",
+      "viewer": "Visualizzatore e misure",
+      "map": "Mappa, GIS e gemello",
+      "export": "Esportazione e report",
+      "team": "Lavoro di squadra",
+      "other": "Altro"
+    },
+    "frequencyLabel": "Ogni quanto ti capita?",
+    "frequency": {
+      "daily": "Ogni giorno",
+      "weekly": "Ogni settimana",
+      "sometimes": "Ogni tanto"
+    },
+    "payLabel": "Pagheresti per averla?",
+    "pay": {
+      "no": "No",
+      "up10": "Sì, fino a 10 €/mese",
+      "up20": "Fino a 20 €/mese",
+      "up50": "Fino a 50 €/mese",
+      "more": "Di più, o per azienda"
+    },
+    "workaroundLabel": "Come lo risolvi oggi? (facoltativo)",
+    "workaroundPlaceholder": "Un altro strumento, Excel, a mano…",
+    "contactOk": "Potete scrivermi per capire meglio di cosa ho bisogno.",
+    "privacy": "Salviamo la tua richiesta con il tuo account e la tua email per capirla e, se lo permetti, scriverti. Non la pubblichiamo né la condividiamo.",
+    "send": "Invia",
+    "sending": "Invio…",
+    "cancel": "Annulla",
+    "done": "Chiudi",
+    "thanksTitle": "Grazie, ricevuta",
+    "thanksContact": "La leggo di persona. Se devo capire meglio, ti scriverò via email.",
+    "thanksNoContact": "La leggo di persona e conta per decidere cosa costruiamo dopo.",
+    "directMail": "Preferisci scrivere direttamente?",
+    "error": {
+      "missing": "Descrivi di cosa hai bisogno (almeno 10 caratteri) e scegli area, frequenza e se pagheresti.",
+      "unauthorized": "La sessione è scaduta. Accedi di nuovo e reinviala.",
+      "need_too_short": "Raccontaci qualcosa in più (almeno 10 caratteri).",
+      "daily_limit": "Oggi hai inviato 5 richieste. Domani potrai inviarne altre, oppure scrivi a hola@ifcvieweronline.eu.",
+      "rate_limited": "Troppi tentativi di seguito. Attendi un minuto.",
+      "unavailable": "Non è stato possibile inviarla ora. Riprova tra un momento.",
+      "network": "Sei offline. Controlla la connessione e riprova.",
+      "invalid": "Controlla il modulo e riprova."
+    }
   }
 }
