@@ -69,7 +69,24 @@ for (const h of vercel.headers ?? []) {
 }
 writeFileSync(join(dist, '_headers'), blocks.join('\n') + '\n')
 
-// 4. Pages limits
+// 4. Pages serves dir/index.html at /dir/ and 308s /dir to it. A page whose
+// canonical has no trailing slash (privacy, terms) must answer 200 at /dir, or
+// its canonical and sitemap entry would point at a redirect: as dir.html, Pages
+// serves it at /dir.
+for (const e of readdirSync(dist, { recursive: true, withFileTypes: true })) {
+  if (!e.isFile() || e.name !== 'index.html' || e.parentPath === dist) continue
+  const file = join(e.parentPath, e.name)
+  const canonical = readFileSync(file, 'utf8').match(/<link rel="canonical" href="([^"]+)"/)?.[1]
+  if (!canonical || canonical.endsWith('/')) continue
+  const dir = e.parentPath
+  if (readdirSync(dir).length !== 1) throw new Error(`${dir} has a slashless canonical and other files`)
+  const html = readFileSync(file)
+  rmSync(dir, { recursive: true })
+  writeFileSync(`${dir}.html`, html)
+  console.log(`served without trailing slash: ${canonical}`)
+}
+
+// 5. Pages limits
 let files = 0
 for (const e of readdirSync(dist, { recursive: true, withFileTypes: true })) {
   if (!e.isFile()) continue
