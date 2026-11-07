@@ -338,7 +338,10 @@ export default defineConfig({
     // A git worktree links node_modules from the main checkout, outside this root,
     // and the tests import the 7-Zip wasm from there.
     ...(process.env.VITEST ? { fs: { strict: false } } : {}),
-    proxy: { '/api/lead': { target: 'http://127.0.0.1:8787', rewrite: () => '/lead' } },
+    proxy: {
+      '/api/lead': { target: 'http://127.0.0.1:8787', rewrite: () => '/lead' },
+      '/api/requests': { target: 'http://127.0.0.1:8787', rewrite: () => '/requests' },
+    },
     headers: {
       'Cross-Origin-Opener-Policy':   'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',

@@ -54,7 +54,7 @@ export default function LegacyAccountNotice() {
           <KeyRound aria-hidden size={16} className="mt-[3px] shrink-0 text-[var(--accent-2)]" />
           <p>{t('legacy.body2')}</p>
         </div>
-        <p className="text-[12px] text-[var(--text-muted)]">{t('legacy.body3')}</p>
+        <p className="text-[12px] text-[var(--text-faint)]">{t('legacy.body3')}</p>
       </div>
     </Modal>
   )

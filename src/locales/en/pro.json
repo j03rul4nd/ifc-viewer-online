@@ -238,5 +238,60 @@
     "body3": "Sorry for the trouble of signing in again even though you already had an account. Thank you for staying with us.",
     "ok": "Got it",
     "signInHint": "Already had an account? We have moved to a new system and your account is kept: sign in with Google or with the code we email you. Your old password no longer works."
+  },
+  "requests": {
+    "entryTitle": "Request a feature",
+    "entryHint": "Tell us what is missing and what you would pay for: it decides what we build next.",
+    "entryCta": "Request",
+    "title": "Request a feature",
+    "intro": "I read every one myself (Joel, the founder). What registered users ask for decides what we build next.",
+    "needLabel": "What do you need to solve?",
+    "needHint": "Tell us the problem, not just the solution: what you are trying to do and where you get stuck.",
+    "needPlaceholder": "E.g. I need to export a model’s issues per storey to send them to the contractor…",
+    "areaLabel": "Area",
+    "area": {
+      "validation": "Validation and IDS",
+      "viewer": "Viewer and measuring",
+      "map": "Map, GIS and twin",
+      "export": "Export and reports",
+      "team": "Teamwork",
+      "other": "Other"
+    },
+    "frequencyLabel": "How often does it come up?",
+    "frequency": {
+      "daily": "Every day",
+      "weekly": "Every week",
+      "sometimes": "Now and then"
+    },
+    "payLabel": "Would you pay for it?",
+    "pay": {
+      "no": "No",
+      "up10": "Yes, up to €10/month",
+      "up20": "Up to €20/month",
+      "up50": "Up to €50/month",
+      "more": "More, or per company"
+    },
+    "workaroundLabel": "How do you solve it today? (optional)",
+    "workaroundPlaceholder": "Another tool, Excel, by hand…",
+    "contactOk": "You can email me to understand what I need.",
+    "privacy": "We store your request with your account and email to understand it and, if you allow it, write to you. We never publish or share it.",
+    "send": "Send",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "done": "Close",
+    "thanksTitle": "Thanks, we have it",
+    "thanksContact": "I read it personally. If I need to understand it better, I will email you.",
+    "thanksNoContact": "I read it personally, and it counts towards what we build next.",
+    "directMail": "Rather write directly?",
+    "error": {
+      "missing": "Describe what you need (at least 10 characters) and pick an area, how often, and whether you would pay.",
+      "unauthorized": "Your session has expired. Sign in again and resend it.",
+      "need_too_short": "Tell us a little more (at least 10 characters).",
+      "daily_limit": "You have sent 5 requests today. You can send more tomorrow, or email hola@ifcvieweronline.eu.",
+      "rate_limited": "Too many attempts in a row. Please wait a minute.",
+      "unavailable": "It could not be sent right now. Please try again in a moment.",
+      "network": "You are offline. Check your connection and try again.",
+      "invalid": "Check the form and try again."
+    }
   }
 }

@@ -34,17 +34,27 @@ interface CloudAccountState {
   /** Whether the account modal is open — any component can request it (I-1: no
    *  Clerk import needed to trigger the lazy modal). */
   accountModalOpen: boolean
+  /** Whether the "request a feature" form is open (signed-in users only). */
+  featureRequestOpen: boolean
 
   // ── Writers (bridge only) ────────────────────────────────────────────────
   setSession: (s: Pick<CloudAccountState, 'status' | 'userId' | 'email' | 'planCache' | 'getToken' | 'signOut'>) => void
   /** refresh() result lands here so every consumer re-renders. */
   setPlanCache: (p: PlanCache | null) => void
   setAccountModalOpen: (open: boolean) => void
+  setFeatureRequestOpen: (open: boolean) => void
 }
 
 /** Open the account modal from anywhere (upsell CTAs, ruleset picker). */
 export const openAccountModal = (): void =>
   useCloudAccountStore.getState().setAccountModalOpen(true)
+
+/** Ask for a feature: the form when signed in, the sign-in first otherwise. */
+export const openFeatureRequest = (): void => {
+  const s = useCloudAccountStore.getState()
+  if (s.status === 'signed-in') s.setFeatureRequestOpen(true)
+  else s.setAccountModalOpen(true)
+}
 
 export const isAccountEnabled = (): boolean =>
   Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
@@ -57,8 +67,10 @@ export const useCloudAccountStore = create<CloudAccountState>()((set) => ({
   getToken: null,
   signOut: null,
   accountModalOpen: false,
+  featureRequestOpen: false,
 
   setSession: (s) => set(s),
   setPlanCache: (planCache) => set({ planCache }),
   setAccountModalOpen: (accountModalOpen) => set({ accountModalOpen }),
+  setFeatureRequestOpen: (featureRequestOpen) => set({ featureRequestOpen }),
 }))
