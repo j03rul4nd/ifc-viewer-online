@@ -241,57 +241,128 @@
   },
   "requests": {
     "entryTitle": "Request a feature",
-    "entryHint": "Tell us what is missing and what you would pay for: it decides what we build next.",
+    "entryHint": "What would help you most? One tap is enough, and it decides what we build next.",
     "entryCta": "Request",
-    "title": "Request a feature",
-    "intro": "I read every one myself (Joel, the founder). What registered users ask for decides what we build next.",
-    "needLabel": "What do you need to solve?",
-    "needHint": "Tell us the problem, not just the solution: what you are trying to do and where you get stuck.",
-    "needPlaceholder": "E.g. I need to export a model’s issues per storey to send them to the contractor…",
-    "areaLabel": "Area",
-    "area": {
-      "validation": "Validation and IDS",
-      "viewer": "Viewer and measuring",
-      "map": "Map, GIS and twin",
-      "export": "Export and reports",
-      "team": "Teamwork",
-      "other": "Other"
+    "title": "What would help you most?",
+    "intro": "Pick one and send: that is all it takes. I read every one myself (Joel), and it decides what we build next.",
+    "feature": {
+      "big_files": {
+        "title": "Open very large files",
+        "hint": "Models over 400 MB that do not fit in the browser today"
+      },
+      "versions": {
+        "title": "Cloud projects with versions",
+        "hint": "See what changed when a new version is uploaded"
+      },
+      "client_link": {
+        "title": "Share with my client",
+        "hint": "A link to the model and the report, nothing to install"
+      },
+      "bcf_team": {
+        "title": "BCF issues with my team",
+        "hint": "Assign, statuses, due dates and saved views"
+      },
+      "auto_check": {
+        "title": "Check every delivery automatically",
+        "hint": "Against my company standard (IDS, EIR, naming)"
+      },
+      "cloud_drives": {
+        "title": "Open from Google Drive, OneDrive or Dropbox",
+        "hint": "And save there without downloading"
+      },
+      "batch_tools": {
+        "title": "Batch tools",
+        "hint": "Edit, rename or split many IFC files at once"
+      },
+      "other": {
+        "title": "Something else",
+        "hint": "Tell us what you need"
+      }
     },
+    "needLabel": "Anything else (optional)",
+    "needLabelOther": "What do you need?",
+    "needPlaceholder": "E.g. I need it to send the model to the client every Friday",
+    "needPlaceholderOther": "Tell us what you are trying to do and where you get stuck",
+    "moreToggle": "Tell us more (1 minute, optional)",
     "frequencyLabel": "How often does it come up?",
     "frequency": {
       "daily": "Every day",
       "weekly": "Every week",
       "sometimes": "Now and then"
     },
-    "payLabel": "Would you pay for it?",
-    "pay": {
-      "no": "No",
-      "up10": "Yes, up to €10/month",
-      "up20": "Up to €20/month",
-      "up50": "Up to €50/month",
-      "more": "More, or per company"
+    "todayLabel": "How do you handle it today?",
+    "today": {
+      "nothing": "I don’t",
+      "manual": "By hand or in Excel",
+      "paid_tool": "I pay for another tool",
+      "free_tool": "With another free tool"
     },
-    "workaroundLabel": "How do you solve it today? (optional)",
-    "workaroundPlaceholder": "Another tool, Excel, by hand…",
-    "contactOk": "You can email me to understand what I need.",
-    "privacy": "We store your request with your account and email to understand it and, if you allow it, write to you. We never publish or share it.",
+    "todayToolPlaceholder": "Which one? (e.g. Solibri, BIMcollab)",
+    "payerLabel": "If it existed, who would pay for it?",
+    "payer": {
+      "me": "Me",
+      "company": "My company",
+      "nobody": "Nobody: there is no budget"
+    },
+    "roleLabel": "Your role",
+    "role": {
+      "bim": "BIM manager or coordinator",
+      "architect": "Architecture",
+      "engineer": "Engineering",
+      "contractor": "Contractor",
+      "owner": "Owner or facilities",
+      "developer": "Software development",
+      "student": "Student",
+      "other": "Other"
+    },
+    "teamLabel": "Team size",
+    "team": {
+      "solo": "Just me",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Over 50"
+    },
+    "commitLabel": "Want in?",
+    "beta": "I want to try it before anyone else (I will email you access)",
+    "call": "I can do a 15-minute video call",
+    "contactOk": "You can email me about this request.",
+    "privacy": "We store your answer with your account and email to understand it and, if you ask, write to you. We never publish or share it.",
     "send": "Send",
     "sending": "Sending…",
     "cancel": "Cancel",
     "done": "Close",
     "thanksTitle": "Thanks, we have it",
-    "thanksContact": "I read it personally. If I need to understand it better, I will email you.",
+    "thanksContact": "I read it personally and will email you.",
     "thanksNoContact": "I read it personally, and it counts towards what we build next.",
+    "thanksStatus": "Under “Your requests” you will see its status and my reply.",
+    "mineLink": "Your requests · {{count}}",
+    "mineTitle": "Your requests",
+    "newRequest": "New request",
+    "replyFrom": "Joel:",
+    "status": {
+      "new": "Received",
+      "reviewing": "Looking into it",
+      "planned": "Planned",
+      "building": "In progress",
+      "shipped": "Available now",
+      "declined": "Not now"
+    },
     "directMail": "Rather write directly?",
     "error": {
-      "missing": "Describe what you need (at least 10 characters) and pick an area, how often, and whether you would pay.",
+      "missing": "Pick an option (for “Something else”, say what you need).",
       "unauthorized": "Your session has expired. Sign in again and resend it.",
-      "need_too_short": "Tell us a little more (at least 10 characters).",
+      "need_too_short": "Tell us in a few words what you need.",
       "daily_limit": "You have sent 5 requests today. You can send more tomorrow, or email hola@ifcvieweronline.eu.",
       "rate_limited": "Too many attempts in a row. Please wait a minute.",
-      "unavailable": "It could not be sent right now. Please try again in a moment.",
+      "unavailable": "That did not work right now. Please try again in a moment.",
       "network": "You are offline. Check your connection and try again.",
       "invalid": "Check the form and try again."
-    }
+    },
+    "tellUs": "Tell us your case",
+    "somethingElse": "Missing something else? Tell us",
+    "nudgeTitle": "What would help you most?",
+    "nudgeBody": "One question, 10 seconds. What you tell us decides what we build next.",
+    "nudgeCta": "Answer",
+    "nudgeDismiss": "Close"
   }
 }

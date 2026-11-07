@@ -36,6 +36,8 @@ interface CloudAccountState {
   accountModalOpen: boolean
   /** Whether the "request a feature" form is open (signed-in users only). */
   featureRequestOpen: boolean
+  /** Where the form was opened from ("account", "large_file:320"…): context for the answer. */
+  featureRequestSource: string
 
   // ── Writers (bridge only) ────────────────────────────────────────────────
   setSession: (s: Pick<CloudAccountState, 'status' | 'userId' | 'email' | 'planCache' | 'getToken' | 'signOut'>) => void
@@ -49,9 +51,11 @@ interface CloudAccountState {
 export const openAccountModal = (): void =>
   useCloudAccountStore.getState().setAccountModalOpen(true)
 
-/** Ask for a feature: the form when signed in, the sign-in first otherwise. */
-export const openFeatureRequest = (): void => {
+/** Ask for a feature: the form when signed in, the sign-in first otherwise.
+ *  `source` says where from, so the form can start on the right answer. */
+export const openFeatureRequest = (source = 'unknown'): void => {
   const s = useCloudAccountStore.getState()
+  useCloudAccountStore.setState({ featureRequestSource: source })
   if (s.status === 'signed-in') s.setFeatureRequestOpen(true)
   else s.setAccountModalOpen(true)
 }
@@ -68,6 +72,7 @@ export const useCloudAccountStore = create<CloudAccountState>()((set) => ({
   signOut: null,
   accountModalOpen: false,
   featureRequestOpen: false,
+  featureRequestSource: 'unknown',
 
   setSession: (s) => set(s),
   setPlanCache: (planCache) => set({ planCache }),

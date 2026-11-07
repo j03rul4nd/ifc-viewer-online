@@ -113,57 +113,128 @@
   },
   "requests": {
     "entryTitle": "Demanar una funció",
-    "entryHint": "Explica’ns què et falta i per què pagaries: decideix el que construïm a continuació.",
+    "entryHint": "Què t’ajudaria més? N’hi ha prou amb un toc, i decideix el que construïm a continuació.",
     "entryCta": "Demanar",
-    "title": "Demanar una funció",
-    "intro": "Ho llegeixo jo, en Joel, el fundador. El que ens demaneu els usuaris registrats decideix el que construïm a continuació.",
-    "needLabel": "Què necessites resoldre?",
-    "needHint": "Explica’ns el problema, no només la solució: què intentes fer i on t’encalles.",
-    "needPlaceholder": "Ex.: Necessito exportar les incidències d’un model per planta per enviar-les al constructor…",
-    "areaLabel": "Àrea",
-    "area": {
-      "validation": "Validació i IDS",
-      "viewer": "Visor i mesura",
-      "map": "Mapa, GIS i bessó",
-      "export": "Exportar i informes",
-      "team": "Treball en equip",
-      "other": "Una altra"
+    "title": "Què t’ajudaria més?",
+    "intro": "Tria una opció i envia: n’hi ha prou. Ho llegeixo jo, en Joel, i decideix el que construïm a continuació.",
+    "feature": {
+      "big_files": {
+        "title": "Obrir fitxers molt grans",
+        "hint": "Models de més de 400 MB que avui no caben al navegador"
+      },
+      "versions": {
+        "title": "Projectes al núvol amb versions",
+        "hint": "Veure què ha canviat en pujar una versió nova"
+      },
+      "client_link": {
+        "title": "Compartir amb el meu client",
+        "hint": "Un enllaç al model i a l’informe, sense instal·lar res"
+      },
+      "bcf_team": {
+        "title": "Incidències BCF amb el meu equip",
+        "hint": "Assignar, estats, terminis i vistes desades"
+      },
+      "auto_check": {
+        "title": "Validar cada lliurament automàticament",
+        "hint": "Amb l’estàndard de la meva empresa (IDS, EIR, noms)"
+      },
+      "cloud_drives": {
+        "title": "Obrir des de Google Drive, OneDrive o Dropbox",
+        "hint": "I desar-hi sense descarregar"
+      },
+      "batch_tools": {
+        "title": "Eines per lots",
+        "hint": "Editar, reanomenar o dividir molts IFC alhora"
+      },
+      "other": {
+        "title": "Una altra cosa",
+        "hint": "Explica’ns què necessites"
+      }
     },
+    "needLabel": "Alguna cosa més (opcional)",
+    "needLabelOther": "Què necessites?",
+    "needPlaceholder": "Ex.: ho necessito per enviar el model al client cada divendres",
+    "needPlaceholderOther": "Explica’ns què intentes fer i on t’encalles",
+    "moreToggle": "Explicar-ne més (1 minut, opcional)",
     "frequencyLabel": "Cada quant et passa?",
     "frequency": {
       "daily": "Cada dia",
       "weekly": "Cada setmana",
       "sometimes": "De tant en tant"
     },
-    "payLabel": "Pagaries per tenir-ho?",
-    "pay": {
-      "no": "No",
-      "up10": "Sí, fins a 10 €/mes",
-      "up20": "Fins a 20 €/mes",
-      "up50": "Fins a 50 €/mes",
-      "more": "Més, o per empresa"
+    "todayLabel": "Com ho resols avui?",
+    "today": {
+      "nothing": "No ho resolc",
+      "manual": "A mà o amb Excel",
+      "paid_tool": "Pago una altra eina",
+      "free_tool": "Amb una altra eina gratuïta"
     },
-    "workaroundLabel": "Com ho resols avui? (opcional)",
-    "workaroundPlaceholder": "Una altra eina, Excel, a mà…",
-    "contactOk": "Em podeu escriure per entendre millor el que necessito.",
-    "privacy": "Desem la teva petició amb el teu compte i el teu correu per entendre-la i, si ho permets, escriure’t. No la publiquem ni la compartim.",
+    "todayToolPlaceholder": "Quina? (p. ex. Solibri, BIMcollab)",
+    "payerLabel": "Si existís, qui ho pagaria?",
+    "payer": {
+      "me": "Jo",
+      "company": "La meva empresa",
+      "nobody": "Ningú: no hi ha pressupost"
+    },
+    "roleLabel": "El teu perfil",
+    "role": {
+      "bim": "BIM manager o coordinador",
+      "architect": "Arquitectura",
+      "engineer": "Enginyeria",
+      "contractor": "Constructora",
+      "owner": "Promotor o manteniment",
+      "developer": "Desenvolupament de programari",
+      "student": "Estudiant",
+      "other": "Altre"
+    },
+    "teamLabel": "Mida de l’equip",
+    "team": {
+      "solo": "Només jo",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Més de 50"
+    },
+    "commitLabel": "T’hi apuntes?",
+    "beta": "Vull provar-ho abans que ningú (t’escriuré per donar-te accés)",
+    "call": "Puc parlar 15 minuts per videotrucada",
+    "contactOk": "Em podeu escriure al correu sobre aquesta petició.",
+    "privacy": "Desem la teva resposta amb el teu compte i el teu correu per entendre-la i, si ho demanes, escriure’t. No la publiquem ni la compartim.",
     "send": "Enviar",
     "sending": "Enviant…",
     "cancel": "Cancel·lar",
     "done": "Tancar",
     "thanksTitle": "Gràcies, ho tenim",
-    "thanksContact": "Ho llegeixo personalment. Si necessito entendre-ho millor, t’escriuré al correu.",
+    "thanksContact": "Ho llegeixo personalment i t’escriuré al correu.",
     "thanksNoContact": "Ho llegeixo personalment i compta per decidir el que construïm a continuació.",
+    "thanksStatus": "A «Les teves peticions» veuràs en quin estat està i la meva resposta.",
+    "mineLink": "Les teves peticions · {{count}}",
+    "mineTitle": "Les teves peticions",
+    "newRequest": "Nova petició",
+    "replyFrom": "Joel:",
+    "status": {
+      "new": "Rebuda",
+      "reviewing": "En estudi",
+      "planned": "Planificada",
+      "building": "En desenvolupament",
+      "shipped": "Ja disponible",
+      "declined": "Ara no"
+    },
     "directMail": "Prefereixes escriure directament?",
     "error": {
-      "missing": "Descriu el que necessites (almenys 10 caràcters) i tria àrea, freqüència i si pagaries.",
+      "missing": "Tria una opció (si és «Una altra cosa», escriu què necessites).",
       "unauthorized": "La sessió ha caducat. Torna a iniciar sessió i envia-ho de nou.",
-      "need_too_short": "Explica’ns una mica més (almenys 10 caràcters).",
+      "need_too_short": "Explica’ns en poques paraules què necessites.",
       "daily_limit": "Avui has enviat 5 peticions. Demà en pots enviar més, o escriu-nos a hola@ifcvieweronline.eu.",
       "rate_limited": "Massa intents seguits. Espera un minut.",
-      "unavailable": "Ara mateix no s’ha pogut enviar. Torna-ho a provar d’aquí a un moment.",
+      "unavailable": "Ara mateix no ha funcionat. Torna-ho a provar d’aquí a un moment.",
       "network": "Sense connexió. Comprova la xarxa i torna-ho a provar.",
       "invalid": "Revisa el formulari i torna-ho a provar."
-    }
+    },
+    "tellUs": "Explica’ns el teu cas",
+    "somethingElse": "Et falta una altra cosa? Digues-nos-ho",
+    "nudgeTitle": "Què t’ajudaria més?",
+    "nudgeBody": "Una pregunta, 10 segons. El que ens digueu decideix el que construïm a continuació.",
+    "nudgeCta": "Respondre",
+    "nudgeDismiss": "Tancar"
   }
 }

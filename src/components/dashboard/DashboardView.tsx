@@ -254,7 +254,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
                   <h2 className="text-[14px] font-semibold mb-1">{t('dashboard.quickActions')}</h2>
                   <button onClick={() => onNavigate('/account')} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('manageProfile')}</button>
                   <button onClick={onOpenViewer} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('dashboard.openViewer')}</button>
-                  <button onClick={openFeatureRequest} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('requests.entryTitle')}</button>
+                  <button onClick={() => openFeatureRequest('dashboard')} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('requests.entryTitle')}</button>
                 </section>
               </div>
             </div>

@@ -307,7 +307,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   <p className="text-[12px] font-medium text-[var(--text)]">{t('requests.entryTitle')}</p>
                   <p className="text-[11px] leading-snug text-[var(--text-faint)]">{t('requests.entryHint')}</p>
                 </div>
-                <button onClick={() => { onClose(); openFeatureRequest() }} className={`shrink-0 ${smallBtn}`}>
+                <button onClick={() => { onClose(); openFeatureRequest('account') }} className={`shrink-0 ${smallBtn}`}>
                   {t('requests.entryCta')}
                 </button>
               </section>

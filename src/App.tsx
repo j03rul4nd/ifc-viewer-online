@@ -51,7 +51,7 @@ import WelcomeView from './components/WelcomeView'
 import { isPricingPreview } from './lib/pricing/pricing-preview'
 import DashboardView from './components/dashboard/DashboardView'
 import AdminView from './components/dashboard/AdminView'
-import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountStore'
+import { isAccountEnabled, openFeatureRequest, useCloudAccountStore } from './stores/cloudAccountStore'
 
 // Client-side admin gate: a UX fast-path only — the REAL boundary is the
 // Worker (users.global_role = super_admin; non-admins read 404 on /admin/*).
@@ -82,6 +82,7 @@ const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 // "Request a feature" (signed-in users) and its founder read-back. Clerk-free.
 const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
 const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
+const LazyRequestNudge = React.lazy(() => import('./components/account/RequestNudge'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
@@ -1651,7 +1652,11 @@ export default function App() {
             label: tToasts('model.serverProcessingAction'),
             run: () => {
               trackServerProcessingInterest({ file_size_mb: sizeMb })
-              toast(tToasts('model.serverProcessingNoted'), 'info', { duration: 10000 })
+              // Ask the one who just hit the wall what they need it for: the
+              // form starts on "large files" and records the size as context.
+              toast(tToasts('model.serverProcessingNoted'), 'info', isAccountEnabled()
+                ? { duration: 12000, action: { label: i18n.t('pro:requests.tellUs'), run: () => openFeatureRequest(`large_file:${sizeMb}`) } }
+                : { duration: 10000 })
             },
           }
         : undefined
@@ -5679,6 +5684,14 @@ export default function App() {
       {/* ── Personalized invite — post-aha Mom-Test nudge (viewer) ── */}
       {route === 'viewer' && invite && feedbackNudgeOpen && (
         <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
+      )}
+
+      {/* "What would help you most?" — signed-in users only, after real use of a
+          validated model (the card waits a few minutes and paces itself). */}
+      {route === 'viewer' && accountStatus === 'signed-in' && result && !isEmbedded() && !effectiveChrome.quiet && !feedbackNudgeOpen && (
+        <React.Suspense fallback={null}>
+          <LazyRequestNudge />
+        </React.Suspense>
       )}
 
       {featureRequestOpen && (
