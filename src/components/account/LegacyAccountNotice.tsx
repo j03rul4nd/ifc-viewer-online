@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/react'
+import { KeyRound } from 'lucide-react'
 import { Modal } from '../Modal'
 
 export default function LegacyAccountNotice() {
@@ -45,10 +46,15 @@ export default function LegacyAccountNotice() {
         </button>
       }
     >
-      <div className="flex flex-col gap-3 text-[13px] leading-relaxed text-[var(--text-dim)]">
+      {/* Modal leaves body padding to each dialog. */}
+      <div className="px-4 py-4 sm:px-5 flex flex-col gap-3 text-[13px] leading-relaxed text-[var(--text-dim)]">
         <p>{t('legacy.body1')}</p>
-        <p>{t('legacy.body2')}</p>
-        <p>{t('legacy.body3')}</p>
+        {/* The one thing they must act on: how to sign in from now on. */}
+        <div className="flex gap-2.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-[var(--text)]">
+          <KeyRound aria-hidden size={16} className="mt-[3px] shrink-0 text-[var(--accent-2)]" />
+          <p>{t('legacy.body2')}</p>
+        </div>
+        <p className="text-[12px] text-[var(--text-muted)]">{t('legacy.body3')}</p>
       </div>
     </Modal>
   )
