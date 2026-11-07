@@ -102,5 +102,13 @@
   "authTitle": "Sua conta reúne projetos, certificados e faturamento",
   "authPoint1": "O visualizador e o validador continuam grátis e sem conta",
   "authPoint2": "O que você abre no navegador fica no navegador",
-  "authPoint3": "Seus arquivos só chegam aos nossos servidores se você usar um recurso na nuvem"
+  "authPoint3": "Seus arquivos só chegam aos nossos servidores se você usar um recurso na nuvem",
+  "legacy": {
+    "title": "Melhorámos a sua conta",
+    "body1": "Estamos a introduzir mudanças no produto e a melhorar os planos para os utilizadores registados. O nosso roteiro é oferecer-lhe um serviço melhor e, para isso, passámos as contas para um novo sistema de produção.",
+    "body2": "A sua conta e o seu email foram mantidos. Se antes entrava com palavra-passe, agora entre com o Google ou com o código que lhe enviamos por email; se quiser, pode criar uma nova palavra-passe no seu perfil.",
+    "body3": "Lamentamos o incómodo de ter de iniciar sessão de novo, mesmo já tendo conta. Obrigado por continuar connosco.",
+    "ok": "Entendido",
+    "signInHint": "Já tinha conta? Mudámos de sistema e a sua conta mantém-se: entre com o Google ou com o código que lhe enviamos por email. A sua palavra-passe anterior já não funciona."
+  }
 }

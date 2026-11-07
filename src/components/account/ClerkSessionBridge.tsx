@@ -15,6 +15,7 @@ import { useCloudAccountStore, type PlanCache } from '../../stores/cloudAccountS
 import { getEntitlement } from '../../lib/cloud/account-client'
 import { toast } from '../../stores/toastStore'
 import { trackCheckoutCompleted } from '../../lib/analytics'
+import LegacyAccountNotice from './LegacyAccountNotice'
 
 function planFromMetadata(meta: unknown): PlanCache | null {
   const m = meta as { plan?: string; planStatus?: string } | null
@@ -84,5 +85,6 @@ export default function ClerkSessionBridge() {
     return () => { cancelled = true }
   }, [isLoaded, session, setPlanCache, t])
 
-  return null
+  // Accounts carried over from the development instance get a one-time notice.
+  return <LegacyAccountNotice />
 }

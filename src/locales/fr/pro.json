@@ -102,5 +102,13 @@
   "authTitle": "Votre compte réunit projets, certificats et facturation",
   "authPoint1": "Le visualiseur et le validateur restent gratuits, sans compte",
   "authPoint2": "Ce que vous ouvrez dans le navigateur y reste",
-  "authPoint3": "Vos fichiers n’atteignent nos serveurs que si vous utilisez une fonction cloud"
+  "authPoint3": "Vos fichiers n’atteignent nos serveurs que si vous utilisez une fonction cloud",
+  "legacy": {
+    "title": "Nous avons amélioré votre compte",
+    "body1": "Nous apportons des changements au produit et améliorons les offres pour les utilisateurs inscrits. Notre feuille de route est de vous offrir un meilleur service, et pour cela nous avons migré les comptes vers un nouveau système de production.",
+    "body2": "Votre compte et votre e-mail ont été conservés. Si vous vous connectiez avec un mot de passe, connectez-vous désormais avec Google ou avec le code que nous vous envoyons par e-mail ; vous pouvez créer un nouveau mot de passe depuis votre profil.",
+    "body3": "Désolés pour le désagrément de devoir vous reconnecter alors que vous aviez déjà un compte. Merci de rester avec nous.",
+    "ok": "Compris",
+    "signInHint": "Vous aviez déjà un compte ? Nous avons changé de système et votre compte est conservé : connectez-vous avec Google ou avec le code envoyé par e-mail. Votre ancien mot de passe ne fonctionne plus."
+  }
 }

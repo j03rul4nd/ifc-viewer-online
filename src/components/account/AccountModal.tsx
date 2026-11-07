@@ -257,6 +257,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
             /* ── Anonymous: embedded Clerk sign-in (S-1 scenario A) ─────────── */
             <div className="flex flex-col items-center gap-3">
               <p className="text-[12px] text-[var(--text-muted)] leading-snug self-start">{t('signInIntro')}</p>
+              <p className="text-[12px] text-[var(--text-muted)] leading-snug self-start">{t('legacy.signInHint')}</p>
               {/* Combined sign-in-or-up, completing IN PLACE: the fallback
                   "redirect" is the URL the user is already on (SPA-routed by
                   main.tsx, so nothing reloads); OAuth is redirect-mode because

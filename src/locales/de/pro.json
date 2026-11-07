@@ -102,5 +102,13 @@
   "authTitle": "Ihr Konto bündelt Projekte, Zertifikate und Abrechnung",
   "authPoint1": "Viewer und Validator bleiben kostenlos und ohne Konto",
   "authPoint2": "Im Browser geöffnete Dateien bleiben im Browser",
-  "authPoint3": "Ihre Dateien erreichen unsere Server nur, wenn Sie eine Cloud-Funktion nutzen"
+  "authPoint3": "Ihre Dateien erreichen unsere Server nur, wenn Sie eine Cloud-Funktion nutzen",
+  "legacy": {
+    "title": "Wir haben dein Konto verbessert",
+    "body1": "Wir ändern gerade das Produkt und verbessern die Pläne für registrierte Nutzer. Unser Ziel ist ein besserer Service für dich, und dafür haben wir die Konten auf ein neues Produktivsystem umgezogen.",
+    "body2": "Dein Konto und deine E-Mail-Adresse bleiben erhalten. Wenn du dich bisher mit Passwort angemeldet hast, melde dich jetzt mit Google oder mit dem Code an, den wir dir per E-Mail schicken; in deinem Profil kannst du ein neues Passwort festlegen.",
+    "body3": "Entschuldige die Mühe, dich erneut anmelden zu müssen, obwohl du schon ein Konto hattest. Danke, dass du bei uns bleibst.",
+    "ok": "Verstanden",
+    "signInHint": "Du hattest schon ein Konto? Wir sind auf ein neues System umgezogen und dein Konto bleibt erhalten: Melde dich mit Google oder mit dem Code an, den wir dir per E-Mail schicken. Dein altes Passwort gilt nicht mehr."
+  }
 }

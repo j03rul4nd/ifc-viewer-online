@@ -102,5 +102,13 @@
   "authTitle": "Tu cuenta reúne proyectos, certificados y facturación",
   "authPoint1": "El visor y el validador siguen gratis y sin cuenta",
   "authPoint2": "Lo que abres en el navegador se queda en el navegador",
-  "authPoint3": "Tus archivos solo llegan a nuestros servidores si usas una función en la nube"
+  "authPoint3": "Tus archivos solo llegan a nuestros servidores si usas una función en la nube",
+  "legacy": {
+    "title": "Hemos mejorado tu cuenta",
+    "body1": "Estamos introduciendo cambios en el producto y mejorando los planes para los usuarios registrados. Nuestra hoja de ruta es darte un mejor servicio, y para ello hemos pasado las cuentas a un nuevo sistema de producción.",
+    "body2": "Tu cuenta y tu email se han conservado. Si antes entrabas con contraseña, ahora entra con Google o con el código que te enviamos por email; si quieres, puedes crear una contraseña nueva desde tu perfil.",
+    "body3": "Sentimos las molestias de tener que volver a iniciar sesión aunque ya tuvieras cuenta. Gracias por seguir con nosotros.",
+    "ok": "Entendido",
+    "signInHint": "¿Ya tenías cuenta? Hemos cambiado de sistema y tu cuenta se conserva: entra con Google o con el código que te enviamos por email. Tu contraseña anterior ya no sirve."
+  }
 }
