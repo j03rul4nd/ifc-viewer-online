@@ -280,8 +280,7 @@
 
   <script>
     // Waitlist: posts to the email Worker the app's own forms use, tagged by plan
-    // and role so the list can be segmented. Analytics only if the visitor's
-    // PostHog session already exists; nothing is loaded for it here.
+    // and role so the list can be segmented.
     (function () {
       var ENDPOINT = 'https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe'
       var NAMES = { pro: 'Pro', team: 'Team', reception: 'Reception', developer: 'Developer', enterprise: 'Enterprise' }
@@ -291,7 +290,40 @@
       var submit = document.getElementById('wl-submit')
       var role = document.getElementById('wl-role')
       var plan = null
-      function track(name, props) { try { window.posthog && window.posthog.capture(name, props) } catch (e) {} }
+      // Funnel events, sent the way the app sends them: no cookies, no storage, a
+      // random id per page view, no person profile, URLs without query strings.
+      // Skipped when the visitor opted out in the app, sends GPC or Do Not Track,
+      // or the page is opened from a local dev server.
+      var PH_KEY = 'phc_mAs9WpD6z8RTQbqR8ZVvqbxhF8QUz59Yz4ZmDRjByXwr'
+      var PH_HOST = 'https://eu.i.posthog.com'
+      var visit = 'pricing-' + Math.random().toString(36).slice(2) + Date.now().toString(36)
+      function optedOut() {
+        try {
+          var stored = localStorage.getItem('ifc-analytics-optout:v1')
+          if (stored === '1') return true
+          if (stored === '0') return false
+        } catch (e) { /* storage blocked: fall back to the browser signal */ }
+        if (navigator.globalPrivacyControl === true) return true
+        var dnt = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack
+        return dnt === '1' || dnt === 'yes'
+      }
+      var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|.*\.localhost|.*\.local)$/i
+      function local() {
+        if (LOCAL.test(location.hostname)) return true
+        try { return !!document.referrer && LOCAL.test(new URL(document.referrer).hostname) } catch (e) { return false }
+      }
+      function referrer() {
+        try { return document.referrer ? new URL(document.referrer).origin : '$direct' } catch (e) { return '$direct' }
+      }
+      function track(name, props) {
+        if (optedOut() || local()) return
+        var properties = { $current_url: location.origin + location.pathname, $pathname: location.pathname, $referrer: referrer(), $process_person_profile: false, surface: 'pricing_page' }
+        for (var k in props || {}) properties[k] = props[k]
+        try {
+          fetch(PH_HOST + '/i/v0/e/', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key: PH_KEY, event: name, distinct_id: visit, properties: properties }) }).catch(function () {})
+        } catch (e) { /* analytics never breaks the page */ }
+      }
+      track('$pageview')
 
       document.querySelectorAll('[data-cta]').forEach(function (a) {
         a.addEventListener('click', function () { track('pricing_cta_clicked', { cta: a.dataset.cta }) })
