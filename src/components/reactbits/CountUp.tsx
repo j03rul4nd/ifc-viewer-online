@@ -83,10 +83,15 @@ export default function CountUp({
     return decPart ? `${withSep}.${decPart}` : withSep
   })()
 
+  // Screen readers, text extraction and crawlers get the final number; the
+  // animated one (which starts at `from`, usually 0) is only for the eye.
+  const final = `${prefix}${decimals > 0 ? to.toFixed(decimals) : String(to)}${suffix}`
+
   return (
     <div ref={ref} className={`text-center ${className}`}>
       <div className={numberClassName}>
-        {prefix}{formatted}{suffix}
+        <span aria-hidden="true">{prefix}{formatted}{suffix}</span>
+        <span className="sr-only">{final}</span>
       </div>
       {label && (
         <div className={labelClassName}>

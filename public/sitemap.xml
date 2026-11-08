@@ -613,6 +613,13 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
   </url>
 
+  <!-- Pricing (EN, static) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pricing/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
   <!-- Niche: Solibri WebChecker alternative (EN) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/solibri-webchecker-alternative/</loc>

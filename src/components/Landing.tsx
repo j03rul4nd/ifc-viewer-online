@@ -22,7 +22,6 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { subscribeEmail } from '../lib/subscribe'
 import { trackEmailCaptured, trackProEntryClick } from '../lib/analytics'
-import { isAccountEnabled, openAccountModal } from '../stores/cloudAccountStore'
 import { LanguageSelectorNav } from './LanguageSelector'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
@@ -463,16 +462,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
               className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >Blog</a>
-            {/* F2-TRIGGERS: pricing CTA → opens the app with the account/upsell
-                surface, nothing else changed. Invisible when accounts are off
-                (VITE_CLERK_PUBLISHABLE_KEY absent) — the anonymous nav stays
-                identical to F1. */}
-            {isAccountEnabled() && (
-              <button
-                onClick={() => { trackProEntryClick({ source: 'landing' }); openAccountModal(); onLaunch() }}
-                className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
-              >{t('nav.pricing')}</button>
-            )}
+            {/* Public pricing page (static, crawlable): plans and their waitlists. */}
+            <a
+              href={`${import.meta.env.BASE_URL}pricing/`}
+              onClick={() => trackProEntryClick({ source: 'landing' })}
+              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.pricing')}</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
               aria-label="View source code on GitHub"
@@ -491,8 +486,13 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </button>
           </div>
 
-          {/* Mobile: Blog + GitHub icon + theme toggle + language selector + primary CTA */}
+          {/* Mobile: Blog + Pricing + GitHub icon + theme toggle + language selector + primary CTA */}
           <div className="flex md:hidden items-center gap-2">
+            <a
+              href={`${import.meta.env.BASE_URL}pricing/`}
+              onClick={() => trackProEntryClick({ source: 'landing' })}
+              className="text-[12px] font-medium text-[var(--text-dim)] px-1 py-1 no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.pricing')}</a>
             <a
               href={blogBase}
               onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
@@ -724,7 +724,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         >
           <div className="max-w-[900px] mx-auto grid grid-cols-2 gap-y-8 sm:gap-y-10 gap-x-4 sm:gap-x-6 sm:grid-cols-4">
             {[
-              { to: 38,  suffix: '+', stiffness: 70,  numCls: '' },
+              { to: 44,  suffix: '',  stiffness: 70,  numCls: '' },
               { to: 4,   suffix: '',  stiffness: 90,  numCls: '' },
               { to: 100, suffix: '%', stiffness: 60,  numCls: '' },
               { to: 0,   suffix: '',  stiffness: 90,  numCls: 'text-[var(--ok)]' },
