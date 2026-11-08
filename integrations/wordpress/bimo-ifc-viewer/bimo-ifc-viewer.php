@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       IFC Viewer Online
+ * Plugin Name:       Bimo IFC Viewer
  * Plugin URI:        https://github.com/j03rul4nd/ifc-viewer-online/tree/main/integrations/wordpress
  * Description:       Embed interactive 3D IFC (BIM) models in posts and pages: Health Score, federated models, point clouds, the model on the map, sun studies, plan cuts and digital twin scenes. Block and [ifc_viewer] shortcode.
  * Version:           1.1.0
@@ -10,7 +10,7 @@
  * Author URI:        https://www.ifcvieweronline.eu/
  * License:           MIT
  * License URI:       https://opensource.org/licenses/MIT
- * Text Domain:       ifc-viewer-online
+ * Text Domain:       bimo-ifc-viewer
  *
  * The viewer runs in the visitor's browser inside an iframe served by
  * www.ifcvieweronline.eu. The IFC file is fetched by that browser straight
@@ -87,7 +87,7 @@ function ifcvo_list( $value ) {
 
 /** The CORS-enabled route for an IFC attachment of this site, or '' when it is not one. */
 function ifcvo_attachment_route( $attachment_id ) {
-	return $attachment_id && ifcvo_is_ifc_attachment( $attachment_id ) ? rest_url( 'ifc-viewer-online/v1/file/' . $attachment_id ) : '';
+	return $attachment_id && ifcvo_is_ifc_attachment( $attachment_id ) ? rest_url( 'bimo-ifc-viewer/v1/file/' . $attachment_id ) : '';
 }
 
 /**
@@ -195,12 +195,12 @@ function ifcvo_render( $atts, $wrapper = 'class="ifcvo-embed"' ) {
 	$src  = ifcvo_build_embed_url( $atts );
 	if ( '' === $src ) {
 		if ( current_user_can( 'edit_posts' ) ) {
-			return '<p class="ifcvo-notice">' . esc_html__( 'IFC Viewer Online: choose an IFC file from the Media Library, or give an https URL to an .ifc file or to a scene.', 'ifc-viewer-online' ) . '</p>';
+			return '<p class="ifcvo-notice">' . esc_html__( 'Bimo IFC Viewer: choose an IFC file from the Media Library, or give an https URL to an .ifc file or to a scene.', 'bimo-ifc-viewer' ) . '</p>';
 		}
 		return '';
 	}
 	$height = max( 200, min( 2000, absint( $atts['height'] ) ) );
-	$title  = '' !== trim( (string) $atts['title'] ) ? $atts['title'] : __( 'Interactive 3D IFC model', 'ifc-viewer-online' );
+	$title  = '' !== trim( (string) $atts['title'] ) ? $atts['title'] : __( 'Interactive 3D IFC model', 'bimo-ifc-viewer' );
 	return sprintf(
 		'<div %4$s><iframe src="%1$s" width="100%%" height="%2$d" style="border:0;border-radius:12px;max-width:100%%;display:block" loading="lazy" allow="fullscreen" title="%3$s"></iframe></div>',
 		esc_url( $src ),
@@ -261,7 +261,7 @@ function ifcvo_is_ifc_attachment( $attachment_id ) {
 }
 
 /**
- * GET /wp-json/ifc-viewer-online/v1/file/<id>
+ * GET /wp-json/bimo-ifc-viewer/v1/file/<id>
  *
  * Serves a published IFC attachment with the CORS header the viewer needs:
  * the iframe runs on www.ifcvieweronline.eu and fetches the file from this
@@ -270,7 +270,7 @@ function ifcvo_is_ifc_attachment( $attachment_id ) {
  */
 function ifcvo_register_routes() {
 	register_rest_route(
-		'ifc-viewer-online/v1',
+		'bimo-ifc-viewer/v1',
 		'/file/(?P<id>\d+)',
 		array(
 			'methods'             => 'GET',

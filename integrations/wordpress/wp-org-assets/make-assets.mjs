@@ -51,7 +51,7 @@ const banner = (w, h, shot) => {
   return `<body style="margin:0;width:${w}px;height:${h}px;overflow:hidden;background:#0d1716;font-family:Segoe UI,system-ui,sans-serif;display:flex">
   <div style="flex:0 0 ${370 * k}px;padding:${40 * k}px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:${12 * k}px;color:#e8f1f0">
     ${logo(48 * k)}
-    <div style="font-size:${30 * k}px;font-weight:650;letter-spacing:-0.01em">IFC Viewer Online</div>
+    <div style="font-size:${30 * k}px;font-weight:650;letter-spacing:-0.01em">Bimo IFC Viewer</div>
     <div style="font-size:${15 * k}px;line-height:1.4;color:#a9bfbc">Interactive 3D BIM models in your posts and pages. Health Score, the map, sun studies and digital twins.</div>
   </div>
   <img src="${shot}" style="flex:1;min-width:0;height:100%;object-fit:cover"></body>`
@@ -83,7 +83,7 @@ if (pass) {
   await page.evaluate(() => {
     const { data } = window.wp
     data.dispatch('core/preferences').set('core/edit-post', 'welcomeGuide', false)
-    const blocks = data.select('core/block-editor').getBlocks().filter((b) => b.name === 'ifc-viewer-online/viewer')
+    const blocks = data.select('core/block-editor').getBlocks().filter((b) => b.name === 'bimo-ifc-viewer/viewer')
     data.dispatch('core/block-editor').selectBlock(blocks[1].clientId)
     data.dispatch('core/edit-post').openGeneralSidebar('edit-post/block')
   })
