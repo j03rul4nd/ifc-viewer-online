@@ -1,4 +1,4 @@
-=== IFC Viewer Online ===
+=== Bimo IFC Viewer ===
 Contributors: j03rul4nd
 Tags: ifc, bim, 3d, viewer, digital twin
 Requires at least: 6.1
@@ -11,6 +11,8 @@ License URI: https://opensource.org/licenses/MIT
 Embed interactive 3D IFC (BIM) models in posts and pages: Health Score, federated models, point clouds, the map, sun studies and digital twins.
 
 == Description ==
+
+Bimo IFC Viewer is the WordPress plugin of IFC Viewer Online (https://www.ifcvieweronline.eu), the free browser IFC viewer by the same author; Bimo is its mascot.
 
 Show your BIM models on your own website. Visitors orbit, measure and inspect the model in their browser, without installing anything and without an account.
 
@@ -39,7 +41,7 @@ This plugin embeds the IFC Viewer Online web app (https://www.ifcvieweronline.eu
 
 == Installation ==
 
-1. Install the plugin from Plugins → Add New, or upload the `ifc-viewer-online` folder to `/wp-content/plugins/`.
+1. Install the plugin from Plugins → Add New, or upload the `bimo-ifc-viewer` folder to `/wp-content/plugins/`.
 2. Activate it.
 3. Edit a post or page, add the **IFC Viewer** block and choose one or more IFC files from the Media Library.
 
@@ -55,7 +57,7 @@ In your own Media Library, like any other file. The viewer runs in the visitor's
 
 = My model is on another site and does not load =
 
-A model at another site's URL loads only if that site allows cross-origin requests (CORS). Files from your own Media Library always work: the plugin serves them through `/wp-json/ifc-viewer-online/v1/file/<id>` with the header the viewer needs, and only for published content.
+A model at another site's URL loads only if that site allows cross-origin requests (CORS). Files from your own Media Library always work: the plugin serves them through `/wp-json/bimo-ifc-viewer/v1/file/<id>` with the header the viewer needs, and only for published content.
 
 = Can I embed a model in a private or password-protected post? =
 

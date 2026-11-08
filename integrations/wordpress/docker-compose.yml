@@ -17,4 +17,4 @@ services:
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DB_NAME: wordpress
     volumes:
-      - ./ifc-viewer-online:/var/www/html/wp-content/plugins/ifc-viewer-online
+      - ./bimo-ifc-viewer:/var/www/html/wp-content/plugins/bimo-ifc-viewer
