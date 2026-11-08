@@ -198,16 +198,17 @@ const SURFACE_RENDER_ORDER: Record<SurfaceLayerKind, number> =
  * detail comes from the shader, not from geometry.
  */
 const DETAIL_EDGE_M: Record<SurfaceLayerKind, number> =
-  { water: 8, green: 16, sand: 12, rock: 22 }
+  { water: 8, green: 9, sand: 9, rock: 9 }
 
 /**
  * Edge target for a paved AREA — a square, an esplanade, a pedestrianised street.
  *
- * Between sand and greenery, and for the same reason those two differ: paving
- * is laid flat, so it needs fewer vertices than a hillside to look like it is
- * following the ground.
+ * Under the terrain mesh's own grain (GRID_SEGMENTS: ~9.5 m), for paving and
+ * ground cover alike. Coarser than that, the terrain vertices between two of the
+ * floor's stood above it and showed through as long pale shards at eye level —
+ * walking the Lujiazui riverside, where the DEM is anything but flat.
  */
-const PAVED_AREA_EDGE_M = 14
+const PAVED_AREA_EDGE_M = 8
 
 /**
  * Refinement vertices ONE paved area may spend, over and above its own outline.
