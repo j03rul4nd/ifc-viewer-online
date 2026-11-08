@@ -84,7 +84,11 @@ export function riverfrontPromenades(
   // Never over the water: a floor reaching past the bank follows the DEM down
   // to the river and folds into near-vertical panels along the edge.
   const water = features.filter(isOpenWater).map((w) => w.ring!)
-  return unionRings(rings, water).map((u, k) => ({
+  // Nor over a floor somebody mapped: the promenade fills the gaps between the
+  // paved areas, it does not lay a second floor in another tone on top of one.
+  const paved = features.filter((f) => f.kind === 'road' && f.widthM === undefined && !!f.ring && f.ring.length >= 3)
+    .map((f) => f.ring!)
+  return unionRings(rings, [...water, ...paved]).map((u, k) => ({
     id: `promenade-${k}`, kind: 'road' as const, ring: u.ring,
     ...(u.holes.length > 0 ? { holes: u.holes } : {}),
     height: { heightM: 0, minHeightM: 0, estimated: true }, style,
@@ -176,7 +180,12 @@ export function unionRings(
           cur = list.pop()!
           if (cur === startKey) break
         }
-        if (loop.length >= 4) loops.push(simplify(loop, 0.9))
+        // The traced outline is a staircase of cell edges; walked at eye level it
+        // read as a jagged hem. Its edge midpoints turn each step into a diagonal.
+        if (loop.length >= 4) loops.push(simplify(loop.map((p, i) => {
+          const q = loop[(i + 1) % loop.length]
+          return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }
+        }), 1.0))
       }
     }
     const outers = loops.filter((l) => l.length >= 3 && area(l) > 0)

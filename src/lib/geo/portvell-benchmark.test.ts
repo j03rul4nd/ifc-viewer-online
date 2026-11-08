@@ -357,9 +357,11 @@ describe('Port Vell benchmark · a square is a square', () => {
 
     // BOUNDED. `subdivideOnGround` has only a recursion cap, and a cap of N
     // levels on a 365 m plaza is 4^N triangles whatever the polygon needs —
-    // 59 412 vertices for these five. A point budget makes it 10 272: the same
-    // surface, following the same ground, at a price somebody chose.
-    expect(verts(hilly)).toBeLessThan(12_000)
+    // 59 412 vertices for these five. A point budget makes it 12 480: the same
+    // surface, following the same ground, at a price somebody chose. (10 272
+    // with a 14 m edge; at 8 m, under the terrain grid, the terrain no longer
+    // shows through the floor, and the outline costs the difference.)
+    expect(verts(hilly)).toBeLessThan(14_000)
   })
 
   it('says how many rings it had to refuse', () => {

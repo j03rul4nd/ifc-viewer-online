@@ -86,3 +86,29 @@ describe('promenade floor and the water', () => {
     expect(Math.max(...floor.ring!.map((p) => p.lon))).toBeLessThanOrEqual(121.49002)
   })
 })
+
+describe('promenade edges', () => {
+  it('leaves a mapped paved area to its own floor', () => {
+    const square = { type: 'way', id: 20, tags: { highway: 'pedestrian', area: 'yes' }, geometry: [
+      { lat: 31.2390, lon: 121.4893 }, { lat: 31.2390, lon: 121.4899 }, { lat: 31.2410, lon: 121.4899 },
+      { lat: 31.2410, lon: 121.4893 }, { lat: 31.2390, lon: 121.4893 },
+    ] }
+    const f = parseOsmFeatures({ elements: [river, square, footway(21, 121.4897)] })
+    const floors = f.filter((x) => x.id.startsWith('promenade-'))
+    expect(floors.some((x) => pointInLatLonRing({ lat: 31.2400, lon: 121.4897 }, x.ring!))).toBe(false)
+    expect(floors.some((x) => pointInLatLonRing({ lat: 31.2383, lon: 121.4897 }, x.ring!))).toBe(true)
+  })
+
+  it('draws the hem as diagonals, not a staircase of grid cells', () => {
+    const diagonal = { type: 'way', id: 22, tags: { highway: 'footway' }, geometry: [
+      { lat: 31.2380, lon: 121.4893 }, { lat: 31.2420, lon: 121.4898 },
+    ] }
+    const f = parseOsmFeatures({ elements: [river, diagonal] })
+    const floor = f.find((x) => x.id.startsWith('promenade-'))!
+    const axisAligned = floor.ring!.filter((p, i, r) => {
+      const q = r[(i + 1) % r.length]
+      return Math.abs(p.lat - q.lat) < 1e-9 || Math.abs(p.lon - q.lon) < 1e-9
+    }).length
+    expect(axisAligned / floor.ring!.length).toBeLessThan(0.5)
+  })
+})
