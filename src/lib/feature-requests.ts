@@ -233,25 +233,5 @@ function csvCell(v: unknown): string {
 
 export function requestsToCsv(requests: readonly StoredFeatureRequest[]): string {
   const lines = [CSV_FIELDS.join(','), ...requests.map((r) => CSV_FIELDS.map((f) => csvCell(r[f])).join(','))]
-  return '﻿' + lines.join('\r\n') + '\r\n'
-}
-
-// ── Nudge pacing ───────────────────────────────────────────────────────────────
-// The in-viewer "what would help you most?" card shows at most once every 30
-// days per browser, and sending a request on your own counts as being asked.
-
-const NUDGE_KEY = 'ifc.requests.nudgedAt'
-export const NUDGE_EVERY_MS = 30 * 86_400_000
-
-export function requestNudgeDue(now = Date.now()): boolean {
-  try {
-    const at = Number(localStorage.getItem(NUDGE_KEY))
-    return !Number.isFinite(at) || at <= 0 || now - at >= NUDGE_EVERY_MS
-  } catch {
-    return false // no storage: we could not keep the promise of "once a month"
-  }
-}
-
-export function markRequestNudged(now = Date.now()): void {
-  try { localStorage.setItem(NUDGE_KEY, String(now)) } catch { /* see requestNudgeDue */ }
+  return '\uFEFF' + lines.join('\r\n') + '\r\n'
 }

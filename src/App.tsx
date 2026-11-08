@@ -52,6 +52,7 @@ import { isPricingPreview } from './lib/pricing/pricing-preview'
 import DashboardView from './components/dashboard/DashboardView'
 import AdminView from './components/dashboard/AdminView'
 import { isAccountEnabled, openFeatureRequest, useCloudAccountStore } from './stores/cloudAccountStore'
+import { feedbackAllowed, hasPendingDraft, takePendingDraft } from './lib/feedback-gate'
 
 // Client-side admin gate: a UX fast-path only — the REAL boundary is the
 // Worker (users.global_role = super_admin; non-admins read 404 on /admin/*).
@@ -83,6 +84,7 @@ const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
 const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
 const LazyRequestNudge = React.lazy(() => import('./components/account/RequestNudge'))
+const LazyRequestUpdates = React.lazy(() => import('./components/account/RequestUpdates'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
@@ -1035,6 +1037,30 @@ export default function App() {
       : embedChrome,
     [embedChrome, clientMode],
   )
+
+  // Where the app may talk to the user about feedback: the top-level full
+  // viewer only — never inside an SDK/WordPress/Shopify/blog iframe, never
+  // with ?embed=1 chrome, while presenting to a client, in a tour or a studio.
+  const feedbackSurfaceOk = isAccountEnabled() && feedbackAllowed({
+    route,
+    embedded: isEmbedded(),
+    embedParam: embedChrome.embed,
+    clientMode,
+    tourPlaying: tourMode === 'playing',
+    studioOpen: clipStudioOpen || coverStudioOpen,
+    quiet: Boolean(effectiveChrome.quiet),
+  })
+
+  // An answer chosen before signing in comes back after it, ready to send.
+  // OAuth sign-in reloads the page (often onto the landing), so this listens
+  // on every route, not only the viewer.
+  useEffect(() => {
+    if (accountStatus !== 'signed-in' || isEmbedded() || !hasPendingDraft()) return
+    const draft = takePendingDraft()
+    if (!draft) return
+    const { feature, need, source, ...detail } = draft
+    openFeatureRequest(source, { feature, need, detail, resumed: true })
+  }, [accountStatus])
 
   // Embedded presets are a contract, not a suggestion inherited from the
   // visitor's last full-viewer session. The column layout is intentionally
@@ -5686,11 +5712,19 @@ export default function App() {
         <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
       )}
 
-      {/* "What would help you most?" — signed-in users only, after real use of a
-          validated model (the card waits a few minutes and paces itself). */}
-      {route === 'viewer' && accountStatus === 'signed-in' && result && !isEmbedded() && !effectiveChrome.quiet && !feedbackNudgeOpen && (
+      {/* "What would help you most?" — anyone (signed in or not) in the
+          full viewer, after real use of a validated model; the card paces
+          itself (lib/feedback-gate). Never next to the invite's own nudge. */}
+      {feedbackSurfaceOk && result && !feedbackNudgeOpen && (
         <React.Suspense fallback={null}>
           <LazyRequestNudge />
+        </React.Suspense>
+      )}
+
+      {/* "One of your requests moved" — signed-in users who have asked before. */}
+      {accountStatus === 'signed-in' && !isEmbedded() && !embedChrome.embed && !clientMode && tourMode !== 'playing' && (
+        <React.Suspense fallback={null}>
+          <LazyRequestUpdates />
         </React.Suspense>
       )}
 

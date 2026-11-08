@@ -26,7 +26,9 @@ import { isHazardEnabled } from '../features/hazard/flag'
 import { useFloodStore } from '../features/flood/store'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
-import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
+import { useCloudAccountStore, isAccountEnabled, openFeatureRequest } from '../stores/cloudAccountStore'
+import { isEmbedded } from '../lib/url-params'
+import { MessageSquarePlus } from 'lucide-react'
 import { trackProEntryClick, trackExportClicked } from '../lib/analytics'
 import { useSceneContent } from '../hooks/useSceneContent'
 
@@ -930,8 +932,21 @@ export default function Toolbar({
         </ToolMenu>
       </div>
 
-      {/* ── Utilities: help · account · language ───────────────────────────── */}
+      {/* ── Utilities: suggest · help · account · language ─────────────────── */}
       <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center gap-0.5 shrink-0 ml-0.5 lg:ml-1`}>
+        {/* Suggest: the always-visible way to tell us what is missing. Not in a
+            host's page (compact/embed preset or any iframe): that is not ours. */}
+        {accountEnabled && !compact && !isEmbedded() && (
+          <button
+            onClick={() => openFeatureRequest('toolbar')}
+            title={tPro('requests.entryTitle')}
+            aria-label={tPro('requests.entryTitle')}
+            className="flex items-center gap-1.5 h-[28px] px-2 rounded-[5px] text-[12px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
+          >
+            <MessageSquarePlus aria-hidden size={14} />
+            <span className="hidden lg:inline">{tPro('requests.entryButton')}</span>
+          </button>
+        )}
         <button
           onClick={onOpenHelp}
           title={tCommon('shortcuts.title')}

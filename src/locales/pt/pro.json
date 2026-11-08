@@ -233,8 +233,19 @@
     "tellUs": "Conte-nos o seu caso",
     "somethingElse": "Falta-lhe outra coisa? Diga-nos",
     "nudgeTitle": "O que mais o ajudaria?",
-    "nudgeBody": "Uma pergunta, 10 segundos. O que nos disser decide o que construímos a seguir.",
+    "nudgeBody": "Toque numa opção: 10 segundos. Decide o que construímos a seguir.",
     "nudgeCta": "Responder",
-    "nudgeDismiss": "Fechar"
+    "nudgeDismiss": "Fechar",
+    "entryButton": "Sugerir",
+    "signinTitle": "Último passo: entre para enviar",
+    "signinBody": "A sua resposta está guardada. Entre ou crie a sua conta e devolvemo-la pronta a enviar; assim podemos avisá-lo quando estiver disponível.",
+    "signinFree": "A conta é gratuita e o visualizador continua gratuito.",
+    "signinLater": "Agora não",
+    "signinCta": "Entrar e enviar",
+    "resumed": "Já entrou. A sua resposta continua aqui: reveja-a e envie-a.",
+    "nudgeOther": "Outra coisa…",
+    "updateOne": "O seu pedido «{{feature}}»: {{status}}.",
+    "updateMany": "Há novidades em {{count}} dos seus pedidos.",
+    "updateCta": "Ver"
   }
 }

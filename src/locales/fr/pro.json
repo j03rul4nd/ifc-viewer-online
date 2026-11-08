@@ -233,8 +233,19 @@
     "tellUs": "Racontez-nous votre cas",
     "somethingElse": "Il vous manque autre chose ? Dites-le-nous",
     "nudgeTitle": "Qu’est-ce qui vous aiderait le plus ?",
-    "nudgeBody": "Une question, 10 secondes. Vos réponses décident de ce que nous construisons ensuite.",
+    "nudgeBody": "Touchez une option : 10 secondes. Cela décide de ce que nous construisons ensuite.",
     "nudgeCta": "Répondre",
-    "nudgeDismiss": "Fermer"
+    "nudgeDismiss": "Fermer",
+    "entryButton": "Suggérer",
+    "signinTitle": "Dernière étape : connectez-vous pour l’envoyer",
+    "signinBody": "Votre réponse est enregistrée. Connectez-vous ou créez votre compte et nous vous la rendons prête à envoyer ; nous pourrons ainsi vous prévenir quand ce sera disponible.",
+    "signinFree": "Le compte est gratuit et la visionneuse reste gratuite.",
+    "signinLater": "Pas maintenant",
+    "signinCta": "Se connecter et envoyer",
+    "resumed": "Vous êtes connecté. Votre réponse est toujours là : vérifiez-la et envoyez-la.",
+    "nudgeOther": "Autre chose…",
+    "updateOne": "Votre demande « {{feature}} » : {{status}}.",
+    "updateMany": "Du nouveau sur {{count}} de vos demandes.",
+    "updateCta": "Voir"
   }
 }

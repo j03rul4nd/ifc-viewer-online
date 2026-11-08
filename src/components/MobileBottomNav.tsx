@@ -13,6 +13,9 @@ import { useSceneStore } from '../stores/sceneStore'
 import { useEditorStore } from '../stores/editorStore'
 import { haptic } from '../lib/haptics'
 import { LanguageSelector } from './LanguageSelector'
+import { MessageSquarePlus } from 'lucide-react'
+import { isAccountEnabled, openFeatureRequest } from '../stores/cloudAccountStore'
+import { isEmbedded } from '../lib/url-params'
 import * as Icons from './Icons'
 import { ToolGrid } from './mobile/ToolGrid'
 import type { RailItem } from './PanelRail'
@@ -263,6 +266,7 @@ export default function MobileBottomNav({
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
+  const { t: tPro } = useTranslation('pro')
 
   const {
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -459,6 +463,10 @@ export default function MobileBottomNav({
             {onGoHome && (
               <SheetBtn icon={<Icons.Chevron size={20} className="rotate-180" />} label={tComm('actions.home')}
                 onClick={() => { closeSheet(); onGoHome() }} />
+            )}
+            {isAccountEnabled() && !isEmbedded() && (
+              <SheetBtn icon={<MessageSquarePlus size={22} />} label={tPro('requests.entryButton')}
+                onClick={() => { closeSheet(); openFeatureRequest('mobile_more') }} />
             )}
           </div>
           <SheetDivider />

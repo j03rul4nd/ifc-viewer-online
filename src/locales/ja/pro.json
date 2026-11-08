@@ -233,8 +233,19 @@
     "tellUs": "状況を教えてください",
     "somethingElse": "ほかに足りないものは？ 教えてください",
     "nudgeTitle": "いちばん役立つものは？",
-    "nudgeBody": "質問はひとつ、10秒です。皆さんの声で次に作るものが決まります。",
+    "nudgeBody": "ひとつタップするだけ、10秒です。次に作るものが決まります。",
     "nudgeCta": "答える",
-    "nudgeDismiss": "閉じる"
+    "nudgeDismiss": "閉じる",
+    "entryButton": "提案する",
+    "signinTitle": "最後のステップ：ログインして送信",
+    "signinBody": "回答は保存されています。ログインまたはアカウントを作成すると、すぐ送信できる状態でお戻しします。提供開始時にお知らせもできます。",
+    "signinFree": "アカウントは無料で、ビューアーも引き続き無料です。",
+    "signinLater": "今はしない",
+    "signinCta": "ログインして送信",
+    "resumed": "ログインしました。回答はそのまま残っています。確認して送信してください。",
+    "nudgeOther": "その他…",
+    "updateOne": "リクエスト「{{feature}}」：{{status}}",
+    "updateMany": "{{count}} 件のリクエストに更新があります。",
+    "updateCta": "見る"
   }
 }

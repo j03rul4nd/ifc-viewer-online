@@ -65,6 +65,14 @@
 
 import posthog from 'posthog-js'
 import { sanitizeAnalyticsUrl, URL_PROPERTIES } from './analytics-url'
+import { noteFeedbackSignal, type UsageSignal } from './feedback-gate'
+
+/** Which product actions tell the feedback prompt what this person is doing. */
+const FEATURE_SIGNAL: Partial<Record<string, UsageSignal>> = {
+  bcf_import: 'bcf', bcf_export: 'bcf', bcf_create_topic: 'bcf',
+  report_export_json: 'exported', report_export_csv: 'exported', report_export_cert: 'exported', report_export_delivery: 'exported',
+  multi_model: 'multi_model', measurement: 'measured', takeoff: 'measured',
+}
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
@@ -350,6 +358,7 @@ export function trackValidationCompleted(props: {
   duration_ms:   number
   top_rule:      string | null
 }): void {
+  noteFeedbackSignal('validated')
   track('validation_completed', props)
 }
 
@@ -513,6 +522,7 @@ export function trackExportClicked(props: {
   model_count: number
   source?:     'export_modal' | 'toolbar' | 'batch_fix'
 }): void {
+  noteFeedbackSignal('exported')
   track('export_clicked', props)
 }
 
@@ -571,6 +581,8 @@ export function trackFeatureUsed(props: {
     | 'drawing_scan_slice'
     | 'drawing_compare'
 }): void {
+  const signal = FEATURE_SIGNAL[props.feature]
+  if (signal) noteFeedbackSignal(signal)
   track('feature_used', props)
 }
 
@@ -613,6 +625,7 @@ export function trackMapModeEnabled(props: {
   georef_status: 'unknown' | 'extracting' | 'found' | 'partial' | 'none' | 'invalid'
   source:        'ifc' | 'manual'
 }): void {
+  noteFeedbackSignal('map')
   track('map_mode_enabled', props)
 }
 
@@ -680,6 +693,7 @@ export function trackIdsCheckCompleted(props: {
   model_mb:      number
   model_schema:  string | null
 }): void {
+  noteFeedbackSignal('ids')
   track('ids_check_completed', props)
 }
 
@@ -767,6 +781,7 @@ export function trackFileOpenFailed(props: {
  * This is a distribution signal — someone is about to share the tool with a client.
  */
 export function trackShareReportClicked(): void {
+  noteFeedbackSignal('shared')
   track('share_report_clicked')
 }
 
@@ -849,12 +864,21 @@ export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): voi
  * processing, which does not exist yet. Size only — never the file name.
  */
 export function trackServerProcessingInterest(props: { file_size_mb: number }): void {
+  noteFeedbackSignal('large_file')
   track('server_processing_interest', props)
 }
 
 /** The "what would help you most" form opened. `source` = entry point, never PII. */
-export function trackFeatureRequestOpened(props: { source: string }): void {
+export function trackFeatureRequestOpened(props: { source: string; signed_in: boolean }): void {
   track('feature_request_opened', props)
+}
+
+/**
+ * An anonymous visitor picked an answer and pressed Send, before signing in.
+ * Counted even if they never sign in — the choice only, no text, no identity.
+ */
+export function trackFeatureRequestChosen(props: { feature: string; source: string; signed_in: boolean }): void {
+  track('feature_request_chosen', props)
 }
 
 /**
@@ -874,6 +898,16 @@ export function trackFeatureRequestSubmitted(props: {
   track('feature_request_submitted', props)
 }
 
+/** The in-viewer "what would help you most?" card: shown, an option chosen, or dismissed. */
+export function trackFeatureRequestNudge(props: { action: 'shown' | 'chosen' | 'dismissed'; options: string }): void {
+  track('feature_request_nudge', props)
+}
+
+/** A signed-in user was told one of their requests moved (status or reply). */
+export function trackFeatureRequestUpdateSeen(props: { count: number; opened: boolean }): void {
+  track('feature_request_update', props)
+}
+
 /** Fired client-side when the post-checkout entitlement poll confirms the plan. */
 export function trackCheckoutCompleted(props: { plan: 'pro' | 'org' }): void {
   track('checkout_completed', props)
@@ -885,6 +919,7 @@ export function trackCobieExported(props: {
   components: number
   spaces: number
 }): void {
+  noteFeedbackSignal('exported')
   track('cobie_exported', props)
 }
 
@@ -894,6 +929,7 @@ export function trackDeliveryReportGenerated(props: {
   warnings: number
   rules_evaluated: number
 }): void {
+  noteFeedbackSignal('exported')
   track('delivery_report_generated', props)
 }
 

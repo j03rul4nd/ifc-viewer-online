@@ -123,19 +123,8 @@ describe('request profile', () => {
 describe('requestsToCsv', () => {
   it('quotes and defuses formulas', () => {
     const csv = requestsToCsv([stored({ need: '=HYPERLINK("x")', today_tool: 'a, b' })])
-    expect(csv.startsWith('﻿created_at,email,')).toBe(true)
+    expect(csv.startsWith('\uFEFFcreated_at,email,')).toBe(true)
     expect(csv).toContain(`"'=HYPERLINK(""x"")"`)
     expect(csv).toContain('"a, b"')
-  })
-})
-
-describe('nudge pacing', () => {
-  afterEach(() => localStorage.clear())
-  it('is due the first time, then once a month', async () => {
-    const { requestNudgeDue, markRequestNudged, NUDGE_EVERY_MS } = await import('./feature-requests')
-    expect(requestNudgeDue(1_000)).toBe(true)
-    markRequestNudged(1_000)
-    expect(requestNudgeDue(1_000 + NUDGE_EVERY_MS - 1)).toBe(false)
-    expect(requestNudgeDue(1_000 + NUDGE_EVERY_MS)).toBe(true)
   })
 })

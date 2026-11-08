@@ -233,8 +233,19 @@
     "tellUs": "Erzähl uns deinen Fall",
     "somethingElse": "Fehlt dir etwas anderes? Sag es uns",
     "nudgeTitle": "Was würde dir am meisten helfen?",
-    "nudgeBody": "Eine Frage, 10 Sekunden. Was ihr uns sagt, entscheidet, was wir als Nächstes bauen.",
+    "nudgeBody": "Tippe eine Option an: 10 Sekunden. Das entscheidet, was wir als Nächstes bauen.",
     "nudgeCta": "Antworten",
-    "nudgeDismiss": "Schließen"
+    "nudgeDismiss": "Schließen",
+    "entryButton": "Vorschlagen",
+    "signinTitle": "Letzter Schritt: anmelden und senden",
+    "signinBody": "Deine Antwort ist gespeichert. Melde dich an oder erstelle ein Konto, dann bekommst du sie sendebereit zurück – und wir können dir sagen, wenn es verfügbar ist.",
+    "signinFree": "Das Konto ist kostenlos, und der Viewer bleibt kostenlos.",
+    "signinLater": "Jetzt nicht",
+    "signinCta": "Anmelden und senden",
+    "resumed": "Du bist angemeldet. Deine Antwort ist noch da: prüfen und senden.",
+    "nudgeOther": "Etwas anderes…",
+    "updateOne": "Dein Wunsch „{{feature}}“: {{status}}.",
+    "updateMany": "Neuigkeiten zu {{count}} deiner Wünsche.",
+    "updateCta": "Ansehen"
   }
 }

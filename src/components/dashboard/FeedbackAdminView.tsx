@@ -112,6 +112,14 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
   }
 
   const users = new Set(requests.map((r) => r.user_id)).size
+  // Which entry point brings requests (and which brings buying signals).
+  const sources = [...requests.reduce((m, r) => {
+    const key = (r.source || 'unknown').split(':')[0]
+    const row = m.get(key) ?? { total: 0, strong: 0 }
+    row.total++
+    if (hasStrongSignal(r)) row.strong++
+    return m.set(key, row)
+  }, new Map<string, { total: number; strong: number }>())].sort((a, b) => b[1].total - a[1].total)
   const strong = requests.filter(hasStrongSignal).length
   const w = SIGNAL_WEIGHTS
 
@@ -174,6 +182,13 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
             </div>
           )}
         </section>
+
+        {sources.length > 0 && (
+          <p className="text-[12px] mb-5 leading-relaxed" style={{ color: 'var(--text-faint)' }}>
+            <span style={{ color: 'var(--text-dim)' }}>Por origen: </span>
+            {sources.map(([k, v]) => `${k} ${v.total}${v.strong ? ` (${v.strong} con señal)` : ''}`).join(' · ')}
+          </p>
+        )}
 
         {/* ── Filters ───────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-1.5 mb-2">

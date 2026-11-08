@@ -233,8 +233,19 @@
     "tellUs": "Explica’ns el teu cas",
     "somethingElse": "Et falta una altra cosa? Digues-nos-ho",
     "nudgeTitle": "Què t’ajudaria més?",
-    "nudgeBody": "Una pregunta, 10 segons. El que ens digueu decideix el que construïm a continuació.",
+    "nudgeBody": "Toca una opció: 10 segons. Decideix el que construïm a continuació.",
     "nudgeCta": "Respondre",
-    "nudgeDismiss": "Tancar"
+    "nudgeDismiss": "Tancar",
+    "entryButton": "Suggerir",
+    "signinTitle": "Últim pas: entra per enviar-ho",
+    "signinBody": "La teva resposta està desada. Entra o crea el teu compte i te la tornem a punt per enviar; així et podrem avisar quan estigui disponible.",
+    "signinFree": "El compte és gratuït i el visor continua sent gratuït.",
+    "signinLater": "Ara no",
+    "signinCta": "Entrar i enviar",
+    "resumed": "Ja has entrat. La teva resposta continua aquí: revisa-la i envia-la.",
+    "nudgeOther": "Una altra cosa…",
+    "updateOne": "La teva petició «{{feature}}»: {{status}}.",
+    "updateMany": "Hi ha novetats en {{count}} de les teves peticions.",
+    "updateCta": "Veure"
   }
 }

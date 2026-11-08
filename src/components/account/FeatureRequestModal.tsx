@@ -1,6 +1,6 @@
 // ─── FeatureRequestModal ──────────────────────────────────────────────────────
-// "What would help you most?" for signed-in users. Built so answering is fast
-// and the answer is worth something:
+// "What would help you most?" Built so answering is fast and the answer is
+// worth something:
 //  · One tap + Send is a complete request. The options are the paid features on
 //    the roadmap (docs-planning 19/20) in the user's words, plus "something else".
 //  · "Tell us more" (optional, ~1 minute) asks what they DO, not what they would
@@ -8,18 +8,22 @@
 //    who holds the budget — and what they commit to: the beta, a 15-minute call.
 //  · "Your requests" shows what they asked for, our status and our reply, so the
 //    loop closes and asking again feels worth it.
+//  · Anonymous users (most of the traffic) answer first; only Send asks them to
+//    sign in. Their answer is kept across the sign-in and comes back ready to
+//    send. Even if they stop there, the choice is counted (anonymous analytics).
 //
 // CLERK-FREE (I-1): the token comes from cloudAccountStore.getToken().
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, ChevronDown, ChevronLeft } from 'lucide-react'
+import { CheckCircle2, ChevronDown, ChevronLeft, UserRound } from 'lucide-react'
 import { Modal } from '../Modal'
-import { useCloudAccountStore } from '../../stores/cloudAccountStore'
-import { trackFeatureRequestOpened, trackFeatureRequestSubmitted } from '../../lib/analytics'
+import { openAccountModal, useCloudAccountStore } from '../../stores/cloudAccountStore'
+import { trackFeatureRequestChosen, trackFeatureRequestOpened, trackFeatureRequestSubmitted } from '../../lib/analytics'
+import { markSeen, noteAnswered, savePendingDraft } from '../../lib/feedback-gate'
 import {
   NEED_MAX, OTHER_MIN, REQUEST_FEATURES, REQUEST_FREQUENCIES, REQUEST_PAYERS, REQUEST_ROLES, REQUEST_TEAMS, REQUEST_TODAY,
-  canSubmit, listMyFeatureRequests, loadRequestProfile, markRequestNudged, saveRequestProfile, submitFeatureRequest,
+  canSubmit, listMyFeatureRequests, loadRequestProfile, saveRequestProfile, submitFeatureRequest,
   type OwnFeatureRequest, type RequestFeature, type RequestFrequency, type RequestPayer, type RequestRole,
   type RequestTeam, type RequestToday, type SubmitError,
 } from '../../lib/feature-requests'
@@ -90,7 +94,12 @@ const STATUS_TONE: Record<string, string> = {
   building: 'var(--accent-2)', shipped: '#4caf82', declined: 'var(--text-faint)',
 }
 
-type View = 'form' | 'sent' | 'mine'
+type View = 'form' | 'signin' | 'sent' | 'mine'
+
+/** A preset value, only if it is one of the allowed answers. */
+function pick<T extends string>(v: unknown, allowed: readonly T[]): T | '' {
+  return allowed.includes(v as T) ? (v as T) : ''
+}
 
 export default function FeatureRequestModal() {
   const { t, i18n } = useTranslation('pro')
@@ -99,66 +108,97 @@ export default function FeatureRequestModal() {
   const setOpen = useCloudAccountStore((s) => s.setFeatureRequestOpen)
   const getToken = useCloudAccountStore((s) => s.getToken)
   const plan = useCloudAccountStore((s) => s.planCache?.plan ?? 'free')
+  const status = useCloudAccountStore((s) => s.status)
+  const signedIn = status === 'signed-in'
+  // Read once: the form is mounted per opening.
+  const [preset] = useState(() => useCloudAccountStore.getState().featureRequestPreset)
+  const d = (preset.detail ?? {}) as Record<string, unknown>
+  const profile = loadRequestProfile()
 
-  const [view, setView] = useState<View>('form')
-  const [feature, setFeature] = useState<RequestFeature | null>(() => featureFromSource(source))
-  const [need, setNeed] = useState('')
-  const [more, setMore] = useState(false)
-  const [frequency, setFrequency] = useState<RequestFrequency | ''>('')
-  const [today, setToday] = useState<RequestToday | ''>('')
-  const [todayTool, setTodayTool] = useState('')
-  const [payer, setPayer] = useState<RequestPayer | ''>('')
-  const [role, setRole] = useState<RequestRole | ''>(() => loadRequestProfile().role)
-  const [team, setTeam] = useState<RequestTeam | ''>(() => loadRequestProfile().team)
-  const [beta, setBeta] = useState(false)
-  const [call, setCall] = useState(false)
-  const [contactOk, setContactOk] = useState(false)
+  const [view, setView] = useState<View>(preset.view ?? 'form')
+  const [feature, setFeature] = useState<RequestFeature | null>(() => pick(preset.feature, REQUEST_FEATURES) || featureFromSource(source))
+  const [need, setNeed] = useState(preset.need ?? '')
+  const [frequency, setFrequency] = useState<RequestFrequency | ''>(pick(d.frequency, REQUEST_FREQUENCIES))
+  const [today, setToday] = useState<RequestToday | ''>(pick(d.today, REQUEST_TODAY))
+  const [todayTool, setTodayTool] = useState(typeof d.today_tool === 'string' ? d.today_tool : '')
+  const [payer, setPayer] = useState<RequestPayer | ''>(pick(d.payer, REQUEST_PAYERS))
+  const [role, setRole] = useState<RequestRole | ''>(pick(d.role, REQUEST_ROLES) || profile.role)
+  const [team, setTeam] = useState<RequestTeam | ''>(pick(d.team, REQUEST_TEAMS) || profile.team)
+  const [beta, setBeta] = useState(d.beta === true)
+  const [call, setCall] = useState(d.call === true)
+  const [contactOk, setContactOk] = useState(d.contact_ok === true)
+  const [more, setMore] = useState(Boolean(frequency || today || payer || beta || call))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<SubmitError | 'missing' | null>(null)
   const [mine, setMine] = useState<OwnFeatureRequest[] | null>(null)
   const [mineFailed, setMineFailed] = useState(false)
 
-  useEffect(() => { trackFeatureRequestOpened({ source }) }, [source])
+  useEffect(() => { trackFeatureRequestOpened({ source, signed_in: signedIn }) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadMine = async () => {
+  /** `seenAll`: they are looking at the list, so every status counts as seen;
+   *  otherwise only newly sent requests are remembered (for change notices). */
+  const loadMine = async (seenAll: boolean) => {
     const token = getToken ? await getToken() : null
     if (!token) return
     const res = await listMyFeatureRequests(token)
-    if (res.ok) { setMine(res.requests); setMineFailed(false) } else setMineFailed(true)
+    if (!res.ok) { setMineFailed(true); return }
+    setMine(res.requests)
+    setMineFailed(false)
+    markSeen(res.requests, { onlyNew: !seenAll })
   }
-  // Only to show "Your requests (n)"; cheap, and it is their own data.
-  useEffect(() => { void loadMine() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // The count for "Your requests"; cheap, and it is their own data.
+  useEffect(() => { if (signedIn) void loadMine(view === 'mine') }, [signedIn]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // App mounts this only while open, so every opening starts from a fresh form.
   const close = () => setOpen(false)
   const ready = canSubmit(feature, need)
 
+  const answers = () => ({
+    feature: feature as RequestFeature, need, frequency, today, today_tool: today === 'paid_tool' ? todayTool : '', payer, role, team,
+    beta, call, contact_ok: contactOk || beta || call, source,
+  })
+
+  /** Anonymous: keep everything they answered across the sign-in, then sign in. */
+  const continueToSignIn = () => {
+    savePendingDraft(answers())
+    setOpen(false)
+    openAccountModal()
+  }
+
   const submit = async () => {
     if (!canSubmit(feature, need)) { setError('missing'); return }
+    if (!signedIn) {
+      // Their choice counts even if they stop here (no text, no identity).
+      trackFeatureRequestChosen({ feature, source, signed_in: false })
+      setView('signin')
+      return
+    }
     setBusy(true)
     setError(null)
     const token = getToken ? await getToken() : null
     if (!token) { setBusy(false); setError('unauthorized'); return }
-    const draft = {
-      feature, need, frequency, today, today_tool: today === 'paid_tool' ? todayTool : '', payer, role, team,
-      beta, call, contact_ok: contactOk || beta || call, source, lang: i18n.language.slice(0, 8), plan,
-    }
+    const draft = { ...answers(), lang: i18n.language.slice(0, 8), plan }
     const res = await submitFeatureRequest(token, draft)
     setBusy(false)
     if (!res.ok) { setError(res.error); return }
     saveRequestProfile(role, team)
-    markRequestNudged()
+    noteAnswered()
     trackFeatureRequestSubmitted({
       feature, source, detailed: more, frequency, today, payer, beta, call,
     })
     setView('sent')
-    void loadMine()
+    void loadMine(false)
   }
 
   const ghostBtn = 'min-h-[36px] px-3 rounded-[8px] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] cursor-pointer'
   const primaryBtn = 'min-h-[36px] px-4 rounded-[8px] bg-[var(--accent)] text-white text-[13px] font-medium cursor-pointer'
 
-  const footer = view === 'form' ? (
+  const footer = view === 'signin' ? (
+    <>
+      <button onClick={close} className={ghostBtn}>{t('requests.signinLater')}</button>
+      <button onClick={continueToSignIn} className={`${primaryBtn} hover:brightness-110`}>{t('requests.signinCta')}</button>
+    </>
+  ) : view === 'form' ? (
     <>
       <button onClick={close} className={ghostBtn}>{t('requests.cancel')}</button>
       <button
@@ -175,7 +215,7 @@ export default function FeatureRequestModal() {
   )
 
   const mineLink = mine && mine.length > 0 && (
-    <button type="button" onClick={() => setView('mine')} className={`${view === 'sent' ? 'self-center' : 'self-start'} text-[12px] text-[var(--accent-2)] underline underline-offset-2 cursor-pointer`}>
+    <button type="button" onClick={() => { setView('mine'); void loadMine(true) }} className={`${view === 'sent' ? 'self-center' : 'self-start'} text-[12px] text-[var(--accent-2)] underline underline-offset-2 cursor-pointer`}>
       {t('requests.mineLink', { count: mine.length })}
     </button>
   )
@@ -189,6 +229,15 @@ export default function FeatureRequestModal() {
       size="md"
       footer={footer}
     >
+      {view === 'signin' && (
+        <div className="px-4 py-6 sm:px-5 flex flex-col items-center gap-3 text-center">
+          <UserRound aria-hidden size={28} className="text-[var(--accent-2)]" />
+          <p className="text-[14px] font-medium text-[var(--text)]">{t('requests.signinTitle')}</p>
+          <p className="max-w-[46ch] text-[13px] leading-relaxed text-[var(--text-dim)]">{t('requests.signinBody')}</p>
+          <p className="max-w-[46ch] text-[12px] text-[var(--text-faint)]">{t('requests.signinFree')}</p>
+        </div>
+      )}
+
       {view === 'sent' && (
         <div className="px-4 py-6 sm:px-5 flex flex-col items-center gap-3 text-center">
           <CheckCircle2 aria-hidden size={28} className="text-[var(--accent-2)]" />
@@ -233,6 +282,11 @@ export default function FeatureRequestModal() {
 
       {view === 'form' && (
         <form className="px-4 py-4 sm:px-5 flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+          {preset.resumed && signedIn && (
+            <p role="status" className="rounded-[8px] border border-[rgba(10,132,129,0.4)] bg-[rgba(10,132,129,0.1)] px-3 py-2 text-[12px] leading-relaxed text-[var(--text)]">
+              {t('requests.resumed')}
+            </p>
+          )}
           {mineLink}
 
           {/* ── The one required answer ─────────────────────────────────── */}

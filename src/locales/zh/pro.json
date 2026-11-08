@@ -233,8 +233,19 @@
     "tellUs": "说说你的情况",
     "somethingElse": "还缺别的？告诉我们",
     "nudgeTitle": "什么对你帮助最大？",
-    "nudgeBody": "一个问题，10 秒钟。你们的回答决定我们接下来做什么。",
+    "nudgeBody": "点一个选项，只需 10 秒。它决定我们接下来做什么。",
     "nudgeCta": "回答",
-    "nudgeDismiss": "关闭"
+    "nudgeDismiss": "关闭",
+    "entryButton": "提建议",
+    "signinTitle": "最后一步：登录后发送",
+    "signinBody": "你的回答已保存。登录或创建账户后，我们会把它原样还给你，一键发送；上线时也能通知你。",
+    "signinFree": "账户免费，查看器也一直免费。",
+    "signinLater": "暂不",
+    "signinCta": "登录并发送",
+    "resumed": "你已登录。你的回答还在：确认后发送即可。",
+    "nudgeOther": "其他…",
+    "updateOne": "你的需求“{{feature}}”：{{status}}",
+    "updateMany": "你有 {{count}} 条需求有新进展。",
+    "updateCta": "查看"
   }
 }

@@ -361,8 +361,19 @@
     "tellUs": "Tell us your case",
     "somethingElse": "Missing something else? Tell us",
     "nudgeTitle": "What would help you most?",
-    "nudgeBody": "One question, 10 seconds. What you tell us decides what we build next.",
+    "nudgeBody": "Tap one: 10 seconds. It decides what we build next.",
     "nudgeCta": "Answer",
-    "nudgeDismiss": "Close"
+    "nudgeDismiss": "Close",
+    "entryButton": "Suggest",
+    "signinTitle": "Last step: sign in to send it",
+    "signinBody": "Your answer is saved. Sign in or create your account and we bring it back ready to send, so we can tell you when it is available.",
+    "signinFree": "The account is free and the viewer stays free.",
+    "signinLater": "Not now",
+    "signinCta": "Sign in and send",
+    "resumed": "You are signed in. Your answer is still here: check it and send it.",
+    "nudgeOther": "Something else…",
+    "updateOne": "Your request “{{feature}}”: {{status}}.",
+    "updateMany": "There is news on {{count}} of your requests.",
+    "updateCta": "View"
   }
 }

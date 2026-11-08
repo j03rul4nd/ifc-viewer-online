@@ -233,8 +233,19 @@
     "tellUs": "Cuéntanos tu caso",
     "somethingElse": "¿Te falta otra cosa? Dínoslo",
     "nudgeTitle": "¿Qué te ayudaría más?",
-    "nudgeBody": "Una pregunta, 10 segundos. Lo que nos digáis decide lo próximo que construimos.",
+    "nudgeBody": "Toca una opción: 10 segundos. Decide lo próximo que construimos.",
     "nudgeCta": "Responder",
-    "nudgeDismiss": "Cerrar"
+    "nudgeDismiss": "Cerrar",
+    "entryButton": "Sugerir",
+    "signinTitle": "Último paso: entra para enviarlo",
+    "signinBody": "Tu respuesta está guardada. Entra o crea tu cuenta y te la devolvemos lista para enviar; así podremos avisarte cuando esté disponible.",
+    "signinFree": "La cuenta es gratis y el visor sigue siendo gratis.",
+    "signinLater": "Ahora no",
+    "signinCta": "Entrar y enviar",
+    "resumed": "Ya has entrado. Tu respuesta sigue aquí: revísala y envíala.",
+    "nudgeOther": "Otra cosa…",
+    "updateOne": "Tu petición «{{feature}}»: {{status}}.",
+    "updateMany": "Hay novedades en {{count}} de tus peticiones.",
+    "updateCta": "Ver"
   }
 }
