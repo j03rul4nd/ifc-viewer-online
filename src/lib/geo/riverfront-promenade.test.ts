@@ -61,6 +61,29 @@ describe('waterfront edge', () => {
     expect(lamps[0].style.furniture).toBe('street_lamp')
   })
 
+  it('stands on the bank itself, not a fixed half-width out from the path', () => {
+    // The footway runs ~9.5 m back from the river wall at lon 121.4900.
+    const f = parseOsmFeatures({ elements: [river, footway(11, 121.4899)] })
+    const railing = f.find((x) => x.id === 'w11-railing')!
+    const kLon = 111_320 * Math.cos((31.24 * Math.PI) / 180)
+    for (const p of railing.ring!) {
+      const inland = (121.4900 - p.lon) * kLon
+      expect(inland).toBeGreaterThan(0.1) // never over the water
+      expect(inland).toBeLessThan(0.6) // on the coping, not out on the paving
+    }
+  })
+
+  it('runs straight on past a vertex where the path turns away from the water', () => {
+    // Mid-way the footway swings 25 m inland: no bank in reach there.
+    const bend = { type: 'way', id: 12, tags: { highway: 'footway' }, geometry: [
+      { lat: 31.238, lon: 121.4899 }, { lat: 31.2385, lon: 121.4897 }, { lat: 31.239, lon: 121.4899 },
+      { lat: 31.240, lon: 121.4899 }, { lat: 31.242, lon: 121.4899 },
+    ] }
+    const railing = parseOsmFeatures({ elements: [river, bend] }).find((x) => x.id === 'w12-railing')!
+    const kLon = 111_320 * Math.cos((31.24 * Math.PI) / 180)
+    for (const p of railing.ring!) expect((121.4900 - p.lon) * kLon).toBeLessThan(0.6)
+  })
+
   it('gives no railing to a promenade path back from the edge', () => {
     const f = parseOsmFeatures({ elements: [river, footway(10, 121.4895)] })
     expect(f.some((x) => x.id.startsWith('promenade-'))).toBe(true)

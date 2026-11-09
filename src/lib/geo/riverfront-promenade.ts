@@ -36,6 +36,25 @@ function distanceToRingM(p: LatLonPoint, ring: ReadonlyArray<LatLonPoint>): numb
   return best
 }
 
+/** The point of a ring's outline nearest to `p`, and how far it is, metres. */
+function nearestOnRing(p: LatLonPoint, ring: ReadonlyArray<LatLonPoint>): { point: LatLonPoint; d: number } {
+  const kLon = K_LAT * Math.cos((p.lat * Math.PI) / 180)
+  let best = { x: 0, y: 0, d: Infinity }
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const ax = (ring[j].lon - p.lon) * kLon, ay = (ring[j].lat - p.lat) * K_LAT
+    const bx = (ring[i].lon - p.lon) * kLon, by = (ring[i].lat - p.lat) * K_LAT
+    const dx = bx - ax, dy = by - ay
+    const l2 = dx * dx + dy * dy
+    const t = l2 > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2)) : 0
+    const x = ax + t * dx, y = ay + t * dy, d = Math.hypot(x, y)
+    if (d < best.d) best = { x, y, d }
+  }
+  return { point: { lat: p.lat + best.y / K_LAT, lon: p.lon + best.x / kLon }, d: best.d }
+}
+
+/** How far inland of the water's edge the railing stands, metres: on the coping, not over the river. */
+export const RAILING_SETBACK_M = 0.3
+
 function isOpenWater(f: OsmFeature): boolean {
   return f.kind === 'water' && !!f.ring && f.ring.length >= 3
     && (f.isSea === true || !!f.waterCourse || f.style.waterRegime === 'flowing')
@@ -245,17 +264,6 @@ export const EDGE_REACH_M = 15
 /** Spacing of the lamps along a waterfront edge, metres. */
 export const LAMP_SPACING_M = 25
 
-/** The polyline moved sideways by `offsetM` metres (positive to the left of travel). */
-function offsetLine(pts: ReadonlyArray<LatLonPoint>, offsetM: number): LatLonPoint[] {
-  return pts.map((p, i) => {
-    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)]
-    const kLon = K_LAT * Math.cos((p.lat * Math.PI) / 180)
-    const dx = (b.lon - a.lon) * kLon, dy = (b.lat - a.lat) * K_LAT
-    const len = Math.hypot(dx, dy) || 1
-    return { lat: p.lat + (dx / len) * offsetM / K_LAT, lon: p.lon - (dy / len) * offsetM / kLon }
-  })
-}
-
 function pointsAlong(pts: ReadonlyArray<LatLonPoint>, stepM: number): LatLonPoint[] {
   const out: LatLonPoint[] = []
   let carry = stepM / 2
@@ -292,9 +300,28 @@ export function waterfrontEdge(
     if (!source.ring || source.ring.length < 2) continue
     const mid = source.ring[Math.floor(source.ring.length / 2)]
     if (near(mid) > EDGE_REACH_M) continue
-    const left = offsetLine(source.ring, PROMENADE_WIDTH_M / 2)
-    const right = offsetLine(source.ring, -PROMENADE_WIDTH_M / 2)
-    const edge = near(left[Math.floor(left.length / 2)]) < near(right[Math.floor(right.length / 2)]) ? left : right
+    // ON THE BANK, not a fixed half-width out from the path. The footway is
+    // a centreline, and the river wall is wherever it is: drawn at a constant
+    // offset, the railing stood metres back on the paving where the path runs
+    // inland of the wall, and out over the water where it hugs it. Each vertex
+    // goes to the nearest point of the water's outline, set back onto the
+    // coping. The paving already ends at that same outline (unionRings).
+    // A vertex where the path turns away from the water has no bank in reach;
+    // kept, it pulled the rail 17 m inland and back (measured on the Bund).
+    // Dropped, the rail runs straight on between its neighbours on the bank.
+    const edge: LatLonPoint[] = []
+    for (const p of source.ring) {
+      let hit = { point: p, d: Infinity }
+      for (const w of water) {
+        const h = nearestOnRing(p, w.ring!)
+        if (h.d < hit.d) hit = h
+      }
+      if (hit.d > EDGE_REACH_M) continue
+      if (hit.d <= RAILING_SETBACK_M) { edge.push(p); continue }
+      const k = RAILING_SETBACK_M / hit.d
+      edge.push({ lat: hit.point.lat + (p.lat - hit.point.lat) * k, lon: hit.point.lon + (p.lon - hit.point.lon) * k })
+    }
+    if (edge.length < 2) continue
     out.push({ id: `${source.id}-railing`, kind: 'barrier', ring: edge, height: flat, style: styles.railing, widthM: 0.08 })
     pointsAlong(edge, LAMP_SPACING_M).forEach((point, k) => out.push({
       id: `${source.id}-lamp-${k}`, kind: 'furniture', point, height: flat, style: styles.lamp,
