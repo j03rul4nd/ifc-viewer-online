@@ -55,7 +55,7 @@
     .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
     .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
     .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(10,132,129,0.16), transparent 70%); }
-    .badge { display: inline-block; background: rgba(10,132,129,0.1); border: 1px solid rgba(10,132,129,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    .badge { display: inline-block; background: rgba(10,132,129,0.1); border: 1px solid rgba(10,132,129,0.25); border-radius: 100px; padding: 5px 14px; font-size: 13px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
     h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
     .accent { color: #55CAC3; }
     .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
@@ -85,16 +85,48 @@
     .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
     .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
     .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
-    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 24px 0; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
     footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
     footer a:hover { color: rgba(255,255,255,0.7); }
   </style>
+  <style data-landing-chrome>
+.lc-top{position:sticky;top:0;z-index:50;background:#100f0c;border-bottom:1px solid #34332e}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:#ecebe7;font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:#b2b1ab;font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:#ecebe7}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:#0a8481;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid #55cac3;outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid #34332e;background:#100f0c;padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:#ecebe7;font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:#b2b1ab;font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid #34332e;border-radius:10px;background:#181714;text-decoration:none}
+.lc-next li a:hover{border-color:#b2b1ab}
+.lc-next .lc-n{color:#55cac3;font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:#ecebe7;font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:#b2b1ab;font-size:14px;line-height:1.5}
+footer a,footer p,footer span,footer li{color:#94928d!important}
+footer a:hover{color:#ecebe7!important}
+
+</style>
 </head>
 <body>
-  <header>
-    <div class="container header-inner">
-      <a href="/es/" class="logo">IFC Viewer Online</a>
-      <a href="/msp-global/?open=agv" class="nav-cta">Demo en vivo →</a>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/es/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="Menú principal">
+        <a href="/es/">Visor</a>
+        <a href="/es/ejemplos-visor-ifc/">Ejemplos</a>
+        <a href="/es/fix/">Guías de corrección</a>
+        <a href="/es/blog/">Blog</a>
+        <a href="/es/precios/">Precios</a>
+      </nav>
+      <a href="/es/" class="lc-btn">Abrir el visor</a>
     </div>
   </header>
   <main>
@@ -157,6 +189,17 @@
       </div>
     </section>
   </main>
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">Siguiente paso</h2>
+      <p class="lc-lead">Gratis, en tu navegador. No se sube nada.</p>
+      <ol>
+        <li><a href="/es/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>Abre un modelo de ejemplo</strong><span>Mira el Health Score y las reglas que fallan en un IFC real en menos de un minuto.</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>Crea una cuenta gratuita</strong><span>Guarda tus comprobaciones y comparte el informe con tu equipo o tu cliente.</span></a></li>
+        <li><a href="/es/precios/"><span class="lc-n">3</span><strong>Compara los planes</strong><span>Pro, Team y recepción de modelos para quien recibe las entregas.</span></a></li>
+      </ol>
+    </div>
+  </section>
   <footer>
     <div class="container">
       <nav>

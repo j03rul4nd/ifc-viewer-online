@@ -193,7 +193,7 @@
   "openSource": {
     "label": "开源",
     "title": "公开构建，永久免费",
-    "body": "源代码在 GitHub 上。使用 @thatopen/components、three.js、web-ifc 和 React 构建。如果您需要定制的 BIM Web 查看器、验证器或 IFC 工具 — 作者可提供合同工作。"
+    "body": "源代码在 GitHub 上。使用 @thatopen/components、three.js、web-ifc 和 React 构建。"
   },
   "finalCta": {
     "title": "立即打开 IFC。",
