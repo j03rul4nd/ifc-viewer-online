@@ -143,3 +143,36 @@ export function distanceToRing(
   }
   return out
 }
+
+/**
+ * Of the fractions `ts` along a run (sorted, inside (0, 1)), the ones where the
+ * ground actually bends: Douglas–Peucker on the height profile, ends fixed.
+ *
+ * The terrain cuts were uniform, one per terrain cell, whatever the ground did
+ * between: a dead-flat street was cut every 9.5 m, and over Lujiazui the road
+ * layer reached a million vertices. A cut is kept only where a straight line
+ * between its kept neighbours would miss the ground by more than `tolM`, so a
+ * hill keeps every cut it needs and a flat street keeps none.
+ */
+export function groundCuts(
+  ts: ReadonlyArray<number>, heightAt: (t: number) => number, tolM: number,
+): number[] {
+  if (ts.length === 0) return []
+  const t = [0, ...ts, 1]
+  const h = t.map(heightAt)
+  const keep = new Uint8Array(t.length)
+  keep[0] = 1
+  keep[t.length - 1] = 1
+  const stack: Array<[number, number]> = [[0, t.length - 1]]
+  while (stack.length > 0) {
+    const [a, b] = stack.pop()!
+    let worst = -1, wd = tolM
+    for (let i = a + 1; i < b; i++) {
+      const line = h[a] + ((h[b] - h[a]) * (t[i] - t[a])) / (t[b] - t[a])
+      const d = Math.abs(h[i] - line)
+      if (d > wd) { wd = d; worst = i }
+    }
+    if (worst >= 0) { keep[worst] = 1; stack.push([a, worst], [worst, b]) }
+  }
+  return t.filter((_, i) => keep[i] && i > 0 && i < t.length - 1)
+}

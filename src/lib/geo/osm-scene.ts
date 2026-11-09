@@ -50,7 +50,7 @@ import {
   type SeedRegion, type SeededTree,
 } from './tree-seeding'
 import {
-  subdivideMesh, distanceToRing, longestEdge, type Vec2, type Face,
+  subdivideMesh, distanceToRing, longestEdge, groundCuts, type Vec2, type Face,
 } from './surface-tessellation'
 import { applyGroundDepthNudge } from './ground-depth-nudge'
 import { compassRose, inlayCircle, splitTriangle, islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving } from './plaza-paving'
@@ -221,6 +221,13 @@ const PAVED_AREA_EDGE_M = 8
  * in the scene already does.
  */
 const PAVED_AREA_SPARE_POINTS = 600
+
+/**
+ * How far a road may leave the ground between two cuts, metres, before a cut
+ * is spent there. Under the ribbon's own lift above the terrain, so the ground
+ * never shows through it.
+ */
+export const ROAD_GROUND_TOL_M = 0.03
 
 /**
  * Vertex ceiling per layer. Reached only by something like a forest covering
@@ -1811,8 +1818,12 @@ function* linearLayerSteps(
    */
   const cutsFor = (a: THREE.Vector2, b: THREE.Vector2): number[] => {
     const terrainSteps = stepsFor(a.distanceTo(b))
-    const uniform: number[] = []
-    for (let s = 1; s < terrainSteps; s++) uniform.push(s / terrainSteps)
+    const every: number[] = []
+    for (let s = 1; s < terrainSteps; s++) every.push(s / terrainSteps)
+    // Only the cuts where the ground bends (surface-tessellation, groundCuts).
+    const uniform = frame.hasTerrain
+      ? groundCuts(every, (t) => frame.groundM(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t), ROAD_GROUND_TOL_M)
+      : every
     if (!activeProfile) return uniform
 
     const s0 = activeProfile.stationAt(a.x, a.y)
