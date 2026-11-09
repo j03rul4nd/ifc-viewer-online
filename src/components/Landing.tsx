@@ -219,6 +219,7 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 // the site root. Mirrors LANG_PATH in scripts/seo/generate-fix-pages.ts.
 import { validatorPath, solibriPath, toolLandings } from '../lib/localized-landings'
 import { isPricingPreview } from '../lib/pricing/pricing-preview'
+import { pricingPath } from '../lib/pricing/pricing-paths'
 
 // Team-only until launch: its own chunk, never fetched by real visitors.
 const PricingSection = React.lazy(() => import('./pricing/PricingSection'))
@@ -464,7 +465,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >Blog</a>
             {/* Public pricing page (static, crawlable): plans and their waitlists. */}
             <a
-              href={`${import.meta.env.BASE_URL}pricing/`}
+              href={`${import.meta.env.BASE_URL}${pricingPath(langShort).slice(1)}`}
               onClick={() => trackProEntryClick({ source: 'landing' })}
               className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.pricing')}</a>
@@ -489,7 +490,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           {/* Mobile: Blog + Pricing + GitHub icon + theme toggle + language selector + primary CTA */}
           <div className="flex md:hidden items-center gap-2">
             <a
-              href={`${import.meta.env.BASE_URL}pricing/`}
+              href={`${import.meta.env.BASE_URL}${pricingPath(langShort).slice(1)}`}
               onClick={() => trackProEntryClick({ source: 'landing' })}
               className="text-[12px] font-medium text-[var(--text-dim)] px-1 py-1 no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.pricing')}</a>
