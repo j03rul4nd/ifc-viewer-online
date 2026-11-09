@@ -193,7 +193,7 @@
   "openSource": {
     "label": "オープンソース",
     "title": "公開で構築、永久に無料",
-    "body": "ソースコードは GitHub 上にあります。@thatopen/components、three.js、web-ifc、React を使用して構築されています。カスタム BIM Web ビューアー、バリデーター、または IFC ツールが必要な場合は、作者に契約作業の依頼が可能です。"
+    "body": "ソースコードは GitHub 上にあります。@thatopen/components、three.js、web-ifc、React を使用して構築されています。"
   },
   "finalCta": {
     "title": "今すぐ IFC を開く。",

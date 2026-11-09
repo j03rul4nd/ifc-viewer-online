@@ -193,7 +193,7 @@
   "openSource": {
     "label": "CODI OBERT",
     "title": "Construït en públic, gratuït per sempre",
-    "body": "El codi font és a GitHub. Construït amb @thatopen/components, three.js, web-ifc i React. Si necessites un visualitzador web BIM personalitzat, validador o eines IFC — l'autor està disponible per a treballs per contracte."
+    "body": "El codi font és a GitHub. Construït amb @thatopen/components, three.js, web-ifc i React."
   },
   "finalCta": {
     "title": "Obre un IFC ara.",

@@ -61,11 +61,22 @@ export default function CountUp({
   const motionVal = useMotionValue(from)
   const springVal = useSpring(motionVal, { stiffness, damping, restDelta: 0.001 })
 
-  const [display, setDisplay] = useState(from)
+  // Show the real number from the first paint (no "0 rules" before JS runs or
+  // while off screen); count up from `from` only once it is seen, and never
+  // when the reader asked for reduced motion.
+  const [display, setDisplay] = useState(to)
+  const played = useRef(false)
 
   useEffect(() => {
-    if (isInView) motionVal.set(to)
-  }, [isInView, motionVal, to])
+    if (!isInView || played.current) return
+    played.current = true
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce || from === to) { setDisplay(to); return }
+    motionVal.jump(from)
+    springVal.jump(from)
+    setDisplay(from)
+    motionVal.set(to)
+  }, [isInView, motionVal, springVal, from, to])
 
   useEffect(() => {
     return springVal.on('change', (v) => setDisplay(v))

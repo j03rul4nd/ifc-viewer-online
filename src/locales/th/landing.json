@@ -193,7 +193,7 @@
   "openSource": {
     "label": "โอเพนซอร์ส",
     "title": "สร้างสาธารณะ ฟรีตลอดไป",
-    "body": "ซอร์สโค้ดอยู่บน GitHub สร้างด้วย @thatopen/components, three.js, web-ifc และ React หากคุณต้องการ BIM web viewer, ตัวตรวจสอบ หรือเครื่องมือ IFC แบบกำหนดเอง — ผู้เขียนพร้อมรับงานสัญญา"
+    "body": "ซอร์สโค้ดอยู่บน GitHub สร้างด้วย @thatopen/components, three.js, web-ifc และ React"
   },
   "finalCta": {
     "title": "เปิด IFC ตอนนี้",

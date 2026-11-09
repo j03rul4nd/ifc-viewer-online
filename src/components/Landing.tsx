@@ -29,6 +29,8 @@ import ShinyText     from './reactbits/ShinyText'
 import TextType      from './reactbits/TextType'
 import DecryptedText from './reactbits/DecryptedText'
 import CountUp       from './reactbits/CountUp'
+import ProfilePaths  from './landing/ProfilePaths'
+import { HOME_COPY, PRIMARY_FEATURES, homeLang } from './landing/home-copy'
 import LineWaves     from './reactbits/LineWaves'
 import StarBorder    from './reactbits/StarBorder'
 import BorderGlow    from './reactbits/BorderGlow'
@@ -545,11 +547,10 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             initial="hidden"
             animate="show"
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="font-semibold tracking-[-0.035em] leading-[1.04] mb-4 sm:mb-5 max-w-[900px] mx-auto"
-            style={{ fontSize: 'clamp(36px, 9vw, 82px)' }}
+            className="font-semibold tracking-[-0.03em] leading-[1.08] mb-4 sm:mb-5 max-w-[900px] mx-auto text-balance"
+            style={{ fontSize: 'clamp(30px, 6.4vw, 60px)' }}
           >
-            IFC Viewer{' '}
-            <span className="text-[var(--text-dim)]">Online</span>
+            {HOME_COPY[homeLang(langShort)].h1}
           </motion.h1>
 
           {/* TextType cycling tagline */}
@@ -733,11 +734,13 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 stiffness={s.stiffness}
                 damping={22}
                 numberClassName={`text-[38px] sm:text-[52px] font-semibold tracking-[-0.04em] ${s.numCls || 'text-[var(--text)]'}`}
-                labelClassName="text-[11.5px] sm:text-[13px] text-[var(--text-faint)] mt-1 tracking-[0.02em]"
+                labelClassName="text-[13px] text-[var(--text-faint)] mt-1 tracking-[0.02em]"
               />
             ))}
           </div>
         </section>
+
+        <ProfilePaths lang={langShort} onLaunch={onLaunch} />
 
         {/* ── Privacy & Security ── */}
         <section
@@ -843,7 +846,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             className="lp-card-grid grid border border-[var(--border)] rounded-xl sm:rounded-2xl overflow-hidden"
             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}
           >
-            {FEATURES.map((f, i) => (
+            {PRIMARY_FEATURES.map((idx) => FEATURES[idx]).filter(Boolean).map((f, i) => (
               <BorderGlow
                 key={i}
                 backgroundColor={landingTheme === 'light' ? '#FFFFFF' : '#18181f'}
@@ -894,10 +897,20 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       encryptedClassName="text-[var(--text-faint)]"
                     />
                   </div>
-                  <div className="text-[12.5px] sm:text-[13px] text-[var(--text-dim)] leading-[1.55]">{f.body}</div>
+                  <div className="text-[13px] sm:text-[14px] text-[var(--text-dim)] leading-[1.55]">{f.body}</div>
                 </motion.div>
               </BorderGlow>
             ))}
+          </div>
+
+          {/* The rest, without competing with the six above. */}
+          <div className="mt-8 sm:mt-10 text-center">
+            <h3 className="text-[13px] font-medium text-[var(--text-dim)] m-0 mb-3">{HOME_COPY[homeLang(langShort)].moreFeatures}</h3>
+            <ul className="list-none m-0 p-0 flex flex-wrap justify-center gap-2" data-testid="more-features">
+              {FEATURES.filter((_, i) => !(PRIMARY_FEATURES as readonly number[]).includes(i)).map((f) => (
+                <li key={f.title} className="text-[13px] text-[var(--text-dim)] px-3 py-1.5 rounded-full border border-[var(--border)]" title={f.body}>{f.title}</li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -1201,13 +1214,6 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       {GITHUB_SVG}
                       {t('actions.viewSourceOnGithub')}
                     </a>
-                    <a
-                      href="mailto:joelbenitezdonari@gmail.com"
-                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
-                      aria-label="Contact for custom BIM development"
-                    >
-                      {t('actions.contactForWork')}
-                    </a>
                   </div>
                 </div>
               </div>
@@ -1246,13 +1252,6 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   >
                     {GITHUB_SVG}
                     {t('actions.viewSourceOnGithub')}
-                  </a>
-                  <a
-                    href="mailto:joelbenitezdonari@gmail.com"
-                    className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
-                    aria-label="Contact for custom BIM development"
-                  >
-                    {t('actions.contactForWork')}
                   </a>
                 </div>
               </>
