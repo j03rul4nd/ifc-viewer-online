@@ -270,5 +270,48 @@
       "measured": "Hai preso delle misure.",
       "validated": "Il tuo modello è validato."
     }
+  },
+  "call": {
+    "back": "Torna al visualizzatore",
+    "title": "{{minutes}} minuti per parlare del tuo caso",
+    "intro": "Sono Joel e sviluppo IFC Viewer Online. Non è una demo né una chiamata commerciale: voglio vedere come lavori per costruire bene quello che mi hai chiesto.",
+    "point1": "Mi racconti l’ultima volta che ti è servito e cosa hai fatto.",
+    "point2": "Se vuoi, condividi lo schermo con il modello o la consegna.",
+    "point3": "Ti dico cosa posso fare e quando, senza impegno.",
+    "signin": "Accedi per scegliere un orario, così so di quale richiesta parliamo.",
+    "signinCta": "Accedi",
+    "loadError": "Non sono riuscito a caricare gli orari. Riprova tra un momento.",
+    "retry": "Riprova",
+    "noSlots": "Non ho più posti liberi nelle prossime due settimane. Scrivimi e troviamo un altro momento:",
+    "pickDay": "Giorno",
+    "pickTime": "Ora",
+    "zone": "Orari nel tuo fuso ({{zone}}).",
+    "email": "Ti mando l’invito a",
+    "note": "Qualcosa che devo sapere prima?",
+    "optional": "(facoltativo)",
+    "notePlaceholder": "Per esempio: ogni settimana consegno modelli a uno studio di ingegneria e il cliente non ha Revit.",
+    "error": {
+      "unauthorized": "La sessione è scaduta. Accedi di nuovo.",
+      "slot_gone": "Qualcuno ha appena preso quell’orario. Scegline un altro.",
+      "already_booked": "Hai già una chiamata prenotata.",
+      "email": "Controlla l’email.",
+      "rate_limited": "Troppi tentativi. Aspetta un minuto.",
+      "unavailable": "Non è stato possibile salvare. Riprova.",
+      "network": "Nessuna connessione. Riprova."
+    },
+    "booking": "Prenotazione…",
+    "confirm": "Scegli un orario",
+    "confirmAt": "Prenota alle {{when}}",
+    "bookedLabel": "Chiamata prenotata",
+    "bookedMeta": "{{minutes}} min · videochiamata · ora di {{zone}}",
+    "join": "Entra dal browser, senza installare nulla:",
+    "mailed": "Ti ho mandato l’invito a {{email}}.",
+    "notMailed": "Salvala nel calendario con uno di questi pulsanti; il link sopra è quello della chiamata.",
+    "mailedEarlier": "L’invito va a {{email}}. Se non lo trovi, salvalo qui:",
+    "addIcs": "Scarica .ics",
+    "changeHint": "Non ti va più bene? Annullala e scegli un altro orario.",
+    "cancel": "Annulla la chiamata",
+    "footer": "Preferisci scrivermi?",
+    "eventTitle": "Chiamata con Joel (IFC Viewer Online)"
   }
 }

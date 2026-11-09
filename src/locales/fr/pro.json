@@ -270,5 +270,48 @@
       "measured": "Vous avez pris des mesures.",
       "validated": "Votre maquette est validée."
     }
+  },
+  "call": {
+    "back": "Retour à la visionneuse",
+    "title": "{{minutes}} minutes pour parler de votre cas",
+    "intro": "Je suis Joel et je développe IFC Viewer Online. Ce n’est ni une démo ni un appel commercial : je veux voir comment vous travaillez pour bien construire ce que vous avez demandé.",
+    "point1": "Vous me racontez la dernière fois où vous en avez eu besoin et ce que vous avez fait.",
+    "point2": "Si vous voulez, vous partagez l’écran avec la maquette ou le livrable.",
+    "point3": "Je vous dis ce que je peux faire et quand, sans engagement.",
+    "signin": "Connectez-vous pour choisir un créneau : je saurai de quelle demande on parle.",
+    "signinCta": "Se connecter",
+    "loadError": "Impossible de charger les créneaux. Réessayez dans un instant.",
+    "retry": "Réessayer",
+    "noSlots": "Je n’ai plus de créneaux sur les deux prochaines semaines. Écrivez-moi et on trouve un autre moment :",
+    "pickDay": "Jour",
+    "pickTime": "Heure",
+    "zone": "Heures dans votre fuseau ({{zone}}).",
+    "email": "J’envoie l’invitation à",
+    "note": "Quelque chose à savoir avant ?",
+    "optional": "(facultatif)",
+    "notePlaceholder": "Par exemple : j’envoie des maquettes à un bureau d’études chaque semaine et le client n’a pas Revit.",
+    "error": {
+      "unauthorized": "Votre session a expiré. Reconnectez-vous.",
+      "slot_gone": "Quelqu’un vient de prendre ce créneau. Choisissez-en un autre.",
+      "already_booked": "Vous avez déjà un appel réservé.",
+      "email": "Vérifiez l’adresse e-mail.",
+      "rate_limited": "Trop d’essais. Attendez une minute.",
+      "unavailable": "Enregistrement impossible. Réessayez.",
+      "network": "Pas de connexion. Réessayez."
+    },
+    "booking": "Réservation…",
+    "confirm": "Choisissez une heure",
+    "confirmAt": "Réserver à {{when}}",
+    "bookedLabel": "Appel réservé",
+    "bookedMeta": "{{minutes}} min · visio · heure de {{zone}}",
+    "join": "Rejoignez depuis le navigateur, rien à installer :",
+    "mailed": "Je vous ai envoyé l’invitation à {{email}}.",
+    "notMailed": "Ajoutez-la à votre agenda avec l’un de ces boutons ; le lien ci-dessus est celui de l’appel.",
+    "mailedEarlier": "L’invitation part à {{email}}. Si vous ne la trouvez pas, enregistrez-la ici :",
+    "addIcs": "Télécharger le .ics",
+    "changeHint": "Un empêchement ? Annulez et choisissez un autre créneau.",
+    "cancel": "Annuler l’appel",
+    "footer": "Vous préférez m’écrire ?",
+    "eventTitle": "Appel avec Joel (IFC Viewer Online)"
   }
 }

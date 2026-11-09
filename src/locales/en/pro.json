@@ -398,5 +398,48 @@
       "measured": "You have been measuring.",
       "validated": "Your model is validated."
     }
+  },
+  "call": {
+    "back": "Back to the viewer",
+    "title": "{{minutes}} minutes to talk about your case",
+    "intro": "I'm Joel and I build IFC Viewer Online. This isn't a demo or a sales call: I want to see how you work so I build what you asked for properly.",
+    "point1": "Tell me about the last time you needed it and what you did.",
+    "point2": "If you like, share your screen with the model or the deliverable.",
+    "point3": "I'll tell you what I can do and when. No strings.",
+    "signin": "Sign in to pick a time, so I know which request we are talking about.",
+    "signinCta": "Sign in",
+    "loadError": "I couldn't load the times. Try again in a moment.",
+    "retry": "Try again",
+    "noSlots": "I'm out of slots for the next two weeks. Write to me and we'll find another time:",
+    "pickDay": "Day",
+    "pickTime": "Time",
+    "zone": "Times in your zone ({{zone}}).",
+    "email": "Send the invite to",
+    "note": "Anything I should know first?",
+    "optional": "(optional)",
+    "notePlaceholder": "For example: I send models to an engineering firm every week and the client doesn't have Revit.",
+    "error": {
+      "unauthorized": "Your session expired. Sign in again.",
+      "slot_gone": "Someone just took that time. Pick another.",
+      "already_booked": "You already have a call booked.",
+      "email": "Check the email address.",
+      "rate_limited": "Too many tries. Wait a minute.",
+      "unavailable": "Couldn't save it. Try again.",
+      "network": "No connection. Try again."
+    },
+    "booking": "Booking…",
+    "confirm": "Pick a time",
+    "confirmAt": "Book {{when}}",
+    "bookedLabel": "Call booked",
+    "bookedMeta": "{{minutes}} min · video call · {{zone}} time",
+    "join": "Join from your browser, nothing to install:",
+    "mailed": "I've sent the invite to {{email}}.",
+    "notMailed": "Save it to your calendar with one of these buttons; the link above is the call.",
+    "mailedEarlier": "The invite goes to {{email}}. If you can't find it, save it here:",
+    "addIcs": "Download .ics",
+    "changeHint": "Doesn't suit you anymore? Cancel it and pick another time.",
+    "cancel": "Cancel the call",
+    "footer": "Rather write to me?",
+    "eventTitle": "Call with Joel (IFC Viewer Online)"
   }
 }

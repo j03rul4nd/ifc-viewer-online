@@ -310,7 +310,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'sketch' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'feedbackAdmin' | 'workspace' | 'plans'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'sketch' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'feedbackAdmin' | 'call' | 'workspace' | 'plans'
 }): void {
   track('route_changed', props)
 }
@@ -906,7 +906,7 @@ export function trackFeatureRequestSubmitted(props: {
  * an answer to Joel's reply, the call booking link.
  */
 export function trackFeatureRequestStep(props: {
-  step: 'signin_shown' | 'signin_continue' | 'signin_later' | 'resumed' | 'answered' | 'booking_opened'
+  step: 'signin_shown' | 'signin_continue' | 'signin_later' | 'resumed' | 'answered' | 'booking_opened' | 'call_booked' | 'call_cancelled'
   feature?: string
   source?: string
 }): void {

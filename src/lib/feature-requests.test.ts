@@ -35,7 +35,7 @@ describe('canSubmit', () => {
 describe('submitFeatureRequest', () => {
   it('posts the trimmed draft with the bearer token', async () => {
     const f = vi.fn(async () => json(200, { ok: true }))
-    expect(await submitFeatureRequest('tok', draft, f as unknown as typeof fetch)).toEqual({ ok: true })
+    expect(await submitFeatureRequest('tok', draft, f as unknown as typeof fetch)).toMatchObject({ ok: true })
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('/api/requests')
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok')

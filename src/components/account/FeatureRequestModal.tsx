@@ -33,7 +33,9 @@ import {
 } from '../../lib/feature-requests'
 
 /** A calendar booking page for the 15-minute call (free tier, no backend). Optional. */
-const BOOKING_URL = (import.meta.env.VITE_BOOKING_URL as string | undefined)?.trim() || ''
+// Our own booking page (/call) unless an external scheduler is configured.
+const EXTERNAL_BOOKING = (import.meta.env.VITE_BOOKING_URL as string | undefined)?.trim() || ''
+const BOOKING_URL = EXTERNAL_BOOKING || '/call'
 
 /** Entry points that already say what the person was missing. */
 function featureFromSource(source: string): RequestFeature | null {
@@ -216,6 +218,7 @@ export default function FeatureRequestModal() {
   const [team, setTeam] = useState<RequestTeam | ''>(pick(d.team, REQUEST_TEAMS) || profile.team)
   const [beta, setBeta] = useState(d.beta === true)
   const [call, setCall] = useState(d.call === true)
+  const [sentId, setSentId] = useState('')
   const [contactOk, setContactOk] = useState(d.contact_ok === true)
   const [more, setMore] = useState(Boolean(frequency || today || payer || beta || call))
   const [busy, setBusy] = useState(false)
@@ -294,6 +297,7 @@ export default function FeatureRequestModal() {
     const res = await submitFeatureRequest(token, draft)
     setBusy(false)
     if (!res.ok) { setError(res.error); return }
+    setSentId(res.id)
     saveRequestProfile(role, team)
     noteAnswered()
     trackFeatureRequestSubmitted({
@@ -374,7 +378,7 @@ export default function FeatureRequestModal() {
           )}
           {call && BOOKING_URL && (
             <a
-              href={BOOKING_URL}
+              href={EXTERNAL_BOOKING || (sentId ? `/call?r=${encodeURIComponent(sentId)}` : BOOKING_URL)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackFeatureRequestStep({ step: 'booking_opened', feature: feature ?? undefined, source })}
