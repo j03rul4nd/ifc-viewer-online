@@ -135,6 +135,7 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   let lastT = performance.now()
   let builtDpr = 0
   const v = new THREE.Vector3()
+  const eye = new THREE.Vector3()
 
   function ensureSprite(e: Entry, dpr: number): void {
     if (e.sprite) return
@@ -205,9 +206,12 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
         ? (2 * Math.tan((cam.fov * Math.PI) / 360)) / viewport.height
         : ((cam.top - cam.bottom) / (cam.zoom || 1)) / viewport.height
       const onScreen: ScreenItem[] = []
+      // At eye level the names stand in the street (see labelsWanted).
+      v.set(0, 0, 0).applyMatrix4(tileFrame)
+      const wanted = labelsWanted(camera.getWorldPosition(eye).y - v.y)
       for (const e of entries.values()) {
         e.target = 0
-        if (!live.has(e.cand.key)) continue
+        if (!wanted || !live.has(e.cand.key)) continue
         // Normalized planar (centred) → world, through the tiles' own matrix.
         v.set(e.cand.nx - 0.5, e.cand.ny - 0.5, 0).applyMatrix4(tileFrame)
         const world = v.clone()
@@ -260,6 +264,21 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
       regions.clear()
     },
   }
+}
+
+/**
+ * Below this height above the map plane, metres, no place names are shown.
+ *
+ * A name is a sprite at its place on the ground, drawn at a constant size on
+ * screen. From above that is a map; at a walker's eye it is a sign floating in
+ * the street — "Barcelona" and the corner shop hanging across the view of the
+ * Sagrada Família, in every screenshot taken there.
+ */
+export const STREET_LEVEL_M = 40
+
+/** Whether place names belong on screen with the camera this high, metres. */
+export function labelsWanted(heightM: number): boolean {
+  return !(heightM < STREET_LEVEL_M)
 }
 
 export interface ScreenItem {
