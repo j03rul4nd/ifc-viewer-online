@@ -1362,7 +1362,7 @@ async function sendBookingMail(env, b, cancel) {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: env.BOOKING_FROM, ...m, attachments: [{ filename: 'call.ics', content: ics }] }),
+        body: JSON.stringify({ from: env.BOOKING_FROM, reply_to: env.BOOKING_REPLY_TO || 'hola@ifcvieweronline.eu', ...m, attachments: [{ filename: 'call.ics', content: ics }] }),
       })
       if (!res.ok) { ok = false; console.error('[worker] booking mail', res.status) }
     } catch { ok = false }
