@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCloudAccountStore } from '../../stores/cloudAccountStore'
+import AdminCallsPanel from './AdminCallsPanel'
 import {
   REQUEST_FEATURES, REQUEST_STATUSES, SIGNAL_WEIGHTS, hasStrongSignal, listFeatureRequests, requestsToCsv,
   summarizeRequests, updateFeatureRequest,
@@ -138,6 +139,8 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
             <button onClick={onBack} className={btn} style={ghost}>Volver</button>
           </div>
         </header>
+
+        <AdminCallsPanel getToken={getToken} card={card} />
 
         {/* ── Demand by feature, ranked by evidence ─────────────────────── */}
         <section className="rounded-2xl border p-4 sm:p-5 mb-6" style={card}>

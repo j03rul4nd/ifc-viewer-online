@@ -270,5 +270,48 @@
       "measured": "Esteve a medir.",
       "validated": "O seu modelo está validado."
     }
+  },
+  "call": {
+    "back": "Voltar ao visualizador",
+    "title": "{{minutes}} minutos para falar do seu caso",
+    "intro": "Sou o Joel e faço o IFC Viewer Online. Não é uma demo nem uma chamada comercial: quero ver como trabalha para construir bem o que me pediu.",
+    "point1": "Conta-me a última vez que precisou e o que fez.",
+    "point2": "Se quiser, partilha o ecrã com o modelo ou a entrega.",
+    "point3": "Digo-lhe o que posso fazer e quando, sem compromisso.",
+    "signin": "Entre com a sua conta para escolher a hora. Assim sei de que pedido falamos.",
+    "signinCta": "Iniciar sessão",
+    "loadError": "Não consegui carregar as horas. Tente de novo daqui a pouco.",
+    "retry": "Tentar de novo",
+    "noSlots": "Não tenho horários livres nas próximas duas semanas. Escreva-me e encontramos outro momento:",
+    "pickDay": "Dia",
+    "pickTime": "Hora",
+    "zone": "Horas no seu fuso ({{zone}}).",
+    "email": "Envio o convite para",
+    "note": "Algo que eu deva saber antes?",
+    "optional": "(opcional)",
+    "notePlaceholder": "Por exemplo: entrego modelos a uma empresa de engenharia todas as semanas e o cliente não tem Revit.",
+    "error": {
+      "unauthorized": "A sessão expirou. Volte a iniciar sessão.",
+      "slot_gone": "Alguém acabou de ficar com essa hora. Escolha outra.",
+      "already_booked": "Já tem uma chamada marcada.",
+      "email": "Verifique o email.",
+      "rate_limited": "Demasiadas tentativas. Aguarde um minuto.",
+      "unavailable": "Não foi possível guardar. Tente de novo.",
+      "network": "Sem ligação. Tente de novo."
+    },
+    "booking": "A marcar…",
+    "confirm": "Escolha uma hora",
+    "confirmAt": "Marcar às {{when}}",
+    "bookedLabel": "Chamada marcada",
+    "bookedMeta": "{{minutes}} min · videochamada · hora de {{zone}}",
+    "join": "Entre pelo navegador, sem instalar nada:",
+    "mailed": "Enviei o convite para {{email}}.",
+    "notMailed": "Guarde-a no calendário com um destes botões; o link acima é o da chamada.",
+    "mailedEarlier": "O convite vai para {{email}}. Se não o encontrar, guarde-o aqui:",
+    "addIcs": "Descarregar .ics",
+    "changeHint": "Já não dá jeito? Cancele e escolha outra hora.",
+    "cancel": "Cancelar a chamada",
+    "footer": "Prefere escrever-me?",
+    "eventTitle": "Chamada com o Joel (IFC Viewer Online)"
   }
 }

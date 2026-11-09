@@ -83,6 +83,7 @@ const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 // "Request a feature" (signed-in users) and its founder read-back. Clerk-free.
 const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
 const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
+const LazyCallBookingView = React.lazy(() => import('./components/account/CallBookingView'))
 const LazyRequestNudge = React.lazy(() => import('./components/account/RequestNudge'))
 const LazyRequestUpdates = React.lazy(() => import('./components/account/RequestUpdates'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
@@ -743,6 +744,7 @@ export default function App() {
         if (rel === '/account' || rel.startsWith('/account/')) return 'account'
         if (rel === '/dashboard' || rel.startsWith('/dashboard/')) return 'dashboard'
         if (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/')) return 'feedbackAdmin'
+        if (rel === '/call' || rel === '/call/') return 'call'
         if (rel === '/admin' || rel.startsWith('/admin/')) return 'admin'
       }
     }
@@ -882,6 +884,8 @@ export default function App() {
         setRoute('dashboard')
       } else if (isAccountEnabled() && (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/'))) {
         setRoute('feedbackAdmin')
+      } else if (isAccountEnabled() && (rel === '/call' || rel === '/call/')) {
+        setRoute('call')
       } else if (isAccountEnabled() && (rel === '/admin' || rel.startsWith('/admin/'))) {
         setRoute('admin')
       } else {
@@ -2733,6 +2737,7 @@ export default function App() {
     history.pushState(null, '', path)
     if (path.startsWith('/dashboard')) setRoute('dashboard')
     else if (path.startsWith('/admin/feedback')) setRoute('feedbackAdmin')
+    else if (path.startsWith('/call')) setRoute('call')
     else if (path.startsWith('/admin')) setRoute('admin')
     else if (path.startsWith('/sign-in')) setRoute('signin')
     else if (path.startsWith('/sign-up')) setRoute('signup')
@@ -4898,6 +4903,24 @@ export default function App() {
               authorized={isSupremeAdmin}
               theme={landingTheme}
             />
+          </motion.div>
+        )}
+
+        {route === 'call' && (
+          <motion.div
+            key="call"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyCallBookingView
+                onBack={handleNavigateToLanding}
+                onSignIn={() => { window.location.href = '/sign-in?redirect_url=' + encodeURIComponent(window.location.pathname + window.location.search) }}
+                theme={landingTheme}
+              />
+            </React.Suspense>
           </motion.div>
         )}
 

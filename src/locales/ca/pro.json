@@ -270,5 +270,48 @@
       "measured": "Has estat mesurant.",
       "validated": "Ja tens el model validat."
     }
+  },
+  "call": {
+    "back": "Tornar al visor",
+    "title": "{{minutes}} minuts per parlar del teu cas",
+    "intro": "Soc en Joel i faig IFC Viewer Online. No és una demo ni una trucada comercial: vull veure com treballes per construir bé el que m’has demanat.",
+    "point1": "M’expliques l’última vegada que et va caldre i què vas fer.",
+    "point2": "Si vols, comparteixes pantalla amb el model o el lliurable.",
+    "point3": "Et dic què puc fer i quan, sense compromís.",
+    "signin": "Entra amb el teu compte per triar hora. Així sé de quina petició parlem.",
+    "signinCta": "Iniciar sessió",
+    "loadError": "No he pogut carregar les hores. Torna-ho a provar d’aquí a un moment.",
+    "retry": "Tornar-ho a provar",
+    "noSlots": "No em queden forats les pròximes dues setmanes. Escriu-me i busquem un altre moment:",
+    "pickDay": "Dia",
+    "pickTime": "Hora",
+    "zone": "Hores a la teva zona ({{zone}}).",
+    "email": "T’envio la invitació a",
+    "note": "Alguna cosa que hagi de saber abans?",
+    "optional": "(opcional)",
+    "notePlaceholder": "Per exemple: lliuro models a una enginyeria cada setmana i el client no té Revit.",
+    "error": {
+      "unauthorized": "La sessió ha caducat. Torna a iniciar sessió.",
+      "slot_gone": "Algú acaba d’agafar aquesta hora. Tria’n una altra.",
+      "already_booked": "Ja tens una trucada reservada.",
+      "email": "Revisa el correu.",
+      "rate_limited": "Massa intents. Espera un minut.",
+      "unavailable": "No s’ha pogut desar. Torna-ho a provar.",
+      "network": "Sense connexió. Torna-ho a provar."
+    },
+    "booking": "Reservant…",
+    "confirm": "Tria una hora",
+    "confirmAt": "Reservar a les {{when}}",
+    "bookedLabel": "Trucada reservada",
+    "bookedMeta": "{{minutes}} min · videotrucada · hora de {{zone}}",
+    "join": "Entra des del navegador, sense instal·lar res:",
+    "mailed": "T’he enviat la invitació a {{email}}.",
+    "notMailed": "Desa-la al calendari amb un d’aquests botons; l’enllaç de dalt és el de la trucada.",
+    "mailedEarlier": "La invitació va a {{email}}. Si no la trobes, desa-la aquí:",
+    "addIcs": "Descarregar .ics",
+    "changeHint": "No et va bé? Anul·la-la i tria una altra hora.",
+    "cancel": "Anul·lar la trucada",
+    "footer": "Prefereixes escriure’m?",
+    "eventTitle": "Trucada amb en Joel (IFC Viewer Online)"
   }
 }

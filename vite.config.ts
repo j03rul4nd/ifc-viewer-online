@@ -341,6 +341,7 @@ export default defineConfig({
     proxy: {
       '/api/lead': { target: 'http://127.0.0.1:8787', rewrite: () => '/lead' },
       '/api/requests': { target: 'http://127.0.0.1:8787', rewrite: () => '/requests' },
+      '/api/booking': { target: 'http://127.0.0.1:8787', rewrite: () => '/booking' },
     },
     headers: {
       'Cross-Origin-Opener-Policy':   'same-origin',

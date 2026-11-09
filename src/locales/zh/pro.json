@@ -270,5 +270,48 @@
       "measured": "你一直在测量。",
       "validated": "你的模型已完成校验。"
     }
+  },
+  "call": {
+    "back": "返回查看器",
+    "title": "用 {{minutes}} 分钟聊聊你的情况",
+    "intro": "我是 Joel，IFC Viewer Online 的开发者。这不是演示，也不是销售电话：我想看看你是怎么工作的，好把你提的需求做好。",
+    "point1": "说说你上一次需要它是什么时候，当时是怎么解决的。",
+    "point2": "愿意的话，可以共享屏幕，展示模型或交付成果。",
+    "point3": "我会告诉你我能做什么、大概什么时候做好，没有任何附加条件。",
+    "signin": "登录后选择时间，这样我就知道我们要聊的是哪条需求。",
+    "signinCta": "登录",
+    "loadError": "无法加载可选时间，请稍后再试。",
+    "retry": "重试",
+    "noSlots": "未来两周已经约满。给我写信，我们另找时间：",
+    "pickDay": "日期",
+    "pickTime": "时间",
+    "zone": "按你所在时区（{{zone}}）显示。",
+    "email": "邀请发送至",
+    "note": "有什么需要我提前了解的吗？",
+    "optional": "（选填）",
+    "notePlaceholder": "例如：我每周把模型发给一家设计院，但业主没有 Revit。",
+    "error": {
+      "unauthorized": "登录已过期，请重新登录。",
+      "slot_gone": "这个时间刚被别人约走了，请换一个。",
+      "already_booked": "你已经预约了一次通话。",
+      "email": "请检查邮箱地址。",
+      "rate_limited": "尝试次数过多，请等一分钟。",
+      "unavailable": "保存失败，请重试。",
+      "network": "没有网络连接，请重试。"
+    },
+    "booking": "正在预约…",
+    "confirm": "请选择时间",
+    "confirmAt": "预约 {{when}}",
+    "bookedLabel": "已预约通话",
+    "bookedMeta": "{{minutes}} 分钟 · 视频通话 · {{zone}} 时间",
+    "join": "在浏览器中加入，无需安装：",
+    "mailed": "邀请已发送至 {{email}}。",
+    "notMailed": "用下面的按钮存到日历里；上面的链接就是通话链接。",
+    "mailedEarlier": "邀请会发到 {{email}}。如果找不到，可以在这里保存：",
+    "addIcs": "下载 .ics",
+    "changeHint": "时间不合适？取消后重新选择。",
+    "cancel": "取消通话",
+    "footer": "更想写信？",
+    "eventTitle": "与 Joel 通话（IFC Viewer Online）"
   }
 }

@@ -89,14 +89,17 @@ export async function submitFeatureRequest(
   token: string,
   draft: FeatureRequestDraft,
   fetchImpl: typeof fetch = fetch,
-): Promise<{ ok: true } | { ok: false; error: SubmitError }> {
+): Promise<{ ok: true; id: string } | { ok: false; error: SubmitError }> {
   try {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...draft, need: draft.need.trim(), today_tool: draft.today_tool.trim() }),
     })
-    if (res.ok) return { ok: true }
+    if (res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { id?: string }
+      return { ok: true, id: typeof body.id === 'string' ? body.id : '' }
+    }
     const body = (await res.json().catch(() => null)) as { error?: string } | null
     const known: SubmitError[] = ['unauthorized', 'need_too_short', 'daily_limit', 'rate_limited', 'unavailable', 'invalid']
     const code = known.find((k) => k === body?.error)
