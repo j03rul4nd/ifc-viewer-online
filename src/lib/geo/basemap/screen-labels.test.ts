@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { labelKey, placeScreenLabels, type ScreenItem } from './screen-labels'
+import { labelKey, labelsWanted, placeScreenLabels, STREET_LEVEL_M, type ScreenItem } from './screen-labels'
 
 const item = (key: string, priority: number, sx: number, sy: number, w = 60, h = 16): ScreenItem =>
   ({ key, priority, sx, sy, w, h })
@@ -31,5 +31,17 @@ describe('labelKey', () => {
   })
   it('separates two places of the same name far apart', () => {
     expect(labelKey('place', 'Sant Martí', 0.5, 0.6)).not.toBe(labelKey('place', 'Sant Martí', 0.52, 0.6))
+  })
+})
+
+describe('place names at a walker\'s eye', () => {
+  it('are not drawn in the street: a camera 1.7 m up shows none', () => {
+    expect(labelsWanted(1.7)).toBe(false)
+    expect(labelsWanted(STREET_LEVEL_M - 1)).toBe(false)
+  })
+
+  it('come back once the view is a map again', () => {
+    expect(labelsWanted(STREET_LEVEL_M)).toBe(true)
+    expect(labelsWanted(400)).toBe(true)
   })
 })
