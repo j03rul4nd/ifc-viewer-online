@@ -14,8 +14,7 @@ import { useEditorStore } from '../stores/editorStore'
 import { haptic } from '../lib/haptics'
 import { LanguageSelector } from './LanguageSelector'
 import { MessageSquarePlus } from 'lucide-react'
-import { isAccountEnabled, openFeatureRequest } from '../stores/cloudAccountStore'
-import { isEmbedded } from '../lib/url-params'
+import { openFeatureRequest } from '../stores/cloudAccountStore'
 import * as Icons from './Icons'
 import { ToolGrid } from './mobile/ToolGrid'
 import type { RailItem } from './PanelRail'
@@ -39,6 +38,8 @@ interface MobileBottomNavProps {
   onOpenCompare?: () => void
   /** Back to the landing — the floating Home button is desktop-only. */
   onGoHome?: () => void
+  /** Show "Suggest" in More: App decides with lib/feedback-gate. */
+  canSuggest?: boolean
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   /**
    * The tool catalogue, the same list the desktop rail draws.
@@ -261,7 +262,7 @@ export default function MobileBottomNav({
   tools,
   visible, selected, canIsolate,
   onOpenSidebarTab, onReset, onUpload, onIsolate,
-  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare, onGoHome,
+  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare, onGoHome, canSuggest = false,
 }: MobileBottomNavProps) {
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
@@ -464,7 +465,7 @@ export default function MobileBottomNav({
               <SheetBtn icon={<Icons.Chevron size={20} className="rotate-180" />} label={tComm('actions.home')}
                 onClick={() => { closeSheet(); onGoHome() }} />
             )}
-            {isAccountEnabled() && !isEmbedded() && (
+            {canSuggest && (
               <SheetBtn icon={<MessageSquarePlus size={22} />} label={tPro('requests.entryButton')}
                 onClick={() => { closeSheet(); openFeatureRequest('mobile_more') }} />
             )}

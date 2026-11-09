@@ -5054,6 +5054,7 @@ export default function App() {
                   return (
                     <Toolbar
                       compact={!!dualLayout}
+                      canSuggest={feedbackSurfaceOk}
                       fileName={displayName}
                       elementCount={displayCount}
                       // Models already in the scene stay usable while others load;
@@ -5513,6 +5514,7 @@ export default function App() {
                   <div className="sr-only" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</div>
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
+                    canSuggest={feedbackSurfaceOk}
                     // Properties is excluded: the bottom nav already has its
                     // own tab for it, and the rail item toggles the desktop
                     // column's flag, which is not what a phone shows.

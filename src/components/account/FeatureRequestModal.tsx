@@ -160,7 +160,6 @@ export default function FeatureRequestModal() {
 
   /** Anonymous: keep everything they answered across the sign-in, then sign in. */
   const continueToSignIn = () => {
-    savePendingDraft(answers())
     setOpen(false)
     openAccountModal()
   }
@@ -170,6 +169,9 @@ export default function FeatureRequestModal() {
     if (!signedIn) {
       // Their choice counts even if they stop here (no text, no identity).
       trackFeatureRequestChosen({ feature, source, signed_in: false })
+      // Kept now, not on "Sign in": the screen says it is saved, and "Not now"
+      // must not lose it (signing in later this session still brings it back).
+      savePendingDraft(answers())
       setView('signin')
       return
     }
