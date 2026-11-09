@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  lowerEnvelope, slidingMin, slidingMax, transpose, ENVELOPE_RADIUS_M,
+  lowerEnvelope, slidingMin, slidingMax, transpose, ENVELOPE_RADIUS_M, capFlatGround, isFlatGround, FLAT_GROUND_STEP_M,
 } from './lower-envelope'
 
 /** A flat plain at `base` with a tower of `h` metres at its centre. */
@@ -136,5 +136,37 @@ describe('lowerEnvelope', () => {
   it('refuses a grid whose size does not match its dimensions', () => {
     const r = lowerEnvelope(new Float32Array(10), 5, 5, 10)
     expect(r.meanDropM).toBe(0)
+  })
+})
+
+describe('flat river deltas: a district of wall-to-wall blocks is not a hill', () => {
+  // 200 × 200 px at 3 m: river on the left fifth at 1 m, land at 4 m, and the
+  // Bund's blocks as a 17 m plateau 300 m deep — wider than the opening sees.
+  const W = 200
+  const make = () => {
+    const g = new Float32Array(W * W)
+    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+      g[y * W + x] = x < 40 ? 1 : x < 50 ? 4 : x < 150 ? 17 : 4
+    }
+    return g
+  }
+
+  it('the opening alone keeps the plateau, which is the ramp seen on the Bund', () => {
+    const g = make()
+    lowerEnvelope(g, W, W, 3)
+    expect(g[100 * W + 100]).toBeGreaterThan(15)
+  })
+
+  it('capped on flat ground the blocks come down to the land, the river stays below', () => {
+    const g = make()
+    lowerEnvelope(g, W, W, 3)
+    capFlatGround(g)
+    expect(g[100 * W + 100]).toBeLessThanOrEqual(4 + FLAT_GROUND_STEP_M)
+    expect(g[100 * W + 10]).toBe(1)
+  })
+
+  it('only where the land is known to be flat', () => {
+    expect(isFlatGround(31.2398, 121.4892)).toBe(true) // the Bund
+    expect(isFlatGround(41.4036, 2.1744)).toBe(false) // Barcelona
   })
 })

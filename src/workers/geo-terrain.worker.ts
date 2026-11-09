@@ -26,7 +26,7 @@
 import { latLonToTileFloat } from '../lib/geo/geo-math'
 import { demSourceById, demTileUrl, type DemSource, type DemSourceId } from '../lib/geo/dem-sources'
 import { clampHeightGrid, despeckleHeightGrid } from '../lib/geo/height-grid-clamp'
-import { lowerEnvelope } from '../lib/geo/lower-envelope'
+import { lowerEnvelope, isFlatGround, capFlatGround } from '../lib/geo/lower-envelope'
 import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
 import {
   TERRAIN_TILE_DIM,
@@ -205,6 +205,13 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
         `removed up to ${envelope.maxDropM.toFixed(0)} m of surface, ` +
         `${envelope.meanDropM.toFixed(1)} m on average`,
       )
+    }
+
+    // A surface model of a delta city keeps whole districts as plateaus the
+    // opening cannot see past (lower-envelope, flat river deltas).
+    if (!demSourceById(req.dem).bareEarth && isFlatGround(req.lat, req.lon)) {
+      const flat = capFlatGround(unified)
+      console.info(`[GeoTerrain] flat ground: capped ${flat.capped} samples at ${flat.capM.toFixed(1)} m`)
     }
 
     const verts = req.grid + 1
