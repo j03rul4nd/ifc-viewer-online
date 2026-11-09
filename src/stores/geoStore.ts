@@ -176,6 +176,12 @@ function readTerrainExaggeration(): number {
   return Number.isFinite(v) ? Math.min(3, Math.max(1, v)) : 1
 }
 
+/** Forget the value older builds saved, and start on. */
+function clearStoredSuppress(): true {
+  try { localStorage.removeItem(LS_SUPPRESS) } catch { /* storage blocked */ }
+  return true
+}
+
 function lsGet(key: string): string | null {
   try { return localStorage.getItem(key) } catch { return null }
 }
@@ -302,7 +308,10 @@ interface GeoStore {
   /** Decorative cars and trains (persisted). Invented placement — off by default. */
   vehicles: boolean
   /**
-   * Whether the OSM context gives way where the model stands (persisted).
+   * Whether the OSM context gives way where the model stands. NOT persisted:
+   * every session starts with it on. Remembered, a comparison left switched
+   * off in one session drew OSM's own Oriental Pearl round the IFC in every
+   * later one, and nothing on screen said why.
    *
    * ON by default: a mapped building standing inside the surveyed one is never
    * what anyone wants to look at. Off is for checking the two against each
@@ -483,7 +492,7 @@ export const useGeoStore = create<GeoStore>()(
       mapLook:            lsGet(LS_LOOK) ?? 'daylight',
       lookTuning:         readLookTuning(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
-      suppressContext:    lsGet(LS_SUPPRESS) !== '0',
+      suppressContext:    clearStoredSuppress(),
       hiddenFeatures:     readHiddenFeatures(),
       sceneHidden:        [],
       buildingsTruncated: false,
@@ -644,7 +653,6 @@ export const useGeoStore = create<GeoStore>()(
       },
 
       setSuppressContext: (v) => {
-        lsSet(LS_SUPPRESS, v ? '1' : '0')
         set({ suppressContext: v }, false, 'setSuppressContext')
       },
 
