@@ -59,7 +59,7 @@ import time
 # Overture release to pin. Bumping this is a deliberate act: a new release can
 # add, move or withdraw footprints, and the extract should change when somebody
 # decided it should, not because a build ran on a Tuesday.
-RELEASE = "2026-08-19.0"
+RELEASE = "2026-10-21.0"
 
 S3 = f"s3://overturemaps-us-west-2/release/{RELEASE}/theme=buildings/type=building/*.parquet"
 
@@ -77,6 +77,11 @@ DISTRICTS = [
     ("poblenou",       41.4064,     2.1900,   "Poblenou, Barcelona"),
     ("barceloneta",    41.3687,     2.1900,   "Barceloneta / Port Vell"),
     ("placa-catalunya", 41.3870,    2.1700,   "Plaça de Catalunya, Barcelona"),
+    # OSM maps 33 buildings in the 400 x 280 m round Yuyuan Garden: the bazaar
+    # and the old city are not there. Puxi's riverfront has the same gaps.
+    ("bund",           31.2400,   121.4860,   "The Bund, Huangpu"),
+    ("yuyuan",         31.2272,   121.4921,   "Yuyuan / Old City, Huangpu"),
+    ("jingan",         31.2236,   121.4458,   "Jing'an Temple, Jing'an"),
 ]
 
 # Overture property -> the OSM tag the viewer already understands.
@@ -218,8 +223,18 @@ def main() -> int:
 
     os.makedirs(OUT_DIR, exist_ok=True)
     print(f"Overture release {RELEASE}, {HALF_SIZE_M} m half-size\n")
+    # `python scripts/overture-footprints.py bund yuyuan` re-extracts only those;
+    # the rest keep the file already shipped (each one is minutes of S3 scan).
+    only = set(sys.argv[1:])
     index = []
     for slug, lat, lon, label in DISTRICTS:
+        path = os.path.join(OUT_DIR, f"{slug}.json")
+        if only and slug not in only and os.path.exists(path):
+            with io.open(path, encoding="utf-8") as fh:
+                data = json.load(fh)
+            index.append({"slug": slug, "label": label, "bbox": data["bbox"],
+                          "count": len(data["footprints"])})
+            continue
         data = extract(con, slug, lat, lon, label)
         path = os.path.join(OUT_DIR, f"{slug}.json")
         with io.open(path, "w", encoding="utf-8") as fh:
