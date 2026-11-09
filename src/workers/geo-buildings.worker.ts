@@ -20,7 +20,7 @@ import { bboxAround, DATA_SOURCE_TAG, fetchOverpassWithMirrors } from '../lib/ge
 import { fetchOmtFallback } from '../lib/geo/omt-fallback'
 import { fetchOsmApiElements, osmCacheKey, readOsmCache, writeOsmCache } from '../lib/geo/osm-api-source'
 import {
-  newFootprints, extractCovers, clearsModelPlan,
+  newFootprints, districtsTouching, mergeExtracts, clearsModelPlan,
   type OvertureExtract, type OvertureFootprint, fuseOvertureAttributes, overtureFootprintTags,
 } from '../lib/geo/overture-footprints'
 import { latLonToNormalized } from '../lib/geo/geo-math'
@@ -133,7 +133,7 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     // grain, the audit's estimated count — then treats them exactly like a
     // building that arrived from Overpass. A second parallel path would have to
     // re-derive all of it and would drift the first time one side changed.
-    const extra = await overtureExtras(req.lat, req.lon, elements, req.modelPlan ?? [])
+    const extra = await overtureExtras(bbox, elements, req.modelPlan ?? [])
     const merged = extra.length > 0 && Array.isArray(elements)
       ? { ...(json as object), elements: [...elements, ...extra] }
       : json
@@ -244,21 +244,24 @@ async function fetchJsonWithin<T>(url: string, timeoutMs: number): Promise<T | n
  * time somebody maps another block.
  */
 async function overtureExtras(
-  lat: number, lon: number, elements: readonly unknown[] | undefined,
+  site: { south: number; west: number; north: number; east: number },
+  elements: readonly unknown[] | undefined,
   modelPlan: readonly PlanPolygon[],
 ): Promise<PseudoOverpassWay[]> {
   try {
     const idx = await fetchJsonWithin<OvertureIndex>(OVERTURE_INDEX, OVERTURE_TIMEOUT_MS)
     if (!idx) return []
-    const district = (idx.districts ?? []).find(
-      (d) => d.bbox !== undefined && extractCovers({ bbox: d.bbox }, lat, lon),
-    )
-    if (!district?.slug) return []
+    // EVERY district the site's box reaches, not just the one under the model:
+    // from Lujiazui the Bund across the river is in view, and with one
+    // district it stood there as the gaps OSM leaves.
+    const districts = districtsTouching(idx.districts ?? [], site)
+    if (districts.length === 0) return []
 
-    const data = await fetchJsonWithin<OvertureExtract>(
-      `/geo/overture/${encodeURIComponent(district.slug)}.json`, OVERTURE_TIMEOUT_MS,
-    )
-    if (!data || !Array.isArray(data.footprints)) return []
+    const parts = await Promise.all(districts.map((d) => fetchJsonWithin<OvertureExtract>(
+      `/geo/overture/${encodeURIComponent(d.slug!)}.json`, OVERTURE_TIMEOUT_MS,
+    )))
+    const data = mergeExtracts(parts)
+    if (!data) return []
 
     // FUSION, field by field, by OSM id. Overture records which OSM element a
     // building's geometry came from, so its enrichment lands on that exact
