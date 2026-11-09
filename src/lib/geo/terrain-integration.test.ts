@@ -210,12 +210,19 @@ describe('linear geometry follows the profile, not a chord', () => {
     style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42] },
   })
 
+  /** A hill that BENDS: a planar slope needs no cuts, a curved one does. */
+  const curved = (nx: number): number => {
+    const alongM = (nx - ORIGIN.nx) / M_TO_N
+    return ANCHOR_M + 40 * Math.sin((alongM / 600) * Math.PI)
+  }
+  const CURVED = () => ({ ...OPTS(), sampleGroundM: curved })
+
   it('puts vertices along the slope instead of spanning it in one quad', () => {
-    const built = buildLinearLayer([road()], 'road', OPTS())!
+    const built = buildLinearLayer([road()], 'road', CURVED())!
     const pos = (built.object as THREE.Mesh).geometry.getAttribute('position') as THREE.BufferAttribute
-    const frame = frameAt()
+    const frame = createGroundFrame({ ...CURVED() })
     // Every vertex must sit on the surface (within the kerb drop), which can
-    // only be true if the way was densified — a two-vertex chord cuts 75 m
+    // only be true if the way was densified — a two-vertex chord cuts 40 m
     // through the middle of this hill.
     let interior = 0
     for (let i = 0; i < pos.count; i++) {
@@ -230,8 +237,16 @@ describe('linear geometry follows the profile, not a chord', () => {
     expect(interior).toBeGreaterThan(0)
   })
 
+  it('spends nothing on a planar slope, which a straight road already follows', () => {
+    const planar = (buildLinearLayer([road()], 'road', OPTS())!
+      .object as THREE.Mesh).geometry.getAttribute('position').count
+    const flat = (buildLinearLayer([road()], 'road', { anchorLat: LAT })!
+      .object as THREE.Mesh).geometry.getAttribute('position').count
+    expect(planar).toBe(flat)
+  })
+
   it('does not densify when there is no terrain to follow', () => {
-    const draped = (buildLinearLayer([road()], 'road', OPTS())!
+    const draped = (buildLinearLayer([road()], 'road', CURVED())!
       .object as THREE.Mesh).geometry.getAttribute('position').count
     const flat = (buildLinearLayer([road()], 'road', { anchorLat: LAT })!
       .object as THREE.Mesh).geometry.getAttribute('position').count
