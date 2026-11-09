@@ -346,3 +346,27 @@ describe('geoStore · hand-hidden map features', () => {
     expect(localStorage.getItem('ifc-geo-hidden-features:v1')).toBe('[]')
   })
 })
+
+describe('the model hides the map under it in every new session', () => {
+  it('starts on even when an earlier session switched it off', async () => {
+    const { vi } = await import('vitest')
+    localStorage.clear()
+    localStorage.setItem('ifc-geo-suppress-context:v1', '0')
+    vi.resetModules()
+    const fresh = await import('./geoStore')
+    expect(fresh.useGeoStore.getState().suppressContext).toBe(true)
+    expect(localStorage.getItem('ifc-geo-suppress-context:v1')).toBeNull()
+  })
+
+  it('turning it off lasts for the session only', async () => {
+    const { vi } = await import('vitest')
+    localStorage.clear()
+    vi.resetModules()
+    const a = await import('./geoStore')
+    a.useGeoStore.getState().setSuppressContext(false)
+    expect(a.useGeoStore.getState().suppressContext).toBe(false)
+    vi.resetModules()
+    const b = await import('./geoStore')
+    expect(b.useGeoStore.getState().suppressContext).toBe(true)
+  })
+})
