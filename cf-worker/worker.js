@@ -974,6 +974,10 @@ async function handleLeadsExport(request, url, env) {
 //   GET   /requests?mine=1     a signed-in user's own, with status and our reply
 //   GET   /requests            all of them, admins only (FEEDBACK_ADMIN_IDS)
 //   PATCH /requests?id=<id>    admin sets status and the reply the user sees
+//   PATCH /requests?id=<id>&mine=1 {message}  the owner answers that reply
+//
+// Each request keeps a short `thread` ({from: 'joel'|'user', text, at}); `reply`
+// stays as Joel's latest message so older clients keep working.
 
 const REQUEST_PREFIX = 'request:'
 const REQUEST_BY_PREFIX = 'request-by:'
@@ -992,6 +996,13 @@ const REQUEST_TEAMS = ['solo', '2-10', '11-50', '51+']
 const REQUEST_STATUSES = ['new', 'reviewing', 'planned', 'building', 'shipped', 'declined']
 const REQUEST_ID_RE = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z:[0-9a-f]{8}$/
 const CLOCK_SKEW_S = 60
+const THREAD_MAX = 20
+
+/** Thread as stored, or rebuilt from the single reply older requests have. */
+function threadOf(r) {
+  if (Array.isArray(r.thread)) return r.thread
+  return r.reply ? [{ from: 'joel', text: r.reply, at: r.updated_at || r.created_at }] : []
+}
 
 const b64urlBytes = (s) => {
   const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4))
@@ -1133,7 +1144,7 @@ async function handleRequestsList(request, url, env, cors) {
       const r = await readRequest(env, id)
       // What the user may see of their own request: no email, no internal fields.
       if (r && r.user_id === claims.sub) {
-        requests.push({ id, created_at: r.created_at, feature: r.feature, need: r.need, status: r.status || 'new', reply: r.reply || '', updated_at: r.updated_at || '' })
+        requests.push({ id, created_at: r.created_at, feature: r.feature, need: r.need, status: r.status || 'new', reply: r.reply || '', updated_at: r.updated_at || '', thread: threadOf(r) })
       }
     }
     return jsonResponse({ ok: true, requests: requests.sort(newestFirst) }, 200, noStore)
@@ -1144,7 +1155,7 @@ async function handleRequestsList(request, url, env, cors) {
   const requests = []
   for (const key of await listByPrefix(env, REQUEST_PREFIX)) {
     const r = await readRequest(env, key.slice(REQUEST_PREFIX.length))
-    if (r) requests.push({ status: 'new', reply: '', ...r })
+    if (r) requests.push({ status: 'new', reply: '', ...r, thread: threadOf(r) })
   }
   return jsonResponse({ ok: true, requests: requests.sort(newestFirst) }, 200, noStore)
 }
@@ -1153,6 +1164,7 @@ async function handleRequestsList(request, url, env, cors) {
 async function handleRequestPatch(request, url, env, cors) {
   const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
   const claims = await verifyClerkToken(bearer(request), env)
+  if (url.searchParams.get('mine') === '1') return handleRequestAnswer(request, url, env, claims, noStore)
   if (!isRequestAdmin(env, claims)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
   if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
   const id = url.searchParams.get('id') ?? ''
@@ -1167,14 +1179,51 @@ async function handleRequestPatch(request, url, env, cors) {
   if (body?.status !== undefined && !REQUEST_STATUSES.includes(body.status)) {
     return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
   }
+  const at = new Date().toISOString()
+  const reply = body?.reply !== undefined ? cleanText(body.reply, 1000) : (current.reply ?? '')
+  let thread = threadOf(current)
+  // A new reply is a new message in the thread; editing it to '' clears nothing said before.
+  if (reply && reply !== current.reply) thread = [...thread, { from: 'joel', text: reply, at }].slice(-THREAD_MAX)
   const next = {
     ...current,
     status: body?.status ?? current.status ?? 'new',
-    reply: body?.reply !== undefined ? cleanText(body.reply, 1000) : (current.reply ?? ''),
-    updated_at: new Date().toISOString(),
+    reply,
+    thread,
+    updated_at: at,
   }
   await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(next))
   return jsonResponse({ ok: true, request: { id, ...next } }, 200, noStore)
+}
+
+/** PATCH /requests?id=<id>&mine=1 {message} — the owner answers Joel's reply. */
+async function handleRequestAnswer(request, url, env, claims, noStore) {
+  if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, noStore)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+  if (!(await underLimit(env.SUBSCRIBE_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'rate_limited' }, 429, { ...noStore, 'Retry-After': '60' })
+  }
+  const id = url.searchParams.get('id') ?? ''
+  if (!REQUEST_ID_RE.test(id)) return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  const current = await readRequest(env, id)
+  // Someone else's request does not exist for you.
+  if (!current || current.user_id !== claims.sub) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  }
+  const text = cleanText(body?.message, 1000)
+  if (text.length < 2) return jsonResponse({ ok: false, error: 'need_too_short' }, 400, noStore)
+  const thread = threadOf(current)
+  // Only an answer to something Joel said, and not a wall of messages in a row.
+  if (!thread.some((m) => m.from === 'joel')) return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  let trailing = 0
+  for (let i = thread.length - 1; i >= 0 && thread[i].from === 'user'; i--) trailing++
+  if (trailing >= 3) return jsonResponse({ ok: false, error: 'daily_limit' }, 429, noStore)
+  const at = new Date().toISOString()
+  const { id: _id, ...stored } = current
+  const next = { ...stored, thread: [...thread, { from: 'user', text, at }].slice(-THREAD_MAX), user_replied_at: at }
+  await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(next))
+  return jsonResponse({ ok: true, thread: next.thread }, 200, noStore)
 }
 
 // ── Router ──────────────────────────────────────────────────────────────────

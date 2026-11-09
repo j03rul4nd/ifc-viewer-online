@@ -14,8 +14,7 @@ import { useCloudAccountStore } from '../../stores/cloudAccountStore'
 import {
   REQUEST_FEATURES, REQUEST_STATUSES, SIGNAL_WEIGHTS, hasStrongSignal, listFeatureRequests, requestsToCsv,
   summarizeRequests, updateFeatureRequest,
-  type RequestFeature, type RequestStatus, type StoredFeatureRequest,
-} from '../../lib/feature-requests'
+  type RequestFeature, type RequestStatus, type StoredFeatureRequest, threadOf } from '../../lib/feature-requests'
 
 interface FeedbackAdminViewProps {
   onBack: () => void
@@ -112,6 +111,14 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
   }
 
   const users = new Set(requests.map((r) => r.user_id)).size
+  // Which entry point brings requests (and which brings buying signals).
+  const sources = [...requests.reduce((m, r) => {
+    const key = (r.source || 'unknown').split(':')[0]
+    const row = m.get(key) ?? { total: 0, strong: 0 }
+    row.total++
+    if (hasStrongSignal(r)) row.strong++
+    return m.set(key, row)
+  }, new Map<string, { total: number; strong: number }>())].sort((a, b) => b[1].total - a[1].total)
   const strong = requests.filter(hasStrongSignal).length
   const w = SIGNAL_WEIGHTS
 
@@ -175,6 +182,13 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
           )}
         </section>
 
+        {sources.length > 0 && (
+          <p className="text-[12px] mb-5 leading-relaxed" style={{ color: 'var(--text-faint)' }}>
+            <span style={{ color: 'var(--text-dim)' }}>Por origen: </span>
+            {sources.map(([k, v]) => `${k} ${v.total}${v.strong ? ` (${v.strong} con señal)` : ''}`).join(' · ')}
+          </p>
+        )}
+
         {/* ── Filters ───────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
           {(['all', ...REQUEST_FEATURES] as const).map((f) => (
@@ -212,7 +226,10 @@ function RequestCard({ r, card, ghost, onSave }: {
   onSave: (id: string, patch: { status?: RequestStatus; reply?: string }) => Promise<boolean>
 }) {
   const { t } = useTranslation('pro')
-  const [reply, setReply] = useState(r.reply ?? '')
+  // Each reply is a new message in the thread the user sees (and can answer).
+  const [reply, setReply] = useState('')
+  const thread = threadOf(r)
+  const theyAnswered = thread.slice(-1)[0]?.from === 'user'
   const [saving, setSaving] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 
@@ -221,6 +238,7 @@ function RequestCard({ r, card, ghost, onSave }: {
     setNote(null)
     const ok = await onSave(r.id, patch)
     setSaving(false)
+    if (ok && patch.reply) setReply('')
     setNote(ok ? 'Guardado' : 'No se pudo guardar')
   }
 
@@ -239,6 +257,7 @@ function RequestCard({ r, card, ghost, onSave }: {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: 'var(--text-faint)' }}>
         <span className="tabular-nums">{dtf(r.created_at)}</span>
         <span className="px-2 py-0.5 rounded-full border text-[12px] font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>{t(`requests.feature.${r.feature}.title`)}</span>
+        {theyAnswered && <span className="font-semibold" style={{ color: 'var(--warn)' }}>Te ha contestado</span>}
         {hasStrongSignal(r) && <span className="font-semibold" style={{ color: 'var(--accent-2)' }}>Señal de compra</span>}
         <span>{r.source || 'unknown'} · {r.plan || 'free'} · {r.lang}</span>
       </div>
@@ -257,7 +276,18 @@ function RequestCard({ r, card, ghost, onSave }: {
         )}
       </div>
 
-      {/* Status + the reply the user sees under "Your requests" */}
+      {thread.length > 0 && (
+        <ol className="flex flex-col gap-1.5 border-l-2 pl-3 text-[12px] leading-relaxed" style={{ borderColor: 'var(--border-strong)' }}>
+          {thread.map((m, i) => (
+            <li key={i} className="whitespace-pre-wrap break-words">
+              <span style={{ color: 'var(--text-faint)' }}>{m.from === 'joel' ? 'Tú' : 'Usuario'} · {dtf(m.at)}</span>
+              <span className="block">{m.text}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {/* Status + a new message the user sees under "Your requests" */}
       <div className="mt-1 flex flex-col sm:flex-row gap-2 sm:items-start">
         <select
           value={r.status}
@@ -273,17 +303,17 @@ function RequestCard({ r, card, ghost, onSave }: {
           value={reply}
           onChange={(e) => setReply(e.target.value.slice(0, 1000))}
           rows={1}
-          placeholder="Respuesta que verá el usuario (opcional)"
+          placeholder={thread.length ? 'Responder (lo verá en «Tus peticiones» y podrá contestarte)' : 'Respuesta que verá el usuario (opcional)'}
           className="flex-1 min-h-[36px] rounded-lg border px-3 py-2 text-[12px] bg-[var(--surface-2)] resize-y"
           style={ghost}
         />
         <button
           onClick={() => void run({ reply })}
-          disabled={saving || reply === (r.reply ?? '')}
+          disabled={saving || !reply.trim()}
           className="h-9 px-3 rounded-lg text-[12px] font-medium border disabled:opacity-50"
           style={ghost}
         >
-          {saving ? 'Guardando…' : 'Guardar respuesta'}
+          {saving ? 'Guardando…' : 'Enviar respuesta'}
         </button>
       </div>
       {note && <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{note}</span>}

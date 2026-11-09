@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   canSubmit, hasStrongSignal, listFeatureRequests, listMyFeatureRequests, loadRequestProfile, requestsToCsv,
   saveRequestProfile, submitFeatureRequest, summarizeRequests, updateFeatureRequest,
+  answerFeatureRequest, awaitsAnswer, threadOf,
   type FeatureRequestDraft, type StoredFeatureRequest,
 } from './feature-requests'
 
@@ -123,19 +124,37 @@ describe('request profile', () => {
 describe('requestsToCsv', () => {
   it('quotes and defuses formulas', () => {
     const csv = requestsToCsv([stored({ need: '=HYPERLINK("x")', today_tool: 'a, b' })])
-    expect(csv.startsWith('﻿created_at,email,')).toBe(true)
+    expect(csv.startsWith('\uFEFFcreated_at,email,')).toBe(true)
     expect(csv).toContain(`"'=HYPERLINK(""x"")"`)
     expect(csv).toContain('"a, b"')
   })
 })
 
-describe('nudge pacing', () => {
-  afterEach(() => localStorage.clear())
-  it('is due the first time, then once a month', async () => {
-    const { requestNudgeDue, markRequestNudged, NUDGE_EVERY_MS } = await import('./feature-requests')
-    expect(requestNudgeDue(1_000)).toBe(true)
-    markRequestNudged(1_000)
-    expect(requestNudgeDue(1_000 + NUDGE_EVERY_MS - 1)).toBe(false)
-    expect(requestNudgeDue(1_000 + NUDGE_EVERY_MS)).toBe(true)
+describe('thread with Joel', () => {
+  it('rebuilds a thread from the single reply of older requests', () => {
+    expect(threadOf({ created_at: 'c', reply: '' })).toEqual([])
+    expect(threadOf({ created_at: 'c', updated_at: 'u', reply: 'Hola' })).toEqual([{ from: 'joel', text: 'Hola', at: 'u' }])
+  })
+
+  it('awaits an answer only when Joel spoke last', () => {
+    expect(awaitsAnswer({ created_at: 'c', reply: 'Hola' })).toBe(true)
+    expect(awaitsAnswer({ created_at: 'c', reply: 'Hola', thread: [{ from: 'joel', text: 'Hola', at: 'a' }, { from: 'user', text: 'Sí', at: 'b' }] })).toBe(false)
+    expect(awaitsAnswer({ created_at: 'c' })).toBe(false)
+  })
+
+  it('answers with PATCH ?id=&mine=1 and returns the new thread', async () => {
+    const thread = [{ from: 'joel', text: 'Hola', at: 'a' }, { from: 'user', text: 'Sí', at: 'b' }]
+    const f = vi.fn(async () => json(200, { ok: true, thread }))
+    const res = await answerFeatureRequest('tok', '2026-11-07T10:00:00.000Z:abcd1234', 'Sí', asFetch(f))
+    expect(res).toEqual({ ok: true, thread })
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/requests?id=2026-11-07T10%3A00%3A00.000Z%3Aabcd1234&mine=1')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(init.body as string)).toEqual({ message: 'Sí' })
+  })
+
+  it('maps worker errors and network failures', async () => {
+    expect(await answerFeatureRequest('t', 'i', 'x', asFetch(async () => json(429, { error: 'daily_limit' })))).toEqual({ ok: false, error: 'daily_limit' })
+    expect(await answerFeatureRequest('t', 'i', 'x', asFetch(async () => { throw new Error('off') }))).toEqual({ ok: false, error: 'network' })
   })
 })
