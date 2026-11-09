@@ -197,6 +197,22 @@ export function markSeen(requests: readonly SeenRequest[], { onlyNew = false } =
   } catch { /* ignore */ }
 }
 
+// What we already toasted about (same fingerprints). Kept apart from "seen" so
+// opening the list still counts as reading, while an ignored toast stays told.
+const NOTIFIED_KEY = 'ifc.feedback.notified'
+
+export function readNotified(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(NOTIFIED_KEY) ?? '{}') as Record<string, string> } catch { return {} }
+}
+
+export function noteNotified(requests: readonly SeenRequest[]): void {
+  try {
+    const next = readNotified()
+    requests.forEach((r) => { next[r.id] = fingerprint(r) })
+    localStorage.setItem(NOTIFIED_KEY, JSON.stringify(next))
+  } catch { /* ignore */ }
+}
+
 /** Throttle the "anything new?" check (and skip users who never asked). */
 export function updatesCheckDue(now = Date.now()): boolean {
   try {

@@ -54,10 +54,27 @@ export interface StoredFeatureRequest extends FeatureRequestDraft {
   email: string
   status: RequestStatus
   reply: string
+  thread?: ThreadMessage[]
+  /** Set when the user answered; the admin list surfaces it until Joel replies. */
+  user_replied_at?: string
 }
 
 /** What a user sees of their own requests. */
-export type OwnFeatureRequest = Pick<StoredFeatureRequest, 'id' | 'created_at' | 'updated_at' | 'feature' | 'need' | 'status' | 'reply'>
+/** One message about a request: Joel's reply or the user's answer to it. */
+export interface ThreadMessage { from: 'joel' | 'user'; text: string; at: string }
+
+export type OwnFeatureRequest = Pick<StoredFeatureRequest, 'id' | 'created_at' | 'updated_at' | 'feature' | 'need' | 'status' | 'reply'> & {
+  thread?: ThreadMessage[]
+}
+
+/** The thread, or the single reply older requests have. */
+export function threadOf(r: { reply?: string; thread?: ThreadMessage[]; updated_at?: string; created_at: string }): ThreadMessage[] {
+  if (Array.isArray(r.thread)) return r.thread
+  return r.reply ? [{ from: 'joel', text: r.reply, at: r.updated_at || r.created_at }] : []
+}
+
+/** Joel spoke last: the user has something to answer. */
+export const awaitsAnswer = (r: Parameters<typeof threadOf>[0]): boolean => threadOf(r).slice(-1)[0]?.from === 'joel'
 
 export type SubmitError = 'unauthorized' | 'need_too_short' | 'daily_limit' | 'rate_limited' | 'unavailable' | 'network' | 'invalid'
 
@@ -123,6 +140,28 @@ export async function listFeatureRequests(
 }
 
 /** Admin: set the status and the reply the user will see. */
+/** The owner answers Joel's reply (PATCH ?id=&mine=1). */
+export async function answerFeatureRequest(
+  token: string,
+  id: string,
+  message: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true; thread: ThreadMessage[] } | { ok: false; error: SubmitError }> {
+  try {
+    const res = await fetchImpl(`${ENDPOINT}?id=${encodeURIComponent(id)}&mine=1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ message }),
+    })
+    const body = (await res.json().catch(() => ({}))) as { thread?: ThreadMessage[]; error?: string }
+    if (res.ok && Array.isArray(body.thread)) return { ok: true, thread: body.thread }
+    const known: SubmitError[] = ['unauthorized', 'need_too_short', 'daily_limit', 'rate_limited', 'unavailable', 'invalid']
+    return { ok: false, error: known.includes(body.error as SubmitError) ? (body.error as SubmitError) : res.status === 401 ? 'unauthorized' : 'unavailable' }
+  } catch {
+    return { ok: false, error: 'network' }
+  }
+}
+
 export async function updateFeatureRequest(
   token: string,
   id: string,

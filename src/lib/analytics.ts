@@ -894,8 +894,23 @@ export function trackFeatureRequestSubmitted(props: {
   payer: string
   beta: boolean
   call: boolean
+  /** They described a concrete last time (length only is never sent). */
+  has_case: boolean
 }): void {
   track('feature_request_submitted', props)
+}
+
+/**
+ * Steps between "chosen" and "submitted", and after it, so the funnel shows
+ * where people stop: the sign-in screen, its button, the draft coming back,
+ * an answer to Joel's reply, the call booking link.
+ */
+export function trackFeatureRequestStep(props: {
+  step: 'signin_shown' | 'signin_continue' | 'signin_later' | 'resumed' | 'answered' | 'booking_opened'
+  feature?: string
+  source?: string
+}): void {
+  track('feature_request_step', props)
 }
 
 /** The in-viewer "what would help you most?" card: shown, an option chosen, or dismissed. */

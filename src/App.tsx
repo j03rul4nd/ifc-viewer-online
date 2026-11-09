@@ -5724,7 +5724,7 @@ export default function App() {
       )}
 
       {/* "One of your requests moved" — signed-in users who have asked before. */}
-      {accountStatus === 'signed-in' && !isEmbedded() && !embedChrome.embed && !clientMode && tourMode !== 'playing' && (
+      {accountStatus === 'signed-in' && feedbackSurfaceOk && (
         <React.Suspense fallback={null}>
           <LazyRequestUpdates />
         </React.Suspense>

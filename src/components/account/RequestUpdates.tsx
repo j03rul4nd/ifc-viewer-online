@@ -10,8 +10,8 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { openFeatureRequest, useCloudAccountStore } from '../../stores/cloudAccountStore'
-import { listMyFeatureRequests } from '../../lib/feature-requests'
-import { changedSince, noteUpdatesChecked, readSeen, updatesCheckDue } from '../../lib/feedback-gate'
+import { listMyFeatureRequests, threadOf } from '../../lib/feature-requests'
+import { changedSince, noteNotified, noteUpdatesChecked, readNotified, readSeen, updatesCheckDue } from '../../lib/feedback-gate'
 import { trackFeatureRequestUpdateSeen } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
 
@@ -28,13 +28,19 @@ export default function RequestUpdates() {
       const res = await listMyFeatureRequests(token)
       if (!res.ok || cancelled) return
       noteUpdatesChecked()
-      const moved = changedSince(readSeen(), res.requests)
+      // Told once per change: not again every 12 hours if they ignore it.
+      const told = readNotified()
+      const moved = changedSince(readSeen(), res.requests).filter((r) => told[r.id] !== `${r.status}|${r.reply}`)
       if (moved.length === 0) return
-      // Not marked seen here: they see it when they open the list.
+      noteNotified(moved)
       const first = moved[0]
-      const message = moved.length === 1
-        ? t('requests.updateOne', { feature: t(`requests.feature.${first.feature}.title`), status: t(`requests.status.${first.status}`) })
-        : t('requests.updateMany', { count: moved.length })
+      const feature = t(`requests.feature.${first.feature}.title`)
+      const replied = threadOf(first).slice(-1)[0]?.from === 'joel'
+      const message = moved.length > 1
+        ? t('requests.updateMany', { count: moved.length })
+        : replied
+          ? t('requests.updateReply', { feature })
+          : t('requests.updateOne', { feature, status: t(`requests.status.${first.status}`) })
       trackFeatureRequestUpdateSeen({ count: moved.length, opened: false })
       toast(message, 'info', {
         duration: 15_000,

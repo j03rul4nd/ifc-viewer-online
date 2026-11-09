@@ -18,11 +18,15 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { MessageSquarePlus, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { openFeatureRequest, useCloudAccountStore } from '../../stores/cloudAccountStore'
 import { trackFeatureRequestNudge } from '../../lib/analytics'
 import { askDue, isEngaged, noteAsked, noteDismissed, readSignals, suggestedFeatures } from '../../lib/feedback-gate'
 import type { RequestFeature } from '../../lib/feature-requests'
+import type { UsageSignal } from '../../lib/feedback-gate'
+
+/** Which of this session's actions the card names first ("You just exported…"). */
+const CONTEXT_ORDER: UsageSignal[] = ['large_file', 'exported', 'shared', 'ids', 'bcf', 'multi_model', 'map', 'measured', 'validated']
 
 /** Never sooner than this after the card is mounted (the model just loaded). */
 const MIN_WAIT_MS = 75_000
@@ -73,33 +77,36 @@ export default function RequestNudge() {
 
   const chip = 'min-h-[32px] px-3 rounded-[8px] border border-[var(--border)] text-left text-[12px] leading-snug text-[var(--text)] hover:border-[var(--accent)] hover:bg-[rgba(10,132,129,0.12)] transition-colors cursor-pointer'
 
+  // Say why now, from the strongest thing they did this session.
+  const signals = readSignals()
+  const why = CONTEXT_ORDER.find((sig) => signals.includes(sig))
+
+  const row = 'w-full min-h-[34px] px-2.5 py-1.5 text-left text-[13px] leading-snug text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors duration-100 cursor-pointer'
+
   return createPortal(
     <aside
       role="complementary"
       aria-label={t('requests.nudgeTitle')}
-      className="fixed z-[56] right-3 left-3 sm:left-auto sm:w-[360px] bottom-[calc(env(safe-area-inset-bottom)+84px)] sm:bottom-5 rounded-2xl glass border border-[var(--border-strong)] shadow-[0_16px_48px_rgba(0,0,0,0.5)] p-3.5 flex flex-col gap-2.5"
+      className="fixed z-[56] right-3 left-3 sm:left-auto sm:w-[340px] bottom-[calc(env(safe-area-inset-bottom)+84px)] sm:bottom-5 rounded-[10px] bg-[var(--surface)] border border-[var(--border-strong)] shadow-[0_8px_24px_rgba(0,0,0,0.35)] flex flex-col"
     >
-      <div className="flex items-start gap-2.5">
-        <MessageSquarePlus aria-hidden size={18} className="mt-0.5 shrink-0 text-[var(--accent-2)]" />
+      <div className="flex items-start gap-2 px-3 pt-2.5 pb-2">
         <div className="flex-1 min-w-0">
+          {why && <p className="text-[12px] leading-snug text-[var(--text-faint)]">{t(`requests.nudgeContext.${why}`)}</p>}
           <p className="text-[13px] font-medium leading-snug text-[var(--text)]">{t('requests.nudgeTitle')}</p>
-          <p className="mt-0.5 text-[12px] leading-snug text-[var(--text-dim)]">{t('requests.nudgeBody')}</p>
         </div>
         <button
           onClick={dismiss}
           aria-label={t('requests.nudgeDismiss')}
-          className="shrink-0 w-7 h-7 -mt-1 -mr-1 grid place-items-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] cursor-pointer"
+          className="shrink-0 w-7 h-7 -mt-1 -mr-1.5 grid place-items-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] cursor-pointer"
         >
           <X aria-hidden size={14} />
         </button>
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col border-t border-[var(--border)] py-1">
         {options.map((f) => (
-          <button key={f} onClick={() => choose(f)} className={chip}>{t(`requests.feature.${f}.title`)}</button>
+          <button key={f} onClick={() => choose(f)} className={row}>{t(`requests.feature.${f}.title`)}</button>
         ))}
-        <button onClick={() => choose('other')} className="self-start mt-0.5 text-[12px] text-[var(--accent-2)] underline underline-offset-2 cursor-pointer">
-          {t('requests.nudgeOther')}
-        </button>
+        <button onClick={() => choose('other')} className={`${row} text-[var(--text-dim)]`}>{t('requests.nudgeOther')}</button>
       </div>
     </aside>,
     document.body,
