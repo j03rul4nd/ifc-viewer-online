@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import { createGeoSystem, type GeoSystemContext } from './geo-system'
 import { composeGeoRootTransform, WEB_MERCATOR_WORLD_M, cosLatScale, latLonToTile } from './geo-math'
 import type { GeoPlacement, MapProvider } from './geo-types'
+import { hazeRangeFor } from './atmosphere'
 import type { SceneReport } from './scene-budget'
 import type { FeatureLayerVisibility } from './geo-system'
 
@@ -205,8 +206,14 @@ describe('geo-system · enable/disable lifecycle (INV-3)', () => {
 
     expect(f.persp.far).toBe(60_000)
     expect(f.ortho.far).toBe(60_000)
-    expect((f.scene.fog as THREE.Fog).near).toBe(30_000)
-    expect((f.scene.fog as THREE.Fog).far).toBe(55_000)
+    // The haze is in proportion to the view (atmosphere.ts): the fixture's
+    // camera is 100 m from its target.
+    const haze = hazeRangeFor(100)
+    expect((f.scene.fog as THREE.Fog).near).toBe(haze.nearM)
+    expect((f.scene.fog as THREE.Fog).far).toBe(haze.farM)
+    // And a look's sky is a dome that turns with the camera, not a screen gradient.
+    geo.setMapLook('daylight')
+    expect((f.scene.background as THREE.Texture).mapping).toBe(THREE.EquirectangularReflectionMapping)
     expect(f.controls.maxDistance).toBe(30_000)
     expect(f.controls.maxPolarAngle).toBeCloseTo((88 * Math.PI) / 180, 6)
     expect(f.flags.grid).toBe(false)

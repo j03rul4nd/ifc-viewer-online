@@ -480,3 +480,65 @@ describe('context-suppression · the Hotel Vela plot', () => {
     expect(keep(neighbour)).toBe(true)
   })
 })
+
+describe('a plan is not a volume — a low model does not replace a tall mapped building', () => {
+  // The mobility hub under Plaça de Catalunya: a 100 x 100 plan that rises
+  // under 3 m. The corner block of Passeig de Gràcia 1 stands inside it.
+  const hub = (riseM?: number): ModelFootprint => ({ ...plot('building'), riseM })
+  const block = (heightM: number, source?: OsmFeature['height']['source']): OsmFeature => ({
+    ...square('building', 'apple', 20, 20, 30),
+    height: { heightM, minHeightM: 0, estimated: source !== 'osm' && source !== 'overture', source },
+  })
+
+  it('keeps a surveyed 19 m block standing over a station that rises 3 m', () => {
+    expect(createSuppressor([hub(2.9)], project)(block(19.2, 'osm'))).toBe(true)
+    expect(createSuppressor([hub(2.9)], project)(block(22.4, 'overture'))).toBe(true)
+  })
+
+  it('still replaces it when the model is a building of comparable height', () => {
+    expect(createSuppressor([hub(18)], project)(block(19.2, 'osm'))).toBe(false)
+    // A third of the height is enough: a podium against its tower.
+    expect(createSuppressor([hub(7)], project)(block(19.2, 'osm'))).toBe(false)
+  })
+
+  it('does not trust a height nobody measured', () => {
+    // An estimate must not keep a mapped block standing through the pavilion
+    // that replaced it.
+    expect(createSuppressor([hub(2.9)], project)(block(19.2, 'prior'))).toBe(false)
+    expect(createSuppressor([hub(2.9)], project)(block(8, 'default'))).toBe(false)
+    expect(createSuppressor([hub(2.9)], project)(block(19.2))).toBe(false)
+  })
+
+  it('behaves exactly as before when the host cannot say how tall the model is', () => {
+    expect(createSuppressor([hub()], project)(block(19.2, 'osm'))).toBe(false)
+  })
+
+  it('measures the building from its own base, not from the ground', () => {
+    // A part that starts 16 m up and ends at 19 m is a 3 m volume.
+    const part: OsmFeature = {
+      ...block(19, 'osm'), height: { heightM: 19, minHeightM: 16, estimated: false, source: 'osm' },
+    }
+    expect(createSuppressor([hub(2.9)], project)(part)).toBe(false)
+  })
+
+  it('still lets a small model show itself inside the tower it is a fit-out of', () => {
+    // Direction two: the MODEL is inside the MAPPED outline. One storey of a
+    // 60 m tower is dwarfed by it and replaces it all the same.
+    const fitOut: ModelFootprint = {
+      polygon: [
+        new THREE.Vector2(-10, -10), new THREE.Vector2(10, -10),
+        new THREE.Vector2(10, 10), new THREE.Vector2(-10, 10),
+      ],
+      kind: 'building', marginN: 0, riseM: 4,
+    }
+    const tower: OsmFeature = {
+      ...square('building', 'tower', 0, 0, 40),
+      height: { heightM: 60, minHeightM: 0, estimated: false, source: 'osm' },
+    }
+    expect(createSuppressor([fitOut], project)(tower)).toBe(false)
+  })
+
+  it('leaves the trees in the plan of a low model to the existing policy', () => {
+    expect(createSuppressor([hub(2.9)], project)(node('tree', 't', 0, 0))).toBe(false)
+  })
+})
