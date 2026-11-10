@@ -15,6 +15,11 @@
 import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { createQualityGovernor, lodResolution } from './basemap/tile-quality'
+import { createCityLod, type CityLod, type CityLodStats } from './city-lod'
+import { cityTriangleBudget } from './city-cells'
+import { loadTileJson } from './basemap/tilejson'
+import { OPENFREEMAP_TILEJSON } from './providers'
+import { isMemoryConstrained } from '../loading/device-profile'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
@@ -573,6 +578,15 @@ export interface GeoSystemAPI {
    * with the numbers in front of them.
    */
   setBudgetOverride(lifted: boolean): void
+  /**
+   * Detail by distance (default on): beyond the full-detail district the city
+   * is drawn in cells that follow the camera — simple buildings near, volumes
+   * far, unloaded out of range (city-cells). Off = the district alone, all at
+   * full detail, as before.
+   */
+  setAutoDetail(on: boolean): void
+  /** What the far city is holding right now; null when it is off. */
+  getCityStats(): CityLodStats | null
   /** Scene build progress and results, for the panel. Null to clear. */
   setSceneReportCallback(cb: ((report: SceneReport) => void) | null): void
   /** The frame watch — one verdict per second while the map is on. */
@@ -794,6 +808,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Per-layer outcome of the builds that produced the current scene. */
   let layerStats = new Map<LayerKey, SceneLayerStat>()
   let budgetLifted = false
+  /** The far city in cells (city-lod); null while map mode is off. */
+  let cityLod: CityLod | null = null
+  let autoDetail = true
   /**
    * Halved on every lost WebGL context. A context loss in map mode is almost
    * always memory pressure from the scene we built, so the restore rebuilds
@@ -1209,6 +1226,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       engine = createBasemapEngine()
       engine.onDegraded = degradedCallback
       engine.setLabelKeepOut(modelBoxes)
+      cityLod = createCityLod()
+      geoRoot.add(cityLod.group)
+      {
+        // The far city reads OpenMapTiles whatever the basemap on screen is:
+        // same free source the Overpass fallback already uses.
+        const city = cityLod
+        void loadTileJson(OPENFREEMAP_TILEJSON)
+          .then((tj) => { if (cityLod === city) city.setSource(tj.tiles[0]) })
+          .catch(() => { /* no far city; the district is unaffected */ })
+      }
       geoRoot.add(engine.group)
       engine.setProvider(provider)
       engine.setCamera(ctx.getActiveCamera())
@@ -1232,7 +1259,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const tick = (): void => {
         if (!engine) return
         engine.update()
-        updateTerrainDetail()
+        updateViewDetail()
         retuneDepthRange()
         retuneAtmosphere()
         if ((subsurfaceMode !== 'surface' || markersEnabled) && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
@@ -1306,6 +1333,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       stopLookAnim()
       staging?.dispose()
       staging = null
+      cityLod?.dispose()
+      cityLod = null
       engine.dispose()
       if (geoRoot) {
         geoRoot.removeFromParent()
@@ -1669,6 +1698,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (!osmFeatures || !geoRoot) return
       await requestRebuild()
     },
+
+    setAutoDetail(on) { autoDetail = on },
+
+    getCityStats() { return cityLod && autoDetail ? cityLod.stats() : null },
 
     setBudgetOverride(lifted) {
       if (lifted === budgetLifted) return
@@ -3045,8 +3078,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * (terrain-detail). Two ground reads a frame; the relief does nothing when
    * the answer has not moved a quarter of a square.
    */
-  function updateTerrainDetail(): void {
-    if (!terrain || !geoRoot) return
+  function updateViewDetail(): void {
+    if (!geoRoot || (!terrain && !cityLod)) return
     const cam = ctx.getActiveCamera() as THREE.PerspectiveCamera & THREE.OrthographicCamera
     cam.getWorldPosition(detailEye)
     cam.getWorldDirection(detailDir)
@@ -3069,12 +3102,41 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       : (cam.top - cam.bottom) / (cam.zoom || 1) / lod.height
     geoRoot.updateWorldMatrix(true, false)
     const local = geoRoot.worldToLocal(detailHit)
-    terrain.setDetailView({
+    terrain?.setDetailView({
       focusNx: local.x, focusNy: local.y,
       // geoRoot's scale is metres per normalized unit at this latitude.
       texelN: pixelM / geoRoot.scale.x,
       dpr: Math.min(2, Math.max(1, Math.round(lod.effectiveDpr * 4) / 4)),
     })
+    updateCity(local.x, local.y, distance)
+  }
+
+  /**
+   * The far city follows the same view: which cells, at what level, within
+   * what budget (city-cells). It is part of the Buildings layer — off with it —
+   * and it leaves the district's own box to the district.
+   */
+  function updateCity(focusNx: number, focusNy: number, distanceM: number): void {
+    if (!cityLod || !geoRoot || !placement) return
+    const on = autoDetail && buildingsEnabled && layerVisibility.building
+    cityLod.group.visible = on
+    cityLod.setTone(contextTone)
+    cityLod.setBudget(cityTriangleBudget(deviceTier(), isMemoryConstrained()) * (budgetLifted ? 3 : 1))
+    // The district's box, once it has buildings of its own to show there.
+    const anchorN = latLonToNormalized(placement.lat, placement.lon)
+    const halfN = BUILDINGS_HALF_SIZE_M / geoRoot.scale.x
+    // (Features kept from another anchor do not count: nothing is drawn here.)
+    const districtHere = !!osmFeatures && osmFeatures.length > 0
+      && osmCache?.key === osmCacheKey(placement.lat, placement.lon)
+    cityLod.setExclude(districtHere
+      ? { minNx: anchorN.nx - halfN, maxNx: anchorN.nx + halfN, minNy: anchorN.ny - halfN, maxNy: anchorN.ny + halfN }
+      : null)
+    const frame = bareGroundFrame()
+    cityLod.update(
+      on ? { focusNx, focusNy, distanceM, metresPerUnit: geoRoot.scale.x } : null,
+      frame ? { key: frame, z: (nx, ny) => frame.groundZ(nx, ny) } : null,
+      { lat: placement.lat, lon: placement.lon },
+    )
   }
 
   let modelBoxCache: { at: number; boxes: THREE.Box3[] } | null = null

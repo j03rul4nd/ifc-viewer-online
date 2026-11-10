@@ -303,6 +303,60 @@ level turns out to be what made the view slow.
   map plane, so on a hill well above it names still show from close to the
   ground.
 
+### The city beyond the district: cells by distance (2026-11)
+
+The full-detail surroundings are still ONE box, 700 m around the site, from one
+Overpass query. Past its edge the city used to be a flat map. Now it is drawn
+in **cells that follow the camera** (`city-cells.ts` rules, `city-lod.ts`
+manager, `city-cells.worker.ts` builder).
+
+- **Data: the z14 OpenMapTiles vector tiles** (OpenFreeMap — no key, no cap,
+  `max-age` ten years). Their `building` layer has every footprint with a
+  height, grouped one multipolygon per height; outlines are separated from
+  courtyards by winding (`groupRings`) and cut to the tile's own square so the
+  halves of a building on a seam abut. Overpass is not asked for anything new:
+  its rule — one query per toggle, never per tile, never on camera movement —
+  stands. The Overture extracts cover six districts and stay what they are, a
+  gap filler for the district.
+- **Grid: z15 cells** (≈ 920 m in Barcelona, four to a data tile), one mesh
+  each, built in a worker with the district's own `buildBuildingsGeometry` at
+  Simple, so a cell looks like the district at Simple.
+  - `mid` (within 0.5–1.6 km of the view's focus, 1.2 × the camera distance):
+    every building, real outline and courtyards. No trees, no furniture —
+    the streets are the basemap under it.
+  - `far` (out to 2.5–8 km, 10 × the camera distance): outlines simplified to
+    3 m, footprints under 80 m² dropped, courtyards filled.
+  - A cell at `mid` keeps it to 1.25 × the radius (no flicker on the line); a
+    cell out of the plan for 2.5 s is unloaded.
+- **Budget.** Cells are admitted nearest first until the device's triangle
+  budget is spent (3 M / 1.5 M / 0.6 M for high / mid / low-or-constrained;
+  ×3 with "Lift the geometry limit"): a cell that does not fit at `mid` is
+  taken at `far`, and the first that does not fit at all ends the list — no
+  holes nearer than what is drawn. Colours and normals travel as bytes:
+  22 bytes a vertex instead of 40.
+- **No building twice.** A cell leaves out every building whose box touches
+  the district's box, once a district is loaded for the current anchor.
+- **Ground.** Each building is seated on the ground under its own centre, read
+  from the same ground frame as everything else: on the relief inside the
+  3×3 patch, on the flat map's level outside it (the rim already eases one
+  into the other). The relief itself is unchanged, so hills outside the patch
+  are flat.
+- **Switch.** Map panel → Performance → "Detail by distance" (on by default,
+  persisted). Off is the previous behaviour: the district alone.
+
+Measured, desktop tier, Plaça de Catalunya seen from 1.7 km: 277 cells,
+137 102 buildings, 2.22 M triangles in 146 MB of buffers; the frame draws
+3.11 M triangles in 198 calls against 1.77 M in 113 with the switch off.
+El Carmel from 620 m: 254 cells, 1.93 M triangles, 127 MB, buildings seated on
+the hillside inside the patch.
+
+Not done: the full-detail district does not follow the camera. Its roads are
+cut to the relief's measured box and the model's height is tied to the patch,
+so moving the district means moving the relief with it — a change to the
+vertical frame, not to this layer. Cells are not pick targets, pop in without
+a fade, and the CPU copy of each cell's buffers is kept (re-seating needs the
+positions).
+
 ### OSM as data: the vector basemap (default for new users)
 
 `vt-<style>` providers read OpenMapTiles vector tiles from **OpenFreeMap**
