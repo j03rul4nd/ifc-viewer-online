@@ -811,6 +811,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** The far city in cells (city-lod); null while map mode is off. */
   let cityLod: CityLod | null = null
   let autoDetail = true
+  let viewDetailFailed = false
   /**
    * Halved on every lost WebGL context. A context loss in map mode is almost
    * always memory pressure from the scene we built, so the restore rebuilds
@@ -1259,7 +1260,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const tick = (): void => {
         if (!engine) return
         engine.update()
-        updateViewDetail()
+        // Sharpening and the far city are extras: if either throws, the map
+        // itself must keep ticking — an exception here would stop the loop.
+        try { updateViewDetail() } catch (err) {
+          if (!viewDetailFailed) { viewDetailFailed = true; log.warn('view detail update failed:', err) }
+        }
         retuneDepthRange()
         retuneAtmosphere()
         if ((subsurfaceMode !== 'surface' || markersEnabled) && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
