@@ -32,6 +32,7 @@ import { minDistance } from './clearance-math'
 import type { SavedMeasurement } from './measure-file'
 import * as M from './measure-math'
 import { createTaskQueue } from './async'
+import { gripAt, movePoint } from './grips'
 import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
@@ -56,6 +57,10 @@ export interface MeasureSystemDeps {
   planRoute?(req: { from: Vec3; to: Vec3; fromAnchor: Anchor | null; toAnchor: Anchor | null; mode: RouteMode }): Promise<RoutePlan | string>
   /** Client coordinates the pointer is aiming at (canvas centre under pointer lock). */
   aim(e: { clientX: number; clientY: number }): { x: number; y: number }
+  /** Where presses are caught before the camera controls (grips). Without it, no grips. */
+  container?: HTMLElement
+  /** Turn the camera controls off while a grip is dragged. */
+  setControlsEnabled?(enabled: boolean): void
 }
 
 export interface MeasureSystem {
@@ -114,6 +119,8 @@ export interface MeasureSystem {
   paintLabels(ctx: CanvasRenderingContext2D, width: number, height: number, s: number): boolean
   /** Hide the whole overlay for one render (a clean presentation image). Returns the undo. */
   hideForCapture(): () => void
+  /** A grip of the selected measurement is being dragged. */
+  isDraggingGrip(): boolean
   dispose(): void
 }
 
@@ -1107,6 +1114,126 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     })
   }
 
+  // ── Grips: drag a point of the selected measurement ──────────────────────────
+  //
+  // A press within GRIP_PX of a point of the SELECTED item grabs it (caught in
+  // the capture phase, before camera-controls, as the section handles are).
+  // While it moves the point snaps exactly as a new one would; on release the
+  // item is recomputed (grips.ts says what a moved point keeps and drops).
+  // Escape puts it back.
+  interface GripDrag { id: string; index: number; original: MeasureItem; anchor: Anchor | null; pending: boolean; queued: { x: number; y: number } | null }
+  let grip: GripDrag | null = null
+
+  function replaceItem(entry: Entry, next: MeasureItem): void {
+    entry.item = next
+    disposeVisuals(entry.visuals)
+    entry.visuals = buildVisuals(next)
+    refreshVisual(entry)
+  }
+
+  function gripMoveTo(x: number, y: number): void {
+    const g = grip
+    if (!g) return
+    if (g.pending) { g.queued = { x, y }; return }
+    g.pending = true
+    void deps.picker.pick(x, y, { snaps: settings.snaps }).then((pick) => {
+      g.pending = false
+      if (grip !== g) return
+      const entry = entries.get(g.id)
+      if (pick && entry) {
+        let p = pick.point.clone()
+        // Polar tracking from the neighbouring point, as when it was drawn.
+        const pts = entry.item.points
+        const neighbour = pts[g.index - 1] ?? pts[g.index + 1]
+        if (settings.polar && neighbour && pick.kind !== 'vertex' && pick.kind !== 'midpoint') {
+          const tr = M.polarTrack(neighbour, plain(p))
+          if (tr) p = v3(tr.point)
+        }
+        let next: MeasureItem | null
+        if (entry.item.kind === 'point') {
+          const { coords, frame } = deps.toModelCoordinates(p, pick.modelId)
+          const geo = deps.geoOf ? deps.geoOf(p, pick.map?.kind === 'terrain') : null
+          next = { ...entry.item, points: [plain(p)], coords, frame, geo: geo ?? null }
+        } else {
+          next = movePoint(entry.item, g.index, plain(p))
+        }
+        if (next) {
+          g.anchor = anchorOf(pick)
+          replaceItem(entry, next)
+          // The panel's value follows the drag, not just the drop.
+          emit()
+        }
+      }
+      if (g.queued) { const q = g.queued; g.queued = null; gripMoveTo(q.x, q.y) }
+    }, () => { g.pending = false })
+  }
+
+  const onGripMove = (e: PointerEvent): void => {
+    if (!grip) return
+    e.preventDefault()
+    e.stopPropagation()
+    const at = deps.aim(e)
+    gripMoveTo(at.x, at.y)
+  }
+
+  function endGrip(cancel: boolean): void {
+    const g = grip
+    if (!g) return
+    grip = null
+    window.removeEventListener('pointermove', onGripMove, true)
+    window.removeEventListener('pointerup', onGripUp, true)
+    window.removeEventListener('pointercancel', onGripUp, true)
+    window.removeEventListener('keydown', onGripKey, true)
+    deps.setControlsEnabled?.(true)
+    deps.canvas.style.cursor = tool === 'none' ? '' : 'crosshair'
+    const entry = entries.get(g.id)
+    if (!entry) return
+    if (cancel) {
+      replaceItem(entry, g.original)
+    } else if (entry.item.anchors || g.anchor) {
+      const anchors = entry.item.points.map((_, i) => (i === g.index ? g.anchor : entry.item.anchors?.[i] ?? null))
+      entry.item = { ...entry.item, anchors: anchors.some(Boolean) ? anchors : undefined } as MeasureItem
+    }
+    emit()
+  }
+
+  const onGripUp = (e: PointerEvent): void => {
+    if (!grip) return
+    // Swallowed: a release here must not also reach the viewer as a click
+    // (which would select an element, or place a point of the active tool).
+    e.preventDefault()
+    e.stopPropagation()
+    endGrip(false)
+  }
+
+  const onGripKey = (e: KeyboardEvent): void => {
+    if (!grip || e.key !== 'Escape') return
+    e.preventDefault()
+    e.stopPropagation()
+    endGrip(true)
+  }
+
+  const onGripDown = (e: PointerEvent): void => {
+    if (e.button !== 0 || e.target !== deps.canvas || grip || !selectedId) return
+    // Not while a new measurement is half drawn: that click belongs to it.
+    if (hasDraft()) return
+    const entry = entries.get(selectedId)
+    if (!entry || !entry.item.visible) return
+    const at = deps.aim(e)
+    const index = gripAt(entry.item.points.map((q) => deps.picker.project(v3(q))), at.x, at.y)
+    if (index === null) return
+    e.preventDefault()
+    e.stopPropagation()
+    grip = { id: entry.item.id, index, original: entry.item, anchor: entry.item.anchors?.[index] ?? null, pending: false, queued: null }
+    deps.setControlsEnabled?.(false)
+    deps.canvas.style.cursor = 'grabbing'
+    window.addEventListener('pointermove', onGripMove, true)
+    window.addEventListener('pointerup', onGripUp, true)
+    window.addEventListener('pointercancel', onGripUp, true)
+    window.addEventListener('keydown', onGripKey, true)
+  }
+  deps.container?.addEventListener('pointerdown', onGripDown, true)
+
   // ── Public API ───────────────────────────────────────────────────────────────
 
   function setTool(next: MeasureTool): void {
@@ -1447,12 +1574,17 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       }
       return painted
     },
+    isDraggingGrip() {
+      return grip !== null
+    },
     hideForCapture() {
       const was = root.visible
       root.visible = false
       return () => { root.visible = was }
     },
     dispose() {
+      endGrip(true)
+      deps.container?.removeEventListener('pointerdown', onGripDown, true)
       clear()
       for (const o of [draftStroke, rubber, draftDots, draftFill, draftArc, edgeHighlight, faceFill, faceOutline, planeFill, planeOutline, draftDims]) o.dispose()
       root.removeFromParent()

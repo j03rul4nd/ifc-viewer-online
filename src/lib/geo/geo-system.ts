@@ -650,6 +650,12 @@ interface EnvSnapshot {
   background: THREE.Scene['background']
 }
 
+/**
+ * Map layers a measurement never lands on: things that move (pigeons,
+ * traffic, boats) and line traces with no surface (the underground's).
+ */
+const UNMEASURABLE_LAYER = /^osm-(pigeons|vehicles|marina|lake-boat|underground-traces)/
+
 export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let engine: BasemapEngine | null = null
   let geoRoot: THREE.Group | null = null
@@ -1068,6 +1074,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const out: THREE.Object3D[] = []
       if (buildingsMesh && buildingsMesh.visible) out.push(buildingsMesh)
       if (terrain && terrain.group.visible) out.push(terrain.group)
+      // The rest of the city is measurable too — a pavement's width, a bridge
+      // deck's clearance, a landmark's height, a railing on the Bund — but not
+      // what moves (a measurement must not follow a pigeon) nor line traces.
+      // Top-level layers only: intersectObjects recurses into them.
+      geoRoot?.traverse((o) => {
+        if (o === buildingsMesh || !o.name.startsWith('osm-')) return
+        if (o.parent && o.parent.name.startsWith('osm-')) return
+        if (!o.visible || UNMEASURABLE_LAYER.test(o.name)) return
+        out.push(o)
+      })
       return out
     },
 
