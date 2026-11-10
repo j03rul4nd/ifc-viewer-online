@@ -406,7 +406,9 @@ export default function CopyForAI({
   onCopied,
   onError,
 }: CopyForAIProps) {
-  const { t } = useTranslation('blog', { keyPrefix: 'copyForAI' })
+  // The article's language, not the reader's UI language: on an English
+  // article a Spanish browser used to get "Explicar con IA".
+  const { t } = useTranslation('blog', { keyPrefix: 'copyForAI', lng: post.lang ?? 'en' })
   const [open, setOpen] = useState(false)
   const { state, copy } = useClipboard()
   const dropdownRef = useRef<HTMLDivElement>(null)
