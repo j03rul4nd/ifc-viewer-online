@@ -38,6 +38,7 @@ import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { validatorPath } from '../../src/lib/localized-landings'
 import { HOME_COPY } from '../../src/components/landing/home-copy'
+import { heroPreloads, homePictures, imageObjects, noscriptFigures } from './home-images'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -145,6 +146,11 @@ function tweakHead(template: string, meta: ShellMeta, jsonLd: Record<string, unk
   // og:locale is EN in the template; point it at this shell's language.
   html = html.replace(/(<meta\s+property="og:locale"\s+content=")[^"]*(")/, `$1${OG_LOCALE[meta.lang]}$2`)
 
+  // The share image is the skyline capture; say what it shows in this language.
+  const shareAlt = esc(homePictures(meta.lang)[2].alt).replace(/"/g, '&quot;')
+  html = html.replace(/(<meta\s+property="og:image:alt"\s+content=")[^"]*(")/, `$1${shareAlt}$2`)
+  html = html.replace(/(<meta\s+name="twitter:image:alt"\s+content=")[^"]*(")/, `$1${shareAlt}$2`)
+
   // Drop the template's own (EN-only) alternates before injecting the full
   // cluster, or the page would advertise two competing sets.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
@@ -155,7 +161,8 @@ function tweakHead(template: string, meta: ShellMeta, jsonLd: Record<string, unk
   html = html.replace(/<noscript>[\s\S]*?<\/noscript>\s*/g, '')
 
   const ld = `<script type="application/ld+json">${jsonEsc(JSON.stringify(jsonLd))}</script>`
-  html = html.replace('</head>', `  ${hreflangCluster()}\n  ${ld}\n</head>`)
+  // The first picture is the page's largest paint: fetch it before the app boots.
+  html = html.replace('</head>', `  ${hreflangCluster()}\n  ${heroPreloads()}\n  ${ld}\n</head>`)
 
   return html
 }
@@ -187,6 +194,8 @@ function noscriptBlock(lang: Lang, t: LandingLocale): string {
     // Same h1 as the rendered page (home-copy.ts): search term, then the result.
     `<h1>${esc(HOME_COPY[lang].kicker)}: ${esc(HOME_COPY[lang].h1)}</h1>`,
     `<p>${esc(t.hero.subtitleFull)}</p>`,
+    // The page's pictures, with alt text in this language (home-images.ts).
+    noscriptFigures(lang),
     `<section><h2>${esc(t.featuresSection.title)}</h2><p>${esc(t.featuresSection.subtitle)}</p>${features}</section>`,
     `<section><h2>${esc(t.faqSection.title)}</h2>${faq}</section>`,
     `<ul>${links.join('')}</ul>`,
@@ -207,6 +216,8 @@ function jsonLdFor(lang: Lang, t: LandingLocale, canonical: string): Record<stri
         description:  t.hero.subtitleFull,
         isPartOf:     { '@id': `${SITE}/` },
         inLanguage:   lang,
+        primaryImageOfPage: { '@id': imageObjects(lang)[0]['@id'] },
+        image:        imageObjects(lang),
       },
       {
         '@type':             'SoftwareApplication',

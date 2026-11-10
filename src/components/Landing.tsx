@@ -14,6 +14,8 @@ import * as Icons from './Icons'
 import CountUp       from './reactbits/CountUp'
 import ProfilePaths  from './landing/ProfilePaths'
 import { HOME_COPY, PRIMARY_FEATURES, homeLang } from './landing/home-copy'
+import { HeroFigure, ShowcaseSection, CompareSection } from './landing/HomeShowcase'
+import { SHOWCASE_COPY, examplesPath } from './landing/home-showcase'
 import BimoMascot, { type BimoMood } from './mascot/BimoMascot'
 
 interface LandingProps {
@@ -101,7 +103,7 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
       <div className="flex-1 relative overflow-hidden bg-black min-w-0">
         <img
           src={`${import.meta.env.BASE_URL}Renderizado_3D_detallado_de_edificio_modular.png`}
-          alt="IFC building model rendered in browser — multi-storey modular structure with walls, windows, and structural elements highlighted by category"
+          alt="Illustration: exploded view of a modular building with labels on its walls, slabs, beams and ducts"
           className="w-full h-auto block"
           width="1536"
           height="1024"
@@ -392,30 +394,19 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
         {/* ── Hero ── */}
         <header
-          className="relative max-w-[1100px] mx-auto px-4 sm:px-7 pt-10 sm:pt-[70px] pb-10 sm:pb-[60px] text-center"
+          className="relative max-w-[1200px] mx-auto px-4 sm:px-7 pt-8 sm:pt-12 pb-10 sm:pb-[60px] text-left"
           style={{ zIndex: 2 }}
         >
-          {/* Badge */}
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[13px] text-[var(--text-dim)] mb-5 sm:mb-7 max-w-full overflow-hidden">
-              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--accent-2)] text-[13px] font-semibold font-mono tracking-wider shrink-0">
-                FREE
-              </span>
-              {/* Shortened text on mobile */}
-              <span className="sm:hidden text-[13px] text-[var(--text-dim)] truncate">
-                {t('hero.badgeMobile')}
-              </span>
-              <span className="hidden sm:inline">
-                {t('hero.badge')}
-              </span>
-              <Icons.ArrowRight size={11} aria-hidden="true" className="shrink-0" />
-            </div>
-          </div>
+          {/* What it costs and where it runs, as a line of text (no pill). */}
+          <p className="m-0 mb-4 sm:mb-5 text-[13px] sm:text-[14px] text-[var(--text-dim)]">
+            <span className="sm:hidden">{t('hero.badgeMobile')}</span>
+            <span className="hidden sm:inline">{t('hero.badge')}</span>
+          </p>
 
           {/* H1 */}
           <h1
-            className="font-semibold tracking-[-0.03em] leading-[1.08] mb-4 sm:mb-5 max-w-[900px] mx-auto text-balance"
-            style={{ fontSize: 'clamp(30px, 6.4vw, 60px)' }}
+            className="font-semibold tracking-[-0.03em] leading-[1.08] mb-4 sm:mb-5 max-w-[900px] text-balance"
+            style={{ fontSize: 'clamp(30px, 5.6vw, 54px)' }}
           >
             <span className="block text-[15px] sm:text-[17px] font-medium tracking-normal text-[var(--accent-2)] mb-3 sm:mb-4">
               {HOME_COPY[homeLang(langShort)].kicker}
@@ -425,7 +416,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
           {/* Subtitle */}
           <p
-            className="text-[var(--text-dim)] leading-[1.5] sm:leading-[1.45] max-w-[700px] mx-auto tracking-[-0.005em]"
+            className="text-[var(--text-dim)] leading-[1.5] sm:leading-[1.45] max-w-[700px] tracking-[-0.005em]"
             style={{ fontSize: 'clamp(14px, 3.5vw, 19px)' }}
           >
             {t('hero.subtitleFull')}
@@ -433,7 +424,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
           {/* CTA row */}
           <div
-            className="flex gap-3 justify-center mt-7 sm:mt-8 flex-wrap"
+            className="flex gap-3 mt-6 sm:mt-7 flex-wrap items-center"
           >
             {/* Phone first: one tap loads the sample model. Only 24% of phone
                 visitors opened a model (desktop 57%) — few carry an IFC on
@@ -466,7 +457,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
           {/* Trust line */}
           <div
-            className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[13px] text-[var(--text-faint)]"
+            className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-[var(--text-faint)]"
           >
             <span className="hidden sm:inline">{t('hero.trustLine')}</span>
             <span className="sm:hidden">{t('hero.trustLineMobile')}</span>
@@ -493,23 +484,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </button>
           </div>
 
-          {/* Hero card: the product itself */}
-          <div className="relative mt-10 sm:mt-14">
-          <div
-            className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--accent)_30%,transparent)]"
-            aria-label="Application preview"
-          >
-            {/* Mock browser bar */}
-            <div className="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-[var(--border)] bg-[var(--surface-2)] flex items-center gap-2">
-              <div className="flex gap-1 sm:gap-1.5" aria-hidden="true">
-              </div>
-              <div className="flex-1 text-center text-[13px] text-[var(--text-faint)] font-mono truncate px-2">
-                IFC Viewer Online
-              </div>
-            </div>
-            <HeroPreview lightBg={landingTheme === 'light'} />
-          </div>
-          </div>
+          {/* The product itself: a capture of the viewer, not an illustration. */}
+          <HeroFigure lang={langShort} />
         </header>
 
         {/* ── Compatible strip ── */}
@@ -557,6 +533,17 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             ))}
           </div>
         </section>
+
+        <ShowcaseSection
+          lang={langShort}
+          links={{
+            validation: validatorHref,
+            skyline: `${import.meta.env.BASE_URL}${examplesPath(homeLang(langShort))}`,
+            aerial: `${blogBase}ifc-coordinates-georeferencing/`,
+          }}
+        />
+
+        <CompareSection lang={langShort} solibriHref={solibriHref} />
 
         <ProfilePaths lang={langShort} onLaunch={onLaunch} />
 
@@ -644,7 +631,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}
           >
             {PRIMARY_FEATURES.map((idx) => FEATURES[idx]).filter(Boolean).map((f, i) => (
-              <div className="w-full">
+              <div className="w-full" key={i}>
                 <div
                   className="p-5 sm:p-7 h-full bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
                 >
@@ -678,6 +665,17 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             ))}
           </div>
 
+          {/* The generated picture that used to open the page: kept, lower, and
+              labelled for what it is. */}
+          <figure className="m-0 mt-10 sm:mt-14 max-w-[920px] mx-auto">
+            <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+              <HeroPreview lightBg={landingTheme === 'light'} />
+            </div>
+            <figcaption className="mt-3 text-[13px] text-[var(--text-faint)] text-center">
+              {SHOWCASE_COPY[homeLang(langShort)].illustration}
+            </figcaption>
+          </figure>
+
           {/* The rest, without competing with the six above. */}
           <div className="mt-8 sm:mt-10 text-center">
             <h3 className="text-[13px] font-medium text-[var(--text-dim)] m-0 mb-3">{HOME_COPY[homeLang(langShort)].moreFeatures}</h3>
@@ -707,7 +705,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
             <div className="grid gap-4 sm:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
               {STEPS.map((s, i) => (
-                <div className="rounded-xl w-full border border-[var(--border)] bg-[var(--surface)]">
+                <div key={i} className="rounded-xl w-full border border-[var(--border)] bg-[var(--surface)]">
                   <div
                     className="p-5 sm:p-[26px] h-full"
                   >
