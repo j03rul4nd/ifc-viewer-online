@@ -12,6 +12,8 @@ export type HomeLang = (typeof HOME_LANGS)[number]
 export type PathId = 'deliver' | 'receive' | 'build'
 
 interface HomeCopy {
+  /** First line of the h1: the term people search for (GSC: «ifc viewer», 18k impressions). */
+  kicker: string
   /** h1: the result, in plain words. */
   h1: string
   pathsTitle: string
@@ -21,6 +23,7 @@ interface HomeCopy {
 
 export const HOME_COPY: Record<HomeLang, HomeCopy> = {
   en: {
+    kicker: 'Free IFC viewer online',
     h1: 'Check an IFC before you deliver it, or before you accept it',
     pathsTitle: 'Where do you sit in the delivery?',
     paths: {
@@ -31,6 +34,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'Also included',
   },
   es: {
+    kicker: 'Visor IFC gratis online',
     h1: 'Comprueba un IFC antes de entregarlo, o antes de aceptarlo',
     pathsTitle: '¿En qué lado de la entrega estás?',
     paths: {
@@ -41,6 +45,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'También incluye',
   },
   de: {
+    kicker: 'IFC Viewer kostenlos online',
     h1: 'IFC-Modelle prüfen, bevor Sie sie abgeben – oder annehmen',
     pathsTitle: 'Auf welcher Seite der Übergabe stehen Sie?',
     paths: {
@@ -51,6 +56,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'Außerdem enthalten',
   },
   fr: {
+    kicker: 'Visionneuse IFC gratuite en ligne',
     h1: 'Contrôlez un IFC avant de le livrer, ou avant de l’accepter',
     pathsTitle: 'De quel côté de la livraison êtes-vous ?',
     paths: {
@@ -61,6 +67,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'Également inclus',
   },
   pt: {
+    kicker: 'Visualizador IFC grátis online',
     h1: 'Verifique um IFC antes de o entregar, ou antes de o aceitar',
     pathsTitle: 'De que lado da entrega está?',
     paths: {
@@ -71,6 +78,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'Também inclui',
   },
   it: {
+    kicker: 'Visualizzatore IFC online gratuito',
     h1: 'Controlla un IFC prima di consegnarlo, o prima di accettarlo',
     pathsTitle: 'Da che parte della consegna sei?',
     paths: {
@@ -81,6 +89,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'Inoltre',
   },
   ca: {
+    kicker: 'Visor IFC gratuït en línia',
     h1: 'Comprova un IFC abans de lliurar-lo, o abans d’acceptar-lo',
     pathsTitle: 'A quin costat del lliurament ets?',
     paths: {
@@ -91,6 +100,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'També inclou',
   },
   zh: {
+    kicker: '免费在线 IFC 查看器',
     h1: '在交付或验收之前检查 IFC 模型',
     pathsTitle: '您在交付链的哪一端？',
     paths: {
@@ -101,6 +111,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: '还包括',
   },
   ja: {
+    kicker: '無料のオンライン IFC ビューア',
     h1: 'IFC を納品する前に、受け取る前にチェック',
     pathsTitle: '納品のどちら側ですか？',
     paths: {
@@ -111,6 +122,7 @@ export const HOME_COPY: Record<HomeLang, HomeCopy> = {
     moreFeatures: 'そのほかの機能',
   },
   th: {
+    kicker: 'โปรแกรมดูไฟล์ IFC ออนไลน์ฟรี',
     h1: 'ตรวจ IFC ก่อนส่งมอบ หรือก่อนรับมอบ',
     pathsTitle: 'คุณอยู่ฝั่งไหนของการส่งมอบ',
     paths: {

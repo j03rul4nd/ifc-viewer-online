@@ -1,45 +1,19 @@
 // ─── Landing.tsx ──────────────────────────────────────────────────────────────
-// Dependencies installed / used:
-//
-//   Raw WebGL            – LineWaves (no OGL dependency)
-//   framer-motion        – page-entry animations + ShinyText / DecryptedText / CountUp
-//   gsap                 – TextType cursor blink
-//   @radix-ui/react-tooltip – feature-card icon tooltips
-//
-// React Bits components (src/components/reactbits/):
-//   LineWaves      – WebGL wave-line hero background
-//   StarBorder     – animated comet-border CTA buttons
-//   BorderGlow     – cursor-tracked glow border for feature / step cards
-//   ShapeGrid      – scrolling square-grid canvas for final CTA background
-//   GradualBlur    – stacked backdrop-blur strips at hero bottom edge
-//   ShinyText      – framer-motion shimmer sweep (hero badge)
-//   TextType       – gsap-cursor typewriter (hero typing tagline)
-//   DecryptedText  – scramble-reveal text (section labels)
-//   CountUp        – spring-animated number counter (stats strip)
+// The home page. Plain surfaces from the theme tokens, one accent, no animated
+// backgrounds or text effects: the product screenshot is the picture, and the
+// first paint is the final paint (no entry animation on the hero).
+// landing-home-design.test.ts pins this.
 
 import React, { useState, useCallback } from 'react'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { subscribeEmail } from '../lib/subscribe'
 import { trackEmailCaptured, trackProEntryClick } from '../lib/analytics'
 import { LanguageSelectorNav } from './LanguageSelector'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
-import ShinyText     from './reactbits/ShinyText'
-import TextType      from './reactbits/TextType'
-import DecryptedText from './reactbits/DecryptedText'
 import CountUp       from './reactbits/CountUp'
 import ProfilePaths  from './landing/ProfilePaths'
 import { HOME_COPY, PRIMARY_FEATURES, homeLang } from './landing/home-copy'
-import LineWaves     from './reactbits/LineWaves'
-import StarBorder    from './reactbits/StarBorder'
-import BorderGlow    from './reactbits/BorderGlow'
-import ShapeGrid     from './reactbits/ShapeGrid'
-import GradualBlur   from './reactbits/GradualBlur'
-import SideRays      from './reactbits/SideRays'
-import SoftAurora    from './reactbits/SoftAurora'
-import Grainient     from './reactbits/Grainient'
-import PixelCard     from './reactbits/PixelCard'
 import BimoMascot, { type BimoMood } from './mascot/BimoMascot'
 
 interface LandingProps {
@@ -77,7 +51,6 @@ function ThemeToggleBtn({ theme, onToggle }: { theme: 'dark' | 'light'; onToggle
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const GRADIENT_SUBTEXT = ['#0A8481', '#C8A97E', '#6FB8D9', '#0A8481'] as const
 
 const GITHUB_URL = 'https://github.com/j03rul4nd/ifc-viewer-online'
 
@@ -106,15 +79,12 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         />
       </button>
       {open && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
+        <div
           className="pb-4 text-[13px] sm:text-[13.5px] text-[var(--text-dim)] leading-relaxed"
           itemScope itemType="https://schema.org/Answer"
         >
           <span itemProp="text">{a}</span>
-        </motion.div>
+        </div>
       )}
     </div>
   )
@@ -123,8 +93,8 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 // ── Hero preview card ─────────────────────────────────────────────────────────
 function HeroPreview({ lightBg }: { lightBg?: boolean }) {
   const tooltipBg = lightBg
-    ? 'bg-[rgba(255,255,255,0.95)] shadow-[0_4px_16px_rgba(0,0,0,0.10)]'
-    : 'bg-[rgba(24,23,20,0.92)]'
+    ? 'bg-[var(--surface)] shadow-sm'
+    : 'bg-[var(--surface)]'
   return (
     <div className="relative bg-[var(--bg)] flex overflow-hidden">
       {/* 3D render — always shown */}
@@ -139,10 +109,10 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
           decoding="async"
         />
         {/* Element tooltip — smaller on mobile */}
-        <div className={`absolute top-[46%] right-[4%] border border-[var(--border-strong)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11.5px] backdrop-blur-md ${tooltipBg}`}>
-          <div className="font-mono text-[9px] sm:text-[10px] text-[var(--accent-2)] mb-0.5">IfcWall</div>
+        <div className={`absolute top-[46%] right-[4%] border border-[var(--border-strong)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-[13px] backdrop-blur-md ${tooltipBg}`}>
+          <div className="font-mono text-[13px] text-[var(--accent-2)] mb-0.5">IfcWall</div>
           <div className="font-medium">Exterior — 300mm</div>
-          <div className="text-[var(--text-dim)] text-[9px] sm:text-[10.5px] mt-0.5">REI 60 · Load bearing</div>
+          <div className="text-[var(--text-dim)] text-[13px] mt-0.5">REI 60 · Load bearing</div>
         </div>
       </div>
 
@@ -150,10 +120,10 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
       <div className="hidden sm:flex w-[220px] md:w-[260px] border-l border-[var(--border)] bg-[var(--surface)] flex-col shrink-0 overflow-hidden" aria-label="Validation panel preview">
         {/* Panel header */}
         <div className="px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface-2)]">
-          <span className="font-mono text-[10px] text-[var(--text-faint)] tracking-[0.1em]">VALIDATION</span>
+          <span className="font-mono text-[13px] text-[var(--text-faint)] tracking-[0.1em]">VALIDATION</span>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-[var(--ok)]" aria-hidden="true" />
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--ok)' }}>87 / 100</span>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--ok)' }}>87 / 100</span>
           </div>
         </div>
 
@@ -167,7 +137,7 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
             { dot: 'var(--ok)',     label: 'Spatial hierarchy OK' },
             { dot: 'var(--ok)',     label: 'No MEP / structural clashes' },
           ].map((row, i) => (
-            <div key={i} className="flex items-start gap-2 px-2 py-1.5 rounded-[6px] bg-[var(--surface-2)] text-[10.5px]">
+            <div key={i} className="flex items-start gap-2 px-2 py-1.5 rounded-[6px] bg-[var(--surface-2)] text-[13px]">
               <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-[3px]" style={{ background: row.dot }} />
               <span className="text-[var(--text-dim)] leading-tight truncate">{row.label}</span>
             </div>
@@ -176,14 +146,14 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
 
         {/* Score bar */}
         <div className="px-3 py-2.5 border-t border-[var(--border)]" aria-hidden="true">
-          <div className="flex justify-between text-[9.5px] text-[var(--text-faint)] mb-1.5">
+          <div className="flex justify-between text-[13px] text-[var(--text-faint)] mb-1.5">
             <span>Health Score</span>
             <span className="font-semibold" style={{ color: 'var(--ok)' }}>87</span>
           </div>
           <div className="h-[3px] bg-[var(--border)] rounded-full overflow-hidden">
             <div className="h-full rounded-full" style={{ width: '87%', background: 'var(--ok)' }} />
           </div>
-          <div className="text-[9px] text-[var(--text-faint)] mt-1.5">Processed in-browser · 0 uploads</div>
+          <div className="text-[13px] text-[var(--text-faint)] mt-1.5">Processed in-browser · 0 uploads</div>
         </div>
       </div>
     </div>
@@ -191,7 +161,6 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
 }
 
 // ── Animation helpers ─────────────────────────────────────────────────────────
-const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 // ── Feature icon map (static — icons don't need i18n) ─────────────────────────
 // Order mirrors the features array in locales: validator, IDS, 3D map, BCF,
@@ -314,8 +283,6 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
   const PRIVACY_CARDS = (Array.isArray(raw.privacyCards) ? raw.privacyCards as Array<{ title: string; body: string }> : [])
     .map((c, i) => ({ ...c, icon: PRIVACY_ICONS[i] ?? Icons.Check }))
-
-  const TYPING_TEXTS = Array.isArray(raw.typing) ? raw.typing as string[] : []
   const STATS        = Array.isArray(raw.stats)   ? raw.stats  as Array<{ label: string }> : []
   const STEPS        = Array.isArray(raw.steps)   ? raw.steps  as Array<{ n: string; title: string; body: string }> : []
   const FAQ          = Array.isArray(raw.faq)     ? raw.faq    as Array<{ q: string; a: string }> : []
@@ -335,96 +302,6 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
       */}
       <div className={`landing-scroll absolute inset-0 overflow-auto bg-[var(--bg)] text-[var(--text)]${landingTheme === 'light' ? ' lp-light' : ''}`}>
 
-        {/* ── Dark: LineWaves WebGL background ── */}
-        {landingTheme === 'dark' && (
-          <div
-            className="hidden sm:block absolute left-0 right-0 top-0 overflow-hidden pointer-events-none"
-            style={{ height: '100vh', zIndex: 0 }}
-            aria-hidden="true"
-          >
-            <LineWaves
-              speed={0.15}
-              innerLineCount={14}
-              outerLineCount={18}
-              warpIntensity={0.6}
-              rotation={-30}
-              edgeFadeWidth={0.15}
-              colorCycleSpeed={0.0}
-              brightness={0.07}
-              color1="#0A8481"
-              color2="#55CAC3"
-              color3="#4a5280"
-              enableMouseInteraction={false}
-              mouseInfluence={0.8}
-            />
-          </div>
-        )}
-
-        {/* ── Light: SideRays accent over clean CSS gradient ── */}
-        {landingTheme === 'light' && (
-          <div
-            className="hidden sm:block absolute left-0 right-0 top-0 pointer-events-none overflow-hidden"
-            style={{ height: '100vh', zIndex: 0 }}
-            aria-hidden="true"
-          >
-            {/* CSS gradient base — fast, zero GPU cost */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: [
-                'radial-gradient(ellipse 90% 60% at 10% 40%, rgba(0,105,106,0.07) 0%, transparent 55%)',
-                'radial-gradient(ellipse 70% 50% at 90% 15%, rgba(10,132,129,0.05) 0%, transparent 50%)',
-                'radial-gradient(ellipse 50% 40% at 50% 90%, rgba(0,105,106,0.04) 0%, transparent 55%)',
-              ].join(', '),
-            }} />
-            {/* WebGL directional rays — single context, proven lightweight */}
-            <SideRays
-              speed={0.55}
-              rayColor1="#00696A"
-              rayColor2="#6B7FE8"
-              intensity={0.5}
-              spread={1.3}
-              origin="top-right"
-              tilt={-10}
-              saturation={0.65}
-              blend={0.52}
-              falloff={2.6}
-              opacity={0.32}
-            />
-          </div>
-        )}
-
-        {/* ── Dark: SideRays corner accent (layered above LineWaves) ── */}
-        {landingTheme === 'dark' && (
-          <div
-            className="hidden sm:block absolute left-0 right-0 top-0 pointer-events-none"
-            style={{ height: '100vh', zIndex: 1 }}
-            aria-hidden="true"
-          >
-            <SideRays
-              speed={1.2}
-              rayColor1="#0A8481"
-              rayColor2="#C8A97E"
-              intensity={0.9}
-              spread={1.4}
-              origin="top-right"
-              tilt={-8}
-              saturation={1.2}
-              blend={0.58}
-              falloff={2.3}
-              opacity={0.5}
-            />
-          </div>
-        )}
-
-        {/* Grid bg */}
-        <div
-          className="grid-bg absolute inset-0 pointer-events-none"
-          style={{
-            maskImage: 'radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%)',
-            zIndex: 1,
-          }}
-        />
-
         {/* ── Nav ── */}
         <nav
           className="relative max-w-[1200px] mx-auto px-4 sm:px-7 py-4 sm:py-[22px] flex items-center justify-between"
@@ -441,10 +318,10 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           <div className="hidden md:flex items-center gap-3 lg:gap-5">
             {/* Nav links — small subset at md, full set at lg */}
             <a href="#features"
-              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.features')}</a>
             <a href="#how"
-              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.howItWorks')}</a>
             <a href="#fix-guides"
               className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
@@ -453,18 +330,18 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.sdk')}</a>
             <a href="#faq"
-              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.faq')}</a>
             <a
               href={blogBase}
               onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
-              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >Blog</a>
             {/* Public pricing page (static, crawlable): plans and their waitlists. */}
             <a
               href={`${import.meta.env.BASE_URL}${pricingPath(langShort).slice(1)}`}
               onClick={() => trackProEntryClick({ source: 'landing' })}
-              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.pricing')}</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
@@ -476,7 +353,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <LanguageSelectorNav landingTheme={landingTheme} />
             <button
               onClick={onLaunch}
-              className="inline-flex items-center gap-1.5 lg:gap-2 h-[30px] px-2.5 lg:px-3 text-[12px] lg:text-[13px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 lg:gap-2 h-[30px] px-2.5 lg:px-3 text-[13px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all cursor-pointer whitespace-nowrap"
             >
               <Icons.ArrowRight size={13} />
               <span className="hidden lg:inline">{t('actions.openViewer')}</span>
@@ -485,16 +362,16 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           </div>
 
           {/* Mobile: Blog + Pricing + GitHub icon + theme toggle + language selector + primary CTA */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-1.5 min-w-0">
             <a
               href={`${import.meta.env.BASE_URL}${pricingPath(langShort).slice(1)}`}
               onClick={() => trackProEntryClick({ source: 'landing' })}
-              className="text-[12px] font-medium text-[var(--text-dim)] px-1 py-1 no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] font-medium text-[var(--text-dim)] px-1 py-1 no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.pricing')}</a>
             <a
               href={blogBase}
               onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
-              className="text-[12px] font-medium text-[var(--text-dim)] bg-transparent border-0 px-1 py-1 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              className="text-[13px] font-medium text-[var(--text-dim)] bg-transparent border-0 px-1 py-1 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >Blog</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
@@ -506,7 +383,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <LanguageSelectorNav landingTheme={landingTheme} />
             <button
               onClick={onLaunch}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 text-[13px] font-semibold rounded-[9px] bg-[var(--accent)] text-white active:brightness-90 cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-9 px-3 text-[13px] font-semibold rounded-[9px] bg-[var(--accent)] text-white active:brightness-90 cursor-pointer whitespace-nowrap"
             >
               {t('actions.launch')}
             </button>
@@ -519,72 +396,43 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           style={{ zIndex: 2 }}
         >
           {/* Badge */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5 }}>
-            <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[11px] sm:text-[12px] text-[var(--text-dim)] mb-5 sm:mb-7 max-w-full overflow-hidden">
-              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[rgba(10,132,129,0.15)] text-[var(--accent-2)] text-[10px] sm:text-[10.5px] font-semibold font-mono tracking-wider shrink-0">
+          <div>
+            <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[13px] text-[var(--text-dim)] mb-5 sm:mb-7 max-w-full overflow-hidden">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--accent-2)] text-[13px] font-semibold font-mono tracking-wider shrink-0">
                 FREE
               </span>
               {/* Shortened text on mobile */}
-              <span className="sm:hidden text-[11px] text-[var(--text-dim)] truncate">
+              <span className="sm:hidden text-[13px] text-[var(--text-dim)] truncate">
                 {t('hero.badgeMobile')}
               </span>
               <span className="hidden sm:inline">
-                <ShinyText
-                  text={t('hero.badge')}
-                  speed={6}
-                  color="var(--text-dim)"
-                  shineColor="var(--text)"
-                  spread={100}
-                />
+                {t('hero.badge')}
               </span>
               <Icons.ArrowRight size={11} aria-hidden="true" className="shrink-0" />
             </div>
-          </motion.div>
+          </div>
 
           {/* H1 */}
-          <motion.h1
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            transition={{ duration: 0.5, delay: 0.1 }}
+          <h1
             className="font-semibold tracking-[-0.03em] leading-[1.08] mb-4 sm:mb-5 max-w-[900px] mx-auto text-balance"
             style={{ fontSize: 'clamp(30px, 6.4vw, 60px)' }}
           >
+            <span className="block text-[15px] sm:text-[17px] font-medium tracking-normal text-[var(--accent-2)] mb-3 sm:mb-4">
+              {HOME_COPY[homeLang(langShort)].kicker}
+            </span>
             {HOME_COPY[homeLang(langShort)].h1}
-          </motion.h1>
-
-          {/* TextType cycling tagline */}
-          <motion.div
-            variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.18 }}
-            className="font-mono tracking-[-0.01em] mb-3 sm:mb-4 flex justify-center items-center"
-            style={{ fontSize: 'clamp(11px, 3.5vw, 16px)', minHeight: '22px' }}
-            aria-hidden="true"
-          >
-            <TextType
-              key={i18n.language}
-              text={TYPING_TEXTS}
-              typingSpeed={52}
-              deletingSpeed={26}
-              pauseDuration={1800}
-              showCursor
-              cursorCharacter="_"
-              cursorClassName="text-[var(--accent)]"
-              className="text-[var(--text-dim)]"
-            />
-          </motion.div>
+          </h1>
 
           {/* Subtitle */}
-          <motion.p
-            variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.2 }}
+          <p
             className="text-[var(--text-dim)] leading-[1.5] sm:leading-[1.45] max-w-[700px] mx-auto tracking-[-0.005em]"
             style={{ fontSize: 'clamp(14px, 3.5vw, 19px)' }}
           >
             {t('hero.subtitleFull')}
-          </motion.p>
+          </p>
 
           {/* CTA row */}
-          <motion.div
-            variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.3 }}
+          <div
             className="flex gap-3 justify-center mt-7 sm:mt-8 flex-wrap"
           >
             {/* Phone first: one tap loads the sample model. Only 24% of phone
@@ -598,19 +446,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               <Icons.ArrowRight size={15} />
               {t('actions.loadDemo')}
             </button>
-            <StarBorder
-              as="button"
-              color="rgba(10,132,129,0.9)"
-              speed="5s"
-              thickness={1}
-              onClick={onOpenUpload}
-              className="cursor-pointer"
-            >
+            <button type="button" onClick={onOpenUpload} className="inline-flex items-center gap-2 h-11 px-5 rounded-[10px] border border-[var(--border-strong)] text-[var(--text)] sm:border-transparent sm:bg-[var(--accent)] sm:text-white font-semibold hover:brightness-110 active:brightness-95 transition-[filter] cursor-pointer">
               <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium">
                 <Icons.Upload size={14} />
                 {t('actions.openAnIfc')}
               </span>
-            </StarBorder>
+            </button>
 
             <a
               href={GITHUB_URL}
@@ -621,12 +462,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               {GITHUB_SVG}
               {t('actions.viewOnGithub')}
             </a>
-          </motion.div>
+          </div>
 
           {/* Trust line */}
-          <motion.div
-            variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.35 }}
-            className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10.5px] sm:text-[11.5px] text-[var(--text-faint)]"
+          <div
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[13px] text-[var(--text-faint)]"
           >
             <span className="hidden sm:inline">{t('hero.trustLine')}</span>
             <span className="sm:hidden">{t('hero.trustLineMobile')}</span>
@@ -639,56 +479,37 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               <Icons.Lock size={9} />
               Privacy Policy
             </button>
-          </motion.div>
+          </div>
 
           {/* Demo gallery link — captures users who don't have an IFC at hand */}
-          <motion.div
-            variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.4 }}
+          <div
             className="mt-3"
           >
             <button
               onClick={onOpenDemoGallery}
-              className="text-[11px] sm:text-[12px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
+              className="text-[13px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
             >
               {t('demoGallery.openCta')} →
             </button>
-          </motion.div>
+          </div>
 
-          {/* Hero card, with Bimo perched on its top edge */}
-          <div className="relative mt-[128px] sm:mt-14">
-          <BimoMascot className="absolute z-[4] right-[3%] sm:right-[5%] w-[128px] h-[128px] sm:w-[190px] sm:h-[190px] -top-[100px] sm:-top-[152px]" />
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.45, ease: 'easeOut' }}
-            className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_rgba(10,132,129,0.3)]"
+          {/* Hero card: the product itself */}
+          <div className="relative mt-10 sm:mt-14">
+          <div
+            className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--accent)_30%,transparent)]"
             aria-label="Application preview"
           >
             {/* Mock browser bar */}
             <div className="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-[var(--border)] bg-[var(--surface-2)] flex items-center gap-2">
               <div className="flex gap-1 sm:gap-1.5" aria-hidden="true">
-                <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#FF5F57]" />
-                <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#FEBC2E]" />
-                <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#28C840]" />
               </div>
-              <div className="flex-1 text-center text-[10px] sm:text-[11.5px] text-[var(--text-faint)] font-mono truncate px-2">
+              <div className="flex-1 text-center text-[13px] text-[var(--text-faint)] font-mono truncate px-2">
                 IFC Viewer Online
               </div>
             </div>
             <HeroPreview lightBg={landingTheme === 'light'} />
-          </motion.div>
           </div>
-
-          {/* Gradual blur at the hero bottom edge */}
-          <GradualBlur
-            position="bottom"
-            height="4rem"
-            strength={1.5}
-            divCount={5}
-            curve="ease-out"
-            target="parent"
-            zIndex={3}
-          />
+          </div>
         </header>
 
         {/* ── Compatible strip ── */}
@@ -697,7 +518,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           style={{ zIndex: 2, position: 'relative' }}
           aria-label="Supported BIM authoring tools"
         >
-          <div className="text-[10.5px] sm:text-[11.5px] text-[var(--text-faint)] mb-3 sm:mb-4 tracking-[0.08em] uppercase">
+          <div className="text-[13px] text-[var(--text-faint)] mb-3 sm:mb-4 font-medium">
             {t('compatible.label')}
           </div>
           <div className="flex gap-4 sm:gap-10 justify-center flex-wrap text-[13px] sm:text-[15px] font-medium text-[var(--text-dim)] tracking-tight">
@@ -713,9 +534,6 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           style={{
             zIndex: 2,
             position: 'relative',
-            ...(landingTheme === 'light' && {
-              background: 'linear-gradient(180deg, rgba(10,132,129,0.04) 0%, transparent 100%)',
-            }),
           }}
           aria-label="Key statistics"
         >
@@ -750,16 +568,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         >
           <div className="max-w-[1200px] mx-auto">
             <div className="text-center mb-10 sm:mb-[60px]">
-              <div className="text-[11px] sm:text-[12px] tracking-[0.1em] font-mono mb-2 sm:mb-2.5" style={{ color: 'var(--ok)' }}>
-                <DecryptedText
-                  text={t('privacySection.label')}
-                  animateOn="view"
-                  sequential
-                  revealDirection="start"
-                  speed={60}
-                  className=""
-                  encryptedClassName="text-[var(--text-faint)]"
-                />
+              <div className="text-[13px] font-medium mb-2 sm:mb-2.5" style={{ color: 'var(--ok)' }}>
+                {t('privacySection.label')}
               </div>
               <h2
                 id="privacy-heading"
@@ -778,18 +588,13 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
             >
               {PRIVACY_CARDS.map((card, i) => (
-                <motion.div
+                <div
                   key={i}
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.07 }}
                   className="p-5 sm:p-7 bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                   <div
                     className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg flex items-center justify-center mb-3 sm:mb-4"
-                    style={{ background: 'rgba(63,168,102,0.10)', color: 'var(--ok)' }}
+                    style={{ background: 'color-mix(in srgb, var(--ok) 10%, transparent)', color: 'var(--ok)' }}
                     aria-hidden="true"
                   >
                     <card.icon size={15} />
@@ -797,15 +602,15 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   <div className="text-[14px] sm:text-[15px] font-semibold tracking-tight mb-1.5">
                     {card.title}
                   </div>
-                  <div className="text-[12.5px] sm:text-[13px] text-[var(--text-dim)] leading-[1.55]">{card.body}</div>
-                </motion.div>
+                  <div className="text-[13px] text-[var(--text-dim)] leading-[1.55]">{card.body}</div>
+                </div>
               ))}
             </div>
 
             <div className="text-center mt-8 sm:mt-10">
               <button
                 onClick={onNavigateToPrivacy}
-                className="inline-flex items-center gap-1.5 text-[12.5px] sm:text-[13px] font-medium hover:underline underline-offset-2 cursor-pointer bg-transparent border-0 p-0 transition-colors"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline underline-offset-2 cursor-pointer bg-transparent border-0 p-0 transition-colors"
                 style={{ color: 'var(--ok)' }}
               >
                 <Icons.Lock size={11} />
@@ -818,16 +623,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         {/* ── Features ── */}
         <section id="features" className="max-w-[1200px] mx-auto px-4 sm:px-7 py-14 sm:py-[90px]" aria-labelledby="features-heading">
           <div className="text-center mb-10 sm:mb-[60px]">
-            <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
-              <DecryptedText
-                text={t('featuresSection.label')}
-                animateOn="view"
-                sequential
-                revealDirection="start"
-                speed={60}
-                className="text-[var(--accent-2)]"
-                encryptedClassName="text-[var(--text-faint)]"
-              />
+            <div className="text-[13px] text-[var(--accent-2)] font-medium mb-2 sm:mb-2.5">
+              {t('featuresSection.label')}
             </div>
             <h2
               id="features-heading"
@@ -847,29 +644,14 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}
           >
             {PRIMARY_FEATURES.map((idx) => FEATURES[idx]).filter(Boolean).map((f, i) => (
-              <BorderGlow
-                key={i}
-                backgroundColor={landingTheme === 'light' ? '#FFFFFF' : '#18181f'}
-                borderRadius={0}
-                glowColor={landingTheme === 'light' ? '54 69 196' : '10 132 129'}
-                glowRadius={30}
-                glowIntensity={landingTheme === 'light' ? 0.18 : 0.6}
-                coneSpread={20}
-                colors={['#0A8481', '#55CAC3', '#3B82F6']}
-                className="w-full"
-              >
-                <motion.div
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
+              <div className="w-full">
+                <div
                   className="p-5 sm:p-7 h-full bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <div
-                        className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg bg-[rgba(10,132,129,0.12)] text-[var(--accent-2)] flex items-center justify-center mb-3 sm:mb-4 cursor-default"
+                        className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] text-[var(--accent-2)] flex items-center justify-center mb-3 sm:mb-4 cursor-default"
                         aria-hidden="true"
                       >
                         <f.icon size={15} />
@@ -879,7 +661,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       <Tooltip.Content
                         side="top"
                         sideOffset={6}
-                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--text-dim)] shadow-xl backdrop-blur-sm z-50 select-none"
+                        className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium bg-[var(--surface)] border border-[var(--border)] text-[var(--text-dim)] shadow-xl backdrop-blur-sm z-50 select-none"
                       >
                         {f.tip}
                         <Tooltip.Arrow className="fill-[var(--border)]" />
@@ -888,18 +670,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   </Tooltip.Root>
 
                   <div className="text-[14px] sm:text-[15px] font-semibold tracking-tight mb-1.5">
-                    <DecryptedText
-                      text={f.title}
-                      animateOn="hover"
-                      speed={35}
-                      maxIterations={8}
-                      className="text-[var(--text)]"
-                      encryptedClassName="text-[var(--text-faint)]"
-                    />
+                    {f.title}
                   </div>
                   <div className="text-[13px] sm:text-[14px] text-[var(--text-dim)] leading-[1.55]">{f.body}</div>
-                </motion.div>
-              </BorderGlow>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -918,16 +693,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         <section id="how" className="border-t border-[var(--border)] py-14 sm:py-[90px] px-4 sm:px-7" aria-labelledby="how-heading">
           <div className="max-w-[1200px] mx-auto">
             <div className="text-center mb-10 sm:mb-[60px]">
-              <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
-                <DecryptedText
-                  text={t('howItWorksSection.label')}
-                  animateOn="view"
-                  sequential
-                  revealDirection="start"
-                  speed={55}
-                  className="text-[var(--accent-2)]"
-                  encryptedClassName="text-[var(--text-faint)]"
-                />
+              <div className="text-[13px] text-[var(--accent-2)] font-medium mb-2 sm:mb-2.5">
+                {t('howItWorksSection.label')}
               </div>
               <h2
                 id="how-heading"
@@ -940,25 +707,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
             <div className="grid gap-4 sm:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
               {STEPS.map((s, i) => (
-                <PixelCard
-                  key={i}
-                  variant="purple"
-                  colors="#0A8481,#55CAC3,#C8A97E"
-                  gap={9}
-                  speed={28}
-                  className="rounded-xl w-full"
-                  style={{
-                    background: 'var(--surface)',
-                    borderRadius: '12px',
-                    borderColor: 'var(--border)',
-                  }}
-                >
-                  <motion.div
-                    variants={fadeUp}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.08 }}
+                <div className="rounded-xl w-full border border-[var(--border)] bg-[var(--surface)]">
+                  <div
                     className="p-5 sm:p-[26px] h-full"
                   >
                     <div
@@ -969,9 +719,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       {s.n}
                     </div>
                     <div className="text-[15px] sm:text-[16px] font-semibold tracking-tight mb-2">{s.title}</div>
-                    <div className="text-[12.5px] sm:text-[13px] text-[var(--text-dim)] leading-[1.55]">{s.body}</div>
-                  </motion.div>
-                </PixelCard>
+                    <div className="text-[13px] text-[var(--text-dim)] leading-[1.55]">{s.body}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -984,36 +734,10 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           aria-labelledby="fix-guides-heading"
           style={{ position: 'relative', overflow: 'hidden' }}
         >
-          {/* SoftAurora ambient glow — dark mode only */}
-          {landingTheme === 'dark' && (
-            <div className="absolute inset-0 pointer-events-none hidden sm:block" aria-hidden="true" style={{ opacity: 0.6 }}>
-              <SoftAurora
-                speed={0.22}
-                scale={1.4}
-                brightness={0.45}
-                color1="#0A8481"
-                color2="#b08d5f"
-                noiseFrequency={1.8}
-                noiseAmplitude={0.9}
-                bandHeight={0.48}
-                bandSpread={0.85}
-                enableMouseInteraction={false}
-                colorSpeed={0.35}
-              />
-            </div>
-          )}
           <div className="max-w-[1200px] mx-auto" style={{ position: 'relative', zIndex: 1 }}>
             <div className="text-center mb-10 sm:mb-[60px]">
-              <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
-                <DecryptedText
-                  text={t('fixGuides.label')}
-                  animateOn="view"
-                  sequential
-                  revealDirection="start"
-                  speed={55}
-                  className="text-[var(--accent-2)]"
-                  encryptedClassName="text-[var(--text-faint)]"
-                />
+              <div className="text-[13px] text-[var(--accent-2)] font-medium mb-2 sm:mb-2.5">
+                {t('fixGuides.label')}
               </div>
               <h2
                 id="fix-guides-heading"
@@ -1092,7 +816,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           <div className="max-w-[1100px] mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left — pitch */}
             <div>
-              <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2.5">
+              <div className="text-[13px] text-[var(--accent-2)] font-medium mb-2.5">
                 {t('sdk.label')}
               </div>
               <h2
@@ -1139,12 +863,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             {/* Right — code snippet */}
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
               <div className="flex items-center gap-1.5 px-4 h-9 border-b border-[var(--border)]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-                <span className="ml-2 text-[11px] font-mono text-[var(--text-faint)]">index.html</span>
+                <span className="ml-2 text-[13px] font-mono text-[var(--text-faint)]">index.html</span>
               </div>
-              <pre className="m-0 p-4 overflow-x-auto text-[12px] sm:text-[12.5px] leading-[1.6] font-mono text-[var(--text-dim)]">
+              <pre className="m-0 p-4 overflow-x-auto text-[13px] leading-[1.6] font-mono text-[var(--text-dim)]">
 {snippet}
               </pre>
             </div>
@@ -1156,43 +877,23 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         {/* ── Open source callout ── */}
         <section
           className="border-t border-[var(--border)] py-10 sm:py-[60px] px-4 sm:px-7"
-          style={landingTheme === 'light' ? {
-            background: 'linear-gradient(145deg, #f3f5ff 0%, #eaedfc 40%, #f7f8ff 100%)',
-          } : undefined}
           aria-labelledby="opensource-heading"
         >
           <div className="max-w-[760px] mx-auto text-center">
             {/* Light mode: inner card with border + shadow */}
             {landingTheme === 'light' && (
               <div
-                className="relative mx-auto mb-8 sm:mb-10 rounded-2xl border border-[rgba(10,132,129,0.18)] overflow-hidden"
+                className="relative mx-auto mb-8 sm:mb-10 rounded-2xl border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] overflow-hidden"
                 style={{
-                  background: 'rgba(255,255,255,0.75)',
-                  boxShadow: '0 1px 4px rgba(10,132,129,0.08), 0 8px 32px rgba(10,132,129,0.07)',
+                  background: 'var(--surface)',
+                  boxShadow: '0 1px 3px color-mix(in srgb, var(--text) 8%, transparent)',
                   backdropFilter: 'blur(8px)',
                   padding: 'clamp(28px, 5vw, 52px)',
                 }}
               >
-                {/* Subtle indigo accent corner */}
-                <div
-                  className="absolute top-0 right-0 pointer-events-none"
-                  style={{
-                    width: '280px', height: '200px',
-                    background: 'radial-gradient(ellipse at 100% 0%, rgba(10,132,129,0.12) 0%, transparent 65%)',
-                  }}
-                  aria-hidden="true"
-                />
                 <div className="relative">
-                  <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
-                    <DecryptedText
-                      text={t('openSource.label')}
-                      animateOn="view"
-                      sequential
-                      revealDirection="center"
-                      speed={55}
-                      className="text-[var(--accent-2)]"
-                      encryptedClassName="text-[var(--text-faint)]"
-                    />
+                  <div className="text-[13px] text-[var(--accent-2)] font-medium mb-2 sm:mb-2.5">
+                    {t('openSource.label')}
                   </div>
                   <h2
                     id="opensource-heading"
@@ -1208,7 +909,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     <a
                       href={GITHUB_URL}
                       target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[rgba(10,132,129,0.06)] transition-colors no-underline"
+                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)] transition-colors no-underline"
                       aria-label="View source code on GitHub"
                     >
                       {GITHUB_SVG}
@@ -1222,16 +923,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             {/* Dark mode: original layout */}
             {landingTheme === 'dark' && (
               <>
-                <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
-                  <DecryptedText
-                    text={t('openSource.label')}
-                    animateOn="view"
-                    sequential
-                    revealDirection="center"
-                    speed={55}
-                    className="text-[var(--accent-2)]"
-                    encryptedClassName="text-[var(--text-faint)]"
-                  />
+                <div className="text-[13px] text-[var(--accent-2)] font-medium mb-2 sm:mb-2.5">
+                  {t('openSource.label')}
                 </div>
                 <h2
                   id="opensource-heading"
@@ -1279,93 +972,30 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           </div>
         </section>
 
-        {/* ── Final CTA — ShapeGrid background (dark) / solid gradient (light) ── */}
+        {/* ── Final CTA ── */}
         <section
           className="border-t border-[var(--border)] py-14 sm:py-20 px-4 sm:px-7 text-center"
           style={{ position: 'relative', overflow: 'hidden', minHeight: '300px' }}
         >
-          {landingTheme === 'dark' && (
-            <>
-              <div className="absolute inset-0 hidden sm:block" aria-hidden="true">
-                <Grainient
-                  color1="#16182e"
-                  color2="#0A8481"
-                  color3="#080810"
-                  timeSpeed={0.10}
-                  warpStrength={0.5}
-                  warpFrequency={4.0}
-                  warpAmplitude={60.0}
-                  grainAmount={0.055}
-                  grainScale={2.5}
-                  contrast={1.22}
-                  saturation={0.6}
-                  zoom={0.95}
-                  rotationAmount={280.0}
-                />
-              </div>
-              <div className="absolute inset-0 hidden sm:block" style={{ opacity: 0.22 }} aria-hidden="true">
-                <ShapeGrid
-                  direction="diagonal"
-                  speed={0.3}
-                  borderColor="rgba(10,132,129,0.15)"
-                  squareSize={48}
-                  hoverFillColor="rgba(10,132,129,0.08)"
-                  shape="square"
-                  hoverTrailAmount={3}
-                />
-              </div>
-            </>
-          )}
-          {landingTheme === 'light' && (
-            <div className="absolute inset-0" aria-hidden="true">
-              <Grainient
-                color1="#c7d0ff"
-                color2="#0A8481"
-                color3="#e8ecff"
-                timeSpeed={0.09}
-                warpStrength={0.45}
-                warpFrequency={4.0}
-                warpAmplitude={55.0}
-                grainAmount={0.055}
-                grainScale={2.2}
-                contrast={1.22}
-                saturation={0.85}
-                zoom={0.95}
-                rotationAmount={260.0}
-              />
-            </div>
-          )}
-
-          {/* Light theme: the gradient sweeps through mid-blue, where the dim
-              and faint text fell to ~2.4:1 — and it moves, so contrast changed
-              by the second. A frosted panel keeps the gradient as a frame and
-              every line of text above 4.5:1. */}
           <div
             style={{ position: 'relative', zIndex: 1 }}
-            className={landingTheme === 'light'
-              ? 'mx-auto max-w-[680px] rounded-2xl border border-white/70 bg-white/85 px-5 py-9 sm:px-10 sm:py-11 shadow-[0_20px_60px_-24px_rgba(0,105,106,0.45)] backdrop-blur-md'
-              : undefined}
+            className="mx-auto max-w-[680px]"
           >
-            <motion.h2
-              variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
+            <h2
               className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
               style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}
             >
               {t('finalCta.title')}
-            </motion.h2>
+            </h2>
 
-            <motion.p
-              variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-              transition={{ delay: 0.08 }}
+            <p
               className="text-[14px] sm:text-[16px] text-[var(--text-dim)] mb-2 sm:mb-3"
             >
               {t('finalCta.subtitle')}
-            </motion.p>
+            </p>
 
-            <motion.p
-              variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-              transition={{ delay: 0.12 }}
-              className="text-[12px] sm:text-[13px] text-[var(--text-faint)] mb-7 sm:mb-8"
+            <p
+              className="text-[13px] text-[var(--text-faint)] mb-7 sm:mb-8"
             >
               {t('finalCta.githubLine')}{' '}
               <a
@@ -1375,38 +1005,27 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               >
                 GitHub
               </a>
-            </motion.p>
+            </p>
 
-            <motion.div
-              variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-              transition={{ delay: 0.16 }}
+            <div
               className="flex flex-col items-center gap-3"
             >
-              <StarBorder
-                as="button"
-                color="rgba(10,132,129,0.9)"
-                speed="4s"
-                thickness={1}
-                onClick={onOpenUpload}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={onOpenUpload} className="inline-flex items-center gap-2 h-11 px-5 rounded-[10px] bg-[var(--accent)] text-white font-semibold hover:brightness-110 active:brightness-95 transition-[filter] cursor-pointer">
                 <span className="inline-flex items-center gap-2 text-[14px] sm:text-[15px] font-medium">
                   <Icons.Upload size={15} />
                   {t('actions.openAnIfc')}
                 </span>
-              </StarBorder>
+              </button>
               <button
                 onClick={onOpenDemoGallery}
-                className="text-[12px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
+                className="text-[13px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
               >
                 {t('demoGallery.openCta')} →
               </button>
-            </motion.div>
+            </div>
 
             {/* ── Email capture ── */}
-            <motion.div
-              variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
-              transition={{ delay: 0.24 }}
+            <div
               className="mt-10 sm:mt-12 pt-8 sm:pt-10 border-t border-[var(--border)]"
             >
               <div className="relative mx-auto -mt-2 mb-1 w-[96px] h-[96px]">
@@ -1421,13 +1040,13 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   <p className="text-[13px] font-medium" style={{ color: 'var(--ok)' }}>
                     {te('successTitle')}
                   </p>
-                  <p className="text-[11px] text-[var(--text-faint)]">
+                  <p className="text-[13px] text-[var(--text-faint)]">
                     {te('successBody')}
                   </p>
                 </div>
               ) : (
                 <>
-                  <p className="text-[12px] sm:text-[13px] text-[var(--text-dim)] text-center mb-3">
+                  <p className="text-[13px] text-[var(--text-dim)] text-center mb-3">
                     {te('prompt')}
                     <span className="hidden sm:inline">{te('promptSuffix')}</span>
                   </p>
@@ -1448,18 +1067,18 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     <button
                       type="submit"
                       disabled={emailStatus === 'loading' || !emailValue.trim()}
-                      className="h-9 px-4 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-50"
-                      style={{ background: 'var(--accent)', color: '#fff' }}
+                      className="h-9 px-4 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-50"
+                      style={{ background: 'var(--accent)', color: 'white' }}
                     >
                       {emailStatus === 'loading' ? '...' : te('submit')}
                     </button>
                   </form>
                   {emailStatus === 'error' && emailError && (
-                    <p className="text-[11px] text-center mt-2" style={{ color: 'var(--danger)' }}>
+                    <p className="text-[13px] text-center mt-2" style={{ color: 'var(--danger)' }}>
                       {emailError}
                     </p>
                   )}
-                  <p className="text-[10.5px] text-center mt-3 text-[var(--text-faint)] max-w-sm mx-auto leading-relaxed">
+                  <p className="text-[13px] text-center mt-3 text-[var(--text-faint)] max-w-sm mx-auto leading-relaxed">
                     {te('consentBefore')}
                     <button
                       type="button"
@@ -1472,12 +1091,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                   </p>
                 </>
               )}
-            </motion.div>
+            </div>
           </div>
         </section>
 
         {/* ── Footer ── */}
-        <footer className="border-t border-[var(--border)] py-5 sm:py-[26px] px-4 sm:px-7 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 text-[11px] sm:text-[12px] text-[var(--text-faint)] max-w-[1200px] mx-auto">
+        <footer className="border-t border-[var(--border)] py-5 sm:py-[26px] px-4 sm:px-7 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 text-[13px] text-[var(--text-faint)] max-w-[1200px] mx-auto">
           <div className="flex items-center gap-2">
             <Icons.Logo size={16} aria-hidden="true" />
             <span>
@@ -1524,7 +1143,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <a
               href={blogBase}
               onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
-              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
+              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[13px] cursor-pointer hover:text-[var(--text)] transition-colors"
             >
               Blog
             </a>
@@ -1547,13 +1166,13 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </a>
             <button
               onClick={onNavigateToPrivacy}
-              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
+              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[13px] cursor-pointer hover:text-[var(--text)] transition-colors"
             >
               Privacy
             </button>
             <button
               onClick={onNavigateToTerms}
-              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
+              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[13px] cursor-pointer hover:text-[var(--text)] transition-colors"
             >
               Terms
             </button>
