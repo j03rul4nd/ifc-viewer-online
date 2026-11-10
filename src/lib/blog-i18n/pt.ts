@@ -16629,7 +16629,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
     faqs: [
       {
         q: "O IFC Viewer Online substitui o Solibri?",
-        a: "Não em todos os fluxos de trabalho. O IFC Viewer Online é uma ferramenta rápida e gratuita, baseada em navegador, para verificação de qualidade, validação IDS e edição de propriedades — forte para controle de qualidade pré-entrega e cenários sem upload. O Solibri se destaca na criação de regras corporativas, verificação COBie, gestão completa de BCF e governança em toda a empresa. Muitas equipes usam as duas ferramentas em etapas diferentes do mesmo fluxo de trabalho.",
+        a: "Não em todos os fluxos de trabalho. O IFC Viewer Online é uma ferramenta gratuita, baseada em navegador, para verificação de qualidade, validação IDS e edição de propriedades — forte para controle de qualidade pré-entrega e cenários sem upload. O Solibri é a ferramenta para criação de regras personalizadas, detecção de conflitos entre disciplinas, gestão de problemas em BCF e governança em toda a empresa. Muitas equipes usam as duas ferramentas em etapas diferentes do mesmo fluxo de trabalho.",
       },
       {
         q: "Posso usar o IFC Viewer Online e o Solibri no mesmo fluxo de trabalho de um projeto?",
@@ -16637,39 +16637,50 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
       {
         q: "O IFC Viewer Online oferece suporte à validação IDS como o Solibri?",
-        a: "O IFC Viewer Online oferece suporte completo à validação IDS 1.0, com as seis facetas — Entity, Attribute, Property, Classification, Material e PartOf — validadas contra o conjunto completo de casos de teste oficiais da bSI. O Solibri adicionou suporte a IDS em versões recentes; verifique a versão atual para saber os detalhes de cobertura.",
+        a: "O IFC Viewer Online oferece suporte à validação IDS 1.0, com as seis facetas — Entity, Attribute, Property, Classification, Material e PartOf — validadas contra o conjunto de casos de teste oficiais da bSI. O Solibri lista verificações de propriedades obrigatórias contra definições IDS no plano Essential, e fluxos de trabalho IDS, um editor de IDS e um validador de IDS no Advanced (solibri.com/pricing, consultado em 2026-11-10).",
       },
       {
         q: "O que o Solibri faz que o IFC Viewer Online não faz?",
-        a: "As principais vantagens do Solibri são a criação de regras personalizadas para requisitos BIM específicos da organização, a gestão completa do ciclo de vida do BCF (não apenas exportação), a verificação de dados de COBie e de gestão de facilities, a implantação corporativa com conjuntos de regras centralizados, a detecção geométrica de conflitos e o tratamento de modelos federados muito grandes, onde a RAM do desktop não é uma limitação.",
+        a: "Criação de regras personalizadas para requisitos BIM específicos da organização, detecção de conflitos entre disciplinas com uma matriz de conflitos, gestão de problemas em BCF com integrações com CDE, extração de quantitativos e de informações, federação de modelos nativos do Revit e um plano totalmente offline para redes restritas (solibri.com/pricing, consultado em 2026-11-10).",
       },
       {
         q: "Existe uma versão gratuita do Solibri?",
-        a: "Sim — o Solibri Anywhere é gratuito para uso não comercial, incluindo estudantes, acadêmicos e aprendizado individual. Trabalho comercial em projetos exige uma licença paga; os preços não são divulgados publicamente. O IFC Viewer Online é gratuito para todos os casos de uso, inclusive trabalho comercial, sem necessidade de conta.",
+        a: "Não para novos clientes. O Solibri Anywhere, que tinha uma versão gratuita, agora é um produto legado: os usuários atuais da versão gratuita podem manter as versões anteriores à 26.4.0 (solibri.com/products/legacy-products, consultado em 2026-11-10). O plano atual mais barato é o Starter, a € 99 por licença por ano, e a verificação de modelos começa no Essential, a partir de € 1.428 (solibri.com/pricing, consultado em 2026-11-10). O IFC Viewer Online é gratuito para todos os casos de uso, inclusive trabalho comercial, sem necessidade de conta.",
       },
       {
         q: "Qual ferramenta é melhor para modelos IFC sensíveis do ponto de vista de privacidade?",
-        a: "Tanto o Solibri quanto o IFC Viewer Online processam os arquivos localmente — o Solibri no desktop, o IFC Viewer Online no navegador via WebAssembly. Nenhum dos dois envia arquivos para um servidor na nuvem por padrão. O IFC Viewer Online tem uma vantagem de acessibilidade: funciona em qualquer navegador sem instalação, o que importa quando os modelos não podem ser copiados para uma estação de trabalho com uma licença do Solibri instalada.",
+        a: "O IFC Viewer Online lê o arquivo no navegador via WebAssembly e não faz upload dele, e funciona em qualquer navegador sem instalação. No Solibri, depende do produto: o Solibri WebChecker é um serviço em que os usuários fazem upload de modelos IFC, com os dados armazenados na UE ou nos EUA, enquanto o plano Security+ é descrito como isolado da rede (air-gapped) e totalmente offline (solibri.com/solutions/webchecker e solibri.com/pricing, consultado em 2026-11-10). Para uma rede sem nenhum acesso à internet, as opções são o Solibri Security+ ou uma cópia do IFC Viewer Online hospedada por você.",
       },
     ],
     content: [
       {
         type: "callout",
         variant: "info",
-        text: "TL;DR — o Solibri é a ferramenta certa para criação de regras corporativas, verificação COBie e coordenação de BCF multidisciplinar. O IFC Viewer Online é a ferramenta certa para controle de qualidade pré-entrega rápido, conformidade com IDS, modelos sensíveis à privacidade e edição de propriedades — sem instalação e sem upload. Os fluxos de trabalho mais eficazes em projetos grandes usam as duas ferramentas.",
+        text: "TL;DR — o Solibri é a ferramenta certa para criação de regras personalizadas, detecção de conflitos entre disciplinas e coordenação de BCF com integrações com CDE. O IFC Viewer Online é a ferramenta certa para controle de qualidade pré-entrega rápido, conformidade com IDS, modelos sensíveis à privacidade e edição de propriedades — sem instalação e sem upload. Os fluxos de trabalho mais eficazes em projetos grandes usam as duas ferramentas.",
+      },
+      {
+        type: "p",
+        text: [
+          "Sem tempo? A página ",
+          {
+            text: "Alternativa ao Solibri",
+            href: "https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/",
+          },
+          " traz a comparação em uma única tabela, com os planos e preços atuais do Solibri e a fonte de cada valor. Este artigo é a versão longa.",
+        ],
       },
       {
         type: "stat-row",
         stats: [
           { value: 44, label: "regras de qualidade (navegador)" },
           { value: 6, label: "facetas do IDS 1.0 (navegador)" },
-          { value: 0, suffix: " upload necessário", label: "em qualquer uma das ferramentas" },
+          { value: 0, suffix: " upload necessário", label: "na ferramenta de navegador" },
           { value: 0, label: "resposta única para todos os casos" },
         ],
       },
       {
         type: "p",
-        text: "O Solibri é a ferramenta de referência em controle de qualidade BIM há mais de uma década. É caro, exige instalação e leva tempo para configurar — mas, quando um projeto grande e multidisciplinar precisa de verificação de modelos de nível corporativo com regras personalizadas e ciclo completo de BCF, é difícil de superar. Este artigo não argumenta o contrário.",
+        text: "O Solibri é a ferramenta de referência em controle de qualidade BIM há mais de uma década. Seus planos vão de € 99 a € 2.772 por licença por ano, e a verificação de modelos começa no plano Essential, de € 1.428 (solibri.com/pricing, consultado em 2026-11-10). Quando um projeto grande e multidisciplinar precisa de verificação de modelos com regras personalizadas, detecção de conflitos e gestão de problemas em BCF, é difícil de superar. Este artigo não argumenta o contrário.",
       },
       {
         type: "p",
@@ -16677,7 +16688,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
       {
         type: "p",
-        text: "Esta comparação foi escrita como uma avaliação independente. Nós construímos o IFC Viewer Online, então temos conhecimento direto do seu funcionamento interno. Para o Solibri, contamos com a documentação publicada e a experiência de profissionais de BIM que usam as duas ferramentas. Quando temos dúvidas sobre um recurso atual do Solibri, dizemos isso explicitamente em vez de afirmar algo que não podemos verificar.",
+        text: "Nós construímos o IFC Viewer Online, então temos conhecimento direto do seu funcionamento interno. Tudo o que este artigo diz sobre os planos, preços e recursos do Solibri foi lido no próprio site do Solibri em 2026-11-10: solibri.com/pricing, as páginas de produto, solibri.com/products/legacy-products e solibri.com/solutions/webchecker. Quando essas páginas não informam algo, a tabela diz isso em vez de supor. Os fornecedores mudam seus planos: confira as páginas atuais antes de comprar.",
       },
       { type: "h2", text: "Comparação rápida: Solibri x IFC Viewer Online" },
       {
@@ -16686,92 +16697,88 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         rows: [
           [
             "Instalação",
-            "Necessária — instalador para Windows e Mac",
+            "Não informado em solibri.com; o WebChecker roda no navegador",
             "Nenhuma — funciona em qualquer navegador, qualquer sistema operacional",
           ],
-          ["Plataforma", "Somente desktop", "Navegador (Chrome, Firefox, Safari, Edge)"],
+          ["Plataforma", "Não informado em solibri.com", "Navegador (Chrome, Firefox, Safari, Edge)"],
           [
             "Preço",
-            "Licença comercial necessária (fale com o setor de vendas); Solibri Anywhere gratuito para uso não comercial",
+            "Starter € 99, Essential € 1.428, Advanced € 2.109, Premium € 2.772 por licença por ano (preços iniciais); Security+ sob consulta",
             "Gratuito para todos os casos de uso — sem conta, sem licença",
           ],
           [
             "Regras de validação",
-            "Mecanismo de regras personalizadas — crie regras para qualquer requisito",
+            "Verificação baseada em regras predefinidas a partir do Essential; criação de regras personalizadas no Advanced e no Premium",
             "44 regras de qualidade IFC integradas + Health Score (0–100)",
           ],
           [
             "Suporte a IDS 1.0",
-            "⚠️ Adicionado em versões recentes — verifique a versão atual",
+            "✅ Verificação de propriedades obrigatórias contra IDS no Essential; fluxos de trabalho, editor e validador de IDS no Advanced",
             "✅ Completo: as 6 facetas, 100 casos de teste oficiais da bSI",
           ],
           [
             "Edição de propriedades",
-            "⚠️ Principalmente uma ferramenta de leitura — não é feita para editar o IFC exportado",
+            "Não informado em solibri.com",
             "✅ Não destrutiva: Psets, GUIDs, nomes, com desfazer completo",
           ],
           [
             "Suporte a BCF",
-            "✅ Ciclo completo: criar, atribuir, acompanhar, resolver, auditar",
-            "✅ Exporta BCF 2.1 — sem caixa de entrada de problemas nativa",
+            "✅ Gestão de problemas em BCF e integrações com CDE, a partir do Essential",
+            "✅ Lê e grava arquivos BCF 2.1 e 3.0 — sem servidor BCF, sem caixa de entrada de problemas",
           ],
           [
             "Health Score",
-            "❌ Sem uma métrica numérica única de qualidade",
+            "Não informado em solibri.com",
             "✅ Pontuação logarítmica de 0 a 100 ponderada por gravidade",
           ],
           [
             "Modelos grandes",
-            "⚠️ Possível; exige muita RAM acima de 500 MB",
-            "⚠️ Limite de memória do navegador de ~300–500 MB por dispositivo",
+            "Não informado para os planos de desktop; o WebChecker aceita até 5 GB por arquivo IFC",
+            "⚠️ Limite de 2 GB por arquivo; na prática, a memória do dispositivo",
           ],
           [
             "Multimodelo",
-            "✅ Federação completa com detecção de conflitos",
+            "✅ Federação de IFC e de modelos nativos do Revit, com detecção de conflitos, a partir do Essential",
             "✅ Federação e comparação lado a lado",
           ],
           [
             "Exportação de IFC",
-            "⚠️ Principalmente uma ferramenta de importação; reexportação de IFC limitada",
+            "Não informado em solibri.com",
             "✅ Exporta o IFC corrigido com todas as edições aplicadas",
           ],
           [
             "Exportação de GLB",
-            "❌ Não suportado",
+            "Não informado em solibri.com",
             "✅ Exporta para GLB em fluxos de trabalho de web e visualização",
           ],
           [
             "Sem necessidade de upload",
-            "✅ Desktop — o modelo permanece na máquina local",
+            "O WebChecker faz upload do IFC (residência de dados na UE ou nos EUA); não informado para os outros planos",
             "✅ WASM — o modelo é processado inteiramente no dispositivo",
           ],
           [
             "Capacidade offline",
-            "✅ Totalmente offline após a instalação",
-            "✅ Offline após o primeiro carregamento; o OPFS armazena os modelos em cache",
+            "✅ Plano Security+: operação totalmente offline",
+            "❌ Não: a página precisa ser carregada pela internet",
           ],
           [
             "Curva de aprendizado",
-            "Alta — criar regras é uma habilidade especializada",
+            "A criação de regras está nos planos Advanced e Premium",
             "Baixa — arraste e solte, resultados instantâneos, sem configuração",
           ],
           [
             "Colaboração",
-            "✅ Gestão completa de BCF corporativo",
-            "⚠️ Apenas exportação de BCF; sem gestão de problemas recebidos",
+            "✅ Gestão de problemas em BCF e integrações com CDE",
+            "⚠️ Apenas arquivos BCF; sem gestão de problemas recebidos",
           ],
-          [
-            "SDK / incorporação",
-            "❌ Sem SDK público de incorporação",
-            "✅ SDK para CI/CD e incorporação em sites",
-          ],
+          ["SDK / incorporação", "Não informado em solibri.com", "✅ SDK para CI/CD e incorporação em sites"],
           [
             "Postura de privacidade",
-            "✅ Desktop on-premise; o modelo permanece na estação de trabalho",
+            "Security+: isolado da rede (air-gapped), sem telemetria. WebChecker: o modelo é enviado por upload e os resultados ficam guardados por 30 dias",
             "✅ WASM no dispositivo; verificável nas DevTools do navegador",
           ],
         ],
-        caption: "Facetas do IDS 1.0: Entity, Attribute, Property, Classification, Material, PartOf. Cobertura de IDS do Solibri: verifique a versão atual. Preço comercial do Solibri: fale com o setor de vendas; varia por região e volume.",
+        caption: "Facetas do IDS 1.0: Entity, Attribute, Property, Classification, Material, PartOf. Coluna do Solibri: solibri.com/pricing, solibri.com/products/essential, solibri.com/products/advanced e solibri.com/solutions/webchecker, consultado em 2026-11-10. “Não informado” significa que essas páginas não dizem.",
         rowHeaders: true,
       },
       { type: "h2", text: "Quando o Solibri é a ferramenta certa" },
@@ -16789,23 +16796,23 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           },
           {
             icon: "📋",
-            title: "Verificação de dados de COBie e gestão de facilities",
-            body: "Fluxos de entrega no setor público e de gestão de facilities (FM) exigem a integralidade das propriedades COBie como obrigação contratual. O Solibri tem modelos de COBie integrados e verifica se centenas de propriedades de FM exigidas estão presentes, com o tipo correto e preenchidas em todo o modelo — uma capacidade que não está disponível em validadores leves.",
+            title: "Extração de quantitativos e de informações",
+            body: "O Solibri Advanced inclui Quantity / Information Takeoff (QTO / ITO): quantitativos e informações extraídos do modelo segundo regras que você define (solibri.com/pricing, consultado em 2026-11-10). O IFC Viewer Online apenas soma as quantidades já gravadas no IFC e exporta uma planilha COBie; não tem regras de extração.",
           },
           {
             icon: "🏢",
             title: "Governança corporativa em vários projetos",
-            body: "Um escritório com mais de 20 projetos ativos precisa de padrões de controle de qualidade aplicados de forma consistente e centralizada. A implantação corporativa do Solibri permite que um gerente BIM defina conjuntos de regras e os distribua por toda a organização. Todas as equipes de projeto executam as mesmas verificações. Todo resultado é auditável.",
+            body: "Um escritório com mais de 20 projetos ativos precisa de padrões de controle de qualidade aplicados de forma consistente e centralizada. O Solibri vende os planos Advanced e Premium exatamente para isso: padrões de validação repetíveis entre equipes e estruturas de validação centralizadas. Todas as equipes de projeto executam as mesmas verificações.",
           },
           {
             icon: "🔄",
-            title: "Gestão completa do ciclo de vida do BCF",
-            body: "O suporte a BCF do Solibri vai além da exportação: os problemas são criados, atribuídos a líderes de disciplinas específicas, acompanhados até a resolução e auditados com histórico completo. Para coordenação multidisciplinar, em que um problema levantado na semana 2 precisa ser resolvido e verificado até a semana 6, essa gestão do ciclo de vida é essencial.",
+            title: "Gestão de problemas em BCF",
+            body: "O Solibri Essential e os planos acima dele incluem gestão de problemas em BCF e integrações com CDE, de modo que os problemas encontrados em uma verificação seguem para as plataformas onde são atribuídos e acompanhados. O IFC Viewer Online lê e grava arquivos BCF, e só: não há um servidor por trás para acompanhar um problema levantado na semana 2 até que seja verificado na semana 6.",
           },
           {
             icon: "💥",
             title: "Detecção geométrica de conflitos em modelos federados",
-            body: "Para edifícios ou infraestruturas complexas, em que os modelos estrutural, de MEP e arquitetônico precisam ser coordenados espacialmente, a detecção de conflitos e a análise de espaços do Solibri identificam conflitos que a validação baseada em regras não detecta. Nenhuma ferramenta de navegador trata detecção de conflitos geométricos nessa escala.",
+            body: "Para edifícios ou infraestruturas complexas, em que os modelos estrutural, de MEP e arquitetônico precisam ser coordenados espacialmente, a detecção de conflitos do Solibri (conflitos rígidos e flexíveis — hard e soft clashes — no Essential, uma matriz de conflitos com tolerâncias no Advanced) encontra conflitos que esta ferramenta não procura. O IFC Viewer Online apenas compara caixas delimitadoras dentro de um único modelo.",
           },
           {
             icon: "✅",
@@ -16900,25 +16907,25 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           color: "accent",
           items: [
             "Criação de regras personalizadas — codifica qualquer requisito BIM; verificações que nenhum conjunto de regras fixo consegue executar",
-            "Ciclo completo de BCF: criar, atribuir, acompanhar, resolver e auditar problemas entre disciplinas",
-            "Verificação de dados de COBie e FM — cobre requisitos contratuais de integralidade de propriedades",
-            "Governança corporativa — conjuntos de regras centralizados implantados e atualizados em todos os projetos",
-            "Detecção geométrica de conflitos e análise de espaços em modelos federados",
+            "Gestão de problemas em BCF e integrações com CDE, a partir do plano Essential",
+            "Extração de quantitativos e de informações (QTO / ITO) no plano Advanced",
+            "Governança — padrões de validação repetíveis e estruturas centralizadas no Advanced e no Premium",
+            "Detecção de conflitos: conflitos rígidos e flexíveis (hard e soft clashes) e uma matriz de conflitos entre disciplinas",
             "Saída reconhecida pelo setor — aceita por verificadores e clientes como o artefato de controle de qualidade",
-            "Solibri Anywhere gratuito para uso não comercial, com acesso completo aos recursos",
+            "Plano Security+ para redes sem internet: isolado da rede (air-gapped), sem telemetria",
           ],
         },
         right: {
           label: "Limitações",
           color: "muted",
           items: [
-            "A licença comercial é cara — os preços não são divulgados publicamente; variam por região e volume",
-            "Somente desktop — sem acesso via navegador para equipes remotas, revisão de clientes ou estações sem licença",
-            "Curva de aprendizado acentuada — criar regras é uma habilidade BIM especializada que exige treinamento dedicado",
-            "Exige instalação e implantação de TI antes que qualquer membro da equipe possa usá-lo",
-            "Exige muita RAM para modelos grandes; o processamento se degrada acima de 500 MB com conjuntos de regras complexos",
-            "Sem SDK público para incorporação ou automação de CI/CD",
-            "Sem um Health Score numérico único integrado — aprovado/reprovado por regra, não um índice de qualidade unificado",
+            "A verificação de modelos começa no Essential, € 1.428 por licença por ano; o plano Starter, de € 99, serve para visualizar modelos e revisar resultados",
+            "O Solibri Anywhere gratuito é um produto legado, não disponível para novos clientes",
+            "Regras personalizadas exigem o plano Advanced (€ 2.109) ou o Premium (€ 2.772)",
+            "O WebChecker, o serviço no navegador, só vem com o Advanced e o Premium e consome 50 tokens por verificação",
+            "O WebChecker faz upload do modelo e guarda os resultados por 30 dias",
+            "Os preços são preços iniciais; o Security+ é orçado sob consulta",
+            "Os sistemas operacionais e os limites de tamanho de arquivo não são informados nas páginas de preços e de produto",
           ],
         },
       },
@@ -16946,25 +16953,25 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             "Sem caixa de entrada de BCF — exporta BCF, mas não gerencia o ciclo de vida de problemas recebidos",
             "Sem verificação de COBie nem validação de integralidade de propriedades de FM",
             "Sem detecção geométrica de conflitos entre disciplinas de modelos federados",
-            "O limite de memória do navegador (~300–500 MB) restringe modelos de infraestrutura muito grandes",
+            "Limite de 2 GB por arquivo e, na prática, a memória do dispositivo",
             "Sem camada de governança corporativa — sem implantação centralizada de regras em toda a organização",
-            "Exige um carregamento inicial pela internet; a primeira sessão não pode ficar totalmente isolada da rede",
+            "Sem modo offline: a página precisa ser carregada pela internet todas as vezes",
           ],
         },
       },
       { type: "h2", text: "Considerações de custo" },
       {
         type: "p",
-        text: "O preço comercial do Solibri não é divulgado publicamente. O custo da licença varia por região, volume e tipo de acordo. O custo total da adoção corporativa é sistematicamente mais alto do que apenas a licença: é preciso considerar o treinamento (criar regras não é algo intuitivo), a implantação e manutenção de TI, e o custo contínuo de tempo para desenvolver e atualizar conjuntos de regras conforme os requisitos do projeto evoluem. Para um gerente BIM avaliando a adoção corporativa, reserve orçamento para pelo menos um treinamento dedicado, além da licença.",
+        text: "O Solibri publica preços iniciais por licença por ano: Starter € 99, Essential € 1.428, Advanced € 2.109 e Premium € 2.772; o Security+ é orçado sob consulta (solibri.com/pricing, consultado em 2026-11-10). O Starter serve para visualizar modelos e revisar resultados; a verificação de modelos é feita no Essential, no Advanced ou no Premium. O custo total da adoção é mais alto do que apenas a licença: é preciso considerar o treinamento, a implantação e o custo contínuo de tempo para desenvolver e atualizar conjuntos de regras conforme os requisitos do projeto evoluem.",
       },
       {
         type: "p",
-        text: "O Solibri Anywhere elimina o custo da licença para uso não comercial, tornando-o acessível para estudantes, acadêmicos e quem está aprendendo a plataforma. A restrição de uso não comercial é rígida — o trabalho profissional em projetos exige uma licença paga.",
+        text: "O Solibri Anywhere, o visualizador que tinha uma versão gratuita, agora aparece como produto legado junto com o Solibri Office, o Site e o CheckPoint: nenhum deles está disponível para novos clientes. Quem já usa a versão gratuita pode permanecer nas versões anteriores à 26.4.0 (solibri.com/products/legacy-products, consultado em 2026-11-10).",
       },
       {
         type: "callout",
         variant: "warning",
-        text: "Não publicamos os preços do Solibri porque eles mudam e variam por região, volume e termos negociados. Fale diretamente com o Solibri para obter um orçamento atualizado. Comparações de preços de terceiros encontradas online costumam estar desatualizadas ou baseadas em estruturas de licenciamento antigas.",
+        text: "Preços e planos mudam. Os valores acima são os que estavam no site do Solibri em 2026-11-10; confira solibri.com/pricing antes de fazer seu orçamento. Comparações de preços de terceiros encontradas online costumam estar desatualizadas ou baseadas em estruturas de licenciamento antigas.",
       },
       {
         type: "p",
@@ -16974,7 +16981,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "Privacidade: processamento local no navegador x no desktop" },
       {
         type: "p",
-        text: "Tanto o Solibri quanto o IFC Viewer Online compartilham uma característica importante que os diferencia das ferramentas baseadas em nuvem: nenhum dos dois envia seu arquivo IFC para um servidor remoto por padrão. O Solibri processa os modelos na estação de trabalho local. O IFC Viewer Online processa os modelos no navegador via WebAssembly — também localmente, sem que nenhum servidor receba o conteúdo do arquivo. Isso importa para infraestrutura governamental, hospitais, instalações industriais, ativos de defesa ou qualquer projeto em que o modelo seja sensível do ponto de vista comercial ou legal.",
+        text: "O IFC Viewer Online processa os modelos no navegador via WebAssembly, sem que nenhum servidor receba o conteúdo do arquivo. Isso importa para infraestrutura governamental, hospitais, instalações industriais, ativos de defesa ou qualquer projeto em que o modelo seja sensível do ponto de vista comercial ou legal. O Solibri dá duas respostas muito diferentes: o WebChecker, em que o IFC é enviado por upload ao serviço do Solibri e os dados são armazenados na UE ou nos EUA, e o plano Security+, descrito como isolado da rede (air-gapped) por concepção (solibri.com/solutions/webchecker e solibri.com/pricing, consultado em 2026-11-10).",
       },
       {
         type: "comparison",
@@ -16990,14 +16997,14 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ],
         },
         right: {
-          label: "Solibri — aplicativo de desktop",
+          label: "Solibri — plano Security+",
           color: "muted",
           items: [
-            "O modelo permanece na máquina local — operação totalmente isolada da rede é possível",
-            "Sem dependência de navegador — funciona em ambientes de TI bloqueados",
-            "Instalação controlada pela política de TI e por restrições da rede interna",
-            "Adequado para redes classificadas em que o acesso à internet é proibido ou monitorado",
-            "Nenhum carregamento inicial pela internet necessário após a instalação",
+            "“Fully offline operation (no telemetry)”",
+            "“Air-gapped by design”",
+            "“Controlled update cycles”",
+            "“Local data sovereignty”",
+            "Preço sob consulta (solibri.com/pricing, consultado em 2026-11-10)",
           ],
         },
       },
@@ -17008,7 +17015,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
       {
         type: "p",
-        text: "Para ambientes verdadeiramente isolados da rede ou redes classificadas em que o acesso à internet é proibido, o modelo de desktop do Solibri é a opção mais controlável. O IFC Viewer Online exige um carregamento inicial pela internet (o download do aplicativo), depois do qual os modelos em cache no OPFS permitem uso offline — mas a primeira sessão exige acesso à internet. Se o ambiente operacional proibir toda conectividade com a internet, o Solibri é a escolha adequada.",
+        text: "Para ambientes verdadeiramente isolados da rede ou redes classificadas em que o acesso à internet é proibido, o plano Security+ do Solibri foi feito para isso. O IFC Viewer Online não tem modo offline: a página precisa ser carregada pela internet todas as vezes, embora o modelo em si nunca seja enviado. A alternativa é hospedá-lo você mesmo — o código tem licença MIT — ou pedir a instalação on-premise.",
       },
       { type: "h2", text: "Matriz de decisão: Solibri ou IFC Viewer Online?" },
       {
@@ -17026,9 +17033,9 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             "Sem instalação, resultados em segundos, Health Score em um relance — caminho mais rápido para aprovado/reprovado",
           ],
           [
-            "Integralidade de dados COBie para entrega de FM",
+            "Extração de quantitativos e de informações segundo suas próprias regras",
             "Solibri",
-            "A verificação de COBie é uma especialidade do Solibri, com modelos integrados e verificação de cobertura de propriedades",
+            "O QTO / ITO faz parte do Solibri Advanced; o IFC Viewer Online apenas soma as quantidades que já estão no arquivo",
           ],
           [
             "Verificação de conformidade com IDS 1.0 (as seis facetas)",
@@ -17038,7 +17045,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           [
             "Coordenação de BCF multidisciplinar com ciclo de vida completo de problemas",
             "Solibri",
-            "Criação, atribuição, acompanhamento e resolução de problemas em um único ambiente gerenciado",
+            "Gestão de problemas em BCF com integrações com CDE, a partir do plano Essential",
           ],
           [
             "Modelo sensível à privacidade (upload não permitido)",
@@ -17048,7 +17055,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           [
             "Rede isolada ou classificada (sem acesso à internet)",
             "Solibri",
-            "O aplicativo de desktop opera totalmente offline após a instalação; não precisa de navegador",
+            "Plano Security+: operação totalmente offline, isolado da rede (air-gapped) por concepção",
           ],
           [
             "Corrigindo GUIDs quebrados ou valores de propriedade incorretos",
@@ -17063,12 +17070,12 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           [
             "Governança BIM em toda a empresa, em mais de 10 projetos simultâneos",
             "Solibri",
-            "Conjuntos de regras centralizados, trilha de auditoria, implantação corporativa — nenhuma ferramenta leve chega perto disso",
+            "Padrões de validação repetíveis e estruturas centralizadas no Advanced e no Premium",
           ],
           [
             "Incorporando a validação de IFC em um portal personalizado ou pipeline de CI/CD",
             "SDK do IFC Viewer Online",
-            "SDK público com API JavaScript — o Solibri não tem SDK público disponível",
+            "SDK público com API JavaScript, gratuito para incorporar",
           ],
           [
             "Ensinando validação de IFC a estudantes ou novos coordenadores",
@@ -17076,7 +17083,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             "Gratuito, sem instalação, feedback imediato — a menor barreira para o público mais amplo",
           ],
         ],
-        caption: "Muitos projetos combinam as duas ferramentas. Essas recomendações refletem o encaixe mais eficiente para cada tarefa individual, e não uma escolha excludente.",
+        caption: "Muitos projetos combinam as duas ferramentas. Essas recomendações refletem o encaixe mais eficiente para cada tarefa individual, e não uma escolha excludente. Recursos do Solibri conforme listados em solibri.com/pricing em 2026-11-10.",
         rowHeaders: true,
       },
       { type: "h2", text: "Como as duas ferramentas se complementam" },
@@ -17124,7 +17131,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h3", text: "O IFC Viewer Online substitui o Solibri?" },
       {
         type: "p",
-        text: "Não — não para todos os fluxos de trabalho. O IFC Viewer Online se encaixa melhor no subconjunto de tarefas que cobre: controle de qualidade pré-entrega rápido, conformidade com IDS, modelos sensíveis à privacidade, edição de propriedades e acessibilidade sem instalação. Ele não substitui o Solibri para criação de regras personalizadas, gestão completa de BCF, verificação de COBie ou governança corporativa. Muitas equipes vão usar as duas ferramentas, cada uma naquilo que faz melhor.",
+        text: "Não — não para todos os fluxos de trabalho. O IFC Viewer Online se encaixa melhor no subconjunto de tarefas que cobre: controle de qualidade pré-entrega rápido, conformidade com IDS, modelos sensíveis à privacidade, edição de propriedades e acessibilidade sem instalação. Ele não substitui o Solibri para criação de regras personalizadas, detecção de conflitos entre disciplinas, gestão de problemas em BCF ou governança corporativa. Muitas equipes vão usar as duas ferramentas, cada uma naquilo que faz melhor.",
       },
       { type: "h3", text: "Posso usar as duas ferramentas no mesmo projeto?" },
       {
@@ -17135,8 +17142,8 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "p",
         text: [
-          "O IFC Viewer Online oferece suporte completo à validação de IDS 1.0: as seis facetas (Entity, Attribute, Property, Classification, Material, PartOf), validadas contra o conjunto completo de casos de teste oficiais da bSI. O Solibri adicionou suporte a IDS em versões recentes — verifique a documentação da versão atual para saber as facetas específicas e a cobertura de casos de teste. Para equipes que precisam de conformidade com IDS sem licença do Solibri em cada usuário, o IFC Viewer Online cobre a especificação completa do IDS 1.0 sem custo algum. Veja o ",
-          { text: "guia do verificador de modelos IFC", to: "ifc-model-checker-guide" },
+          "O IFC Viewer Online oferece suporte à validação de IDS 1.0: as seis facetas (Entity, Attribute, Property, Classification, Material, PartOf), validadas contra o conjunto de casos de teste oficiais da bSI. O Solibri lista fluxos de trabalho IDS, um editor de IDS e um validador de IDS no plano Advanced (solibri.com/pricing, consultado em 2026-11-10). Para equipes que precisam de conformidade com IDS sem licença do Solibri em cada usuário, o IFC Viewer Online verifica arquivos IDS 1.0 sem custo algum. Veja o ",
+          { text: "guia do verificador de modelos IFC", to: "ifc-model-checker" },
           " para entender os três níveis de validação — schema, qualidade e IDS.",
         ],
       },
@@ -17149,7 +17156,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "p",
         text: [
-          "O Health Score do IFC Viewer Online é uma métrica numérica de qualidade de 0 a 100, calculada com um modelo de penalidade logarítmico ponderado por gravidade. Erros têm peso 3× maior que avisos; um único erro crítico tem mais impacto do que muitos problemas menores — o que reflete como um coordenador BIM realmente prioriza as correções. O Solibri não produz uma pontuação numérica única equivalente: ele produz resultados de aprovado/reprovado por regra em todo o conjunto de problemas. As duas abordagens são válidas. O Health Score é otimizado para comunicar rapidamente a qualidade geral do modelo entre envolvidos com níveis variados de conhecimento de BIM. Para a metodologia completa de cálculo, veja o ",
+          "O Health Score do IFC Viewer Online é uma métrica numérica de qualidade de 0 a 100, calculada com um modelo de penalidade logarítmico ponderado por gravidade. Erros têm peso 3× maior que avisos; um único erro crítico tem mais impacto do que muitos problemas menores — o que reflete como um coordenador BIM realmente prioriza as correções. As páginas de planos do Solibri não descrevem uma pontuação numérica única; descrevem resultados regra por regra. As duas abordagens são válidas. O Health Score é otimizado para comunicar rapidamente a qualidade geral do modelo entre envolvidos com níveis variados de conhecimento de BIM. Para a metodologia completa de cálculo, veja o ",
           { text: "guia do IFC Health Score", to: "ifc-health-score" },
           ".",
         ],
