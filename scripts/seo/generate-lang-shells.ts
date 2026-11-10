@@ -37,6 +37,7 @@
 import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { validatorPath } from '../../src/lib/localized-landings'
+import { HOME_COPY } from '../../src/components/landing/home-copy'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -183,7 +184,8 @@ function noscriptBlock(lang: Lang, t: LandingLocale): string {
 
   return [
     '<noscript>',
-    `<h1>${esc(t.hero.h1)} ${esc(t.hero.h1Accent)}</h1>`,
+    // Same h1 as the rendered page (home-copy.ts): search term, then the result.
+    `<h1>${esc(HOME_COPY[lang].kicker)}: ${esc(HOME_COPY[lang].h1)}</h1>`,
     `<p>${esc(t.hero.subtitleFull)}</p>`,
     `<section><h2>${esc(t.featuresSection.title)}</h2><p>${esc(t.featuresSection.subtitle)}</p>${features}</section>`,
     `<section><h2>${esc(t.faqSection.title)}</h2>${faq}</section>`,

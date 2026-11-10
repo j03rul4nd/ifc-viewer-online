@@ -12,7 +12,7 @@
   --border-strong: #3A3933;
   --text: #ECEBE7;
   --text-dim: #A09E98;
-  --text-faint: #7F7D78;
+  --text-faint: #85837E; /* 4.7:1 on --surface (was #7F7D78, 4.4:1) */
   --danger: #E0523F;
   --warn: #E9A23B;
   --ok: #3FA866;

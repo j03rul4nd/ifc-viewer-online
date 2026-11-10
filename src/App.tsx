@@ -794,7 +794,12 @@ export default function App() {
   const [accent, setAccent] = useState(() => urlParams.accent ?? '#0A8481')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
-    try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
+    // A saved choice wins; otherwise follow the system (light for most office desktops).
+    try {
+      const saved = localStorage.getItem('lp-theme')
+      if (saved === 'dark' || saved === 'light') return saved
+    } catch { /* ignore */ }
+    try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark' } catch { return 'dark' }
   })
   const handleToggleLandingTheme = useCallback((): void => {
     setLandingTheme((cur) => {
