@@ -123,6 +123,15 @@ html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
 .lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
 .lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
 .lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
 footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
 footer a:hover{color:var(--lc-text)!important}
 
