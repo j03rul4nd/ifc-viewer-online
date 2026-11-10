@@ -106,6 +106,11 @@ export const LANDMARKS: readonly Landmark[] = [
   { featureId: 'r1574427-0', asset: 'castell-montjuic', origin: { lat: 41.3633906, lon: 2.1662499 },
     covers: ['r5739196-0', 'w646482521', 'w666192268', 'w996701694', 'w111986236',
       'w385708588', 'w385708590', 'w391984231', 'w466476916', 'w1307905428'] },
+
+  // Lujiazui (build-jin-mao-landmark.py). The outline is stood down for its
+  // parts — shaft, crown, spire — and the four entrance canopies against it.
+  { featureId: 'w376075961', asset: 'jin-mao', origin: { lat: 31.2372613, lon: 121.501405 },
+    covers: ['w188377486', 'w376016310', 'w376016312', 'w167061956', 'w167061957', 'w167061961', 'w524263611'] },
 ]
 
 /** Every id that says a landmark is in the scene, to the landmarks it finds. */
