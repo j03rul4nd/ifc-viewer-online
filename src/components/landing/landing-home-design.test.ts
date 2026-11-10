@@ -6,6 +6,7 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 import { HOME_COPY, HOME_LANGS } from './home-copy'
+import { pricingPath } from '../../lib/pricing/pricing-paths'
 import { generateLangShells } from '../../../scripts/seo/generate-lang-shells'
 
 const ROOT = path.resolve(__dirname, '..', '..', '..')
@@ -92,6 +93,20 @@ describe('localized home shells', () => {
       const h1 = html.match(/<h1>([^<]*)<\/h1>/g) ?? []
       expect(h1.length).toBe(1)
       expect(h1[0]).toContain(HOME_COPY[l].kicker)
+    })
+  }
+})
+
+// ── Every page in a language points back to that language's home ────────────
+
+describe('pricing pages link to the home in their own language', () => {
+  for (const l of HOME_LANGS) {
+    it(`${l}: logo, header button and footer go to ${l === 'en' ? '/' : `/${l}/`}`, () => {
+      const home = l === 'en' ? '/' : `/${l}/`
+      const html = read(path.join('public', pricingPath(l), 'index.html'))
+      expect(html).toContain(`<a href="${home}" class="logo">`)
+      expect(html).toContain(`<a href="${home}" class="btn btn-quiet" data-cta="header_open">`)
+      if (l !== 'en') expect(html, 'no link to the English home').not.toMatch(/href="\/"/)
     })
   }
 })
