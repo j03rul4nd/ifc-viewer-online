@@ -29,8 +29,8 @@ function patchMeta(selector: string, content: string): void {
   if (el) el.content = content
 }
 
-// The language the page was served in. Its static <head> (index.html,
-// public/es/index.html, the generated /<lang>/ shells) already carries the
+// The language the page was served in. Its static <head> (index.html and the
+// generated /<lang>/ shells) already carries the
 // title and description written for search listings; the runtime copy in
 // LOCALE_META used to replace them on every load, so Google rendered the older,
 // longer EN/ES titles instead of the ones in the HTML. Meta is now patched only
@@ -98,8 +98,8 @@ export function useSeo({ enabled = true }: SeoOptions = {}): void {
     // all live at /de/ — which invalidates the whole cluster.
     //
     // Every page now ships a correct, reciprocal cluster in its static HTML
-    // (index.html, public/es/index.html, and the shells from
-    // scripts/seo/generate-lang-shells.ts). That markup is authoritative.
+    // (index.html and the shells from scripts/seo/generate-lang-shells.ts).
+    // That markup is authoritative.
 
     // Canonical: strip query/hash so share links and UTM params don't fragment
     // the URL. The origin is taken from the tag itself, not from

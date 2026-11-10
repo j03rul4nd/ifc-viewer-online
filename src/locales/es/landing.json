@@ -393,9 +393,12 @@
     "openSource": "Código abierto",
     "copyright": "IFC Viewer Online © 2026",
     "builtWith": "Construido con @thatopen/components · three.js · web-ifc",
-    "fixGuide": "Corregir errores IFC"
+    "fixGuide": "Corregir errores IFC",
+    "validator": "Validador IFC",
+    "solibri": "Alternativa a Solibri"
   },
   "seo": {
+    "title": "Visor IFC Online — Gratis, Sin Instalación, en tu Navegador",
     "description": "Abre un IFC en el navegador y obtén un Health Score de 0 a 100 en menos de 30 segundos. Sin cuenta, sin subir nada, sin instalar."
   }
 }

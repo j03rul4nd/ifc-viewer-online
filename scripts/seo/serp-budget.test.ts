@@ -57,16 +57,15 @@ function shellMeta(lang: string): { title: string; description: string } {
 }
 
 /**
- * The two hand-authored home pages.
+ * The hand-authored home page.
  *
- * EN is the root template the generator copies; ES is deliberately excluded
- * from generation and maintained by hand. Neither is reached by the locale
- * change, so both are checked directly — and each is tied to its locale's
- * `seo` block so the two copies of one pitch cannot drift apart.
+ * EN is the root template the generator copies. It is not reached by the
+ * locale change, so it is checked directly — and tied to its locale's `seo`
+ * block so the two copies of one pitch cannot drift apart. (ES was the other
+ * one until 2026-11-10; it is generated now and covered by the checks above.)
  */
 const HAND_AUTHORED = [
   { lang: 'en', file: 'index.html' },
-  { lang: 'es', file: 'public/es/index.html' },
 ] as const
 
 /**

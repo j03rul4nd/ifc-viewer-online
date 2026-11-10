@@ -401,7 +401,9 @@
     "openSource": "Open source",
     "copyright": "IFC Viewer Online © 2026",
     "builtWith": "Built with @thatopen/components · three.js · web-ifc",
-    "fixGuide": "Fix IFC errors"
+    "fixGuide": "Fix IFC errors",
+    "validator": "IFC Validator",
+    "solibri": "Solibri alternative"
   },
   "seo": {
     "description": "Free online IFC file viewer and BIM model viewer. Open IFC files in your browser, no install or upload. View, measure, edit and check them in 30 seconds."
