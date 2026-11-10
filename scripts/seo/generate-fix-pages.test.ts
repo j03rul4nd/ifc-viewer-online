@@ -8,14 +8,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'fs'
-import { generateFixPages, TITLE_BUDGET, type FixPagesResult } from './generate-fix-pages'
+import { generateFixPages, HUB_IMAGE, TITLE_BUDGET, UIS, type FixPagesResult } from './generate-fix-pages'
 import { fixGuideUrl, fixGuideSlug } from '../../src/lib/fix-guide-url'
 import { pricingPath } from '../../src/lib/pricing/pricing-paths'
-import { toolLandings } from '../../src/lib/localized-landings'
+import { toolLandings, validatorPath } from '../../src/lib/localized-landings'
 import { BLOG_POSTS } from '../../src/lib/blog-posts'
 
 const SITE = 'https://www.ifcvieweronline.eu'
-const OUT = path.join(process.cwd(), '.seo-test-out')
+const ROOT = process.cwd()
+const OUT = path.join(ROOT, '.seo-test-out')
 const LANGS = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/', 'ca/', 'zh/', 'ja/', 'th/'] as const
 
 /** The languages we ask Google to index — the ones INDEXED_LANGS in the
@@ -221,6 +222,42 @@ describe('generateFixPages — category pages', () => {
         for (const h of hrefs) expect(published.has(h), `${page} → ${h}`).toBe(true)
       }
     }
+  })
+})
+
+describe('generateFixPages — the hub is the reference of the errors, not the tool page', () => {
+  // Search Console 2026-11-10: the hub was shown for "ifc model validation"
+  // (768 impressions, position 67). The validator landing owns that query.
+  it('links the validator landing and the checker comparison with the query as anchor', () => {
+    expect(BLOG_POSTS.some((p) => p.slug === 'best-ifc-model-checkers-2026')).toBe(true)
+    for (const lp of LANGS) {
+      const lang = (lp.replace('/', '') || 'en') as keyof typeof UIS
+      const html = readFileSync(path.join(OUT, `${lp}fix/`, 'index.html'), 'utf8')
+      const block = html.match(/<p class="hub-next hub-owners">(.*?)<\/p>/)?.[1] ?? ''
+      const hrefs = [...block.matchAll(/href="([^"]+)"/g)].map((m) => new URL(m[1], `https://x/${lp}fix/`).pathname)
+      expect(hrefs, lp).toEqual([`/${validatorPath(lang)}`, `/${lp}blog/best-ifc-model-checkers-2026/`])
+      expect(existsSync(path.join(ROOT, 'public', validatorPath(lang), 'index.html')), lp).toBe(true)
+      expect(block).toContain(UIS[lang].hubValidate)
+    }
+  })
+
+  it('has a table of every category and a capture with its own alt text per language', () => {
+    expect(existsSync(path.join(ROOT, 'public', HUB_IMAGE.src))).toBe(true)
+    expect(existsSync(path.join(ROOT, 'public', HUB_IMAGE.small))).toBe(true)
+    const alts = new Set<string>()
+    for (const lp of LANGS) {
+      const lang = (lp.replace('/', '') || 'en') as keyof typeof UIS
+      const html = readFileSync(path.join(OUT, `${lp}fix/`, 'index.html'), 'utf8')
+      const table = html.match(/<table class="causes-table hub-table">[\s\S]*?<\/table>/)?.[0] ?? ''
+      expect((table.match(/<tr><th scope="row">/g) ?? []).length, lp).toBeGreaterThanOrEqual(6)
+      expect(table).toContain('href="./category/spatial/"')
+      const img = html.match(/<img src="[^"]*ifc-validation-errors-by-rule\.jpg"[^>]*>/)?.[0] ?? ''
+      expect(img, lp).toContain('width="1600"')
+      expect(html).toMatch(/"representativeOfPage":\s*true/)
+      alts.add(UIS[lang].hubImgAlt)
+      expect(UIS[lang].hubImgAlt.length, lp).toBeGreaterThan(40)
+    }
+    expect(alts.size).toBe(LANGS.length)
   })
 })
 

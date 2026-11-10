@@ -3,9 +3,10 @@ import {
   resolveBuildingHeight, parseLengthM, parseLevels,
   parseOverpassBuildings, approximateAreaM2, buildOverpassQuery, bboxAround,
   DEFAULT_STOREY_HEIGHT_M, DEFAULT_BUILDING_HEIGHT_M,
-  MAX_BUILDING_HEIGHT_M, MIN_FOOTPRINT_AREA_M2,
+  MAX_BUILDING_HEIGHT_M, MIN_FOOTPRINT_AREA_M2, MAX_ASSUMED_HEIGHT_M,
   overpassRemarkError,
 } from './buildings'
+import { buildHeightPrior } from './height-prior'
 
 describe('parseLengthM', () => {
   it('reads plain metres, with or without a unit', () => {
@@ -81,6 +82,31 @@ describe('resolveBuildingHeight', () => {
   it('ignores an unusable height and moves to the next source', () => {
     const h = resolveBuildingHeight({ height: 'tall', 'building:levels': '3' })
     expect(h.heightM).toBeCloseTo(3 * DEFAULT_STOREY_HEIGHT_M, 6)
+  })
+})
+
+describe('an untagged building is never assumed to be a tower', () => {
+  // Lujiazui: the surveyed buildings over 1000 m² are the towers, median 196 m.
+  const lujiazui = buildHeightPrior(
+    Array.from({ length: 12 }, () => ({ type: 'yes', areaM2: 3000, heightM: 196 })),
+  )
+
+  it('caps the district guess where a high-rise starts', () => {
+    // The convention centre in front of the Oriental Pearl: mapped, no height.
+    const h = resolveBuildingHeight({ building: 'yes' }, lujiazui, 20000)
+    expect(h.heightM).toBe(MAX_ASSUMED_HEIGHT_M)
+    expect(h.estimated).toBe(true)
+    expect(h.source).toBe('prior')
+  })
+
+  it('leaves a tagged tower as tall as it says', () => {
+    expect(resolveBuildingHeight({ building: 'yes', height: '250' }, lujiazui, 3000).heightM).toBe(250)
+    expect(resolveBuildingHeight({ building: 'yes', 'building:levels': '50' }, lujiazui, 3000).heightM).toBeGreaterThan(150)
+  })
+
+  it('still lets a low district answer below the cap', () => {
+    const low = buildHeightPrior(Array.from({ length: 12 }, () => ({ type: 'yes', areaM2: 3000, heightM: 18 })))
+    expect(resolveBuildingHeight({ building: 'yes' }, low, 3000).heightM).toBe(18)
   })
 })
 

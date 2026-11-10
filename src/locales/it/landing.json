@@ -373,7 +373,9 @@
     "openSource": "Open source",
     "copyright": "IFC Viewer Online © 2026",
     "builtWith": "Costruito con @thatopen/components · three.js · web-ifc",
-    "fixGuide": "Correggi errori IFC"
+    "fixGuide": "Correggi errori IFC",
+    "validator": "Validatore IFC",
+    "solibri": "Alternativa a Solibri"
   },
   "sdk": {
     "label": "SDK · INTEGRAZIONI",
