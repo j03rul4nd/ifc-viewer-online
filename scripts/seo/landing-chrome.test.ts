@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 import {
-  COPY, LANGS, MIN_FONT_PX, TOKENS, CHROME_CSS, applyChrome, chromeLinks, landingFiles, raiseSmallFonts, renderHeader, renderNextStep,
+  COPY, LANGS, MIN_FONT_PX, THEMES, CHROME_CSS, literalColours, tokenizeDecls, applyDotGrid, DOT_GRID, applyChrome, chromeLinks, landingFiles, raiseSmallFonts, renderHeader, renderNextStep,
 } from './landing-chrome'
 
 const ROOT = path.resolve(__dirname, '..', '..')
@@ -69,15 +69,54 @@ describe('landing chrome', () => {
     }
   })
 
-  it('the chrome only uses colour tokens, with readable contrast', () => {
-    const allowed = new Set(Object.values(TOKENS).map((v) => v.toLowerCase()))
-    for (const hex of CHROME_CSS.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) expect(allowed, hex).toContain(hex.toLowerCase())
-    for (const fg of [TOKENS.text, TOKENS.text2, TOKENS.text3, TOKENS.accentText]) {
-      expect(contrast(fg, TOKENS.canvas), fg).toBeGreaterThanOrEqual(4.5)
-      expect(contrast(fg, TOKENS.panel), fg).toBeGreaterThanOrEqual(4.5)
+  it('colours live only in the token blocks, in every landing', () => {
+    expect(literalColours(CHROME_CSS.replace(/<style[^>]*>/, '<style>'))).toEqual([])
+    for (const f of landingFiles()) expect(literalColours(readFileSync(f, 'utf8')), path.relative(ROOT, f)).toEqual([])
+    expect(tokenizeDecls('color:#55CAC3;border:1px solid rgba(255,255,255,0.06)')).toBe('color:var(--lc-accent-text);border:1px solid color-mix(in srgb,var(--lc-ink) 6%,transparent)')
+    expect(tokenizeDecls('background:#0a8481;color:#fff')).toBe('background:var(--lc-accent);color:var(--lc-on-accent)')
+  })
+
+  it('the CSS that dot-grid.js injects follows the same rules', () => {
+    const js = readFileSync(DOT_GRID, 'utf8')
+    expect(applyDotGrid(js)).toBe(js)
+    const css = js.slice(js.indexOf('function injectStyles()'), js.indexOf("document.createElement('style')"))
+    expect(css.match(/#[0-9a-f]{3,8}\b|rgba?\(\s*\d/gi) ?? []).toEqual([])
+    for (const m of css.matchAll(/font-size:\s*([\d.]+)px/g)) expect(+m[1]).toBeGreaterThanOrEqual(MIN_FONT_PX)
+  })
+
+  it('both themes pass AA: text roles on canvas and panel, white on the accent', () => {
+    for (const [name, t] of Object.entries(THEMES)) {
+      for (const fg of [t.text, t['text-2'], t['text-3'], t['accent-text'], t.ok, t.warn, t.danger]) {
+        expect(contrast(fg, t.canvas), `${name} ${fg}`).toBeGreaterThanOrEqual(4.5)
+        expect(contrast(fg, t.panel), `${name} ${fg}`).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrast(t['on-accent'], t.accent), name).toBeGreaterThanOrEqual(4.5)
     }
-    expect(contrast(TOKENS.onAccent, TOKENS.accent)).toBeGreaterThanOrEqual(4.5)
     for (const m of CHROME_CSS.matchAll(/font-size:(\d+)px/g)) expect(+m[1]).toBeGreaterThanOrEqual(MIN_FONT_PX)
+  })
+
+  it('light and dark follow the system and the remembered choice, like /pricing/', () => {
+    for (const f of landingFiles()) {
+      const html = readFileSync(f, 'utf8'), head = html.slice(0, html.indexOf('</head>'))
+      expect(head, f).toContain("localStorage.getItem('lp-theme')")
+      expect(head, f).toContain('prefers-color-scheme: light')
+      expect(head, f).toContain(':root[data-theme="light"]')
+      expect(html.match(/data-lc-theme aria/g)?.length, f).toBe(1)
+    }
+  })
+
+  it('one h1, a self canonical and a full hreflang set on every landing', () => {
+    for (const f of landingFiles()) {
+      const html = readFileSync(f, 'utf8'), rel = path.relative(ROOT, f)
+      expect(html.match(/<h1\b/g)?.length, rel).toBe(1)
+      const canon = /<link rel="canonical" href="([^"]+)"/.exec(html)?.[1]
+      const route = '/' + path.relative(PUBLIC, path.dirname(f)).split(path.sep).join('/') + '/'
+      expect(canon, rel).toBe(`https://www.ifcvieweronline.eu${route}`)
+      const alts = [...html.matchAll(/hreflang="([^"]+)"\s+href="([^"]+)"/g)]
+      expect(alts.length, rel).toBeGreaterThanOrEqual(2)
+      expect(alts.some((a) => a[1] === 'x-default'), rel).toBe(true)
+      expect(alts.some((a) => a[2] === canon), `${rel} lists itself`).toBe(true)
+    }
   })
 
   it('no dead links in the header or the next step, in any language', () => {
