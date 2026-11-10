@@ -370,6 +370,8 @@
   },
   "footer": {
     "fixGuide": "IFC エラーの修正方法 →",
+    "validator": "IFCバリデーター",
+    "solibri": "Solibriの代替",
     "poweredBy": "IFC.js が動力",
     "openSource": "オープンソース",
     "copyright": "IFC ビューアー オンライン © 2026",
