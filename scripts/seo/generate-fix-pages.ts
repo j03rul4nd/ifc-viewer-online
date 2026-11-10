@@ -918,7 +918,7 @@ const STYLE = `
     .rule-card:hover { border-color: rgba(10,132,129,0.4); transform: translateY(-1px); }
     .rule-card .rc-t { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
     .rule-card .rc-d { font-size: 12px; color: var(--text-3); line-height: 1.55; }
-    .meta-grid { gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .meta-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     .meta-card { background: none; border: none; border-radius: 0; box-shadow: inset -1px -1px 0 var(--line); }
     .meta-k { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
 `
