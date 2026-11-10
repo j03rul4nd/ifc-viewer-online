@@ -578,7 +578,7 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchIm
   return `<noscript>
       <main id="blog-static-fallback">
         <article lang="${esc(post.lang ?? 'en')}">
-          <p><a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
+          <p><a href="${SITE}/${prefix}">IFC Viewer Online</a> · <a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
           <header>
             <p>${esc(post.category)} · ${esc(post.date)} · ${esc(ui.post.minutes(post.readTimeMin))}</p>
             <h1>${esc(post.title)}</h1>

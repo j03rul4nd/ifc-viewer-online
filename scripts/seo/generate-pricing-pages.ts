@@ -58,7 +58,7 @@ function priceHead(lang: PricingLang, c: PricingCopy, plan: TablePlan): string {
 }
 
 function ctaFor(c: PricingCopy, plan: Plan, lang: PricingLang): string {
-  if (plan === 'free') return `<a class="btn btn-quiet" href="/" data-cta="table_free" hreflang="${lang}">${esc(c.cta.free)}</a>`
+  if (plan === 'free') return `<a class="btn btn-quiet" href="${lang === 'en' ? '/' : `/${lang}/`}" data-cta="table_free" hreflang="${lang}">${esc(c.cta.free)}</a>`
   const label = plan === 'enterprise' ? c.cta.talk : c.cta.waitlist
   return `<button type="button" class="btn btn-main" data-plan="${plan}">${esc(label)}</button>`
 }
@@ -198,6 +198,8 @@ export function renderPricingPage(lang: PricingLang): string {
     saving: c.dialog.saving, ok: c.dialog.ok, err: c.dialog.err,
   }
   const blog = lang === 'en' ? '/blog/' : `/${lang}/blog/`
+  // The home in the reader's language (the viewer opens from it).
+  const home = lang === 'en' ? '/' : `/${lang}/`
   return `<!doctype html>
 <html lang="${c.htmlLang}">
 <head>
@@ -226,13 +228,13 @@ ${alternates}
   <a class="skip" href="#plans">${esc(c.plans.h2)}</a>
   <header class="top">
     <div class="wrap bar">
-      <a href="/" class="logo">IFC Viewer Online</a>
+      <a href="${home}" class="logo">IFC Viewer Online</a>
       <nav aria-label="Main">
         <a href="${VALIDATOR[lang]}" class="hide-s">${esc(c.nav.validator)}</a>
         <a href="/sdk/" class="hide-s">${esc(c.nav.sdk)}</a>
         <a href="${blog}" class="hide-s">${esc(c.nav.blog)}</a>
         <button type="button" class="theme" id="theme" aria-label="${esc(c.nav.theme)}" title="${esc(c.nav.theme)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
-        <a href="/" class="btn btn-quiet" data-cta="header_open">${esc(c.nav.open)}</a>
+        <a href="${home}" class="btn btn-quiet" data-cta="header_open">${esc(c.nav.open)}</a>
       </nav>
     </div>
   </header>
@@ -258,7 +260,7 @@ ${dialog(c)}
     <nav aria-label="${esc(c.plans.show)}" class="langs">${PRICING_LANGS.map((l) => l === lang
       ? `<span aria-current="page">${LANG_NAME[l]}</span>`
       : `<a href="${pricingPath(l)}" hreflang="${l}" lang="${l}">${LANG_NAME[l]}</a>`).join('')}</nav>
-    <p><a href="/">IFC Viewer Online</a><a href="${VALIDATOR[lang]}">${esc(c.nav.validator)}</a><a href="/on-premise-ifc-validator/">${esc(c.footer.onPrem)}</a><a href="/sdk/">SDK</a><a href="/privacy">${esc(c.footer.privacy)}</a><a href="/terms">${esc(c.footer.terms)}</a></p>
+    <p><a href="${home}">IFC Viewer Online</a><a href="${VALIDATOR[lang]}">${esc(c.nav.validator)}</a><a href="/on-premise-ifc-validator/">${esc(c.footer.onPrem)}</a><a href="/sdk/">SDK</a><a href="/privacy">${esc(c.footer.privacy)}</a><a href="/terms">${esc(c.footer.terms)}</a></p>
   </footer>
 
   <script type="application/json" id="pricing-i18n">${jsonEsc(JSON.stringify(i18n))}</script>
