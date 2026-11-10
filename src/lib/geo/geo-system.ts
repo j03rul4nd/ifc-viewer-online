@@ -30,7 +30,7 @@ import { createModelStaging, type ModelStaging } from './model-staging'
 import { createFacadeMaterial, createUnlitFacadeMaterial, currentLightTint, setFacadeGround, setFacadeLook } from './facade-shader'
 import {
   BUILDING_FINISHES, DEFAULT_LOOK_TUNING, LIGHT_PRESETS, clampLookTuning, easeInOut, lerpLightPreset, resolveLook,
-  skyBackdropStops, tunedLight, type LightPreset, type LookTuning, type MapLook,
+  tunedLight, type LightPreset, type LookTuning, type MapLook,
 } from './map-look'
 import { buildVehicleLayer } from './props-scene'
 import { buildBarrierLayerSliced, buildFurnitureLayerSliced, buildPlacedSignalLayerSliced } from './street-furniture'
@@ -78,6 +78,9 @@ import {
   type BudgetGate, type DeviceTier, type FrameVerdict, type LayerKey, type SceneLayerStat, type SceneReport,
 } from './scene-budget'
 import { buildSkyEnvironment } from './sky-environment'
+import { buildSkyDomePixels, hazeRangeFor, hazeRangeChanged, type HazeRange } from './atmosphere'
+import { createStreetGrading } from './terrain-grading'
+import { clipLineToBox } from './way-clip'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import {
@@ -85,7 +88,7 @@ import {
   latLonToNormalized, metresToNormalized, type LatLon,
 } from './geo-math'
 import { createLogger } from '../logger'
-import { createGroundFrame } from './ground-frame'
+import { createGroundFrame, DEFAULT_GROUND_STEP_M } from './ground-frame'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook, MapMeasureHit } from './geo-types'
 import type { Hydrology, OsmContext } from './osm-hydro'
 import { findWaterCrossings, type WaterCrossing } from './water-crossings'
@@ -105,8 +108,6 @@ const log = createLogger('GeoSystem')
 
 // Environment override targets (plan T9 / §3.9)
 const MAP_FAR_M = 60_000
-const MAP_FOG_NEAR_M = 30_000
-const MAP_FOG_FAR_M = 55_000
 /** Precision leash (§4.7): worst-case float32 error ≈ 30 km / 2²⁴ ≈ 2 mm. */
 const MAP_MAX_DISTANCE_M = 30_000
 /** Keep the camera just above the horizon — can't go under the map (surface mode). */
@@ -315,6 +316,15 @@ export interface GeoSystemContext {
    * that cannot enumerate its models still gets the single-model behaviour.
    */
   getModelFootprints?(): Array<Array<{ x: number; z: number }>> | null
+  /**
+   * Scene Y of the TOP of each loaded model, in the same order as
+   * `getModelFootprints`. A plan says where a model is, not what it is: a
+   * station under a square and a tower have the same kind of outline. With
+   * the top, the map can tell that a model which barely leaves the ground is
+   * not the 20 m building standing in its plan (context-suppression,
+   * DWARFED_SHARE). Optional: without it every model is taken at its plan.
+   */
+  getModelTops?(): number[] | null
   /**
    * Scene Y of the model's LOCAL ORIGIN — where its own y = 0 ended up.
    *
@@ -1010,8 +1020,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // the list, and a hull around three disciplines of the same building would
     // also swallow whatever sits in the notch between them. Each file speaks
     // only for the ground it actually covers.
+    // How far each model rises above the ground at its own centre — only when
+    // the host lists a top for every outline it listed, so the two cannot be
+    // read against each other's models.
+    const outlines = ctx.getModelFootprints?.()?.filter((o) => o && o.length >= 3) ?? null
+    const tops = ctx.getModelTops?.() ?? null
+    const rises = outlines && tops && outlines.length === polys.length && tops.length === polys.length
+      ? outlines.map((outline, i) => {
+          let x = 0
+          let z = 0
+          for (const c of outline) { x += c.x; z += c.z }
+          const ground = api.groundHeightAt(x / outline.length, z / outline.length) ?? geoRoot!.position.y
+          return Number.isFinite(tops[i]) ? Math.max(0, tops[i] - ground) : undefined
+        })
+      : null
     return createSuppressor(
-      polys.map((polygon) => ({ polygon, kind: facilityKind, marginN })),
+      polys.map((polygon, i) => ({ polygon, kind: facilityKind, marginN, riseM: rises?.[i] })),
       (p) => {
         const n = latLonToNormalized(p.lat, p.lon)
         return { x: n.nx, y: n.ny }
@@ -1061,8 +1085,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const fillLights = new Map<THREE.Light, number>()
   /** Contact shadow + floodlight around the model (model-staging.ts). */
   let staging: ModelStaging | null = null
-  /** The look's sky backdrop; owned here, disposed on change and on disable. */
-  let skyBackdrop: THREE.CanvasTexture | null = null
+  /** The look's sky dome; owned here, disposed on change and on disable. */
+  let skyBackdrop: THREE.Texture | null = null
+  /** The fog range last pushed to the scene (atmosphere.ts); null = not yet. */
+  let hazeRange: HazeRange | null = null
+  /** The patch whose ground currently carries a correction (applyGroundCorrections). */
+  let correctedPatch: TerrainPatch | null = null
   /** Rebuilding costs a PMREM pass, so a slider drag must not do it per frame. */
   let skyTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -1166,11 +1194,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ctx.setSceneTuneLock(true)
       ctx.setGridVisible(false)
       applyCameraPlanes(Math.min(ctx.perspCamera.near, 0.5), MAP_FAR_M)
-      const fog = ctx.scene.fog
-      if (fog instanceof THREE.Fog) {
-        fog.near = MAP_FOG_NEAR_M
-        fog.far = MAP_FOG_FAR_M
-      }
+      hazeRange = null
+      retuneAtmosphere()
       ctx.controls.maxDistance = MAP_MAX_DISTANCE_M
       ctx.controls.maxPolarAngle = MAP_MAX_POLAR_RAD
 
@@ -1205,6 +1230,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         if (!engine) return
         engine.update()
         retuneDepthRange()
+        retuneAtmosphere()
         if ((subsurfaceMode !== 'surface' || markersEnabled) && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
           subsurfaceFrames = 0
           sweepSubsurface()
@@ -1333,6 +1359,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const patch = await buildTerrainPatch(placement, provider, {
         modelSpanM: bounds ? Math.hypot(bounds.size.x, bounds.size.z) : null,
         maxAnisotropy: ctx.renderer.capabilities?.getMaxAnisotropy?.() ?? 1,
+        // The district is built on this ground; its relief is not the rim's.
+        keepHalfM: BUILDINGS_HALF_SIZE_M + 50,
       })
       if (token !== terrainToken || !engine || !geoRoot) {
         // disabled / re-toggled while the worker ran — drop the stale patch
@@ -1341,6 +1369,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       }
       terrain = patch
       geoRoot.add(patch.group)
+      applyMapLevel()
       // The ground under the anchor is now measured: stand the model on it.
       if (placement) applyPlacement(placement)
       // Re-apply sticky visuals (style/exaggeration survive rebuilds).
@@ -1398,6 +1427,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (k === terrainExaggeration) return
       terrainExaggeration = k
       terrain?.setExaggeration(k)
+      applyMapLevel()
       // The ground moved, so everything laid on it has to be re-derived. The
       // terrain can stretch itself with a matrix because it is one mesh; a tree
       // cannot, because scaling z would stretch the tree too. Rebuilding the
@@ -2314,11 +2344,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const replaced = byPosition
       ? (loadedLandmarks.length > 0 ? byPosition.replaced : new Set<string>())
       : replacedFeatureIds(loadedLandmarks.map((l) => l.landmark))
-    const features = replaced.size > 0 ? suppressed.filter((f) => !replaced.has(f.id)) : suppressed
+    const standing = replaced.size > 0 ? suppressed.filter((f) => !replaced.has(f.id)) : suppressed
+    // A way ends where the measured ground ends — see way-clip.
+    const features = terrain ? clipWaysToMeasuredGround(standing, terrain) : standing
 
-    // THE SAND BELOW ITS WALL (beach-carve): the ground the layers will sit on
-    // is corrected first, so the sand, the roads and every prop follow it.
-    if (terrain) applyBeachCarve(terrain, features, p.lat)
+    // THE GROUND THE MAP KNOWS BETTER THAN THE RASTER — streets benched into
+    // their hillside, sand below its wall, ponds in their beds: corrected
+    // first, so the roads, the buildings and every prop stand on the result.
+    if (terrain) applyGroundCorrections(terrain, features, p.lat)
 
     // Captured, not read through the closure: a partial build reuses this
     // prelude later, and must sample the ground it was solved against.
@@ -2887,6 +2920,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   function applySky(): void {
     if (!engine) return
     aimKeyLight()
+    // The sun moved, and it is painted on the dome as well as in the light.
+    applyBackdrop()
     const next = buildSkyEnvironment(ctx.renderer, {
       sunAzimuthDeg: sunNow().az,
       sunAltitudeDeg: sunNow().alt,
@@ -2940,13 +2975,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const fog = ctx.scene.fog
     const fogColor = new THREE.Color(light.fog)
     if (fog instanceof THREE.Fog) fog.color.copy(fogColor)
-    // A sky that ends in the fog's own colour: the far city dissolves into
+    // A sky that starts in the fog's own colour: the far city dissolves into
     // haze and the haze into the sky, with no line where the world stops.
-    // 2×256 px, screen-space — a gradient needs no more.
-    const backdrop = buildSkyBackdrop(light)
-    skyBackdrop?.dispose()
-    skyBackdrop = backdrop
-    ctx.scene.background = backdrop ?? fogColor
+    applyBackdrop()
+    // A look can thin the air (a drawing has less of it than a view).
+    hazeRange = null
+    retuneAtmosphere()
     restage()
     streetTint.set(light.streetTint)
     for (const [kind, objs] of layerObjects) for (const obj of objs) tintUnlit(obj, kind)
@@ -2960,20 +2994,53 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     scheduleSky()
   }
 
-  function buildSkyBackdrop(light: (typeof LIGHT_PRESETS)[keyof typeof LIGHT_PRESETS]): THREE.CanvasTexture | null {
-    if (typeof document === 'undefined') return null
-    const canvas = document.createElement('canvas')
-    canvas.width = 2
-    canvas.height = 256
-    const g = canvas.getContext('2d')
-    if (!g) return null
-    const grad = g.createLinearGradient(0, 0, 0, canvas.height)
-    for (const [offset, color] of skyBackdropStops(light)) grad.addColorStop(offset, color)
-    g.fillStyle = grad
-    g.fillRect(0, 0, canvas.width, canvas.height)
-    const tex = new THREE.CanvasTexture(canvas)
+  /**
+   * The sky behind the map, as a dome anchored to the WORLD (atmosphere.ts).
+   *
+   * It used to be a gradient in screen space, which put the fog colour at 82 %
+   * of the canvas height wherever the horizon actually was: tilt the camera
+   * and the far map met a deep blue sky along a ruled line. An equirectangular
+   * background turns with the camera, so its haze band is always AT the
+   * horizon — the one place the fog needs a sky of its own colour to fade into.
+   */
+  function applyBackdrop(): void {
+    const light = currentLight()
+    if (!light || !engine) return
+    const sun = sunNow()
+    const px = buildSkyDomePixels({
+      zenith: light.sky.zenith, horizon: light.sky.horizon, haze: light.fog,
+      sunHigh: light.sky.sunHigh, sunLow: light.sky.sunLow,
+      sunAzimuthDeg: sun.az, sunAltitudeDeg: sun.alt,
+    })
+    const tex = new THREE.DataTexture(px.data, px.width, px.height, THREE.RGBAFormat, THREE.UnsignedByteType)
+    tex.mapping = THREE.EquirectangularReflectionMapping
     tex.colorSpace = THREE.SRGBColorSpace
-    return tex
+    tex.magFilter = THREE.LinearFilter
+    tex.minFilter = THREE.LinearFilter
+    tex.needsUpdate = true
+    skyBackdrop?.dispose()
+    skyBackdrop = tex
+    ctx.scene.background = tex
+  }
+
+  /**
+   * Keep the haze in proportion to the view (atmosphere.ts `hazeRangeFor`).
+   *
+   * Per frame, like the depth range and for the same reason: the right answer
+   * depends on how far away the subject is, and that changes with every zoom.
+   * Pushed to the fog only when it has moved by more than the eye can see.
+   */
+  function retuneAtmosphere(): void {
+    const fog = ctx.scene.fog
+    // Sun Study takes the fog away for its own sky; nothing to tune then.
+    if (!(fog instanceof THREE.Fog)) return
+    const distance = ctx.controls.getPosition(scratchCam)
+      .distanceTo(ctx.controls.getTarget(scratchTarget))
+    const next = hazeRangeFor(distance, mapLook?.haze ?? 1)
+    if (!hazeRangeChanged(hazeRange, next)) return
+    hazeRange = next
+    fog.near = next.nearM
+    fog.far = next.farM
   }
 
   /** Stop a running time-of-day transition, landing on its target. */
@@ -3138,6 +3205,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (!terrain) return undefined
     terrain.dispose()
     terrain = null
+    applyMapLevel()
     engine?.setHole(null) // restore the full flat basemap
     // The pit walls stood on the relief that just went away.
     if (engine) applySubsurface()
@@ -3320,6 +3388,24 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       mk(0, 1, c.nx, c.ny + half),
       mk(0, -1, c.nx, c.ny - half),
     ]
+  }
+
+  /**
+   * Stand the flat map at the level the relief's rim eases onto.
+   *
+   * The flat tiles are drawn at the ANCHOR's elevation, which is right while
+   * there is no relief and arbitrary once there is: a site on a hill had the
+   * rest of its city floating at the hill's height, with a band of sky between
+   * the two. The patch knows the level of its own edge (`rimDatumM`, see the
+   * rim in geo-terrain); the map goes there, scaled like the relief itself.
+   * Zero — exactly where it always was — on the flat map and on level ground.
+   */
+  function applyMapLevel(): void {
+    if (!engine) return
+    const t = terrain
+    engine.group.position.z = t && placement && Number.isFinite(t.rimDatumM)
+      ? (t.rimDatumM - t.anchorElevation) * metresToNormalized(placement.lat) * terrainExaggeration
+      : 0
   }
 
   function scheduleTerrainRebuild(): void {
@@ -3743,45 +3829,135 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   }
 
   /**
-   * Lower the sand in front of every promenade wall the DEM smeared into a
-   * ramp (beach-carve). Measured from the UNCORRECTED ground each time, so a
-   * rebuild does not carve twice.
+   * Correct the measured ground where the MAP knows better than the raster,
+   * before anything is stood on it:
+   *
+   *   • streets cut their own bench into a hillside (terrain-grading);
+   *   • the sand lies below its promenade wall (beach-carve);
+   *   • a pond's bed is held under its water (pond-carve).
+   *
+   * Every one of them is worked out from the MEASURED ground, so a rebuild
+   * does not correct twice. The streets go first and the shore last: a
+   * promenade's bank must not fill the beach its wall was just cut for.
    */
-  function applyBeachCarve(t: TerrainPatch, features: ReadonlyArray<OsmFeature>, anchorLat: number): void {
+  function applyGroundCorrections(t: TerrainPatch, features: ReadonlyArray<OsmFeature>, anchorLat: number): void {
     // A patch without the hook (tests' stand-ins) is left as measured.
     if (typeof t.setGroundOverride !== 'function') return
-    t.setGroundOverride(null)
     const mToN = metresToNormalized(anchorLat)
-    const ponds = pondCarveFor(t, features, mToN)
+    let measured: (nx: number, ny: number) => number
+    if (typeof t.sampleMeasuredM === 'function') {
+      measured = (nx, ny) => t.sampleMeasuredM(nx, ny)
+    } else {
+      t.setGroundOverride(null)
+      measured = (nx, ny) => t.sampleGroundM(nx, ny)
+    }
+    const shore = shoreCarveFor(measured, features, mToN)
+    const streets = streetGradingFor(
+      shore ? (nx, ny) => shore(nx, ny, measured(nx, ny)) : measured,
+      features, mToN, t.spacingM ?? DEFAULT_GROUND_STEP_M,
+    )
+    const next = !shore && !streets ? null : (nx: number, ny: number, h: number): number => {
+      const graded = streets ? streets(nx, ny, h) : h
+      return shore ? shore(nx, ny, graded) : graded
+    }
+    // Nothing to say, and nothing said before: spare the patch a re-bake.
+    if (!next && correctedPatch !== t) return
+    t.setGroundOverride(next)
+    correctedPatch = next ? t : null
+  }
+
+  /**
+   * Roads and railways cut to the part of the patch whose relief is measured
+   * (way-clip). The first piece of a way keeps its id, so a profile, a pick
+   * and a hidden-feature entry still find it; a way that leaves and returns
+   * gets a suffixed id per further piece. Everything else passes through.
+   */
+  function clipWaysToMeasuredGround(features: ReadonlyArray<OsmFeature>, t: TerrainPatch): OsmFeature[] {
+    const b = t.measuredBox
+    // A patch without the box (tests' stand-ins) clips nothing.
+    if (!b) return features as OsmFeature[]
+    const sw = normalizedToLatLon(b.minNx, b.minNy)
+    const ne = normalizedToLatLon(b.maxNx, b.maxNy)
+    const box = { south: sw.lat, north: ne.lat, west: sw.lon, east: ne.lon }
+    const out: OsmFeature[] = []
+    for (const f of features) {
+      if ((f.kind !== 'road' && f.kind !== 'rail') || !f.ring || f.widthM === undefined) {
+        out.push(f)
+        continue
+      }
+      const runs = clipLineToBox(f.ring, box)
+      if (runs.length === 1 && runs[0].length === f.ring.length) { out.push(f); continue }
+      runs.forEach((ring, i) => out.push({ ...f, id: i === 0 ? f.id : `${f.id}:${i}`, ring }))
+    }
+    return out
+  }
+
+  /**
+   * The bench every ground-level way cuts for itself (terrain-grading). Null
+   * when the scene has no such way.
+   *
+   * Only what LIES ON the ground: a bridge, a tunnel, a covered or sunken way
+   * and anything given an OSM layer is somewhere else vertically, and the
+   * ground is not bent to it. Paved areas and painted crossings are not
+   * alignments and have no level of their own.
+   */
+  function streetGradingFor(
+    groundM: (nx: number, ny: number) => number,
+    features: ReadonlyArray<OsmFeature>, mToN: number, spacingM: number,
+  ): ((nx: number, ny: number, h: number) => number) | null {
+    const ways = features.filter((f) => (f.kind === 'road' || f.kind === 'rail')
+      && f.ring && f.ring.length >= 2 && f.widthM !== undefined && f.widthM > 0
+      && !f.style.crossing && !f.style.accessKind
+      && (!f.vertical || (f.vertical.structure === 'ground' && f.vertical.layer === 0 && !f.vertical.overWater)))
+    if (ways.length === 0) return null
+    const o = latLonToNormalized(ways[0].ring![0].lat, ways[0].ring![0].lon)
+    const grade = createStreetGrading(
+      ways.map((f) => ({
+        points: f.ring!.map((q) => {
+          const n = latLonToNormalized(q.lat, q.lon)
+          return { x: (n.nx - o.nx) / mToN, y: (n.ny - o.ny) / mToN }
+        }),
+        halfWidthM: f.widthM! / 2,
+      })),
+      { groundM: (x, y) => groundM(o.nx + x * mToN, o.ny + y * mToN), spacingM },
+    )
+    return grade ? (nx, ny, h) => grade((nx - o.nx) / mToN, (ny - o.ny) / mToN, h) : null
+  }
+
+  /**
+   * Lower the sand in front of every promenade wall the DEM smeared into a
+   * ramp (beach-carve), and hold every pond's bed under its water. Null when
+   * the scene has neither.
+   */
+  function shoreCarveFor(
+    measured: (nx: number, ny: number) => number,
+    features: ReadonlyArray<OsmFeature>, mToN: number,
+  ): ((nx: number, ny: number, h: number) => number) | null {
+    const ponds = pondCarveFor(measured, features, mToN)
     const sea = seaDistanceFor(features, { mToN } as Parameters<typeof seaDistanceFor>[1])
     const beaches = sea ? seaBeaches(features, sea) : []
-    if (!sea || beaches.length === 0) {
-      if (ponds) t.setGroundOverride(ponds)
-      return
-    }
+    if (!sea || beaches.length === 0) return ponds
     const o = latLonToNormalized(beaches[0].ring![0].lat, beaches[0].ring![0].lon)
     const toLocal = (q: { lat: number; lon: number }) => {
       const n = latLonToNormalized(q.lat, q.lon)
       return { x: (n.nx - o.nx) / mToN, y: (n.ny - o.ny) / mToN }
     }
     const rings = beaches.map((f) => f.ring!.map(toLocal))
-    const groundM = (x: number, y: number) => t.sampleGroundM(o.nx + x * mToN, o.ny + y * mToN)
+    const groundM = (x: number, y: number) => measured(o.nx + x * mToN, o.ny + y * mToN)
     const seaM = (x: number, y: number) => sea(o.nx + x * mToN, o.ny + y * mToN)
     const walls = planBeachWalls(rings, groundM, seaM, pavedNearFor(features, toLocal))
-    if (walls.length === 0) {
-      if (ponds) t.setGroundOverride(ponds)
-      return
-    }
+    if (walls.length === 0) return ponds
     const carve = carveGround(walls, rings)
-    t.setGroundOverride((nx, ny, h) => {
+    return (nx, ny, h) => {
       const beach = carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h)
       return ponds ? ponds(nx, ny, beach) : beach
-    })
+    }
   }
 
   /** The bed of every inland pond, held under its water (pond-carve). Null when there is none. */
   function pondCarveFor(
-    t: TerrainPatch, features: ReadonlyArray<OsmFeature>, mToN: number,
+    measured: (nx: number, ny: number) => number,
+    features: ReadonlyArray<OsmFeature>, mToN: number,
   ): ((nx: number, ny: number, h: number) => number) | null {
     const ponds = features.filter((f) => f.kind === 'water' && f.ring && f.ring.length >= 3
       && !f.isSea && !f.waterCourse && !f.waterJoin)
@@ -3791,7 +3967,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const n = latLonToNormalized(q.lat, q.lon)
       return { x: (n.nx - o.nx) / mToN, y: (n.ny - o.ny) / mToN }
     }))
-    const groundM = (x: number, y: number) => t.sampleGroundM(o.nx + x * mToN, o.ny + y * mToN)
+    const groundM = (x: number, y: number) => measured(o.nx + x * mToN, o.ny + y * mToN)
     const carve = carvePonds(rings, rings.map((r) => pondLevelM(r, groundM)))
     return (nx, ny, h) => carve((nx - o.nx) / mToN, (ny - o.ny) / mToN, h)
   }
@@ -3815,6 +3991,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // switches a look without the panel (and without refetching the city).
     ;(globalThis as Record<string, unknown>).__geoSystem = api
     ;(globalThis as Record<string, unknown>).__geoVerticalDebug = () => lastVertical
+    // The patch itself: `__geoTerrain().sampleMeasuredM(nx, ny)` against
+    // `.sampleGroundM(nx, ny)` is what a ground correction did at a point.
+    ;(globalThis as Record<string, unknown>).__geoTerrain = () => terrain
   }
   return api
 }

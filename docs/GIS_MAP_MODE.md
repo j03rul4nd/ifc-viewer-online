@@ -649,6 +649,62 @@ reason the vector basemap is the default.
 - **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
   calls. Low-poly on purpose; at map scale a tree is a silhouette.
 
+### The ground the map corrects, the rim, and the air (2026-11)
+
+Four things changed together, because each one alone leaves a visible fault.
+
+- **Streets cut their own bench** (`terrain-grading.ts`). A carriageway is level
+  from kerb to kerb; the relief is a 10–30 m raster on a ~7–10 m mesh that
+  carries on sloping straight through it. Measured on El Carmel (Barcelona,
+  429 ground-level roads, 2 050 samples 4 m either side of the centreline):
+  the hillside stood more than the road's 25 cm lift above one kerb at **62 %**
+  of them, and more than 50 cm at 37 %. Under each ground-level way, and for a
+  shoulder either side, the ground now takes the way's own level, then returns
+  to the measured hillside over a 1 : 1.5 bank. Same samples afterwards:
+  **11 %** and 3 %, median 36 cm → 3 cm. Where ways compete, the wider one and
+  the nearer one win, so a pavement follows its carriageway and two streets
+  16 m apart each keep their own. Bridges, tunnels, covered ways and anything
+  with an OSM `layer` are never graded. It runs in the prelude with the beach
+  and pond carves (`applyGroundCorrections`), from the MEASURED ground, so a
+  rebuild does not grade twice. What is left (the 11 %) is junctions and
+  bundles of ways closer together than the mesh can separate.
+- **The rim** (`geo-terrain.ts`, `RIM_*`). The patch is real ground set into a
+  map with none, so its edge used to stand tens of metres above or below the
+  flat tiles, with a band of sky between. The outer band now eases onto the
+  flat map and dips under it, and the flat map itself moves to the level of the
+  patch's own edge (`rimDatumM`, `applyMapLevel`) instead of the anchor's — or
+  a hilltop site would sit in a crater. The square around the anchor that the
+  scene is built on (`measuredBox`) is never eased; when the site is near one
+  side of the patch the easing on that side is short and steep.
+- **Ways end where measured ground ends** (`way-clip.ts`). The eased band is not
+  ground a road can follow: the solver holds the legal grade, the way leaves
+  the surface, and the builder walls it down — slabs of ramp wall round the
+  district. Roads and railways are cut to `measuredBox`.
+- **Atmosphere** (`atmosphere.ts`). The sky was a gradient in screen space, so
+  the horizon met a saturated blue wherever the camera tilted; it is now an
+  equirectangular dome whose lowest band is exactly the fog colour. The fog ran
+  30–55 km, beyond anything in a district; its range now follows the camera's
+  distance to its target (`hazeRangeFor`), re-tuned per frame like the depth
+  range. A look can thin it (`MapLook.haze`; Blueprint does).
+
+Two things to know before touching any of it:
+
+- The **environment map was upside down** and a quarter turn round until this
+  change: `buildSkyTexture` wrote its rows from the zenith, and a DataTexture's
+  first row is the nadir. Every PBR surface was lit by the ground colour from
+  above. `equirectDirection` is now the one texel → direction mapping, shared
+  by the dome and the environment, and tested against three's own formula.
+  With the sky the right way up, lighting with the palette's saturated zenith
+  turned roofs lilac, hence `SKY_LIGHT_CHROMA` / `SKY_LIGHT_GAIN`.
+- `terrain-truth` reads a slope steeper than about 25 % as an obstruction and
+  takes the neighbourhood floor instead, metres lower. That is older than this
+  change and still true on real cliffs; it is why a road cannot be left on the
+  eased band.
+
+Not verified: the looks other than Daylight were checked only for the sky and
+haze colours meeting, not re-tuned by eye under the corrected environment; and
+nothing here has been looked at on a phone.
+
 ### How high a georeferenced IFC stands (2026-10)
 
 `vertical-frame.ts`, `dem-sources.ts`, `multi-placement.ts`, applied in
@@ -871,6 +927,20 @@ and the carriageway it carries. All three questions run inside that policy.
 
 The arithmetic is done about the model's own centre, for the reason the next
 section gives.
+
+### A plan is not a volume (2026-11)
+
+Suppression compares outlines, and an outline says nothing about what is inside
+it. The mobility hub modelled under Plaça de Catalunya has a 49 × 64 m plan and
+rises under 3 m above the pavement; the corner block of Passeig de Gràcia 1 (the
+Apple Store, two parts of 19 and 22 m) stands inside that plan, scored full
+coverage and was deleted. A model that rises less than a third of a mapped
+building's **measured** height (`osm`, `overture`) no longer replaces it
+(`DWARFED_SHARE` in `context-suppression.ts`; the viewer supplies each model's
+top through `getModelTops`). An estimated height does not count, and a small
+model INSIDE a mapped outline — a fit-out of one storey — still replaces it.
+The cost: a low pavilion that really did replace a surveyed tall building now
+needs that building hidden by hand.
 
 ### Traps that cost real debugging time
 

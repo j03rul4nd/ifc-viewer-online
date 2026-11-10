@@ -5034,6 +5034,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           getModelFootprints: () => self.getLoadedModelIds()
             .map((id) => self.getModelFootprint(id))
             .filter((f): f is Array<{ x: number; z: number }> => f !== null && f.length >= 3),
+          // The top of each of those models, same order and same filter: map
+          // mode needs it to tell a station under a square from a building.
+          getModelTops: () => self.getLoadedModelIds()
+            .filter((id) => { const f = self.getModelFootprint(id); return f !== null && f.length >= 3 })
+            .map((id) => { const b = self.getModelBounds(id); return b ? b.center.y + b.size.y / 2 : Number.NaN }),
           // Where the model's own y = 0 ended up: its pivot, plus whatever the
           // loader's coordination moved it by. Normally both are zero, and it
           // is the moment they are NOT that this has to be read rather than

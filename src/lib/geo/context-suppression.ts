@@ -46,6 +46,12 @@ export interface ModelFootprint {
    * a small skirt is what stops a sliver of OSM wall surviving along an edge.
    */
   marginN: number
+  /**
+   * How far the model rises above the ground it stands on, metres. Omitted
+   * when the host cannot say — every test then behaves as it always has.
+   * See `DWARFED_SHARE`.
+   */
+  riseM?: number
 }
 
 /**
@@ -139,6 +145,38 @@ const CONTAINMENT_AREA_RATIO = 6
  * the model is not describing it, and deleting it would be the worse artefact.
  */
 const OVERLAP_FRACTION = 0.3
+
+/**
+ * A PLAN IS NOT A VOLUME: how tall a model must be, as a share of a mapped
+ * building standing in its plan, to be that building.
+ *
+ * Every test above compares outlines, and an outline says nothing about what
+ * is inside it. A metro station is a box under a square; a set of benches and
+ * lamp posts is a box around a street. Their plans cover the buildings beside
+ * and above them, the buildings score full coverage, and they are deleted —
+ * which is how the corner block of Passeig de Gràcia 1 (the Apple Store, 19
+ * and 22 m, both heights surveyed) vanished from Plaça de Catalunya: it stands
+ * inside the 49 × 64 m plan of the mobility hub modelled under the square,
+ * which rises under 3 m above the pavement.
+ *
+ * So a model that rises less than this share of a mapped building's MEASURED
+ * height is not a model of it, whatever their plans say, and the building
+ * stays. Two limits keep it honest:
+ *
+ *   • only a height somebody measured counts (`osm`, `overture`). An estimate
+ *     is the map guessing, and a guess must not keep a mapped block standing
+ *     through the pavilion that replaced it;
+ *   • it does not apply when the MODEL stands inside the MAPPED outline
+ *     (direction two). A fit-out of one storey is a small thing inside a big
+ *     one and is entitled to show itself — the reverse of this case.
+ *
+ * A third is deliberately stark: a podium against its tower, a ground floor
+ * against its block and a low annexe against its neighbour all clear it.
+ */
+export const DWARFED_SHARE = 1 / 3
+
+/** Height sources that are evidence about the building rather than a guess. */
+const MEASURED_HEIGHT: ReadonlySet<string> = new Set(['osm', 'overture'])
 
 /**
  * Shoelace area of a polygon. Sign discarded; units are the caller's.
@@ -373,6 +411,7 @@ export function createSuppressor(
       // model's own centre so the clipper works on numbers with room in them.
       hullLocal: convexHull(poly.map((p) => ({ x: p.x - centre.x, y: p.y - centre.y }))),
       policy: { ...DEFAULT_POLICY[f.kind], ...overrides },
+      riseM: f.riseM,
     }
   })
 
@@ -405,7 +444,12 @@ export function createSuppressor(
         if (p.x < f.minX || p.x > f.maxX || p.y < f.minY || p.y > f.maxY) continue
         if (pointInPolygon(p, f.poly)) inside++
       }
-      if (inside / projected.length >= COVERAGE_FRACTION) return false
+      // A building several times the model's height is not the model, however
+      // much of it stands in the model's plan — see DWARFED_SHARE.
+      const dwarfed = feature.kind === 'building' && f.riseM !== undefined
+        && MEASURED_HEIGHT.has(feature.height?.source ?? '')
+        && f.riseM < (feature.height.heightM - feature.height.minHeightM) * DWARFED_SHARE
+      if (!dwarfed && inside / projected.length >= COVERAGE_FRACTION) return false
 
       // Both remaining directions need the areas, and both refuse to touch a
       // polygon far larger than the model — see CONTAINMENT_AREA_RATIO.
@@ -419,6 +463,7 @@ export function createSuppressor(
         && pointInPolygon(f.centre, projected)) {
         return false
       }
+      if (dwarfed) continue
 
       // Direction three: neither contains the other, but the two plans share
       // enough ground to be descriptions of the same building. Last because it

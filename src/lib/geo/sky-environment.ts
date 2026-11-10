@@ -19,6 +19,7 @@
 import * as THREE from 'three'
 import { createLogger } from '../logger'
 import type { SkyPalette } from './map-look'
+import { equirectDirection, sunDirection } from './atmosphere'
 
 const log = createLogger('SkyEnvironment')
 
@@ -42,6 +43,14 @@ export interface SkyOptions {
 const WIDTH = 256
 const HEIGHT = 128
 
+/**
+ * How much of the sky's own colour, and of its brightness, reaches a surface
+ * as fill light. Set by eye on Plaça de Catalunya: enough blue left that a
+ * shadow reads as outdoors, not enough to tint a terracotta roof.
+ */
+const SKY_LIGHT_CHROMA = 0.35
+const SKY_LIGHT_GAIN = 0.8
+
 /** Zenith, horizon and ground tones for a clear day. */
 const ZENITH = new THREE.Color(0.16, 0.30, 0.62)
 const HORIZON = new THREE.Color(0.62, 0.72, 0.85)
@@ -53,22 +62,19 @@ const SUN_LOW = new THREE.Color(1.0, 0.62, 0.36)
 /**
  * Build the equirectangular sky as float RGBA.
  *
- * Rows run from +Y (zenith) at v=0 to −Y at v=1, and columns from −Z going
- * clockwise — three's own equirectangular convention, so the result can be fed
- * straight to PMREMGenerator without a flip.
+ * Laid out in three's own equirectangular convention (`equirectDirection` in
+ * atmosphere.ts: first row = nadir, last row = zenith), so the result can be
+ * fed straight to PMREMGenerator without a flip — and so it is the same sky,
+ * the same way up, as the dome drawn behind the scene.
  */
 export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
   const data = new Float32Array(WIDTH * HEIGHT * 4)
 
-  const az = (opts.sunAzimuthDeg * Math.PI) / 180
   const alt = (opts.sunAltitudeDeg * Math.PI) / 180
   // Same frame as everything else in the geo system: +x east, +y north, +z up,
   // then mapped into three's Y-up world where north is −Z.
-  const sun = new THREE.Vector3(
-    Math.cos(alt) * Math.sin(az),
-    Math.sin(alt),
-    -Math.cos(alt) * Math.cos(az),
-  ).normalize()
+  const s = sunDirection(opts.sunAzimuthDeg, opts.sunAltitudeDeg)
+  const sun = new THREE.Vector3(s.x, s.y, s.z).normalize()
 
   const pal = opts.palette
   const zenith = pal ? new THREE.Color(pal.zenith) : ZENITH
@@ -86,12 +92,14 @@ export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
   const colour = new THREE.Color()
 
   for (let y = 0; y < HEIGHT; y++) {
-    const theta = ((y + 0.5) / HEIGHT) * Math.PI          // 0 = zenith
-    const sinT = Math.sin(theta)
-    const cosT = Math.cos(theta)
     for (let x = 0; x < WIDTH; x++) {
-      const phi = ((x + 0.5) / WIDTH) * Math.PI * 2
-      dir.set(sinT * Math.sin(phi), cosT, -sinT * Math.cos(phi))
+      // The direction three will sample this texel FOR — not one derived here.
+      // This loop used to run its rows from the zenith and its columns from
+      // north, which is neither: a DataTexture's first row is the nadir. The
+      // environment came out upside down and a quarter turn round, so roofs
+      // and roads were lit by the ground colour and soffits by the sky.
+      const d = equirectDirection(x, y, WIDTH, HEIGHT)
+      dir.set(d.x, d.y, d.z)
 
       const up = dir.y
       if (up >= 0) {
@@ -102,6 +110,17 @@ export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
         // Forward scattering: the sky brightens and warms around the sun.
         const cosGamma = Math.max(0, dir.dot(sun))
         colour.lerp(sunColor, Math.pow(cosGamma, 6) * 0.45 * (1 - up * 0.4))
+        // AS A LIGHT, the sky is paler than it looks. What fills a shadow
+        // outdoors is the whole hemisphere — blue sky, bright haze, and sunlight
+        // bounced off everything — and the sum is close to white. Lighting with
+        // the palette's own saturated zenith turned every roof and pavement
+        // lilac the moment this map was the right way up.
+        const lum = 0.2126 * colour.r + 0.7152 * colour.g + 0.0722 * colour.b
+        colour.setRGB(
+          (lum + (colour.r - lum) * SKY_LIGHT_CHROMA) * SKY_LIGHT_GAIN,
+          (lum + (colour.g - lum) * SKY_LIGHT_CHROMA) * SKY_LIGHT_GAIN,
+          (lum + (colour.b - lum) * SKY_LIGHT_CHROMA) * SKY_LIGHT_GAIN,
+        )
       } else {
         // Below the horizon: the ground bounce. Dim, and tinted by nothing in
         // particular — this is the term that keeps undersides from going black.
