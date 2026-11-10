@@ -53,7 +53,7 @@ import {
   buildRoofPropLayer, groundFrameFor, seaDistanceFor,
 } from './osm-scene'
 import { pickAnchorModel, satelliteOffset, satelliteYaw, shouldPlaceSatellite, sameOriginOffset } from './multi-placement'
-import { placementOverGround, liftAboveGround, absoluteGroundM } from './vertical-frame'
+import { placementOverGround, liftAboveGround, absoluteGroundM, localDatumAt } from './vertical-frame'
 import { demSourceFor, type DemSourceId } from './dem-sources'
 import { sampleElevation } from './elevation'
 import { distanceM } from './model-sites'
@@ -3707,7 +3707,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         const g = api.groundAtWorld(x, z)
         if (g === null) return groundY + anchor.heightOffsetM
         const groundM = absoluteGroundM(g, groundY, t.anchorElevation, terrainExaggeration)
-        return g + (sp.source === 'ifc' ? liftAboveGround(sp.heightOffsetM, groundM).liftM : sp.heightOffsetM)
+        return g + (sp.source === 'ifc' ? liftAboveGround(sp.heightOffsetM, groundM, localDatumAt(sp.lat, sp.lon)).liftM : sp.heightOffsetM)
       }
       : (): number => groundY + anchor.heightOffsetM
     for (const s of satellites) {
