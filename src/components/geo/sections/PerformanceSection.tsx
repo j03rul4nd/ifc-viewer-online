@@ -29,11 +29,14 @@ export function PerformanceSection() {
     perf: st.perf,
     adaptiveQuality: st.adaptiveQuality,
     budgetLifted: st.budgetLifted,
+    autoDetail: st.autoDetail,
+    setAutoDetail: st.setAutoDetail,
     buildingsEnabled: st.buildingsEnabled,
     setAdaptiveQuality: st.setAdaptiveQuality,
   })))
   const mapOn = s.mapMode === 'on'
   const tileBytes = useTileBytes(mapOn)
+  const city = useCityStats(mapOn && s.autoDetail && s.buildingsEnabled)
 
   if (!mapOn) return <Group><Notice tone="muted">{t('perf.mapOff')}</Notice></Group>
 
@@ -94,6 +97,15 @@ export function PerformanceSection() {
         <Hint>{t('perf.empty')}</Hint>
       )}
 
+      <SwitchRow label={t('perf.autoDetail')} checked={s.autoDetail} onChange={s.setAutoDetail} />
+      <Hint active={!s.autoDetail}>{t(s.autoDetail ? 'perf.autoDetailHint' : 'perf.autoDetailOffHint')}</Hint>
+      {s.autoDetail && city && city.cells > 0 && (
+        <StatRow
+          label={t('perf.city')}
+          value={t('perf.cityValue', { cells: city.cells, triangles: formatTriangles(city.triangles) })}
+        />
+      )}
+
       <SwitchRow label={t('perf.adaptive')} checked={s.adaptiveQuality} onChange={s.setAdaptiveQuality} />
       <Hint>{t('perf.adaptiveHint')}</Hint>
 
@@ -105,6 +117,27 @@ export function PerformanceSection() {
       </Button>
     </Group>
   )
+}
+
+/** What the far city is holding, polled while the tab is on screen. */
+function useCityStats(active: boolean): { cells: number; triangles: number } | null {
+  const ctl = useGeoCtl()
+  const [stats, setStats] = useState<{ cells: number; triangles: number } | null>(null)
+  useEffect(() => {
+    if (!active) { setStats(null); return }
+    let alive = true
+    const read = (): void => {
+      void ctl.getGeo()?.then((geo) => {
+        if (!alive) return
+        const s = geo.getCityStats()
+        setStats(s ? { cells: s.cells, triangles: s.triangles } : null)
+      })
+    }
+    read()
+    const id = window.setInterval(read, TILE_POLL_MS)
+    return () => { alive = false; window.clearInterval(id) }
+  }, [active, ctl])
+  return stats
 }
 
 /** The basemap's GPU estimate, polled while the tab is on screen. */
