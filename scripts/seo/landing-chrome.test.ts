@@ -119,6 +119,12 @@ describe('landing chrome', () => {
     }
   })
 
+  it('the first screen is left-aligned, without the pill, glow or dot field', () => {
+    expect(CHROME_CSS).toContain('section.hero{text-align:left!important;background:none!important}')
+    expect(CHROME_CSS).toMatch(/section\.hero \.badge[^{]*\{[^}]*background:none!important;border:0!important/)
+    for (const f of landingFiles()) expect(readFileSync(f, 'utf8'), f).toMatch(/<section class="hero">/)
+  })
+
   it('no dead links in the header or the next step, in any language', () => {
     for (const l of LANGS) {
       const k = chromeLinks(l)
