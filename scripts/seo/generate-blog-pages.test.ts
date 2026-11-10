@@ -656,3 +656,16 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
     }
   })
 })
+
+describe('generateBlogPages — hero preload', () => {
+  // The article draws a hero only for a real heroImage; the generated cover is
+  // just the social card, so preloading it would fetch an image nobody sees.
+  const html = (slug: string) => readFileSync(path.join(OUT, 'blog', slug, 'index.html'), 'utf-8')
+  it('preloads the hero only when the article draws one', () => {
+    const withHero = BLOG_POSTS.find((p) => p.heroImage)!
+    const without = BLOG_POSTS.find((p) => !p.heroImage)!
+    expect(html(withHero.slug)).toContain('rel="preload" as="image"')
+    expect(html(without.slug)).not.toContain('rel="preload" as="image"')
+    expect(html(without.slug)).toMatch(/<meta property="og:image"\s+content="[^"]+"/)
+  })
+})

@@ -364,3 +364,35 @@ function titleOf(rel: string): string {
   const html = readFileSync(path.join(OUT, rel, 'index.html'), 'utf8')
   return (html.match(/<title[^>]*>([^<]*)<\/title>/) || [])[1] ?? ''
 }
+
+describe('fix pages follow the colour system (docs/COLOR_SYSTEM.md)', () => {
+  const html = () => readFileSync(path.join(OUT, 'fix', 'missing-type', 'index.html'), 'utf8')
+  const css = () => html().match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? ''
+  const tokens = (block: string) => Object.fromEntries([...block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]))
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+  }
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
+
+  it('has a light theme and no white-alpha or stray hex colours', () => {
+    expect(css()).toContain('@media (prefers-color-scheme: light)')
+    expect(css()).not.toMatch(/rgba\(255,\s*255,\s*255/)
+    const outsideTokens = css().replace(/:root\s*\{[^}]*\}/g, '').replace(/\.cta-primary[^}]*\}/, '')
+    expect(outsideTokens.match(/#[0-9a-f]{3,6}\b/gi) ?? []).toEqual([])
+  })
+
+  it('keeps every text token readable on the canvas in both themes (WCAG AA)', () => {
+    const [dark, light] = css().split('@media (prefers-color-scheme: light)')
+    for (const t of [tokens(dark), { ...tokens(dark), ...tokens(light) }]) {
+      for (const k of ['text', 'text-2', 'text-3', 'accent-text', 'warn', 'danger']) {
+        expect(ratio(t[k], t.bg), `${k} on ${t.bg}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  it('has no filler label above each heading, and one h1', () => {
+    expect(html()).not.toContain('class="section-label"')
+    expect(html().match(/<h1[\s>]/g)).toHaveLength(1)
+  })
+})
