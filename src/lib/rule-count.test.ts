@@ -27,7 +27,8 @@ import { RULE_COUNT, RULE_METADATA } from '../types'
 import { CERTIFY_VALIDATOR_VERSION } from './certify/build-payload'
 
 /** Numbers below this next to a rule word are subset mentions, not the total. */
-const TOTAL_CLAIM_MIN = 25
+// 25 is itself a subset the landings quote: the rules that run by default.
+const TOTAL_CLAIM_MIN = 26
 
 // "<n> … rule-word" in every locale the product ships (latin + zh/ja/th).
 // The window between the number and the keyword is capped at 15 non-digit,

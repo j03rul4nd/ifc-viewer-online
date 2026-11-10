@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>オンプレミス IFC バリデーター — 閉域網での BIM 検証</title>
+  <meta name="description" content="IFC ビューア、44 ルールのバリデーター、IDS チェックを、インターネット接続なしで自社ネットワークから提供します。コンテナイメージ、セットアップ、トレーニング、サポート。" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/" />
+  <meta property="og:title" content="オンプレミス IFC バリデーター — 閉域網での BIM 検証" />
+  <meta property="og:description" content="IFC ビューア、44 ルールのバリデーター、IDS チェックを、インターネット接続なしで自社ネットワークから提供します。コンテナイメージ、セットアップ、トレーニング、サポート。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="組み込みの検証プロファイルの一覧を開いた IFC バリデーター：基本納品、品質レビュー、BIM 調整、ISO 19650 準拠、LOD 300 設計" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="オンプレミス IFC バリデーター — 閉域網での BIM 検証" />
+  <meta name="twitter:description" content="IFC ビューア、44 ルールのバリデーター、IDS チェックを、インターネット接続なしで自社ネットワークから提供します。コンテナイメージ、セットアップ、トレーニング、サポート。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/validador-ifc-on-premise/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-validator-on-premise/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/validateur-ifc-sur-site/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/validador-ifc-on-premise/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/validatore-ifc-on-premise/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/validador-ifc-on-premise/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/on-premise-ifc-validator/" />
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/landings/ifc-validation-requirement-profiles-800.webp 800w, /images/landings/ifc-validation-requirement-profiles-1600.webp 1600w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/",
+      "url": "https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/",
+      "name": "オンプレミス IFC バリデーター — 閉域網での BIM 検証",
+      "description": "IFC ビューア、44 ルールのバリデーター、IDS チェックを、インターネット接続なしで自社ネットワークから提供します。コンテナイメージ、セットアップ、トレーニング、サポート。",
+      "inLanguage": "ja",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg#image"
+      },
+      "dateModified": "2026-11-10"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (web browser)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg",
+        "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "組み込みの検証プロファイルの一覧を開いた IFC バリデーター：基本納品、品質レビュー、BIM 調整、ISO 19650 準拠、LOD 300 設計",
+      "caption": "組み込みのプロファイル。パイロットの間に、貴社独自のプロファイルと IDS ファイルを読み込み、貴社のモデルでテストします。",
+      "inLanguage": "ja",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "IFC バリデーターでの IDS チェックの結果：仕様が一つ不合格、FireRating プロパティを持つ壁は 57 のうち 0。ハイライト、分離、エクスポートのボタンがある",
+      "caption": "IDS ファイルに対してチェックしたモデル：57 の壁が耐火等級の要件を満たしていません。オンプレミスでは、モデルも要件も自社ネットワークにとどまります。",
+      "inLanguage": "ja",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "自社ネットワークの外に出るものはありますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "いいえ。コンテナは貴社のブラウザにアプリケーションを配信するだけで、外向きの接続は行いません。このビルドには利用統計が入っていません。モデルは各ユーザーのブラウザ内で読み込まれ、サーバーには保存されません。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "公開版のアプリと何が違いますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "プログラムは同じです。変わるのは、どこから配信されるか、バージョンが固定であること、そしてインターネットを必要とする機能（地図コンテキストとオンラインのサンプルモデル）が使えないことです。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "御社に頼らず自社でホストできますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。ソースは MIT ライセンスで公開されており、Dockerfile と nginx の設定を含みます。パイロットは、設定、説明、サポートを受けたいチームのためのものです。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "どのくらい大きなモデルを扱えますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "公開版のアプリと同じです。ファイルあたり 2 GB 未満で、チェックがブラウザで実行されるため、実際には各ワークステーションのメモリが上限になります。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "費用はいくらですか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "パイロットは範囲確認の打ち合わせのあとに見積もります。拠点数と必要なサポートによって変わるためです。公開の価格表はまだありません。"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/ja/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "オンプレミス IFC 検証",
+          "item": "https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
+  </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
+</head>
+<body>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/ja/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="メインメニュー">
+        <a href="/ja/">ビューア</a>
+        <a href="/ja/ifc-viewer-examples/">事例</a>
+        <a href="/ja/fix/">修正ガイド</a>
+        <a href="/ja/blog/">ブログ</a>
+        <a href="/ja/pricing/">料金</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="ライト／ダーク切替" title="ライト／ダーク切替"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/ja/" class="lc-btn">ビューアを開く</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">オンプレミス · インターネット接続なし · 自社のサーバー</p>
+        <h1>オンプレミス IFC バリデーター <span>閉じたままのネットワークのために</span></h1>
+        <p class="lead">公開版のアプリはすでに IFC ファイルをブラウザ内で読み込みますが、ページ自体はインターネットから読み込まれます。それが認められない環境では、同じビューア、バリデーター、IDS チェックを、自社サーバー上のコンテナから提供します。</p>
+        <div class="go">
+          <a href="#pilot" class="btn">パイロットを申し込む</a>
+        </div>
+        <p class="note">一拠点、範囲は固定：インストール、貴社の要件に合わせた設定、トレーニングセッション、サポート期間。</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-validation-requirement-profiles.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-validation-requirement-profiles-800.webp 800w, /images/landings/ifc-validation-requirement-profiles-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-validation-requirement-profiles.jpg" width="1600" height="1000" alt="組み込みの検証プロファイルの一覧を開いた IFC バリデーター：基本納品、品質レビュー、BIM 調整、ISO 19650 準拠、LOD 300 設計" fetchpriority="high" />
+          </picture></a>
+          <figcaption>組み込みのプロファイル。パイロットの間に、貴社独自のプロファイルと IDS ファイルを読み込み、貴社のモデルでテストします。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">対象となる方</p>
+        <h2>「何もアップロードされない」だけでは足りないとき</h2>
+        <div class="cols">
+          <div class="col"><h3>向いている場合</h3><ul>
+            <li>ワークステーションがインターネットに接続できない、またはインターネットからソフトウェアを読み込んではならない。</li>
+            <li>自分たちが決めるまで変わらない、監査済みの単一のバージョンが必要。</li>
+            <li>協力会社のモデルを、第三者を経由せずに自社の IDS や EIR に対してチェックしなければならない。</li>
+            <li>動かないときに連絡できる相手が欲しい。</li>
+          </ul></div>
+          <div class="col"><h3>必要ない場合</h3><ul>
+            <li>ポリシーが禁じているのがモデルのアップロードだけである。<a href="/ja/ifc-validator-online/">公開版のバリデーター</a>はモデルをアップロードしません。</li>
+            <li>自社でホストできる人員がいる。コードは MIT ライセンスで、Dockerfile を含みます。イメージをビルドして配信してください。パイロットで加わるのは設定、トレーニング、サポートであり、別の製品ではありません。</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">提供内容</p>
+        <h2>インストールされるものと、されないもの</h2>
+        <div class="table-wrap"><table class="facts">
+          <thead><tr><th scope="col"></th><th scope="col">詳細</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">ソフトウェア</th><td data-h="詳細">ビューア、Health Score を伴う 44 のルール、IDS 1.0、BCF 2.1 と 3.0、複数モデルの同時表示、計測、断面。コンテナから nginx が配信する静的なウェブアプリケーションで、チェックは各ユーザーのブラウザで実行されます。</td></tr>
+            <tr><th scope="row">サーバー</th><td data-h="詳細">コンテナを実行できるマシンならどれでも。ファイルを配信するだけなので、要求はわずかです。処理はワークステーションが行います。</td></tr>
+            <tr><th scope="row">接続</th><td data-h="詳細">このビルドには外向きの接続も利用統計もありません。</td></tr>
+            <tr><th scope="row">オフラインで使えないもの</th><td data-h="詳細">3D の地図コンテキスト（地形、OpenStreetMap の建物）とオンラインのサンプルモデル。インターネットからダウンロードされるためです。</td></tr>
+            <tr><th scope="row">貴社の要件</th><td data-h="詳細">貴社の IDS ファイル、検証プロファイル、命名パターンを読み込み、貴社のモデルでテストします。</td></tr>
+            <tr><th scope="row">更新</th><td data-h="詳細">新しいイメージファイルを、お選びの経路でお渡しします。自動で更新されるものはありません。</td></tr>
+            <tr><th scope="row">ハードウェア</th><td data-h="詳細">自社のサーバーまたは仮想マシン。ご要望があれば、設定済みのゲートウェイを提供できます。</td></tr>
+          </tbody>
+        </table></div>
+        <figure class="shot">
+          <a href="/images/landings/ids-check-ifc-model-in-browser.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ids-check-ifc-model-in-browser-800.webp 800w, /images/landings/ids-check-ifc-model-in-browser-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ids-check-ifc-model-in-browser.jpg" width="1600" height="1000" alt="IFC バリデーターでの IDS チェックの結果：仕様が一つ不合格、FireRating プロパティを持つ壁は 57 のうち 0。ハイライト、分離、エクスポートのボタンがある" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>IDS ファイルに対してチェックしたモデル：57 の壁が耐火等級の要件を満たしていません。オンプレミスでは、モデルも要件も自社ネットワークにとどまります。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">他の選択肢</p>
+        <h2>当社が知る、もう一つのエアギャップ対応の選択肢</h2>
+        <p class="sub">比較検討中の方へ。Solibri がオフラインプランについて公開している内容は次のとおりです。</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col"></th><th scope="col">Solibri Security+</th><th scope="col">IFC Viewer Online オンプレミス</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">説明</th><td data-h="Solibri Security+">「Fully offline operation (no telemetry)」、「Air-gapped by design」、「Controlled update cycles」</td><td data-h="IFC Viewer Online オンプレミス">自社サーバー上のコンテナ。外向きの接続なし</td></tr>
+            <tr><th scope="row">価格</th><td data-h="Solibri Security+">非公開。「Talk with an expert」</td><td data-h="IFC Viewer Online オンプレミス">範囲確認の打ち合わせのあと、パイロットごとに見積もり</td></tr>
+            <tr><th scope="row">チェック内容</th><td data-h="Solibri Security+">Solibri のルールベースの検証</td><td data-h="IFC Viewer Online オンプレミス">44 の固定ルールと IDS 1.0。干渉はバウンディングボックスのみ</td></tr>
+          </tbody>
+        </table></div>
+        <p class="after">分野間の干渉チェックや、組織のために書かれたルールが必要な場合は、Solibri のほうが適しています。この導入はもっと小さなものです。納品物を開き、要件に対してチェックし、検出結果を返します。</p>
+        <p class="src" data-vendors="solibri">出典: <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> · 閲覧日 <time datetime="2026-11-10">2026-11-10</time></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">パイロット</p>
+        <h2>パイロットの進め方</h2>
+        <ol class="steps">
+          <li><h3>範囲確認の打ち合わせ</h3><p>ネットワークの規則、モデルの大きさ、要件、誰が使うか。</p></li>
+          <li><h3>インストール</h3><p>貴社のサーバーに、IDS ファイルとプロファイルを読み込んだ状態で。</p></li>
+          <li><h3>トレーニング</h3><p>貴社の BIM コーディネーターと、貴社のモデルを使って一回のセッション。</p></li>
+          <li><h3>判断</h3><p>サポート期間のあと、他の拠点に広げるかどうかを決めていただきます。</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="pilot">
+      <div class="container">
+        <p class="label">パイロットを申し込む</p>
+        <h2>貴社の環境について教えてください</h2>
+        <p class="sub">このフォームは、お使いのメールソフトでメッセージを開きます。当社のサーバーには何も送信されません。</p>
+        <form class="form" id="pilot-form" data-subject="オンプレミス IFC 検証のパイロット" data-to="joelbenitezdonari@gmail.com">
+          <div class="form-row">
+            <label>組織名<input name="org" required autocomplete="organization" /></label>
+            <label>業種<select name="sector"><option>防衛・セキュリティ</option><option>エネルギー・公益事業</option><option>交通・インフラ</option><option>行政機関</option><option>産業・製造</option><option>建築・エンジニアリング・建設会社</option><option>その他</option></select></label>
+          </div>
+          <div class="form-row">
+            <label>ネットワーク<select name="deploy"><option>インターネット接続がまったくない</option><option>プライベートネットワーク、インターネットは制限付き</option><option>自地域のプライベートクラウド</option><option>まだ分からない</option></select></label>
+            <label>ハードウェア<select name="hw"><option>自社のサーバーまたは仮想マシン</option><option>設定済みのゲートウェイ</option><option>まだ分からない</option></select></label>
+          </div>
+          <label>何をチェックする必要がありますか。モデルのおおよその大きさも教えてください。<textarea name="need" rows="4"></textarea></label>
+          <button type="submit" class="btn">メールを開く</button>
+          <p class="form-note">または直接こちらへ <a href="mailto:joelbenitezdonari@gmail.com?subject=%E3%82%AA%E3%83%B3%E3%83%97%E3%83%AC%E3%83%9F%E3%82%B9%20IFC%20%E6%A4%9C%E8%A8%BC%E3%81%AE%E3%83%91%E3%82%A4%E3%83%AD%E3%83%83%E3%83%88">joelbenitezdonari@gmail.com</a></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">FAQ</p>
+        <h2>よくある質問</h2>
+        <div class="faq">
+          <div><h3>自社ネットワークの外に出るものはありますか？</h3><p>いいえ。コンテナは貴社のブラウザにアプリケーションを配信するだけで、外向きの接続は行いません。このビルドには利用統計が入っていません。モデルは各ユーザーのブラウザ内で読み込まれ、サーバーには保存されません。</p></div>
+          <div><h3>公開版のアプリと何が違いますか？</h3><p>プログラムは同じです。変わるのは、どこから配信されるか、バージョンが固定であること、そしてインターネットを必要とする機能（地図コンテキストとオンラインのサンプルモデル）が使えないことです。</p></div>
+          <div><h3>御社に頼らず自社でホストできますか？</h3><p>はい。ソースは MIT ライセンスで公開されており、Dockerfile と nginx の設定を含みます。パイロットは、設定、説明、サポートを受けたいチームのためのものです。</p></div>
+          <div><h3>どのくらい大きなモデルを扱えますか？</h3><p>公開版のアプリと同じです。ファイルあたり 2 GB 未満で、チェックがブラウザで実行されるため、実際には各ワークステーションのメモリが上限になります。</p></div>
+          <div><h3>費用はいくらですか？</h3><p>パイロットは範囲確認の打ち合わせのあとに見積もります。拠点数と必要なサポートによって変わるためです。公開の価格表はまだありません。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">関連ページ</p>
+        <ul class="related">
+          <li><a href="/ja/ifc-validator-online/">IFC バリデーター</a></li>
+          <li><a href="/ja/cloud-ifc-validator/">クラウド IFC バリデーター</a></li>
+          <li><a href="/ja/solibri-alternative/">Solibri 代替</a></li>
+          <li><a href="/ja/solibri-webchecker-alternative/">Solibri WebChecker 代替</a></li>
+          <li><a href="/ja/ifc-viewer-mac/">Mac 用 IFC ビューア</a></li>
+          <li><a href="/ja/blog/solibri-alternative/">Solibri かブラウザのバリデーターか：詳しい比較</a></li>
+          <li><a href="/ja/fix/">IFC のエラーを修正</a></li>
+          <li><a href="/ja/pricing/">料金</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>ネットワークがインターネットにつながっていますか？それなら、すでに無料で使えます</h2>
+        <p>公開版のバリデーターはファイルをブラウザ内で読み込み、何もアップロードしません。</p>
+        <a href="/ja/" class="btn">IFC ファイルを検証</a>
+      </div>
+    </section>
+  </main>
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">次のステップ</h2>
+      <p class="lc-lead">無料・ブラウザ内で動作。ファイルはアップロードされません。</p>
+      <ol>
+        <li><a href="/ja/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>サンプルモデルを開く</strong><span>実際の IFC で Health Score と不合格ルールを 1 分以内に確認できます。</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>無料アカウントを作成</strong><span>チェック結果を保存し、チームや発注者とレポートを共有できます。</span></a></li>
+        <li><a href="/ja/pricing/"><span class="lc-n">3</span><strong>プランを比較</strong><span>Pro、Team、そして納品を受け取る側のためのモデル受入れ。</span></a></li>
+      </ol>
+    </div>
+  </section>
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="/ja/">IFC Viewer Online</a>
+        <a href="/ja/ifc-validator-online/">IFC バリデーター</a>
+        <a href="/ja/cloud-ifc-validator/">クラウド IFC バリデーター</a>
+        <a href="/ja/solibri-alternative/">Solibri 代替</a>
+        <a href="/ja/solibri-webchecker-alternative/">Solibri WebChecker 代替</a>
+        <a href="/ja/ifc-viewer-mac/">Mac 用 IFC ビューア</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
+    </div>
+  </footer>
+  <script>
+  (function () {
+    var form = document.getElementById('pilot-form'); if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var lines = [];
+      form.querySelectorAll('label').forEach(function (l) {
+        var field = l.querySelector('input,select,textarea');
+        if (field) lines.push(l.firstChild.textContent.trim() + ': ' + field.value);
+      });
+      location.href = 'mailto:' + form.dataset.to + '?subject=' + encodeURIComponent(form.dataset.subject + ' — ' + form.elements.org.value) + '&body=' + encodeURIComponent(lines.join('\n'));
+    });
+  })();
+  </script>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
+</body>
+</html>
