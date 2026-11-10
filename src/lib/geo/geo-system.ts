@@ -14,7 +14,7 @@
 
 import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
-import { lowerQuality } from './basemap/tile-quality'
+import { createQualityGovernor, lodResolution } from './basemap/tile-quality'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
@@ -804,6 +804,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let sceneReportCb: ((report: SceneReport) => void) | null = null
   let perfCb: ((verdict: FrameVerdict) => void) | null = null
   const frameWatch = createFrameWatch()
+  /** Lowers the basemap's sharpness in a slow view and gives it back after. */
+  const basemapQuality = createQualityGovernor()
   let contextListeners: { lost: (e: Event) => void; restored: () => void } | null = null
   /** Authored props, once fetched. Null until showcase mode asks for them. */
   let propAssets: Map<string, THREE.BufferGeometry> | null = null
@@ -1206,6 +1208,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
       engine = createBasemapEngine()
       engine.onDegraded = degradedCallback
+      engine.setLabelKeepOut(modelBoxes)
       geoRoot.add(engine.group)
       engine.setProvider(provider)
       engine.setCamera(ctx.getActiveCamera())
@@ -1229,6 +1232,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const tick = (): void => {
         if (!engine) return
         engine.update()
+        updateTerrainDetail()
         retuneDepthRange()
         retuneAtmosphere()
         if ((subsurfaceMode !== 'surface' || markersEnabled) && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
@@ -1249,11 +1253,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         } else {
           const verdict = frameWatch.sample(now)
           if (verdict) {
-            if (verdict.slow) {
-              // Basemap sharpness goes first: cheapest thing on screen to lose.
-              const q = lowerQuality(engine.getQuality())
-              if (q) engine.setQuality(q)
-            }
+            // Basemap sharpness goes first — cheapest thing on screen to lose —
+            // and comes back once the view is fast again (tile-quality).
+            const q = basemapQuality.step(engine.getQuality(), verdict)
+            if (q) engine.setQuality(q)
             perfCb?.(verdict)
           }
         }
@@ -1336,6 +1339,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     setProvider(p) {
       provider = p
+      basemapQuality.reset()
       engine?.setQuality('balanced')
       engine?.setProvider(p)
       // BUG-1 fix: the terrain drape follows the basemap provider. Heights are
@@ -3030,6 +3034,85 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * depends on how far away the subject is, and that changes with every zoom.
    * Pushed to the fog only when it has moved by more than the eye can see.
    */
+  const detailEye = new THREE.Vector3()
+  const detailDir = new THREE.Vector3()
+  const detailHit = new THREE.Vector3()
+  const detailSize = new THREE.Vector2()
+
+  /**
+   * Tell the relief where the camera is looking and how much ground one device
+   * pixel covers there, so it can repaint the map sharper around that point
+   * (terrain-detail). Two ground reads a frame; the relief does nothing when
+   * the answer has not moved a quarter of a square.
+   */
+  function updateTerrainDetail(): void {
+    if (!terrain || !geoRoot) return
+    const cam = ctx.getActiveCamera() as THREE.PerspectiveCamera & THREE.OrthographicCamera
+    cam.getWorldPosition(detailEye)
+    cam.getWorldDirection(detailDir)
+    const under = api.groundHeightAt(detailEye.x, detailEye.z) ?? geoRoot.position.y
+    const height = Math.max(1, detailEye.y - under)
+    // Where the middle of the view meets the ground — but never further ahead
+    // than three times the camera's height: looking at the horizon, what needs
+    // to be sharp is the ground in front of the viewer, not the skyline.
+    const flat = Math.hypot(detailDir.x, detailDir.z)
+    let t = detailDir.y < -1e-3 ? height / -detailDir.y : Infinity
+    if (t * flat > 3 * height) t = (3 * height) / Math.max(1e-6, flat)
+    detailHit.copy(detailEye).addScaledVector(detailDir, t)
+    const ground = api.groundHeightAt(detailHit.x, detailHit.z) ?? under
+    detailHit.y = ground
+    const distance = Math.max(1, detailEye.distanceTo(detailHit))
+    ctx.renderer.getSize(detailSize)
+    const lod = lodResolution(detailSize.x, detailSize.y, ctx.renderer.getPixelRatio())
+    const pixelM = cam.isPerspectiveCamera
+      ? (distance * 2 * Math.tan((cam.fov * Math.PI) / 360)) / lod.height
+      : (cam.top - cam.bottom) / (cam.zoom || 1) / lod.height
+    geoRoot.updateWorldMatrix(true, false)
+    const local = geoRoot.worldToLocal(detailHit)
+    terrain.setDetailView({
+      focusNx: local.x, focusNy: local.y,
+      // geoRoot's scale is metres per normalized unit at this latitude.
+      texelN: pixelM / geoRoot.scale.x,
+      dpr: Math.min(2, Math.max(1, Math.round(lod.effectiveDpr * 4) / 4)),
+    })
+  }
+
+  let modelBoxCache: { at: number; boxes: THREE.Box3[] } | null = null
+
+  /**
+   * World boxes of the loaded models, for the map's place names to keep off
+   * (screen-labels). Read at most twice a second: a model does not move while
+   * the camera does.
+   */
+  function modelBoxes(): THREE.Box3[] {
+    const now = performance.now()
+    if (modelBoxCache && now - modelBoxCache.at < 500) return modelBoxCache.boxes
+    const boxes: THREE.Box3[] = []
+    const outlines = ctx.getModelFootprints?.() ?? null
+    const tops = ctx.getModelTops?.() ?? null
+    const active = ctx.getActiveModelBounds()
+    if (outlines && outlines.length > 0) {
+      outlines.forEach((outline, i) => {
+        if (outline.length === 0) return
+        const box = new THREE.Box3()
+        const top = tops?.[i] ?? (active ? active.center.y + active.size.y / 2 : geoRoot?.position.y ?? 0)
+        const base = api.groundHeightAt(outline[0].x, outline[0].z) ?? geoRoot?.position.y ?? 0
+        for (const c of outline) {
+          box.expandByPoint(new THREE.Vector3(c.x, Math.min(base, top), c.z))
+          box.expandByPoint(new THREE.Vector3(c.x, Math.max(base, top), c.z))
+        }
+        boxes.push(box)
+      })
+    } else if (active) {
+      boxes.push(new THREE.Box3().setFromCenterAndSize(
+        new THREE.Vector3(active.center.x, active.center.y, active.center.z),
+        new THREE.Vector3(active.size.x, active.size.y, active.size.z),
+      ))
+    }
+    modelBoxCache = { at: now, boxes }
+    return boxes
+  }
+
   function retuneAtmosphere(): void {
     const fog = ctx.scene.fog
     // Sun Study takes the fog away for its own sky; nothing to tune then.

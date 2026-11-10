@@ -245,6 +245,64 @@ pickable — means a tile still in flight shows *map colour*, never the black
 sky. Priority (in-frustum, nearest, shallowest first), request abort on
 unload, LRU + byte-target unloading are the library's and were already on.
 
+### Sharp up close: the relief, and sharpness that comes back (2026-11)
+
+Measured at Plaça de Catalunya, camera pitched 45°, device pixels covered by
+one texel where the camera looks:
+
+| Distance | Relief before | Relief after | Flat map, `economy` | Flat map, `balanced` |
+|---|---|---|---|---|
+| 800 m | 0.55 | 0.55 (nothing to add) | 2.2–2.9 | 1–2 |
+| 400 m | 1.1 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+| 100 m | 4.4 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+| 50 m | 8.8 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+| 25 m | 17.6 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+
+Two separate faults.
+
+**The relief is one texture.** 3 072 px over the 3×3 patch is 0.9 m per texel,
+painted once; nothing refined it as the camera came closer. A bigger texture is
+not the answer (one level sharper is 200 MB and still 4 px per texel at 50 m).
+`terrain-detail.ts` plans a small stack of **squares that follow the view**:
+same pixel count each (2 048 on a desktop, 1 024 on a constrained device), each
+twice the side and half the sharpness of the one inside it, the innermost at
+about one texel per device pixel where the camera looks, snapped to a grid a
+quarter of its side so a small move repaints nothing. `terrain-detail-layer.ts`
+paints them in the basemap's paint worker from the **z14 vector tiles the
+basemap already fetched** (OpenFreeMap serves them `max-age` ten years, so the
+second read is the browser cache) and the relief's material mixes them over
+the big texture. 22–46 ms per square off the main thread; three squares ≈ 67 MB
+of GPU memory, given back 8 s after the view leaves. Street names are painted
+into the innermost square only — a name in a coarser square would be twice the
+size and cut by the square inside it. Vector providers only: for a raster
+provider sharper squares would mean more image tiles from someone else's
+server, so those keep the single texture.
+
+**The flat map never got its sharpness back.** The frame watch reports "slow"
+once a second for as long as it lasts, each report took one quality level off,
+and nothing but changing the provider put it back. Building the 3D surroundings
+is a slow stretch on any machine, so the map sat at `economy` for the rest of
+the session. `createQualityGovernor` (tile-quality) raises it again after three
+fast reports in a row (≥ 40 fps), and doubles that wait each time the sharper
+level turns out to be what made the view slow.
+
+### Names that keep out of the way (2026-11)
+
+`screen-labels.ts`:
+
+- **While the camera moves** nothing is placed or rasterised: POIs and house
+  numbers leave, place names stay at a third of their opacity, and the full set
+  returns 220 ms after the view holds still. "Moving" is a speed (12 % of the
+  height above the map per second, or 0.1 rad/s), not a per-frame step, so a
+  slow presentation orbit keeps its names.
+- **Never over the model.** The engine is given the loaded models' world boxes
+  (`setLabelKeepOut`); their screen rectangles count as already-placed labels.
+- **Room to breathe.** 9 px of clear space around a name (was 4), and the same
+  words are not written twice within 260 px.
+- Known gap: "street level" (no names below 40 m) is measured from the flat
+  map plane, so on a hill well above it names still show from close to the
+  ground.
+
 ### OSM as data: the vector basemap (default for new users)
 
 `vt-<style>` providers read OpenMapTiles vector tiles from **OpenFreeMap**
