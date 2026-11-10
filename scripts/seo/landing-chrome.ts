@@ -24,16 +24,93 @@ import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from '
 import { join, relative, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { pricingPath } from '../../src/lib/pricing/pricing-paths'
+import { COPY as PRICING_COPY } from './pricing/pricing-i18n'
 
 export const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'] as const
 export type Lang = (typeof LANGS)[number]
 export const MIN_FONT_PX = 13
 
-/** Colour tokens: the dark set of docs/COLOR_SYSTEM.md (the landings are dark pages). */
-export const TOKENS = {
-  canvas: '#100f0c', panel: '#181714', line: '#34332e',
-  text: '#ecebe7', text2: '#b2b1ab', text3: '#94928d', accent: '#0a8481', onAccent: '#ffffff', accentText: '#55cac3',
+/**
+ * Colour tokens of docs/COLOR_SYSTEM.md, dark and light, the same values and the
+ * same switch as /pricing/ (prefers-color-scheme, overridden by localStorage
+ * 'lp-theme' → <html data-theme>). Colours live only here: every literal colour
+ * in a landing's own CSS is rewritten to one of these variables.
+ */
+export const THEMES = {
+  dark: {
+    canvas: '#100f0c', panel: '#181714', line: '#34332e', text: '#ecebe7', 'text-2': '#b2b1ab', 'text-3': '#94928d',
+    accent: '#0a8481', 'on-accent': '#ffffff', 'accent-text': '#55cac3', ok: '#6fc884', warn: '#f2af48', danger: '#f66e60',
+    ink: '#ffffff', shadow: '#000000', tint: '1',
+  },
+  light: {
+    canvas: '#f4f3f0', panel: '#fefdfc', line: '#d5d4d0', text: '#1c1b16', 'text-2': '#4e4d48', 'text-3': '#65635e',
+    accent: '#00696a', 'on-accent': '#ffffff', 'accent-text': '#00696a', ok: '#206b38', warn: '#915c08', danger: '#af2b25',
+    ink: '#1c1b16', shadow: '#1c1b16', tint: '.4',
+  },
 } as const
+export type Token = keyof typeof THEMES.dark
+const v = (t: Token) => `var(--lc-${t})`
+/** Kept for callers that want the dark value of a role. */
+export const TOKENS = {
+  canvas: v('canvas'), panel: v('panel'), line: v('line'), text: v('text'), text2: v('text-2'), text3: v('text-3'),
+  accent: v('accent'), onAccent: v('on-accent'), accentText: v('accent-text'),
+} as const
+
+const block = (t: Record<string, string>) => Object.entries(t).map(([k, x]) => `--lc-${k}:${x}`).join(';')
+export const TOKEN_CSS = `:root{${block(THEMES.dark)};color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){${block(THEMES.light)};color-scheme:light}}
+:root[data-theme="light"]{${block(THEMES.light)};color-scheme:light}
+html,body{background:${v('canvas')}!important;color:${v('text')}}`
+
+/** Literal colours found in the landings → the role they play. */
+const HEX: Record<string, Token> = {
+  '100f0c': 'canvas', '111216': 'canvas', '0f0f13': 'canvas', '111': 'canvas', '181714': 'panel', '34332e': 'line',
+  ecebe7: 'text', b2b1ab: 'text-2', '94928d': 'text-3', '0a8481': 'accent', '55cac3': 'accent-text',
+  a5aef0: 'accent-text', '9aa4ee': 'accent-text', '8b96e9': 'accent-text', '4f5abf': 'accent', e8e8f0: 'text', '7ed3a0': 'ok', f5c16b: 'warn', ff8082: 'danger', '6f7be0': 'accent-text', '52c41a': 'ok', '4caf82': 'ok', e9a23b: 'warn', dc3545: 'danger',
+}
+const RGB: Record<string, Token> = {
+  '255,255,255': 'ink', '10,132,129': 'accent', '85,202,195': 'accent-text', '82,196,26': 'ok', '233,162,59': 'warn', '220,53,69': 'danger', '0,0,0': 'shadow', '245,166,35': 'warn', '255,77,79': 'danger',
+}
+const pct = (a: number) => `${Math.round(a * 1000) / 10}%`
+
+/** Rewrite the colours of one declaration list (a rule body or a style="" value). */
+export function tokenizeDecls(body: string): string {
+  const onAccent = /background(?:-color)?:\s*(?:#0a8481|var\(--lc-accent\))/i.test(body)
+  return body.replace(/([a-z-]+)(\s*:\s*)([^;]*)/gi, (m, prop: string, sep: string, val: string) => {
+    const isText = prop.toLowerCase() === 'color' || prop.toLowerCase() === 'fill'
+    const out = val
+      .replace(/#([0-9a-f]{6}|[0-9a-f]{3})\b/gi, (h, x: string) => {
+        const k = x.toLowerCase()
+        if (k === 'fff' || k === 'ffffff') return onAccent && isText ? v('on-accent') : isText ? v('text') : v('on-accent')
+        const t = HEX[k]
+        return t ? v(isText && t === 'accent' ? 'accent-text' : t) : h
+      })
+      .replace(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/g, (r, a: string, b: string, c: string, al?: string) => {
+        const t = RGB[`${a},${b},${c}`]
+        if (!t) return r
+        const alpha = al === undefined ? 1 : +al
+        if (t === 'ink' && isText) return onAccent ? v('on-accent') : v(alpha >= 0.7 ? 'text' : alpha >= 0.5 ? 'text-2' : 'text-3')
+        if (isText) return v(t === 'accent' ? 'accent-text' : t)
+        if (alpha >= 1) return v(t)
+        // Tints of a hue are lighter in the light theme (--lc-tint), so text on them keeps AA.
+        return t === 'ink' || t === 'shadow' ? `color-mix(in srgb,${v(t)} ${pct(alpha)},transparent)` : `color-mix(in srgb,${v(t)} calc(${pct(alpha)} * var(--lc-tint)),transparent)`
+      })
+    return out === val ? m : `${prop}${sep}${out}`
+  })
+}
+
+/** Rewrite every literal colour in a stylesheet, rule by rule. */
+export function tokenizeCss(css: string): string {
+  return css.replace(/\{([^{}]*)\}/g, (_m, body: string) => `{${tokenizeDecls(body)}}`)
+}
+
+/** Literal colours left in CSS, style="" or SVG paint attributes (the test wants none). */
+export function literalColours(html: string): string[] {
+  const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1].replace(/--lc-[a-z0-9-]+:[^;}]*/g, ''))
+  const attrs = [...html.matchAll(/\sstyle="([^"]*)"/g)].map((m) => m[1])
+  const paint = [...html.matchAll(/\s(?:fill|stroke|stop-color)="([^"]*)"/g)].map((m) => m[1])
+  return [...css, ...attrs, ...paint].flatMap((t) => t.match(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/gi) ?? [])
+}
 
 const EXAMPLES: Record<Lang, string> = {
   en: 'ifc-viewer-examples', es: 'ejemplos-visor-ifc', de: 'ifc-viewer-beispiele', fr: 'exemples-visionneuse-ifc',
@@ -104,6 +181,10 @@ export function chromeLinks(l: Lang) {
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 export const CHROME_CSS = `<style data-landing-chrome>
+${TOKEN_CSS}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid ${TOKENS.line};border-radius:8px;background:transparent;color:${TOKENS.text2};cursor:pointer}
+.lc-theme:hover{color:${TOKENS.text}}
+.lc-theme:focus-visible{outline:2px solid ${TOKENS.accentText};outline-offset:2px}
 .lc-top{position:sticky;top:0;z-index:50;background:${TOKENS.canvas};border-bottom:1px solid ${TOKENS.line}}
 .lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
 .lc-logo{color:${TOKENS.text};font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
@@ -128,6 +209,13 @@ footer a,footer p,footer span,footer li{color:${TOKENS.text3}!important}
 footer a:hover{color:${TOKENS.text}!important}
 </style>`
 
+const themeLabel = (l: Lang) => PRICING_COPY[l].nav.theme
+
+/** Before first paint: the remembered theme, so a light visitor never sees a dark flash. */
+export const THEME_HEAD = `<script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>`
+/** The switch in the header (same key as /pricing/). */
+export const THEME_SWITCH = `<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>`
+
 export function renderHeader(l: Lang): string {
   const c = COPY[l], k = chromeLinks(l)
   return `<header class="lc-top" data-landing-chrome>
@@ -136,6 +224,7 @@ export function renderHeader(l: Lang): string {
       <nav class="lc-nav" aria-label="${esc(c.menu)}">
         ${k.nav.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('\n        ')}
       </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="${esc(themeLabel(l))}" title="${esc(themeLabel(l))}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
       <a href="${k.open}" class="lc-btn">${esc(c.open)}</a>
     </div>
   </header>`
@@ -189,12 +278,23 @@ export function applyChrome(input: string): string {
   html = html.replace(/\s*<section class="lc-next"[\s\S]*?<\/section>/, '')
   html = html.replace(/(\s*)<footer\b/, `\n  ${renderNextStep(l)}$1<footer`)
   // 3. page CSS: minimum size + no gradient text
-  html = html.replace(/<style(?![^>]*data-landing-chrome)([^>]*)>([\s\S]*?)<\/style>/g, (_m, attrs: string, css: string) => `<style${attrs}>${raiseSmallFonts(css)}</style>`)
+  html = html.replace(/<style(?![^>]*data-landing-chrome)([^>]*)>([\s\S]*?)<\/style>/g, (_m, attrs: string, css: string) => `<style${attrs}>${tokenizeCss(raiseSmallFonts(css))}</style>`)
+  // 4. colours outside <style>: style="" and SVG paint attributes → tokens
+  html = html.replace(/(\sstyle=")([^"]*)"/g, (_m, a: string, d: string) => `${a}${tokenizeDecls(d)}"`)
+  html = html.replace(/<(circle|path|rect|text|line|polyline|polygon|ellipse|stop)\b([^>]*)>/g, (m, tag: string, attrs: string) => {
+    const paint: string[] = []
+    const rest = attrs.replace(/\s(fill|stroke|stop-color)="((?:#|rgba?\()[^"]*)"/g, (_a, prop: string, val: string) => { paint.push(`${prop}:${val}`); return '' })
+    if (!paint.length || /\sstyle="/.test(rest)) return m
+    const end = rest.endsWith('/') ? '/' : ''
+    return `<${tag}${end ? rest.slice(0, -1) : rest} style="${tokenizeDecls(paint.join(';'))}"${end}>`
+  })
   const grad = [...html.matchAll(/<style(?![^>]*data-landing-chrome)[^>]*>([\s\S]*?)<\/style>/g)].flatMap((m) => gradientTextSelectors(m[1]))
   const flat = grad.length ? `\n${grad.join(',')}{background:none!important;-webkit-text-fill-color:currentColor!important;color:${TOKENS.accentText}!important}` : ''
   const css = CHROME_CSS.replace('</style>', `${flat}\n</style>`)
   html = html.replace(/\s*<style data-landing-chrome>[\s\S]*?<\/style>/, '')
-  html = html.replace(/<\/head>/, `  ${css}\n</head>`)
+  html = html.replace(/\s*<script data-landing-chrome>[\s\S]*?<\/script>/g, '')
+  html = html.replace(/\s*<\/head>/, `\n  ${THEME_HEAD}\n  ${css}\n</head>`)
+  html = html.replace(/(\s*)<\/body>/, `\n${THEME_SWITCH}$1</body>`)
   return html
 }
 
@@ -226,7 +326,17 @@ export function landingFiles(): string[] {
   return out.sort()
 }
 
+/** public/seo/dot-grid.js injects extra CSS on every landing: same rules, inside injectStyles(). */
+export const DOT_GRID = join(PUBLIC, 'seo', 'dot-grid.js')
+export function applyDotGrid(js: string): string {
+  const a = js.indexOf('function injectStyles()'), b = js.indexOf("document.createElement('style')", a)
+  if (a < 0 || b < 0) throw new Error('dot-grid.js: injectStyles() not found')
+  return js.slice(0, a) + tokenizeCss(raiseSmallFonts(js.slice(a, b))) + js.slice(b)
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const dg = readFileSync(DOT_GRID, 'utf8'), dgOut = applyDotGrid(dg)
+  if (dgOut !== dg) writeFileSync(DOT_GRID, dgOut)
   let n = 0
   for (const f of landingFiles()) {
     const before = readFileSync(f, 'utf8')
