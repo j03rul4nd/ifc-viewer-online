@@ -62,6 +62,7 @@ interface FakePatch {
   setStyle: ReturnType<typeof vi.fn>
   setExaggeration: ReturnType<typeof vi.fn>
   setLook: ReturnType<typeof vi.fn>
+  setDetailView: ReturnType<typeof vi.fn>
   dispose: ReturnType<typeof vi.fn>
 }
 
