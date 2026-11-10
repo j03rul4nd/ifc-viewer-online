@@ -32,22 +32,29 @@ const models = join(dist, 'models')
 const modelDirs = existsSync(models) ? readdirSync(models).filter((d) => d !== 'video-demo') : []
 for (const d of modelDirs) rmSync(join(models, d), { recursive: true, force: true })
 
-// 2. _redirects
+// 2. _redirects. Pages counts every rule after the first one with a splat or
+// placeholder as dynamic and ignores dynamic rules past the 100th, so the
+// static ones (the 301s of retired URLs) go first and the model splats last.
+// Before this order only the first 100 lines worked in production.
 const redirects = []
-for (const dir of readdirSync(join(root, 'public/models'))) {
-  if (dir === 'video-demo') continue
-  const isDir = statSync(join(root, 'public/models', dir)).isDirectory()
-  redirects.push(isDir
-    ? `/models/${dir}/* ${MODELS_ORIGIN}/models/${dir}/:splat 302`
-    : `/models/${dir} ${MODELS_ORIGIN}/models/${dir} 302`)
-}
 for (const r of vercel.redirects ?? []) {
-  if (r.source.startsWith('/models/')) continue // handled above
+  if (r.source.startsWith('/models/')) continue // handled below
   if (/\(\?|\(\.\*\)|\[/.test(r.source)) throw new Error(`Cannot convert redirect ${r.source}`)
   for (const { path, params } of expand(r.source)) {
     redirects.push(`${path} ${fill(r.destination, params)} ${r.permanent ? 301 : 302}`)
   }
 }
+if (redirects.length > 2000) throw new Error(`${redirects.length} static redirects, Pages allows 2000`)
+const dynamicRedirects = []
+for (const dir of readdirSync(join(root, 'public/models'))) {
+  if (dir === 'video-demo') continue
+  const isDir = statSync(join(root, 'public/models', dir)).isDirectory()
+  dynamicRedirects.push(isDir
+    ? `/models/${dir}/* ${MODELS_ORIGIN}/models/${dir}/:splat 302`
+    : `/models/${dir} ${MODELS_ORIGIN}/models/${dir} 302`)
+}
+if (dynamicRedirects.length > 100) throw new Error(`${dynamicRedirects.length} dynamic redirects, Pages allows 100`)
+redirects.push(...dynamicRedirects)
 writeFileSync(join(dist, '_redirects'), redirects.join('\n') + '\n')
 
 // 3. _headers
