@@ -53,3 +53,10 @@ describe('Cloudflare Pages _redirects order', () => {
     expect(modelLoop).toBeGreaterThan(staticLoop)
   })
 })
+
+describe('sitemap', () => {
+  it('lists no retired post (the generator only adds entries)', () => {
+    const xml = readFileSync(resolve(root, 'public/sitemap.xml'), 'utf8')
+    for (const old of Object.keys(RETIRED_POSTS)) expect(xml, old).not.toContain(`/blog/${old}/`)
+  })
+})
