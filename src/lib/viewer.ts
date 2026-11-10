@@ -2632,6 +2632,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
     aim: aimClient,
+    // Grips are caught on the container in the capture phase, before the camera.
+    container,
+    setControlsEnabled: (enabled) => { world.camera.controls.enabled = enabled },
     modelName: (modelId) => fileNameOfModelId(modelId),
     planRoute: async (req) => {
       const svc = await routeService()
