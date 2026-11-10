@@ -10,6 +10,9 @@ import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'fs'
 import { generateFixPages, TITLE_BUDGET, type FixPagesResult } from './generate-fix-pages'
 import { fixGuideUrl, fixGuideSlug } from '../../src/lib/fix-guide-url'
+import { pricingPath } from '../../src/lib/pricing/pricing-paths'
+import { toolLandings } from '../../src/lib/localized-landings'
+import { BLOG_POSTS } from '../../src/lib/blog-posts'
 
 const SITE = 'https://www.ifcvieweronline.eu'
 const OUT = path.join(process.cwd(), '.seo-test-out')
@@ -198,6 +201,26 @@ describe('generateFixPages — category pages', () => {
   it('is reachable from the hub (heading links to the category)', () => {
     const hub = readFileSync(path.join(OUT, 'fix', 'index.html'), 'utf8')
     expect(hub).toContain('href="./category/spatial/"')
+  })
+
+  it('sends hub readers on to the checker guide, the plans and (classification) the checker', () => {
+    // Every link must land on a page that is published: the pillar post (not
+    // a retired one), the localized pricing page, the classification landing.
+    const published = new Set([
+      ...LANGS.map((lp) => `/${lp}blog/ifc-model-checker/`),
+      ...LANGS.map((lp) => pricingPath(lp.replace('/', '') || 'en')),
+      ...LANGS.flatMap((lp) => toolLandings(lp.replace('/', '') || 'en').map((t) => `/${t.path}`)),
+    ])
+    expect(BLOG_POSTS.some((p) => p.slug === 'ifc-model-checker')).toBe(true)
+    for (const lp of LANGS) {
+      for (const [page, n] of [[`${lp}fix/`, 2], [`${lp}fix/category/classification/`, 3]] as const) {
+        const html = readFileSync(path.join(OUT, page, 'index.html'), 'utf8')
+        const block = html.match(/<p class="hub-next">(.*?)<\/p>/)?.[1] ?? ''
+        const hrefs = [...block.matchAll(/href="([^"]+)"/g)].map((m) => new URL(m[1], `https://x/${page}`).pathname)
+        expect(hrefs, page).toHaveLength(n)
+        for (const h of hrefs) expect(published.has(h), `${page} → ${h}`).toBe(true)
+      }
+    }
   })
 })
 

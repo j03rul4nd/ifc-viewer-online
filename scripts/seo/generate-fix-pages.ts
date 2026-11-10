@@ -24,6 +24,7 @@ import {
   type FixGuideLang,
 } from '../../src/lib/fix-guide-url'
 import { validatorPath, solibriPath, toolLandings } from '../../src/lib/localized-landings'
+import { pricingPath } from '../../src/lib/pricing/pricing-paths'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -204,6 +205,8 @@ interface UI {
   hubTitleSuffix: string; hubMeta: string; hubBadge: (n: number) => string
   hubH1Pre: string; hubH1Accent: string; hubHeroDesc: string
   hubCta: string; hubNote: string
+  /** Link to the blog's model-checker pillar, and to the pricing page. */
+  hubGuide: string; hubPlans: string
   hubRefLabel: string; hubRefTitle: string; hubRefSubPre: string; hubRefLink: string; hubRefSubPost: string
   hubCtaTitle: string; hubCtaBody: string; hubCtaBtn: string
   // category page (everything else is reused from the hub strings above)
@@ -255,6 +258,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'How to fix', hubH1Accent: 'IFC validation errors',
     hubHeroDesc: 'Every check the IFC Health Score runs, with concrete fixes for Revit, ArchiCAD, Tekla and Allplan. Pick an issue below, or open the validator and check your own model in seconds.',
     hubCta: 'Check your IFC file — free', hubNote: 'No account · No upload · Runs in your browser',
+    hubGuide: "Read the IFC model checker guide", hubPlans: "Checking every delivery as a team? See plans",
     hubRefLabel: 'Reference', hubRefTitle: 'IFC checks by category',
     hubRefSubPre: 'Also see the dedicated tool for ', hubRefLink: 'fixing duplicate GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Get your IFC Health Score.',
@@ -304,6 +308,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'Cómo corregir', hubH1Accent: 'errores de validación IFC',
     hubHeroDesc: 'Cada comprobación que ejecuta el IFC Health Score, con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Elige un problema abajo o abre el validador y analiza tu propio modelo en segundos.',
     hubCta: 'Analiza tu archivo IFC — gratis', hubNote: 'Sin cuenta · Sin subida · Se ejecuta en tu navegador',
+    hubGuide: "Lee la guía del verificador de modelos IFC", hubPlans: "¿Revisáis cada entrega en equipo? Ver planes",
     hubRefLabel: 'Referencia', hubRefTitle: 'Comprobaciones IFC por categoría',
     hubRefSubPre: 'Consulta también la herramienta dedicada para ', hubRefLink: 'corregir GUID duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén tu IFC Health Score.',
@@ -353,6 +358,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'So beheben Sie', hubH1Accent: 'IFC-Validierungsfehler',
     hubHeroDesc: 'Jede Prüfung des IFC Health Score, mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Wählen Sie unten ein Problem oder öffnen Sie den Validator und prüfen Sie Ihr eigenes Modell in Sekunden.',
     hubCta: 'IFC-Datei prüfen — kostenlos', hubNote: 'Kein Konto · Kein Upload · Läuft im Browser',
+    hubGuide: "Zum Leitfaden IFC-Modellprüfung", hubPlans: "Prüfen Sie jede Lieferung im Team? Zu den Tarifen",
     hubRefLabel: 'Referenz', hubRefTitle: 'IFC-Prüfungen nach Kategorie',
     hubRefSubPre: 'Siehe auch das spezielle Tool zum ', hubRefLink: 'Beheben doppelter GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Holen Sie sich Ihren IFC Health Score.',
@@ -402,6 +408,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'Comment corriger', hubH1Accent: 'les erreurs de validation IFC',
     hubHeroDesc: 'Chaque vérification du IFC Health Score, avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Choisissez un problème ci-dessous ou ouvrez le validateur et vérifiez votre propre modèle en quelques secondes.',
     hubCta: 'Vérifiez votre fichier IFC — gratuit', hubNote: 'Sans compte · Sans téléversement · Dans le navigateur',
+    hubGuide: "Lire le guide du vérificateur de modèles IFC", hubPlans: "Vous contrôlez chaque livrable en équipe ? Voir les offres",
     hubRefLabel: 'Référence', hubRefTitle: 'Vérifications IFC par catégorie',
     hubRefSubPre: 'Voir aussi l’outil dédié pour ', hubRefLink: 'corriger les GUID en double', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenez votre IFC Health Score.',
@@ -451,6 +458,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'Como corrigir', hubH1Accent: 'erros de validação IFC',
     hubHeroDesc: 'Cada verificação que o IFC Health Score executa, com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Escolha um problema abaixo ou abra o validador e verifique o seu próprio modelo em segundos.',
     hubCta: 'Verifique o seu ficheiro IFC — grátis', hubNote: 'Sem conta · Sem upload · Funciona no navegador',
+    hubGuide: "Ler o guia do verificador de modelos IFC", hubPlans: "Verificam cada entrega em equipa? Ver planos",
     hubRefLabel: 'Referência', hubRefTitle: 'Verificações IFC por categoria',
     hubRefSubPre: 'Veja também a ferramenta dedicada para ', hubRefLink: 'corrigir GUIDs duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenha o seu IFC Health Score.',
@@ -500,6 +508,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'Come correggere', hubH1Accent: 'gli errori di validazione IFC',
     hubHeroDesc: 'Ogni controllo eseguito dall’IFC Health Score, con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Scegli un problema qui sotto o apri il validatore e controlla il tuo modello in pochi secondi.',
     hubCta: 'Controlla il tuo file IFC — gratis', hubNote: 'Senza account · Senza caricamento · Funziona nel browser',
+    hubGuide: "Leggi la guida al checker di modelli IFC", hubPlans: "Controllate ogni consegna in team? Vedi i piani",
     hubRefLabel: 'Riferimento', hubRefTitle: 'Controlli IFC per categoria',
     hubRefSubPre: 'Vedi anche lo strumento dedicato per ', hubRefLink: 'correggere i GUID duplicati', hubRefSubPost: '.',
     hubCtaTitle: 'Ottieni il tuo IFC Health Score.',
@@ -549,6 +558,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'Com corregir', hubH1Accent: 'errors de validació IFC',
     hubHeroDesc: 'Cada comprovació que executa l’IFC Health Score, amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Tria un problema a sota o obre el validador i analitza el teu propi model en segons.',
     hubCta: 'Analitza el teu fitxer IFC — gratis', hubNote: 'Sense compte · Sense pujada · S’executa al navegador',
+    hubGuide: "Llegeix la guia del verificador de models IFC", hubPlans: "Reviseu cada lliurament en equip? Veure plans",
     hubRefLabel: 'Referència', hubRefTitle: 'Comprovacions IFC per categoria',
     hubRefSubPre: 'Consulta també l’eina dedicada per ', hubRefLink: 'corregir GUID duplicats', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén el teu IFC Health Score.',
@@ -598,6 +608,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: '如何修复', hubH1Accent: 'IFC 验证错误',
     hubHeroDesc: 'IFC Health Score 运行的每一项检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复方法。在下方选择一个问题，或打开验证器在数秒内检查你自己的模型。',
     hubCta: '检查你的 IFC 文件 — 免费', hubNote: '无需账户 · 无需上传 · 在浏览器中运行',
+    hubGuide: "阅读 IFC 模型检查指南", hubPlans: "团队需要检查每次交付？查看方案",
     hubRefLabel: '参考', hubRefTitle: '按类别划分的 IFC 检查',
     hubRefSubPre: '另请参阅专用工具：', hubRefLink: '修复重复 GUID', hubRefSubPost: '。',
     hubCtaTitle: '获取你的 IFC Health Score。',
@@ -647,6 +658,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: '修正方法：', hubH1Accent: 'IFC 検証エラー',
     hubHeroDesc: 'IFC Health Score が実行するすべてのチェックを、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正方法とともに紹介します。下から問題を選ぶか、検証ツールを開いて自分のモデルを数秒でチェックしましょう。',
     hubCta: 'IFC ファイルをチェック — 無料', hubNote: 'アカウント不要 · アップロード不要 · ブラウザで実行',
+    hubGuide: "IFC モデルチェックのガイドを読む", hubPlans: "チームで毎回の納品をチェックするなら：プランを見る",
     hubRefLabel: 'リファレンス', hubRefTitle: 'カテゴリ別の IFC チェック',
     hubRefSubPre: '専用ツールもご覧ください：', hubRefLink: '重複 GUID の修正', hubRefSubPost: '。',
     hubCtaTitle: 'IFC Health Score を取得。',
@@ -696,6 +708,7 @@ export const UIS: Record<Lang, UI> = {
     hubH1Pre: 'วิธีแก้ไข', hubH1Accent: 'ข้อผิดพลาดการตรวจสอบ IFC',
     hubHeroDesc: 'ทุกการตรวจสอบที่ IFC Health Score เรียกใช้ พร้อมวิธีแก้ไขที่เฉพาะเจาะจงสำหรับ Revit, ArchiCAD, Tekla และ Allplan เลือกปัญหาด้านล่าง หรือเปิดเครื่องมือตรวจสอบแล้วตรวจโมเดลของคุณเองได้ในไม่กี่วินาที',
     hubCta: 'ตรวจสอบไฟล์ IFC ของคุณ — ฟรี', hubNote: 'ไม่ต้องมีบัญชี · ไม่ต้องอัปโหลด · ทำงานในเบราว์เซอร์',
+    hubGuide: "อ่านคู่มือการตรวจสอบโมเดล IFC", hubPlans: "ตรวจทุกงานส่งมอบเป็นทีม? ดูแพ็กเกจ",
     hubRefLabel: 'ข้อมูลอ้างอิง', hubRefTitle: 'การตรวจสอบ IFC ตามหมวดหมู่',
     hubRefSubPre: 'ดูเครื่องมือเฉพาะสำหรับ ', hubRefLink: 'การแก้ไข GUID ที่ซ้ำกัน', hubRefSubPost: ' ด้วย',
     hubCtaTitle: 'รับ IFC Health Score ของคุณ',
@@ -850,6 +863,9 @@ const STYLE = `
     .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #0A8481; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
     .cta-primary:hover { background: #0A8481; }
     .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); }
+    .hub-next { margin-top: 18px; font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.55); }
+    .hub-next a { color: #55CAC3; text-decoration: underline; text-underline-offset: 3px; }
+    .hub-next a:hover { color: #ecebe7; }
     .section { padding: 52px 0; }
     .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #0A8481; text-transform: uppercase; margin-bottom: 12px; }
     .section-title { font-size: clamp(1.35rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
@@ -1219,6 +1235,26 @@ function catLabelOf(cat: string, loc: LocaleData): string {
   return loc.catFull[cat] ?? VALIDATION_CATEGORY_LABELS[cat as keyof typeof VALIDATION_CATEGORY_LABELS] ?? cat
 }
 
+/**
+ * Where a hub reader goes next besides the checker: the blog's model-checker
+ * pillar (the page meant to win "IFC model checker" / "IFC model validation"),
+ * the plans, and on the classification category the classification checker.
+ * Search Console (2026-11-10): /fix/ and /fix/category/classification/ had
+ * 2,500 impressions and 6 clicks, and linked to neither.
+ */
+function hubNextLinks(ui: UI, lang: Lang, root: string, cat?: string): string {
+  const langPath = LANG_PATH[lang]
+  const links = [
+    `<a href="${root}${langPath}blog/ifc-model-checker/">${esc(ui.hubGuide)}</a>`,
+    `<a href="${root}${pricingPath(lang).slice(1)}">${esc(ui.hubPlans)}</a>`,
+  ]
+  if (cat === 'classification') {
+    const tool = toolLandings(lang).find((t) => t.key === 'classification')
+    if (tool) links.unshift(`<a href="${root}${tool.path}">${esc(tool.label)}</a>`)
+  }
+  return `<p class="hub-next">${links.join(' <span aria-hidden="true">·</span> ')}</p>`
+}
+
 function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
   const ui = UIS[lang]
   const langPath = LANG_PATH[lang]
@@ -1297,6 +1333,7 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, ''))}
           <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCta)}</a>
           <span class="cta-note">${esc(ui.hubNote)}</span>
         </div>
+        ${hubNextLinks(ui, lang, root)}
       </div>
     </section>
 
@@ -1406,6 +1443,7 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `category/${cat}/`))}
           <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCta)}</a>
           <span class="cta-note">${esc(ui.hubNote)}</span>
         </div>
+        ${hubNextLinks(ui, lang, root, cat)}
       </div>
     </section>
 

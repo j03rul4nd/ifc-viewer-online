@@ -27,8 +27,8 @@ export interface TopicCopy {
 const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   en: {
     validation: {
-      title: 'IFC validation and model checking',
-      intro: 'How to check an IFC model before it is delivered — schema, quality rules, IDS and the Health Score — and how to read what the checks report.',
+      title: 'IFC model validation and model checkers',
+      intro: 'How to check an IFC model before delivery: schema, quality rules, IDS and the Health Score, how to read the report, and a free checker that runs in the browser.',
     },
     'export-fixes': {
       title: 'Fixing broken IFC exports',
@@ -53,8 +53,8 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   },
   es: {
     validation: {
-      title: 'Validación IFC y comprobación de modelos',
-      intro: 'Cómo comprobar un modelo IFC antes de entregarlo —esquema, reglas de calidad, IDS y Health Score— y cómo leer lo que dicen los informes.',
+      title: 'Validación IFC y verificación de modelos',
+      intro: 'Cómo comprobar un modelo IFC antes de entregarlo: esquema, reglas de calidad, IDS y Health Score, cómo leer el informe y un verificador gratis en el navegador.',
     },
     'export-fixes': {
       title: 'Corregir exportaciones IFC defectuosas',
@@ -80,7 +80,7 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   de: {
     validation: {
       title: 'IFC-Validierung und Modellprüfung',
-      intro: 'Wie Sie ein IFC-Modell vor der Übergabe prüfen – Schema, Qualitätsregeln, IDS und Health Score – und wie Sie lesen, was die Prüfungen melden.',
+      intro: 'Wie Sie ein IFC-Modell vor der Übergabe prüfen: Schema, Qualitätsregeln, IDS und Health Score, den Bericht lesen und ein kostenloser Checker im Browser.',
     },
     'export-fixes': {
       title: 'Fehlerhafte IFC-Exporte beheben',
@@ -106,7 +106,7 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   fr: {
     validation: {
       title: 'Validation IFC et vérification de maquettes',
-      intro: 'Comment contrôler une maquette IFC avant sa livraison — schéma, règles qualité, IDS et Health Score — et comment lire ce que signalent les contrôles.',
+      intro: 'Contrôler une maquette IFC avant livraison : schéma, règles qualité, IDS et Health Score, lire le rapport, et un vérificateur gratuit dans le navigateur.',
     },
     'export-fixes': {
       title: 'Corriger les exports IFC défaillants',
@@ -132,7 +132,7 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   pt: {
     validation: {
       title: 'Validação de IFC e verificação de modelos',
-      intro: 'Como verificar um modelo IFC antes da entrega — schema, regras de qualidade, IDS e Health Score — e como interpretar o que as verificações apontam.',
+      intro: 'Como verificar um modelo IFC antes da entrega: schema, regras de qualidade, IDS e Health Score, como ler o relatório e um verificador grátis no navegador.',
     },
     'export-fixes': {
       title: 'Corrigir exportações IFC com defeito',
@@ -158,7 +158,7 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   it: {
     validation: {
       title: 'Validazione IFC e model checking',
-      intro: 'Come verificare un modello IFC prima della consegna — schema, regole di qualità, IDS e Health Score — e come leggere ciò che segnalano i controlli.',
+      intro: 'Come verificare un modello IFC prima della consegna: schema, regole di qualità, IDS e Health Score, come leggere il report e un checker gratuito nel browser.',
     },
     'export-fixes': {
       title: 'Correggere le esportazioni IFC difettose',
@@ -184,7 +184,7 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   ca: {
     validation: {
       title: 'Validació IFC i verificació de models',
-      intro: 'Com comprovar un model IFC abans de lliurar-lo —esquema, regles de qualitat, IDS i Health Score— i com llegir el que diuen les comprovacions.',
+      intro: 'Com comprovar un model IFC abans de lliurar-lo: esquema, regles de qualitat, IDS i Health Score, com llegir l’informe i un verificador gratuït al navegador.',
     },
     'export-fixes': {
       title: 'Corregir exportacions IFC defectuoses',
@@ -209,8 +209,8 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   },
   zh: {
     validation: {
-      title: 'IFC 验证与模型检查',
-      intro: '如何在交付前检查 IFC 模型——模式、质量规则、IDS 和 Health Score——以及如何解读检查报告。',
+      title: 'IFC 模型验证与模型检查',
+      intro: '交付前如何检查 IFC 模型：模式、质量规则、IDS 和 Health Score，如何解读报告，以及在浏览器中免费运行的检查器。',
     },
     'export-fixes': {
       title: '修复出错的 IFC 导出',
@@ -235,8 +235,8 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   },
   ja: {
     validation: {
-      title: 'IFCの検証とモデルチェック',
-      intro: '納品前にIFCモデルをチェックする方法（スキーマ、品質ルール、IDS、Health Score）と、チェック結果の読み方。',
+      title: 'IFCモデルの検証とモデルチェック',
+      intro: '納品前にIFCモデルをチェックする方法（スキーマ、品質ルール、IDS、Health Score）、レポートの読み方、ブラウザで使える無料チェッカー。',
     },
     'export-fixes': {
       title: 'IFCエクスポートの不具合を直す',
@@ -262,7 +262,7 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
   th: {
     validation: {
       title: 'การตรวจสอบความถูกต้องของไฟล์และโมเดล IFC',
-      intro: 'วิธีตรวจสอบโมเดล IFC ก่อนส่งมอบ ทั้งสคีมา กฎคุณภาพ IDS และ Health Score รวมถึงวิธีอ่านผลการตรวจสอบ',
+      intro: 'วิธีตรวจสอบโมเดล IFC ก่อนส่งมอบ ทั้งสคีมา กฎคุณภาพ IDS และ Health Score วิธีอ่านรายงาน และตัวตรวจสอบฟรีที่ทำงานในเบราว์เซอร์',
     },
     'export-fixes': {
       title: 'แก้ไขปัญหาการส่งออก IFC',

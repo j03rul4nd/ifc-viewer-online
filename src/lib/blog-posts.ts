@@ -7678,6 +7678,9 @@ Project acceptance or rejection`,
       { q: 'What is a good IFC Health Score?', a: 'Scores of 90–100 indicate a delivery-ready model. 75–89 is acceptable for most coordination stages with minor fixes needed. 50–74 requires remediation before delivery. Below 50 means significant data quality issues that will cause downstream problems in quantity takeoff, cost estimation, and FM handover.' },
       { q: 'Can I check IFC models without uploading them to a server?', a: 'Yes. IFC Viewer Online processes files entirely in the browser using WebAssembly. The IFC file never leaves your machine — you can verify this by opening browser DevTools and watching the Network tab during loading. This is critical for projects with NDA or data sovereignty requirements.' },
       { q: 'At what project stages should IFC models be checked?', a: 'At minimum: before CDE upload (prevent junk in), at coordination stage gates (before clash detection), before client submission (formal delivery), and at FM handover (LOI completeness). On large projects, automated checking at every model revision is achievable with CLI tools or API-driven workflows.' },
+      { q: "How do I validate an IFC file before sending it?", a: "Open it in the checker and look at three things before the CDE upload: no duplicate GlobalIds, every element inside a storey under a single IfcProject, and coordinates near the project origin. Then check that standard property sets and names are present and aim for a Health Score of 80 or more. Each failing rule links to a fix guide." },
+      { q: "Can I get a PDF report of the IFC check?", a: "Yes. The validation export produces a printable report and certificate with the score, the rules checked and the failing elements; print it to PDF from the browser. JSON, CSV and BCF exports are there too, for scripts and for issue tracking in your BIM tool." },
+      { q: "Does the checker verify IFC classification?", a: "Yes. A built-in rule flags elements with no classification reference, and an IDS file can require a specific system such as Uniclass or OmniClass on chosen classes. The classification fix guide explains how to map it in the authoring tool before re-exporting." },
     ],
     content: [
       {"type":"p","text":["Want to check a model right now? The free ",{"text":"IFC model health check","href":"https://www.ifcvieweronline.eu/ifc-health-check/"}," gives it a score from 0 to 100 and a printable report, and ",{"text":"IFC model validation online","href":"https://www.ifcvieweronline.eu/ifc-validator/"}," runs all 44 rules in your browser — nothing is uploaded."]},
@@ -10683,6 +10686,12 @@ export const RETIRED_POSTS: Readonly<Record<string, string>> = {
   'ifc-model-checker-guide': 'ifc-model-checker',
   // Same FAQ and the same query as the pillar: 93 impressions in 3 months, page 5.
   'ifc-model-checker-vs-ifc-viewer': 'ifc-model-checker',
+  // 2026-11-10 export: 1,409 impressions at position 51 for "ifc model
+  // validation", the pillar's own query. Its checklist is the pillar's FAQ now.
+  'how-to-validate-ifc-file': 'ifc-model-checker',
+  // 843 impressions at position 35, the same "free IFC viewer" queries as
+  // best-free-ifc-viewer (position 18), which is the one Google already prefers.
+  'free-online-ifc-viewers-compared': 'best-free-ifc-viewer',
 }
 
 function relinkRetired(value: unknown): unknown {

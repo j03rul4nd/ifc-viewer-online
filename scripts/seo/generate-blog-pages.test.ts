@@ -516,7 +516,7 @@ describe('generateBlogPages — topic hubs', () => {
 })
 
 describe('generateBlogPages — article structured data', () => {
-  const post = BLOG_POSTS.find((p) => p.slug === 'how-to-validate-ifc-file')!
+  const post = BLOG_POSTS.find((p) => p.slug === 'ifc-model-checker')!
   const html = () => readFileSync(path.join(OUT, 'blog', post.slug, 'index.html'), 'utf-8')
 
   it('names the organisation as publisher, with its logo', () => {
@@ -629,7 +629,7 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
   })
 
   it('links every translation to its English original and back, with x-default on English', () => {
-    const slug = 'how-to-validate-ifc-file'
+    const slug = 'ifc-model-checker'
     const clusterOf = (html: string) => [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`)
     const expected = [
       `en ${SITE}/blog/${slug}/`,
@@ -643,7 +643,7 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
   })
 
   it('keeps the page chrome of the static fallback in the article language', () => {
-    const html = page('ja', 'blog', 'how-to-validate-ifc-file')
+    const html = page('ja', 'blog', 'ifc-model-checker')
     expect(html).toContain('BIM・IFCブログに戻る')
     expect(html).not.toContain('Back to the BIM &amp; IFC blog')
   })
