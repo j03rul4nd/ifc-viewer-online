@@ -10,6 +10,7 @@ import { generateMspPage } from './scripts/seo/generate-msp-page'
 import { generateTwinBuilderPage } from './scripts/seo/generate-twin-builder-page'
 import { generateSketchPage } from './scripts/seo/generate-sketch-page'
 import { generateLangShells } from './scripts/seo/generate-lang-shells'
+import { addHomeImagesToSitemap, injectHomeImages } from './scripts/seo/home-images'
 
 // ── Static landing content injection ─────────────────────────────────────────
 // Reads src/locales/en/landing.json after the build and injects the FAQ and
@@ -203,6 +204,30 @@ function generateLanguageShells(): import('vite').Plugin {
   }
 }
 
+// ── The home page's pictures, stated in the HTML as served ───────────────────
+// Preload, ImageObject JSON-LD and <noscript> figures for the English home, and
+// <image:image> entries for all ten homes in the sitemap. LAST in the plugin
+// list on purpose: the blog, fix and legal generators use dist/index.html as
+// their template and must not inherit the home's pictures. The nine language
+// shells get theirs from generate-lang-shells. See scripts/seo/home-images.ts.
+function injectHomePictures(): import('vite').Plugin {
+  return {
+    name: 'inject-home-pictures',
+    apply: 'build',
+    closeBundle() {
+      const distIndex = path.resolve(__dirname, 'dist', 'index.html')
+      if (existsSync(distIndex)) {
+        writeFileSync(distIndex, injectHomeImages(readFileSync(distIndex, 'utf-8'), process.env.BASE_PATH || '/'))
+      }
+      const sitemap = path.resolve(__dirname, 'dist', 'sitemap.xml')
+      if (existsSync(sitemap)) {
+        const langs = ['en', 'es', 'fr', 'de', 'pt', 'it', 'zh', 'ja', 'th', 'ca']
+        writeFileSync(sitemap, addHomeImagesToSitemap(readFileSync(sitemap, 'utf-8'), langs))
+      }
+    },
+  }
+}
+
 function copyWebIfcWasm() {
   return {
     name: 'copy-web-ifc-wasm',
@@ -277,7 +302,7 @@ export default defineConfig({
   // dist/index.html as its template, and injectLandingContent() appends an
   // ENGLISH <noscript> block to that file. Reversing the two would give every
   // localized shell the English copy on top of its own translated block.
-  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), generateLanguageShells(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell(), generateMspPageShell()],
+  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), generateLanguageShells(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell(), generateMspPageShell(), injectHomePictures()],
   // Served from the domain root on Vercel (https://www.ifcvieweronline.eu/).
   // BASE_PATH is honoured if set, but defaults to '/' — the single deploy target.
   base: process.env.BASE_PATH || '/',

@@ -11,7 +11,7 @@ import { generateLangShells } from '../../../scripts/seo/generate-lang-shells'
 
 const ROOT = path.resolve(__dirname, '..', '..', '..')
 const read = (p: string) => readFileSync(path.join(ROOT, p), 'utf8')
-const SOURCES = ['src/components/Landing.tsx', 'src/components/landing/ProfilePaths.tsx'].map((p) => [p, read(p)] as const)
+const SOURCES = ['src/components/Landing.tsx', 'src/components/landing/ProfilePaths.tsx', 'src/components/landing/HomeShowcase.tsx'].map((p) => [p, read(p)] as const)
 
 describe('home page design', () => {
   it('uses no animated background or text-effect components', () => {
