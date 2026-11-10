@@ -25,6 +25,7 @@ import {
 } from '../../src/lib/fix-guide-url'
 import { validatorPath, solibriPath, toolLandings } from '../../src/lib/localized-landings'
 import { pricingPath } from '../../src/lib/pricing/pricing-paths'
+import { withRights } from './image-metadata'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -207,6 +208,12 @@ interface UI {
   hubCta: string; hubNote: string
   /** Link to the blog's model-checker pillar, and to the pricing page. */
   hubGuide: string; hubPlans: string
+  /** Links to the page that owns "IFC model validation" (the validator landing) and to the checker comparison. */
+  hubValidate: string; hubCompare: string
+  /** The table of categories above the list of checks. */
+  hubSumTitle: string; hubSumSub: string; thChecks: string; thExamples: string
+  /** The capture of a validation result. */
+  hubImgAlt: string; hubImgCap: string
   hubRefLabel: string; hubRefTitle: string; hubRefSubPre: string; hubRefLink: string; hubRefSubPost: string
   hubCtaTitle: string; hubCtaBody: string; hubCtaBtn: string
   // category page (everything else is reused from the hub strings above)
@@ -256,9 +263,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Every IFC validation check with concrete, tool-specific fixes for Revit, ArchiCAD, Tekla and Allplan. Free, in the browser, nothing uploaded.',
     hubBadge: (n) => `Free · No upload · ${n} checks documented`,
     hubH1Pre: 'How to fix', hubH1Accent: 'IFC validation errors',
-    hubHeroDesc: 'Every check the IFC Health Score runs, with concrete fixes for Revit, ArchiCAD, Tekla and Allplan. Pick an issue below, or open the validator and check your own model in seconds.',
+    hubHeroDesc: 'The errors an IFC model validation reports, one page each: what the check means, why it fails and how to fix it in Revit, ArchiCAD, Tekla and Allplan. Pick an error below, or open the validator and check your own model.',
     hubCta: 'Check your IFC file — free', hubNote: 'No account · No upload · Runs in your browser',
     hubGuide: "Read the IFC model checker guide", hubPlans: "Checking every delivery as a team? See plans",
+    hubValidate: 'IFC model validation online', hubCompare: 'IFC model checkers compared',
+    hubSumTitle: 'What an IFC validation checks', hubSumSub: 'The checks by category. An error blocks a delivery; warnings and notes lower the Health Score.',
+    thChecks: 'Checks', thExamples: 'Examples',
+    hubImgAlt: 'IFC validation errors grouped by rule in IFC Viewer Online: each failing rule with its number of elements, next to the 3D model and the Health Score',
+    hubImgCap: 'A validation result in the viewer: the failing rules, how many elements each one affects and the Health Score.',
     hubRefLabel: 'Reference', hubRefTitle: 'IFC checks by category',
     hubRefSubPre: 'Also see the dedicated tool for ', hubRefLink: 'fixing duplicate GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Get your IFC Health Score.',
@@ -306,9 +318,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Cada comprobación de validación IFC con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, en el navegador, sin subir nada.',
     hubBadge: (n) => `Gratis · Sin subida · ${n} comprobaciones documentadas`,
     hubH1Pre: 'Cómo corregir', hubH1Accent: 'errores de validación IFC',
-    hubHeroDesc: 'Cada comprobación que ejecuta el IFC Health Score, con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Elige un problema abajo o abre el validador y analiza tu propio modelo en segundos.',
+    hubHeroDesc: 'Los errores que devuelve una validación de modelos IFC, cada uno en su página: qué significa la comprobación, por qué falla y cómo corregirla en Revit, ArchiCAD, Tekla y Allplan. Elige un error abajo o abre el validador y revisa tu modelo.',
     hubCta: 'Analiza tu archivo IFC — gratis', hubNote: 'Sin cuenta · Sin subida · Se ejecuta en tu navegador',
     hubGuide: "Lee la guía del verificador de modelos IFC", hubPlans: "¿Revisáis cada entrega en equipo? Ver planes",
+    hubValidate: 'Validación de modelos IFC online', hubCompare: 'Comparativa de verificadores de modelos IFC',
+    hubSumTitle: 'Qué comprueba una validación IFC', hubSumSub: 'Las comprobaciones por categoría. Un error bloquea la entrega; los avisos y las notas bajan el Health Score.',
+    thChecks: 'Comprobaciones', thExamples: 'Ejemplos',
+    hubImgAlt: 'Errores de validación IFC agrupados por regla en IFC Viewer Online: cada regla que falla con su número de elementos, junto al modelo 3D y el Health Score',
+    hubImgCap: 'El resultado de una validación en el visor: las reglas que fallan, cuántos elementos afecta cada una y el Health Score.',
     hubRefLabel: 'Referencia', hubRefTitle: 'Comprobaciones IFC por categoría',
     hubRefSubPre: 'Consulta también la herramienta dedicada para ', hubRefLink: 'corregir GUID duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén tu IFC Health Score.',
@@ -356,9 +373,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Jede IFC-Validierungsprüfung mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, im Browser, ohne Upload.',
     hubBadge: (n) => `Kostenlos · Kein Upload · ${n} Prüfungen dokumentiert`,
     hubH1Pre: 'So beheben Sie', hubH1Accent: 'IFC-Validierungsfehler',
-    hubHeroDesc: 'Jede Prüfung des IFC Health Score, mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Wählen Sie unten ein Problem oder öffnen Sie den Validator und prüfen Sie Ihr eigenes Modell in Sekunden.',
+    hubHeroDesc: 'Die Fehler, die eine IFC-Modellvalidierung meldet, jeweils auf einer eigenen Seite: was die Prüfung bedeutet, warum sie fehlschlägt und wie Sie sie in Revit, ArchiCAD, Tekla und Allplan beheben. Wählen Sie unten einen Fehler oder öffnen Sie den Validator und prüfen Sie Ihr Modell.',
     hubCta: 'IFC-Datei prüfen — kostenlos', hubNote: 'Kein Konto · Kein Upload · Läuft im Browser',
     hubGuide: "Zum Leitfaden IFC-Modellprüfung", hubPlans: "Prüfen Sie jede Lieferung im Team? Zu den Tarifen",
+    hubValidate: 'IFC-Modellvalidierung online', hubCompare: 'IFC-Modellprüfer im Vergleich',
+    hubSumTitle: 'Was eine IFC-Validierung prüft', hubSumSub: 'Die Prüfungen nach Kategorie. Ein Fehler blockiert die Lieferung; Warnungen und Hinweise senken den Health Score.',
+    thChecks: 'Prüfungen', thExamples: 'Beispiele',
+    hubImgAlt: 'IFC-Validierungsfehler nach Regel gruppiert in IFC Viewer Online: jede verletzte Regel mit der Zahl der betroffenen Elemente, neben dem 3D-Modell und dem Health Score',
+    hubImgCap: 'Ein Validierungsergebnis im Viewer: die verletzten Regeln, die Zahl der betroffenen Elemente und der Health Score.',
     hubRefLabel: 'Referenz', hubRefTitle: 'IFC-Prüfungen nach Kategorie',
     hubRefSubPre: 'Siehe auch das spezielle Tool zum ', hubRefLink: 'Beheben doppelter GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Holen Sie sich Ihren IFC Health Score.',
@@ -406,9 +428,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Chaque vérification de validation IFC avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Gratuit, sans téléversement.',
     hubBadge: (n) => `Gratuit · Sans téléversement · ${n} vérifications documentées`,
     hubH1Pre: 'Comment corriger', hubH1Accent: 'les erreurs de validation IFC',
-    hubHeroDesc: 'Chaque vérification du IFC Health Score, avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Choisissez un problème ci-dessous ou ouvrez le validateur et vérifiez votre propre modèle en quelques secondes.',
+    hubHeroDesc: 'Les erreurs que signale une validation de maquette IFC, chacune sur sa page : ce que signifie la vérification, pourquoi elle échoue et comment la corriger dans Revit, ArchiCAD, Tekla et Allplan. Choisissez une erreur ci-dessous ou ouvrez le validateur et contrôlez votre maquette.',
     hubCta: 'Vérifiez votre fichier IFC — gratuit', hubNote: 'Sans compte · Sans téléversement · Dans le navigateur',
     hubGuide: "Lire le guide du vérificateur de modèles IFC", hubPlans: "Vous contrôlez chaque livrable en équipe ? Voir les offres",
+    hubValidate: 'Validation de maquettes IFC en ligne', hubCompare: 'Comparatif des vérificateurs de maquettes IFC',
+    hubSumTitle: 'Ce que vérifie une validation IFC', hubSumSub: 'Les vérifications par catégorie. Une erreur bloque la livraison ; les avertissements et les notes font baisser le Health Score.',
+    thChecks: 'Vérifications', thExamples: 'Exemples',
+    hubImgAlt: 'Erreurs de validation IFC regroupées par règle dans IFC Viewer Online : chaque règle en échec avec son nombre d’éléments, à côté de la maquette 3D et du Health Score',
+    hubImgCap: 'Le résultat d’une validation dans la visionneuse : les règles en échec, le nombre d’éléments concernés et le Health Score.',
     hubRefLabel: 'Référence', hubRefTitle: 'Vérifications IFC par catégorie',
     hubRefSubPre: 'Voir aussi l’outil dédié pour ', hubRefLink: 'corriger les GUID en double', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenez votre IFC Health Score.',
@@ -456,9 +483,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Cada verificação de validação IFC com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Grátis, no navegador, sem upload.',
     hubBadge: (n) => `Grátis · Sem upload · ${n} verificações documentadas`,
     hubH1Pre: 'Como corrigir', hubH1Accent: 'erros de validação IFC',
-    hubHeroDesc: 'Cada verificação que o IFC Health Score executa, com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Escolha um problema abaixo ou abra o validador e verifique o seu próprio modelo em segundos.',
+    hubHeroDesc: 'Os erros que uma validação de modelos IFC aponta, cada um na sua página: o que a verificação significa, por que falha e como corrigir no Revit, ArchiCAD, Tekla e Allplan. Escolha um erro abaixo ou abra o validador e verifique o seu modelo.',
     hubCta: 'Verifique o seu ficheiro IFC — grátis', hubNote: 'Sem conta · Sem upload · Funciona no navegador',
     hubGuide: "Ler o guia do verificador de modelos IFC", hubPlans: "Verificam cada entrega em equipa? Ver planos",
+    hubValidate: 'Validação de modelos IFC online', hubCompare: 'Comparativo de verificadores de modelos IFC',
+    hubSumTitle: 'O que uma validação IFC verifica', hubSumSub: 'As verificações por categoria. Um erro bloqueia a entrega; avisos e notas baixam o Health Score.',
+    thChecks: 'Verificações', thExamples: 'Exemplos',
+    hubImgAlt: 'Erros de validação IFC agrupados por regra no IFC Viewer Online: cada regra que falha com o número de elementos, ao lado do modelo 3D e do Health Score',
+    hubImgCap: 'O resultado de uma validação no visualizador: as regras que falham, quantos elementos cada uma afeta e o Health Score.',
     hubRefLabel: 'Referência', hubRefTitle: 'Verificações IFC por categoria',
     hubRefSubPre: 'Veja também a ferramenta dedicada para ', hubRefLink: 'corrigir GUIDs duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenha o seu IFC Health Score.',
@@ -506,9 +538,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Ogni controllo di validazione IFC con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Gratis, nel browser, senza caricamento.',
     hubBadge: (n) => `Gratis · Senza caricamento · ${n} controlli documentati`,
     hubH1Pre: 'Come correggere', hubH1Accent: 'gli errori di validazione IFC',
-    hubHeroDesc: 'Ogni controllo eseguito dall’IFC Health Score, con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Scegli un problema qui sotto o apri il validatore e controlla il tuo modello in pochi secondi.',
+    hubHeroDesc: 'Gli errori segnalati da una validazione di modelli IFC, ognuno nella sua pagina: che cosa significa il controllo, perché fallisce e come correggerlo in Revit, ArchiCAD, Tekla e Allplan. Scegli un errore qui sotto o apri il validatore e controlla il tuo modello.',
     hubCta: 'Controlla il tuo file IFC — gratis', hubNote: 'Senza account · Senza caricamento · Funziona nel browser',
     hubGuide: "Leggi la guida al checker di modelli IFC", hubPlans: "Controllate ogni consegna in team? Vedi i piani",
+    hubValidate: 'Validazione di modelli IFC online', hubCompare: 'Confronto tra model checker IFC',
+    hubSumTitle: 'Che cosa controlla una validazione IFC', hubSumSub: 'I controlli per categoria. Un errore blocca la consegna; avvisi e note abbassano l’Health Score.',
+    thChecks: 'Controlli', thExamples: 'Esempi',
+    hubImgAlt: 'Errori di validazione IFC raggruppati per regola in IFC Viewer Online: ogni regola non superata con il numero di elementi, accanto al modello 3D e all’Health Score',
+    hubImgCap: 'Il risultato di una validazione nel visualizzatore: le regole non superate, quanti elementi riguarda ciascuna e l’Health Score.',
     hubRefLabel: 'Riferimento', hubRefTitle: 'Controlli IFC per categoria',
     hubRefSubPre: 'Vedi anche lo strumento dedicato per ', hubRefLink: 'correggere i GUID duplicati', hubRefSubPost: '.',
     hubCtaTitle: 'Ottieni il tuo IFC Health Score.',
@@ -556,9 +593,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Cada comprovació de validació IFC amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Gratis, al navegador, sense pujar res.',
     hubBadge: (n) => `Gratis · Sense pujada · ${n} comprovacions documentades`,
     hubH1Pre: 'Com corregir', hubH1Accent: 'errors de validació IFC',
-    hubHeroDesc: 'Cada comprovació que executa l’IFC Health Score, amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Tria un problema a sota o obre el validador i analitza el teu propi model en segons.',
+    hubHeroDesc: 'Els errors que retorna una validació de models IFC, cadascun a la seva pàgina: què significa la comprovació, per què falla i com corregir-la a Revit, ArchiCAD, Tekla i Allplan. Tria un error a sota o obre el validador i revisa el teu model.',
     hubCta: 'Analitza el teu fitxer IFC — gratis', hubNote: 'Sense compte · Sense pujada · S’executa al navegador',
     hubGuide: "Llegeix la guia del verificador de models IFC", hubPlans: "Reviseu cada lliurament en equip? Veure plans",
+    hubValidate: 'Validació de models IFC en línia', hubCompare: 'Comparativa de verificadors de models IFC',
+    hubSumTitle: 'Què comprova una validació IFC', hubSumSub: 'Les comprovacions per categoria. Un error bloqueja el lliurament; els avisos i les notes abaixen el Health Score.',
+    thChecks: 'Comprovacions', thExamples: 'Exemples',
+    hubImgAlt: 'Errors de validació IFC agrupats per regla a IFC Viewer Online: cada regla que falla amb el nombre d’elements, al costat del model 3D i el Health Score',
+    hubImgCap: 'El resultat d’una validació al visor: les regles que fallen, quants elements afecta cadascuna i el Health Score.',
     hubRefLabel: 'Referència', hubRefTitle: 'Comprovacions IFC per categoria',
     hubRefSubPre: 'Consulta també l’eina dedicada per ', hubRefLink: 'corregir GUID duplicats', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén el teu IFC Health Score.',
@@ -606,9 +648,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: '浏览每一项 IFC 验证检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复步骤。免费、基于浏览器、无需上传 — 修复你的 IFC 并提升 Health Score。',
     hubBadge: (n) => `免费 · 无需上传 · 已记录 ${n} 项检查`,
     hubH1Pre: '如何修复', hubH1Accent: 'IFC 验证错误',
-    hubHeroDesc: 'IFC Health Score 运行的每一项检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复方法。在下方选择一个问题，或打开验证器在数秒内检查你自己的模型。',
+    hubHeroDesc: 'IFC 模型验证报告的各类错误，每项一页：这项检查的含义、失败原因，以及在 Revit、ArchiCAD、Tekla 和 Allplan 中的修复方法。在下方选择一个错误，或打开验证器检查你自己的模型。',
     hubCta: '检查你的 IFC 文件 — 免费', hubNote: '无需账户 · 无需上传 · 在浏览器中运行',
     hubGuide: "阅读 IFC 模型检查指南", hubPlans: "团队需要检查每次交付？查看方案",
+    hubValidate: '在线 IFC 模型验证', hubCompare: 'IFC 模型检查工具对比',
+    hubSumTitle: 'IFC 验证检查哪些内容', hubSumSub: '按类别列出的检查项。错误会阻止交付；警告和提示会拉低 Health Score。',
+    thChecks: '检查项', thExamples: '示例',
+    hubImgAlt: 'IFC Viewer Online 中按规则分组的 IFC 验证错误：每条未通过的规则及其构件数量，旁边是三维模型和 Health Score',
+    hubImgCap: '查看器中的一次验证结果：未通过的规则、各自影响的构件数量和 Health Score。',
     hubRefLabel: '参考', hubRefTitle: '按类别划分的 IFC 检查',
     hubRefSubPre: '另请参阅专用工具：', hubRefLink: '修复重复 GUID', hubRefSubPost: '。',
     hubCtaTitle: '获取你的 IFC Health Score。',
@@ -656,9 +703,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'すべての IFC 検証チェックを、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正手順とともに確認できます。無料、ブラウザベース、アップロード不要 — IFC を修正して Health Score を向上させましょう。',
     hubBadge: (n) => `無料 · アップロード不要 · ${n} 項目のチェックを掲載`,
     hubH1Pre: '修正方法：', hubH1Accent: 'IFC 検証エラー',
-    hubHeroDesc: 'IFC Health Score が実行するすべてのチェックを、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正方法とともに紹介します。下から問題を選ぶか、検証ツールを開いて自分のモデルを数秒でチェックしましょう。',
+    hubHeroDesc: 'IFCモデルの検証で報告されるエラーを1項目1ページで解説します。チェックの意味、失敗する理由、Revit、ArchiCAD、Tekla、Allplanでの修正方法がわかります。下からエラーを選ぶか、検証ツールを開いて自分のモデルを確認してください。',
     hubCta: 'IFC ファイルをチェック — 無料', hubNote: 'アカウント不要 · アップロード不要 · ブラウザで実行',
     hubGuide: "IFC モデルチェックのガイドを読む", hubPlans: "チームで毎回の納品をチェックするなら：プランを見る",
+    hubValidate: 'オンラインIFCモデル検証', hubCompare: 'IFCモデルチェッカーの比較',
+    hubSumTitle: 'IFC検証でチェックする内容', hubSumSub: 'カテゴリー別のチェック項目です。エラーは納品を止め、警告と情報はHealth Scoreを下げます。',
+    thChecks: 'チェック数', thExamples: '例',
+    hubImgAlt: 'IFC Viewer Onlineでルール別にまとめたIFC検証エラー。不合格の各ルールと該当要素数を、3DモデルとHealth Scoreの横に表示',
+    hubImgCap: 'ビューアーでの検証結果。不合格のルール、それぞれの該当要素数、Health Scoreが表示されます。',
     hubRefLabel: 'リファレンス', hubRefTitle: 'カテゴリ別の IFC チェック',
     hubRefSubPre: '専用ツールもご覧ください：', hubRefLink: '重複 GUID の修正', hubRefSubPost: '。',
     hubCtaTitle: 'IFC Health Score を取得。',
@@ -706,9 +758,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'การตรวจสอบ IFC ทุกรายการ พร้อมวิธีแก้ไขเฉพาะสำหรับ Revit, ArchiCAD, Tekla และ Allplan ฟรี ทำงานบนเบราว์เซอร์ ไม่ต้องอัปโหลด',
     hubBadge: (n) => `ฟรี · ไม่ต้องอัปโหลด · บันทึกไว้ ${n} การตรวจสอบ`,
     hubH1Pre: 'วิธีแก้ไข', hubH1Accent: 'ข้อผิดพลาดการตรวจสอบ IFC',
-    hubHeroDesc: 'ทุกการตรวจสอบที่ IFC Health Score เรียกใช้ พร้อมวิธีแก้ไขที่เฉพาะเจาะจงสำหรับ Revit, ArchiCAD, Tekla และ Allplan เลือกปัญหาด้านล่าง หรือเปิดเครื่องมือตรวจสอบแล้วตรวจโมเดลของคุณเองได้ในไม่กี่วินาที',
+    hubHeroDesc: 'ข้อผิดพลาดที่การตรวจสอบโมเดล IFC รายงาน แยกหน้าละหนึ่งรายการ: การตรวจสอบหมายถึงอะไร ทำไมจึงไม่ผ่าน และแก้ไขอย่างไรใน Revit, ArchiCAD, Tekla และ Allplan เลือกข้อผิดพลาดด้านล่าง หรือเปิดเครื่องมือตรวจสอบเพื่อตรวจโมเดลของคุณ',
     hubCta: 'ตรวจสอบไฟล์ IFC ของคุณ — ฟรี', hubNote: 'ไม่ต้องมีบัญชี · ไม่ต้องอัปโหลด · ทำงานในเบราว์เซอร์',
     hubGuide: "อ่านคู่มือการตรวจสอบโมเดล IFC", hubPlans: "ตรวจทุกงานส่งมอบเป็นทีม? ดูแพ็กเกจ",
+    hubValidate: 'ตรวจสอบโมเดล IFC ออนไลน์', hubCompare: 'เปรียบเทียบเครื่องมือตรวจสอบโมเดล IFC',
+    hubSumTitle: 'การตรวจสอบ IFC ตรวจอะไรบ้าง', hubSumSub: 'รายการตรวจสอบตามหมวดหมู่ ข้อผิดพลาดทำให้ส่งมอบไม่ได้ ส่วนคำเตือนและหมายเหตุทำให้ Health Score ลดลง',
+    thChecks: 'รายการตรวจสอบ', thExamples: 'ตัวอย่าง',
+    hubImgAlt: 'ข้อผิดพลาดการตรวจสอบ IFC จัดกลุ่มตามกฎใน IFC Viewer Online แต่ละกฎที่ไม่ผ่านพร้อมจำนวนองค์ประกอบ ข้างโมเดล 3 มิติและ Health Score',
+    hubImgCap: 'ผลการตรวจสอบในโปรแกรมดู: กฎที่ไม่ผ่าน จำนวนองค์ประกอบที่เกี่ยวข้อง และ Health Score',
     hubRefLabel: 'ข้อมูลอ้างอิง', hubRefTitle: 'การตรวจสอบ IFC ตามหมวดหมู่',
     hubRefSubPre: 'ดูเครื่องมือเฉพาะสำหรับ ', hubRefLink: 'การแก้ไข GUID ที่ซ้ำกัน', hubRefSubPost: ' ด้วย',
     hubCtaTitle: 'รับ IFC Health Score ของคุณ',
@@ -918,6 +975,17 @@ const STYLE = `
     .rule-card:hover { border-color: rgba(10,132,129,0.4); transform: translateY(-1px); }
     .rule-card .rc-t { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
     .rule-card .rc-d { font-size: 12px; color: var(--text-3); line-height: 1.55; }
+    .rc-sev { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; vertical-align: 1px; white-space: nowrap; }
+    td .rc-sev { margin: 0 4px 4px 0; }
+    .hub-owners { margin-top: 6px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .hub-table { min-width: 560px; }
+    .hub-table th[scope="row"] { background: none; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 600; color: var(--text); border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .hub-table tr:last-child th[scope="row"] { border-bottom: none; }
+    .hub-table a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+    .hub-figure { margin: 28px 0 0; }
+    .hub-figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .hub-figure figcaption { margin-top: 10px; font-size: 13px; color: var(--text-3); }
     .meta-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     .meta-card { background: none; border: none; border-radius: 0; box-shadow: inset -1px -1px 0 var(--line); }
     .meta-k { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
@@ -1265,6 +1333,25 @@ function hubNextLinks(ui: UI, lang: Lang, root: string, cat?: string): string {
   return `<p class="hub-next">${links.join(' <span aria-hidden="true">·</span> ')}</p>`
 }
 
+/**
+ * Search Console (2026-11-10, query × page): Google showed the hub for
+ * "ifc model validation" (768 impressions, position 67) and other tool
+ * queries, none of which it answers. The hub is the reference of the errors;
+ * the validator landing owns the tool query, and the comparison post owns
+ * "best IFC model checkers". Both get a link with the query as its anchor.
+ */
+function hubOwnerLinks(ui: UI, lang: Lang, root: string): string {
+  const langPath = LANG_PATH[lang]
+  const links = [
+    `<a href="${root}${validatorPath(lang)}">${esc(ui.hubValidate)}</a>`,
+    `<a href="${root}${langPath}blog/best-ifc-model-checkers-2026/">${esc(ui.hubCompare)}</a>`,
+  ]
+  return `<p class="hub-next hub-owners">${links.join(' <span aria-hidden="true">·</span> ')}</p>`
+}
+
+/** The capture shown on the hub, and its 800 px cut. */
+export const HUB_IMAGE = { src: 'images/fix/ifc-validation-errors-by-rule.jpg', small: 'images/fix/ifc-validation-errors-by-rule-800.jpg', width: 1600, height: 900 }
+
 function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
   const ui = UIS[lang]
   const langPath = LANG_PATH[lang]
@@ -1281,10 +1368,11 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
     const cards = rules.map((r) => {
       const label = labelOf(r.ruleId, lang)
       const { summary } = remOf(r.ruleId, lang)
+      const sev = loc.severity[r.severity] ?? r.severity
       return `
           <a class="rule-card" href="./${r.slug}/">
-            <div class="rc-t">${esc(label)}</div>
-            <div class="rc-d">${esc(clip(summary, 96))}</div>
+            <div class="rc-t">${esc(label)} <span class="rc-sev sev-${r.severity}">${esc(sev)}</span></div>
+            <div class="rc-d">${esc(clip(summary, 180))}</div>
           </a>`
     }).join('')
     // Heading links to the dedicated category silo page.
@@ -1296,10 +1384,42 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
       </div>`
   }).join('')
 
+  // What a validation checks, by category: how many checks, how severe, and
+  // three of them by name. Built from the rule metadata, so it cannot drift.
+  const sevCount = (rules: RuleBase[]): string => (['error', 'warning', 'info'] as const)
+    .map((k) => ({ k, n: rules.filter((r) => r.severity === k).length }))
+    .filter((x) => x.n > 0)
+    .map((x) => `<span class="rc-sev sev-${x.k}">${x.n} ${esc(loc.severity[x.k] ?? x.k)}</span>`)
+    .join(' ')
+  const summaryRows = cats.map((cat) => {
+    const rules = byCat.get(cat) ?? []
+    const examples = rules.slice(0, 3).map((r) => `<a href="./${r.slug}/">${esc(labelOf(r.ruleId, lang))}</a>`).join(', ')
+    return `
+            <tr><th scope="row"><a href="./category/${cat}/">${esc(catLabelOf(cat, loc))}</a></th><td>${rules.length}</td><td>${sevCount(rules)}</td><td>${examples}</td></tr>`
+  }).join('')
+  const steps = [
+    { name: ui.sOpenName, text: ui.sOpenText },
+    { name: ui.sValidateName, text: ui.hubCtaBody },
+    { name: ui.sRevalName, text: ui.sRevalText },
+  ].map((st, i) => `
+          <div class="step">
+            <div class="step-n">${String(i + 1).padStart(2, '0')}</div>
+            <div class="step-title">${esc(st.name)}</div>
+            <div class="step-desc">${esc(st.text)}</div>
+          </div>`).join('')
+  const imgUrl = `${SITE}/${HUB_IMAGE.src}`
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'CollectionPage', '@id': url, url, name: ui.hubTitle + ui.hubTitleSuffix, description: ui.hubMeta, isPartOf: { '@id': `${SITE}/` }, inLanguage: lang },
+      { '@type': 'CollectionPage', '@id': url, url, name: ui.hubTitle + ui.hubTitleSuffix, description: ui.hubMeta, isPartOf: { '@id': `${SITE}/` }, inLanguage: lang, primaryImageOfPage: { '@id': `${imgUrl}#image` } },
+      {
+        '@type': 'ImageObject', '@id': `${imgUrl}#image`, contentUrl: imgUrl, url: imgUrl, width: HUB_IMAGE.width, height: HUB_IMAGE.height,
+        name: ui.hubImgAlt, caption: ui.hubImgCap, representativeOfPage: true, inLanguage: lang,
+        creator: { '@type': 'Organization', name: 'IFC Viewer Online', url: `${SITE}/` },
+        creditText: 'IFC Viewer Online', copyrightNotice: '© 2026 IFC Viewer Online',
+        license: `${SITE}/terms/`, acquireLicensePage: `${SITE}/terms/`,
+      },
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -1344,6 +1464,34 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, ''))}
           <span class="cta-note">${esc(ui.hubNote)}</span>
         </div>
         ${hubNextLinks(ui, lang, root)}
+        ${hubOwnerLinks(ui, lang, root)}
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <h2 class="section-title">${esc(ui.hubSumTitle)}</h2>
+        <p class="section-sub">${esc(ui.hubSumSub)}</p>
+        <div class="table-scroll">
+        <table class="causes-table hub-table">
+          <thead><tr><th>${esc(ui.mCategory)}</th><th>${esc(ui.thChecks)}</th><th>${esc(ui.mSeverity)}</th><th>${esc(ui.thExamples)}</th></tr></thead>
+          <tbody>${summaryRows}
+          </tbody>
+        </table>
+        </div>
+        <figure class="hub-figure">
+          <img src="${root}${HUB_IMAGE.src}" srcset="${root}${HUB_IMAGE.small} 800w, ${root}${HUB_IMAGE.src} 1600w" sizes="(max-width: 1100px) 100vw, 1040px" width="${HUB_IMAGE.width}" height="${HUB_IMAGE.height}" alt="${esc(ui.hubImgAlt)}" loading="lazy" decoding="async">
+          <figcaption>${esc(ui.hubImgCap)}</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <h2 class="section-title">${esc(ui.howTitle)}</h2>
+        <p class="section-sub">${esc(ui.howSub)}</p>
+        <div class="steps">${steps}
+        </div>
       </div>
     </section>
 
@@ -1608,6 +1756,27 @@ export function generateFixPages(distDir: string): FixPagesResult {
     for (const cat of COVER_CATS) {
       if (existsSync(path.join(distDir, 'fix', 'covers', lang, `${cat}.png`)))
         FIX_COVER_AVAILABLE.add(`${lang}/${cat}`)
+    }
+  }
+
+  // The hub's capture carries its credit and licence inside the file, like the
+  // blog's pictures (image-metadata.ts).
+  for (const rel of [HUB_IMAGE.src, HUB_IMAGE.small]) {
+    const file = path.join(distDir, rel)
+    if (!existsSync(file)) continue
+    try {
+      writeFileSync(file, withRights(readFileSync(file), {
+        creator: 'IFC Viewer Online',
+        credit: 'IFC Viewer Online',
+        copyright: '© 2026 IFC Viewer Online',
+        webStatement: `${SITE}/terms/`,
+        licensorUrl: `${SITE}/terms/`,
+        description: UIS.en.hubImgCap,
+        sourceType: 'screenCapture',
+      }))
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[fix-pages] could not write rights metadata into ${rel}: ${(err as Error).message}`)
     }
   }
 
