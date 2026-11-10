@@ -122,7 +122,7 @@ describe('localized home shells', () => {
     it('opens its one h1 with «Visor IFC gratis online»', () => {
       const h1 = html.match(/<h1>([^<]*)<\/h1>/g) ?? []
       expect(h1).toHaveLength(1)
-      expect(h1[0].startsWith('<h1>Visor IFC gratis online')).toBe(true)
+      expect(h1[0]?.startsWith('<h1>Visor IFC gratis online')).toBe(true)
     })
 
     it('states the hero capture and the three of «El visor en acción», with Spanish alt text', () => {
