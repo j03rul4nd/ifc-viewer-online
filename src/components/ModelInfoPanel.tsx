@@ -123,7 +123,7 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
       {/* Collapsed pill */}
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-surface)_88%,transparent)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
       >
         {/* File size badge */}
         <HealthBadge h={sizeHealth} />
@@ -172,7 +172,7 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
 
       {/* Expanded panel */}
       {expanded && (
-        <div className="mt-1 px-3 py-2 rounded-lg bg-[rgba(12,12,16,0.92)] backdrop-blur-[14px] border border-[var(--border)]">
+        <div className="mt-1 px-3 py-2 rounded-lg bg-[color-mix(in_srgb,var(--bg-surface)_92%,transparent)] backdrop-blur-[14px] border border-[var(--border)]">
           <Row
             label={t('info.fileSize')}
             value={modelInfo.fileSize === 0 ? '—' : formatBytes(modelInfo.fileSize)}

@@ -90,7 +90,7 @@ function Stick({ onChange }: { onChange: (forward: number, right: number) => voi
       }}
       onPointerUp={release}
       onPointerCancel={release}
-      className="relative w-[112px] h-[112px] rounded-full bg-[rgba(12,12,16,0.72)] backdrop-blur-[14px] border border-[var(--border)] touch-none"
+      className="relative w-[112px] h-[112px] rounded-full bg-[color-mix(in_srgb,var(--bg-surface)_72%,transparent)] backdrop-blur-[14px] border border-[var(--border)] touch-none"
       style={{ pointerEvents: 'auto' }}
       aria-hidden
     >
@@ -182,7 +182,7 @@ export default function WalkHud({ viewerApiRef }: WalkHudProps): React.ReactElem
       {/* Keys, speed and the way out — one row, bottom centre, clear of both
           the side panels and the mobile nav bar. */}
       <div className="absolute left-1/2 -translate-x-1/2 bottom-[92px] sm:bottom-5 z-[22] flex items-center gap-2 pointer-events-none">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)] text-[11px] text-[var(--text-dim)] whitespace-nowrap">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-surface)_88%,transparent)] backdrop-blur-[14px] border border-[var(--border)] text-[11px] text-[var(--text-dim)] whitespace-nowrap">
           <span>{coarse ? t('walk.hintTouch') : t('walk.hint')}</span>
           <span className="w-px h-3 bg-[var(--border)]" />
           {/* The wheel sets this, so it has to be visible while the wheel turns
@@ -201,7 +201,7 @@ export default function WalkHud({ viewerApiRef }: WalkHudProps): React.ReactElem
         </div>
         <button
           onClick={() => viewerApiRef.current?.setWalkMode(false)}
-          className="px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)] text-[11px] font-medium text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+          className="px-2.5 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-surface)_88%,transparent)] backdrop-blur-[14px] border border-[var(--border)] text-[11px] font-medium text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
           style={{ pointerEvents: 'auto' }}
         >
           {t('walk.exit')}
@@ -223,7 +223,7 @@ export default function WalkHud({ viewerApiRef }: WalkHudProps): React.ReactElem
                 onPointerCancel={() => hold(0)}
                 onPointerLeave={() => hold(0)}
                 aria-label={dir > 0 ? t('walk.up') : t('walk.down')}
-                className="w-9 h-9 rounded-lg bg-[rgba(12,12,16,0.82)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] text-[13px] touch-none"
+                className="w-9 h-9 rounded-lg bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] text-[13px] touch-none"
               >
                 {glyph}
               </button>
