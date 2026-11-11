@@ -39,7 +39,7 @@ export function SheetHeaderBar({
   onClose: () => void
 }) {
   return (
-    <div className="shrink-0 flex items-center gap-2 px-4 pb-3 pt-0.5 border-b border-[rgba(255,255,255,0.06)]">
+    <div className="shrink-0 flex items-center gap-2 px-4 pb-3 pt-0.5 border-b border-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]">
       {icon && <span className="shrink-0 text-[var(--accent)] flex items-center">{icon}</span>}
       <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--text-dim)] shrink-0">
         {title}
@@ -140,10 +140,10 @@ export function PrimaryCTA({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-[14px] font-semibold text-white transition-all active:scale-[0.985] disabled:opacity-40 disabled:active:scale-100"
+      className="w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-[14px] font-semibold text-[var(--accent-contrast)] transition-all active:scale-[0.985] disabled:opacity-40 disabled:active:scale-100"
       style={{
         background: 'linear-gradient(180deg, var(--accent-2), var(--accent))',
-        boxShadow: '0 6px 20px rgba(10,132,129,0.32), inset 0 1px 0 rgba(255,255,255,0.15)',
+        boxShadow: '0 6px 20px color-mix(in srgb, var(--accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, var(--accent-contrast) 15%, transparent)',
         ...TAP,
       }}
     >
@@ -228,12 +228,12 @@ export function Segmented<T extends string>({
             key={o.value}
             onClick={() => { if (!on) { haptic('tick'); onChange(o.value) } }}
             className="relative flex-1 h-10 rounded-xl text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-colors active:scale-[0.97]"
-            style={{ color: on ? '#fff' : 'var(--text-dim)', ...TAP }}
+            style={{ color: on ? 'var(--accent-contrast)' : 'var(--text-dim)', ...TAP }}
           >
             {on && (
               <span
                 className="absolute inset-0 rounded-xl"
-                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(10,132,129,0.3)' }}
+                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent)' }}
               />
             )}
             <span className="relative z-10 flex items-center gap-1.5">{o.label}</span>
@@ -323,9 +323,9 @@ export function MobileSearch({
 export function SheetFooterBar({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="shrink-0 px-4 pt-3 flex flex-col gap-2 border-t border-[rgba(255,255,255,0.07)]"
+      className="shrink-0 px-4 pt-3 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--text-primary)_7%,transparent)]"
       style={{
-        background: 'rgba(10,10,16,0.72)',
+        background: 'color-mix(in srgb, var(--bg-app) 72%, transparent)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
@@ -353,7 +353,7 @@ export function MobileEmpty({
         <button
           onClick={action.onClick}
           disabled={action.disabled}
-          className="h-11 px-5 rounded-xl text-[13px] font-semibold text-white disabled:opacity-40 active:scale-[0.97] transition-transform"
+          className="h-11 px-5 rounded-xl text-[13px] font-semibold text-[var(--accent-contrast)] disabled:opacity-40 active:scale-[0.97] transition-transform"
           style={{ background: 'linear-gradient(180deg, var(--accent-2), var(--accent))', ...TAP }}
         >
           {action.label}
