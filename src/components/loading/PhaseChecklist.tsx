@@ -27,7 +27,7 @@ const LABEL_TONE: Record<PhaseStatus, string> = {
   done:    'text-[var(--text-dim)]',
   active:  'text-[var(--text)] font-medium',
   pending: 'text-[var(--text-faint)]',
-  skipped: 'text-[var(--text-faint)] line-through decoration-[rgba(255,255,255,0.18)]',
+  skipped: 'text-[var(--text-faint)] line-through decoration-[color-mix(in_srgb,var(--text-primary)_18%,transparent)]',
   failed:  'text-[var(--danger)]',
 }
 

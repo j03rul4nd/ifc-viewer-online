@@ -39,7 +39,7 @@ export function ProgressRing({
       className={spinning && !reduce ? 'animate-spin' : undefined}
       style={spinning && !reduce ? { animationDuration: '1.4s' } : undefined}
     >
-      <circle cx="8" cy="8" r={RING_R} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+      <circle cx="8" cy="8" r={RING_R} fill="none" stroke="color-mix(in srgb, var(--text-primary) 12%, transparent)" strokeWidth="2" />
       {arc > 0 && (
         <circle
           cx="8" cy="8" r={RING_R} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"
@@ -124,8 +124,8 @@ export function IconButton({
 }) {
   const tones = {
     default: 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-    danger:  'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]',
-    armed:   'text-white bg-[var(--danger)] hover:brightness-110',
+    danger:  'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)]',
+    armed:   'text-[var(--accent-contrast)] bg-[var(--danger)] hover:brightness-110',
   }
   return (
     <button
@@ -163,8 +163,8 @@ export function TextButton({
 }) {
   const tones = {
     default: 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
-    danger:  'text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]',
-    accent:  'text-[var(--accent-2)] hover:bg-[rgba(10,132,129,0.12)]',
+    danger:  'text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)]',
+    accent:  'text-[var(--accent-2)] hover:bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]',
   }
   return (
     <button

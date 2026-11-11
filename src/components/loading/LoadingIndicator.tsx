@@ -186,7 +186,7 @@ function Glyph({ model, size }: { model: IndicatorModel; size: number }) {
 
 function FailureBadge({ count }: { count: number }) {
   return (
-    <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-[3px] rounded-full bg-[var(--danger)] text-white text-[9px] font-semibold tabular-nums shrink-0">
+    <span className="inline-flex items-center justify-center min-w-[14px] h-[14px] px-[3px] rounded-full bg-[var(--danger)] text-[var(--accent-contrast)] text-[9px] font-semibold tabular-nums shrink-0">
       {count}
     </span>
   )
@@ -201,7 +201,7 @@ function HistoryButton({
   const shape = {
     toolbar:  'w-[22px] h-[22px] rounded-[6px]',
     mobile:   'w-[26px] h-[26px] rounded-full',
-    floating: 'w-[28px] h-[28px] rounded-[8px] bg-[rgba(12,12,16,0.92)] backdrop-blur-[14px] shadow-lg',
+    floating: 'w-[28px] h-[28px] rounded-[8px] bg-[color-mix(in_srgb,var(--bg-surface)_92%,transparent)] backdrop-blur-[14px] shadow-lg',
   }[variant]
   const rest = variant === 'toolbar'
     ? 'border-transparent hover:border-[var(--border)]'
@@ -272,7 +272,7 @@ function IndicatorButton({
         {...common}
         className={[
           'inline-flex items-center gap-1.5 h-[26px] px-2 rounded-full border text-[11px] font-medium tabular-nums select-none',
-          failed ? 'border-[rgba(224,82,63,0.35)] bg-[rgba(224,82,63,0.1)]' : 'border-[var(--border)] bg-[rgba(255,255,255,0.04)]',
+          failed ? 'border-[color-mix(in_srgb,var(--danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)]' : 'border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)]',
           toneText,
         ].join(' ')}
       >
@@ -289,8 +289,8 @@ function IndicatorButton({
         {...common}
         className={[
           'relative inline-flex items-center gap-2 h-[28px] max-w-[min(320px,calc(100vw-32px))] pl-2 pr-2.5 rounded-[8px] overflow-hidden',
-          'bg-[rgba(12,12,16,0.92)] backdrop-blur-[14px] border shadow-lg text-[11px] select-none transition-colors duration-100',
-          failed ? 'border-[rgba(224,82,63,0.4)]' : open ? 'border-[var(--border-strong)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]',
+          'bg-[color-mix(in_srgb,var(--bg-surface)_92%,transparent)] backdrop-blur-[14px] border shadow-lg text-[11px] select-none transition-colors duration-100',
+          failed ? 'border-[color-mix(in_srgb,var(--danger)_40%,transparent)]' : open ? 'border-[var(--border-strong)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]',
           toneText,
         ].join(' ')}
       >
@@ -316,7 +316,7 @@ function IndicatorButton({
         'inline-flex items-center gap-1.5 h-[22px] max-w-[180px] min-w-0 shrink pl-1.5 pr-2 rounded-[6px] border text-[11px] select-none transition-colors duration-100',
         'focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)]',
         failed
-          ? 'border-[rgba(224,82,63,0.35)] bg-[rgba(224,82,63,0.08)]'
+          ? 'border-[color-mix(in_srgb,var(--danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]'
           : open ? 'border-[var(--border-strong)] bg-[var(--surface-2)]' : 'border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--border-strong)]',
         toneText,
       ].join(' ')}
