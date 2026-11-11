@@ -129,11 +129,11 @@ export function DrawerResizeGrip({ drawerRef, minPx }: DrawerResizeGripProps) {
       onMouseLeave={() => setHovered(false)}
       className="dual-hide h-5 shrink-0 cursor-ns-resize flex items-center justify-center select-none touch-none outline-none focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:-outline-offset-2"
       style={{
-        background: dragging ? 'var(--accent)33' : hovered ? 'var(--accent)1a' : 'var(--surface-2)',
-        borderBottom: '1px solid var(--border)',
+        background: dragging ? 'var(--accent)33' : hovered ? 'var(--accent)1a' : 'transparent',
+        borderBottom: '1px solid var(--border-subtle)',
       }}
     >
-      <div className="flex gap-[4px] items-center">
+      <div className="flex gap-[4px] items-center transition-opacity duration-100" style={{ opacity: active ? 1 : 0 }}>
         {[0, 1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}

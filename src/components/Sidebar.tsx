@@ -230,8 +230,8 @@ function ReadOnlyField({ label, value, mono = false, copyable = false }: {
 function IssuePill({ issue }: { issue: ValidationIssue }) {
   const [open, setOpen] = useState(false)
   const colors = {
-    error:   { bg: 'color-mix(in srgb, var(--danger) 9%, transparent)', border: 'color-mix(in srgb, var(--danger) 27%, transparent)', text: 'var(--danger)', dot: 'var(--danger)' },
-    warning: { bg: 'color-mix(in srgb, var(--warning) 9%, transparent)', border: 'color-mix(in srgb, var(--warning) 27%, transparent)', text: 'var(--warning)', dot: 'var(--warning)' },
+    error:   { bg: 'color-mix(in srgb, var(--danger) 12%, var(--bg-surface))', border: 'color-mix(in srgb, var(--danger) 27%, transparent)', text: 'var(--danger)', dot: 'var(--danger)' },
+    warning: { bg: 'color-mix(in srgb, var(--warning) 12%, var(--bg-surface))', border: 'color-mix(in srgb, var(--warning) 27%, transparent)', text: 'var(--warning)', dot: 'var(--warning)' },
     info:    { bg: '#5E9ED618', border: '#5E9ED644', text: '#5E9ED6', dot: '#5E9ED6' },
   }[issue.severity]
 
@@ -972,12 +972,12 @@ function PropertiesPanel({
             </span>
           )}
           {errorCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--danger)_13%,transparent)] text-[var(--danger)] border border-[color-mix(in_srgb,var(--danger)_27%,transparent)] font-medium leading-none">
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--danger)_12%,var(--bg-surface))] text-[var(--danger)] font-normal leading-none">
               {errorCount} err
             </span>
           )}
           {warningCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--warning)_13%,transparent)] text-[var(--warning)] border border-[color-mix(in_srgb,var(--warning)_27%,transparent)] font-medium leading-none">
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--warning)_12%,var(--bg-surface))] text-[var(--warning)] font-normal leading-none">
               {warningCount} warn
             </span>
           )}

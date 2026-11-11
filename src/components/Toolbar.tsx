@@ -539,11 +539,10 @@ export default function Toolbar({
   // Issue count chip (reused in two places)
   const IssueChip = hasIssues && !isRunning ? (
     <span
-      className="px-1.5 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums shrink-0"
+      className="px-1.5 py-0.5 text-[11px] font-normal rounded leading-none tabular-nums shrink-0"
       style={{
-        background: errorCount > 0 ? 'color-mix(in srgb, var(--danger) 13%, transparent)' : 'color-mix(in srgb, var(--warning) 13%, transparent)',
-        color:      errorCount > 0 ? 'var(--danger)'   : 'var(--warning)',
-        border:     `1px solid ${errorCount > 0 ? 'color-mix(in srgb, var(--danger) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)'}`,
+        background: `color-mix(in srgb, ${errorCount > 0 ? 'var(--danger)' : 'var(--warning)'} 12%, var(--bg-surface))`,
+        color:      errorCount > 0 ? 'var(--danger)' : 'var(--warning)',
       }}
     >
       {errorCount > 0 ? `${errorCount}E` : issueCount}
@@ -572,10 +571,8 @@ export default function Toolbar({
       </Btn>
       {qualityScore !== null && !isRunning && (
         <div className="flex items-center gap-1.5 pl-2 pr-2" title={`Health Score: ${qualityScore}/100`}>
-          <span
-            className="text-[13px] font-bold font-mono tabular-nums leading-none"
-            style={{ color: scoreColor(qualityScore) }}
-          >
+          <span aria-hidden className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: scoreColor(qualityScore) }} />
+          <span className="text-[13px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">
             {qualityScore}
           </span>
           {IssueChip}
@@ -1012,7 +1009,7 @@ export default function Toolbar({
         onClick={() => { haptic('tick'); toggleScenePanel() }}
         aria-label={t('mobileBar.openScene')}
         aria-expanded={scenePanelOpen}
-        className="md:hidden order-first pointer-events-auto mobile-pill-glass flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-164px)] active:scale-[0.98] transition-transform"
+        className="md:hidden order-first pointer-events-auto mobile-pill-glass !shadow-none flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-164px)] active:scale-[0.98] transition-transform"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primary)_7%,transparent)] shrink-0">
@@ -1048,7 +1045,7 @@ export default function Toolbar({
           data-testid="mobile-add-data"
           onClick={() => { haptic('tick'); onOpenAddData('mobile') }}
           aria-label={t('menu.addData')}
-          className="md:hidden order-first shrink-0 pointer-events-auto mobile-pill-glass w-11 h-11 rounded-full inline-flex items-center justify-center text-[var(--text)] active:scale-[0.95] transition-transform"
+          className="md:hidden order-first shrink-0 pointer-events-auto mobile-pill-glass !shadow-none w-11 h-11 rounded-full inline-flex items-center justify-center text-[var(--text)] active:scale-[0.95] transition-transform"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           <Icons.Plus size={20} strokeWidth={2} />
@@ -1061,9 +1058,10 @@ export default function Toolbar({
           type="button"
           onClick={() => { haptic('tick'); useUIStore.getState().setValidationPanelOpen(true) }}
           aria-label={t('mobileBar.score', { score: qualityScore })}
-          className="md:hidden pointer-events-auto mobile-pill-glass h-10 min-w-10 px-3 inline-flex items-center justify-center rounded-full text-[14px] font-bold font-mono tabular-nums active:scale-[0.95] transition-transform"
-          style={{ color: scoreColor(qualityScore), WebkitTapHighlightColor: 'transparent' }}
+          className="md:hidden pointer-events-auto mobile-pill-glass !shadow-none h-10 min-w-10 px-3 inline-flex items-center justify-center rounded-full gap-1.5 text-[14px] font-semibold tabular-nums text-[var(--text-primary)] active:scale-[0.95] transition-transform"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
+          <span aria-hidden className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: scoreColor(qualityScore) }} />
           {qualityScore}
         </button>
       )}

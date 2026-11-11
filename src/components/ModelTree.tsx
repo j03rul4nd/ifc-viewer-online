@@ -225,18 +225,13 @@ function IssueBadge({
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-0.5 px-1 rounded text-[10px] font-mono font-semibold leading-none shrink-0 hover:brightness-125 transition-all"
-      style={{
-        background: errors > 0 ? 'color-mix(in srgb, var(--danger) 13%, transparent)' : 'color-mix(in srgb, var(--warn) 13%, transparent)',
-        color:      errors > 0 ? 'var(--danger)' : 'var(--warn)',
-        border: `1px solid ${errors > 0 ? 'color-mix(in srgb, var(--danger) 27%, transparent)' : 'color-mix(in srgb, var(--warn) 27%, transparent)'}`,
-        height: 16,
-      }}
+      className="inline-flex items-center gap-0.5 px-1.5 rounded text-[11px] font-normal tabular-nums leading-none shrink-0 text-[var(--text-secondary)] bg-[var(--bg-surface-raised)] hover:text-[var(--text-primary)] transition-colors"
+      style={{ height: 16 }}
       title={t('issueBadge', { errors, warnings })}
     >
       {errors > 0 && <span className="text-[var(--danger)]">{errors}</span>}
       {errors > 0 && warnings > 0 && <span className="opacity-40">·</span>}
-      {warnings > 0 && <span style={{ color: 'var(--warn)' }}>{warnings}</span>}
+      {warnings > 0 && <span>{warnings}</span>}
     </button>
   )
 }

@@ -516,14 +516,14 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
         {replay && (
           <SceneBackgroundMenu
             disabled={!hasModel}
-            triggerClassName="mobile-pill-glass w-10 h-10 inline-flex items-center justify-center gap-1 rounded-full text-[var(--text-dim)] active:scale-[0.93] transition-transform disabled:opacity-40"
+            triggerClassName="mobile-pill-glass !shadow-none w-10 h-10 inline-flex items-center justify-center gap-1 rounded-full text-[var(--text-dim)] active:scale-[0.93] transition-transform disabled:opacity-40"
           />
         )}
         <button
           onClick={() => setMobileMenuOpen(true)}
           disabled={!hasModel}
           aria-label={t('mobileMenu')}
-          className="mobile-pill-glass w-10 h-10 inline-flex items-center justify-center rounded-full text-[var(--text)] active:scale-[0.93] transition-transform disabled:opacity-40"
+          className="mobile-pill-glass !shadow-none w-10 h-10 inline-flex items-center justify-center rounded-full text-[var(--text)] active:scale-[0.93] transition-transform disabled:opacity-40"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           <Icons.Camera size={18} />

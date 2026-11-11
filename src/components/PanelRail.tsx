@@ -100,7 +100,7 @@ export function PanelRail({ items }: PanelRailProps) {
             item.open
               // The open panel is marked, so the rail also answers "which one am
               // I in" — the question the closed toolbar menu could not.
-              ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
+              ? 'bg-[var(--bg-surface-raised)] text-[var(--accent)] ring-1 ring-inset ring-[var(--border-subtle)]'
               : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
           ].join(' ')}
         >
@@ -115,7 +115,7 @@ export function PanelRail({ items }: PanelRailProps) {
                 'absolute -top-0.5 -right-0.5 rounded-full text-[9px] font-semibold leading-none',
                 'flex items-center justify-center',
                 item.badge != null ? 'min-w-[14px] h-[14px] px-1' : 'w-[7px] h-[7px]',
-                item.open ? 'bg-[var(--accent-contrast)] text-[var(--accent)]' : 'bg-[var(--accent)] text-[var(--accent-contrast)]',
+                'bg-[var(--accent)] text-[var(--accent-contrast)]',
               ].join(' ')}
             >
               {item.badge != null ? item.badge : ''}
