@@ -79,7 +79,7 @@ export default function Quality(_: SectionProps) {
 
       <h2 className="text-[13px] font-semibold mb-2">{tx('Audit log')}</h2>
       <DataList rows={audit.data.events} rowKey={(a) => a.at + a.type + (a.actor_id ?? '')} primaryHeader={tx('Event')}
-        primary={(a) => <p>{typeof a.details.text === 'string' ? a.details.text : `${a.type.replace(/_/g, ' ')}${a.to ? ` → ${a.to}` : ''}`}</p>}
+        primary={(a) => <p>{typeof a.details.text === 'string' ? tx(a.details.text) : `${a.type.replace(/_/g, ' ')}${a.to ? ` → ${a.to}` : ''}`}</p>}
         columns={[
           { key: 'who', header: tx('Who'), cell: (a) => <span className="text-[12.5px]">{a.actor_id ?? tx('System')}</span> },
           { key: 'at', header: tx('When'), cell: (a) => <span className="text-[12px] tabular-nums text-[var(--text-dim)]">{a.at.slice(0, 16).replace('T', ' ')}</span> },

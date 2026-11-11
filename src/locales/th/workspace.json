@@ -1,4 +1,8 @@
 {
+  "Approved HCA_ARQ_v6.ifc → Published (A1)": "อนุมัติ HCA_ARQ_v6.ifc → เผยแพร่ (A1)",
+  "Blocked HCA_EST_v4.ifc: score 71 below 80": "บล็อก HCA_EST_v4.ifc: คะแนน 71 ต่ำกว่า 80",
+  "Changed the house profile: added IDS CatSalut 2026": "เปลี่ยนโปรไฟล์ของบริษัท: เพิ่ม IDS CatSalut 2026",
+  "Sealed HCA_MEP_v5.ifc (qualified timestamp)": "ปิดผนึก HCA_MEP_v5.ifc (ตราเวลาที่รับรอง)",
   "· Certificates you didn't revoke: the file hash and result, so links your clients hold keep working. Revoke them first if you prefer.": "· ใบรับรองที่คุณยังไม่ได้เพิกถอน: แฮชของไฟล์และผลลัพธ์ เพื่อให้ลิงก์ที่ลูกค้าถืออยู่ยังใช้งานได้ หากต้องการ ให้เพิกถอนก่อน",
   "· Invoices, for 6 years (Spanish tax law), with your billing details only": "· ใบแจ้งหนี้ เก็บไว้ 6 ปี (กฎหมายภาษีสเปน) มีเพียงข้อมูลการเรียกเก็บเงินของคุณ",
   "· Nothing runs in the cloud unless you start it here — the free tools keep working in your browser.": "· ไม่มีอะไรทำงานบนคลาวด์จนกว่าคุณจะเริ่มที่นี่ — เครื่องมือฟรียังใช้งานได้ในเบราว์เซอร์ของคุณ",

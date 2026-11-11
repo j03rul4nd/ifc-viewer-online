@@ -1,4 +1,8 @@
 {
+  "Approved HCA_ARQ_v6.ifc → Published (A1)": "Approvato HCA_ARQ_v6.ifc → Pubblicato (A1)",
+  "Blocked HCA_EST_v4.ifc: score 71 below 80": "Bloccato HCA_EST_v4.ifc: punteggio 71 sotto 80",
+  "Changed the house profile: added IDS CatSalut 2026": "Profilo aziendale modificato: aggiunto IDS CatSalut 2026",
+  "Sealed HCA_MEP_v5.ifc (qualified timestamp)": "Sigillato HCA_MEP_v5.ifc (marca temporale qualificata)",
   "· Certificates you didn't revoke: the file hash and result, so links your clients hold keep working. Revoke them first if you prefer.": "· I certificati che non hai revocato: impronta del file e risultato, così i link dei tuoi clienti continuano a funzionare. Revocali prima, se preferisci.",
   "· Invoices, for 6 years (Spanish tax law), with your billing details only": "· Fatture, per 6 anni (legge fiscale spagnola), solo con i tuoi dati di fatturazione",
   "· Nothing runs in the cloud unless you start it here — the free tools keep working in your browser.": "· Nel cloud non parte nulla se non lo avvii qui: gli strumenti gratuiti continuano a funzionare nel tuo browser.",

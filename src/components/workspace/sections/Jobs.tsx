@@ -39,7 +39,7 @@ export default function Jobs({ data, actions }: SectionProps) {
             { key: 'file', header: tx("File"), wide: true, className: 'max-w-[180px] lg:max-w-[260px] [overflow-wrap:anywhere]', cell: (j) => <span className="text-[var(--text-dim)]">{j.file} <span className="text-[var(--text-faint)]">· {fmtInt(j.sizeMb)} {tx("MB")}</span></span> },
             { key: 'status', header: tx("Status"), cell: (j) => <><Status status={j.status} refunded={j.refunded} />{j.progress && <p className="text-[11px] text-[var(--text-faint)] whitespace-nowrap">{j.progress.pct}%</p>}</> },
             { key: 'credits', header: tx("Credits"), align: 'right', cell: (j) => <span className={`tabular-nums ${j.refunded ? 'line-through text-[var(--text-faint)]' : ''}`}>{j.credits}</span> },
-            { key: 'result', header: tx("Result"), hideOnPhone: true, desktopOnly: true, className: 'max-w-[260px]', cell: (j) => <span className="text-[var(--text-dim)]">{j.result ?? '—'}</span> },
+            { key: 'result', header: tx("Result"), hideOnPhone: true, desktopOnly: true, className: 'max-w-[260px]', cell: (j) => <span className="text-[var(--text-dim)]">{j.result ? tx(j.result) : '—'}</span> },
           ]}
           actions={(j) => (j.status === 'done' && j.feature === 'auto_fix' ? <Quiet aria-label={tx("Download the clean IFC")}>{tx("Download IFC")}</Quiet> : null)}
         />
