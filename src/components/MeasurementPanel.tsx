@@ -119,7 +119,7 @@ function Segmented<T extends string | number>({ value, options, onChange, label 
             onClick={() => onChange(o.value)}
             className={[
               'flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 py-1 rounded-[6px] text-[11px] font-medium transition-colors',
-              active ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/[0.04]',
+              active ? 'bg-[var(--accent)] text-[var(--accent-contrast)] shadow-sm' : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)]',
             ].join(' ')}
           >
             {o.label}
@@ -140,7 +140,7 @@ function Chip({ on, onClick, children, title }: { on: boolean; onClick: () => vo
       className={[
         'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10.5px] font-medium border transition-colors',
         on
-          ? 'border-[var(--accent)] text-[var(--text)] bg-[rgba(10,132,129,0.16)]'
+          ? 'border-[var(--accent)] text-[var(--text)] bg-[color-mix(in_srgb,var(--accent)_16%,transparent)]'
           : 'border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text-dim)]',
       ].join(' ')}
     >
@@ -163,10 +163,10 @@ function IconButton({ title, onClick, children, danger, active, touch }: {
       onClick={(e) => { e.stopPropagation(); onClick(e) }}
       className={[
         'flex-none flex items-center justify-center transition-colors',
-        touch ? 'w-10 h-10 rounded-[11px] bg-white/[0.05]' : 'w-6 h-6 rounded-[6px]',
-        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]'
-          : active ? 'text-[var(--accent-2)] hover:bg-white/[0.06]'
-            : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/[0.06]',
+        touch ? 'w-10 h-10 rounded-[11px] bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)]' : 'w-6 h-6 rounded-[6px]',
+        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)]'
+          : active ? 'text-[var(--accent-2)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]'
+            : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]',
       ].join(' ')}
     >
       {children}
@@ -451,12 +451,12 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               </div>
             </div>
             <button type="button" onClick={() => openList()}
-              className="h-10 px-3 rounded-[11px] bg-white/[0.05] text-[12.5px] font-medium text-[var(--text)] flex items-center gap-1.5 active:scale-[0.95] transition-transform">
+              className="h-10 px-3 rounded-[11px] bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] text-[12.5px] font-medium text-[var(--text)] flex items-center gap-1.5 active:scale-[0.95] transition-transform">
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
                 <path d="M5 4h9M5 8h9M5 12h9" /><circle cx="2" cy="4" r=".6" fill="currentColor" /><circle cx="2" cy="8" r=".6" fill="currentColor" /><circle cx="2" cy="12" r=".6" fill="currentColor" />
               </svg>
               {t('mobile.list')}
-              {count > 0 && <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent)] text-white text-[10.5px] font-semibold flex items-center justify-center">{count}</span>}
+              {count > 0 && <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] text-[10.5px] font-semibold flex items-center justify-center">{count}</span>}
             </button>
             <IconButton touch title={t('panel.close')} onClick={() => setMeasurementPanelOpen(false)}>
               <CloseIcon size={15} />
@@ -473,7 +473,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   onClick={() => { haptic('tick'); chooseTool(active ? 'none' : id) }}
                   className={[
                     'flex flex-col items-center justify-center gap-1 h-[52px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0 overflow-hidden',
-                    active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] bg-white/[0.04]',
+                    active ? 'bg-[var(--accent)] text-[var(--accent-contrast)]' : 'text-[var(--text-dim)] bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)]',
                   ].join(' ')}>
                   <Icon size={19} />
                   <span className="text-[10.5px] font-medium leading-none truncate max-w-full px-0.5">{t(`tools.${id}`)}</span>
@@ -522,16 +522,16 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             <div className="shrink-0 px-2 pb-2 flex gap-1.5">
               {snapshot.canFinish && (
                 <button type="button" onClick={() => { haptic('select'); system?.finishDraft() }}
-                  className="flex-[1.4] h-11 rounded-[12px] text-[13px] font-semibold bg-[var(--accent)] text-white flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform">
+                  className="flex-[1.4] h-11 rounded-[12px] text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)] flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform">
                   <CheckIcon size={15} />{t('actions.finish')}
                 </button>
               )}
               <button type="button" onClick={() => { haptic('tick'); system?.undoLastPoint() }}
-                className="flex-1 h-11 rounded-[12px] text-[13px] text-[var(--text)] bg-white/[0.06] flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform">
+                className="flex-1 h-11 rounded-[12px] text-[13px] text-[var(--text)] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform">
                 <UndoIcon size={15} />{t('actions.undo')}
               </button>
               <button type="button" aria-label={t('actions.cancel')} onClick={() => { haptic('tick'); system?.cancelDraft() }}
-                className="w-11 h-11 rounded-[12px] text-[var(--text-dim)] bg-white/[0.06] flex items-center justify-center active:scale-[0.95] transition-transform">
+                className="w-11 h-11 rounded-[12px] text-[var(--text-dim)] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] flex items-center justify-center active:scale-[0.95] transition-transform">
                 <CloseIcon size={15} />
               </button>
             </div>
@@ -540,7 +540,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           {/* The latest result, big — tap for its breakdown */}
           {!drafting && latest && LatestIcon && (
             <button type="button" onClick={() => openList(latest.id)}
-              className="shrink-0 mx-2 mb-2 rounded-[12px] border border-[var(--border)] bg-white/[0.02] px-3 py-2 flex items-center gap-2.5 text-left active:bg-white/[0.05]">
+              className="shrink-0 mx-2 mb-2 rounded-[12px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)] px-3 py-2 flex items-center gap-2.5 text-left active:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)]">
               <span style={{ color: KIND_COLOR[latest.kind] }}><LatestIcon size={17} /></span>
               <span className="flex-1 min-w-0">
                 <span className="block text-[10.5px] uppercase tracking-wider text-[var(--text-faint)]">{t('mobile.latest')}</span>
@@ -643,11 +643,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           {snapshot.items.length > 0 && (
             <div className="shrink-0 border-t border-[var(--border)] px-3 pt-2 flex items-center gap-1.5">
               <button type="button" onClick={handleCopyAll}
-                className="flex-1 h-11 rounded-[12px] bg-white/[0.06] text-[12.5px] text-[var(--text)] flex items-center justify-center gap-1.5">
+                className="flex-1 h-11 rounded-[12px] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] text-[12.5px] text-[var(--text)] flex items-center justify-center gap-1.5">
                 <CopyIcon size={14} />{t('actions.copyAll')}
               </button>
               <button type="button" onClick={handleExportCsv}
-                className="flex-1 h-11 rounded-[12px] bg-white/[0.06] text-[12.5px] text-[var(--text)] flex items-center justify-center gap-1.5">
+                className="flex-1 h-11 rounded-[12px] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] text-[12.5px] text-[var(--text)] flex items-center justify-center gap-1.5">
                 <DownloadIcon size={14} />{t('actions.export')}
               </button>
               <IconButton touch title={allHidden ? t('actions.showAll') : t('actions.hideAll')} onClick={() => system?.setAllVisible(allHidden)}>
@@ -655,7 +655,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               </IconButton>
               {confirmClear ? (
                 <button type="button" onClick={() => { haptic('select'); system?.clear(); setConfirmClear(false) }}
-                  className="h-11 px-3 rounded-[12px] text-[12.5px] font-semibold text-white bg-[var(--danger)]">
+                  className="h-11 px-3 rounded-[12px] text-[12.5px] font-semibold text-[var(--accent-contrast)] bg-[var(--danger)]">
                   {t('actions.confirmClear', { count })}
                 </button>
               ) : (
@@ -721,14 +721,14 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 className={[
                   'relative flex flex-col items-center justify-center gap-1 h-[46px] px-1.5 rounded-[9px] transition-all min-w-0 overflow-hidden',
                   active
-                    ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(10,132,129,0.35)]'
+                    ? 'bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_4px_14px_color-mix(in_srgb,var(--accent)_35%,transparent)]'
                     : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
                 ].join(' ')}
               >
                 <Icon size={15} className="shrink-0" />
                 <span className="max-w-full truncate text-[11px] font-medium leading-tight">{t(`tools.${id}`)}</span>
                 {!isMobile && (
-                  <span className={['absolute top-1 right-1.5 text-[8.5px] font-mono leading-none', active ? 'text-white/70' : 'text-[var(--text-faint)]'].join(' ')}>
+                  <span className={['absolute top-1 right-1.5 text-[8.5px] font-mono leading-none', active ? 'text-[color-mix(in_srgb,var(--text-primary)_70%,transparent)]' : 'text-[var(--text-faint)]'].join(' ')}>
                     {i + 1}
                   </span>
                 )}
@@ -787,7 +787,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 <div className="flex gap-1.5">
                   {snapshot.canFinish && (
                     <button type="button" onClick={() => system?.finishDraft()}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 transition">
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110 transition">
                       <CheckIcon size={12} />{t('actions.finish')}{!isMobile && <span className="opacity-60 font-mono text-[9.5px]">↵</span>}
                     </button>
                   )}
@@ -812,7 +812,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             a short window pushes the list down instead of squeezing it to 0. */}
         <div ref={listRef} className="min-h-[72px] flex-1 overflow-y-auto border-t border-[var(--border)]">
           {settingsOpen && (
-            <div className="border-b border-[var(--border)] px-2.5 py-2.5 flex flex-col gap-2.5 bg-[rgba(255,255,255,0.015)]">
+            <div className="border-b border-[var(--border)] px-2.5 py-2.5 flex flex-col gap-2.5 bg-[color-mix(in_srgb,var(--text-primary)_1.5%,transparent)]">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-[var(--text-faint)] font-semibold">{t('settings.units')}</span>
                 <Segmented
@@ -948,14 +948,14 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             {confirmClear ? (
               <span className="flex items-center gap-1">
                 <button type="button" onClick={() => { system?.clear(); setConfirmClear(false) }}
-                  className="px-2 py-1.5 rounded-[7px] text-[11px] font-semibold text-white bg-[var(--danger)] hover:brightness-110">
+                  className="px-2 py-1.5 rounded-[7px] text-[11px] font-semibold text-[var(--accent-contrast)] bg-[var(--danger)] hover:brightness-110">
                   {t('actions.confirmClear', { count })}
                 </button>
                 <IconButton title={t('actions.cancel')} onClick={() => setConfirmClear(false)}><CloseIcon size={12} /></IconButton>
               </span>
             ) : (
               <button type="button" onClick={() => setConfirmClear(true)} title={t('actions.clearAll')}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] text-[11px] text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)] transition-colors">
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] text-[11px] text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] transition-colors">
                 <TrashIcon size={12} />{t('actions.clearAll')}
               </button>
             )}
@@ -1077,7 +1077,7 @@ function MeasureRow(p: RowProps) {
       onMouseLeave={() => p.onHover(false)}
       className={[
         'group mx-1 rounded-[8px] transition-colors',
-        p.selected ? 'bg-[rgba(10,132,129,0.12)] ring-1 ring-inset ring-[rgba(10,132,129,0.45)]' : 'hover:bg-[var(--surface-2)]',
+        p.selected ? 'bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_45%,transparent)]' : 'hover:bg-[var(--surface-2)]',
       ].join(' ')}
     >
       <div role="button" tabIndex={0} onClick={p.onSelect}
@@ -1127,7 +1127,7 @@ function MeasureRow(p: RowProps) {
             <p className="mt-1.5 text-[10px] leading-snug text-[var(--text-dim)] flex items-start gap-1">
               <span className="text-[var(--text-faint)] shrink-0">{t('item.on')}</span>
               <span className="min-w-0 break-words">{anchors}</span>
-              {(() => { const ck = crossKind(item); return ck && <span className="shrink-0 px-1 rounded bg-[rgba(10,132,129,0.15)] text-[var(--accent-2)]">{ck === 'models' ? t('item.crossModel') : ck === 'modelMap' ? t('item.crossModelMap') : t('item.crossMap')}</span> })()}
+              {(() => { const ck = crossKind(item); return ck && <span className="shrink-0 px-1 rounded bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--accent-2)]">{ck === 'models' ? t('item.crossModel') : ck === 'modelMap' ? t('item.crossModelMap') : t('item.crossMap')}</span> })()}
             </p>
           )}
           {note && <p className="mt-1.5 text-[10px] text-[var(--text-faint)] leading-snug">{note}</p>}
