@@ -15,7 +15,8 @@
 //   2. LIMITER: a cell whose outflows would take more than the water it holds
 //      has all of them scaled down by h / outflow. Each face has one donor, so
 //      the scaling conserves mass exactly and depth never goes negative.
-//   3. CONTINUITY: h += Δt/Δx · (in − out) + Δt · rain · rainFactor, then
+//   3. CONTINUITY: h += Δt/Δx · (in − out) + Δt · rain · rainFactor
+//      (+ Δt · Q · inflow / Δx² where water enters from outside), then
 //      infiltration takes min(h, f(t)·Δt) (Horton, from the step's start time).
 //
 // The step itself is chosen by nextStepMs (solver-api.ts).
@@ -23,8 +24,9 @@
 import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from './grid'
 import { intervalMs, ratesMs, type Hyetograph } from './hyetograph'
 import { packDisplay } from './half'
+import { inflowShare, volumeFromFlows } from './inflow'
 import {
-  infiltrationRate, nextStepMs, resolveParams,
+  infiltrationRate, inflowFlows, nextStepMs, resolveParams,
   type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams,
 } from './solver-api'
 
@@ -54,6 +56,12 @@ export class CpuInertialSolver implements FloodSolver {
   private readonly hyeto: Hyetograph
   private readonly rates: Float32Array
   private readonly ivMs: number
+  /** Inflow discharge per interval, m³/s (empty: none). */
+  private readonly flows: Float32Array
+  /** Intervals of rain or inflow: no step straddles one. */
+  private readonly nIv: number
+  /** Σ of the inflow weights as held (≈ 1). */
+  private readonly inShare: number
 
   private readonly h: Float64Array
   private readonly u: Float64Array
@@ -86,6 +94,9 @@ export class CpuInertialSolver implements FloodSolver {
     this.hyeto = init.hyetograph
     this.rates = ratesMs(init.hyetograph)
     this.ivMs = intervalMs(init.hyetograph)
+    this.flows = inflowFlows(init)
+    this.nIv = Math.max(this.rates.length, this.flows.length)
+    this.inShare = inflowShare(g.inflow)
     const nc = g.nx * g.ny
     const nf = (g.nx + 1) * (g.ny + 1)
     this.h = new Float64Array(nc)
@@ -115,11 +126,14 @@ export class CpuInertialSolver implements FloodSolver {
     const g = this.grid
     const p = this.params
     const { nx, ny, dx, z, blocked, manning: nm, rainFactor } = g
-    const dtMs = nextStepMs(this.tMs, tStopMs, this.hMaxNow, dx, p, this.ivMs, this.rates.length)
+    const dtMs = nextStepMs(this.tMs, tStopMs, this.hMaxNow, dx, p, this.ivMs, this.nIv)
     if (dtMs === 0) return false
     const dt = dtMs / 1000
     const idx = Math.floor(this.tMs / this.ivMs)
     const rate = idx < this.rates.length ? this.rates[idx] : 0
+    // Depth per second the inflow adds per unit weight: Q / Δx².
+    const qin = idx < this.flows.length ? this.flows[idx] / (dx * dx) : 0
+    const inW = g.inflow
     const { h, qx, qy, qxN, qyN, factor } = this
     const W = nx + 1
     const G = p.g
@@ -264,6 +278,7 @@ export class CpuInertialSolver implements FloodSolver {
         const qB = qyN[f]
         const qT = qyN[f + W]
         let hn = h[c] + k * (qL - qR + qB - qT) + dt * rate * rainFactor[c]
+        if (qin > 0 && inW) hn += dt * qin * inW[c]
         if (hn < 0) hn = 0
         if (loss > 0) {
           const l = Math.min(hn, infil ? loss * infil[c] : loss)
@@ -334,8 +349,9 @@ export class CpuInertialSolver implements FloodSolver {
     const a = g.dx * g.dx
     const volume = vol * a
     const rainVolume = this.rainDepth * this.rainArea
+    const inflowVolume = volumeFromFlows(this.flows, this.ivMs, this.tMs) * this.inShare
     const infiltratedVolume = infd * a
-    const denom = Math.max(rainVolume + this.v0, 1e-12)
+    const denom = Math.max(rainVolume + inflowVolume + this.v0, 1e-12)
     return {
       t: this.tMs / 1000,
       dt: this.lastDtMs / 1000,
@@ -345,10 +361,11 @@ export class CpuInertialSolver implements FloodSolver {
       volume,
       floodedArea: wet * a,
       rainVolume,
+      inflowVolume,
       outflowVolume: this.outflow,
       infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / denom,
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - inflowVolume - this.v0) / denom,
     }
   }
 

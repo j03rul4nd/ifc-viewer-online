@@ -211,6 +211,13 @@ uniform sampler2D uCells;
 uniform sampler2D uMax;
 uniform float uWet;
 uniform vec3 uInf; // Horton: initial mm/h, final mm/h, decay per hour
+// Inflow: the discharge per interval is .y of the rain texture; the weights
+// (share ÷ Δx², m⁻²) a texture of their own.
+uniform sampler2D uRain;
+uniform sampler2D uInflowW;
+uniform uint uRainIv;
+uniform uint uRainCount;
+uniform int uRainW;
 layout(location = 0) out vec4 oCell;
 layout(location = 1) out vec4 oMax;
 void main() {
@@ -227,7 +234,9 @@ void main() {
   float qB = texelFetch(uQ, ivec2(i, j), 0).y;
   float qT = texelFetch(uQ, ivec2(i, j + 1), 0).y;
   float k = dt / uDx;
-  float hn = max(cell.x + k * (qL - qR + qB - qT) + dt * uintBitsToFloat(c.w) * s.y, 0.0);
+  uint idx = (c.x - c.y) / uRainIv; // the interval the step started in (no step straddles one)
+  float qin = idx < uRainCount ? texelFetch(uRain, ivec2(int(idx) % uRainW, int(idx) / uRainW), 0).y : 0.0;
+  float hn = max(cell.x + k * (qL - qR + qB - qT) + dt * uintBitsToFloat(c.w) * s.y + dt * qin * texelFetch(uInflowW, ivec2(i, j), 0).x, 0.0);
   // Infiltration from the step's start time; cells.w keeps the depth absorbed so far.
   float tStart = float(c.x - c.y) * 0.001;
   float f = max(uInf.y + (uInf.x - uInf.y) * exp(-uInf.z * tStart / 3600.0), 0.0) / 3600000.0;

@@ -21,7 +21,9 @@
 // infiltration) —
 // under the default limit of 8, so no adapter needs raised limits. The static
 // fields (z, rainFactor, n, blocked) are a texture for the same reason; `blocked`
-// is 1 for an obstacle and minus the cell's infiltration factor otherwise.
+// is 1 for an obstacle and minus the cell's infiltration factor otherwise. The
+// inflow weights (share of an entering discharge ÷ Δx²) are a second texture,
+// and the discharge per interval rides in the rain uniform, from INFLOW_BASE.
 
 const PARAMS = /* wgsl */`
 struct Params {
@@ -35,13 +37,15 @@ struct Params {
 
 export const PARAMS_BYTES = 80
 export const RAIN_SLOTS = 4096 // vec4 × 1024 = 16 KiB of uniform
+/** Rain intensities fill [0, INFLOW_BASE); inflow discharges, [INFLOW_BASE, RAIN_SLOTS). */
+export const INFLOW_BASE = 2048
 export const CTRL_BYTES = 32
 
 export const STEP_WGSL = /* wgsl */`
 ${PARAMS}
 struct Ctrl {
   tMs: u32, tStopMs: u32, dtMs: u32, steps: u32,
-  dt: f32, rate: f32, hmaxBits: atomic<u32>, pad: u32,
+  dt: f32, rate: f32, hmaxBits: atomic<u32>, qin: f32,
 };
 
 @group(0) @binding(0) var<uniform> P: Params;
@@ -54,6 +58,7 @@ struct Ctrl {
 @group(0) @binding(7) var<storage, read_write> mx: array<vec4f>;
 @group(0) @binding(8) var<storage, read_write> bnd: array<f32>;
 @group(0) @binding(9) var<storage, read_write> inf: array<f32>;
+@group(0) @binding(10) var INW: texture_2d<f32>;
 
 const H_FLOOR: f32 = 1e-6;
 
@@ -87,10 +92,12 @@ fn k_dt() {
   }
   let idx = t / P.rainIntervalMs;
   var rate = 0.0;
-  if (d > 0u && idx < P.rainCount) { rate = rainAt(idx); }
+  var qin = 0.0;
+  if (d > 0u && idx < P.rainCount) { rate = rainAt(idx); qin = rainAt(2048u + idx); }
   C.dtMs = d;
   C.dt = f32(d) * 0.001;
   C.rate = rate;
+  C.qin = qin;
   if (d > 0u) {
     atomicStore(&C.hmaxBits, 0u);
     C.tMs = t + d;
@@ -239,7 +246,7 @@ fn k_cont(@builtin(global_invocation_id) id: vec3u, @builtin(local_invocation_in
       let qT = q[f + W].y;
       let cell = cells[c];
       let k = dt / P.dx;
-      hn = max(cell.x + k * (qL - qR + qB - qT) + dt * C.rate * s.y, 0.0);
+      hn = max(cell.x + k * (qL - qR + qB - qT) + dt * C.rate * s.y + dt * C.qin * textureLoad(INW, vec2u(i, j), 0).x, 0.0);
       // An open cell's static w is minus its infiltration factor.
       let loss = min(hn, infiltrationRate(f32(C.tMs - C.dtMs) * 0.001) * dt * max(-s.w, 0.0));
       if (loss > 0.0) {

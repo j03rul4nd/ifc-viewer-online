@@ -313,5 +313,40 @@
       "university": "大学",
       "warehouse": "仓库"
     }
+  },
+  "inflow": {
+    "title": "外部来水",
+    "none": "无",
+    "channel": "水道",
+    "point": "指定点",
+    "needGrid": "先生成网格，才能看到水可能从哪里进入。",
+    "noCandidates": "OpenStreetMap 中没有水道流入该区域。请改为选择一个点。",
+    "choose": "选择水道…",
+    "gone": "已消失或暗埋",
+    "piped": "涵管",
+    "inside": "发源于区域内",
+    "cls": {
+      "river": "河流",
+      "canal": "运河",
+      "stream": "溪流",
+      "ditch": "沟渠",
+      "drain": "排水沟"
+    },
+    "pick": "在场景中选择",
+    "repick": "重新选择",
+    "stopPicking": "停止选择",
+    "picking": "点击水流进入的位置。",
+    "picked": "从所选点进入（青色圆环）。",
+    "wave": "洪水过程",
+    "presets": {
+      "stream": "溪流 · {{q}} m³/s，持续 {{min}} 分钟",
+      "riera": "季节性河道涨水 · {{q}} m³/s，持续 {{min}} 分钟",
+      "river": "河流漫溢 · {{q}} m³/s，持续 {{min}} 分钟"
+    },
+    "peak": "洪峰",
+    "duration": "历时",
+    "facts": "洪峰 {{q}} m³/s；{{min}} 分钟内流入 {{v}} m³。",
+    "note": "水以流量形式从青色圆环处进入。不模拟区域上游的水道，也不模拟涵洞或河岸如何失效：用于查看这些水会流向哪里。",
+    "entered": "外部来水量"
   }
 }

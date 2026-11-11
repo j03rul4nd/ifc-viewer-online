@@ -33,7 +33,10 @@ import { readDemFile, sampleDem, type DemRaster } from './raster/dem-import'
 import { affineFrom, elevationToSceneY, gridRotation, sceneToGrid, type FloodGeoref } from './raster/georef'
 import { northUp, writeAsc, writeGeoTiff, type RasterOut } from './raster/dem-export'
 import { buildOsmSurface, isBuriedCourse, osmBuildingsReached, type OsmSurface } from './raster/osm-surface'
-import { createOldCourseLines, createReachedOutlines, disposeLines } from './view/osm-overlay'
+import { createInflowMarker, createOldCourseLines, createReachedOutlines, disposeLines } from './view/osm-overlay'
+import { inflowCandidates, inflowWeights, sourceRadiusM, type InflowCandidate, type InflowChannel, type InflowSource } from './raster/inflow-source'
+import { inflowSeries, type Hydrograph } from './core/inflow'
+import { intervalMs } from './core/hyetograph'
 import type { OsmContext } from '../../lib/geo/osm-hydro'
 import { AFFECTED_CLASSES, elevationFrom, findAffected, type AffectedElement, type AffectedReport, type Box3Like, type Candidate } from './validation/affected'
 import { WaterLayer, type WaterMode } from './view/water-layer'
@@ -186,6 +189,8 @@ export interface PrepareResult extends BuildReport {
 export interface RunOptions {
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
+  /** Water from outside: a watercourse entering the area, or a point, and its flood wave. */
+  inflow?: { source: InflowSource; hydrograph: Hydrograph } | null
   durationS: number
   backend?: BackendChoice
   speed: number | 'max'
@@ -282,6 +287,12 @@ export interface FloodSystemAPI {
   setCaptureOverlay(paint: CapturePaint | null): void
   /** Camera on a neighbouring building the water reached (AffectedReport.neighbours). */
   focusNeighbour(id: string): void
+  /** The watercourses (OSM, live or gone) that enter the prepared area, widest first. */
+  inflowCandidates(): InflowCandidate[]
+  /** Marks where water from outside will enter (null: none). */
+  setInflowSource(src: InflowSource | null): void
+  /** While on, a click on the scene picks a point of the grid for an inflow. */
+  setPicking(on: boolean, onPick?: (p: { x: number; z: number } | null) => void): void
   isPrepared(): boolean
   /** Removes the layers and stops the worker; the geometry cache stays. */
   clear(): void
@@ -320,6 +331,12 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
   let osmSurface: OsmSurface | null = null
   let oldCourseOverlay: THREE.LineSegments | null = null
   let reachedOverlay: THREE.LineSegments | null = null
+  // ── Water from outside ──
+  let inflowChannels: InflowChannel[] = []
+  let inflowCands: InflowCandidate[] = []
+  let inflowSrc: InflowSource | null = null
+  let inflowMarker: THREE.LineSegments | null = null
+  let pickHandlers: { down: (e: PointerEvent) => void; up: (e: PointerEvent) => void } | null = null
   // ── Timeline ──
   const tl: TimelineState = {
     endS: 0, computedT: 0, viewT: 0, following: true, playing: false, speed: 300,
@@ -465,7 +482,28 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
     return c ? displayBed[c.j * plan.nx + c.i] : displayBed[0]
   }
 
+  /** Where a source puts its water, and how wide: scene centre, radius (m). */
+  function resolveSource(src: InflowSource): { center: { x: number; z: number }; radiusM: number } | null {
+    if (!plan) return null
+    if (src.kind === 'point') return { center: { x: src.x, z: src.z }, radiusM: sourceRadiusM(plan.dx) }
+    const c = inflowCands.find((x) => x.id === src.id)
+    return c ? { center: c.entry, radiusM: sourceRadiusM(plan.dx, c.widthM) } : null
+  }
+
+  function drawInflowMarker(): void {
+    disposeLines(inflowMarker)
+    inflowMarker = null
+    const r = inflowSrc && displayBed ? resolveSource(inflowSrc) : null
+    if (!r) return
+    inflowMarker = createInflowMarker(r.center, r.radiusM, bedAt)
+    inflowMarker.visible = view.visible
+    ctx.scene.add(inflowMarker)
+    ctx.requestRender()
+  }
+
   function removeLayers(): void {
+    disposeLines(inflowMarker)
+    inflowMarker = null
     disposeLines(oldCourseOverlay)
     oldCourseOverlay = null
     disposeLines(reachedOverlay)
@@ -499,6 +537,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       particles.setVisible(view.visible && view.particles)
     }
     if (oldCourseOverlay) oldCourseOverlay.visible = view.visible
+    if (inflowMarker) inflowMarker.visible = view.visible
     if (reachedOverlay) reachedOverlay.visible = view.visible
     wake()
     ctx.requestRender()
@@ -828,6 +867,16 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
         ground = createGroundLayer({ nx: gp.nx, ny: gp.ny, dx: gp.dx, frame: gp.frame, bed, blocked: built.grid.blocked })
         ctx.scene.add(ground)
       }
+      // Where watercourses (live or gone) enter the area: candidate inflows.
+      inflowChannels = osm
+        ? osm.hydro.channels.map((c) => ({
+          id: c.id, cls: c.cls, name: c.name, historic: c.historic, culvert: c.culvert, widthM: c.widthM,
+          line: c.line.map((q) => osm!.toScene(q.lat, q.lon)),
+        }))
+        : []
+      inflowCands = inflowCandidates(gp, inflowChannels)
+      if (inflowSrc?.kind === 'channel' && !inflowCands.some((c) => c.id === (inflowSrc as { id: string }).id)) inflowSrc = null
+      drawInflowMarker()
       // The old and buried courses, dashed over the ground.
       if (osm && osmSurface && osmSurface.counts.oldCourses > 0) {
         const lines = osm.hydro.channels.filter(isBuriedCourse).map((c) => c.line.map((p) => osm!.toScene(p.lat, p.lon)))
@@ -860,6 +909,14 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       const copy: FloodGrid = {
         ...g, z: g.z.slice(), blocked: g.blocked.slice(), rainFactor: g.rainFactor.slice(), manning: g.manning.slice(), h0: g.h0?.slice(),
         infiltration: g.infiltration?.slice(),
+      }
+      let inflowM3s: Float32Array | undefined
+      if (o.inflow) {
+        const r = resolveSource(o.inflow.source)
+        const w = r && plan ? inflowWeights(plan, g.blocked, r.center, r.radiusM) : null
+        if (!w) throw new Error('flood: no open ground where that water would enter')
+        copy.inflow = w
+        inflowM3s = inflowSeries(o.inflow.hydrograph, intervalMs(o.hyetograph))
       }
       resetTimeline(o.durationS)
       tl.computing = true
@@ -895,7 +952,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
           ev.onState?.(x)
         },
       })
-      runner.init({ grid: copy, hyetograph: o.hyetograph, params: o.params, endS: o.durationS, backend: o.backend })
+      runner.init({ grid: copy, hyetograph: o.hyetograph, params: o.params, inflowM3s, endS: o.durationS, backend: o.backend })
       runner.play(o.speed)
       wake()
     },
@@ -1124,6 +1181,42 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
       )
     },
 
+    inflowCandidates() {
+      return inflowCands
+    },
+
+    setInflowSource(src) {
+      inflowSrc = src
+      drawInflowMarker()
+    },
+
+    setPicking(on, onPick) {
+      const canvas = ctx.canvas
+      if (pickHandlers && canvas) {
+        canvas.removeEventListener('pointerdown', pickHandlers.down, true)
+        canvas.removeEventListener('pointerup', pickHandlers.up, true)
+        pickHandlers = null
+      }
+      ctx.setPointerSuppressed?.(on)
+      if (canvas) canvas.style.cursor = on ? 'crosshair' : ''
+      if (!on || !canvas) return
+      let down: { x: number; y: number; t: number } | null = null
+      pickHandlers = {
+        down: (e) => { if (e.button === 0) down = { x: e.clientX, y: e.clientY, t: performance.now() } },
+        up: (e) => {
+          if (!down || e.button !== 0) return
+          const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y)
+          const long = performance.now() - down.t > 400
+          down = null
+          if (moved > 5 || long) return // a camera drag, not a pick
+          const hit = hitGrid(e.clientX, e.clientY)
+          onPick?.(hit ? { x: hit.x, z: hit.z } : null)
+        },
+      }
+      canvas.addEventListener('pointerdown', pickHandlers.down, true)
+      canvas.addEventListener('pointerup', pickHandlers.up, true)
+    },
+
     setCaptureOverlay(paint) {
       overlay = paint
       if (!removePainter && ctx.addCapturePainter) {
@@ -1135,6 +1228,9 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
 
     clear() {
       api.setProbing(false)
+      api.setPicking(false)
+      inflowCands = []
+      inflowChannels = []
       runner?.dispose()
       runner = null
       removeLayers()

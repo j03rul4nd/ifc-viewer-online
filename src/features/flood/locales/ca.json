@@ -313,5 +313,40 @@
       "university": "Universitat",
       "warehouse": "Magatzem"
     }
+  },
+  "inflow": {
+    "title": "Aigua de fora",
+    "none": "Cap",
+    "channel": "Un curs d'aigua",
+    "point": "Un punt",
+    "needGrid": "Prepara la malla per veure per on pot entrar aigua.",
+    "noCandidates": "Cap curs d'aigua que conegui OpenStreetMap entra en aquesta zona. Tria un punt.",
+    "choose": "Tria un curs d'aigua…",
+    "gone": "desaparegut o soterrat",
+    "piped": "canalitzat",
+    "inside": "neix dins la zona",
+    "cls": {
+      "river": "Riu",
+      "canal": "Canal",
+      "stream": "Rierol",
+      "ditch": "Sèquia",
+      "drain": "Desguàs"
+    },
+    "pick": "Tria a l'escena",
+    "repick": "Tria'n un altre",
+    "stopPicking": "Deixa de triar",
+    "picking": "Fes clic on entra l'aigua.",
+    "picked": "Entra al punt triat (anell cian).",
+    "wave": "Crescuda",
+    "presets": {
+      "stream": "Rierol · {{q}} m³/s durant {{min}} min",
+      "riera": "Riera en crescuda · {{q}} m³/s durant {{min}} min",
+      "river": "Riu desbordat · {{q}} m³/s durant {{min}} min"
+    },
+    "peak": "Pic",
+    "duration": "Dura",
+    "facts": "Fins a {{q}} m³/s; entren {{v}} m³ en {{min}} min.",
+    "note": "Entra com un cabal on és l'anell cian. No se simula el curs aigües amunt de la zona ni com cedeixen un col·lector o una riba: serveix per veure on aniria aquesta aigua.",
+    "entered": "Entrada de fora"
   }
 }

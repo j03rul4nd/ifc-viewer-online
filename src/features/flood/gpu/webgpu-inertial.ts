@@ -10,11 +10,12 @@
 
 import { effectiveRainArea, initialVolume, validateGrid, type FloodGrid } from '../core/grid'
 import { depthFromRates, intervalMs, ratesMs } from '../core/hyetograph'
+import { inflowShare, volumeFromFlows } from '../core/inflow'
 import {
-  edgeBits, resolveParams,
+  edgeBits, inflowFlows, resolveParams,
   type AdvanceResult, type FieldFrame, type FloodSolver, type FloodStats, type MaxFields, type SolverInit, type SolverParams,
 } from '../core/solver-api'
-import { CTRL_BYTES, IO_WGSL, PARAMS_BYTES, RAIN_SLOTS, STEP_WGSL } from './wgsl'
+import { CTRL_BYTES, INFLOW_BASE, IO_WGSL, PARAMS_BYTES, RAIN_SLOTS, STEP_WGSL } from './wgsl'
 
 const WG = 16
 const IO_WG = 256
@@ -32,9 +33,9 @@ export interface GpuAdapterSummary {
   description: string
 }
 
-/** Rain step function and total duration must fit a u32 millisecond clock. */
+/** Rain and inflow step functions and the total duration must fit a u32 millisecond clock. */
 function checkRain(ivMs: number, count: number): void {
-  if (count > RAIN_SLOTS) throw new Error(`flood: at most ${RAIN_SLOTS} rain intervals (got ${count})`)
+  if (count > INFLOW_BASE) throw new Error(`flood: at most ${INFLOW_BASE} rain or inflow intervals (got ${count})`)
   if (ivMs * (count + 1) >= 2 ** 31) throw new Error('flood: rain event too long for the millisecond clock')
 }
 
@@ -48,6 +49,9 @@ export class WebGpuInertialSolver implements FloodSolver {
   private readonly ownsDevice: boolean
   private readonly rates: Float32Array
   private readonly ivMs: number
+  private readonly flows: Float32Array
+  /** Σ of the weights the texture holds, × Δx² (≈ 1). */
+  private readonly inShare: number
   private readonly nc: number
   private readonly nf: number
   private readonly nb: number
@@ -57,6 +61,7 @@ export class WebGpuInertialSolver implements FloodSolver {
   private readonly bufParams: GPUBuffer
   private readonly bufRain: GPUBuffer
   private readonly texStatic: GPUTexture
+  private readonly texInflow: GPUTexture
   private readonly bufCtrl: GPUBuffer
   private readonly bufCells: GPUBuffer
   private readonly bufQ: [GPUBuffer, GPUBuffer]
@@ -115,7 +120,9 @@ export class WebGpuInertialSolver implements FloodSolver {
     this.adapter = adapter
     this.rates = ratesMs(init.hyetograph)
     this.ivMs = intervalMs(init.hyetograph)
-    checkRain(this.ivMs, this.rates.length)
+    this.flows = inflowFlows(init)
+    const nIv = Math.max(this.rates.length, this.flows.length)
+    checkRain(this.ivMs, nIv)
     const { nx, ny } = g
     this.nc = nx * ny
     this.nf = (nx + 1) * (ny + 1)
@@ -133,7 +140,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     const pb = new ArrayBuffer(PARAMS_BYTES)
     const pu = new Uint32Array(pb)
     const pf = new Float32Array(pb)
-    pu[0] = nx; pu[1] = ny; pu[2] = edgeBits(p.boundary); pu[3] = this.rates.length
+    pu[0] = nx; pu[1] = ny; pu[2] = edgeBits(p.boundary); pu[3] = nIv
     pu[4] = this.ivMs; pu[5] = p.friction === 'implicit' ? 1 : 0
     pf[8] = g.dx; pf[9] = p.g; pf[10] = p.theta; pf[11] = p.alpha
     pf[12] = p.hEps; pf[13] = p.dtMax; pf[14] = p.freeSlopeMin; pf[15] = p.wetThreshold
@@ -141,6 +148,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     this.bufParams = this.buffer(PARAMS_BYTES, GPUBufferUsage.UNIFORM | CD, pb)
     const rain = new Float32Array(RAIN_SLOTS)
     rain.set(this.rates)
+    rain.set(this.flows, INFLOW_BASE)
     this.bufRain = this.buffer(rain.byteLength, GPUBufferUsage.UNIFORM | CD, rain.buffer)
 
     // Static fields → rgba32float texture (z, rainFactor, n, blocked).
@@ -156,6 +164,14 @@ export class WebGpuInertialSolver implements FloodSolver {
       size: [nx, ny], format: 'rgba32float', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     })
     device.queue.writeTexture({ texture: this.texStatic }, st, { bytesPerRow: nx * 16, rowsPerImage: ny }, [nx, ny])
+    // Inflow weights ÷ Δx² (m⁻²): Q · w adds depth per second. Zero without inflow.
+    const inw = new Float32Array(this.nc)
+    if (g.inflow) for (let c = 0; c < this.nc; c++) inw[c] = g.inflow[c] / (g.dx * g.dx)
+    this.texInflow = device.createTexture({
+      size: [nx, ny], format: 'r32float', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    })
+    device.queue.writeTexture({ texture: this.texInflow }, inw, { bytesPerRow: nx * 4, rowsPerImage: ny }, [nx, ny])
+    this.inShare = inflowShare(inw, g.dx * g.dx)
 
     // State.
     const cells = new Float32Array(this.nc * 4)
@@ -195,6 +211,7 @@ export class WebGpuInertialSolver implements FloodSolver {
         { binding: 7, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
         { binding: 8, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
         { binding: 9, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+        { binding: 10, visibility: GPUShaderStage.COMPUTE, texture: { sampleType: 'unfilterable-float' } },
       ],
     })
     const ioLayout = device.createBindGroupLayout({
@@ -236,6 +253,7 @@ export class WebGpuInertialSolver implements FloodSolver {
         { binding: 7, resource: { buffer: this.bufMax } },
         { binding: 8, resource: { buffer: this.bufBnd } },
         { binding: 9, resource: { buffer: this.bufInf } },
+        { binding: 10, resource: this.texInflow.createView() },
       ],
     })
     this.stepGroups = [stepGroup(this.bufQ[0], this.bufQ[1]), stepGroup(this.bufQ[1], this.bufQ[0])]
@@ -371,6 +389,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     const a = this.grid.dx * this.grid.dx
     const volume = sumH * a
     const rainVolume = depthFromRates(this.rates, this.ivMs, tMs) * this.rainArea
+    const inflowVolume = volumeFromFlows(this.flows, this.ivMs, tMs) * this.inShare
     const infiltratedVolume = sumInf * a
     return {
       t: tMs / 1000,
@@ -379,10 +398,11 @@ export class WebGpuInertialSolver implements FloodSolver {
       hMax, vMax, volume,
       floodedArea: wet * a,
       rainVolume,
+      inflowVolume,
       outflowVolume: this.outflow,
       infiltratedVolume,
       initialVolume: this.v0,
-      massError: (volume + this.outflow + infiltratedVolume - rainVolume - this.v0) / Math.max(rainVolume + this.v0, 1e-12),
+      massError: (volume + this.outflow + infiltratedVolume - rainVolume - inflowVolume - this.v0) / Math.max(rainVolume + inflowVolume + this.v0, 1e-12),
     }
   }
 
@@ -441,6 +461,7 @@ export class WebGpuInertialSolver implements FloodSolver {
     this.disposed = true
     for (const b of [this.bufParams, this.bufRain, this.bufCtrl, this.bufCells, ...this.bufQ, this.bufMax, this.bufBnd, this.bufInf, this.bufPartials, this.bufDisp]) b.destroy()
     this.texStatic.destroy()
+    this.texInflow.destroy()
     if (this.ownsDevice) this.device.destroy()
   }
 }

@@ -313,5 +313,40 @@
       "university": "Université",
       "warehouse": "Entrepôt"
     }
+  },
+  "inflow": {
+    "title": "Apport d'eau extérieur",
+    "none": "Aucun",
+    "channel": "Un cours d'eau",
+    "point": "Un point",
+    "needGrid": "Construisez la grille pour voir par où l'eau peut entrer.",
+    "noCandidates": "Aucun cours d'eau connu d'OpenStreetMap n'entre dans cette zone. Choisissez plutôt un point.",
+    "choose": "Choisir un cours d'eau…",
+    "gone": "disparu ou enterré",
+    "piped": "busé",
+    "inside": "prend sa source dans la zone",
+    "cls": {
+      "river": "Rivière",
+      "canal": "Canal",
+      "stream": "Ruisseau",
+      "ditch": "Fossé",
+      "drain": "Drain"
+    },
+    "pick": "Choisir dans la scène",
+    "repick": "Choisir à nouveau",
+    "stopPicking": "Arrêter de choisir",
+    "picking": "Cliquez là où l'eau entre.",
+    "picked": "Elle entre au point choisi (anneau cyan).",
+    "wave": "Onde de crue",
+    "presets": {
+      "stream": "Ruisseau · {{q}} m³/s pendant {{min}} min",
+      "riera": "Torrent en crue · {{q}} m³/s pendant {{min}} min",
+      "river": "Rivière en débordement · {{q}} m³/s pendant {{min}} min"
+    },
+    "peak": "Pointe",
+    "duration": "Durée",
+    "facts": "Jusqu'à {{q}} m³/s ; {{v}} m³ entrent en {{min}} min.",
+    "note": "Elle entre comme un débit à l'anneau cyan. Le cours d'eau en amont de la zone n'est pas simulé, ni la façon dont une buse ou une berge cède : cela montre où irait cette eau.",
+    "entered": "Entrée de l'extérieur"
   }
 }

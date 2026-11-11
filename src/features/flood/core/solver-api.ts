@@ -99,6 +99,16 @@ export function edgeBits(b: BoundaryConfig): number {
  * The next step, in whole milliseconds — the single definition every backend
  * implements (the shaders mirror it line by line). 0 = stop (t reached tStop).
  */
+/**
+ * The inflow discharges of an init (m³/s per interval), checked against the
+ * grid: a discharge needs somewhere to enter.
+ */
+export function inflowFlows(init: SolverInit): Float32Array {
+  const f = init.inflowM3s ? Float32Array.from(init.inflowM3s, (q) => Math.max(0, q)) : new Float32Array(0)
+  if (f.length && !init.grid.inflow) throw new Error('flood: an inflow discharge needs grid.inflow (where it enters)')
+  return f
+}
+
 export function nextStepMs(
   tMs: number,
   tStopMs: number,
@@ -133,12 +143,14 @@ export interface FloodStats {
   floodedArea: number
   /** Rain that has reached the grid, m³. */
   rainVolume: number
+  /** Water that has entered from outside (a river, a culvert), m³. */
+  inflowVolume: number
   /** Water that has left through free edges, m³. */
   outflowVolume: number
   /** Water the ground has absorbed, m³. */
   infiltratedVolume: number
   initialVolume: number
-  /** (stored + out + infiltrated − rain − initial) / (rain + initial). */
+  /** (stored + out + infiltrated − rain − inflow − initial) / (rain + inflow + initial). */
   massError: number
 }
 
@@ -198,6 +210,11 @@ export interface SolverInit {
   grid: FloodGrid
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
+  /**
+   * Discharge entering by grid.inflow, m³/s per interval of the hyetograph
+   * (core/inflow.ts inflowSeries). It may run past the rain; nothing enters after it.
+   */
+  inflowM3s?: ArrayLike<number>
 }
 
 export function resolveParams(p?: Partial<SolverParams>): SolverParams {

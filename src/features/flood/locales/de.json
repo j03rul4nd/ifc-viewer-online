@@ -313,5 +313,40 @@
       "university": "Universität",
       "warehouse": "Lagerhalle"
     }
+  },
+  "inflow": {
+    "title": "Wasser von außen",
+    "none": "Keins",
+    "channel": "Ein Gewässer",
+    "point": "Ein Punkt",
+    "needGrid": "Erstellen Sie das Raster, um zu sehen, wo Wasser hereinkommen kann.",
+    "noCandidates": "Kein Gewässer, das OpenStreetMap kennt, fließt in dieses Gebiet. Wählen Sie stattdessen einen Punkt.",
+    "choose": "Gewässer wählen…",
+    "gone": "verschwunden oder verrohrt",
+    "piped": "verrohrt",
+    "inside": "entspringt im Gebiet",
+    "cls": {
+      "river": "Fluss",
+      "canal": "Kanal",
+      "stream": "Bach",
+      "ditch": "Graben",
+      "drain": "Entwässerungsgraben"
+    },
+    "pick": "In der Szene wählen",
+    "repick": "Neu wählen",
+    "stopPicking": "Auswahl beenden",
+    "picking": "Klicken Sie dorthin, wo das Wasser hereinkommt.",
+    "picked": "Es kommt am gewählten Punkt herein (cyanfarbener Ring).",
+    "wave": "Hochwasserwelle",
+    "presets": {
+      "stream": "Bach · {{q}} m³/s für {{min}} min",
+      "riera": "Wildbach bei Hochwasser · {{q}} m³/s für {{min}} min",
+      "river": "Fluss tritt über die Ufer · {{q}} m³/s für {{min}} min"
+    },
+    "peak": "Scheitel",
+    "duration": "Dauer",
+    "facts": "Bis zu {{q}} m³/s; {{v}} m³ fließen in {{min}} min herein.",
+    "note": "Es kommt als Abfluss am cyanfarbenen Ring herein. Das Gewässer oberhalb des Gebiets wird nicht simuliert, ebenso wenig, wie ein Durchlass oder ein Ufer versagt: Es zeigt, wohin dieses Wasser liefe.",
+    "entered": "Von außen hereingekommen"
   }
 }

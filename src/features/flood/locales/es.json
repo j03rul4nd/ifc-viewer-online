@@ -313,5 +313,40 @@
       "university": "Universidad",
       "warehouse": "Almacén"
     }
+  },
+  "inflow": {
+    "title": "Agua de fuera",
+    "none": "Ninguna",
+    "channel": "Un cauce",
+    "point": "Un punto",
+    "needGrid": "Prepara la malla para ver por dónde puede entrar agua.",
+    "noCandidates": "Ningún cauce que conozca OpenStreetMap entra en esta zona. Elige un punto.",
+    "choose": "Elige un cauce…",
+    "gone": "desaparecido o soterrado",
+    "piped": "entubado",
+    "inside": "nace dentro de la zona",
+    "cls": {
+      "river": "Río",
+      "canal": "Canal",
+      "stream": "Arroyo",
+      "ditch": "Acequia",
+      "drain": "Desagüe"
+    },
+    "pick": "Elegir en la escena",
+    "repick": "Elegir otro",
+    "stopPicking": "Dejar de elegir",
+    "picking": "Haz clic donde entra el agua.",
+    "picked": "Entra en el punto elegido (anillo cian).",
+    "wave": "Crecida",
+    "presets": {
+      "stream": "Arroyo · {{q}} m³/s durante {{min}} min",
+      "riera": "Riera en crecida · {{q}} m³/s durante {{min}} min",
+      "river": "Río desbordado · {{q}} m³/s durante {{min}} min"
+    },
+    "peak": "Pico",
+    "duration": "Dura",
+    "facts": "Hasta {{q}} m³/s; entran {{v}} m³ en {{min}} min.",
+    "note": "Entra como un caudal donde está el anillo cian. No se simula el cauce aguas arriba de la zona ni cómo fallan un colector o una orilla: sirve para ver adónde iría esa agua.",
+    "entered": "Entrado de fuera"
   }
 }

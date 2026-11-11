@@ -24,6 +24,8 @@ export interface RunnerInit {
   grid: FloodGrid
   hyetograph: Hyetograph
   params?: Partial<SolverParams>
+  /** Discharge entering by grid.inflow, m³/s per rain interval. */
+  inflowM3s?: Float32Array
   backend?: BackendChoice
   powerPreference?: 'low-power' | 'high-performance'
   endS: number
@@ -85,7 +87,7 @@ export class FloodRunner {
    */
   init(r: RunnerInit): void {
     this.send({
-      type: 'init', grid: r.grid, hyetograph: r.hyetograph, params: r.params,
+      type: 'init', grid: r.grid, hyetograph: r.hyetograph, params: r.params, inflowM3s: r.inflowM3s,
       backend: r.backend ?? 'auto', powerPreference: r.powerPreference, endS: r.endS, snapshotEveryS: r.snapshotEveryS,
     }, gridTransferables(r.grid))
   }

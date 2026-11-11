@@ -313,5 +313,40 @@
       "university": "Università",
       "warehouse": "Magazzino"
     }
+  },
+  "inflow": {
+    "title": "Acqua dall'esterno",
+    "none": "Nessuna",
+    "channel": "Un corso d'acqua",
+    "point": "Un punto",
+    "needGrid": "Crea la griglia per vedere da dove può entrare l'acqua.",
+    "noCandidates": "Nessun corso d'acqua noto a OpenStreetMap entra in quest'area. Scegli un punto.",
+    "choose": "Scegli un corso d'acqua…",
+    "gone": "scomparso o tombinato",
+    "piped": "tombinato",
+    "inside": "nasce dentro l'area",
+    "cls": {
+      "river": "Fiume",
+      "canal": "Canale",
+      "stream": "Ruscello",
+      "ditch": "Fosso",
+      "drain": "Scolo"
+    },
+    "pick": "Scegli nella scena",
+    "repick": "Scegli di nuovo",
+    "stopPicking": "Smetti di scegliere",
+    "picking": "Fai clic dove entra l'acqua.",
+    "picked": "Entra nel punto scelto (anello ciano).",
+    "wave": "Onda di piena",
+    "presets": {
+      "stream": "Ruscello · {{q}} m³/s per {{min}} min",
+      "riera": "Torrente in piena · {{q}} m³/s per {{min}} min",
+      "river": "Fiume esondato · {{q}} m³/s per {{min}} min"
+    },
+    "peak": "Picco",
+    "duration": "Durata",
+    "facts": "Fino a {{q}} m³/s; entrano {{v}} m³ in {{min}} min.",
+    "note": "Entra come una portata dove c'è l'anello ciano. Non si simula il corso d'acqua a monte dell'area, né come cedono un tombino o un argine: serve a vedere dove andrebbe quell'acqua.",
+    "entered": "Entrata dall'esterno"
   }
 }

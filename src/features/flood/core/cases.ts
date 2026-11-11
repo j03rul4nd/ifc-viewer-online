@@ -4,7 +4,8 @@
 // them with the CPU. Each case builds its own grid, rain and parameters.
 
 import { createGrid, inclinedPlaneDemo, blockLayout, validateGrid, type FloodGrid } from './grid'
-import { constantStorm, type Hyetograph } from './hyetograph'
+import { constantStorm, intervalMs, type Hyetograph } from './hyetograph'
+import { inflowSeries } from './inflow'
 import type { SolverParams } from './solver-api'
 
 export interface FloodCase {
@@ -15,6 +16,8 @@ export interface FloodCase {
   params: Partial<SolverParams>
   /** Simulated duration to run, s. */
   durationS: number
+  /** Discharge entering by grid.inflow, m³/s per rain interval. */
+  inflowM3s?: Float32Array
 }
 
 const closed = { west: 'closed', east: 'closed', south: 'closed', north: 'closed' } as const
@@ -85,6 +88,25 @@ export function infiltrationBasin(n = 80): FloodCase {
       infiltration: { initialMmH: 40, finalMmH: 8, decayPerHour: 2 },
     },
     durationS: 70 * 60,
+  }
+}
+
+/**
+ * A stream entering a sloping street grid: a flood wave through six cells of
+ * the west edge, with a shorter shower on top — the two series end at
+ * different times, so the step clamp has to follow the longer.
+ */
+export function riverInflow(n = 80): FloodCase {
+  const grid = inclinedPlaneDemo({ nx: n, ny: n, dx: 2, slopeX: 0.01, slopeY: 0.002, roughnessAmplitude: 0.4, seed: 9, obstacles: blockLayout(n, n, 14, 5) })
+  grid.inflow = new Float32Array(n * n)
+  const mid = Math.floor(n / 2)
+  for (let j = mid - 3; j < mid + 3; j++) if (!grid.blocked[j * n]) grid.inflow[j * n] = 1
+  const hyetograph = constantStorm(20, 20, 5)
+  return {
+    id: 'river-inflow', title: 'A stream entering a city grid', grid: validateGrid(grid), hyetograph,
+    inflowM3s: inflowSeries({ peakM3s: 8, durationMin: 30, peakAt: 0.35 }, intervalMs(hyetograph)),
+    params: { boundary: { west: 'closed', east: 'free', south: 'closed', north: 'closed' } },
+    durationS: 50 * 60,
   }
 }
 

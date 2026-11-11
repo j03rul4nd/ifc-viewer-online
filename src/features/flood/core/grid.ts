@@ -54,6 +54,12 @@ export interface FloodGrid {
    * 1 everywhere. Scales the Horton curve, never replaces it.
    */
   infiltration?: Float32Array
+  /**
+   * Where water from outside enters (a river, a stream, an overflowing
+   * culvert): each cell's share of the inflow discharge. Normalised to sum 1
+   * over open cells by validateGrid. Absent = no inflow (core/inflow.ts).
+   */
+  inflow?: Float32Array
   frame?: GridFrame
 }
 
@@ -90,14 +96,24 @@ export function validateGrid(g: FloodGrid): FloodGrid {
   }
   if (g.h0 && g.h0.length !== n) throw new Error(`flood grid: h0 has ${g.h0.length} cells, expected ${n}`)
   if (g.infiltration && g.infiltration.length !== n) throw new Error(`flood grid: infiltration has ${g.infiltration.length} cells, expected ${n}`)
+  if (g.inflow && g.inflow.length !== n) throw new Error(`flood grid: inflow has ${g.inflow.length} cells, expected ${n}`)
   for (let c = 0; c < n; c++) {
     if (!Number.isFinite(g.z[c])) throw new Error(`flood grid: non-finite elevation at cell ${c}`)
     if (!(g.manning[c] >= 0)) throw new Error(`flood grid: bad Manning's n at cell ${c}`)
     if (g.infiltration && !(g.infiltration[c] >= 0)) throw new Error(`flood grid: bad infiltration factor at cell ${c}`)
+    if (g.inflow && !(g.inflow[c] >= 0)) throw new Error(`flood grid: bad inflow weight at cell ${c}`)
     if (g.blocked[c]) {
       g.rainFactor[c] = 0
       if (g.h0) g.h0[c] = 0
+      if (g.inflow) g.inflow[c] = 0
     }
+  }
+  // The inflow lands somewhere, all of it: its weights sum to 1 over open cells.
+  if (g.inflow) {
+    let s = 0
+    for (let c = 0; c < n; c++) s += g.inflow[c]
+    if (!(s > 0)) throw new Error('flood grid: the inflow has no open cell to enter by')
+    for (let c = 0; c < n; c++) g.inflow[c] /= s
   }
   return g
 }

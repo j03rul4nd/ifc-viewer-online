@@ -22,9 +22,11 @@ import { parseAppUrlParams } from '../../../lib/url-params'
 import { shareOrDownload } from '../../../lib/share-file'
 import type { ViewerAPI } from '../../../lib/viewer'
 import {
-  useFloodStore, MANNING, INFILTRATION,
-  type InfiltrationPreset, type ManningPreset, type StormPreset, type ViewMode,
+  useFloodStore, MANNING, INFILTRATION, INFLOW_PRESETS,
+  type InfiltrationPreset, type InflowPreset, type ManningPreset, type StormPreset, type ViewMode,
 } from '../store'
+import { hydrographVolume } from '../core/inflow'
+import type { InflowCandidate, InflowSource } from '../raster/inflow-source'
 import { ensureFloodI18n, FLOOD_NS } from '../i18n'
 import { detectFloodSupport, type FloodSupport } from '../gpu/create'
 import { STORM_PRESETS, stormFacts, stormHyetograph } from '../presets'
@@ -81,6 +83,19 @@ function videoMime(): { mime: string; ext: 'mp4' | 'webm' } | null {
 
 const fmtDepthScale = (v: number): string => (v < 1 ? `${Math.round(v * 100)} cm` : `${v.toFixed(1)} m`)
 
+/** The inflow the settings describe, or null (none chosen, or nowhere to enter yet). */
+function inflowSource(st: { inflowMode: string; inflowChannel: string | null; inflowPoint: { x: number; z: number } | null }): InflowSource | null {
+  if (st.inflowMode === 'channel' && st.inflowChannel) return { kind: 'channel', id: st.inflowChannel }
+  if (st.inflowMode === 'point' && st.inflowPoint) return { kind: 'point', ...st.inflowPoint }
+  return null
+}
+
+/** Simulated length of the event: the rain or the flood wave, whichever ends later, then the drain time. */
+function eventS(st: { hyetograph: Parameters<typeof rainDurationS>[0]; drainMin: number; inflowMode: string; inflowChannel: string | null; inflowPoint: { x: number; z: number } | null; inflowHydrograph: { durationMin: number } }): number {
+  const wave = inflowSource(st) ? st.inflowHydrograph.durationMin * 60 : 0
+  return Math.max(rainDurationS(st.hyetograph), wave) + st.drainMin * 60
+}
+
 /** The locale key of an OSM label ("Sports centre" → osm.kind.sports_centre). */
 const kindKey = (label: string): string => `osm.kind.${label.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]+/g, '_')}`
 
@@ -104,6 +119,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
   const [support, setSupport] = useState<FloodSupport | null>(null)
   const [sys, setSys] = useState<FloodSystemAPI | null>(null)
   const [editRain, setEditRain] = useState(false)
+  /** The watercourses that enter the prepared area (system.inflowCandidates). */
+  const [candidates, setCandidates] = useState<InflowCandidate[]>([])
   const [field, setField] = useState<ResultField>('hMax')
   const [exportNote, setExportNote] = useState<string | null>(null)
   const [recording, setRecording] = useState<number | null>(null)
@@ -191,6 +208,11 @@ export default function FloodPanel({ viewerApiRef }: Props) {
       })
       sy.setView({ mode: st.viewMode, threshold: st.threshold, showGround: st.showGround, particles: st.particles })
       useFloodStore.getState().set({ status: 'ready', stage: null, report, planeY: st.planeAuto ? report.planeY : st.planeY })
+      const cands = sy.inflowCandidates()
+      setCandidates(cands)
+      // A watercourse chosen before that no longer enters: the widest that does.
+      const now = useFloodStore.getState()
+      if (!cands.some((c) => c.id === now.inflowChannel)) now.set({ inflowChannel: cands[0]?.id ?? null })
     } catch (err) {
       useFloodStore.getState().set({ status: 'error', stage: null, error: (err as Error)?.message ?? String(err) })
     }
@@ -216,7 +238,8 @@ export default function FloodPanel({ viewerApiRef }: Props) {
     st.set({ status: 'running', stats: null, perf: null, error: null, probe: null, affected: null })
     sy.start({
       hyetograph: st.hyetograph,
-      durationS: rainDurationS(st.hyetograph) + st.drainMin * 60,
+      inflow: inflowSource(st) ? { source: inflowSource(st)!, hydrograph: st.inflowHydrograph } : null,
+      durationS: eventS(st),
       params: {
         boundary: { west: edge, east: edge, south: edge, north: edge },
         wetThreshold: st.threshold,
@@ -271,6 +294,18 @@ export default function FloodPanel({ viewerApiRef }: Props) {
       await run()
     })()
   }, [modelCount, prepare, run])
+
+  // Where water from outside enters, marked on the scene.
+  useEffect(() => {
+    sys?.setInflowSource(inflowSource(s))
+  }, [sys, s.inflowMode, s.inflowChannel, s.inflowPoint, s.report]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Picking the point it enters by: one click on the scene.
+  useEffect(() => {
+    if (!sys) return
+    sys.setPicking(s.picking, (p) => { if (p) useFloodStore.getState().set({ inflowPoint: p, picking: false }) })
+    return () => sys.setPicking(false)
+  }, [sys, s.picking])
 
   const clear = useCallback(() => {
     sysRef.current?.clear()
@@ -359,10 +394,13 @@ export default function FloodPanel({ viewerApiRef }: Props) {
   const busy = s.status === 'preparing'
   const running = s.status === 'running'
   const rep = s.report
-  const totalS = rainDurationS(s.hyetograph) + s.drainMin * 60
+  const totalS = eventS(s)
   const progress = s.stats ? Math.min(1, s.stats.t / totalS) : null
   const unsupported = support !== null && !support.supported
   const runExists = s.status === 'running' || s.status === 'paused' || s.status === 'finished'
+  const prepared = s.status === 'ready' || runExists
+  const candidateLabel = (c: InflowCandidate): string =>
+    `${c.name ?? t(`inflow.cls.${c.cls}`)}${c.historic ? ` · ${t('inflow.gone')}` : c.culvert ? ` · ${t('inflow.piped')}` : ''}${c.edge ? '' : ` · ${t('inflow.inside')}`}`
   const finished = s.status === 'finished'
   const canVideo = videoMime() !== null
 
@@ -507,6 +545,87 @@ export default function FloodPanel({ viewerApiRef }: Props) {
               <LookSlider label={t('rain.after')} value={s.drainMin} min={0} max={180} step={5} format={(v) => `${v} min`} onChange={(v) => s.set({ drainMin: v })} />
             </section>
 
+            {/* ── Water from outside ───────────────────────────────────── */}
+            <section className="flex flex-col gap-1.5">
+              <div className={caption}>{t('inflow.title')}</div>
+              <Segmented
+                label={t('inflow.title')}
+                value={s.inflowMode}
+                onChange={(v) => {
+                  s.set({ inflowMode: v })
+                  if (v !== 'point' && s.picking) s.set({ picking: false })
+                }}
+                options={[
+                  { id: 'none', label: t('inflow.none') },
+                  { id: 'channel', label: t('inflow.channel') },
+                  { id: 'point', label: t('inflow.point') },
+                ]}
+              />
+              {s.inflowMode === 'channel' && (
+                !prepared
+                  ? <span className="text-[10px] text-[var(--text-faint)]">{t('inflow.needGrid')}</span>
+                  : candidates.length === 0
+                    ? <span className="text-[10px] text-[var(--text-faint)]">{t('inflow.noCandidates')}</span>
+                    : (
+                      <select
+                        value={s.inflowChannel ?? ''}
+                        onChange={(e) => s.set({ inflowChannel: e.target.value || null })}
+                        className={`${selectCls} h-[28px] text-[11px]`}
+                        aria-label={t('inflow.channel')}
+                      >
+                        <option value="">{t('inflow.choose')}</option>
+                        {candidates.map((c) => <option key={c.id} value={c.id}>{candidateLabel(c)}</option>)}
+                      </select>
+                    )
+              )}
+              {s.inflowMode === 'point' && (
+                !prepared
+                  ? <span className="text-[10px] text-[var(--text-faint)]">{t('inflow.needGrid')}</span>
+                  : (
+                    <div className="flex items-center gap-2">
+                      <Button onClick={() => s.set({ picking: !s.picking })}>
+                        {s.picking ? t('inflow.stopPicking') : s.inflowPoint ? t('inflow.repick') : t('inflow.pick')}
+                      </Button>
+                      <span className="text-[10px] text-[var(--text-faint)]">
+                        {s.picking ? t('inflow.picking') : s.inflowPoint ? t('inflow.picked') : ''}
+                      </span>
+                    </div>
+                  )
+              )}
+              {s.inflowMode !== 'none' && (
+                <>
+                  <select
+                    value={s.inflowPreset ?? 'custom'}
+                    onChange={(e) => {
+                      const p = e.target.value as InflowPreset | 'custom'
+                      if (p !== 'custom') s.set({ inflowPreset: p, inflowHydrograph: INFLOW_PRESETS[p] })
+                    }}
+                    className={`${selectCls} h-[28px] text-[11px]`}
+                    aria-label={t('inflow.wave')}
+                  >
+                    {(Object.keys(INFLOW_PRESETS) as InflowPreset[]).map((p) => (
+                      <option key={p} value={p}>{t(`inflow.presets.${p}`, { q: INFLOW_PRESETS[p].peakM3s, min: INFLOW_PRESETS[p].durationMin })}</option>
+                    ))}
+                    {s.inflowPreset === null && <option value="custom">{t('rain.custom')}</option>}
+                  </select>
+                  <LookSlider
+                    label={t('inflow.peak')} value={s.inflowHydrograph.peakM3s} min={1} max={300} step={1}
+                    format={(v) => `${v} m³/s`}
+                    onChange={(v) => s.set({ inflowHydrograph: { ...s.inflowHydrograph, peakM3s: v }, inflowPreset: null })}
+                  />
+                  <LookSlider
+                    label={t('inflow.duration')} value={s.inflowHydrograph.durationMin} min={10} max={360} step={5}
+                    format={(v) => `${v} min`}
+                    onChange={(v) => s.set({ inflowHydrograph: { ...s.inflowHydrograph, durationMin: v }, inflowPreset: null })}
+                  />
+                  <div className="text-[10px] text-[var(--text-faint)]">
+                    {t('inflow.facts', { q: s.inflowHydrograph.peakM3s, v: fmt(hydrographVolume(s.inflowHydrograph), 0), min: s.inflowHydrograph.durationMin })}
+                  </div>
+                  <Notice tone="muted">{t('inflow.note')}</Notice>
+                </>
+              )}
+            </section>
+
             {/* ── Surface ──────────────────────────────────────────────── */}
             <section className="flex flex-col gap-1.5">
               <div className={caption}>{t('surface.section')}</div>
@@ -610,6 +729,7 @@ export default function FloodPanel({ viewerApiRef }: Props) {
                 <StatRow label={t('live.time')} value={`${fmt((s.stats?.t ?? 0) / 60, 1)} / ${fmt(totalS / 60, 0)} min`} />
                 <StatRow label={t('live.maxDepth')} value={`${fmt(s.stats?.hMax, 2)} m`} />
                 <StatRow label={t('live.volume')} value={`${fmt(s.stats?.volume, 0)} m³`} />
+                {s.stats && s.stats.inflowVolume > 0 && <StatRow label={t('inflow.entered')} value={`${fmt(s.stats.inflowVolume, 0)} m³`} />}
                 {s.stats && s.stats.infiltratedVolume > 0 && <StatRow label={t('live.infiltrated')} value={`${fmt(s.stats.infiltratedVolume, 0)} m³`} />}
                 <StatRow label={t('live.outflow')} value={`${fmt(s.stats?.outflowVolume, 0)} m³`} />
                 <StatRow label={t('live.mass')} value={s.stats ? s.stats.massError.toExponential(1) : '—'} tone={s.stats && Math.abs(s.stats.massError) > 1e-3 ? 'warn' : 'normal'} />

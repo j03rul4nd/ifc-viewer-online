@@ -34,6 +34,8 @@ export type ToWorker =
       grid: FloodGrid
       hyetograph: Hyetograph
       params?: Partial<SolverParams>
+      /** Discharge entering by grid.inflow, m³/s per rain interval. */
+      inflowM3s?: Float32Array
       backend: BackendChoice
       powerPreference?: 'low-power' | 'high-performance'
       /** Simulated time at which the run ends, s. */
@@ -68,5 +70,6 @@ export function gridTransferables(g: FloodGrid): ArrayBuffer[] {
   const out = [g.z.buffer, g.blocked.buffer, g.rainFactor.buffer, g.manning.buffer]
   if (g.h0) out.push(g.h0.buffer)
   if (g.infiltration) out.push(g.infiltration.buffer)
+  if (g.inflow) out.push(g.inflow.buffer)
   return out.filter((b): b is ArrayBuffer => b instanceof ArrayBuffer)
 }

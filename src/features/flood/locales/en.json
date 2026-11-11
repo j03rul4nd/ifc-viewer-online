@@ -313,5 +313,40 @@
       "university": "University",
       "warehouse": "Warehouse"
     }
+  },
+  "inflow": {
+    "title": "Water from outside",
+    "none": "None",
+    "channel": "A watercourse",
+    "point": "A point",
+    "needGrid": "Build the grid to see where water can come in.",
+    "noCandidates": "No watercourse that OpenStreetMap knows enters this area. Pick a point instead.",
+    "choose": "Choose a watercourse…",
+    "gone": "gone or buried",
+    "piped": "piped",
+    "inside": "rises inside the area",
+    "cls": {
+      "river": "River",
+      "canal": "Canal",
+      "stream": "Stream",
+      "ditch": "Ditch",
+      "drain": "Drain"
+    },
+    "pick": "Pick it on the scene",
+    "repick": "Pick again",
+    "stopPicking": "Stop picking",
+    "picking": "Click where the water comes in.",
+    "picked": "It comes in at the point picked (cyan ring).",
+    "wave": "Flood wave",
+    "presets": {
+      "stream": "Stream · {{q}} m³/s for {{min}} min",
+      "riera": "Riera in spate · {{q}} m³/s for {{min}} min",
+      "river": "River overflowing · {{q}} m³/s for {{min}} min"
+    },
+    "peak": "Peak",
+    "duration": "Lasting",
+    "facts": "Up to {{q}} m³/s; {{v}} m³ come in over {{min}} min.",
+    "note": "It comes in as a discharge where the cyan ring is. The watercourse upstream of the area is not simulated, nor how a culvert or a bank gives way: this shows where that water would go.",
+    "entered": "Came in from outside"
   }
 }

@@ -76,6 +76,31 @@ export function createReachedOutlines(items: Array<{ ring: PlanPoint[]; depth: n
   return unpickable(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, depthWrite: false, transparent: true })), 'flood-reached', 8)
 }
 
+/**
+ * Where water from outside enters: a ring as wide as the source on the ground
+ * and an arrow coming down into it, cyan — the colour of the water layer's
+ * shallowest blue, a shade apart from the old courses' violet.
+ */
+export function createInflowMarker(center: PlanPoint, radiusM: number, groundY: (x: number, z: number) => number): THREE.LineSegments {
+  const y0 = groundY(center.x, center.z) + 0.3
+  const pos: number[] = []
+  const seg = 48
+  const r = Math.max(1, radiusM)
+  for (let k = 0; k < seg; k++) {
+    const a0 = (k / seg) * Math.PI * 2, a1 = ((k + 1) / seg) * Math.PI * 2
+    pos.push(center.x + r * Math.cos(a0), y0, center.z + r * Math.sin(a0), center.x + r * Math.cos(a1), y0, center.z + r * Math.sin(a1))
+  }
+  const top = y0 + Math.max(6, r * 1.5)
+  const head = Math.max(1.2, r * 0.35)
+  pos.push(center.x, top, center.z, center.x, y0, center.z)
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    pos.push(center.x, y0, center.z, center.x + dx * head * 0.6, y0 + head, center.z + dz * head * 0.6)
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  return unpickable(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.95, depthWrite: false })), 'flood-inflow', 9)
+}
+
 export function disposeLines(o: THREE.LineSegments | null): void {
   if (!o) return
   o.removeFromParent()

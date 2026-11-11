@@ -313,5 +313,40 @@
       "university": "Universidade",
       "warehouse": "Armazém"
     }
+  },
+  "inflow": {
+    "title": "Água de fora",
+    "none": "Nenhuma",
+    "channel": "Um curso de água",
+    "point": "Um ponto",
+    "needGrid": "Prepare a malha para ver por onde pode entrar água.",
+    "noCandidates": "Nenhum curso de água que o OpenStreetMap conheça entra nesta zona. Escolha um ponto.",
+    "choose": "Escolha um curso de água…",
+    "gone": "desaparecido ou enterrado",
+    "piped": "entubado",
+    "inside": "nasce dentro da zona",
+    "cls": {
+      "river": "Rio",
+      "canal": "Canal",
+      "stream": "Ribeiro",
+      "ditch": "Vala",
+      "drain": "Dreno"
+    },
+    "pick": "Escolher na cena",
+    "repick": "Escolher outro",
+    "stopPicking": "Parar de escolher",
+    "picking": "Clique onde a água entra.",
+    "picked": "Entra no ponto escolhido (anel ciano).",
+    "wave": "Cheia",
+    "presets": {
+      "stream": "Ribeiro · {{q}} m³/s durante {{min}} min",
+      "riera": "Ribeira em cheia · {{q}} m³/s durante {{min}} min",
+      "river": "Rio a transbordar · {{q}} m³/s durante {{min}} min"
+    },
+    "peak": "Pico",
+    "duration": "Dura",
+    "facts": "Até {{q}} m³/s; entram {{v}} m³ em {{min}} min.",
+    "note": "Entra como um caudal onde está o anel ciano. Não se simula o curso de água a montante da zona, nem como cedem uma passagem hidráulica ou uma margem: serve para ver para onde iria essa água.",
+    "entered": "Entrou de fora"
   }
 }
