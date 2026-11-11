@@ -26,6 +26,8 @@
   --success: #3FA866;
   --warning: #E9A23B;
   --danger: #E0523F;
+  --info: #5E9ED6;
+  --scrim: #000;
   --focus-ring: #55CAC3;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   --overlay: rgba(0, 0, 0, 0.6);
@@ -50,6 +52,8 @@
   --success: #206B38;
   --warning: #915C08;
   --danger: #AF2B25;
+  --info: #2F6FB0;
+  --scrim: rgba(28, 27, 22, 0.45); /* consumers dim it further (opacity / color-mix) */
   --focus-ring: #00696A;
   --shadow: 0 1px 2px rgba(28, 27, 22, 0.08), 0 4px 12px rgba(28, 27, 22, 0.06);
   --overlay: rgba(28, 27, 22, 0.20);
@@ -142,7 +146,7 @@
 .sheet-handle {
   width: 36px;
   height: 5px;
-  background: rgba(255,255,255,0.22);
+  background: color-mix(in srgb, var(--text-primary) 22%, transparent);
   border-radius: 3px;
   flex-shrink: 0;
   transition: width 0.18s ease, background 0.18s ease;
@@ -150,7 +154,7 @@
 /* Slightly grow + brighten while the sheet is being dragged (native feel). */
 .sheet-handle[data-dragging='true'] {
   width: 52px;
-  background: rgba(255,255,255,0.4);
+  background: color-mix(in srgb, var(--text-primary) 40%, transparent);
 }
 
 * {
