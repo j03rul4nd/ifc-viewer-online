@@ -91,7 +91,7 @@ export function Modal({
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose() }}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 bg-black/55 backdrop-blur-sm data-[state=open]:animate-[fadeIn_140ms_ease]"
+          className="fixed inset-0 bg-black/55 [[data-theme=light]_&]:bg-[var(--overlay)] backdrop-blur-sm data-[state=open]:animate-[fadeIn_140ms_ease]"
           style={{ zIndex: z }}
         />
         <Dialog.Content
@@ -104,8 +104,8 @@ export function Modal({
           className={[
             'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 outline-none',
             'flex flex-col overflow-hidden rounded-2xl',
-            'bg-[rgba(14,14,18,0.98)] border border-[var(--border-strong)]',
-            'shadow-[0_24px_64px_rgba(0,0,0,0.6)]',
+            'bg-[rgba(14,14,18,0.98)] [[data-theme=light]_&]:bg-[var(--bg-surface)] border border-[var(--border-strong)]',
+            'shadow-[0_24px_64px_rgba(0,0,0,0.6)] [[data-theme=light]_&]:shadow-[var(--shadow)]',
             // The card never exceeds the viewport; the BODY scrolls, so the
             // header and the actions stay reachable however long the content is.
             size === 'full' ? '' : 'max-h-[calc(100dvh-24px)]',

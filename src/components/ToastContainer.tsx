@@ -27,10 +27,10 @@ const SEVERITY_STYLE: Record<Toast['severity'], {
   text: string
   icon: string
 }> = {
-  error:   { bar: 'bg-red-500',    bg: 'bg-red-500/10 border-red-500/30',    text: 'text-red-300',    icon: '✕' },
-  warning: { bar: 'bg-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/30', text: 'text-yellow-300', icon: '⚠' },
-  success: { bar: 'bg-emerald-500',bg: 'bg-emerald-500/10 border-emerald-500/30',text: 'text-emerald-300',icon: '✓' },
-  info:    { bar: 'bg-blue-400',   bg: 'bg-blue-400/10 border-blue-400/30',   text: 'text-blue-300',   icon: 'ℹ' },
+  error:   { bar: 'bg-red-500 [[data-theme=light]_&]:bg-[var(--danger)]',    bg: 'bg-red-500/10 border-red-500/30 [[data-theme=light]_&]:bg-[color-mix(in_srgb,var(--danger)_10%,var(--bg-surface))] [[data-theme=light]_&]:border-[color-mix(in_srgb,var(--danger)_30%,transparent)]',    text: 'text-red-300 [[data-theme=light]_&]:text-[var(--danger)]',    icon: '✕' },
+  warning: { bar: 'bg-yellow-400 [[data-theme=light]_&]:bg-[var(--warning)]', bg: 'bg-yellow-400/10 border-yellow-400/30 [[data-theme=light]_&]:bg-[color-mix(in_srgb,var(--warning)_10%,var(--bg-surface))] [[data-theme=light]_&]:border-[color-mix(in_srgb,var(--warning)_30%,transparent)]', text: 'text-yellow-300 [[data-theme=light]_&]:text-[var(--warning)]', icon: '⚠' },
+  success: { bar: 'bg-emerald-500 [[data-theme=light]_&]:bg-[var(--success)]',bg: 'bg-emerald-500/10 border-emerald-500/30 [[data-theme=light]_&]:bg-[color-mix(in_srgb,var(--success)_10%,var(--bg-surface))] [[data-theme=light]_&]:border-[color-mix(in_srgb,var(--success)_30%,transparent)]',text: 'text-emerald-300 [[data-theme=light]_&]:text-[var(--success)]',icon: '✓' },
+  info:    { bar: 'bg-blue-400 [[data-theme=light]_&]:bg-[var(--accent)]',   bg: 'bg-blue-400/10 border-blue-400/30 [[data-theme=light]_&]:bg-[color-mix(in_srgb,var(--accent)_10%,var(--bg-surface))] [[data-theme=light]_&]:border-[color-mix(in_srgb,var(--accent)_30%,transparent)]',   text: 'text-blue-300 [[data-theme=light]_&]:text-[var(--accent)]',   icon: 'ℹ' },
 }
 
 // The countdown bar is a CSS animation, not a framer one: it has to freeze
@@ -88,7 +88,7 @@ function ToastItem({ t, closeLabel, onClose }: { t: Toast; closeLabel: string; o
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false)
       }}
-      className={`relative overflow-hidden rounded-xl border -webkit-backdrop-filter backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)] pointer-events-auto ${t.actionLabel ? '' : 'cursor-pointer'} ${s.bg}`}
+      className={`relative overflow-hidden rounded-xl border -webkit-backdrop-filter backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)] [[data-theme=light]_&]:shadow-[var(--shadow)] pointer-events-auto ${t.actionLabel ? '' : 'cursor-pointer'} ${s.bg}`}
       style={{ WebkitBackdropFilter: 'blur(20px)' }}
     >
       {/* Severity accent bar */}
@@ -108,7 +108,7 @@ function ToastItem({ t, closeLabel, onClose }: { t: Toast; closeLabel: string; o
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); runToastAction(t.id) }}
-              className="block mt-1 -ml-1.5 min-h-[28px] px-1.5 rounded-md text-left text-[11.5px] font-semibold underline underline-offset-2 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-current"
+              className="block mt-1 -ml-1.5 min-h-[28px] px-1.5 rounded-md text-left text-[11.5px] font-semibold underline underline-offset-2 hover:bg-white/10 [[data-theme=light]_&]:hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-current"
             >
               {t.actionLabel}
             </button>
@@ -121,7 +121,7 @@ function ToastItem({ t, closeLabel, onClose }: { t: Toast; closeLabel: string; o
           aria-label={closeLabel}
           title={closeLabel}
           onClick={(e) => { e.stopPropagation(); onClose() }}
-          className={`-mr-2 -mt-1.5 flex-none w-7 h-7 grid place-items-center rounded-md text-[11px] opacity-75 hover:opacity-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-current ${s.text}`}
+          className={`-mr-2 -mt-1.5 flex-none w-7 h-7 grid place-items-center rounded-md text-[11px] opacity-75 hover:opacity-100 hover:bg-white/10 [[data-theme=light]_&]:hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-current ${s.text}`}
         >
           <span aria-hidden="true">✕</span>
         </button>
