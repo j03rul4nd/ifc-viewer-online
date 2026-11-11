@@ -68,10 +68,10 @@ describe('reception sample', () => {
   it('proposes reasons from the checks and suggests the verdict', () => {
     const unreadable = SAMPLE_DELIVERIES.find((d) => d.score === null)!
     expect(proposedReasons(mdt, unreadable)).toEqual([REASONS.unreadable])
-    const ins = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'ins').at(-1)!
+    const ins = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'ins').slice(-1)[0]!
     expect(proposedReasons(mdt, ins)).toEqual([REASONS.score, RULES.systems, RULES.proxy])
     expect(suggestedVerdict(mdt, ins)).toBe('returned')
-    const arq = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'arq').at(-1)!
+    const arq = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'arq').slice(-1)[0]!
     expect(suggestedVerdict(mdt, arq)).toBe('accepted')
   })
 
@@ -107,7 +107,7 @@ describe('reception register', () => {
   it('appends a decision on top of the last hash', async () => {
     const chain = await buildChain(await draftsFrom(SAMPLE_SUPPLIERS.slice(0, 1), []))
     const next = await appendEntry(chain, { at: '2026-11-11T10:00:00Z', event: 'accepted', supplierId: 'arq', subject: 'x.ifc', by: 'Laura Méndez', detail: '' })
-    expect(next.at(-1)!.prevHash).toBe(chain.at(-1)!.hash)
+    expect(next.slice(-1)[0]!.prevHash).toBe(chain.slice(-1)[0]!.hash)
     expect(await verifyChain(next)).toBeNull()
   })
 
@@ -152,7 +152,7 @@ describe('reception v2', () => {
   })
 
   it('finds every version of a delivery for the before/after', () => {
-    const last = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'pci').at(-1)!
+    const last = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'pci').slice(-1)[0]!
     const v = versionsOf(mdt, last, SAMPLE_DELIVERIES)
     expect(v.map((x) => x.verdict)).toEqual(['returned', 'returned', 'pending'])
   })

@@ -90,7 +90,7 @@ export default function OverviewTab({ project, suppliers, deliveries, rx, lang, 
         <Panel className="p-4 sm:p-5">
           <SectionLabel>{rx('Accepted first time, over the project')}</SectionLabel>
           <div className="flex items-end gap-4">
-            <span className="text-[26px] font-semibold tabular-nums leading-tight">{weekly.at(-1) ?? 0}%</span>
+            <span className="text-[26px] font-semibold tabular-nums leading-tight">{weekly.slice(-1)[0] ?? 0}%</span>
             <Sparkline values={weekly} width={220} height={40} />
           </div>
           <p className="text-[12px] text-[var(--text-dim)] mt-2">{rx('Suppliers learn the rules: the share of deliveries accepted without a return goes up week by week.')}</p>
@@ -113,7 +113,7 @@ export default function OverviewTab({ project, suppliers, deliveries, rx, lang, 
                 <tr key={r.s.id} className="hover:bg-[var(--surface-2)]">
                   <td className="px-4 sm:px-5 py-2"><button onClick={() => onSupplier(r.s.id)} className="text-left hover:underline">{r.s.name}</button><span className="block text-[11.5px] text-[var(--text-faint)]">{rx(r.s.discipline)}</span></td>
                   {r.ms.map((m, i) => <td key={i} className="py-2 pr-4"><Light state={m} rx={rx} /></td>)}
-                  <td className="py-2 pr-4 sm:pr-5 text-right tabular-nums">{r.st.trend.length ? <span style={{ color: scoreColor(r.st.trend.at(-1)!) }}>{r.st.trend.at(-1)}</span> : '—'}</td>
+                  <td className="py-2 pr-4 sm:pr-5 text-right tabular-nums">{r.st.trend.length ? <span style={{ color: scoreColor(r.st.trend.slice(-1)[0]!) }}>{r.st.trend.slice(-1)[0]}</span> : '—'}</td>
                 </tr>
               ))}
             </tbody>

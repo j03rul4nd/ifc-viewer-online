@@ -23,9 +23,9 @@ export function buildReport(project: RxProject, suppliers: RxSupplier[], deliver
   lines.push('')
   lines.push(rx('By supplier'))
   for (const sup of suppliers) {
-    const mine = week.filter((d) => d.supplierId === sup.id).at(-1)
+    const mine = week.filter((d) => d.supplierId === sup.id).slice(-1)[0]
     if (!mine) continue
-    const prev = deliveries.filter((d) => d.supplierId === sup.id && d.receivedAt < mine.receivedAt).at(-1)
+    const prev = deliveries.filter((d) => d.supplierId === sup.id && d.receivedAt < mine.receivedAt).slice(-1)[0]
     const delta = mine.score !== null && prev?.score != null ? ` (${mine.score - prev.score >= 0 ? '+' : ''}${mine.score - prev.score})` : ''
     const n = namingOf(project, mine)
     const fails = mine.failures.map((f) => rx(f.rule)).join('; ')
@@ -33,7 +33,7 @@ export function buildReport(project: RxProject, suppliers: RxSupplier[], deliver
   }
   lines.push('')
   lines.push(rx('Trend'))
-  const improving = suppliers.filter((x) => { const t = supplierStats(project, x, deliveries).trend; return t.length > 1 && t.at(-1)! > t[0] })
+  const improving = suppliers.filter((x) => { const t = supplierStats(project, x, deliveries).trend; return t.length > 1 && t.slice(-1)[0]! > t[0] })
   lines.push('- ' + rx('Improving since the start: {{list}}', { list: improving.map((x) => x.originator).join(', ') || '—' }))
   return lines.join('\n')
 }

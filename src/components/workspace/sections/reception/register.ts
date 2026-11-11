@@ -38,7 +38,7 @@ export function canonicalLine(e: Omit<RegisterEntry, 'hash'>): string {
 }
 
 export async function appendEntry(chain: RegisterEntry[], draft: DraftEntry): Promise<RegisterEntry[]> {
-  const prev = chain.at(-1)
+  const prev = chain.slice(-1)[0]
   const base = { ...draft, fileHash: draft.fileHash ?? null, seq: (prev?.seq ?? 0) + 1, prevHash: prev?.hash ?? GENESIS }
   return [...chain, { ...base, hash: await sha256Hex(canonicalLine(base)) }]
 }
