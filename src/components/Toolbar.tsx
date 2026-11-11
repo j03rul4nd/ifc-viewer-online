@@ -27,7 +27,8 @@ import { useFloodStore } from '../features/flood/store'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled, openFeatureRequest } from '../stores/cloudAccountStore'
-import { MessageSquarePlus } from 'lucide-react'
+import { MessageSquarePlus, Moon, Sun, Monitor } from 'lucide-react'
+import { useTheme } from '../theme'
 import { trackProEntryClick, trackExportClicked } from '../lib/analytics'
 import { useSceneContent } from '../hooks/useSceneContent'
 
@@ -101,7 +102,7 @@ const Btn = ({
   const variants = {
     ghost:     'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:opacity-80 disabled:opacity-35 disabled:cursor-not-allowed',
     secondary: 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 disabled:opacity-35 disabled:cursor-not-allowed',
-    primary:   'bg-[var(--accent)] text-white hover:brightness-110 active:brightness-95 disabled:opacity-35 disabled:cursor-not-allowed',
+    primary:   'bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110 active:brightness-95 disabled:opacity-35 disabled:cursor-not-allowed',
   }
   return (
     <button onClick={onClick} disabled={disabled} title={title} className={`${base} ${variants[variant]}`}>
@@ -536,9 +537,9 @@ export default function Toolbar({
     <span
       className="px-1.5 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums shrink-0"
       style={{
-        background: errorCount > 0 ? 'var(--danger)22' : '#E9A23B22',
-        color:      errorCount > 0 ? 'var(--danger)'   : '#E9A23B',
-        border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#E9A23B33'}`,
+        background: errorCount > 0 ? 'color-mix(in srgb, var(--danger) 13%, transparent)' : 'color-mix(in srgb, var(--warning) 13%, transparent)',
+        color:      errorCount > 0 ? 'var(--danger)'   : 'var(--warning)',
+        border:     `1px solid ${errorCount > 0 ? 'color-mix(in srgb, var(--danger) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)'}`,
       }}
     >
       {errorCount > 0 ? `${errorCount}E` : issueCount}
@@ -888,7 +889,7 @@ export default function Toolbar({
             <span className="relative inline-flex">
               {DownloadSVG}
               {diffs.length > 0 && (
-                <span className="absolute -top-[5px] -right-[7px] min-w-[13px] h-[13px] px-[3px] text-[8px] font-mono rounded-full bg-[var(--accent)] text-white leading-[13px] text-center tabular-nums">
+                <span className="absolute -top-[5px] -right-[7px] min-w-[13px] h-[13px] px-[3px] text-[8px] font-mono rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] leading-[13px] text-center tabular-nums">
                   {diffs.length}
                 </span>
               )}
@@ -949,6 +950,14 @@ export default function Toolbar({
           </button>
         )}
         <button
+          onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : themeMode === 'light' ? 'system' : 'dark')}
+          title={t('theme.toggle', { mode: t(`theme.${themeMode}`) })}
+          aria-label={t('theme.toggle', { mode: t(`theme.${themeMode}`) })}
+          className="flex items-center justify-center h-[28px] w-[28px] rounded-[5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
+        >
+          {themeMode === 'light' ? <Sun aria-hidden size={14} /> : themeMode === 'system' ? <Monitor aria-hidden size={14} /> : <Moon aria-hidden size={14} />}
+        </button>
+        <button
           onClick={onOpenHelp}
           title={tCommon('shortcuts.title')}
           aria-label={tCommon('shortcuts.title')}
@@ -1002,10 +1011,10 @@ export default function Toolbar({
         className="md:hidden order-first pointer-events-auto mobile-pill-glass flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-164px)] active:scale-[0.98] transition-transform"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
-        <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.07] shrink-0">
+        <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primary)_7%,transparent)] shrink-0">
           <Icons.Logo size={18} />
           {loadingState !== 'idle' && (
-            <span aria-hidden="true" className="absolute bottom-[3px] right-[3px] w-[9px] h-[9px] rounded-full ring-2 ring-[#0d0d12]" style={{ background: statusColor }} />
+            <span aria-hidden="true" className="absolute bottom-[3px] right-[3px] w-[9px] h-[9px] rounded-full ring-2 ring-[var(--bg-surface)]" style={{ background: statusColor }} />
           )}
         </span>
         <span className="min-w-0 text-left leading-tight">
