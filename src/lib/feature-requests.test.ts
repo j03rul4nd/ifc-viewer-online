@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   canSubmit, hasStrongSignal, listFeatureRequests, listMyFeatureRequests, loadRequestProfile, requestsToCsv,
   saveRequestProfile, submitFeatureRequest, summarizeRequests, updateFeatureRequest,
-  answerFeatureRequest, awaitsAnswer, threadOf,
+  answerFeatureRequest, awaitsAnswer, threadOf, REQUEST_FEATURES,
   type FeatureRequestDraft, type StoredFeatureRequest,
 } from './feature-requests'
 
@@ -156,5 +156,36 @@ describe('thread with Joel', () => {
   it('maps worker errors and network failures', async () => {
     expect(await answerFeatureRequest('t', 'i', 'x', asFetch(async () => json(429, { error: 'daily_limit' })))).toEqual({ ok: false, error: 'daily_limit' })
     expect(await answerFeatureRequest('t', 'i', 'x', asFetch(async () => { throw new Error('off') }))).toEqual({ ok: false, error: 'network' })
+  })
+})
+
+describe('request features ×10 and the Worker', () => {
+  const LANGS = ['en', 'es', 'ca', 'de', 'fr', 'it', 'pt', 'ja', 'zh', 'th']
+
+  it('offers the B2B options (reception, managed requirements, ISO naming)', () => {
+    for (const f of ['reception_inbox', 'managed_requirements', 'iso_naming']) {
+      expect(REQUEST_FEATURES).toContain(f)
+    }
+    expect(REQUEST_FEATURES[REQUEST_FEATURES.length - 1]).toBe('other')
+  })
+
+  it('every option has a title and a hint in every language', async () => {
+    for (const l of LANGS) {
+      const pack = (await import(`../locales/${l}/pro.json`)).default as { requests: { feature: Record<string, { title: string; hint: string }> } }
+      for (const f of REQUEST_FEATURES) {
+        expect(pack.requests.feature[f]?.title, `${l}.${f}`).toBeTruthy()
+        expect(pack.requests.feature[f]?.hint, `${l}.${f}`).toBeTruthy()
+      }
+    }
+  })
+
+  it('the Worker accepts the same list', async () => {
+    const { readFileSync } = await import('fs')
+    const path = await import('path')
+    const src = readFileSync(path.resolve(__dirname, '../../cf-worker/worker.js'), 'utf8')
+    const m = src.match(/const REQUEST_FEATURES = \[([^\]]*)\]/)
+    expect(m).not.toBeNull()
+    const list = [...m![1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1])
+    expect(list).toEqual([...REQUEST_FEATURES])
   })
 })

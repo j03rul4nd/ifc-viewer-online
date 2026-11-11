@@ -10,6 +10,7 @@
     "scanLoadFailed": "Der verlinkte Scan konnte nicht geladen werden: {{message}}",
     "loadFailedNamed": "\"{{fileName}}\" konnte nicht geladen werden — {{reason}}",
     "serverProcessingAction": "Auf dem Server verarbeiten (demnächst)",
+    "serverProcessingOffer": "Diese Datei ist zu groß für den Browser. Würde Ihnen die Verarbeitung auf einem Server helfen?",
     "serverProcessingNoted": "Notiert — Serververarbeitung großer Dateien kommt mit Pro. Exportiere das Modell bis dahin in Teilen oder mit weniger Eigenschaften.",
     "batchLoaded_one": "{{name}} — {{count}} Modell geladen",
     "batchLoaded_other": "{{name}} — {{count}} Modelle geladen",

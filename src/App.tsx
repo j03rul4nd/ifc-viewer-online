@@ -115,6 +115,8 @@ import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
+import BatchFolderDoor from './components/pricing/BatchFolderDoor'
+import { batchCountBucket, shouldOfferBatchFolder } from './lib/batch-folder-door'
 import { useCompareStore } from './stores/compareStore'
 import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
@@ -294,6 +296,8 @@ import {
   trackFileOpenFailed,
   trackRequirementsLinkOpened,
   trackServerProcessingInterest,
+  trackServerProcessingOffered,
+  trackBatchFolderInterest,
   trackIdsFileLoaded,
 } from './lib/analytics'
 
@@ -1027,6 +1031,8 @@ export default function App() {
   // The "+ Add data" hub (components/data/AddDataHub, docs/ADD_DATA.md).
   const [showAddData, setShowAddData]         = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
+  /** Fake door: files in the multi-IFC drop whose "Validate folder (Pro)" was clicked. */
+  const [batchDoorCount, setBatchDoorCount]   = useState<number | null>(null)
   const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
@@ -1707,6 +1713,8 @@ export default function App() {
             },
           }
         : undefined
+      // Exposure, so zero clicks can be told apart from zero chances to click.
+      if (serverProcessingDoor) trackServerProcessingOffered({ file_size_mb: sizeMb })
       // The geometry did not fit (a 300–400 MB model, typically) but the file is
       // readable IFC: offer the Health Score without the 3D instead of a dead end.
       const source = getLoadManager().failedSource(job.id)
@@ -1730,6 +1738,9 @@ export default function App() {
             },
           },
         })
+        // The failure toast holds one action (validation only): the door gets
+        // its own, or nobody who skips validation-only ever sees it.
+        if (serverProcessingDoor) toast(tToasts('model.serverProcessingOffer'), 'info', { duration: 0, action: serverProcessingDoor })
         return
       }
       toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error',
@@ -2254,6 +2265,20 @@ export default function App() {
     if (plan.ifc.length > 0) {
       setUploadInitial(plan.ifc)
       setShowUpload(true)
+    }
+    // Fake door: several IFC at once is when a folder check would help.
+    if (shouldOfferBatchFolder(plan.ifc.length, { interactive, embedded: isEmbedded() || embedChrome.embed })) {
+      const count = batchCountBucket(plan.ifc.length)
+      toast(i18n.t('pro:batchFolder.offer', { count: plan.ifc.length }), 'info', {
+        duration: 15000,
+        action: {
+          label: i18n.t('pro:batchFolder.action'),
+          run: () => {
+            trackBatchFolderInterest({ file_count: count, step: 'clicked' })
+            setBatchDoorCount(count)
+          },
+        },
+      })
     }
     if (plan.ids) {
       // With IFCs in the same drop the IDS checks them by itself once they
@@ -5634,6 +5659,9 @@ export default function App() {
       {/* ── IDS check ── */}
       {showIdsModal && (
         <IdsModal onClose={() => setShowIdsModal(false)} />
+      )}
+      {batchDoorCount !== null && (
+        <BatchFolderDoor fileCount={batchDoorCount} onClose={() => setBatchDoorCount(null)} />
       )}
 
       {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}

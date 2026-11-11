@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} IFC files at once. Need the whole folder checked in one report?",
+    "action": "Validate folder (Pro)",
+    "title": "Validate a whole folder",
+    "soon": "Coming soon.",
+    "body": "Checking a whole folder of IFC files in one go, with one report, is not available yet. Your files open one by one as usual.",
+    "notifyLabel": "Leave your email and I will tell you once, when it is ready.",
+    "submit": "Notify me",
+    "thanks": "Thanks. I will email you once, when it is ready.",
+    "error": "Could not save it. Try again."
+  },
   "title": "Account",
   "close": "Close",
   "signInIntro": "Sign in to keep a history of your certificates, sync rule profiles across devices and manage API keys. The free validator stays free — no account needed to use it.",
@@ -273,6 +284,18 @@
       "batch_tools": {
         "title": "Batch tools",
         "hint": "Edit, rename or split many IFC files at once"
+      },
+      "reception_inbox": {
+        "title": "Receive deliveries from my suppliers",
+        "hint": "One inbox where suppliers drop their IFC and it is checked against my requirements"
+      },
+      "managed_requirements": {
+        "title": "Requirements managed for my company",
+        "hint": "My IDS, EIR and minimum score kept in one place and sent with every request"
+      },
+      "iso_naming": {
+        "title": "Check file names (ISO 19650)",
+        "hint": "Flag files and containers that break our naming convention"
       },
       "other": {
         "title": "Something else",

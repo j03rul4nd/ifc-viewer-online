@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} ficheiros IFC de uma vez. Precisa de verificar a pasta inteira num só relatório?",
+    "action": "Validar pasta (Pro)",
+    "title": "Validar uma pasta inteira",
+    "soon": "Em breve.",
+    "body": "Verificar uma pasta inteira de IFC de uma vez, com um só relatório, ainda não está disponível. Os seus ficheiros abrem um a um como sempre.",
+    "notifyLabel": "Deixe o seu email e aviso uma vez, quando estiver pronto.",
+    "submit": "Avisar-me",
+    "thanks": "Obrigado. Escrevo uma vez, quando estiver pronto.",
+    "error": "Não foi possível guardar. Tente novamente."
+  },
   "title": "Conta",
   "close": "Fechar",
   "signInIntro": "Inicie sessão para guardar o histórico dos seus certificados, sincronizar perfis de regras entre dispositivos e gerir chaves de API. O validador gratuito continua gratuito — não é preciso conta para o usar.",
@@ -145,6 +156,18 @@
       "batch_tools": {
         "title": "Ferramentas em lote",
         "hint": "Editar, renomear ou dividir muitos IFC de uma vez"
+      },
+      "reception_inbox": {
+        "title": "Receber entregas dos meus fornecedores",
+        "hint": "Uma caixa onde os fornecedores deixam o IFC e é verificado contra os meus requisitos"
+      },
+      "managed_requirements": {
+        "title": "Requisitos geridos para a minha empresa",
+        "hint": "Os meus IDS, EIR e nota mínima num só lugar, enviados com cada pedido"
+      },
+      "iso_naming": {
+        "title": "Verificar nomes de ficheiros (ISO 19650)",
+        "hint": "Assinalar ficheiros e contentores que não seguem a nossa convenção de nomes"
       },
       "other": {
         "title": "Outra coisa",
