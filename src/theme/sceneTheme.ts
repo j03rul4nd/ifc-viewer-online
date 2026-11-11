@@ -2,7 +2,6 @@
  * Colours and light levels for the Three.js scene, per UI theme. Dark is the
  * current look (src/lib/viewer.ts, src/lib/scene/background.ts). Consumers
  * subscribe and update materials/colours in place; never rebuild the scene.
- * Not wired into the viewer yet (docs/theme-migration.md, phase 3).
  */
 import type { ResolvedTheme } from './themeCore'
 
@@ -26,6 +25,20 @@ export interface SceneTheme {
   ambientIntensity: number
   directional: string
   directionalIntensity: number
+  /** Element overlay colours in the 3D viewer (src/lib/viewer.ts), updated in place. */
+  highlight: HighlightPalette
+}
+
+export interface HighlightPalette {
+  hover: string
+  select: string
+  /** Selection bounding box. */
+  selectBox: string
+  error: string
+  warn: string
+  info: string
+  /** Faint neutral for unflagged elements while issues are isolated. */
+  ghost: string
 }
 
 export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
@@ -47,6 +60,8 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
     ambientIntensity: 0.6,
     directional: '#fff5e8',
     directionalIntensity: 1.1,
+    // Dark keeps the viewer's historic colours exactly (selection is still the old indigo).
+    highlight: { hover: '#0a8481', select: '#6c7cec', selectBox: '#6c7cec', error: '#e5484d', warn: '#f5a623', info: '#5e9ed6', ghost: '#9aa0ae' },
   },
   light: {
     backgroundTop: '#faf9f7',
@@ -65,7 +80,9 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
     hemiGround: '#8a8984',
     ambientIntensity: 0.8,
     directional: '#fffaf2',
-    directionalIntensity: 1.0,
+    directionalIntensity: 0.95,
+    // Same hues, darker so they hold contrast on the warm-grey backdrop.
+    highlight: { hover: '#0a8481', select: '#00696a', selectBox: '#00504f', error: '#c62f35', warn: '#c77a0a', info: '#2f6fb0', ghost: '#5e5d57' },
   },
 }
 

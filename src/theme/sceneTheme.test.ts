@@ -31,6 +31,17 @@ describe('sceneTheme', () => {
     }
   })
 
+  it('highlight palette: dark is unchanged, light keeps hues and stays hex', () => {
+    expect(SCENE_THEMES.dark.highlight).toEqual({ hover: '#0a8481', select: '#6c7cec', selectBox: '#6c7cec', error: '#e5484d', warn: '#f5a623', info: '#5e9ed6', ghost: '#9aa0ae' })
+    const l = SCENE_THEMES.light.highlight
+    expect(l.hover).toBe('#0a8481')
+    expect(l.select).toBe(SCENE_THEMES.light.measureHighlight)
+    expect(Object.keys(l).sort()).toEqual(Object.keys(SCENE_THEMES.dark.highlight).sort())
+    for (const v of Object.values(l)) expect(v).toMatch(/^#[0-9a-f]{6}$/)
+    expect(SCENE_THEMES.light.ambientIntensity).toBeGreaterThan(SCENE_THEMES.dark.ambientIntensity)
+    expect(SCENE_THEMES.light.directionalIntensity).toBeLessThan(SCENE_THEMES.dark.directionalIntensity)
+  })
+
   it('notifies subscribers on change only, and unsubscribes', () => {
     const seen: string[] = []
     const off = subscribeSceneTheme((_, name) => seen.push(name))
