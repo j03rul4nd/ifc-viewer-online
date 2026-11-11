@@ -54,7 +54,7 @@ export function ProgressBar({
       aria-valuemax={100}
       aria-valuenow={measured ? Math.round(pct) : undefined}
       aria-busy={active && !determinate ? true : undefined}
-      className="relative w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.07)]"
+      className="relative w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--text-primary)_7%,transparent)]"
       style={{ height }}
     >
       <div
@@ -65,7 +65,7 @@ export function ProgressBar({
         <div className="absolute inset-y-0 right-0 overflow-hidden" style={{ left: `${pct}%` }}>
           <div
             className="absolute inset-y-0 left-0 w-[35%] animate-toolbar-sweep"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(10,132,129,0.55), transparent)' }}
+            style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, transparent), transparent)' }}
           />
         </div>
       )}

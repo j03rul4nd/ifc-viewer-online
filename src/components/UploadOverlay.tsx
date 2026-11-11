@@ -86,7 +86,7 @@ const VIEW_MOTION = {
 } as const
 
 const BTN_PRIMARY =
-  'px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed'
+  'px-4 py-2 rounded-lg bg-[var(--accent)] text-[var(--accent-contrast)] text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed'
 const BTN_SECONDARY =
   'px-4 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
 const BTN_GHOST =
@@ -153,7 +153,7 @@ function IdleView({
         className="relative py-8 sm:py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         style={{
           border:     `2px dashed ${isDragging ? 'var(--accent)' : 'var(--border-strong)'}`,
-          background: isDragging ? 'rgba(10,132,129,0.06)' : 'var(--surface-2)',
+          background: isDragging ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'var(--surface-2)',
         }}
       >
         {isDragging && (
@@ -582,8 +582,8 @@ function ErrorView({
   return (
     <motion.div key="error" {...VIEW_MOTION} className="p-5 sm:p-9 min-h-0 overflow-y-auto">
       <div className="flex justify-between items-start mb-5">
-        <div className="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-none">
-          <Icons.ErrorIcon size={20} className="text-red-400" />
+        <div className="w-11 h-11 rounded-xl bg-[color-mix(in_srgb,var(--danger)_15%,transparent)] border border-[color-mix(in_srgb,var(--danger)_25%,transparent)] flex items-center justify-center flex-none">
+          <Icons.ErrorIcon size={20} className="text-[var(--danger)]" />
         </div>
         <CloseButton onClose={onClose} />
       </div>
@@ -636,8 +636,8 @@ function SubmittedView({ count, onClose }: { count: number; onClose: () => void 
   const { t } = useTranslation('common')
   return (
     <motion.div key="submitted" {...VIEW_MOTION} className="p-5 sm:p-9 text-center">
-      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-        <Icons.Check size={20} className="text-emerald-400" />
+      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[color-mix(in_srgb,var(--success)_15%,transparent)] border border-[color-mix(in_srgb,var(--success)_30%,transparent)] flex items-center justify-center">
+        <Icons.Check size={20} className="text-[var(--success)]" />
       </div>
       <p className="text-[14px] font-medium mb-5">{t('upload.submitted.title', { count })}</p>
       <button type="button" onClick={onClose} className={BTN_SECONDARY}>
@@ -679,7 +679,7 @@ export default function UploadOverlay(props: UploadOverlayProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
-      className="m-sheet-host fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-5"
+      className="m-sheet-host fixed inset-0 z-[100] bg-[var(--overlay)] backdrop-blur-xl flex items-center justify-center p-5"
       // Close only on a click that lands directly on the backdrop. Without this
       // guard, the programmatic click from openFilePicker() on the hidden <input>
       // (a child of this backdrop) bubbles up here and closes the modal the

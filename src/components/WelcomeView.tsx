@@ -160,7 +160,7 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
               onClick={onStart}
               onPointerEnter={() => setMood({ clip: 'excited', id: Date.now() })}
               onPointerLeave={() => setMood({ clip: 'idle', id: Date.now() })}
-              className="group relative h-12 px-7 rounded-full text-[14px] font-semibold text-white cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="group relative h-12 px-7 rounded-full text-[14px] font-semibold text-[var(--accent-contrast)] cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
                 background: 'linear-gradient(160deg, var(--accent), var(--accent-2))',
                 boxShadow: '0 14px 34px -10px rgba(10,132,129,0.6), inset 0 1px 0 rgba(255,255,255,0.25)',
