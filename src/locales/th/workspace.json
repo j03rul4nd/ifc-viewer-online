@@ -221,6 +221,8 @@
   "Automation": "ระบบอัตโนมัติ",
   "Automation firings": "จำนวนครั้งที่ระบบอัตโนมัติทำงาน",
   "Automations": "ระบบอัตโนมัติ",
+  "Rules": "กฎ",
+  "Write, test and govern your own rules, exported as IDS 1.0.": "เขียน ทดสอบ และกำกับดูแลกฎของคุณเอง ส่งออกเป็น IDS 1.0",
   "Available": "พร้อมใช้งาน",
   "Average size (MB)": "ขนาดเฉลี่ย (MB)",
   "Back": "ย้อนกลับ",

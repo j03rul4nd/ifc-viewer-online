@@ -6,7 +6,7 @@
 
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles, Boxes, TrendingUp, Workflow } from 'lucide-react'
+import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles, Boxes, TrendingUp, Workflow, ListChecks } from 'lucide-react'
 import type { WorkspaceData, TicketKind } from './sample-data'
 import type { CheckoutItem } from '../../lib/pricing/checkout'
 import Overview from './sections/Overview'
@@ -29,9 +29,10 @@ import Ai from './sections/Ai'
 import Middleware from './sections/Middleware'
 import Automations from './sections/team/TeamAutomations'
 import Value from './sections/Value'
+import Rules from './sections/rules/RulesStudio'
 
 export type SectionId = 'overview' | 'projects' | 'jobs' | 'certificates' | 'team' | 'billing' | 'settings' | 'privacy' | 'support' | 'scenes' | 'data'
-  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai' | 'middleware' | 'automations' | 'value'
+  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai' | 'middleware' | 'automations' | 'value' | 'rules'
 
 /** Plans in rank order; a section is open to its plan and every plan above. */
 export const PLAN_RANK = { pro: 1, team: 2 } as const
@@ -76,6 +77,7 @@ export const SECTIONS: SectionDef[] = [
   { id: 'certificates', label: 'Certificates', short: 'Certs', icon: BadgeCheck, requires: 'pro', secondary: true, Component: Certificates },
   { id: 'scenes', label: 'Scenes', icon: Clapperboard, requires: 'pro', secondary: true, Component: Scenes },
   { id: 'data', label: 'Data sources', short: 'Data', icon: Plug, requires: 'pro', secondary: true, Component: DataSources },
+  { id: 'rules', label: 'Rules', icon: ListChecks, requires: 'pro', secondary: true, soon: true, pitch: 'Write, test and govern your own rules, exported as IDS 1.0.', Component: Rules },
   { id: 'team', label: 'Team', icon: Users, requires: 'team', secondary: true, pitch: 'Share projects, credits and certificates with your studio — one bill, a login per person.', Component: Team },
   { id: 'issues', label: 'Issues', icon: ListTodo, requires: 'team', secondary: true, soon: true, pitch: 'BCF issues for the whole team, assigned and tracked, with reviewers and guests free.', Component: Issues },
   { id: 'quality', label: 'Quality gate', short: 'Quality', icon: ShieldHalf, requires: 'team', secondary: true, soon: true, pitch: 'Validate every upload with your house standard and publish only what passes.', Component: Quality },

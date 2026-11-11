@@ -221,6 +221,8 @@
   "Automation": "自動化",
   "Automation firings": "自動化の実行回数",
   "Automations": "自動化",
+  "Rules": "ルール",
+  "Write, test and govern your own rules, exported as IDS 1.0.": "独自ルールを作成・テスト・管理し、IDS 1.0 で書き出します。",
   "Available": "利用可能",
   "Average size (MB)": "平均サイズ（MB）",
   "Back": "戻る",
