@@ -5198,7 +5198,7 @@ export default function App() {
                   </Panel>
                   <PanelResizeHandle
                     id="tree-resize"
-                    className="w-[3px] bg-[var(--border)] hover:bg-[var(--accent)] active:bg-[var(--accent)] transition-colors duration-100 cursor-col-resize flex-none"
+                    className="relative w-px bg-[var(--border-subtle)] hover:bg-[var(--accent)] active:bg-[var(--accent)] data-[resize-handle-state=drag]:bg-[var(--accent)] transition-colors duration-100 cursor-col-resize flex-none after:content-[''] after:absolute after:inset-y-0 after:-left-[3px] after:-right-[2px]"
                   />
                 </>
               )}
