@@ -326,6 +326,11 @@ body {
   .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
 }
 
+/* Light theme: frosted surfaces follow the palette (dark values above unchanged). */
+[data-theme="light"] .glass,
+[data-theme="light"] .glass-md { background: color-mix(in srgb, var(--bg-surface) 92%, transparent); }
+[data-theme="light"] .glass-xl { background: color-mix(in srgb, var(--bg-surface) 85%, transparent); }
+
 /* ── GeoPanel inputs (GIS map mode) ─────────────────────────────────────────── */
 
 .geo-input {
