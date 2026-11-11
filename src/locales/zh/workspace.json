@@ -1,4 +1,8 @@
 {
+  "Approved HCA_ARQ_v6.ifc → Published (A1)": "已批准 HCA_ARQ_v6.ifc → 已发布 (A1)",
+  "Blocked HCA_EST_v4.ifc: score 71 below 80": "已阻止 HCA_EST_v4.ifc：分数 71，低于 80",
+  "Changed the house profile: added IDS CatSalut 2026": "修改了公司标准：新增 IDS CatSalut 2026",
+  "Sealed HCA_MEP_v5.ifc (qualified timestamp)": "已封存 HCA_MEP_v5.ifc（合格时间戳）",
   "· Certificates you didn't revoke: the file hash and result, so links your clients hold keep working. Revoke them first if you prefer.": "· 未撤销的证书：文件哈希和结果，以便客户手中的链接继续有效。如有需要，请先撤销它们。",
   "· Invoices, for 6 years (Spanish tax law), with your billing details only": "· 发票，保存 6 年（西班牙税法），仅含您的账单信息",
   "· Nothing runs in the cloud unless you start it here — the free tools keep working in your browser.": "· 除非您在这里启动，否则云端不会运行任何内容——免费工具仍在您的浏览器中正常使用。",

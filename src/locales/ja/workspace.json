@@ -1,4 +1,8 @@
 {
+  "Approved HCA_ARQ_v6.ifc → Published (A1)": "HCA_ARQ_v6.ifc を承認 → 公開 (A1)",
+  "Blocked HCA_EST_v4.ifc: score 71 below 80": "HCA_EST_v4.ifc をブロック：スコア 71（基準 80 未満）",
+  "Changed the house profile: added IDS CatSalut 2026": "社内プロファイルを変更：IDS CatSalut 2026 を追加",
+  "Sealed HCA_MEP_v5.ifc (qualified timestamp)": "HCA_MEP_v5.ifc を封印（適格タイムスタンプ）",
   "· Certificates you didn't revoke: the file hash and result, so links your clients hold keep working. Revoke them first if you prefer.": "· 取り消していない証明書：ファイルのハッシュと結果。クライアントが持つリンクは引き続き機能します。必要なら先に取り消してください。",
   "· Invoices, for 6 years (Spanish tax law), with your billing details only": "· 請求書：6 年間（スペイン税法）、請求情報のみ",
   "· Nothing runs in the cloud unless you start it here — the free tools keep working in your browser.": "· ここで開始しない限りクラウドでは何も実行されません。無料ツールはブラウザーでそのまま使えます。",

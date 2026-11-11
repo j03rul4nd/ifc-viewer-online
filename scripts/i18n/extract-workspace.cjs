@@ -31,9 +31,9 @@ const CATALOGUES = {
   'src/lib/connections/schedule.ts': ['label'],
   'src/lib/pricing/catalog.ts': ['title', 'description', 'name', 'audience', 'features'],
   'src/components/workspace/registry.ts': ['label', 'short', 'pitch'],
-  'src/components/workspace/sample-data.ts': ['label', 'detail', 'what', 'where', 'kept', 'description'],
+  'src/components/workspace/sample-data.ts': ['label', 'detail', 'what', 'where', 'kept', 'description', 'result'],
   'src/components/workspace/connections-sample.ts': ['label', 'detail', 'note', 'message'],
-  'src/components/workspace/plan-sample-data.ts': ['when'],
+  'src/components/workspace/plan-sample-data.ts': ['when', 'what'],
   'src/lib/plans/features.ts': ['does'],
   'src/lib/plans/ai-credits.ts': ['label'],
 }

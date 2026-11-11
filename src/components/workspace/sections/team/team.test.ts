@@ -27,8 +27,16 @@ describe('team screens translations', () => {
   it('covers the nine non-English languages', () => expect(Object.keys(TEAM_LOCALES).sort()).toEqual(['ca', 'de', 'es', 'fr', 'it', 'ja', 'pt', 'th', 'zh']))
   it('falls back to English and fills values', () => {
     expect(teamT('en', 'Export {{n}} issues', { n: 4 })).toBe('Export 4 issues')
-    expect(teamT('es-ES', 'Export {{n}} issues', { n: 4 })).toBe('Exportar 4 issues')
+    expect(teamT('es-ES', 'Export {{n}} issues', { n: 4 })).toBe('Exportar 4 incidencias')
     expect(teamT('xx', 'Not a key')).toBe('Not a key')
+  })
+})
+
+describe('one word for issues across the workspace', () => {
+  it('Spanish and Catalan say incidencia, like the rest of the workspace', () => {
+    for (const l of ['es', 'ca']) {
+      expect(Object.values(TEAM_LOCALES[l]).filter((v) => /\bissues?\b/i.test(v.replace(/\{\{issues\}\}/g, '')))).toEqual([])
+    }
   })
 })
 
