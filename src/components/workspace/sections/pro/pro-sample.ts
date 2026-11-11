@@ -110,3 +110,26 @@ export const LOGO_MAX_KB = 512
 export const LOGO_TYPES = ['image/png', 'image/svg+xml', 'image/jpeg']
 
 export const SAMPLE_BRAND = { studio: 'Marta Vidal · Coordinación BIM', email: 'marta@vidalbim.es' }
+
+// ── v2 ────────────────────────────────────────────────────────────────────────
+
+/** Share of a file's issues the free "Fix all" in the viewer corrects (names, Psets…). */
+export const AUTO_FIX_SHARE: Record<string, number> = {
+  'Duplicate names': 1, 'Empty Pset_*Common': 0.9, 'Missing FireRating': 0.2, 'No classification': 0.1, 'Elements outside storeys': 0.6,
+}
+
+export interface ClientComment { who: string; role: string; at: string; body: string; element?: string }
+export const SAMPLE_COMMENTS: ClientComment[] = [
+  { who: 'Jordi Puig', role: 'Dirección facultativa', at: '2026-11-10 18:22', body: 'Las puertas EI2-60 del pasillo 1.2 ya cuadran con el plano de sectorización. Bien.', element: 'IfcDoor · P-EI2-60' },
+  { who: 'Marta Vidal', role: 'Coordinación BIM', at: '2026-11-10 19:05', body: 'Gracias. La v5 cerrará los 19 elementos fuera de planta de clima.' },
+  { who: 'Anna Soler', role: 'Propiedad', at: '2026-11-11 08:40', body: '¿La nota 74 es suficiente para el hito de diciembre?' },
+]
+
+export interface MonthActivity { deliveries: number; batchFiles: number; linkViews: number; certificates: number; diffs: number }
+export const SAMPLE_MONTH: MonthActivity = { deliveries: 11, batchFiles: 36, linkViews: 42, certificates: 3, diffs: 7 }
+/** Minutes each action saves against doing it by hand (estimates, shown with the formula). */
+export const MINUTES_SAVED = { batchFiles: 6, diffs: 45, certificates: 20, linkViews: 3 } as const
+export const PRO_PRICE_EUR = 39
+export const HOURLY_RATE_EUR = 45
+
+export const SAMPLE_CERT_DOC = { id: 'CERT-9A41', file: 'HCA_ARQ_v4.ifc', score: 84, profile: 'EIR Ajuntament de Sabadell 2026', date: '2026-11-11', hash: '7c1e04d9…b902', client: 'Servei Català de la Salut' }

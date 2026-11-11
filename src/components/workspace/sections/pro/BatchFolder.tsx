@@ -10,6 +10,9 @@ import { Panel, Primary, Quiet, Banner, DataList, Dot, Field, inputClass, scoreC
 import { PRO_PROFILES, SAMPLE_FOLDER, SAMPLE_SKIPPED, MAX_FILES, MAX_TOTAL_MB, type BatchFile, type BatchStatus } from './pro-sample'
 import { intake, statusOf, summary, toBcf, toCsv } from './batch-export'
 import { useP } from './pro-i18n'
+import { autoFixable, batchReportHtml, bySeverity, openPrintable } from './pro-reports'
+import { useBrand } from './brand-store'
+import { TODAY } from './pro-sample'
 
 interface Row { file: BatchFile; status: BatchStatus }
 
@@ -38,6 +41,7 @@ function StatusCell({ s }: { s: BatchStatus }) {
 
 export default function BatchFolder() {
   const p = useP()
+  const brand = useBrand()
   const [profile, setProfile] = useState<string>(PRO_PROFILES[0])
   const [rows, setRows] = useState<Row[]>([])
   const [skipped, setSkipped] = useState<string[]>([])
@@ -93,7 +97,10 @@ export default function BatchFolder() {
 
   const done = rows.filter((r) => r.status !== 'pending' && r.status !== 'checking').length
   const s = summary(rows)
-  const shown = onlyFailing ? rows.filter((r) => r.status === 'fail' || r.status === 'unreadable') : rows
+  // While running, rows stay in folder order; once done, worst first.
+  const ordered = running ? rows : bySeverity(rows)
+  const shown = onlyFailing ? ordered.filter((r) => r.status === 'fail' || r.status === 'unreadable') : ordered
+  const firstThree = running ? [] : ordered.filter((r) => r.status === 'fail' || r.status === 'unreadable').slice(0, 3)
   const stamp = `${profile.replace(/\W+/g, '-').toLowerCase()}`
 
   return (
@@ -143,10 +150,27 @@ export default function BatchFolder() {
             </div>
           </Panel>
 
+          {firstThree.length > 0 && (
+            <Panel className="p-4 mb-4">
+              <p className="text-[13.5px] font-medium">{p('Start with these {{count}}', { count: firstThree.length })}</p>
+              <ol className="mt-2 grid gap-2 sm:grid-cols-3">
+                {firstThree.map((r, i) => (
+                  <li key={r.file.name} className="rounded-[8px] border border-[var(--border)] p-3">
+                    <p className="text-[11.5px] text-[var(--text-faint)]">{i + 1}</p>
+                    <p className="text-[13px] font-medium [overflow-wrap:anywhere]">{r.file.name}</p>
+                    <p className="text-[12px] text-[var(--text-dim)] mt-0.5">{r.status === 'unreadable' ? p('Ask for it again: it can not be opened.') : p('{{rule}} · score {{score}}', { rule: p(r.file.worstRule!), score: r.file.score })}</p>
+                    {r.status === 'fail' && autoFixable(r.file) > 0 && <p className="text-[12px] mt-1" style={{ color: 'var(--ok)' }}>{p('~{{count}} fixed automatically, free', { count: autoFixable(r.file) })}</p>}
+                  </li>
+                ))}
+              </ol>
+            </Panel>
+          )}
+
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {running ? <Quiet onClick={cancel}>{p('Cancel')}</Quiet> : <>
               <Primary disabled={done === 0} onClick={() => save(`folder-check-${stamp}.csv`, toCsv(rows.filter((r) => r.status !== 'cancelled'), profile), 'text/csv')}>{p('Export CSV')}</Primary>
               <Quiet disabled={s.fail + s.unreadable === 0} onClick={() => save(`folder-check-${stamp}.bcf`, toBcf(rows, profile), 'application/octet-stream')}>{p('Export BCF')}</Quiet>
+              <Quiet disabled={done === 0} onClick={() => openPrintable(batchReportHtml(rows.filter((r) => r.status !== 'cancelled'), profile, brand, p, TODAY), `folder-report-${stamp}.html`)}>{p('Folder report with your logo')}</Quiet>
               <Quiet onClick={reset}>{p('Check another folder')}</Quiet>
             </>}
             <label className="sm:ml-auto inline-flex items-center gap-2 text-[12.5px] text-[var(--text-dim)] min-h-[32px]">
@@ -165,7 +189,11 @@ export default function BatchFolder() {
               { key: 'issues', header: p('Issues'), cell: (r) => (r.status === 'pass' || r.status === 'fail' ? <span className="tabular-nums">{fmtInt(r.file.issues!)}</span> : <span className="text-[var(--text-faint)]">—</span>) },
               { key: 'worst', header: p('Most frequent problem'), hideOnPhone: true, cell: (r) => <span className="text-[var(--text-dim)]">{r.status === 'unreadable' ? p('The file header or geometry is broken.') : r.file.worstRule && (r.status === 'pass' || r.status === 'fail') ? p(r.file.worstRule) : '—'}</span> },
             ]}
-            actions={(r) => (r.status === 'pass' || r.status === 'fail' ? <Quiet>{p('Open in viewer')}</Quiet> : null)}
+            actions={(r) => {
+              if (r.status !== 'pass' && r.status !== 'fail') return null
+              const n = autoFixable(r.file)
+              return n > 0 ? <Quiet aria-label={p('Fix for free in the viewer: about {{count}} automatic fixes', { count: n })}>{p('Fix free · ~{{count}}', { count: n })}</Quiet> : <Quiet>{p('Open in viewer')}</Quiet>
+            }}
           />
           {!running && s.fail > 0 && <p className="mt-3 text-[12px] text-[var(--text-dim)]">{p('To fix a file, open it in the viewer: “Fix all” there stays free, one file at a time.')}</p>}
         </>

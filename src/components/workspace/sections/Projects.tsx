@@ -13,6 +13,7 @@ import { featureName } from './Overview'
 import { useTx } from '../i18n'
 import VersionCompare from './pro/VersionCompare'
 import ClientLinks from './pro/ClientLinks'
+import MonthSummary from './pro/MonthSummary'
 import { useP } from './pro/pro-i18n'
 
 
@@ -241,6 +242,7 @@ export default function Projects(props: SectionProps) {
         <Empty title={tx("No projects yet")} body={tx("A project groups the deliveries of one model. Upload the first one and every later version is compared against it automatically.")} action={<Primary onClick={() => setNewOpen(true)}>{tx("Create a project")}</Primary>} />
       ) : (
         <>
+          <MonthSummary />
           <div className="flex flex-col sm:flex-row gap-2 mb-3">
             <input data-tour="project-search" type="search" aria-label={tx("Search projects")} placeholder={tx("Search by project or client")} className={`${inputClass} sm:max-w-[320px]`} value={q} onChange={(e) => setQ(e.target.value)} />
             <select aria-label={tx("Sort projects")} className={`${inputClass} sm:!w-auto`} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
