@@ -30,6 +30,7 @@ import { applySuppression, parseRuleList, type SuppressRule } from '../../lib/cl
 import { estimateCost, sortByCost, totalCost } from '../../lib/clash/cost'
 import { TEMPLATE_IDS, templateMatrix, type TemplateId } from '../../lib/clash/templates'
 import { trendPoint, trendPolyline } from '../../lib/clash/trend'
+import { clashShot } from '../../lib/clash/frame'
 import { cloudSync, isClashCloudEnabled, localSync, projectKey } from '../../lib/clash/sync'
 import { downloadBcfBlob } from '../../lib/bcf'
 import * as THREE from 'three'
@@ -87,8 +88,13 @@ function Upsell({ t }: { t: T }) {
   )
 }
 
-/** Wait for two frames (and a beat) so the camera has settled before a snapshot. */
-const settle = (ms: number) => new Promise<void>((r) => setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => r())), ms))
+/** Wait a beat and two frames so the camera has settled before a snapshot. */
+const settle = (ms: number) => new Promise<void>((r) => setTimeout(() => {
+  // A background tab never runs animation frames: fall back to a timer so the
+  // report still finishes if the user switches tabs while it is made.
+  const done = setTimeout(r, 400)
+  requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(done); r() }))
+}, ms))
 
 function ClashWorkspace({ viewerApiRef, team, t, lang }: { viewerApiRef: Props['viewerApiRef']; team: boolean; t: T; lang: string }) {
   const sceneModels = useSceneStore((s) => s.models)
@@ -188,8 +194,8 @@ function ClashWorkspace({ viewerApiRef, team, t, lang }: { viewerApiRef: Props['
   }
 
   const openReport = async (withShots: boolean) => {
-    // Open the window first (inside the click) so pop-up blockers allow it.
-    const w = window.open('', '_blank')
+    // Pictures first, window after: a new tab takes focus, and a tab in the
+    // background stops drawing, so every picture would be the same frame.
     const shots: Record<string, string> = {}
     const viewer = viewerApiRef.current
     if (withShots && viewer?.takeSnapshot) {
@@ -198,16 +204,25 @@ function ClashWorkspace({ viewerApiRef, team, t, lang }: { viewerApiRef: Props['
       const cam = viewer.getCameraViewpoint?.() ?? null
       setShotProgress({ done: 0, total: top.length })
       for (const [i, r] of top.entries()) {
-        focusClash(viewer, r, false)
-        await settle(350)
-        try { const img = viewer.takeSnapshot(0.5); if (img) shots[r.key] = img } catch { /* no image for this one */ }
+        await focusClash(viewer, r, false)
+        await settle(450)
+        try { const img = viewer.takeSnapshot(0.6); if (img) shots[r.key] = await toJpeg(img) } catch { /* no image for this one */ }
         setShotProgress({ done: i + 1, total: top.length })
       }
       try { viewer.isolateElements([], false); if (cam) viewer.setCameraLookAt(cam.position, cam.target, false) } catch { /* fine */ }
       setShotProgress(null)
     }
     const html = coordinationReportHtml({ lang, project: models.map((m) => m.fileName).join(', '), results: shown, records, testName, shots, trend, suppressed })
-    if (!w) return
+    const w = window.open('', '_blank')
+    if (!w) {
+      // Pop-up blocked (we are no longer inside the click): hand over the file.
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+      a.download = `clash-report-${new Date().toISOString().slice(0, 10)}.html`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+      return
+    }
     w.document.open(); w.document.write(html); w.document.close()
     setTimeout(() => { try { w.print() } catch { /* closed */ } }, 400)
   }
@@ -376,14 +391,46 @@ function VirtualList({ groups, flat, viewerApiRef, t, testName, lang }: {
   )
 }
 
-function focusClash(viewer: ViewerAPI | null, r: ClashResult, animate = true): void {
+async function focusClash(viewer: ViewerAPI | null, r: ClashResult, animate = true): Promise<void> {
   if (!viewer) return
   try {
-    viewer.isolateElements([{ expressId: r.a.localId, modelId: r.a.modelId }, { expressId: r.b.localId, modelId: r.b.modelId }], true)
+    // Isolate both with their parts: a curtain wall's glass and mullions are
+    // child items, and isolating only the wall would hide them.
+    const targets: Array<{ expressId: number; modelId: string }> = []
+    for (const e of [r.a, r.b]) {
+      targets.push({ expressId: e.localId, modelId: e.modelId })
+      const fm = viewer.getFragmentsModel(e.modelId) as { getItemsChildren?: (ids: number[]) => Promise<number[]> } | null
+      const kids = await fm?.getItemsChildren?.([e.localId]).catch(() => [] as number[]) ?? []
+      for (const k of kids.slice(0, 2000)) targets.push({ expressId: k, modelId: e.modelId })
+    }
+    viewer.isolateElements(targets, true)
     viewer.selectElement(r.a.localId, r.a.modelId)
-    const [x, y, z] = r.point
-    viewer.setCameraLookAt({ x: x + 4.5, y: y + 3.5, z: z + 4.5 }, { x, y, z }, animate)
+    // Frame on the two elements' boxes: across the smaller one, sized on it.
+    const [ba, bb] = await Promise.all([
+      viewer.getElementsBox([r.a.localId], r.a.modelId).catch(() => null),
+      viewer.getElementsBox([r.b.localId], r.b.modelId).catch(() => null),
+    ])
+    const shot = clashShot(r.point, ba, bb)
+    viewer.setCameraLookAt(shot.position, shot.target, animate)
   } catch { /* viewer busy: the list still works */ }
+}
+
+/** PNG snapshot → JPEG (a 10-image report drops from ~5 MB to well under 1 MB). */
+function toJpeg(dataUrl: string, quality = 0.82): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const c = document.createElement('canvas')
+      c.width = img.naturalWidth; c.height = img.naturalHeight
+      const g = c.getContext('2d')
+      if (!g) { resolve(dataUrl); return }
+      g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height)
+      g.drawImage(img, 0, 0)
+      resolve(c.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
 }
 
 const ClashRow = React.memo(function ClashRow({ r, style, viewerApiRef, t, testName, lang }: { r: ClashResult; style: React.CSSProperties; viewerApiRef: Props['viewerApiRef']; t: T; testName: (id: string) => string; lang: string }) {
@@ -395,7 +442,7 @@ const ClashRow = React.memo(function ClashRow({ r, style, viewerApiRef, t, testN
   return (
     <button type="button" style={style} aria-pressed={selected}
       className={`px-3 text-left flex items-start gap-2 pt-1.5 ${selected ? 'bg-[var(--surface-2)]' : 'hover:bg-[var(--surface-2)]'}`}
-      onClick={() => { select(selected ? null : r.key); if (!selected) focusClash(viewerApiRef.current, r) }}>
+      onClick={() => { select(selected ? null : r.key); if (!selected) void focusClash(viewerApiRef.current, r) }}>
       <span className="mt-[5px] w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_COLOR[status] }} title={t(`status_${status}`)} />
       <span className="flex-1 min-w-0">
         <span className="flex gap-2 text-[11.5px] text-[var(--text)]"><span className="truncate flex-1">{clashTitle(r)}</span><span className="font-mono text-[10px] text-[var(--text-dim)] shrink-0" title={t('costHint')}>{t('cost', { eur: estimateCost(r).toLocaleString(lang.slice(0, 2)) })}</span></span>
@@ -421,7 +468,7 @@ function Detail({ r, viewerApiRef, team, t, lang }: { r: ClashResult; viewerApiR
       </div>
       <div className="text-[10px] text-[var(--text-faint)] font-mono break-all">{r.a.category} {r.a.guid ?? ''} · {r.a.fileName}<br />{r.b.category} {r.b.guid ?? ''} · {r.b.fileName}</div>
       <div className="flex gap-1 flex-wrap">
-        <button type="button" className={btn} onClick={() => focusClash(viewerApiRef.current, r)}>{t('focus')}</button>
+        <button type="button" className={btn} onClick={() => void focusClash(viewerApiRef.current, r)}>{t('focus')}</button>
         {status !== 'approved' && <button type="button" className={btn} onClick={() => update(r.key, { status: 'approved' })}>{t('approve')}</button>}
         {status === 'approved' && <button type="button" className={btn} onClick={() => update(r.key, { status: 'active' })}>{t('reopen')}</button>}
       </div>
