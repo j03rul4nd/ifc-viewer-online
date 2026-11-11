@@ -252,7 +252,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
             <svg width="8" height="8" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 shrink-0"><path d="M3 5l4 4 4-4" /></svg>
             {/* The replay buffer is always rolling — a quiet dot says so. */}
             {isRecording && !menuOpen && (
-              <span className={`absolute top-[5px] right-[5px] w-[4px] h-[4px] rounded-full ${bufferReady ? 'bg-[var(--danger)]' : 'bg-[var(--warn,#E9A23B)]'}`} />
+              <span className={`absolute top-[5px] right-[5px] w-[4px] h-[4px] rounded-full ${bufferReady ? 'bg-[var(--danger)]' : 'bg-[var(--warning)]'}`} />
             )}
           </button>
           {menuOpen && (
@@ -292,7 +292,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
                       <span className="w-[16px] flex justify-center shrink-0"><Icons.Replay size={15} /></span>
                       <span className="flex-1 text-left">{t('lastSeconds', { seconds: captureSeconds })}</span>
                       {isRecording && (
-                        <span className={`w-[6px] h-[6px] rounded-full ${bufferReady ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--warn,#E9A23B)]'}`} />
+                        <span className={`w-[6px] h-[6px] rounded-full ${bufferReady ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--warning)]'}`} />
                       )}
                     </button>
                     {/* Clip length — one tap, no second popover */}
@@ -304,7 +304,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
                           aria-pressed={d === captureSeconds}
                           className={`flex-1 h-[22px] rounded-[5px] text-[11px] font-medium tabular-nums transition-colors ${
                             d === captureSeconds
-                              ? 'bg-[var(--accent)] text-white'
+                              ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
                               : 'bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)]'
                           }`}
                         >
@@ -320,7 +320,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
                           : t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })}
                       >
                         <div
-                          className={`h-full transition-[width] duration-300 ${bufferReady ? 'bg-[var(--ok,#2E9E5B)]' : 'bg-[var(--warn,#E9A23B)]'}`}
+                          className={`h-full transition-[width] duration-300 ${bufferReady ? 'bg-[var(--success)]' : 'bg-[var(--warning)]'}`}
                           style={{ width: `${bufferPercent}%` }}
                         />
                       </div>
@@ -417,7 +417,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
               {isRecording && (
                 <span
                   className={`w-[5px] h-[5px] rounded-full ${
-                    bufferReady ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--warn,#E9A23B)]'
+                    bufferReady ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--warning)]'
                   }`}
                   title={bufferReady ? t('recording') : t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })}
                 />
@@ -454,7 +454,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
                         onClick={() => setCaptureSeconds(d as CaptureDuration)}
                         className={`h-[24px] rounded-[5px] text-[11px] font-medium transition-colors ${
                           d === captureSeconds
-                            ? 'bg-[var(--accent)] text-white'
+                            ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
                             : 'bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)]'
                         }`}
                       >
@@ -479,7 +479,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true, variant = 'bar' }:
                   <div className="flex flex-col gap-1">
                     <div className="h-[3px] rounded bg-[var(--surface-2)] overflow-hidden">
                       <div
-                        className={`h-full transition-[width] duration-300 ${bufferReady ? 'bg-[var(--ok,#2E9E5B)]' : 'bg-[var(--warn,#E9A23B)]'}`}
+                        className={`h-full transition-[width] duration-300 ${bufferReady ? 'bg-[var(--success)]' : 'bg-[var(--warning)]'}`}
                         style={{ width: `${bufferPercent}%` }}
                       />
                     </div>

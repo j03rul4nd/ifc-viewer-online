@@ -496,7 +496,7 @@ export default function CapturePreviewModal() {
   const transportCls = 'p-1.5 rounded-[5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-35 transition-colors'
 
   return createPortal(
-    <div className="m-sheet-host fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/70" onClick={close}>
+    <div className="m-sheet-host fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-[var(--overlay)]" onClick={close}>
       <div
         className="m-sheet m-sheet-full bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-2xl w-full max-w-[1120px] max-h-[95vh] overflow-y-auto flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -576,7 +576,7 @@ export default function CapturePreviewModal() {
                 onClick={() => (playing ? pause() : play())}
                 disabled={exporting}
                 title={playing ? t('editor.transport.pause') : t('editor.transport.play')}
-                className="p-2 rounded-[6px] bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-35 transition-[filter]"
+                className="p-2 rounded-[6px] bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110 disabled:opacity-35 transition-[filter]"
               >
                 {playing ? <Icons.Pause size={14} /> : <Icons.Play size={14} />}
               </button>
@@ -716,7 +716,7 @@ export default function CapturePreviewModal() {
                 size: formatBytes(estimate.bytes),
               })}</span>
               {estimate.capped && (
-                <span className="text-[var(--warn,#E9A23B)]">{t('frameCapNotice', { max: MAX_GIF_FRAMES })}</span>
+                <span className="text-[var(--warning)]">{t('frameCapNotice', { max: MAX_GIF_FRAMES })}</span>
               )}
             </div>
           )}
@@ -746,7 +746,7 @@ export default function CapturePreviewModal() {
               onClick={() => void handleVideo()}
               disabled={exporting || !container}
               title={container ? undefined : t('editor.export.noVideoNote')}
-              className={`${actionCls} bg-[var(--accent)] text-white hover:brightness-110`}
+              className={`${actionCls} bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110`}
             >
               <Icons.Download size={13} />
               {exporting ? t('exporting') : (container?.extension.toUpperCase() ?? 'MP4')}

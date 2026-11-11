@@ -212,8 +212,8 @@ export function EditorTimeline(props: EditorTimelineProps) {
               onClick={onSelectAudio}
               className={`absolute inset-y-[2px] rounded-[3px] px-1.5 flex items-center gap-1 text-[10px] font-medium truncate transition-colors ${
                 audioSelected
-                  ? 'bg-[#2E9E7A] text-white ring-1 ring-white/60'
-                  : 'bg-[#2E9E7A]/75 text-white hover:bg-[#2E9E7A]'
+                  ? 'bg-[#2E9E7A] text-[var(--accent-contrast)] ring-1 ring-white/60'
+                  : 'bg-[#2E9E7A]/75 text-[var(--accent-contrast)] hover:bg-[#2E9E7A]'
               }`}
               style={{ left: `${pct(timeline.trim.start)}%`, width: `${pct(timeline.trim.end - timeline.trim.start)}%` }}
             >
@@ -294,7 +294,7 @@ function TextBlock({ card, duration, selected, left, width, disabled, onSelect, 
     <div
       className={`absolute inset-y-[2px] rounded-[3px] flex items-center overflow-hidden transition-colors ${
         selected
-          ? 'bg-[var(--accent)] ring-1 ring-white/70 z-[5]'
+          ? 'bg-[var(--accent)] ring-1 ring-[color-mix(in_srgb,var(--text-primary)_70%,transparent)] z-[5]'
           : 'bg-[var(--accent)]/65 hover:bg-[var(--accent)]/85'
       }`}
       style={{ left: `${left}%`, width: `${width}%` }}
@@ -317,7 +317,7 @@ function TextBlock({ card, duration, selected, left, width, disabled, onSelect, 
         }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() } }}
       >
-        <span className="truncate text-[10px] font-medium text-white leading-none">
+        <span className="truncate text-[10px] font-medium text-[var(--accent-contrast)] leading-none">
           {spec.uppercase ? card.text.toUpperCase() : card.text}
         </span>
       </span>

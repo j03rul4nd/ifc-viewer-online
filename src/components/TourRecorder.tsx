@@ -23,7 +23,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { getRuleLabel, type TourStep } from '../types'
 import type { ViewerAPI } from '../lib/viewer'
 
-const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#E9A23B', info: '#3B82F6' } as const
+const SEVERITY_COLOR = { error: 'var(--danger)', warning: 'var(--warning)', info: '#3B82F6' } as const
 
 interface TourRecorderProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -77,7 +77,7 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
     return t('recorder.stop', { n: index + 1 })
   }, [i18n.language, t])
 
-  const iconBtn = 'w-6 h-6 max-md:w-10 max-md:h-10 max-md:rounded-[10px] max-md:bg-white/[0.05] flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150'
+  const iconBtn = 'w-6 h-6 max-md:w-10 max-md:h-10 max-md:rounded-[10px] max-md:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150'
 
   return (
     // A ViewportPanel like every other tool, rather than a panel that placed
@@ -210,7 +210,7 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
           <button
             onClick={() => play(0)}
             disabled={steps.length === 0}
-            className="flex-1 h-[32px] max-md:h-12 max-md:text-[14px] max-md:rounded-[12px] flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[12px] font-medium text-white hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+            className="flex-1 h-[32px] max-md:h-12 max-md:text-[14px] max-md:rounded-[12px] flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[12px] font-medium text-[var(--accent-contrast)] hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z" /></svg>
             {t('recorder.play')}
