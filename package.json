@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "theme:colour-baseline": "node scripts/colour-guard.mjs --write",
     "test:flood-gpu": "node scripts/flood/gpu-suite.mjs",
     "ebook": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/ebook/build-ebook.mjs",
     "og": "node scripts/og/build-og.mjs",

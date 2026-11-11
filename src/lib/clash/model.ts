@@ -162,6 +162,8 @@ export interface ClashRecord {
   assignee?: string
   due?: string
   note?: string
+  /** When a person or a run last changed it (merge key for the cloud). */
+  updatedAt?: string
   /** Last known labels, so a resolved clash can still be listed. */
   label?: string
   testName?: string
@@ -196,12 +198,12 @@ export function reconcile(
     live.add(r.key)
     const old = prev[r.key]
     const status: ClashStatus = !old ? 'new' : old.status === 'approved' ? 'approved' : 'active'
-    next[r.key] = { ...old, status, firstSeen: old?.firstSeen ?? now, lastSeen: now, label: label(r), testName: testName(r.test), storey: r.a.storey || r.b.storey }
+    next[r.key] = { ...old, status, firstSeen: old?.firstSeen ?? now, lastSeen: now, updatedAt: old && old.status === status ? old.updatedAt : now, label: label(r), testName: testName(r.test), storey: r.a.storey || r.b.storey }
   }
   for (const [key, rec] of Object.entries(prev)) {
     if (live.has(key)) continue
     const test = key.slice(0, key.indexOf('|'))
-    next[key] = ranTests.has(test) && rec.status !== 'approved' ? { ...rec, status: 'resolved' } : rec
+    next[key] = ranTests.has(test) && rec.status !== 'approved' && rec.status !== 'resolved' ? { ...rec, status: 'resolved', updatedAt: now } : rec
   }
   return next
 }
@@ -230,23 +232,30 @@ export function groupClashes(results: ClashResult[], by: GroupBy, testName: (id:
     g.clashes.push(r)
   }
   if (by === 'element') {
+    // Greedy with a lazy max-heap: O(n log n), so 5,000+ clashes group in
+    // a few ms instead of rescanning the whole list once per group.
     const elKey = (e: ClashElement) => `${e.modelId}#${e.localId}`
-    const count = new Map<string, number>()
-    for (const r of results) for (const e of [r.a, r.b]) count.set(elKey(e), (count.get(elKey(e)) ?? 0) + 1)
-    const rest = [...results]
-    while (rest.length) {
-      let topKey = '', top = -1
-      for (const [k, c] of count) if (c > top) { top = c; topKey = k }
-      if (top <= 0) break
-      for (let i = rest.length - 1; i >= 0; i--) {
-        const r = rest[i]
-        const hit = elKey(r.a) === topKey ? r.a : elKey(r.b) === topKey ? r.b : null
-        if (!hit) continue
-        add(topKey, `${hit.name || hit.category} · ${hit.discipline}`, r)
-        rest.splice(i, 1)
-        for (const e of [r.a, r.b]) count.set(elKey(e), (count.get(elKey(e)) ?? 1) - 1)
+    const inc = new Map<string, number[]>()
+    results.forEach((r, i) => { for (const e of [r.a, r.b]) { const k = elKey(e); let l = inc.get(k); if (!l) inc.set(k, (l = [])); l.push(i) } })
+    const taken = new Uint8Array(results.length)
+    const heap: Array<[number, string]> = [...inc].map(([k, l]) => [l.length, k])
+    const less = (x: [number, string], y: [number, string]) => x[0] < y[0] || (x[0] === y[0] && x[1] > y[1])
+    const up = (i: number) => { while (i > 0) { const p = (i - 1) >> 1; if (!less(heap[p], heap[i])) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p } }
+    const down = (i: number) => { for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && less(heap[m], heap[l])) m = l; if (r < heap.length && less(heap[m], heap[r])) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m } }
+    for (let i = (heap.length >> 1) - 1; i >= 0; i--) down(i)
+    while (heap.length) {
+      const top = heap[0]
+      const last = heap.pop()!
+      if (heap.length) { heap[0] = last; down(0) }
+      const free = inc.get(top[1])!.filter((i) => !taken[i])
+      if (!free.length) continue
+      if (free.length < top[0]) { heap.push([free.length, top[1]]); up(heap.length - 1); continue }
+      for (const i of free) {
+        taken[i] = 1
+        const r = results[i]
+        const hit = elKey(r.a) === top[1] ? r.a : r.b
+        add(top[1], `${hit.name || hit.category} · ${hit.discipline}`, r)
       }
-      count.delete(topKey)
     }
   } else {
     for (const r of results) {
