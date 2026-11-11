@@ -5,6 +5,8 @@
 import type { BcfTopic, BcfViewpoint } from '../../types'
 import { groupClashes, statusCounts, type ClashRecord, type ClashResult, type ClashStatus } from './model'
 import { clashText, type ClashTextKey } from './i18n'
+import { estimateCost, sortByCost } from './cost'
+import { trendSvg, type TrendPoint } from './trend'
 
 const BCF_STATUS: Record<ClashStatus, string> = { new: 'Open', active: 'Active', resolved: 'Resolved', approved: 'Closed' }
 
@@ -87,6 +89,10 @@ export function coordinationReportHtml(opts: {
   records: Record<string, ClashRecord>
   testName: (id: string) => string
   now?: Date
+  /** Clash key → image (data URL) for the clashes shown with a picture. */
+  shots?: Record<string, string>
+  trend?: TrendPoint[]
+  suppressed?: number
 }): string {
   const { lang, project, results, records, testName } = opts
   const t = (k: ClashTextKey) => clashText(lang, k)
@@ -108,6 +114,16 @@ export function coordinationReportHtml(opts: {
     v[0]++; if (open.includes(r)) v[1]++
     people.set(who, v)
   }
+  const eur = (n: number) => n.toLocaleString(lang.slice(0, 2))
+  const top = sortByCost(open).slice(0, 10)
+  const shots = opts.shots ?? {}
+  const trendBlock = opts.trend && opts.trend.length > 1
+    ? `<h2>${esc(t('trend'))} · ${esc(clashText(lang, 'trendRuns', { n: opts.trend.length }))}</h2>${trendSvg(opts.trend, 520, 110, { open: t('trendOpen'), resolved: t('trendResolved') })}`
+    : ''
+  const costBlock = top.length ? `
+  <h2>${esc(t('reportTopCost'))}</h2>
+  <p class="meta">${esc(t('costHint'))} ${esc(clashText(lang, 'costTotal', { eur: eur(open.reduce((a, r) => a + estimateCost(r), 0)) }))}</p>
+  ${top.map((r, i) => `<div class="card">${shots[r.key] ? `<img src="${shots[r.key]}" alt="">` : ''}<div><b>${i + 1}. ${esc(clashTitle(r))}</b><br>${esc(testName(r.test))} · ${esc(r.a.storey || r.b.storey || '—')} · ${esc(records[r.key]?.assignee || t('unassigned'))}<br><span class="pill">≈ ${eur(estimateCost(r))} € (${esc(t('estimate'))})</span></div></div>`).join('')}` : ''
   const statusLine = (['new', 'active', 'approved'] as const).map((s) => `<span class="pill">${esc(t(`status_${s}`))}: ${counts[s]}</span>`).join(' ')
   return `<!doctype html>
 <html lang="${esc(lang.slice(0, 2))}"><head><meta charset="utf-8"><title>${esc(t('reportTitle'))} · ${esc(project)}</title>
@@ -117,11 +133,15 @@ export function coordinationReportHtml(opts: {
   .meta{color:#5b6670;margin-bottom:12px} .pill{display:inline-block;border:1px solid #c9d1d8;border-radius:999px;padding:1px 8px;margin-right:6px}
   table{border-collapse:collapse;width:100%} th,td{text-align:left;padding:4px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}
   th{font-weight:600;color:#5b6670} td.n{font-variant-numeric:tabular-nums}
+  .card{display:flex;gap:12px;align-items:flex-start;border:1px solid #e3e7eb;border-radius:8px;padding:8px;margin:6px 0;break-inside:avoid}
+  .card img{width:220px;height:auto;border-radius:4px;flex:none}
   @media print{body{margin:12mm} h2{break-after:avoid}}
 </style></head><body>
   <h1>${esc(t('reportTitle'))}</h1>
   <div class="meta">${esc(project)} · ${esc(t('generated'))} ${esc(now.toISOString().slice(0, 16).replace('T', ' '))}</div>
-  <div>${esc(t('total'))}: <b>${results.length}</b> · ${statusLine} <span class="pill">${esc(t('status_resolved'))}: ${resolved}</span></div>
+  <div>${esc(t('total'))}: <b>${results.length}</b> · ${statusLine} <span class="pill">${esc(t('status_resolved'))}: ${resolved}</span>${opts.suppressed ? ` <span class="pill">${esc(clashText(lang, 'suppressed', { n: opts.suppressed }))}</span>` : ''}</div>
+  ${trendBlock}
+  ${costBlock}
   ${table(t('byTest'), rowsOf('test'))}
   ${table(t('byStorey'), rowsOf('storey'))}
   ${table(t('byAssignee'), [...people.entries()].sort((a, b) => b[1][1] - a[1][1]).map(([k, v]) => [k, v[0], v[1]]))}
