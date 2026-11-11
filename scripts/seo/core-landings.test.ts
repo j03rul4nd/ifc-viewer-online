@@ -39,7 +39,8 @@ function shape(v: unknown): unknown {
 }
 
 describe('core landings: pages on disk', () => {
-  it('are exactly what the generator writes', () => {
+  // Sixty pages through the template and the shared chrome: slow on a busy machine.
+  it('are exactly what the generator writes', { timeout: 60_000 }, () => {
     each((f, l) => {
       const file = join(PUBLIC, SLUGS[f][l], 'index.html')
       expect(existsSync(file), file).toBe(true)

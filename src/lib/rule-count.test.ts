@@ -62,6 +62,12 @@ const RULESET_AFTER_NUMBER =
 // score range, it does not count rules. Matched on the text just before it.
 const SCORE_RANGE_BEFORE = /\b0\s*(?:[–\-~〜]|to|a|bis|à|ถึง)\s*$/iu
 
+// "Score 77 und die drei Regeln", "note de 77, et les trois règles", "Advanced
+// (2 109 €) ajoute les règles": the number ends one thing and the rule word
+// starts another. A count is written "44 rules" or "44 quality rules", with no
+// punctuation or conjunction in between.
+const SEPARATED_FROM_WORD = /^\d{2,3}[^\d\n]{0,15}?(?:[,;:()]|\s(?:and|und|et|e|ed|y|i)\s)/iu
+
 // Every content surface that quotes the rule count, loaded raw at test time
 // (same import.meta.glob idiom as ids-testcases.test.ts — no node builtins,
 // so the browser tsconfig stays clean). Surfaces that only exist in dist/
@@ -98,6 +104,7 @@ function sweep(file: string, text: string): Offender[] {
       if (MORE_MARKER.test(context)) continue
       if (RULESET_AFTER_NUMBER.test(text.slice(m.index!, m.index! + 40))) continue
       if (SCORE_RANGE_BEFORE.test(text.slice(Math.max(0, m.index! - 12), m.index!))) continue
+      if (re === NUMBER_BEFORE_WORD && SEPARATED_FROM_WORD.test(text.slice(m.index!, m.index! + 20))) continue
       offenders.push({ file, line, claim, context })
     }
   }
