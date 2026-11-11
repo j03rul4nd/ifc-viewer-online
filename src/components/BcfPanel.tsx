@@ -25,12 +25,12 @@ const STATUS_COLORS: Record<string, string> = {
   'Open':        '#e0523f',
   'In Progress': '#e9a23b',
   'Closed':      '#3fa866',
-  "Won't Fix":   '#6b7280',
+  "Won't Fix":   'var(--text-faint)',
 }
 const PRIORITY_COLORS: Record<string, string> = {
   'High':   '#e0523f',
   'Normal': '#e9a23b',
-  'Low':    '#6b7280',
+  'Low':    'var(--text-faint)',
 }
 const PRIORITY_ORDER: Record<string, number> = { 'High': 0, 'Normal': 1, 'Low': 2 }
 const STATUS_ORDER:   Record<string, number>  = { 'Open': 0, 'In Progress': 1, 'Closed': 2, "Won't Fix": 3 }
@@ -109,7 +109,7 @@ function openViewpoint(viewer: BcfViewer | null | undefined, vp: BcfViewpoint | 
 function StatusDot({
   status, onClick, size = 8,
 }: { status?: string; onClick?: (e: React.MouseEvent) => void; size?: number }) {
-  const color = STATUS_COLORS[status ?? 'Open'] ?? '#6b7280'
+  const color = STATUS_COLORS[status ?? 'Open'] ?? 'var(--text-faint)'
   return (
     <button
       onClick={onClick}
@@ -122,7 +122,7 @@ function StatusDot({
 
 function PriorityPip({ priority }: { priority?: string }) {
   if (!priority || priority === 'Normal') return null
-  const color = PRIORITY_COLORS[priority] ?? '#6b7280'
+  const color = PRIORITY_COLORS[priority] ?? 'var(--text-faint)'
   return (
     <span
       className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
@@ -515,7 +515,7 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
                   <button
                     onClick={() => save({ viewpoints: topic.viewpoints.filter((v) => v.guid !== vp.guid) })}
                     title="Remove viewpoint"
-                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 text-white rounded flex items-center justify-center opacity-0 group-hover/vp:opacity-100 transition-opacity"
+                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border)] rounded flex items-center justify-center opacity-0 group-hover/vp:opacity-100 transition-opacity"
                   >
                     <svg width="6" height="6" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                       <path d="M1 1l4 4M5 1L1 5" />
@@ -582,7 +582,7 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
                 className="px-2.5 rounded text-[10px] font-medium border transition-colors self-end h-7 shrink-0"
                 style={{
                   background:  newComment.trim() ? 'var(--accent)' : 'var(--surface-2)',
-                  color:       newComment.trim() ? '#fff' : 'var(--text-faint)',
+                  color:       newComment.trim() ? 'var(--accent-contrast)' : 'var(--text-faint)',
                   borderColor: newComment.trim() ? 'var(--accent)' : 'var(--border)',
                 }}
               >
@@ -673,7 +673,7 @@ function BcfCreateForm({ viewer, onBack, onCreated }: CreateFormProps) {
           className="px-2.5 h-6 text-[10px] font-semibold rounded transition-colors"
           style={{
             background:  title.trim() ? 'var(--accent)' : 'var(--surface-2)',
-            color:       title.trim() ? '#fff' : 'var(--text-faint)',
+            color:       title.trim() ? 'var(--accent-contrast)' : 'var(--text-faint)',
             border:      title.trim() ? '1px solid var(--accent)' : '1px solid var(--border)',
           }}
         >
@@ -894,7 +894,7 @@ function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
                 onClick={() => setExportVersion(v)}
                 className="px-1.5 h-full text-[9px] font-mono font-semibold transition-colors"
                 style={exportVersion === v
-                  ? { background: 'var(--accent)', color: '#fff' }
+                  ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
                   : { color: 'var(--text-faint)', background: 'transparent' }}
               >
                 {v}

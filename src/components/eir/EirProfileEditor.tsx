@@ -35,7 +35,7 @@ const RULE_TYPES: EirRuleType[] = [
 
 const SEVERITIES: EirSeverity[] = ['error', 'warning', 'info', 'ignored']
 const SEV_COLOR: Record<EirSeverity, string> = {
-  error: 'var(--danger)', warning: '#E9A23B', info: 'var(--accent)', ignored: 'var(--text-faint)',
+  error: 'var(--danger)', warning: 'var(--warn)', info: 'var(--accent)', ignored: 'var(--text-faint)',
 }
 const OPERATORS: NumericOperator[] = ['>', '>=', '<', '<=', '=']
 
@@ -261,12 +261,12 @@ export default function EirProfileEditor({ onClose }: Props) {
       <div className="m-sheet-host fixed inset-0 z-[72] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}
+          className="absolute inset-0 bg-[var(--overlay)]" onClick={onClose}
         />
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: -8 }}
           transition={{ duration: 0.18 }}
-          className="m-sheet m-sheet-full relative z-[73] w-[840px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+          className="m-sheet m-sheet-full relative z-[73] w-[840px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-strong)] shadow-[var(--shadow)] overflow-hidden flex flex-col"
           style={{ maxHeight: 'calc(100dvh - 4rem)' }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -338,7 +338,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                     <Icons.Shield size={26} className="text-[var(--accent)]/70" />
                     <p className="text-[13px] font-semibold text-[var(--text)] m-0">{t('empty.title')}</p>
                     <p className="text-[11.5px] text-[var(--text-faint)] leading-relaxed m-0">{t('empty.body')}</p>
-                    <button onClick={newProfile} className="mt-1 h-8 px-3 rounded-md bg-[var(--accent)] text-white text-[11.5px] font-medium hover:brightness-110">+ {t('empty.cta')}</button>
+                    <button onClick={newProfile} className="mt-1 h-8 px-3 rounded-md bg-[var(--accent)] text-[var(--accent-contrast)] text-[11.5px] font-medium hover:brightness-110">+ {t('empty.cta')}</button>
                   </div>
                 </div>
               ) : (
@@ -387,7 +387,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                   {/* Footer actions */}
                   <div className="p-3 border-t border-[var(--border)] flex items-center gap-2">
                     <span className="text-[10.5px] text-[var(--text-faint)]">{t('footer', { rules: ruleCount, active: compiledCount })}</span>
-                    {!hasBuffer && <span className="text-[10px] text-[#E9A23B] flex items-center gap-1">⚠ {t('noModelHint')}</span>}
+                    {!hasBuffer && <span className="text-[10px] text-[var(--warn)] flex items-center gap-1">⚠ {t('noModelHint')}</span>}
                     <div className="ml-auto flex items-center gap-1.5">
                       <button onClick={duplicate} title={t('actions.duplicate')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Copy size={13} /></button>
                       <button onClick={onExport} title={t('actions.export')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Download size={13} /></button>
@@ -396,7 +396,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                         <button onClick={() => void onDelete()} title={t('actions.delete')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--danger)] hover:brightness-125"><Icons.X size={13} /></button>
                       )}
                       <button onClick={() => void onSave()} className="h-8 px-3 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[11.5px] text-[var(--text)] hover:brightness-110 flex items-center gap-1.5"><Icons.Check size={13} /> {t('actions.save')}</button>
-                      <button onClick={() => void useAndRun()} disabled={!hasBuffer} title={hasBuffer ? '' : t('toasts.loadModelFirst')} className="h-8 px-3 rounded-md bg-[var(--accent)] text-white text-[11.5px] font-medium disabled:opacity-40 hover:brightness-110">{t('actions.useAndRun')}</button>
+                      <button onClick={() => void useAndRun()} disabled={!hasBuffer} title={hasBuffer ? '' : t('toasts.loadModelFirst')} className="h-8 px-3 rounded-md bg-[var(--accent)] text-[var(--accent-contrast)] text-[11.5px] font-medium disabled:opacity-40 hover:brightness-110">{t('actions.useAndRun')}</button>
                     </div>
                   </div>
                 </>
@@ -432,9 +432,9 @@ function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleC
     : rule.predefinedType || rule.where?.property ? t('applies.upper', { count: applies })
     : applies > 0 ? t('applies.match', { count: applies })
     : t('applies.none')
-  const appliesColor = applies && applies > 0 ? 'var(--text-faint)' : '#E9A23B'
+  const appliesColor = applies && applies > 0 ? 'var(--text-faint)' : 'var(--warn)'
   return (
-    <div className={`rounded-lg border bg-[var(--surface)] p-2 flex flex-col gap-1.5 ${lint?.length ? 'border-[#E9A23B]/50' : 'border-[var(--border)]'}`}>
+    <div className={`rounded-lg border bg-[var(--surface)] p-2 flex flex-col gap-1.5 ${lint?.length ? 'border-[color-mix(in_srgb,var(--warn)_50%,transparent)]' : 'border-[var(--border)]'}`}>
       <div className="flex items-center gap-1.5 flex-wrap">
         <select value={rule.type} onChange={(e) => onType(rule.id, e.target.value as EirRuleType)} className={`${inputCls} w-[150px]`}>
           {RULE_TYPES.map((rt) => <option key={rt} value={rt}>{t(`ruleTypes.${rt}`)}</option>)}
@@ -458,7 +458,7 @@ function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleC
       {lint?.length ? (
         <div className="flex flex-col gap-0.5 pt-0.5">
           {lint.map((c) => (
-            <span key={c} className="text-[10px] leading-snug" style={{ color: '#E9A23B' }}>⚠ {t(`lint.${c}`)}</span>
+            <span key={c} className="text-[10px] leading-snug" style={{ color: 'var(--warn)' }}>⚠ {t(`lint.${c}`)}</span>
           ))}
         </div>
       ) : null}

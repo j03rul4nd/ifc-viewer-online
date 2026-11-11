@@ -561,7 +561,7 @@ function SpecCard({
       <button
         onClick={expandable ? onToggle : undefined}
         aria-expanded={expandable ? open : undefined}
-        className="w-full flex items-start gap-2.5 px-3.5 py-3 min-h-[52px] text-left active:bg-[rgba(255,255,255,0.03)]"
+        className="w-full flex items-start gap-2.5 px-3.5 py-3 min-h-[52px] text-left active:bg-[var(--bg-hover)]"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         <span className="font-mono text-[15px] leading-none mt-0.5 shrink-0" style={{ color }}>{icon}</span>

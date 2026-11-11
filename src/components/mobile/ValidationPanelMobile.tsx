@@ -586,7 +586,7 @@ function IssueGroup({
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-      <button onClick={onToggle} className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left active:bg-[rgba(255,255,255,0.03)]" style={TAP}>
+      <button onClick={onToggle} className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left active:bg-[var(--bg-hover)]" style={TAP}>
         <Icons.Chevron size={13} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
         <span className="text-[12px] font-semibold uppercase tracking-wider truncate flex-1 min-w-0" style={{ color: headColor }}>{label}</span>
         <span className="flex items-center gap-1.5 shrink-0 font-mono text-[10px]">
@@ -690,13 +690,13 @@ function IssueCard({
               className="flex-1 h-10 px-3 rounded-lg bg-[var(--surface-2)] border border-[var(--accent)] text-[13px] text-[var(--text)] outline-none"
               style={TAP}
             />
-            <button onClick={commit} className="h-10 px-3.5 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: 'var(--accent)', ...TAP }}>{t('issue.apply')}</button>
+            <button onClick={commit} className="h-10 px-3.5 rounded-lg text-[12.5px] font-semibold text-[var(--accent-contrast)]" style={{ background: 'var(--accent)', ...TAP }}>{t('issue.apply')}</button>
           </div>
         )}
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 mt-1.5">
-          <button onClick={() => onJumpTo(issue)} className="h-9 px-3.5 rounded-lg text-[12px] font-semibold text-white flex items-center gap-1.5 active:scale-[0.97] transition-transform" style={{ background: 'var(--accent)', ...TAP }}>
+          <button onClick={() => onJumpTo(issue)} className="h-9 px-3.5 rounded-lg text-[12px] font-semibold text-[var(--accent-contrast)] flex items-center gap-1.5 active:scale-[0.97] transition-transform" style={{ background: 'var(--accent)', ...TAP }}>
             <EyeIcon />{t('issue.view')}
           </button>
           {isNameEditable ? (
