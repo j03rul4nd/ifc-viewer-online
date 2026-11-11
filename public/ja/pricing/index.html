@@ -227,14 +227,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <th scope="col" class="c-pro" id="h-pro">
             <span class="pick-tag">あなたの業務に合うプラン</span>
             <span class="plan-name">Pro</span>
-            <p class="price"><strong>€19 / 月</strong></p><p class="meta">または年額 €190（2 か月分お得）</p>
+            <p class="price"><strong>€39 / 月（年払い）</strong></p><p class="meta">年額 €468 · 月払いは €47 / 月</p>
             <p class="meta who">個人</p>
             <button type="button" class="btn btn-main" data-plan="pro">ウェイティングリストに登録</button>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">あなたの業務に合うプラン</span>
             <span class="plan-name">Team</span>
-            <p class="price"><strong>編集者 1 人あたり €35 / 月</strong></p><p class="meta">または年額 €348（2 か月分お得）</p><p class="meta">編集者 3 人から</p>
+            <p class="price"><strong>編集者 1 人あたり €59 / 月（年払い）</strong></p><p class="meta">年額 €708 · 月払いは €71 / 月</p><p class="meta">編集者 3 人から</p>
             <p class="meta who">設計事務所・建設コンサル</p>
             <button type="button" class="btn btn-main" data-plan="team">ウェイティングリストに登録</button>
           </th>
@@ -288,7 +288,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           </tr>
         </tbody>
       </table>
-      <p class="founder">早期登録特典：先着 20 チームは年額が 40% オフ、契約中はずっと適用。</p>
+      <p class="founder">Team と納品受付の早期特典：先着 10 社は 12 か月間 30% オフ（導入事例の公開が条件）。</p>
     </section>
 
     <section class="sec wrap" id="reception" aria-labelledby="reception-h">
@@ -298,10 +298,10 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
         <div>
           <span class="pick-tag">あなたの業務に合うプラン</span>
           <h3>納品受付</h3>
-          <p class="price"><strong>稼働中のプロジェクトごとに €149 / 月（協力会社 10 社まで）</strong></p>
-          <p class="meta">€399 / 月、プロジェクト数無制限</p>
+          <p class="price"><strong>稼働中のプロジェクトごとに €290 / 月から（協力会社 15 社まで）</strong></p>
+          <p class="meta">ポートフォリオ：€790 / 月から、プロジェクトと協力会社は無制限</p>
           <p class="body">差し戻しが必要なモデルを受け取るのはもう終わりです。協力会社は送る前に貴社の要件に対して無料でファイルをチェックします。届くのは要件を満たしたものだけで、誰の納品が良いかも分かります。</p>
-          <button type="button" class="btn btn-main" data-plan="reception">ウェイティングリストに登録</button>
+          <button type="button" class="btn btn-main" data-plan="reception">お問い合わせ</button>
         </div>
         <ol><li><strong>要件を公開</strong> 入札や契約向けにリンクや QR で：IDS、ルール、最低スコア、命名規則。</li><li><strong>協力会社は無料でチェック</strong> ブラウザで修正してから送ります。</li><li><strong>納品受付箱</strong> が各ファイルを再チェックし、バージョンを保存して、BCF の指摘付きで受理または差し戻します。</li><li><strong>協力会社ごとの記録：</strong> 納品数、初回受理率、スコアの推移。</li><li><strong>竣工時の引き渡しレポート</strong> 受け取った情報をまとめ、維持管理にそのまま使えます。</li></ol>
       </div>
@@ -310,9 +310,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     <section class="sec wrap" id="more" aria-labelledby="more-h">
       <h2 id="more-h">自社製品に組み込む、またはポートフォリオ全体で</h2>
       <dl class="rows">
-        <div class="row" id="row-developer"><dt><span class="pick-tag">あなたの業務に合うプラン</span>Developer<span class="meta">€49 / 月 + 従量</span></dt>
+        <div class="row" id="row-developer"><dt><span class="pick-tag">あなたの業務に合うプラン</span>Developer<span class="meta">€149 / 月（年払い）+ 従量</span></dt>
           <dd><p>クライアント SDK は無料です。Developer はプラットフォーム、CDE、自動化向けのホスト型検証 API を追加します。</p><button type="button" class="btn btn-main" data-plan="developer">ウェイティングリストに登録</button></dd></div>
-        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">年額 €6,000 から</span></dt>
+        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">年額 €15,000 から</span></dt>
           <dd><p>ポートフォリオ全体での納品受付、シングルサインオン、データ処理契約、インターネット接続不要のオンプレミス版。 <a href="/on-premise-ifc-validator/">オンプレミス版バリデータ</a></p><button type="button" class="btn btn-main" data-plan="enterprise">お問い合わせ</button></dd></div>
       </dl>
     </section>
@@ -401,7 +401,7 @@ var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-for
     submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
 document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
   plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=(plan==='enterprise'?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
   roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
   msg.textContent='';msg.className='msg';submit.disabled=false;
   track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});

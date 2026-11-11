@@ -227,14 +227,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <th scope="col" class="c-pro" id="h-pro">
             <span class="pick-tag">Correspond à votre activité</span>
             <span class="plan-name">Pro</span>
-            <p class="price"><strong>19 € / mois</strong></p><p class="meta">ou 190 € par an, deux mois offerts</p>
+            <p class="price"><strong>39 € / mois, facturé à l’année</strong></p><p class="meta">468 € par an · 47 € / mois en paiement mensuel</p>
             <p class="meta who">Une personne</p>
             <button type="button" class="btn btn-main" data-plan="pro">Rejoindre la liste</button>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">Correspond à votre activité</span>
             <span class="plan-name">Team</span>
-            <p class="price"><strong>35 € par éditeur / mois</strong></p><p class="meta">ou 348 € par an, deux mois offerts</p><p class="meta">3 éditeurs minimum</p>
+            <p class="price"><strong>59 € par éditeur / mois, facturé à l’année</strong></p><p class="meta">708 € par an · 71 € / mois en paiement mensuel</p><p class="meta">3 éditeurs minimum</p>
             <p class="meta who">Agences et bureaux d’études</p>
             <button type="button" class="btn btn-main" data-plan="team">Rejoindre la liste</button>
           </th>
@@ -288,7 +288,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           </tr>
         </tbody>
       </table>
-      <p class="founder">Offre fondateur : 40 % de remise sur l’annuel pour les 20 premières équipes, tant qu’elles restent.</p>
+      <p class="founder">Offre fondateur pour Team et Réception : 30 % de remise pendant 12 mois pour les 10 premiers clients, en échange d’une étude de cas publiée.</p>
     </section>
 
     <section class="sec wrap" id="reception" aria-labelledby="reception-h">
@@ -298,10 +298,10 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
         <div>
           <span class="pick-tag">Correspond à votre activité</span>
           <h3>Réception</h3>
-          <p class="price"><strong>149 € / mois par chantier actif, jusqu’à 10 sous-traitants</strong></p>
-          <p class="meta">399 € / mois, chantiers illimités</p>
+          <p class="price"><strong>À partir de 290 € / mois par chantier actif, jusqu’à 15 sous-traitants</strong></p>
+          <p class="meta">Portefeuille : à partir de 790 € / mois, chantiers et sous-traitants illimités</p>
           <p class="body">Arrêtez de recevoir des modèles à renvoyer. Vos sous-traitants vérifient gratuitement leurs fichiers par rapport à vos exigences avant l’envoi ; vous ne recevez que ce qui est conforme et vous voyez qui livre bien.</p>
-          <button type="button" class="btn btn-main" data-plan="reception">Rejoindre la liste</button>
+          <button type="button" class="btn btn-main" data-plan="reception">Nous contacter</button>
         </div>
         <ol><li><strong>Publiez vos exigences</strong> en lien ou QR code pour les appels d’offres et contrats : IDS, règles, note minimale, nommage.</li><li><strong>Les sous-traitants vérifient gratuitement</strong> dans leur navigateur et corrigent avant d’envoyer.</li><li><strong>Une boîte de réception</strong> revérifie chaque fichier, garde la version et l’accepte ou la refuse avec des issues BCF.</li><li><strong>Un historique par sous-traitant :</strong> livraisons, acceptées du premier coup, évolution de la note.</li><li><strong>Un rapport de fin de chantier</strong> sur les informations reçues, prêt pour l’exploitation.</li></ol>
       </div>
@@ -310,9 +310,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     <section class="sec wrap" id="more" aria-labelledby="more-h">
       <h2 id="more-h">Développer par-dessus, ou tout un portefeuille</h2>
       <dl class="rows">
-        <div class="row" id="row-developer"><dt><span class="pick-tag">Correspond à votre activité</span>Developer<span class="meta">49 € / mois + usage</span></dt>
+        <div class="row" id="row-developer"><dt><span class="pick-tag">Correspond à votre activité</span>Developer<span class="meta">149 € / mois, facturé à l’année, + usage</span></dt>
           <dd><p>Le SDK client est gratuit. Developer ajoute une API de validation hébergée pour plateformes, CDE et automatisations.</p><button type="button" class="btn btn-main" data-plan="developer">Rejoindre la liste</button></dd></div>
-        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">À partir de 6 000 € / an</span></dt>
+        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">À partir de 15 000 € / an</span></dt>
           <dd><p>Réception sur tout un portefeuille, authentification unique, accord de sous-traitance et une option sur site sans accès à internet. <a href="/on-premise-ifc-validator/">Validateur sur site</a></p><button type="button" class="btn btn-main" data-plan="enterprise">Nous contacter</button></dd></div>
       </dl>
     </section>
@@ -401,7 +401,7 @@ var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-for
     submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
 document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
   plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=(plan==='enterprise'?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
   roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
   msg.textContent='';msg.className='msg';submit.disabled=false;
   track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});

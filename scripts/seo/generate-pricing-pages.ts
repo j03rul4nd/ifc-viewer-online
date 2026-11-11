@@ -49,17 +49,17 @@ export function eur(lang: PricingLang, n: number): string {
 function priceHead(lang: PricingLang, c: PricingCopy, plan: TablePlan): string {
   if (plan === 'free') return `<p class="price"><strong>${esc(fill(c.price.free, { p: eur(lang, 0) }))}</strong></p>`
   if (plan === 'pro') {
-    return `<p class="price"><strong>${esc(fill(c.price.month, { p: eur(lang, PRICES.pro.monthly) }))}</strong></p>`
-      + `<p class="meta">${esc(fill(c.price.yearly, { y: eur(lang, PRICES.pro.yearly) }))}</p>`
+    return `<p class="price"><strong>${esc(fill(c.price.month, { p: eur(lang, PRICES.pro.perMonthYearly) }))}</strong></p>`
+      + `<p class="meta">${esc(fill(c.price.yearly, { y: eur(lang, PRICES.pro.yearly), m: eur(lang, PRICES.pro.monthly) }))}</p>`
   }
-  return `<p class="price"><strong>${esc(fill(c.price.editorMonth, { p: eur(lang, PRICES.team.monthlyPerEditor) }))}</strong></p>`
-    + `<p class="meta">${esc(fill(c.price.yearly, { y: eur(lang, PRICES.team.yearlyPerEditor) }))}</p>`
+  return `<p class="price"><strong>${esc(fill(c.price.editorMonth, { p: eur(lang, PRICES.team.perEditorMonthYearly) }))}</strong></p>`
+    + `<p class="meta">${esc(fill(c.price.yearly, { y: eur(lang, PRICES.team.yearlyPerEditor), m: eur(lang, PRICES.team.monthlyPerEditor) }))}</p>`
     + `<p class="meta">${esc(fill(c.price.minEditors, { n: PRICES.team.minEditors }))}</p>`
 }
 
 function ctaFor(c: PricingCopy, plan: Plan, lang: PricingLang): string {
   if (plan === 'free') return `<a class="btn btn-quiet" href="${lang === 'en' ? '/' : `/${lang}/`}" data-cta="table_free" hreflang="${lang}">${esc(c.cta.free)}</a>`
-  const label = plan === 'enterprise' ? c.cta.talk : c.cta.waitlist
+  const label = plan === 'enterprise' || plan === 'reception' ? c.cta.talk : c.cta.waitlist
   return `<button type="button" class="btn btn-main" data-plan="${plan}">${esc(label)}</button>`
 }
 
@@ -94,7 +94,7 @@ function table(lang: PricingLang, c: PricingCopy): string {
         <thead><tr><td class="corner"></td>${head}
         </tr></thead>${bodies}
       </table>
-      <p class="founder">${esc(fill(c.price.founder, { n: PRICES.founder.discountPct, t: PRICES.founder.teams }))}</p>`
+      <p class="founder">${esc(fill(c.price.founder, { n: PRICES.founder.discountPct, t: PRICES.founder.customers, m: PRICES.founder.months }))}</p>`
 }
 
 function picker(c: PricingCopy): string {
@@ -121,8 +121,8 @@ function reception(lang: PricingLang, c: PricingCopy): string {
         <div>
           <span class="pick-tag">${esc(c.plans.recommended)}</span>
           <h3>${esc(c.names.reception)}</h3>
-          <p class="price"><strong>${esc(fill(r.perProject, { p: eur(lang, PRICES.reception.perProject), n: PRICES.reception.suppliersPerProject }))}</strong></p>
-          <p class="meta">${esc(fill(r.unlimited, { p: eur(lang, PRICES.reception.unlimited) }))}</p>
+          <p class="price"><strong>${esc(fill(r.perProject, { p: eur(lang, PRICES.reception.fromPerProject), n: PRICES.reception.suppliersPerProject }))}</strong></p>
+          <p class="meta">${esc(fill(r.unlimited, { p: eur(lang, PRICES.reception.fromPortfolio) }))}</p>
           <p class="body">${esc(r.body)}</p>
           ${ctaFor(c, 'reception', lang)}
         </div>
@@ -137,7 +137,7 @@ function more(lang: PricingLang, c: PricingCopy): string {
     <section class="sec wrap" id="more" aria-labelledby="more-h">
       <h2 id="more-h">${esc(m.h2)}</h2>
       <dl class="rows">
-        <div class="row" id="row-developer"><dt><span class="pick-tag">${esc(c.plans.recommended)}</span>${esc(c.names.developer)}<span class="meta">${esc(fill(m.devPrice, { p: eur(lang, PRICES.developer.monthly) }))}</span></dt>
+        <div class="row" id="row-developer"><dt><span class="pick-tag">${esc(c.plans.recommended)}</span>${esc(c.names.developer)}<span class="meta">${esc(fill(m.devPrice, { p: eur(lang, PRICES.developer.perMonthYearly) }))}</span></dt>
           <dd><p>${esc(m.dev)}</p>${ctaFor(c, 'developer', lang)}</dd></div>
         <div class="row" id="row-enterprise"><dt>${esc(c.names.enterprise)}<span class="meta">${esc(fill(m.entPrice, { p: eur(lang, PRICES.enterprise.fromYearly) }))}</span></dt>
           <dd><p>${esc(m.ent)} <a href="/on-premise-ifc-validator/">${esc(m.onPrem)}</a></p>${ctaFor(c, 'enterprise', lang)}</dd></div>
@@ -484,7 +484,7 @@ var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-for
     submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
 document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
   plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=(plan==='enterprise'?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
   roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
   msg.textContent='';msg.className='msg';submit.disabled=false;
   track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});

@@ -6,16 +6,16 @@ const pro = { kind: 'plan', plan: 'pro', period: 'monthly' } as const
 describe('checkout quote', () => {
   it('a Spanish consumer pays the list price to the cent', () => {
     const q = quote(pro, { country: 'ES', business: false })
-    expect(q.totalEur).toBe(19)
+    expect(q.totalEur).toBe(47)
     expect(q.vatRate).toBe(21)
-    expect(q.netEur + q.vatEur).toBeCloseTo(19, 2)
+    expect(q.netEur + q.vatEur).toBeCloseTo(47, 2)
   })
 
   it('another EU consumer pays their own VAT on the same net', () => {
     const q = quote(pro, { country: 'DE', business: false })
     expect(q.vatRate).toBe(19)
-    expect(q.netEur).toBe(15.7)
-    expect(q.totalEur).toBe(18.68)
+    expect(q.netEur).toBe(38.84)
+    expect(q.totalEur).toBe(46.22)
   })
 
   it('an EU business abroad with a VAT ID is reverse-charged', () => {
@@ -28,7 +28,7 @@ describe('checkout quote', () => {
   it('a Spanish business still pays Spanish VAT', () => {
     const q = quote(pro, { country: 'ES', business: true, vatId: 'ESB12345678' })
     expect(q.reverseCharge).toBe(false)
-    expect(q.totalEur).toBe(19)
+    expect(q.totalEur).toBe(47)
   })
 
   it('outside the EU there is no EU VAT', () => {
@@ -40,7 +40,7 @@ describe('checkout quote', () => {
   it('yearly plans show what they save over twelve months', () => {
     const p = itemPrice({ kind: 'plan', plan: 'pro', period: 'yearly' })
     expect(p.recurring).toBe('yearly')
-    expect(p.savingEur).toBe(19 * 12 - 190)
+    expect(p.savingEur).toBe(47 * 12 - 468)
   })
 
   it('packs are one-off', () => {

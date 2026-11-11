@@ -9,18 +9,24 @@ import { CSS, eur, renderPricingPage } from './generate-pricing-pages'
 const ROOT = path.resolve(__dirname, '..', '..')
 
 describe('pricing data', () => {
-  it('keeps the prices of docs-planning/12 and 17', () => {
-    expect(PRICES.pro).toEqual({ monthly: 19, yearly: 190 })
-    expect(PRICES.team).toEqual({ monthlyPerEditor: 35, yearlyPerEditor: 348, minEditors: 3 })
-    expect(PRICES.reception).toEqual({ perProject: 149, suppliersPerProject: 10, unlimited: 399 })
-    expect(PRICES.developer.monthly).toBe(49)
-    expect(PRICES.enterprise.fromYearly).toBe(6000)
-    expect(PRICES.founder).toEqual({ discountPct: 40, teams: 20 })
+  it('keeps the prices of docs-planning/12 (B2B ladder, 2026-11-11)', () => {
+    expect(PRICES.pro).toEqual({ perMonthYearly: 39, yearly: 468, monthly: 47 })
+    expect(PRICES.team).toEqual({ perEditorMonthYearly: 59, yearlyPerEditor: 708, monthlyPerEditor: 71, minEditors: 3 })
+    expect(PRICES.reception).toEqual({ fromPerProject: 290, suppliersPerProject: 15, fromPortfolio: 790 })
+    expect(PRICES.developer).toEqual({ perMonthYearly: 149, yearly: 1788, monthly: 179 })
+    expect(PRICES.enterprise.fromYearly).toBe(15000)
+    expect(PRICES.founder).toEqual({ discountPct: 30, customers: 10, months: 12 })
   })
 
-  it('"two months free" is true for every yearly price it is printed next to', () => {
-    expect(PRICES.pro.monthly * 12 - PRICES.pro.yearly).toBeGreaterThanOrEqual(PRICES.pro.monthly * 2)
-    expect(PRICES.team.monthlyPerEditor * 12 - PRICES.team.yearlyPerEditor).toBeGreaterThanOrEqual(PRICES.team.monthlyPerEditor * 2)
+  it('yearly is twelve times the headline, and month to month is about 20 % more', () => {
+    for (const [head, year, month] of [
+      [PRICES.pro.perMonthYearly, PRICES.pro.yearly, PRICES.pro.monthly],
+      [PRICES.team.perEditorMonthYearly, PRICES.team.yearlyPerEditor, PRICES.team.monthlyPerEditor],
+      [PRICES.developer.perMonthYearly, PRICES.developer.yearly, PRICES.developer.monthly],
+    ]) {
+      expect(year).toBe(head * 12)
+      expect(Math.abs(month / head - 1.2)).toBeLessThan(0.02)
+    }
   })
 
   it('the free plan gets nothing that needs a server', () => {
@@ -83,7 +89,7 @@ describe('pricing page HTML', () => {
 
   it.each(PRICING_LANGS)('%s: prices on the page are the data, formatted for the language', (lang) => {
     const html = renderPricingPage(lang)
-    for (const n of [19, 190, 35, 348, 149, 399, 49, 6000]) expect(html, `${lang} ${n}`).toContain(eur(lang, n).replace(/&/g, '&amp;'))
+    for (const n of [39, 468, 47, 59, 708, 71, 290, 790, 149, 15000]) expect(html, `${lang} ${n}`).toContain(eur(lang, n).replace(/&/g, '&amp;'))
   })
 
   it('works without JavaScript: every plan and every row is in the HTML', () => {

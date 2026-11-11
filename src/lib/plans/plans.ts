@@ -1,4 +1,4 @@
-// ─── Plan catalogue (doc 12 §2 + doc 17 §3, decided 2026-10-28) ──────────────
+// ─── Plan catalogue (doc 12 §2 + doc 17 §3, B2B ladder 2026-11-11) ──────────
 // Prices are the best estimate, validated in the November calls (doc 12 §7).
 // Change them here and nowhere else.
 
@@ -15,7 +15,7 @@ export const PLAN_DEFS: PlanDef[] = [
   {
     key: 'pro', name: 'Pro', audience: 'Freelancers and one-person studios',
     promise: 'My file opens, my client sees it and there is a record.',
-    monthlyEur: 19, yearlyEur: 190,
+    monthlyEur: 47, yearlyEur: 468,
     quotas: { storageGb: 20, maxFileMb: 1024, apiCallsMonth: 500, cloudCreditsMonth: 20, aiCreditsMonth: 50 },
     includes: ['large_files', 'cloud_projects', 'client_link', 'certificates', 'score_history', 'qualified_timestamp', 'weekly_digest', 'server_autofix', 'hosted_api', 'cloud_storage_pickers', 'email_preview', 'email_tracking'],
     extends: 'free', highlighted: true,
@@ -23,7 +23,7 @@ export const PLAN_DEFS: PlanDef[] = [
   {
     key: 'team', name: 'Team', audience: 'Studios and engineering firms that deliver',
     promise: 'Nothing leaves my company wrong, and my delivery record proves it.',
-    monthlyEur: 35, yearlyEur: 348, unit: 'seat', minUnits: 3,
+    monthlyEur: 71, yearlyEur: 708, unit: 'seat', minUnits: 3,
     quotas: { storageGb: 100, maxFileMb: 3072, apiCallsMonth: 2000, cloudCreditsMonth: 100, aiCreditsMonth: 200 },
     includes: ['quality_gate', 'house_standard', 'cde_connector', 'client_portal', 'iso_states', 'team_issues', 'roi_report', 'audit_log', 'public_record', 'notify_chat', 'white_label', 'webhooks'],
     extends: 'pro',
@@ -31,15 +31,15 @@ export const PLAN_DEFS: PlanDef[] = [
   {
     key: 'reception', name: 'Reception', audience: 'Contractors, developers, owners and FM teams that receive models',
     promise: 'Only what complies reaches me, and I know which supplier delivers well.',
-    monthlyEur: 149, yearlyEur: 1490, unit: 'project', minUnits: 1, fromEur: 149,
-    quotas: { storageGb: 50, maxFileMb: 3072, apiCallsMonth: 2000, cloudCreditsMonth: 100, aiCreditsMonth: 200, suppliers: 10 },
+    monthlyEur: 348, yearlyEur: 3480, unit: 'project', minUnits: 1, fromEur: 290,
+    quotas: { storageGb: 50, maxFileMb: 3072, apiCallsMonth: 2000, cloudCreditsMonth: 100, aiCreditsMonth: 200, suppliers: 15 },
     includes: ['saved_requirements', 'delivery_inbox', 'accept_reject', 'supplier_record', 'portfolio', 'sealed_register', 'cde_export', 'closeout_report'],
     extends: 'team',
   },
   {
     key: 'developer', name: 'Developer', audience: 'Platforms, CDEs and AI agents',
     promise: 'Validate IFC by API, pay for what you use.',
-    monthlyEur: 49, yearlyEur: 490,
+    monthlyEur: 179, yearlyEur: 1788,
     quotas: { storageGb: null, maxFileMb: 1024, apiCallsMonth: null, cloudCreditsMonth: 5000, aiCreditsMonth: null },
     includes: ['api_credits'],
     extends: 'free',
@@ -47,15 +47,15 @@ export const PLAN_DEFS: PlanDef[] = [
   {
     key: 'enterprise', name: 'Enterprise', audience: 'Public bodies and large contractors',
     promise: 'Reception across the whole portfolio, with SSO, DPA and an isolated deployment.',
-    monthlyEur: null, yearlyEur: null, fromEur: 6000,
+    monthlyEur: null, yearlyEur: null, fromEur: 15000,
     quotas: { storageGb: null, maxFileMb: null, apiCallsMonth: null, cloudCreditsMonth: null, aiCreditsMonth: null },
     includes: [],
     extends: 'reception',
   },
 ]
 
-/** Reception with unlimited suppliers (doc 17 §3). */
-export const RECEPTION_UNLIMITED_EUR = 399
+/** Reception portfolio, unlimited projects and suppliers, from (doc 12 §2). */
+export const RECEPTION_UNLIMITED_EUR = 790
 
 export const ADDONS: AddOnDef[] = [
   { id: 'public_links', name: 'Public web links', description: 'Embeddable public links on your website. Bandwidth grows with your traffic, so it is priced apart.', priceEur: 15, per: '10,000 views / month', on: ['team', 'reception'], status: 'planned' },
@@ -64,8 +64,8 @@ export const ADDONS: AddOnDef[] = [
   { id: 'api_credits', name: 'API credits', description: 'Over the included amount, each API credit costs €0.01.', priceEur: 0.01, per: 'credit', on: ['pro', 'team', 'developer'], status: 'planned' },
 ]
 
-/** Founder offer, November 2026 (doc 12 §2): −40 % for life on yearly, first 20 teams. */
-export const FOUNDER_OFFER = { discount: 0.4, seats: 20, until: '2026-11-30' } as const
+/** Founder offer (doc 12 §2, 2026-11-11): −30 % for 12 months on Team and Reception, first 10 customers, for a published case study. */
+export const FOUNDER_OFFER = { discount: 0.3, seats: 10, months: 12, plans: ['team', 'reception'] } as const
 
 export function planDef(key: PlanKey): PlanDef {
   const p = PLAN_DEFS.find((x) => x.key === key)

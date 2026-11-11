@@ -64,7 +64,7 @@ describe('workspace preview (design on sample data)', () => {
     const html = renderToStaticMarkup(createElement(CheckoutDialog, { item: { kind: 'plan', plan: 'pro', period: 'monthly' }, onClose: () => {} }))
     expect(html).toContain('VAT 21% (ES)')
     expect(html).toContain('Buying for a company')
-    expect(html).toMatch(/Pay .*19/)
+    expect(html).toMatch(/Pay .*47/)
   })
 
   it('every section is reachable by URL and Team is locked for Pro', () => {
