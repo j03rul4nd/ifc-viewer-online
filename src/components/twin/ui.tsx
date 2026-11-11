@@ -24,9 +24,9 @@ export function Field({ label, hint, className = '', children }: { label: string
 }
 
 export function Btn({ variant = 'secondary', className = '', ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
-  const v = variant === 'primary' ? 'bg-[var(--accent)] text-white hover:brightness-110'
+  const v = variant === 'primary' ? 'bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110'
     : variant === 'ghost' ? 'text-[var(--accent-2,var(--accent))] hover:bg-[var(--surface-2)]'
-    : variant === 'danger' ? 'text-[var(--danger,#e0523f)] hover:bg-[var(--surface-2)]'
+    : variant === 'danger' ? 'text-[var(--danger)] hover:bg-[var(--surface-2)]'
     : 'border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)]'
   return (
     <button type="button" {...rest}
@@ -47,7 +47,7 @@ export function Switch({ checked, onChange, label, testId }: { checked: boolean;
       <input type="checkbox" role="switch" aria-label={label} checked={checked} data-testid={testId}
         onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
       <span aria-hidden className={`relative block w-8 h-[18px] rounded-full transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)] ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'}`}>
-        <span className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform duration-150 ${checked ? 'translate-x-[14px]' : ''}`} />
+        <span className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-[var(--accent-contrast)] transition-transform duration-150 ${checked ? 'translate-x-[14px]' : ''}`} />
       </span>
     </label>
   )
@@ -69,7 +69,7 @@ export function Section({ title, trailing, children }: { title?: string; trailin
 }
 
 export function Hint({ children, tone = 'muted' }: { children: React.ReactNode; tone?: 'muted' | 'warn' | 'danger' | 'ok' }) {
-  const color = tone === 'danger' ? 'text-[var(--danger,#e0523f)]' : tone === 'warn' ? 'text-[var(--warn,#e9a23b)]' : tone === 'ok' ? 'text-[var(--text)]' : 'text-[var(--text-faint)]'
+  const color = tone === 'danger' ? 'text-[var(--danger)]' : tone === 'warn' ? 'text-[var(--warning)]' : tone === 'ok' ? 'text-[var(--text)]' : 'text-[var(--text-faint)]'
   return <p className={`text-[11.5px] max-md:text-[13px] leading-[1.45] ${color}`}>{children}</p>
 }
 

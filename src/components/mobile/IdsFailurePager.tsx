@@ -111,8 +111,8 @@ export default function IdsFailurePager({
             style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', pointerEvents: 'auto' }}
           >
             <div
-              className="flex items-center gap-2 h-9 px-3.5 rounded-full text-[12px] font-semibold text-white"
-              style={{ background: 'rgba(10,10,16,0.72)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '0.5px solid rgba(255,255,255,0.1)' }}
+              className="flex items-center gap-2 h-9 px-3.5 rounded-full text-[12px] font-semibold text-[var(--text-primary)]"
+              style={{ background: 'color-mix(in srgb, var(--bg-surface) 88%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '0.5px solid var(--border)' }}
             >
               <Icons.Shield size={13} className="text-[var(--accent-2)]" />
               <span className="tabular-nums">{t('pager.counter', { current: index + 1, total })}</span>
@@ -121,8 +121,8 @@ export default function IdsFailurePager({
             <button
               onClick={onClose}
               aria-label={t('pager.backToList')}
-              className="w-10 h-10 flex items-center justify-center rounded-full text-white active:scale-90 transition-transform"
-              style={{ background: 'rgba(10,10,16,0.72)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '0.5px solid rgba(255,255,255,0.1)', WebkitTapHighlightColor: 'transparent' }}
+              className="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-primary)] active:scale-90 transition-transform"
+              style={{ background: 'color-mix(in srgb, var(--bg-surface) 88%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '0.5px solid var(--border)', WebkitTapHighlightColor: 'transparent' }}
             >
               <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M2 2l8 8M10 2l-8 8" /></svg>
             </button>
@@ -163,11 +163,11 @@ export default function IdsFailurePager({
                 transition={{ type: 'spring', damping: 32, stiffness: 380, mass: 0.8 }}
                 className="rounded-[24px] overflow-hidden p-4"
                 style={{
-                  background: 'rgba(12,12,18,0.86)',
+                  background: 'color-mix(in srgb, var(--bg-surface) 94%, transparent)',
                   backdropFilter: 'blur(28px) saturate(1.6)',
                   WebkitBackdropFilter: 'blur(28px) saturate(1.6)',
-                  border: '0.5px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
+                  border: '0.5px solid var(--border)',
+                  boxShadow: 'var(--shadow)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -176,7 +176,7 @@ export default function IdsFailurePager({
                     {cur.specName}
                   </span>
                 </div>
-                <div className="text-[17px] font-semibold text-white leading-tight break-words">
+                <div className="text-[17px] font-semibold text-[var(--text-primary)] leading-tight break-words">
                   {cur.name || `#${cur.expressId}`}
                 </div>
                 <div className="text-[11px] font-mono text-[var(--text-faint)] mt-0.5">
@@ -215,12 +215,12 @@ function RailBtn({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="w-11 h-11 flex items-center justify-center rounded-full text-white active:scale-90 transition-transform disabled:opacity-30"
+      className="w-11 h-11 flex items-center justify-center rounded-full text-[var(--text-primary)] active:scale-90 transition-transform disabled:opacity-30"
       style={{
-        background: 'rgba(10,10,16,0.72)',
+        background: 'color-mix(in srgb, var(--bg-surface) 88%, transparent)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        border: '0.5px solid rgba(255,255,255,0.1)',
+        border: '0.5px solid var(--border)',
         WebkitTapHighlightColor: 'transparent',
       }}
     >

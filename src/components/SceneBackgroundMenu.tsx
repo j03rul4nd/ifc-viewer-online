@@ -136,7 +136,7 @@ export function SceneBackgroundMenu({ disabled = false, inline = false, triggerC
                 onClick={() => setMode(m)}
                 className={`px-1.5 h-[18px] rounded-[3px] text-[10px] font-medium transition-colors ${
                   background.mode === m
-                    ? 'bg-[var(--accent)] text-white'
+                    ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
                     : 'text-[var(--text-dim)] hover:text-[var(--text)]'
                 }`}
               >
@@ -191,7 +191,7 @@ export function SceneBackgroundMenu({ disabled = false, inline = false, triggerC
 
       {open && (
         <>
-          <div className="fixed inset-0 z-[59] max-md:bg-black/45" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[59] max-md:bg-[var(--overlay)]" onClick={() => setOpen(false)} />
           <div
             role="dialog"
             aria-label={t('background.title')}
