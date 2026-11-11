@@ -28,7 +28,7 @@ import {
 } from './building-mesh'
 import {
   createSuppressor, footprintFromBounds, DEFAULT_MARGIN_M,
-  expandPolygon, pointInPolygon,
+  expandPolygon, pointInPolygon, withAttachedPartsRemoved,
   type FacilityKind, type SuppressionPolicy,
 } from './context-suppression'
 import { createModelStaging, type ModelStaging } from './model-staging'
@@ -2366,7 +2366,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const kept = hiddenFeatureIds.size > 0
       ? osmFeatures!.filter((f) => !hiddenFeatureIds.has(f.id))
       : osmFeatures!
-    const suppressed = suppressContext ? kept.filter(modelSuppressor()) : kept
+    const suppressed = suppressContext
+      ? withAttachedPartsRemoved(kept, kept.filter(modelSuppressor()), { lat: 1 / 111_320, lon: 1 / (111_320 * Math.cos((p.lat * Math.PI) / 180)) })
+      : kept
     // LANDMARKS: in Showcase, a loaded hand-built model replaces the mapped
     // feature it stands for (the building, or the sculpture node). One that no
     // mapped feature stands for is found by the loaded box instead.
