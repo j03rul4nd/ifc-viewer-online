@@ -39,16 +39,16 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 | # | Grupo | Archivos | Estado | PR | Notas |
 |---|---|---|---|---|---|
 | 1 | **base** (Fase 1) | `src/index.css` (tokens `[data-theme]`), `src/theme/*` (ThemeProvider, useTheme, sceneTheme.ts), `index.html` (script anti-FOUC), `tailwind.config.js`, `docs/theming.md` | mergeada | [#515](https://github.com/j03rul4nd/ifc-viewer-online/pull/515) | Definir `--text-muted`. Oscuro idéntico. Toggle claro/oscuro/sistema. Mantener alias de los nombres actuales (`--bg`, `--text-dim`…) hacia los semánticos para no tocar 4.000 usos |
-| 2 | primitivas-modal-toast | `Modal.tsx`, `ToastContainer.tsx`, `lib/ui/modal-stack.ts` | en curso | — | Commit local 4793d53a en `theme/modal-toast`; push bloqueado, pendiente de permiso |
+| 2 | primitivas-modal-toast | `Modal.tsx`, `ToastContainer.tsx`, `lib/ui/modal-stack.ts` | mergeada | [#524](https://github.com/j03rul4nd/ifc-viewer-online/pull/524) | Oscuro idéntico (clases originales + overrides claros) |
 | 3 | primitivas-móvil | `mobile/mobileUi.tsx`, `mobile/MobileSheet.tsx`, `MobileBottomNav.tsx` | mergeada | [#516](https://github.com/j03rul4nd/ifc-viewer-online/pull/516) | `ScoreHero`/`StatPill` reciben color por prop |
 | 4 | layout-toolbar | `Toolbar.tsx`, `Sidebar.tsx`, `PanelRail.tsx`, `OverlayHud.tsx`, `CameraControls.tsx` | mergeada | [#517](https://github.com/j03rul4nd/ifc-viewer-online/pull/517) | Incluye selector claro/oscuro/sistema y fix de `?theme=` |
-| 5 | arranque | `WelcomeView.tsx`, `UploadOverlay.tsx`, `components/loading/*`, `KeyboardHelpModal.tsx` | pendiente | | |
-| 6 | árbol-info | `ModelTree.tsx`, `ModelInfoPanel.tsx`, `ScenePanel.tsx`, `SceneContextMenu.tsx` | pendiente | | |
-| 7 | validación | `ValidationPanel.tsx`, `ValidationCoverageSummary.tsx`, `ValidationExportModal.tsx`, `components/ids/score.ts` | pendiente | | ⚠ colores de nota y score con significado |
+| 5 | arranque | `WelcomeView.tsx`, `UploadOverlay.tsx`, `components/loading/*`, `KeyboardHelpModal.tsx` | mergeada | [#528](https://github.com/j03rul4nd/ifc-viewer-online/pull/528) | |
+| 6 | árbol-info | `ModelTree.tsx`, `ModelInfoPanel.tsx`, `ScenePanel.tsx`, `SceneContextMenu.tsx` | mergeada | [#529](https://github.com/j03rul4nd/ifc-viewer-online/pull/529) | |
+| 7 | validación | `ValidationPanel.tsx`, `ValidationCoverageSummary.tsx`, `ValidationExportModal.tsx`, `components/ids/score.ts` | mergeada | [#530](https://github.com/j03rul4nd/ifc-viewer-online/pull/530) | ⚠ colores de nota y score con significado |
 | 8 | validación-móvil-bcf | `mobile/ValidationPanelMobile.tsx`, `mobile/IdsPanelMobile.tsx`, `mobile/IdsFailurePager.tsx`, `BcfPanel.tsx`, `eir/EirProfileEditor.tsx` | pendiente | | Depende de 3 y 7 |
-| 9 | medir-sección UI | `MeasurementPanel.tsx`, `SectionPanel.tsx`, `measure/MeasureHud.tsx`, `lib/measure/measure.css` | pendiente | | Incluir la pista oscura de `measure/MeasureHud.tsx:129` |
-| 10 | paneles-escena | `PointCloudPanel.tsx`, `SolarPanel.tsx`, `VideoPanel.tsx`, `MeshPanel.tsx`, `ViewportPanel.tsx` | pendiente | | Solo el marco: las rampas no se tocan |
-| 11 | datos-capas | `DataLegend.tsx`, `LayerStyleEditor.tsx`, `geo/ui.tsx`, `geo/chrome.tsx`, `GeoPanel.tsx` | pendiente | | ⚠ leyendas con significado |
+| 9 | medir-sección UI | `MeasurementPanel.tsx`, `SectionPanel.tsx`, `measure/MeasureHud.tsx`, `lib/measure/measure.css` | mergeada | [#531](https://github.com/j03rul4nd/ifc-viewer-online/pull/531) | Incluye la pista de MeasureHud |
+| 10 | paneles-escena | `PointCloudPanel.tsx`, `SolarPanel.tsx`, `VideoPanel.tsx`, `MeshPanel.tsx`, `ViewportPanel.tsx` | mergeada | [#525](https://github.com/j03rul4nd/ifc-viewer-online/pull/525) | MeshPanel sin revisar (feature off) |
+| 11 | datos-capas | `DataLegend.tsx`, `LayerStyleEditor.tsx`, `geo/ui.tsx`, `geo/chrome.tsx`, `GeoPanel.tsx` | mergeada | [#527](https://github.com/j03rul4nd/ifc-viewer-online/pull/527) | DataLegend/LayerStyleEditor sin revisar a ojo |
 | 12 | captura-tour | `CaptureToolbar.tsx`, `CapturePreviewModal.tsx`, `capture/EditorTimeline.tsx`, `TourRecorder.tsx`, `SceneBackgroundMenu.tsx` | pendiente | | |
 | 13 | huds-tiempo | `WalkHud.tsx`, `TimeBar.tsx`, `PlacementMiniMap.tsx`, `DemoGallery.tsx` | pendiente | | |
 | 14 | cuenta | `account/AccountModal.tsx`, `account/authAppearance.ts`, `CustomProfileModal.tsx`, `pro/SavedRulesetPicker.tsx` | pendiente | | Clerk necesita una variante clara |
@@ -62,6 +62,11 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 | G1 | glass (index.css) | `.glass`, `.glass-md`, `.glass-xl`, `.mobile-pill-glass`, `.mobile-sheet-glass` | mergeada | [#520](https://github.com/j03rul4nd/ifc-viewer-online/pull/520) | Añadido tras QA |
 | G2 | app-chips + tool grid | `App.tsx` (chips Inicio y caché), `mobile/ToolGrid.tsx` | mergeada | [#521](https://github.com/j03rul4nd/ifc-viewer-online/pull/521) | |
 | G3 | hud-pills | `ModelInfoPanel.tsx`, `WalkHud.tsx`, `ClientHealthBadge.tsx`, `ClientPresentationLayout.tsx` | mergeada | [#522](https://github.com/j03rul4nd/ifc-viewer-online/pull/522) | WalkHud y modo cliente sin revisar a ojo |
+| P1 | pulido: tokens | `index.css`, `sceneTheme.ts`, `docs/theming.md` | mergeada | [#536](https://github.com/j03rul4nd/ifc-viewer-online/pull/536) | Revisión estética: superficies cálidas, velo sin blur, paneles sólidos en claro, 3D en verde azulado, `--border-control` |
+| P2 | pulido: barra, lateral, árbol | `Toolbar.tsx`, `Sidebar.tsx`, `ModelTree.tsx`, `PanelRail.tsx`, `DrawerResizeGrip.tsx`, `App.tsx` (separador) | mergeada | [#540](https://github.com/j03rul4nd/ifc-viewer-online/pull/540) | |
+| P3 | pulido: cajón de validación | `ValidationPanel.tsx`, `pricing/ScoreUpsell.tsx` | mergeada | [#541](https://github.com/j03rul4nd/ifc-viewer-online/pull/541) | |
+| P4 | pulido: modal de atajos | `KeyboardHelpModal.tsx` | mergeada | [#543](https://github.com/j03rul4nd/ifc-viewer-online/pull/543) | |
+| P5 | pulido: campos a `--border-control` | inputs y selects | pendiente | | Token ya creado, sin uso |
 | 4a | cierre: lint anti-hex | script de CI + allowlist (tokens, `lib/geo`, `lib/cover`, informes) | pendiente | | |
 | 4b | tokens propuestos | `src/index.css` | pendiente | | Consolidar lo que propongan los subagentes |
 
@@ -78,6 +83,8 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 - 2026-11-11: se aceptan pequeños desplazamientos de color en oscuro al pasar colores fijos a tokens (Joel).
 - Tema por defecto: oscuro. `?theme=` en la URL solo fija el tema inicial.
 - Tokens propuestos hasta ahora: `--scrim`, `--info`, `--selection`, `--bg-floating`, sombras y velo de modal/aviso.
+
+- 2026-11-11, revisión estética (crítica en `.claude/theme-qa/review.md`, local): superficies en escalones cálidos, velo de modal oscuro suave sin blur, paneles flotantes sólidos con borde en claro, hover y medida 3D en verde azulado (Joel).
 
 ## Dudas para Joel (colores con significado)
 
