@@ -227,14 +227,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <th scope="col" class="c-pro" id="h-pro">
             <span class="pick-tag">适合你的工作</span>
             <span class="plan-name">Pro</span>
-            <p class="price"><strong>€19 / 月</strong></p><p class="meta">或 €190 / 年，相当于免费两个月</p>
+            <p class="price"><strong>€39 / 月，按年付费</strong></p><p class="meta">每年 €468 · 按月付费为 €47 / 月</p>
             <p class="meta who">个人</p>
             <button type="button" class="btn btn-main" data-plan="pro">加入候补名单</button>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">适合你的工作</span>
             <span class="plan-name">Team</span>
-            <p class="price"><strong>每位编辑者 €35 / 月</strong></p><p class="meta">或 €348 / 年，相当于免费两个月</p><p class="meta">至少 3 位编辑者</p>
+            <p class="price"><strong>每位编辑者 €59 / 月，按年付费</strong></p><p class="meta">每年 €708 · 按月付费为 €71 / 月</p><p class="meta">至少 3 位编辑者</p>
             <p class="meta who">设计院和工程公司</p>
             <button type="button" class="btn btn-main" data-plan="team">加入候补名单</button>
           </th>
@@ -288,7 +288,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           </tr>
         </tbody>
       </table>
-      <p class="founder">首发优惠：前 20 个团队年付享 40% 折扣，续订期间一直有效。</p>
+      <p class="founder">Team 和接收版首发优惠：前 10 位客户 12 个月享 30% 折扣，条件是发布一篇客户案例。</p>
     </section>
 
     <section class="sec wrap" id="reception" aria-labelledby="reception-h">
@@ -298,10 +298,10 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
         <div>
           <span class="pick-tag">适合你的工作</span>
           <h3>接收版</h3>
-          <p class="price"><strong>每个在建项目 €149 / 月，最多 10 家分包商</strong></p>
-          <p class="meta">€399 / 月，项目不限</p>
+          <p class="price"><strong>每个在建项目 €290 / 月起，最多 15 家分包商</strong></p>
+          <p class="meta">项目组合：€790 / 月起，项目和分包商不限</p>
           <p class="body">不再收到需要退回的模型。分包商在发送前免费按你的要求检查文件；你只收到合格的模型，并能看出谁交付得好。</p>
-          <button type="button" class="btn btn-main" data-plan="reception">加入候补名单</button>
+          <button type="button" class="btn btn-main" data-plan="reception">联系我们</button>
         </div>
         <ol><li><strong>发布你的要求</strong> 以链接或二维码用于招标和合同：IDS、规则、最低分数、命名。</li><li><strong>分包商免费自查</strong> 在浏览器中修正后再发送。</li><li><strong>交付收件箱</strong> 重新检查每个文件，保留版本，并附 BCF 问题清单予以接收或退回。</li><li><strong>每家分包商的记录：</strong> 交付次数、一次通过率、分数走势。</li><li><strong>竣工交付报告</strong> 汇总收到的信息，可直接用于运维。</li></ol>
       </div>
@@ -310,9 +310,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     <section class="sec wrap" id="more" aria-labelledby="more-h">
       <h2 id="more-h">基于它开发，或覆盖整个项目组合</h2>
       <dl class="rows">
-        <div class="row" id="row-developer"><dt><span class="pick-tag">适合你的工作</span>Developer<span class="meta">€49 / 月 + 用量</span></dt>
+        <div class="row" id="row-developer"><dt><span class="pick-tag">适合你的工作</span>Developer<span class="meta">€149 / 月，按年付费，+ 用量</span></dt>
           <dd><p>客户端 SDK 免费。Developer 为平台、CDE 和自动化增加托管验证 API。</p><button type="button" class="btn btn-main" data-plan="developer">加入候补名单</button></dd></div>
-        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">€6,000 / 年起</span></dt>
+        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">€15,000 / 年起</span></dt>
           <dd><p>在整个项目组合中使用接收版、单点登录、数据处理协议，以及无需联网的本地部署选项。 <a href="/on-premise-ifc-validator/">本地部署验证器</a></p><button type="button" class="btn btn-main" data-plan="enterprise">联系我们</button></dd></div>
       </dl>
     </section>
@@ -401,7 +401,7 @@ var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-for
     submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
 document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
   plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=(plan==='enterprise'?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
   roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
   msg.textContent='';msg.className='msg';submit.disabled=false;
   track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});

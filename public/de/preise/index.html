@@ -227,14 +227,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <th scope="col" class="c-pro" id="h-pro">
             <span class="pick-tag">Passt zu Ihrer Arbeit</span>
             <span class="plan-name">Pro</span>
-            <p class="price"><strong>19 € / Monat</strong></p><p class="meta">oder 190 € pro Jahr, zwei Monate geschenkt</p>
+            <p class="price"><strong>39 € / Monat, jährlich abgerechnet</strong></p><p class="meta">468 € pro Jahr · 47 € / Monat bei monatlicher Zahlung</p>
             <p class="meta who">Eine Person</p>
             <button type="button" class="btn btn-main" data-plan="pro">Auf die Warteliste</button>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">Passt zu Ihrer Arbeit</span>
             <span class="plan-name">Team</span>
-            <p class="price"><strong>35 € pro Bearbeiter / Monat</strong></p><p class="meta">oder 348 € pro Jahr, zwei Monate geschenkt</p><p class="meta">Mindestens 3 Bearbeiter</p>
+            <p class="price"><strong>59 € pro Bearbeiter / Monat, jährlich abgerechnet</strong></p><p class="meta">708 € pro Jahr · 71 € / Monat bei monatlicher Zahlung</p><p class="meta">Mindestens 3 Bearbeiter</p>
             <p class="meta who">Architektur- und Ingenieurbüros</p>
             <button type="button" class="btn btn-main" data-plan="team">Auf die Warteliste</button>
           </th>
@@ -288,7 +288,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           </tr>
         </tbody>
       </table>
-      <p class="founder">Gründerangebot: 40 % Rabatt auf das Jahresabo für die ersten 20 Teams, solange sie bleiben.</p>
+      <p class="founder">Gründerangebot für Team und Annahme: 30 % Rabatt für 12 Monate für die ersten 10 Kunden, im Austausch gegen eine veröffentlichte Fallstudie.</p>
     </section>
 
     <section class="sec wrap" id="reception" aria-labelledby="reception-h">
@@ -298,10 +298,10 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
         <div>
           <span class="pick-tag">Passt zu Ihrer Arbeit</span>
           <h3>Annahme</h3>
-          <p class="price"><strong>149 € / Monat pro aktivem Projekt, bis 10 Nachunternehmer</strong></p>
-          <p class="meta">399 € / Monat, unbegrenzt viele Projekte</p>
+          <p class="price"><strong>Ab 290 € / Monat pro aktivem Projekt, bis 15 Nachunternehmer</strong></p>
+          <p class="meta">Portfolio: ab 790 € / Monat, unbegrenzt Projekte und Nachunternehmer</p>
           <p class="body">Keine Modelle mehr annehmen, die Sie zurückschicken müssen. Ihre Nachunternehmer prüfen ihre Dateien kostenlos gegen Ihre Anforderungen, bevor sie liefern; Sie erhalten nur, was passt, und sehen, wer gut liefert.</p>
-          <button type="button" class="btn btn-main" data-plan="reception">Auf die Warteliste</button>
+          <button type="button" class="btn btn-main" data-plan="reception">Kontakt aufnehmen</button>
         </div>
         <ol><li><strong>Anforderungen veröffentlichen</strong> als Link oder QR-Code für Ausschreibungen und Verträge: IDS, Regeln, Mindestnote, Benennung.</li><li><strong>Nachunternehmer prüfen kostenlos</strong> im Browser und korrigieren vor dem Versand.</li><li><strong>Ein Liefereingang</strong> prüft jede Datei erneut, speichert die Version und nimmt sie an oder lehnt sie mit BCF-Issues ab.</li><li><strong>Ein Verlauf pro Nachunternehmer:</strong> Lieferungen, beim ersten Mal angenommen, Entwicklung der Note.</li><li><strong>Ein Abschlussbericht</strong> über die erhaltenen Informationen, bereit für den Betrieb.</li></ol>
       </div>
@@ -310,9 +310,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     <section class="sec wrap" id="more" aria-labelledby="more-h">
       <h2 id="more-h">Darauf aufbauen oder ein ganzes Portfolio</h2>
       <dl class="rows">
-        <div class="row" id="row-developer"><dt><span class="pick-tag">Passt zu Ihrer Arbeit</span>Developer<span class="meta">49 € / Monat + Nutzung</span></dt>
+        <div class="row" id="row-developer"><dt><span class="pick-tag">Passt zu Ihrer Arbeit</span>Developer<span class="meta">149 € / Monat, jährlich abgerechnet, + Nutzung</span></dt>
           <dd><p>Das Client-SDK ist kostenlos. Developer ergänzt eine gehostete Validierungs-API für Plattformen, CDEs und Automatisierungen.</p><button type="button" class="btn btn-main" data-plan="developer">Auf die Warteliste</button></dd></div>
-        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">Ab 6.000 € / Jahr</span></dt>
+        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">Ab 15.000 € / Jahr</span></dt>
           <dd><p>Annahme über das ganze Portfolio, Single Sign-on, Auftragsverarbeitungsvertrag und eine On-Premise-Option ohne Internetzugang. <a href="/on-premise-ifc-validator/">On-Premise-Validator</a></p><button type="button" class="btn btn-main" data-plan="enterprise">Kontakt aufnehmen</button></dd></div>
       </dl>
     </section>
@@ -401,7 +401,7 @@ var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-for
     submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
 document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
   plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=(plan==='enterprise'?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
   roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
   msg.textContent='';msg.className='msg';submit.disabled=false;
   track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});

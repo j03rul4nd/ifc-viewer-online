@@ -34,7 +34,7 @@ export default function Reception(_: SectionProps) {
   return (
     <>
       <Head title={tx('Reception')}
-        sub={tx('Suppliers check against your requirements for free; you receive only what complies. {{price}} a month per project, {{unlimited}} unlimited.', { price: `€${plan.monthlyEur}`, unlimited: `€${RECEPTION_UNLIMITED_EUR}` })} />
+        sub={tx('Suppliers check against your requirements for free; you receive only what complies. {{price}} a month per project, {{unlimited}} unlimited.', { price: `€${plan.fromEur ?? plan.monthlyEur}`, unlimited: `€${RECEPTION_UNLIMITED_EUR}` })} />
       <SoonBanner section="reception" source={deliveries.source} error={deliveries.error} />
       {msg && <p role="alert" className="text-[12.5px] text-[var(--danger)] mb-3">{msg}</p>}
       <Tabs label={tx('Reception')} tabs={TABS.map((t) => ({ ...t, label: tx(t.label), count: t.id === 'inbox' ? deliveries.data.deliveries.filter((d) => d.verdict === 'pending').length : undefined }))} value={tab} onChange={setTab} />

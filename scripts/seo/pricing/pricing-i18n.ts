@@ -95,11 +95,11 @@ const en: PricingCopy = {
   who: { free: 'Anyone with an IFC', pro: 'One person', team: 'Studios and engineering firms' },
   price: {
     free: '{p}, forever',
-    month: '{p} / month',
-    editorMonth: '{p} per editor / month',
-    yearly: 'or {y} a year, two months free',
+    month: '{p} / month, billed yearly',
+    editorMonth: '{p} per editor / month, billed yearly',
+    yearly: '{y} a year · {m} / month if paid monthly',
     minEditors: '{n} editors minimum',
-    founder: 'Founding offer: {n}% off yearly for the first {t} teams, for as long as they stay.',
+    founder: 'Founding offer for Team and Reception: {n}% off for {m} months for the first {t} customers, in exchange for a published case study.',
   },
   groups: { files: 'Files and storage', share: 'Sharing with your client', quality: 'Quality across the team', contract: 'Automation and contract' },
   rows: {
@@ -119,8 +119,8 @@ const en: PricingCopy = {
   reception: {
     h2: 'For people who receive models',
     sub: 'Contractors, developers, owners and facility managers who collect models from many suppliers.',
-    perProject: '{p} / month per active project, up to {n} suppliers',
-    unlimited: '{p} / month, unlimited projects',
+    perProject: 'From {p} / month per active project, up to {n} suppliers',
+    unlimited: 'Portfolio: from {p} / month, unlimited projects and suppliers',
     body: 'Stop receiving models you have to send back. Your suppliers check their files free against your requirements before sending; you only receive what complies, and you see who delivers well.',
     steps: [
       { b: 'Publish your requirements', t: 'as a link or QR for tenders and contracts: IDS, rules, minimum score, naming.' },
@@ -133,7 +133,7 @@ const en: PricingCopy = {
   more: {
     h2: 'Building on top, or a whole portfolio',
     dev: 'The client-side SDK is free. Developer adds a hosted validation API for platforms, CDEs and automations.',
-    devPrice: '{p} / month + usage',
+    devPrice: '{p} / month, billed yearly, + usage',
     ent: 'Reception across a portfolio, single sign-on, a data processing agreement and an on-premise option with no internet access.',
     entPrice: 'From {p} / year',
     onPrem: 'On-premise validator',
@@ -196,11 +196,11 @@ const es: PricingCopy = {
   who: { free: 'Cualquiera con un IFC', pro: 'Una persona', team: 'Estudios e ingenierías' },
   price: {
     free: '{p}, para siempre',
-    month: '{p} / mes',
-    editorMonth: '{p} por editor / mes',
-    yearly: 'o {y} al año, dos meses gratis',
+    month: '{p} / mes, pago anual',
+    editorMonth: '{p} por editor / mes, pago anual',
+    yearly: '{y} al año · {m} / mes si pagas mes a mes',
     minEditors: 'Mínimo {n} editores',
-    founder: 'Oferta de fundador: {n} % de descuento en el pago anual para los {t} primeros equipos, mientras sigan.',
+    founder: 'Oferta de fundador para Team y Recepción: {n} % de descuento durante {m} meses para los {t} primeros clientes, a cambio de un caso de éxito publicado.',
   },
   groups: { files: 'Archivos y almacenamiento', share: 'Compartir con tu cliente', quality: 'Calidad en todo el equipo', contract: 'Automatización y contrato' },
   rows: {
@@ -220,8 +220,8 @@ const es: PricingCopy = {
   reception: {
     h2: 'Para quien recibe modelos',
     sub: 'Constructoras, promotoras, propiedades y gestores de activos que reciben modelos de muchas subcontratas.',
-    perProject: '{p} / mes por obra activa, hasta {n} subcontratas',
-    unlimited: '{p} / mes, obras ilimitadas',
+    perProject: 'Desde {p} / mes por obra activa, hasta {n} subcontratas',
+    unlimited: 'Cartera: desde {p} / mes, obras y subcontratas ilimitadas',
     body: 'Deja de recibir modelos que tienes que devolver. Tus subcontratas comprueban sus archivos gratis contra tus requisitos antes de enviarlos; solo recibes lo que cumple y ves quién entrega bien.',
     steps: [
       { b: 'Publica tus requisitos', t: 'como enlace o QR para licitaciones y contratos: IDS, reglas, nota mínima y nomenclatura.' },
@@ -234,7 +234,7 @@ const es: PricingCopy = {
   more: {
     h2: 'Para integrar, o para toda una cartera',
     dev: 'El SDK de cliente es gratis. Developer añade una API de validación alojada para plataformas, CDE y automatizaciones.',
-    devPrice: '{p} / mes + consumo',
+    devPrice: '{p} / mes, pago anual, + consumo',
     ent: 'Recepción en toda la cartera, inicio de sesión único, contrato de encargo de tratamiento y una opción en tus servidores sin acceso a internet.',
     entPrice: 'Desde {p} / año',
     onPrem: 'Validador en tus servidores',
@@ -297,11 +297,11 @@ const de: PricingCopy = {
   who: { free: 'Alle mit einer IFC-Datei', pro: 'Eine Person', team: 'Architektur- und Ingenieurbüros' },
   price: {
     free: '{p}, dauerhaft',
-    month: '{p} / Monat',
-    editorMonth: '{p} pro Bearbeiter / Monat',
-    yearly: 'oder {y} pro Jahr, zwei Monate geschenkt',
+    month: '{p} / Monat, jährlich abgerechnet',
+    editorMonth: '{p} pro Bearbeiter / Monat, jährlich abgerechnet',
+    yearly: '{y} pro Jahr · {m} / Monat bei monatlicher Zahlung',
     minEditors: 'Mindestens {n} Bearbeiter',
-    founder: 'Gründerangebot: {n} % Rabatt auf das Jahresabo für die ersten {t} Teams, solange sie bleiben.',
+    founder: 'Gründerangebot für Team und Annahme: {n} % Rabatt für {m} Monate für die ersten {t} Kunden, im Austausch gegen eine veröffentlichte Fallstudie.',
   },
   groups: { files: 'Dateien und Speicher', share: 'Mit dem Auftraggeber teilen', quality: 'Qualität im ganzen Team', contract: 'Automatisierung und Vertrag' },
   rows: {
@@ -321,8 +321,8 @@ const de: PricingCopy = {
   reception: {
     h2: 'Für alle, die Modelle erhalten',
     sub: 'Bauunternehmen, Projektentwickler, Bauherren und Facility Manager, die Modelle vieler Nachunternehmer sammeln.',
-    perProject: '{p} / Monat pro aktivem Projekt, bis {n} Nachunternehmer',
-    unlimited: '{p} / Monat, unbegrenzt viele Projekte',
+    perProject: 'Ab {p} / Monat pro aktivem Projekt, bis {n} Nachunternehmer',
+    unlimited: 'Portfolio: ab {p} / Monat, unbegrenzt Projekte und Nachunternehmer',
     body: 'Keine Modelle mehr annehmen, die Sie zurückschicken müssen. Ihre Nachunternehmer prüfen ihre Dateien kostenlos gegen Ihre Anforderungen, bevor sie liefern; Sie erhalten nur, was passt, und sehen, wer gut liefert.',
     steps: [
       { b: 'Anforderungen veröffentlichen', t: 'als Link oder QR-Code für Ausschreibungen und Verträge: IDS, Regeln, Mindestnote, Benennung.' },
@@ -335,7 +335,7 @@ const de: PricingCopy = {
   more: {
     h2: 'Darauf aufbauen oder ein ganzes Portfolio',
     dev: 'Das Client-SDK ist kostenlos. Developer ergänzt eine gehostete Validierungs-API für Plattformen, CDEs und Automatisierungen.',
-    devPrice: '{p} / Monat + Nutzung',
+    devPrice: '{p} / Monat, jährlich abgerechnet, + Nutzung',
     ent: 'Annahme über das ganze Portfolio, Single Sign-on, Auftragsverarbeitungsvertrag und eine On-Premise-Option ohne Internetzugang.',
     entPrice: 'Ab {p} / Jahr',
     onPrem: 'On-Premise-Validator',
@@ -398,11 +398,11 @@ const fr: PricingCopy = {
   who: { free: 'Quiconque a un IFC', pro: 'Une personne', team: 'Agences et bureaux d’études' },
   price: {
     free: '{p}, pour toujours',
-    month: '{p} / mois',
-    editorMonth: '{p} par éditeur / mois',
-    yearly: 'ou {y} par an, deux mois offerts',
+    month: '{p} / mois, facturé à l’année',
+    editorMonth: '{p} par éditeur / mois, facturé à l’année',
+    yearly: '{y} par an · {m} / mois en paiement mensuel',
     minEditors: '{n} éditeurs minimum',
-    founder: 'Offre fondateur : {n} % de remise sur l’annuel pour les {t} premières équipes, tant qu’elles restent.',
+    founder: 'Offre fondateur pour Team et Réception : {n} % de remise pendant {m} mois pour les {t} premiers clients, en échange d’une étude de cas publiée.',
   },
   groups: { files: 'Fichiers et stockage', share: 'Partager avec votre client', quality: 'Qualité dans toute l’équipe', contract: 'Automatisation et contrat' },
   rows: {
@@ -422,8 +422,8 @@ const fr: PricingCopy = {
   reception: {
     h2: 'Pour ceux qui reçoivent des modèles',
     sub: 'Entreprises générales, promoteurs, maîtres d’ouvrage et exploitants qui collectent les modèles de nombreux sous-traitants.',
-    perProject: '{p} / mois par chantier actif, jusqu’à {n} sous-traitants',
-    unlimited: '{p} / mois, chantiers illimités',
+    perProject: 'À partir de {p} / mois par chantier actif, jusqu’à {n} sous-traitants',
+    unlimited: 'Portefeuille : à partir de {p} / mois, chantiers et sous-traitants illimités',
     body: 'Arrêtez de recevoir des modèles à renvoyer. Vos sous-traitants vérifient gratuitement leurs fichiers par rapport à vos exigences avant l’envoi ; vous ne recevez que ce qui est conforme et vous voyez qui livre bien.',
     steps: [
       { b: 'Publiez vos exigences', t: 'en lien ou QR code pour les appels d’offres et contrats : IDS, règles, note minimale, nommage.' },
@@ -436,7 +436,7 @@ const fr: PricingCopy = {
   more: {
     h2: 'Développer par-dessus, ou tout un portefeuille',
     dev: 'Le SDK client est gratuit. Developer ajoute une API de validation hébergée pour plateformes, CDE et automatisations.',
-    devPrice: '{p} / mois + usage',
+    devPrice: '{p} / mois, facturé à l’année, + usage',
     ent: 'Réception sur tout un portefeuille, authentification unique, accord de sous-traitance et une option sur site sans accès à internet.',
     entPrice: 'À partir de {p} / an',
     onPrem: 'Validateur sur site',
@@ -499,11 +499,11 @@ const pt: PricingCopy = {
   who: { free: 'Qualquer pessoa com um IFC', pro: 'Uma pessoa', team: 'Gabinetes e empresas de engenharia' },
   price: {
     free: '{p}, para sempre',
-    month: '{p} / mês',
-    editorMonth: '{p} por editor / mês',
-    yearly: 'ou {y} por ano, dois meses grátis',
+    month: '{p} / mês, faturado anualmente',
+    editorMonth: '{p} por editor / mês, faturado anualmente',
+    yearly: '{y} por ano · {m} / mês com pagamento mensal',
     minEditors: 'Mínimo de {n} editores',
-    founder: 'Oferta de fundador: {n}% de desconto no anual para as primeiras {t} equipas, enquanto ficarem.',
+    founder: 'Oferta de fundador para Team e Receção: {n}% de desconto durante {m} meses para os {t} primeiros clientes, em troca de um caso de sucesso publicado.',
   },
   groups: { files: 'Ficheiros e armazenamento', share: 'Partilhar com o cliente', quality: 'Qualidade em toda a equipa', contract: 'Automação e contrato' },
   rows: {
@@ -523,8 +523,8 @@ const pt: PricingCopy = {
   reception: {
     h2: 'Para quem recebe modelos',
     sub: 'Construtoras, promotores, donos de obra e gestores de ativos que recebem modelos de muitos subempreiteiros.',
-    perProject: '{p} / mês por obra ativa, até {n} subempreiteiros',
-    unlimited: '{p} / mês, obras ilimitadas',
+    perProject: 'Desde {p} / mês por obra ativa, até {n} subempreiteiros',
+    unlimited: 'Carteira: desde {p} / mês, obras e subempreiteiros ilimitados',
     body: 'Deixe de receber modelos que tem de devolver. Os seus subempreiteiros verificam os ficheiros gratuitamente contra os seus requisitos antes de enviar; só recebe o que cumpre e vê quem entrega bem.',
     steps: [
       { b: 'Publique os seus requisitos', t: 'como link ou QR para concursos e contratos: IDS, regras, nota mínima e nomenclatura.' },
@@ -537,7 +537,7 @@ const pt: PricingCopy = {
   more: {
     h2: 'Para integrar, ou para toda uma carteira',
     dev: 'O SDK de cliente é gratuito. O Developer acrescenta uma API de validação alojada para plataformas, CDE e automações.',
-    devPrice: '{p} / mês + consumo',
+    devPrice: '{p} / mês, faturado anualmente, + consumo',
     ent: 'Receção em toda a carteira, início de sessão único, acordo de tratamento de dados e uma opção nos seus servidores sem acesso à internet.',
     entPrice: 'Desde {p} / ano',
     onPrem: 'Validador nos seus servidores',
@@ -600,11 +600,11 @@ const it: PricingCopy = {
   who: { free: 'Chiunque abbia un IFC', pro: 'Una persona', team: 'Studi e società di ingegneria' },
   price: {
     free: '{p}, per sempre',
-    month: '{p} / mese',
-    editorMonth: '{p} per editor / mese',
-    yearly: 'oppure {y} all’anno, due mesi gratis',
+    month: '{p} / mese, fatturato annualmente',
+    editorMonth: '{p} per editor / mese, fatturato annualmente',
+    yearly: '{y} all’anno · {m} / mese con pagamento mensile',
     minEditors: 'Minimo {n} editor',
-    founder: 'Offerta fondatori: {n}% di sconto sull’annuale per i primi {t} team, finché restano.',
+    founder: 'Offerta fondatori per Team e Ricezione: {n}% di sconto per {m} mesi ai primi {t} clienti, in cambio di un caso di studio pubblicato.',
   },
   groups: { files: 'File e archiviazione', share: 'Condividere con il cliente', quality: 'Qualità in tutto il team', contract: 'Automazione e contratto' },
   rows: {
@@ -624,8 +624,8 @@ const it: PricingCopy = {
   reception: {
     h2: 'Per chi riceve modelli',
     sub: 'Imprese, sviluppatori immobiliari, committenti e facility manager che raccolgono modelli da molti subappaltatori.',
-    perProject: '{p} / mese per cantiere attivo, fino a {n} subappaltatori',
-    unlimited: '{p} / mese, cantieri illimitati',
+    perProject: 'Da {p} / mese per cantiere attivo, fino a {n} subappaltatori',
+    unlimited: 'Portafoglio: da {p} / mese, cantieri e subappaltatori illimitati',
     body: 'Smetti di ricevere modelli da rimandare indietro. I tuoi subappaltatori verificano gratis i file rispetto ai tuoi requisiti prima di inviarli; ricevi solo ciò che è conforme e vedi chi consegna bene.',
     steps: [
       { b: 'Pubblica i tuoi requisiti', t: 'come link o QR per gare e contratti: IDS, regole, punteggio minimo, nomenclatura.' },
@@ -638,7 +638,7 @@ const it: PricingCopy = {
   more: {
     h2: 'Per sviluppare sopra, o per un intero portafoglio',
     dev: 'L’SDK client è gratuito. Developer aggiunge un’API di validazione ospitata per piattaforme, CDE e automazioni.',
-    devPrice: '{p} / mese + consumo',
+    devPrice: '{p} / mese, fatturato annualmente, + consumo',
     ent: 'Ricezione su tutto il portafoglio, accesso unico, accordo sul trattamento dei dati e un’opzione on-premise senza accesso a internet.',
     entPrice: 'Da {p} / anno',
     onPrem: 'Validatore on-premise',
@@ -701,11 +701,11 @@ const ca: PricingCopy = {
   who: { free: 'Qualsevol amb un IFC', pro: 'Una persona', team: 'Estudis i enginyeries' },
   price: {
     free: '{p}, per sempre',
-    month: '{p} / mes',
-    editorMonth: '{p} per editor / mes',
-    yearly: 'o {y} l’any, dos mesos gratis',
+    month: '{p} / mes, pagament anual',
+    editorMonth: '{p} per editor / mes, pagament anual',
+    yearly: '{y} l’any · {m} / mes si pagues mes a mes',
     minEditors: 'Mínim {n} editors',
-    founder: 'Oferta de fundador: {n} % de descompte en el pagament anual per als {t} primers equips, mentre continuïn.',
+    founder: 'Oferta de fundador per a Team i Recepció: {n} % de descompte durant {m} mesos per als {t} primers clients, a canvi d’un cas d’èxit publicat.',
   },
   groups: { files: 'Fitxers i emmagatzematge', share: 'Compartir amb el client', quality: 'Qualitat a tot l’equip', contract: 'Automatització i contracte' },
   rows: {
@@ -725,8 +725,8 @@ const ca: PricingCopy = {
   reception: {
     h2: 'Per a qui rep models',
     sub: 'Constructores, promotores, propietats i gestors d’actius que reben models de moltes subcontractes.',
-    perProject: '{p} / mes per obra activa, fins a {n} subcontractes',
-    unlimited: '{p} / mes, obres il·limitades',
+    perProject: 'Des de {p} / mes per obra activa, fins a {n} subcontractes',
+    unlimited: 'Cartera: des de {p} / mes, obres i subcontractes il·limitades',
     body: 'Deixa de rebre models que has de retornar. Les subcontractes comproven els seus fitxers gratis contra els teus requisits abans d’enviar-los; només reps el que compleix i veus qui lliura bé.',
     steps: [
       { b: 'Publica els teus requisits', t: 'com a enllaç o QR per a licitacions i contractes: IDS, regles, nota mínima i nomenclatura.' },
@@ -739,7 +739,7 @@ const ca: PricingCopy = {
   more: {
     h2: 'Per integrar, o per a tota una cartera',
     dev: 'L’SDK de client és gratuït. Developer afegeix una API de validació allotjada per a plataformes, CDE i automatitzacions.',
-    devPrice: '{p} / mes + consum',
+    devPrice: '{p} / mes, pagament anual, + consum',
     ent: 'Recepció a tota la cartera, inici de sessió únic, contracte d’encarregat del tractament i una opció als teus servidors sense accés a internet.',
     entPrice: 'Des de {p} / any',
     onPrem: 'Validador als teus servidors',
@@ -802,11 +802,11 @@ const zh: PricingCopy = {
   who: { free: '所有使用 IFC 的人', pro: '个人', team: '设计院和工程公司' },
   price: {
     free: '{p}，永久',
-    month: '{p} / 月',
-    editorMonth: '每位编辑者 {p} / 月',
-    yearly: '或 {y} / 年，相当于免费两个月',
+    month: '{p} / 月，按年付费',
+    editorMonth: '每位编辑者 {p} / 月，按年付费',
+    yearly: '每年 {y} · 按月付费为 {m} / 月',
     minEditors: '至少 {n} 位编辑者',
-    founder: '首发优惠：前 {t} 个团队年付享 {n}% 折扣，续订期间一直有效。',
+    founder: 'Team 和接收版首发优惠：前 {t} 位客户 {m} 个月享 {n}% 折扣，条件是发布一篇客户案例。',
   },
   groups: { files: '文件与存储', share: '与业主共享', quality: '全团队质量', contract: '自动化与合同' },
   rows: {
@@ -826,8 +826,8 @@ const zh: PricingCopy = {
   reception: {
     h2: '面向接收模型的人',
     sub: '从众多分包商收集模型的总包、开发商、业主和设施管理者。',
-    perProject: '每个在建项目 {p} / 月，最多 {n} 家分包商',
-    unlimited: '{p} / 月，项目不限',
+    perProject: '每个在建项目 {p} / 月起，最多 {n} 家分包商',
+    unlimited: '项目组合：{p} / 月起，项目和分包商不限',
     body: '不再收到需要退回的模型。分包商在发送前免费按你的要求检查文件；你只收到合格的模型，并能看出谁交付得好。',
     steps: [
       { b: '发布你的要求', t: '以链接或二维码用于招标和合同：IDS、规则、最低分数、命名。' },
@@ -840,7 +840,7 @@ const zh: PricingCopy = {
   more: {
     h2: '基于它开发，或覆盖整个项目组合',
     dev: '客户端 SDK 免费。Developer 为平台、CDE 和自动化增加托管验证 API。',
-    devPrice: '{p} / 月 + 用量',
+    devPrice: '{p} / 月，按年付费，+ 用量',
     ent: '在整个项目组合中使用接收版、单点登录、数据处理协议，以及无需联网的本地部署选项。',
     entPrice: '{p} / 年起',
     onPrem: '本地部署验证器',
@@ -903,11 +903,11 @@ const ja: PricingCopy = {
   who: { free: 'IFC を扱うすべての方', pro: '個人', team: '設計事務所・建設コンサル' },
   price: {
     free: '{p}、ずっと無料',
-    month: '{p} / 月',
-    editorMonth: '編集者 1 人あたり {p} / 月',
-    yearly: 'または年額 {y}（2 か月分お得）',
+    month: '{p} / 月（年払い）',
+    editorMonth: '編集者 1 人あたり {p} / 月（年払い）',
+    yearly: '年額 {y} · 月払いは {m} / 月',
     minEditors: '編集者 {n} 人から',
-    founder: '早期登録特典：先着 {t} チームは年額が {n}% オフ、契約中はずっと適用。',
+    founder: 'Team と納品受付の早期特典：先着 {t} 社は {m} か月間 {n}% オフ（導入事例の公開が条件）。',
   },
   groups: { files: 'ファイルと保存', share: 'クライアントとの共有', quality: 'チーム全体の品質', contract: '自動化と契約' },
   rows: {
@@ -927,8 +927,8 @@ const ja: PricingCopy = {
   reception: {
     h2: 'モデルを受け取る方へ',
     sub: '多くの協力会社からモデルを集めるゼネコン、デベロッパー、発注者、施設管理者。',
-    perProject: '稼働中のプロジェクトごとに {p} / 月（協力会社 {n} 社まで）',
-    unlimited: '{p} / 月、プロジェクト数無制限',
+    perProject: '稼働中のプロジェクトごとに {p} / 月から（協力会社 {n} 社まで）',
+    unlimited: 'ポートフォリオ：{p} / 月から、プロジェクトと協力会社は無制限',
     body: '差し戻しが必要なモデルを受け取るのはもう終わりです。協力会社は送る前に貴社の要件に対して無料でファイルをチェックします。届くのは要件を満たしたものだけで、誰の納品が良いかも分かります。',
     steps: [
       { b: '要件を公開', t: '入札や契約向けにリンクや QR で：IDS、ルール、最低スコア、命名規則。' },
@@ -941,7 +941,7 @@ const ja: PricingCopy = {
   more: {
     h2: '自社製品に組み込む、またはポートフォリオ全体で',
     dev: 'クライアント SDK は無料です。Developer はプラットフォーム、CDE、自動化向けのホスト型検証 API を追加します。',
-    devPrice: '{p} / 月 + 従量',
+    devPrice: '{p} / 月（年払い）+ 従量',
     ent: 'ポートフォリオ全体での納品受付、シングルサインオン、データ処理契約、インターネット接続不要のオンプレミス版。',
     entPrice: '年額 {p} から',
     onPrem: 'オンプレミス版バリデータ',
@@ -1004,11 +1004,11 @@ const th: PricingCopy = {
   who: { free: 'ทุกคนที่มีไฟล์ IFC', pro: 'หนึ่งคน', team: 'สำนักงานออกแบบและบริษัทวิศวกรรม' },
   price: {
     free: '{p} ตลอดไป',
-    month: '{p} / เดือน',
-    editorMonth: '{p} ต่อผู้ใช้สิทธิ์แก้ไข / เดือน',
-    yearly: 'หรือ {y} ต่อปี ฟรีสองเดือน',
+    month: '{p} / เดือน เมื่อชำระรายปี',
+    editorMonth: '{p} ต่อผู้ใช้สิทธิ์แก้ไข / เดือน เมื่อชำระรายปี',
+    yearly: '{y} ต่อปี · {m} / เดือน หากชำระรายเดือน',
     minEditors: 'ขั้นต่ำ {n} ผู้ใช้สิทธิ์แก้ไข',
-    founder: 'ข้อเสนอสมาชิกกลุ่มแรก: ลด {n}% สำหรับรายปี แก่ {t} ทีมแรก ตลอดเวลาที่ยังใช้งาน',
+    founder: 'ข้อเสนอสมาชิกกลุ่มแรกสำหรับ Team และตรวจรับ: ลด {n}% เป็นเวลา {m} เดือน สำหรับ {t} ลูกค้าแรก แลกกับการเผยแพร่กรณีศึกษา',
   },
   groups: { files: 'ไฟล์และพื้นที่เก็บ', share: 'แชร์กับลูกค้า', quality: 'คุณภาพทั้งทีม', contract: 'ระบบอัตโนมัติและสัญญา' },
   rows: {
@@ -1028,8 +1028,8 @@ const th: PricingCopy = {
   reception: {
     h2: 'สำหรับผู้รับโมเดล',
     sub: 'ผู้รับเหมาหลัก ผู้พัฒนาโครงการ เจ้าของอาคาร และผู้จัดการอาคาร ที่รวบรวมโมเดลจากผู้รับเหมาช่วงจำนวนมาก',
-    perProject: '{p} / เดือน ต่อโครงการที่ดำเนินอยู่ สูงสุด {n} ผู้รับเหมาช่วง',
-    unlimited: '{p} / เดือน ไม่จำกัดโครงการ',
+    perProject: 'เริ่มต้น {p} / เดือน ต่อโครงการที่ดำเนินอยู่ สูงสุด {n} ผู้รับเหมาช่วง',
+    unlimited: 'พอร์ตโฟลิโอ: เริ่มต้น {p} / เดือน ไม่จำกัดโครงการและผู้รับเหมาช่วง',
     body: 'เลิกรับโมเดลที่ต้องส่งกลับไปแก้ ผู้รับเหมาช่วงตรวจไฟล์ของตนตามข้อกำหนดของคุณฟรีก่อนส่ง คุณได้รับเฉพาะงานที่ผ่าน และเห็นว่าใครส่งงานได้ดี',
     steps: [
       { b: 'เผยแพร่ข้อกำหนดของคุณ', t: 'เป็นลิงก์หรือ QR สำหรับการประมูลและสัญญา: IDS กฎ คะแนนขั้นต่ำ การตั้งชื่อ' },
@@ -1042,7 +1042,7 @@ const th: PricingCopy = {
   more: {
     h2: 'พัฒนาต่อยอด หรือใช้ทั้งพอร์ตโฟลิโอ',
     dev: 'SDK ฝั่งไคลเอนต์ใช้ฟรี Developer เพิ่ม API ตรวจสอบแบบโฮสต์สำหรับแพลตฟอร์ม CDE และระบบอัตโนมัติ',
-    devPrice: '{p} / เดือน + ตามการใช้งาน',
+    devPrice: '{p} / เดือน เมื่อชำระรายปี + ตามการใช้งาน',
     ent: 'แผนตรวจรับทั้งพอร์ตโฟลิโอ Single Sign-On (SSO) ข้อตกลงการประมวลผลข้อมูล และตัวเลือกติดตั้งในองค์กรโดยไม่ต้องเชื่อมอินเทอร์เน็ต',
     entPrice: 'เริ่มต้น {p} / ปี',
     onPrem: 'ตัวตรวจสอบแบบติดตั้งในองค์กร',
