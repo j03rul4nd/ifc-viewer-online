@@ -274,7 +274,7 @@ function GroupCard({ g, count, kinds, schema, rows, open, onToggle, onChange, on
           <input className={sel} value={g.name} onChange={(e) => onChange({ ...g, name: e.target.value })} aria-label={t('groups.name')} />
           <Conditions g={g} schema={schema} rows={rows} onChange={onChange} t={t} />
           <LookEditor style={g.style} kinds={kinds} schema={schema} t={t} onChange={(style) => onChange({ ...g, style })} />
-          <button className="self-start text-[10px] text-[#e0523f] hover:underline" onClick={onDelete}>{t('groups.delete')}</button>
+          <button className="self-start text-[10px] text-[var(--danger)] hover:underline" onClick={onDelete}>{t('groups.delete')}</button>
         </div>
       )}
     </div>

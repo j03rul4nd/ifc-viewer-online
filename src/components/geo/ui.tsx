@@ -57,9 +57,9 @@ export function Notice({ tone = 'muted', children, action }: {
   action?: { label: string; onClick: () => void }
 }) {
   const style =
-    tone === 'danger' ? 'border-[rgba(224,82,63,0.4)] bg-[rgba(224,82,63,0.08)] text-[var(--text-dim)]'
-    : tone === 'warn' ? 'border-[rgba(233,162,59,0.4)] bg-[rgba(233,162,59,0.08)] text-[var(--text-dim)]'
-    : tone === 'info' ? 'border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.08)] text-[var(--text-dim)]'
+    tone === 'danger' ? 'border-[color-mix(in_srgb,var(--danger)_40%,transparent)] bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] text-[var(--text-dim)]'
+    : tone === 'warn' ? 'border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] text-[var(--text-dim)]'
+    : tone === 'info' ? 'border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] text-[var(--text-dim)]'
     : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-faint)]'
   return (
     <div className={`text-[10px] leading-snug px-2 py-1.5 rounded-[7px] border ${style} flex items-start gap-2`} role={tone === 'danger' ? 'alert' : undefined}>
@@ -67,7 +67,7 @@ export function Notice({ tone = 'muted', children, action }: {
       {action && (
         <button
           onClick={action.onClick}
-          className="shrink-0 -my-0.5 px-1.5 py-0.5 max-md:py-2 max-md:px-2.5 max-md:text-[12px] rounded-[5px] text-[10px] font-medium text-[var(--accent-2)] hover:bg-[rgba(10,132,129,0.14)] transition-colors"
+          className="shrink-0 -my-0.5 px-1.5 py-0.5 max-md:py-2 max-md:px-2.5 max-md:text-[12px] rounded-[5px] text-[10px] font-medium text-[var(--accent-2)] hover:bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] transition-colors"
         >
           {action.label}
         </button>
@@ -215,7 +215,7 @@ export function Choices<T extends string>({ options, onSelect, minWidth = 90, la
             'flex-1 px-2 h-[28px] max-md:h-[40px] max-md:text-[12px] rounded-[7px] text-[10.5px] font-medium leading-tight truncate',
             'border transition-colors active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none',
             o.active
-              ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+              ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)]'
               : 'border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
           ].join(' ')}
         >
@@ -409,9 +409,9 @@ export function StatusDot({ status }: { status: GeorefExtraction['status'] }) {
 /** Map state as a colour + word, next to the title where it is read first. */
 export function ModeChip({ mode, label }: { mode: string; label: string }) {
   const tone =
-    mode === 'on' ? { fg: 'var(--ok)', bg: 'rgba(48,163,108,0.12)' }
-    : mode === 'starting' ? { fg: 'var(--accent-2)', bg: 'rgba(10,132,129,0.14)' }
-    : mode === 'error' ? { fg: 'var(--danger)', bg: 'rgba(224,82,63,0.12)' }
+    mode === 'on' ? { fg: 'var(--ok)', bg: 'color-mix(in srgb, var(--success) 12%, transparent)' }
+    : mode === 'starting' ? { fg: 'var(--accent-2)', bg: 'color-mix(in srgb, var(--accent) 14%, transparent)' }
+    : mode === 'error' ? { fg: 'var(--danger)', bg: 'color-mix(in srgb, var(--danger) 12%, transparent)' }
     : { fg: 'var(--text-faint)', bg: 'var(--surface-2)' }
   return (
     <span
@@ -443,8 +443,8 @@ export function Button({ variant = 'secondary', size = 'md', className = '', chi
   },
 ) {
   const v =
-    variant === 'primary' ? 'bg-[var(--accent)] text-white font-semibold hover:brightness-110'
-    : variant === 'accent-outline' ? 'border border-[var(--accent)] text-[var(--accent-2)] font-medium hover:bg-[rgba(10,132,129,0.12)]'
+    variant === 'primary' ? 'bg-[var(--accent)] text-[var(--accent-contrast)] font-semibold hover:brightness-110'
+    : variant === 'accent-outline' ? 'border border-[var(--accent)] text-[var(--accent-2)] font-medium hover:bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]'
     : variant === 'ghost' ? 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
     : 'border border-[var(--border-strong)] text-[var(--text-dim)] font-medium hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
   const s = size === 'lg'
