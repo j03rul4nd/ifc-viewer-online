@@ -176,7 +176,7 @@ describe('home page pictures: what a crawler is told', () => {
     writeFileSync(path.join(dist, 'index.html'), read('index.html'))
     expect(generateLangShells(dist).errors).toBe(0)
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-    for (const l of ['de', 'fr', 'ja'] as const) {
+    for (const l of ['es', 'de', 'fr', 'ja'] as const) {
       const html = readFileSync(path.join(dist, l, 'index.html'), 'utf8')
       expect(html, l).toContain(`alt="${esc(SHOWCASE_COPY[l].heroAlt)}"`)
       expect(html, l).toContain('"primaryImageOfPage"')

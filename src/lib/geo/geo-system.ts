@@ -14,7 +14,12 @@
 
 import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
-import { lowerQuality } from './basemap/tile-quality'
+import { createQualityGovernor, lodResolution } from './basemap/tile-quality'
+import { createCityLod, type CityLod, type CityLodStats } from './city-lod'
+import { cityTriangleBudget } from './city-cells'
+import { loadTileJson } from './basemap/tilejson'
+import { OPENFREEMAP_TILEJSON } from './providers'
+import { isMemoryConstrained } from '../loading/device-profile'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
@@ -573,6 +578,15 @@ export interface GeoSystemAPI {
    * with the numbers in front of them.
    */
   setBudgetOverride(lifted: boolean): void
+  /**
+   * Detail by distance (default on): beyond the full-detail district the city
+   * is drawn in cells that follow the camera — simple buildings near, volumes
+   * far, unloaded out of range (city-cells). Off = the district alone, all at
+   * full detail, as before.
+   */
+  setAutoDetail(on: boolean): void
+  /** What the far city is holding right now; null when it is off. */
+  getCityStats(): CityLodStats | null
   /** Scene build progress and results, for the panel. Null to clear. */
   setSceneReportCallback(cb: ((report: SceneReport) => void) | null): void
   /** The frame watch — one verdict per second while the map is on. */
@@ -794,6 +808,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Per-layer outcome of the builds that produced the current scene. */
   let layerStats = new Map<LayerKey, SceneLayerStat>()
   let budgetLifted = false
+  /** The far city in cells (city-lod); null while map mode is off. */
+  let cityLod: CityLod | null = null
+  let autoDetail = true
+  let viewDetailFailed = false
   /**
    * Halved on every lost WebGL context. A context loss in map mode is almost
    * always memory pressure from the scene we built, so the restore rebuilds
@@ -804,6 +822,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let sceneReportCb: ((report: SceneReport) => void) | null = null
   let perfCb: ((verdict: FrameVerdict) => void) | null = null
   const frameWatch = createFrameWatch()
+  /** Lowers the basemap's sharpness in a slow view and gives it back after. */
+  const basemapQuality = createQualityGovernor()
   let contextListeners: { lost: (e: Event) => void; restored: () => void } | null = null
   /** Authored props, once fetched. Null until showcase mode asks for them. */
   let propAssets: Map<string, THREE.BufferGeometry> | null = null
@@ -1206,6 +1226,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
       engine = createBasemapEngine()
       engine.onDegraded = degradedCallback
+      engine.setLabelKeepOut(modelBoxes)
+      cityLod = createCityLod()
+      geoRoot.add(cityLod.group)
+      {
+        // The far city reads OpenMapTiles whatever the basemap on screen is:
+        // same free source the Overpass fallback already uses.
+        const city = cityLod
+        void loadTileJson(OPENFREEMAP_TILEJSON)
+          .then((tj) => { if (cityLod === city) city.setSource(tj.tiles[0]) })
+          .catch(() => { /* no far city; the district is unaffected */ })
+      }
       geoRoot.add(engine.group)
       engine.setProvider(provider)
       engine.setCamera(ctx.getActiveCamera())
@@ -1229,6 +1260,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const tick = (): void => {
         if (!engine) return
         engine.update()
+        // Sharpening and the far city are extras: if either throws, the map
+        // itself must keep ticking — an exception here would stop the loop.
+        try { updateViewDetail() } catch (err) {
+          if (!viewDetailFailed) { viewDetailFailed = true; log.warn('view detail update failed:', err) }
+        }
         retuneDepthRange()
         retuneAtmosphere()
         if ((subsurfaceMode !== 'surface' || markersEnabled) && ++subsurfaceFrames >= SUBSURFACE_SWEEP_FRAMES) {
@@ -1249,11 +1285,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         } else {
           const verdict = frameWatch.sample(now)
           if (verdict) {
-            if (verdict.slow) {
-              // Basemap sharpness goes first: cheapest thing on screen to lose.
-              const q = lowerQuality(engine.getQuality())
-              if (q) engine.setQuality(q)
-            }
+            // Basemap sharpness goes first — cheapest thing on screen to lose —
+            // and comes back once the view is fast again (tile-quality).
+            const q = basemapQuality.step(engine.getQuality(), verdict)
+            if (q) engine.setQuality(q)
             perfCb?.(verdict)
           }
         }
@@ -1303,6 +1338,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       stopLookAnim()
       staging?.dispose()
       staging = null
+      cityLod?.dispose()
+      cityLod = null
       engine.dispose()
       if (geoRoot) {
         geoRoot.removeFromParent()
@@ -1336,6 +1373,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     setProvider(p) {
       provider = p
+      basemapQuality.reset()
       engine?.setQuality('balanced')
       engine?.setProvider(p)
       // BUG-1 fix: the terrain drape follows the basemap provider. Heights are
@@ -1665,6 +1703,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (!osmFeatures || !geoRoot) return
       await requestRebuild()
     },
+
+    setAutoDetail(on) { autoDetail = on },
+
+    getCityStats() { return cityLod && autoDetail ? cityLod.stats() : null },
 
     setBudgetOverride(lifted) {
       if (lifted === budgetLifted) return
@@ -3030,6 +3072,114 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * depends on how far away the subject is, and that changes with every zoom.
    * Pushed to the fog only when it has moved by more than the eye can see.
    */
+  const detailEye = new THREE.Vector3()
+  const detailDir = new THREE.Vector3()
+  const detailHit = new THREE.Vector3()
+  const detailSize = new THREE.Vector2()
+
+  /**
+   * Tell the relief where the camera is looking and how much ground one device
+   * pixel covers there, so it can repaint the map sharper around that point
+   * (terrain-detail). Two ground reads a frame; the relief does nothing when
+   * the answer has not moved a quarter of a square.
+   */
+  function updateViewDetail(): void {
+    if (!geoRoot || (!terrain && !cityLod)) return
+    const cam = ctx.getActiveCamera() as THREE.PerspectiveCamera & THREE.OrthographicCamera
+    cam.getWorldPosition(detailEye)
+    cam.getWorldDirection(detailDir)
+    const under = api.groundHeightAt(detailEye.x, detailEye.z) ?? geoRoot.position.y
+    const height = Math.max(1, detailEye.y - under)
+    // Where the middle of the view meets the ground — but never further ahead
+    // than three times the camera's height: looking at the horizon, what needs
+    // to be sharp is the ground in front of the viewer, not the skyline.
+    const flat = Math.hypot(detailDir.x, detailDir.z)
+    let t = detailDir.y < -1e-3 ? height / -detailDir.y : Infinity
+    if (t * flat > 3 * height) t = (3 * height) / Math.max(1e-6, flat)
+    detailHit.copy(detailEye).addScaledVector(detailDir, t)
+    const ground = api.groundHeightAt(detailHit.x, detailHit.z) ?? under
+    detailHit.y = ground
+    const distance = Math.max(1, detailEye.distanceTo(detailHit))
+    ctx.renderer.getSize(detailSize)
+    const lod = lodResolution(detailSize.x, detailSize.y, ctx.renderer.getPixelRatio())
+    const pixelM = cam.isPerspectiveCamera
+      ? (distance * 2 * Math.tan((cam.fov * Math.PI) / 360)) / lod.height
+      : (cam.top - cam.bottom) / (cam.zoom || 1) / lod.height
+    geoRoot.updateWorldMatrix(true, false)
+    const local = geoRoot.worldToLocal(detailHit)
+    terrain?.setDetailView({
+      focusNx: local.x, focusNy: local.y,
+      // geoRoot's scale is metres per normalized unit at this latitude.
+      texelN: pixelM / geoRoot.scale.x,
+      dpr: Math.min(2, Math.max(1, Math.round(lod.effectiveDpr * 4) / 4)),
+    })
+    updateCity(local.x, local.y, distance)
+  }
+
+  /**
+   * The far city follows the same view: which cells, at what level, within
+   * what budget (city-cells). It is part of the Buildings layer — off with it —
+   * and it leaves the district's own box to the district.
+   */
+  function updateCity(focusNx: number, focusNy: number, distanceM: number): void {
+    if (!cityLod || !geoRoot || !placement) return
+    const on = autoDetail && buildingsEnabled && layerVisibility.building
+    cityLod.group.visible = on
+    cityLod.setTone(contextTone)
+    cityLod.setBudget(cityTriangleBudget(deviceTier(), isMemoryConstrained()) * (budgetLifted ? 3 : 1))
+    // The district's box, once it has buildings of its own to show there.
+    const anchorN = latLonToNormalized(placement.lat, placement.lon)
+    const halfN = BUILDINGS_HALF_SIZE_M / geoRoot.scale.x
+    // (Features kept from another anchor do not count: nothing is drawn here.)
+    const districtHere = !!osmFeatures && osmFeatures.length > 0
+      && osmCache?.key === osmCacheKey(placement.lat, placement.lon)
+    cityLod.setExclude(districtHere
+      ? { minNx: anchorN.nx - halfN, maxNx: anchorN.nx + halfN, minNy: anchorN.ny - halfN, maxNy: anchorN.ny + halfN }
+      : null)
+    const frame = bareGroundFrame()
+    cityLod.update(
+      on ? { focusNx, focusNy, distanceM, metresPerUnit: geoRoot.scale.x } : null,
+      frame ? { key: frame, z: (nx, ny) => frame.groundZ(nx, ny) } : null,
+      { lat: placement.lat, lon: placement.lon },
+    )
+  }
+
+  let modelBoxCache: { at: number; boxes: THREE.Box3[] } | null = null
+
+  /**
+   * World boxes of the loaded models, for the map's place names to keep off
+   * (screen-labels). Read at most twice a second: a model does not move while
+   * the camera does.
+   */
+  function modelBoxes(): THREE.Box3[] {
+    const now = performance.now()
+    if (modelBoxCache && now - modelBoxCache.at < 500) return modelBoxCache.boxes
+    const boxes: THREE.Box3[] = []
+    const outlines = ctx.getModelFootprints?.() ?? null
+    const tops = ctx.getModelTops?.() ?? null
+    const active = ctx.getActiveModelBounds()
+    if (outlines && outlines.length > 0) {
+      outlines.forEach((outline, i) => {
+        if (outline.length === 0) return
+        const box = new THREE.Box3()
+        const top = tops?.[i] ?? (active ? active.center.y + active.size.y / 2 : geoRoot?.position.y ?? 0)
+        const base = api.groundHeightAt(outline[0].x, outline[0].z) ?? geoRoot?.position.y ?? 0
+        for (const c of outline) {
+          box.expandByPoint(new THREE.Vector3(c.x, Math.min(base, top), c.z))
+          box.expandByPoint(new THREE.Vector3(c.x, Math.max(base, top), c.z))
+        }
+        boxes.push(box)
+      })
+    } else if (active) {
+      boxes.push(new THREE.Box3().setFromCenterAndSize(
+        new THREE.Vector3(active.center.x, active.center.y, active.center.z),
+        new THREE.Vector3(active.size.x, active.size.y, active.size.z),
+      ))
+    }
+    modelBoxCache = { at: now, boxes }
+    return boxes
+  }
+
   function retuneAtmosphere(): void {
     const fog = ctx.scene.fog
     // Sun Study takes the fog away for its own sky; nothing to tune then.

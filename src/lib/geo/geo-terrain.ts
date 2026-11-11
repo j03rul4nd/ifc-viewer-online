@@ -33,6 +33,8 @@ import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 import type { TerrainWorkerIn, TerrainWorkerOut, VectorDrape } from '../../workers/geo-terrain.worker'
+import { createTerrainDetailLayer, type TerrainDetailView } from './terrain-detail-layer'
+import { isMemoryConstrained } from '../loading/device-profile'
 import { loadTileJson } from './basemap/tilejson'
 
 const log = createLogger('GeoTerrain')
@@ -169,6 +171,14 @@ export interface TerrainPatch {
    * road can be laid on (way-clip).
    */
   measuredBox: { minNx: number; maxNx: number; minNy: number; maxNy: number }
+  /**
+   * Per frame: where the camera is looking and how much ground one device
+   * pixel covers there. The relief repaints the map sharper around that point
+   * (terrain-detail). null = the view is not on the relief.
+   */
+  setDetailView(view: TerrainDetailView | null): void
+  /** Dev diagnosis of the sharp close-up squares. */
+  detailDebug(): unknown
   dispose(): void
 }
 
@@ -235,6 +245,7 @@ async function buildTerrainPatchFrom(
 ): Promise<TerrainPatch> {
   const zoom = Math.min(terrainZoomFor(placement.lat, opts.modelSpanM ?? null), dem.maxZoom)
   const imageryZoom = provider ? imageryZoomFor(zoom, provider.id, provider.maxZoom) : null
+  const vector = await vectorDrapeFor(provider)
 
   const result = await runTerrainWorker({
     type: 'build-terrain',
@@ -246,13 +257,14 @@ async function buildTerrainPatchFrom(
     grid: GRID_SEGMENTS,
     imageryTemplate: provider?.urlTemplate ?? null,
     imageryZoom,
-    vector: await vectorDrapeFor(provider),
+    vector,
   }, BUILD_TIMEOUT_MS)
   if (result.type !== 'done') throw new Error('unexpected terrain worker reply')
 
   return assemblePatch(
     result, placement.lat, Math.min(MAX_ANISOTROPY, opts.maxAnisotropy ?? 1),
     latLonToNormalized(placement.lat, placement.lon), opts.keepHalfM ?? DEFAULT_KEEP_HALF_M,
+    vector,
   )
 }
 
@@ -267,6 +279,7 @@ function assemblePatch(
   anisotropy: number,
   anchorN: { nx: number; ny: number } | null = null,
   keepHalfM: number = DEFAULT_KEEP_HALF_M,
+  vector: VectorDrape | null = null,
 ): TerrainPatch {
   const { zoom, grid, centerTx, centerTy, anchorElevation, heights, normals, detail, sky } = data
   const verts = grid + 1
@@ -295,6 +308,20 @@ function assemblePatch(
   geometry.setAttribute('color', colorAttr)
 
   const material = new THREE.MeshBasicMaterial({ transparent: true, vertexColors: true })
+  // The sharp close-up: squares of the same map repainted around the view and
+  // mixed over the big texture by this material (terrain-detail).
+  let baseTexelN = patchSize / 3072
+  const detailLayer = createTerrainDetailLayer({
+    patch: {
+      minNx: centre.nx - patchSize / 2, maxNx: centre.nx + patchSize / 2,
+      minNy: centre.ny - patchSize / 2, maxNy: centre.ny + patchSize / 2,
+    },
+    baseTexelN: () => baseTexelN,
+    anisotropy,
+    constrained: isMemoryConstrained(),
+  })
+  detailLayer.attach(material)
+  detailLayer.setSource(vector)
   /**
    * Built on first use: allocating its attribute costs ~2.4 MB on a 385² patch,
    * which is not worth paying for every user who never turns detail up.
@@ -602,6 +629,7 @@ function assemblePatch(
     texture?.dispose()
     texture = null
     if (next) {
+      baseTexelN = patchSize / next.width
       const canvas = document.createElement('canvas')
       canvas.width = next.width
       canvas.height = next.height
@@ -681,13 +709,14 @@ function assemblePatch(
       if (disposed) return
       const token = ++drapeToken
       const imageryZoom = provider ? imageryZoomFor(zoom, provider.id, provider.maxZoom) : null
+      const nextVector = await vectorDrapeFor(provider)
       const result = await runTerrainWorker({
         type: 'drape-terrain',
         id: crypto.randomUUID(),
         centerTx, centerTy, zoom,
         imageryTemplate: provider?.urlTemplate ?? null,
         imageryZoom,
-        vector: await vectorDrapeFor(provider),
+        vector: nextVector,
       }, DRAPE_TIMEOUT_MS)
       if (result.type !== 'drape-done') throw new Error('unexpected drape worker reply')
       if (disposed || token !== drapeToken) {
@@ -695,6 +724,8 @@ function assemblePatch(
         return
       }
       applyDrape(result.imagery)
+      // The squares are the old map until this moment; from here, the new one.
+      detailLayer.setSource(nextVector)
       log.debug(`redraped with "${provider?.id ?? 'none'}"`)
     },
 
@@ -742,6 +773,16 @@ function assemblePatch(
       recolor()
     },
 
+    setDetailView(view) {
+      if (disposed) return
+      // Only where the relief shows the map: a hypsometric or procedural
+      // ground has no map to sharpen.
+      const shown = style === 'imagery' && texture !== null && !isProcedural()
+      detailLayer.update(shown ? view : null, performance.now())
+    },
+
+    detailDebug() { return detailLayer.debug() },
+
     dispose() {
       disposed = true
       drapeToken++
@@ -749,6 +790,7 @@ function assemblePatch(
       group.clear()
       geometry.dispose()
       material.dispose()
+      detailLayer.dispose()
       terrainMaterial?.dispose()
       terrainMaterial = null
       beltTint = null

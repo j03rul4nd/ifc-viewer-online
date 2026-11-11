@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { labelKey, labelsWanted, placeScreenLabels, STREET_LEVEL_M, type ScreenItem } from './screen-labels'
+import * as THREE from 'three'
+import { labelKey, labelsWanted, placeScreenLabels, screenBoxOf, STREET_LEVEL_M, type ScreenItem } from './screen-labels'
 
 const item = (key: string, priority: number, sx: number, sy: number, w = 60, h = 16): ScreenItem =>
   ({ key, priority, sx, sy, w, h })
@@ -43,5 +44,47 @@ describe('place names at a walker\'s eye', () => {
   it('come back once the view is a map again', () => {
     expect(labelsWanted(STREET_LEVEL_M)).toBe(true)
     expect(labelsWanted(400)).toBe(true)
+  })
+})
+
+describe('names and the model', () => {
+  it('keeps every name off a blocked rectangle', () => {
+    const kept = placeScreenLabels(
+      [item('over', 900, 200, 200), item('beside', 100, 500, 200)], 10, {}, [[150, 150, 260, 240]],
+    )
+    expect(kept).toEqual(['beside'])
+  })
+
+  it('does not write the same words twice close together', () => {
+    const a = { ...item('a', 5, 100, 100), text: 'Gran Via' }
+    const b = { ...item('b', 4, 100, 180), text: 'Gran Via' }
+    const far = { ...item('c', 3, 700, 100), text: 'Gran Via' }
+    expect(placeScreenLabels([a, b, far], 10)).toEqual(['a', 'c'])
+  })
+
+  it('projects a world box to the rectangle it covers on screen', () => {
+    const camera = new THREE.PerspectiveCamera(60, 2, 0.1, 1000)
+    camera.position.set(0, 0, 10)
+    camera.updateMatrixWorld()
+    camera.updateProjectionMatrix()
+    const vp = { width: 800, height: 400 }
+    const box = screenBoxOf(new THREE.Box3(new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, 1, 1)), camera, vp)!
+    // Centred, and as wide as it is tall on screen (a cube seen head-on).
+    expect((box[0] + box[2]) / 2).toBeCloseTo(400, 5)
+    expect((box[1] + box[3]) / 2).toBeCloseTo(200, 5)
+    expect(box[2] - box[0]).toBeCloseTo(box[3] - box[1], 5)
+    // The near face (9 m away) sets the size: 2 m of 2·9·tan30° = 10.39 m of view height.
+    expect(box[3] - box[1]).toBeCloseTo((2 / (2 * 9 * Math.tan(Math.PI / 6))) * 400, 3)
+  })
+
+  it('has no rectangle for a box behind the camera or off screen', () => {
+    const camera = new THREE.PerspectiveCamera(60, 2, 0.1, 1000)
+    camera.position.set(0, 0, 10)
+    camera.updateMatrixWorld()
+    camera.updateProjectionMatrix()
+    const vp = { width: 800, height: 400 }
+    const at = (x: number, z: number) => new THREE.Box3(new THREE.Vector3(x - 1, -1, z - 1), new THREE.Vector3(x + 1, 1, z + 1))
+    expect(screenBoxOf(at(0, 30), camera, vp)).toBeNull()
+    expect(screenBoxOf(at(500, -20), camera, vp)).toBeNull()
   })
 })

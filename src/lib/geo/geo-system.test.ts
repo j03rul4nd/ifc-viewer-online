@@ -24,6 +24,7 @@ const fakeEngine = {
   setHole: vi.fn(),
   setQuality: vi.fn(),
   getQuality: vi.fn(() => 'balanced'),
+  setLabelKeepOut: vi.fn(),
   setTint: vi.fn(),
   getAttributions: vi.fn(() => ['© Test']),
   getGpuBytesEstimate: vi.fn(() => 42),
@@ -33,6 +34,20 @@ const fakeEngine = {
 vi.mock('./basemap-engine', () => ({
   createBasemapEngine: () => fakeEngine,
 }))
+
+// ── city-lod mock ───────────────────────────────────────────────────────────────
+// The far city starts a worker and reads a TileJSON; neither belongs in a test
+// of the map's own lifecycle.
+
+vi.mock('./city-lod', () => ({
+  createCityLod: () => ({
+    group: new THREE.Group(),
+    setSource: vi.fn(), setExclude: vi.fn(), setTone: vi.fn(), setBudget: vi.fn(),
+    update: vi.fn(), dispose: vi.fn(),
+    stats: () => ({ cells: 0, mid: 0, far: 0, triangles: 0, buildings: 0, inFlight: 0, bytes: 0, wanted: 0, lastError: null }),
+  }),
+}))
+vi.mock('./basemap/tilejson', () => ({ loadTileJson: () => Promise.reject(new Error('offline in tests')) }))
 
 // ── geo-terrain mock (terrain-sync tests) ───────────────────────────────────────
 
@@ -47,6 +62,7 @@ interface FakePatch {
   setStyle: ReturnType<typeof vi.fn>
   setExaggeration: ReturnType<typeof vi.fn>
   setLook: ReturnType<typeof vi.fn>
+  setDetailView: ReturnType<typeof vi.fn>
   dispose: ReturnType<typeof vi.fn>
 }
 
@@ -135,6 +151,8 @@ function makeFixture(): Fixture {
         domElement: {
           getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
         },
+        getSize: (v: THREE.Vector2) => v.set(100, 100),
+        getPixelRatio: () => 1,
       } as unknown as THREE.WebGLRenderer,
       controls,
       onProjectionChanged: (cb) => {
@@ -185,6 +203,7 @@ beforeEach(() => {
       setStyle: vi.fn(),
       setExaggeration: vi.fn(),
       setLook: vi.fn(),
+      setDetailView: vi.fn(),
       dispose: vi.fn(),
     }
     terrainMock.patches.push(patch)

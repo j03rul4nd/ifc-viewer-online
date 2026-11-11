@@ -15,6 +15,7 @@ import CountUp       from './reactbits/CountUp'
 import ProfilePaths  from './landing/ProfilePaths'
 import { HOME_COPY, PRIMARY_FEATURES, homeLang } from './landing/home-copy'
 import { HeroFigure, ShowcaseSection, CompareSection } from './landing/HomeShowcase'
+import { HomeGuideSection, HomeLanguages } from './landing/HomeGuide'
 import { SHOWCASE_COPY, examplesPath } from './landing/home-showcase'
 import BimoMascot, { type BimoMood } from './mascot/BimoMascot'
 
@@ -546,6 +547,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         <CompareSection lang={langShort} solibriHref={solibriHref} />
 
         <ProfilePaths lang={langShort} onLaunch={onLaunch} />
+
+        {/* «IFC-Datei öffnen», «ouvrir un fichier IFC», «abrir un archivo IFC»: answered where the language is searched that way. */}
+        <HomeGuideSection lang={langShort} />
 
         {/* ── Privacy & Security ── */}
         <section
@@ -1177,6 +1181,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <span className="text-[var(--text-faint)]">{t('footer.builtWith')}</span>
           </div>
         </footer>
+
+        {/* The other nine homes, as links a crawler can follow. */}
+        <HomeLanguages lang={langShort} />
 
         {/* ── Bottom safe-area spacer (iOS home indicator) ── */}
         <div style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />

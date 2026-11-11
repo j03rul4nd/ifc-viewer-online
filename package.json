@@ -42,7 +42,8 @@
     "realtime-lidar": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/pointcloud/build-realtime-snapshots.ts",
     "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo",
     "indexnow": "node scripts/seo/indexnow.mjs",
-    "seo:chrome": "tsx scripts/seo/landing-chrome.ts"
+    "seo:chrome": "tsx scripts/seo/landing-chrome.ts",
+    "seo:core": "tsx scripts/seo/generate-core-landings.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",

@@ -37,6 +37,8 @@ export interface PaintRequest {
   rasters: RasterDraw[]
   /** Hand point labels back instead of baking them (screen-space layer on). */
   collect: boolean
+  /** Bake street names into the picture (default true). */
+  groundLabels?: boolean
   /** Where the product's fonts are served (`${BASE_URL}fonts/`). */
   fontBase: string
 }
@@ -115,6 +117,7 @@ async function paint(req: PaintRequest): Promise<void> {
     paintTile(ctx as unknown as CanvasRenderingContext2D, getMapStyle(req.styleId), frames, {
       width: req.width, height: req.height, zoom: req.zoom,
       pixelScale: req.pixelScale, language: req.language, rasters: req.rasters,
+      groundLabels: req.groundLabels,
       collectPoints: req.collect
         ? (cands) => {
           points = cands.map((c) => ({

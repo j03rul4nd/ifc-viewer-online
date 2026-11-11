@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>本地部署 IFC 验证器 — 物理隔离网络中的 BIM 验证</title>
+  <meta name="description" content="IFC 查看器、44 条规则的验证器和 IDS 检查，从您自己的网络提供，不需要互联网连接。包括容器镜像、安装配置、培训和支持。" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/" />
+  <meta property="og:title" content="本地部署 IFC 验证器 — 物理隔离网络中的 BIM 验证" />
+  <meta property="og:description" content="IFC 查看器、44 条规则的验证器和 IDS 检查，从您自己的网络提供，不需要互联网连接。包括容器镜像、安装配置、培训和支持。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="IFC 验证器，内置验证配置列表已展开：基本交付、质量审查、BIM 协调、ISO 19650 合规和 LOD 300 设计" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="本地部署 IFC 验证器 — 物理隔离网络中的 BIM 验证" />
+  <meta name="twitter:description" content="IFC 查看器、44 条规则的验证器和 IDS 检查，从您自己的网络提供，不需要互联网连接。包括容器镜像、安装配置、培训和支持。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/validador-ifc-on-premise/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-validator-on-premise/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/validateur-ifc-sur-site/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/validador-ifc-on-premise/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/validatore-ifc-on-premise/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/validador-ifc-on-premise/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/on-premise-ifc-validator/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/on-premise-ifc-validator/" />
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/landings/ifc-validation-requirement-profiles-800.webp 800w, /images/landings/ifc-validation-requirement-profiles-1600.webp 1600w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/",
+      "url": "https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/",
+      "name": "本地部署 IFC 验证器 — 物理隔离网络中的 BIM 验证",
+      "description": "IFC 查看器、44 条规则的验证器和 IDS 检查，从您自己的网络提供，不需要互联网连接。包括容器镜像、安装配置、培训和支持。",
+      "inLanguage": "zh",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg#image"
+      },
+      "dateModified": "2026-11-10"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (web browser)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg",
+        "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-requirement-profiles.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "IFC 验证器，内置验证配置列表已展开：基本交付、质量审查、BIM 协调、ISO 19650 合规和 LOD 300 设计",
+      "caption": "内置的验证配置。试点期间，会加载您自己的配置和 IDS 文件，并在您的模型上测试。",
+      "inLanguage": "zh",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "IFC 验证器中的 IDS 检查结果：一条规范未通过，57 面墙中有 0 面带有 FireRating 属性，并有高亮、隔离和导出按钮",
+      "caption": "用 IDS 文件检查的模型：57 面墙不满足耐火等级要求。本地部署时，模型和要求都留在您的网络内。",
+      "inLanguage": "zh",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "有任何东西会离开我们的网络吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "没有。容器向您的浏览器提供应用，不建立任何出站连接；此版本不带使用统计。模型在每位用户的浏览器中读取，不存储在服务器上。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "它和公开版应用有什么不同？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "程序是同一个。变化的是它从哪里提供、它是一个固定版本，以及需要互联网的功能（地图环境和在线示例模型）不可用。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "我们可以不通过你们自行托管吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "可以。源代码以 MIT 许可证公开，并包含 Dockerfile 和 nginx 配置。试点面向的是希望有人配置、讲解并提供支持的团队。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "模型可以有多大？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "与公开版应用相同：每个文件小于 2 GB，实际受每台工作站内存的限制，因为检查在浏览器中运行。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "费用是多少？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "试点在范围确认通话之后报价，因为它取决于站点数量和您需要的支持。目前还没有公开的价目表。"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/zh/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "本地部署 IFC 验证",
+          "item": "https://www.ifcvieweronline.eu/zh/on-premise-ifc-validator/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
+  </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
+</head>
+<body>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/zh/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="主菜单">
+        <a href="/zh/">查看器</a>
+        <a href="/zh/ifc-viewer-examples/">示例</a>
+        <a href="/zh/fix/">修复指南</a>
+        <a href="/zh/blog/">博客</a>
+        <a href="/zh/pricing/">价格</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="切换浅色或深色" title="切换浅色或深色"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/zh/" class="lc-btn">打开查看器</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">本地部署 · 无互联网连接 · 您自己的服务器</p>
+        <h1>本地部署 IFC 验证器 <span>用于保持封闭的网络</span></h1>
+        <p class="lead">公开版应用本来就在浏览器内读取 IFC 文件，但页面本身要从互联网加载。在不允许这样做的地方，同样的查看器、验证器和 IDS 检查可以由您自己服务器上的一个容器提供。</p>
+        <div class="go">
+          <a href="#pilot" class="btn">申请试点</a>
+        </div>
+        <p class="note">一个站点，范围固定：安装、按您的要求配置、一次培训和一段支持期。</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-validation-requirement-profiles.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-validation-requirement-profiles-800.webp 800w, /images/landings/ifc-validation-requirement-profiles-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-validation-requirement-profiles.jpg" width="1600" height="1000" alt="IFC 验证器，内置验证配置列表已展开：基本交付、质量审查、BIM 协调、ISO 19650 合规和 LOD 300 设计" fetchpriority="high" />
+          </picture></a>
+          <figcaption>内置的验证配置。试点期间，会加载您自己的配置和 IDS 文件，并在您的模型上测试。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">适用对象</p>
+        <h2>当“不上传任何内容”还不够时</h2>
+        <div class="cols">
+          <div class="col"><h3>适用的情况</h3><ul>
+            <li>工作站无法访问互联网，或不允许从互联网加载软件。</li>
+            <li>您需要一个经过审计的版本，在您决定之前不会变化。</li>
+            <li>承包商的模型必须按您的 IDS 或 EIR 检查，且不能经过第三方。</li>
+            <li>出问题时，您希望有人可以联系。</li>
+          </ul></div>
+          <div class="col"><h3>不需要它的情况</h3><ul>
+            <li>您的规定只禁止上传模型。<a href="/zh/ifc-validator-online/">公开版验证器</a>不会上传模型。</li>
+            <li>您有人手自行托管。代码采用 MIT 许可证，并附带 Dockerfile：构建镜像并提供服务即可。试点增加的是配置、培训和支持，而不是另一个产品。</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">您得到什么</p>
+        <h2>安装什么，不安装什么</h2>
+        <div class="table-wrap"><table class="facts">
+          <thead><tr><th scope="col"></th><th scope="col">详情</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">软件</th><td data-h="详情">查看器、带 Health Score 的 44 条规则、IDS 1.0、BCF 2.1 和 3.0、同时打开多个模型、测量和剖切。这是一个静态 Web 应用，由容器中的 nginx 提供；检查在每位用户的浏览器中运行。</td></tr>
+            <tr><th scope="row">服务器</th><td data-h="详情">任何能运行容器的机器。它只负责提供文件，所以要求很低：工作由各工作站完成。</td></tr>
+            <tr><th scope="row">连接</th><td data-h="详情">此版本没有出站连接，也没有使用统计。</td></tr>
+            <tr><th scope="row">离线时不可用</th><td data-h="详情">3D 地图环境（地形、OpenStreetMap 建筑）和在线示例模型，因为它们需要从互联网下载。</td></tr>
+            <tr><th scope="row">您的要求</th><td data-h="详情">加载您的 IDS 文件、验证配置和命名规则，并在您自己的模型上测试。</td></tr>
+            <tr><th scope="row">更新</th><td data-h="详情">一个新的镜像文件，通过您选择的渠道交付。任何东西都不会自行更新。</td></tr>
+            <tr><th scope="row">硬件</th><td data-h="详情">您自己的服务器或虚拟机。如有需要，可以提供预先配置好的网关设备。</td></tr>
+          </tbody>
+        </table></div>
+        <figure class="shot">
+          <a href="/images/landings/ids-check-ifc-model-in-browser.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ids-check-ifc-model-in-browser-800.webp 800w, /images/landings/ids-check-ifc-model-in-browser-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ids-check-ifc-model-in-browser.jpg" width="1600" height="1000" alt="IFC 验证器中的 IDS 检查结果：一条规范未通过，57 面墙中有 0 面带有 FireRating 属性，并有高亮、隔离和导出按钮" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>用 IDS 文件检查的模型：57 面墙不满足耐火等级要求。本地部署时，模型和要求都留在您的网络内。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">其他选择</p>
+        <h2>我们所知的另一个物理隔离方案</h2>
+        <p class="sub">如果您正在比较，以下是 Solibri 就其离线方案公开的内容。</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col"></th><th scope="col">Solibri Security+</th><th scope="col">IFC Viewer Online 本地部署</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">官方描述</th><td data-h="Solibri Security+">“Fully offline operation (no telemetry)”、“Air-gapped by design”、“Controlled update cycles”</td><td data-h="IFC Viewer Online 本地部署">您服务器上的一个容器；没有出站连接</td></tr>
+            <tr><th scope="row">价格</th><td data-h="Solibri Security+">未公开；“Talk with an expert”</td><td data-h="IFC Viewer Online 本地部署">在确定范围的通话之后，按试点报价</td></tr>
+            <tr><th scope="row">检查内容</th><td data-h="Solibri Security+">Solibri 基于规则的验证</td><td data-h="IFC Viewer Online 本地部署">44 条固定规则和 IDS 1.0；碰撞仅按包围盒检查</td></tr>
+          </tbody>
+        </table></div>
+        <p class="after">当您需要专业之间的碰撞检测，或需要为本单位编写的规则时，Solibri 是更强的选择。这套安装做的事情更小：打开一份交付文件，按您的要求检查它，并返回检查结果。</p>
+        <p class="src" data-vendors="solibri">来源: <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> · 查阅于 <time datetime="2026-11-10">2026-11-10</time></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">试点</p>
+        <h2>试点如何进行</h2>
+        <ol class="steps">
+          <li><h3>范围确认通话</h3><p>您的网络规定、模型的大小、您的要求以及谁会使用它。</p></li>
+          <li><h3>安装</h3><p>安装在您的服务器上，并加载您的 IDS 文件和验证配置。</p></li>
+          <li><h3>培训</h3><p>与您的 BIM 协调员进行一次培训，使用您自己的模型。</p></li>
+          <li><h3>决定</h3><p>支持期结束后，由您决定是否扩展到其他站点。</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="pilot">
+      <div class="container">
+        <p class="label">申请试点</p>
+        <h2>告诉我们您的环境</h2>
+        <p class="sub">此表单会在您自己的邮件程序中打开一封邮件。不会向我们的服务器发送任何内容。</p>
+        <form class="form" id="pilot-form" data-subject="本地部署 IFC 验证试点" data-to="joelbenitezdonari@gmail.com">
+          <div class="form-row">
+            <label>单位<input name="org" required autocomplete="organization" /></label>
+            <label>行业<select name="sector"><option>国防 / 安全</option><option>能源 / 公用事业</option><option>交通 / 基础设施</option><option>政府机构</option><option>工业 / 制造业</option><option>建筑工程企业（AEC）</option><option>其他</option></select></label>
+          </div>
+          <div class="form-row">
+            <label>网络<select name="deploy"><option>完全无法访问互联网</option><option>专用网络，互联网受限</option><option>位于本地区的私有云</option><option>尚未确定</option></select></label>
+            <label>硬件<select name="hw"><option>我们自己的服务器或虚拟机</option><option>预先配置好的网关设备</option><option>尚未确定</option></select></label>
+          </div>
+          <label>您需要检查什么？模型大约有多大？<textarea name="need" rows="4"></textarea></label>
+          <button type="submit" class="btn">打开邮件</button>
+          <p class="form-note">或直接写信至 <a href="mailto:joelbenitezdonari@gmail.com?subject=%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2%20IFC%20%E9%AA%8C%E8%AF%81%E8%AF%95%E7%82%B9">joelbenitezdonari@gmail.com</a></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">常见问题</p>
+        <h2>问题</h2>
+        <div class="faq">
+          <div><h3>有任何东西会离开我们的网络吗？</h3><p>没有。容器向您的浏览器提供应用，不建立任何出站连接；此版本不带使用统计。模型在每位用户的浏览器中读取，不存储在服务器上。</p></div>
+          <div><h3>它和公开版应用有什么不同？</h3><p>程序是同一个。变化的是它从哪里提供、它是一个固定版本，以及需要互联网的功能（地图环境和在线示例模型）不可用。</p></div>
+          <div><h3>我们可以不通过你们自行托管吗？</h3><p>可以。源代码以 MIT 许可证公开，并包含 Dockerfile 和 nginx 配置。试点面向的是希望有人配置、讲解并提供支持的团队。</p></div>
+          <div><h3>模型可以有多大？</h3><p>与公开版应用相同：每个文件小于 2 GB，实际受每台工作站内存的限制，因为检查在浏览器中运行。</p></div>
+          <div><h3>费用是多少？</h3><p>试点在范围确认通话之后报价，因为它取决于站点数量和您需要的支持。目前还没有公开的价目表。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">相关页面</p>
+        <ul class="related">
+          <li><a href="/zh/ifc-validator-online/">IFC 验证器</a></li>
+          <li><a href="/zh/cloud-ifc-validator/">云端 IFC 验证器</a></li>
+          <li><a href="/zh/solibri-alternative/">Solibri 替代方案</a></li>
+          <li><a href="/zh/solibri-webchecker-alternative/">Solibri WebChecker 替代方案</a></li>
+          <li><a href="/zh/ifc-viewer-mac/">Mac 版 IFC 查看器</a></li>
+          <li><a href="/zh/blog/solibri-alternative/">Solibri 还是浏览器验证器：详细对比</a></li>
+          <li><a href="/zh/fix/">修复 IFC 错误</a></li>
+          <li><a href="/zh/pricing/">价格</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>您的网络能上网吗？那它本来就是免费的</h2>
+        <p>公开版验证器在您的浏览器中读取文件，不上传任何内容。</p>
+        <a href="/zh/" class="btn">验证 IFC 文件</a>
+      </div>
+    </section>
+  </main>
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">下一步</h2>
+      <p class="lc-lead">免费，在浏览器中运行，不上传任何文件。</p>
+      <ol>
+        <li><a href="/zh/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>打开示例模型</strong><span>一分钟内在真实 IFC 上查看健康评分和未通过的规则。</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>创建免费账户</strong><span>保存检查结果，并与团队或业主共享报告。</span></a></li>
+        <li><a href="/zh/pricing/"><span class="lc-n">3</span><strong>比较方案</strong><span>Pro、Team，以及面向接收交付方的模型验收。</span></a></li>
+      </ol>
+    </div>
+  </section>
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="/zh/">IFC Viewer Online</a>
+        <a href="/zh/ifc-validator-online/">IFC 验证器</a>
+        <a href="/zh/cloud-ifc-validator/">云端 IFC 验证器</a>
+        <a href="/zh/solibri-alternative/">Solibri 替代方案</a>
+        <a href="/zh/solibri-webchecker-alternative/">Solibri WebChecker 替代方案</a>
+        <a href="/zh/ifc-viewer-mac/">Mac 版 IFC 查看器</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
+    </div>
+  </footer>
+  <script>
+  (function () {
+    var form = document.getElementById('pilot-form'); if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var lines = [];
+      form.querySelectorAll('label').forEach(function (l) {
+        var field = l.querySelector('input,select,textarea');
+        if (field) lines.push(l.firstChild.textContent.trim() + ': ' + field.value);
+      });
+      location.href = 'mailto:' + form.dataset.to + '?subject=' + encodeURIComponent(form.dataset.subject + ' — ' + form.elements.org.value) + '&body=' + encodeURIComponent(lines.join('\n'));
+    });
+  })();
+  </script>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
+</body>
+</html>

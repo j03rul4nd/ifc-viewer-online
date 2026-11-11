@@ -370,6 +370,8 @@
   },
   "footer": {
     "fixGuide": "วิธีแก้ไขข้อผิดพลาด IFC →",
+    "validator": "เครื่องมือตรวจสอบ IFC",
+    "solibri": "ทางเลือกแทน Solibri",
     "poweredBy": "ขับเคลื่อนโดย IFC.js",
     "openSource": "โอเพนซอร์ส",
     "copyright": "IFC Viewer ออนไลน์ © 2026",

@@ -112,6 +112,11 @@ export interface BasemapEngine {
   setTint(hex: string): void
   setQuality(q: BasemapQuality): void
   getQuality(): BasemapQuality
+  /**
+   * World boxes the place names must stay off (the loaded models). Asked every
+   * frame names are placed; the caller caches.
+   */
+  setLabelKeepOut(boxes: (() => readonly THREE.Box3[]) | null): void
   /** Fired when the tile failure ratio crosses/clears the degraded threshold. */
   onDegraded: ((degraded: boolean) => void) | null
   dispose(): void
@@ -165,6 +170,7 @@ export function createBasemapEngine(): BasemapEngine {
   /** Screen-space place names (vector providers only), and their overlay. */
   let labels: ScreenLabelLayer | null = null
   let labelOverlay: { regionKeyOfTexture?: (tex: unknown) => string | undefined } | null = null
+  let labelKeepOut: (() => readonly THREE.Box3[]) | null = null
   const viewportCss = new THREE.Vector2()
   const tint = new THREE.Color(1, 1, 1)
   /** Last resolution handed to the tiles — re-sent only when it changes. */
@@ -229,6 +235,8 @@ export function createBasemapEngine(): BasemapEngine {
     },
 
     getQuality() { return quality },
+
+    setLabelKeepOut(boxes) { labelKeepOut = boxes },
 
     setTint(hex) {
       tint.set(hex)
@@ -384,7 +392,7 @@ export function createBasemapEngine(): BasemapEngine {
     renderer.getSize(viewportCss)
     tiles.group.updateMatrixWorld()
     labels.update(camera, { width: viewportCss.x, height: viewportCss.y }, keys,
-      Math.min(2, renderer.getPixelRatio()), tiles.group.matrixWorld)
+      Math.min(2, renderer.getPixelRatio()), tiles.group.matrixWorld, labelKeepOut?.())
   }
 
   /** Region keys of the tiles on screen now, via their textures. */
