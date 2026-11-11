@@ -1,42 +1,4 @@
-# Migración a modo claro: registro
-
-Fuente de verdad del trabajo de tema claro/oscuro en la app 3D (`src/`). Las landings y el blog (`public/`) quedan fuera porque ya tienen su modo claro (`.lp-light`, `--lc-*`).
-
-Actualizar este fichero cada vez que termine un subagente.
-
-## Auditoría (Fase 0, 2026-11-11)
-
-**Stack**
-- Tailwind 3.4.17. `tailwind.config.js` mapea tokens a variables CSS, pero los componentes no usan esas clases. Usan estilos en línea con `var(--x)`: unos 4.160 usos en unos 800 bloques `style={{}}`.
-- Los tokens están en `:root` de `src/index.css` (líneas 5–17): `--bg`, `--surface`, `--surface-2`, `--border`, `--border-strong`, `--text`, `--text-dim`, `--text-faint`, `--accent` (#5E6AD2), `--accent-2`, `--danger`, `--warn` y `--ok`.
-- **`--text-muted` se usa 139 veces y no está definido.**
-- Hay unas 65 clases Tailwind con alfa pensadas solo para oscuro (`bg-white/NN`, `border-white/NN`, `black/NN`).
-- No hay ThemeProvider, `data-theme` ni store de tema. `.lp-light` (index.css, línea ~494) sirve de plantilla de valores claros.
-- No hay componente `Button` compartido: los botones llevan estilo en línea.
-
-**Colores fijos**
-- Hay unos 2.436 en `src/`. Por carpeta: components 937, lib/geo 333, lib/cover 234, reactbits 153, blog 116, lib/layers 114, index.css 62, lib/scene 59…
-
-**Escena 3D**
-- `lib/viewer.ts`:
-  - Fondo `0x0A0A0C` y niebla (~1130).
-  - Fondo, niebla y grid de usuario (~1160–1206).
-  - Materiales de selección y resaltado (~781–837): acento, hover, danger, warn, info y ghost.
-  - Box3Helper (~1817).
-  - Looks de presentación (~3105).
-- `lib/scene/background.ts`: presets de fondo, niebla y grid, con test. Ya existe `SceneBackgroundMenu`.
-- `lib/measure/section-system.ts` (23 colores) y `lib/measure/overlay.ts`.
-
-**Fuera de alcance: es contenido, no interfaz**
-- `lib/geo/*` (mapa, OSM, cielo, fachadas), `lib/cover/*`, rampas de nube de puntos, rampas solares y capas de datos.
-- Informes exportados: `lib/ids/ids-report.ts` y `lib/delivery-report.ts`.
-- Marketing: Blog, Landing, reactbits y `blog/EmbedViewer`.
-
-## Registro de grupos
-
-Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
-
-| # | Grupo | Archivos | Estado | PR | Notas |
+ mergeada | [#519](https://github.com/j03rul4nd/ifc-viewer-online/pull/519) | Resaltado claro #0077a8 pendiente de validar || [#518](https://github.com/j03rul4nd/ifc-viewer-online/pull/518) | Preset `studio` = fondo del tema || [#517](https://github.com/j03rul4nd/ifc-viewer-online/pull/517) | Incluye selector claro/oscuro/sistema y fix de `?theme=` en ThemeProvider || [#516](https://github.com/j03rul4nd/ifc-viewer-online/pull/516) |undefined| — | Commit local 4793d53a en `theme/modal-toast`; push bloqueado, pendiente de permiso || [#515](https://github.com/j03rul4nd/ifc-viewer-online/pull/515) |undefined| # | Grupo | Archivos | Estado | PR | Notas |
 |---|---|---|---|---|---|
 | 1 | **base** (Fase 1) | `src/index.css` (tokens `[data-theme]`), `src/theme/*` (ThemeProvider, useTheme, sceneTheme.ts), `index.html` (script anti-FOUC), `tailwind.config.js`, `docs/theming.md` | PR abierta | [#515](https://github.com/j03rul4nd/ifc-viewer-online/pull/515) | Definir `--text-muted`. Oscuro idéntico. Toggle claro/oscuro/sistema. Mantener alias de los nombres actuales (`--bg`, `--text-dim`…) hacia los semánticos para no tocar 4.000 usos |
 | 2 | primitivas-modal-toast | `Modal.tsx`, `ToastContainer.tsx`, `lib/ui/modal-stack.ts` | pendiente | | Las usan muchos componentes |
@@ -59,6 +21,9 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 | 3b | 3D selección/hover | `lib/viewer.ts` (~781–837, ~1817) | pendiente | | En serie con 3a (mismo fichero) |
 | 3c | 3D gizmos/overlays/etiquetas | `lib/measure/section-system.ts`, `lib/measure/overlay.ts` | pendiente | | |
 | 3d | 3D luces/tone mapping | `lib/viewer.ts` (luces) | pendiente | | En serie después de 3b |
+| G1 | glass (index.css) | `.glass`, `.glass-md`, `.glass-xl`, `.mobile-pill-glass`, `.mobile-sheet-glass` | mergeada | [#520](https://github.com/j03rul4nd/ifc-viewer-online/pull/520) | Grupo añadido tras QA |
+| G2 | app-chips + tool grid | `App.tsx` (chips Inicio y caché), `mobile/ToolGrid.tsx` | mergeada | [#521](https://github.com/j03rul4nd/ifc-viewer-online/pull/521) | |
+| G3 | hud-pills | `ModelInfoPanel.tsx`, `WalkHud.tsx`, `ClientHealthBadge.tsx`, `ClientPresentationLayout.tsx` | mergeada | [#522](https://github.com/j03rul4nd/ifc-viewer-online/pull/522) | WalkHud y modo cliente sin revisar a ojo |
 | 4a | cierre: lint anti-hex | script de CI + allowlist (tokens, `lib/geo`, `lib/cover`, informes) | pendiente | | |
 | 4b | tokens propuestos | `src/index.css` | pendiente | | Consolidar lo que propongan los subagentes |
 
@@ -69,6 +34,13 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 3. **En paralelo:** 5, 6, 7, 9, 10, 11, 12, 13, 14 y 3b.
 4. **Después:** 8 (tras 3 y 7), 3d (tras 3b), 15, 16 y 17.
 5. **Cierre:** 4a y 4b.
+
+## Decisiones tomadas
+
+- 2026-11-11: se aceptan pequeños desplazamientos de color en oscuro al pasar colores fijos a tokens (Joel).
+- Tema por defecto: oscuro. `?theme=` en la URL solo fija el tema inicial.
+- Pendiente en grupo 9: la pista de medida de `measure/MeasureHud.tsx:129` sigue oscura en claro.
+- Tokens propuestos hasta ahora: `--scrim`, `--info`, `--selection`, `--bg-floating`, sombras y velo de modal/aviso.
 
 ## Dudas para Joel (colores con significado)
 
