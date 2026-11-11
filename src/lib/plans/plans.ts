@@ -17,7 +17,7 @@ export const PLAN_DEFS: PlanDef[] = [
     promise: 'My file opens, my client sees it and there is a record.',
     monthlyEur: 47, yearlyEur: 468,
     quotas: { storageGb: 20, maxFileMb: 1024, apiCallsMonth: 500, cloudCreditsMonth: 20, aiCreditsMonth: 50 },
-    includes: ['large_files', 'cloud_projects', 'client_link', 'certificates', 'score_history', 'qualified_timestamp', 'weekly_digest', 'server_autofix', 'hosted_api', 'cloud_storage_pickers', 'email_preview', 'email_tracking'],
+    includes: ['large_files', 'cloud_projects', 'client_link', 'certificates', 'score_history', 'qualified_timestamp', 'weekly_digest', 'server_autofix', 'hosted_api', 'cloud_storage_pickers', 'email_preview', 'email_tracking', 'clash_detection'],
     extends: 'free', highlighted: true,
   },
   {
@@ -25,7 +25,7 @@ export const PLAN_DEFS: PlanDef[] = [
     promise: 'Nothing leaves my company wrong, and my delivery record proves it.',
     monthlyEur: 71, yearlyEur: 708, unit: 'seat', minUnits: 3,
     quotas: { storageGb: 100, maxFileMb: 3072, apiCallsMonth: 2000, cloudCreditsMonth: 100, aiCreditsMonth: 200 },
-    includes: ['quality_gate', 'house_standard', 'cde_connector', 'client_portal', 'iso_states', 'team_issues', 'roi_report', 'audit_log', 'public_record', 'notify_chat', 'white_label', 'webhooks'],
+    includes: ['quality_gate', 'house_standard', 'cde_connector', 'client_portal', 'iso_states', 'team_issues', 'roi_report', 'audit_log', 'public_record', 'notify_chat', 'white_label', 'webhooks', 'clash_coordination'],
     extends: 'pro',
   },
   {
