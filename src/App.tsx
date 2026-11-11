@@ -651,7 +651,19 @@ export default function App() {
       if (!hash.startsWith('#r=')) return
       void (async () => {
         const { decodeRequirements, requirementsFromHash } = await import('./lib/requirements/requirements-link')
-        const req = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        const linked = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        // B2: a link made from a managed profile is checked against the
+        // version that is current now (public read, no account); the link's
+        // own snapshot is the fallback, so an old link never breaks.
+        let req = linked
+        let checkedVersion: import('./lib/requirements/managed-requirements').CheckedVersion | null = null
+        if (linked?.pr) {
+          const { publicFetcher, resolveManagedRequirements } = await import('./lib/requirements/managed-requirements')
+          const base = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+          const resolved = await resolveManagedRequirements(linked, base ? publicFetcher(base) : null)
+          req = resolved.req
+          checkedVersion = resolved.version
+        }
         trackRequirementsLinkOpened({ has_score: typeof req?.s === 'number', has_ids: typeof req?.x === 'string', valid: req !== null })
         if (!req) {
           toast(tToasts('requirements.invalid'), 'error', { duration: 8000 })
@@ -675,7 +687,7 @@ export default function App() {
             if (!(err instanceof IdsParseError)) throw err
           }
         }
-        useRequirementsStore.getState().setActive(req)
+        useRequirementsStore.getState().setActive(req, checkedVersion)
       })()
     }
     apply()
@@ -5480,7 +5492,7 @@ export default function App() {
 
                   {/* Requirements link (doc 17, M1): who asks for what, and the verdict.
                       Inside the viewport so the toolbar's menus open over it. */}
-                  <RequirementsBanner onOpenFile={handleOpenUpload} />
+                  <RequirementsBanner onOpenFile={handleOpenUpload} getProjectTexts={(id) => viewerApiRef.current?.getProjectTexts(id) ?? Promise.resolve(undefined)} />
 
                   {effectiveChrome.showHome && (
                     <button

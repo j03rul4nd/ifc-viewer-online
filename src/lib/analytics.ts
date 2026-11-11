@@ -1048,7 +1048,7 @@ export function trackEventContactSent(props: { event: string; entry: EventEntry;
 // link carries and coarse outcomes.
 
 /** A receiver built a requirements link. */
-export function trackRequirementsLinkCreated(props: { has_score: boolean; has_ids: boolean; has_profile: boolean }): void {
+export function trackRequirementsLinkCreated(props: { has_score: boolean; has_ids: boolean; has_profile: boolean; has_naming?: boolean; managed?: boolean }): void {
   track('requirements_link_created', props)
 }
 
@@ -1058,6 +1058,6 @@ export function trackRequirementsLinkOpened(props: { has_score: boolean; has_ids
 }
 
 /** The model got its verdict against a requirements link. */
-export function trackRequirementsVerdict(props: { pass: boolean; score_bucket: string | null }): void {
+export function trackRequirementsVerdict(props: { pass: boolean; score_bucket: string | null; naming_pass?: boolean; managed_version?: number; version_moved?: boolean }): void {
   track('requirements_verdict', props)
 }

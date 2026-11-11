@@ -212,6 +212,76 @@
       "empty": "请至少添加最低分数或一个 IDS",
       "tooLong": "此 IDS 太大,无法放入链接。请直接发送 .ids 文件。",
       "failed": "无法创建链接"
+    },
+    "naming": {
+      "include": "检查文件名（ISO 19650）",
+      "pending": "文件名：等待模型",
+      "pass": "文件名符合命名规则",
+      "fail": "文件名不符合命名规则（{{count}}）",
+      "more": "另有 {{count}} 项",
+      "separator": "分隔符",
+      "reset": "恢复为 ISO 19650",
+      "fieldName": "字段名",
+      "values": "允许的值（逗号分隔）",
+      "anyValue": "任意值",
+      "digits": "数字",
+      "removeField": "删除字段",
+      "newField": "字段",
+      "addField": "+ 添加字段",
+      "status": "状态代码",
+      "revision": "版次（P01、C01）",
+      "project": "IfcProject 中的状态和版次一致",
+      "try": "试一个文件名",
+      "tryOk": "此名称符合",
+      "fields": {
+        "project": "项目",
+        "originator": "编制方",
+        "volume": "分区",
+        "level": "楼层",
+        "type": "类型",
+        "role": "专业",
+        "number": "编号"
+      },
+      "issue": {
+        "fieldCount": "有 {{got}} 个字段，应为 {{expected}} 个",
+        "empty": "{{field}} 为空",
+        "chars": "{{field}}“{{value}}”：只能包含字母和数字",
+        "value": "{{field}}“{{value}}”不被允许（{{allowed}}）",
+        "case": "{{field}}“{{value}}”应为“{{expected}}”",
+        "length": "{{field}}“{{value}}”须为 {{min}}–{{max}} 个字符",
+        "digits": "{{field}}“{{value}}”须为数字",
+        "statusMissing": "名称中缺少状态代码（S0–S4）",
+        "status": "状态 {{value}} 不被允许（{{allowed}}）",
+        "revisionMissing": "名称中缺少版次（P01、C01）",
+        "revisionStatus": "状态 {{status}} 应对应 P 版次，而不是 {{revision}}",
+        "projectMissing": "模型没有 IfcProject",
+        "projectStatus": "IfcProject 状态为 {{project}}，文件名为 {{file}}",
+        "projectRevision": "IfcProject 版次为 {{project}}，文件名为 {{file}}"
+      }
+    },
+    "version": {
+      "checked": "已按“{{name}}” v{{version}} 检查",
+      "moved": "已按“{{name}}” v{{version}} 检查（链接创建于 v{{linked}}）"
+    },
+    "managed": {
+      "title": "账户中的要求",
+      "plan": "Reception",
+      "upsell": "带版本和历史记录保存要求属于 Reception 方案。链接对供应商仍然免费。",
+      "seePlans": "查看方案",
+      "profile": "配置",
+      "newProfile": "新配置…",
+      "name": "配置名称",
+      "namePlaceholder": "医院 EIR",
+      "note": "此版本的变更",
+      "notePlaceholder": "变更内容（必填）",
+      "publishFirst": "保存为 v1",
+      "publishNext": "发布 v{{version}}",
+      "copyCurrent": "复制链接（当前：v{{version}}）",
+      "history": "历史记录",
+      "noVersions": "暂无版本",
+      "published": "已发布版本 {{version}}。旧链接仍然可用。",
+      "noteRequired": "请填写此版本的变更",
+      "failed": "无法保存，请重试。"
     }
   }
 }

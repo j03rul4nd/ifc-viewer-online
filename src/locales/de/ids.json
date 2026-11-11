@@ -212,6 +212,76 @@
       "empty": "Fügen Sie mindestens einen Mindestwert oder eine IDS hinzu",
       "tooLong": "Diese IDS ist zu groß für einen Link. Senden Sie die .ids-Datei.",
       "failed": "Link konnte nicht erstellt werden"
+    },
+    "naming": {
+      "include": "Dateinamen prüfen (ISO 19650)",
+      "pending": "Dateiname: wartet auf das Modell",
+      "pass": "Der Dateiname folgt der Regel",
+      "fail": "Der Dateiname folgt der Regel nicht ({{count}})",
+      "more": "+{{count}} weitere",
+      "separator": "Trennzeichen",
+      "reset": "Auf ISO 19650 zurücksetzen",
+      "fieldName": "Feldname",
+      "values": "Erlaubte Werte (kommagetrennt)",
+      "anyValue": "Beliebiger Wert",
+      "digits": "Ziffern",
+      "removeField": "Feld entfernen",
+      "newField": "Feld",
+      "addField": "+ Feld hinzufügen",
+      "status": "Statuscodes",
+      "revision": "Revision (P01, C01)",
+      "project": "Gleicher Status und gleiche Revision in IfcProject",
+      "try": "Dateinamen testen",
+      "tryOk": "Dieser Name ist gültig",
+      "fields": {
+        "project": "Projekt",
+        "originator": "Urheber",
+        "volume": "Bereich",
+        "level": "Ebene",
+        "type": "Typ",
+        "role": "Rolle",
+        "number": "Nummer"
+      },
+      "issue": {
+        "fieldCount": "{{got}} Felder statt {{expected}}",
+        "empty": "{{field}} ist leer",
+        "chars": "{{field}} „{{value}}“: nur Buchstaben und Ziffern",
+        "value": "{{field}} „{{value}}“ ist nicht erlaubt ({{allowed}})",
+        "case": "{{field}} „{{value}}“ sollte „{{expected}}“ sein",
+        "length": "{{field}} „{{value}}“ muss {{min}}–{{max}} Zeichen haben",
+        "digits": "{{field}} „{{value}}“ muss aus Ziffern bestehen",
+        "statusMissing": "Kein Statuscode (S0–S4) im Namen",
+        "status": "Status {{value}} ist nicht erlaubt ({{allowed}})",
+        "revisionMissing": "Keine Revision (P01, C01) im Namen",
+        "revisionStatus": "Status {{status}} gehört zu einer P-Revision, nicht {{revision}}",
+        "projectMissing": "Das Modell hat kein IfcProject",
+        "projectStatus": "Status in IfcProject {{project}}, im Dateinamen {{file}}",
+        "projectRevision": "Revision in IfcProject {{project}}, im Dateinamen {{file}}"
+      }
+    },
+    "version": {
+      "checked": "Geprüft gegen „{{name}}“ v{{version}}",
+      "moved": "Geprüft gegen „{{name}}“ v{{version}} (Link erstellt bei v{{linked}})"
+    },
+    "managed": {
+      "title": "Anforderungen in Ihrem Konto",
+      "plan": "Reception",
+      "upsell": "Anforderungen mit Versionen und Verlauf zu speichern ist Teil des Reception-Plans. Links bleiben für Lieferanten kostenlos.",
+      "seePlans": "Pläne ansehen",
+      "profile": "Profil",
+      "newProfile": "Neues Profil…",
+      "name": "Profilname",
+      "namePlaceholder": "AIA Krankenhaus",
+      "note": "Was sich in dieser Version ändert",
+      "notePlaceholder": "Was sich ändert (Pflicht)",
+      "publishFirst": "Als v1 speichern",
+      "publishNext": "v{{version}} veröffentlichen",
+      "copyCurrent": "Link kopieren (aktuell: v{{version}})",
+      "history": "Verlauf",
+      "noVersions": "Noch keine Versionen",
+      "published": "Version {{version}} veröffentlicht. Ältere Links funktionieren weiter.",
+      "noteRequired": "Beschreiben Sie, was sich in dieser Version ändert",
+      "failed": "Speichern fehlgeschlagen. Bitte erneut versuchen."
     }
   }
 }

@@ -212,6 +212,76 @@
       "empty": "เพิ่มคะแนนขั้นต่ำหรือ IDS อย่างน้อยหนึ่งรายการ",
       "tooLong": "IDS นี้ใหญ่เกินไปสำหรับลิงก์ โปรดส่งไฟล์ .ids แทน",
       "failed": "สร้างลิงก์ไม่สำเร็จ"
+    },
+    "naming": {
+      "include": "ตรวจชื่อไฟล์ (ISO 19650)",
+      "pending": "ชื่อไฟล์: รอโมเดล",
+      "pass": "ชื่อไฟล์เป็นไปตามกฎการตั้งชื่อ",
+      "fail": "ชื่อไฟล์ไม่เป็นไปตามกฎการตั้งชื่อ ({{count}})",
+      "more": "อีก {{count}} รายการ",
+      "separator": "ตัวคั่น",
+      "reset": "กลับไปใช้ ISO 19650",
+      "fieldName": "ชื่อฟิลด์",
+      "values": "ค่าที่อนุญาต (คั่นด้วยจุลภาค)",
+      "anyValue": "ค่าใดก็ได้",
+      "digits": "ตัวเลข",
+      "removeField": "ลบฟิลด์",
+      "newField": "ฟิลด์",
+      "addField": "+ เพิ่มฟิลด์",
+      "status": "รหัสสถานะ",
+      "revision": "รีวิชัน (P01, C01)",
+      "project": "สถานะและรีวิชันเดียวกันใน IfcProject",
+      "try": "ลองชื่อไฟล์",
+      "tryOk": "ชื่อนี้ผ่าน",
+      "fields": {
+        "project": "โครงการ",
+        "originator": "ผู้จัดทำ",
+        "volume": "โซน",
+        "level": "ชั้น",
+        "type": "ประเภท",
+        "role": "สาขา",
+        "number": "เลขที่"
+      },
+      "issue": {
+        "fieldCount": "มี {{got}} ฟิลด์ แทนที่จะเป็น {{expected}}",
+        "empty": "{{field}} ว่างอยู่",
+        "chars": "{{field}} \"{{value}}\": ใช้ได้เฉพาะตัวอักษรและตัวเลข",
+        "value": "{{field}} \"{{value}}\" ไม่อนุญาต ({{allowed}})",
+        "case": "{{field}} \"{{value}}\" ควรเป็น \"{{expected}}\"",
+        "length": "{{field}} \"{{value}}\" ต้องยาว {{min}}–{{max}} ตัวอักษร",
+        "digits": "{{field}} \"{{value}}\" ต้องเป็นตัวเลข",
+        "statusMissing": "ไม่มีรหัสสถานะ (S0–S4) ในชื่อ",
+        "status": "สถานะ {{value}} ไม่อนุญาต ({{allowed}})",
+        "revisionMissing": "ไม่มีรีวิชัน (P01, C01) ในชื่อ",
+        "revisionStatus": "สถานะ {{status}} ใช้กับรีวิชัน P ไม่ใช่ {{revision}}",
+        "projectMissing": "โมเดลไม่มี IfcProject",
+        "projectStatus": "สถานะใน IfcProject {{project}} ในชื่อไฟล์ {{file}}",
+        "projectRevision": "รีวิชันใน IfcProject {{project}} ในชื่อไฟล์ {{file}}"
+      }
+    },
+    "version": {
+      "checked": "ตรวจกับ \"{{name}}\" v{{version}}",
+      "moved": "ตรวจกับ \"{{name}}\" v{{version}} (ลิงก์สร้างที่ v{{linked}})"
+    },
+    "managed": {
+      "title": "ข้อกำหนดในบัญชีของคุณ",
+      "plan": "Reception",
+      "upsell": "การเก็บข้อกำหนดพร้อมเวอร์ชันและประวัติเป็นส่วนหนึ่งของแพ็กเกจ Reception ลิงก์ยังคงใช้ฟรีสำหรับผู้รับเหมา",
+      "seePlans": "ดูแพ็กเกจ",
+      "profile": "โปรไฟล์",
+      "newProfile": "โปรไฟล์ใหม่…",
+      "name": "ชื่อโปรไฟล์",
+      "namePlaceholder": "EIR โรงพยาบาล",
+      "note": "สิ่งที่เปลี่ยนในเวอร์ชันนี้",
+      "notePlaceholder": "สิ่งที่เปลี่ยน (จำเป็น)",
+      "publishFirst": "บันทึกเป็น v1",
+      "publishNext": "เผยแพร่ v{{version}}",
+      "copyCurrent": "คัดลอกลิงก์ (ปัจจุบัน: v{{version}})",
+      "history": "ประวัติ",
+      "noVersions": "ยังไม่มีเวอร์ชัน",
+      "published": "เผยแพร่เวอร์ชัน {{version}} แล้ว ลิงก์เดิมยังใช้งานได้",
+      "noteRequired": "เขียนสิ่งที่เปลี่ยนในเวอร์ชันนี้",
+      "failed": "บันทึกไม่สำเร็จ ลองอีกครั้ง"
     }
   }
 }
