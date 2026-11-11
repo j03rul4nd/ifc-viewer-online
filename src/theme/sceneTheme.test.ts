@@ -16,9 +16,10 @@ describe('sceneTheme', () => {
     expect(d.directionalIntensity).toBe(1.1)
   })
 
-  it('light grid uses the dark ink the light backdrops need', () => {
+  it('light grid is a warm mid-grey ink, darker than the warm light backdrop', () => {
     const l = SCENE_THEMES.light
-    expect(l.grid).toBe(gridColorFor({ mode: 'gradient', top: l.backgroundTop, bottom: l.backgroundBottom }))
+    expect(l.grid).toBe('#a8a69f')
+    expect(gridColorFor({ mode: 'gradient', top: l.backgroundTop, bottom: l.backgroundBottom })).not.toBe('#2a2d36')
   })
 
   it('both themes define the same keys with hex colours', () => {
