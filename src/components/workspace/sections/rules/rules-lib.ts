@@ -29,7 +29,7 @@ export const SAMPLE_ELEMENTS: IdsElement[] = [
   el(102, 'IFCWALL', 'MUR-EXT-02', { Pset_WallCommon: { IsExternal: true, LoadBearing: true, FireRating: 'EI60' } }, { classifications: gubim('E30') }),
   el(103, 'IFCWALL', 'MUR-EXT-03', { Pset_WallCommon: { IsExternal: true, LoadBearing: false } }),
   el(104, 'IFCWALL', 'TAB-INT-01', { Pset_WallCommon: { IsExternal: false, LoadBearing: false, FireRating: 'EI30' } }, { classifications: gubim('E35') }),
-  el(105, 'IFCWALL', 'TAB-INT-02', { Pset_WallCommon: { IsExternal: false, LoadBearing: false, FireRating: '' } }),
+  el(105, 'IFCWALL', 'MUR-PRK-01', { Pset_WallCommon: { IsExternal: false, LoadBearing: true, FireRating: 'EI30' } }),
   el(106, 'IFCWALL', 'Basic Wall:Generic 200mm', { Pset_WallCommon: { IsExternal: false } }),
   el(201, 'IFCDOOR', 'PTA-01', { Pset_DoorCommon: { FireRating: 'EI2 60-C5', IsExternal: false } }, { classifications: uniclass('Pr_30_59_24') }),
   el(202, 'IFCDOOR', 'PTA-02', { Pset_DoorCommon: { FireRating: 'EI2 30-C5', IsExternal: false } }, { classifications: uniclass('Pr_30_59_24') }),

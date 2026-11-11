@@ -6,13 +6,14 @@
 
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RULES_DICT_V2 } from './rules-i18n-v2'
 
 export const RULES_LANGS = ['es', 'ca', 'fr', 'de', 'it', 'pt', 'ja', 'zh', 'th'] as const
 type Row = readonly [string, string, string, string, string, string, string, string, string]
 
 /** Keys passed as variables (tab labels, sample data), so the test finds them. */
 export const RULES_DYNAMIC_KEYS = [
-  'Editor', 'Tests', 'Coverage', 'Templates',
+  'Editor', 'Tests', 'Coverage', 'Templates', 'Geometry and relations',
   'All', 'Architecture', 'Facility management', 'Structure', 'MEP', 'Imported',
   'First version from CTE DB-SI.', 'Slabs added; GuBIMClass on walls.', 'EI30 allowed on load-bearing walls of parking.',
   'COBie basics for the client.', 'Draft, not reviewed.', 'Imported from IDS 1.0.',
@@ -181,6 +182,8 @@ export const RULES_DICT: Record<string, Row> = {
   'The parking supplier asks for EI30. Can we allow it?': ['El proveedor del aparcamiento pide EI30. ¿Lo podemos permitir?', 'El proveïdor de l’aparcament demana EI30. Ho podem permetre?', 'Le fournisseur du parking demande EI30. Peut-on l’autoriser ?', 'Der Lieferant der Garage will EI30. Können wir das erlauben?', 'Il fornitore del parcheggio chiede EI30. Possiamo permetterlo?', 'O fornecedor do estacionamento pede EI30. Podemos permitir?', '駐車場の取引先が EI30 を希望しています。許可できますか？', '停车场供应商要求 EI30，可以允许吗？', 'ซัพพลายเออร์ที่จอดรถขอ EI30 อนุญาตได้ไหม'],
   'Only with a where on the storey. As it is, it relaxes every wall.': ['Solo con una condición de planta. Tal cual, relaja todos los muros.', 'Només amb una condició de planta. Tal com està, relaxa tots els murs.', 'Seulement avec une condition sur le niveau. En l’état, elle assouplit tous les murs.', 'Nur mit einer Bedingung auf das Geschoss. So lockert sie alle Wände.', 'Solo con una condizione sul piano. Così com’è, allenta tutti i muri.', 'Só com uma condição no pavimento. Do jeito que está, afrouxa todas as paredes.', '階の条件を付ける場合のみ。このままだと全ての壁が緩くなります。', '只有加上楼层条件才行。现在这样会放宽所有墙体。', 'ต้องมีเงื่อนไขชั้นเท่านั้น แบบนี้จะผ่อนทุกผนัง'],
 }
+
+Object.assign(RULES_DICT, RULES_DICT_V2)
 
 function fill(text: string, vars?: Record<string, unknown>): string {
   return vars ? text.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : text

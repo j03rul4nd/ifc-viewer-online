@@ -15,9 +15,10 @@ import {
   exportSetIds, importIds, newId,
 } from './rules-lib'
 import { useR } from './rules-i18n'
+import { AdvancedTab, LibraryExtras } from './AdvancedRules'
 
 const TABS = [
-  { id: 'editor', label: 'Editor' }, { id: 'tests', label: 'Tests' }, { id: 'coverage', label: 'Coverage' },
+  { id: 'editor', label: 'Editor' }, { id: 'advanced', label: 'Geometry and relations' }, { id: 'tests', label: 'Tests' }, { id: 'coverage', label: 'Coverage' },
   { id: 'templates', label: 'Templates' }, { id: 'library', label: 'Library' },
 ] as const
 type Tab = (typeof TABS)[number]['id']
@@ -47,6 +48,7 @@ export default function RulesStudio(_: SectionProps) {
       </Banner>
       <Tabs tabs={TABS.map((t) => ({ id: t.id, label: t.id === 'library' ? `${r('Library')} · Team` : r(t.label) }))} value={tab} onChange={setTab} label={r('Rules')} />
       {tab === 'editor' && <Editor rule={rule} setRule={setRule} onSave={(set) => setLibrary((l) => l.map((s) => s.id === set ? newVersion(s, ME, TODAY, [...latest(s).rules.filter((x) => x.id !== rule.id), { ...rule, id: rule.id === 'draft' ? newId() : rule.id }], r('Rule added from the editor.')) : s))} library={library} />}
+      {tab === 'advanced' && <AdvancedTab />}
       {tab === 'tests' && <TestsTab rule={rule} />}
       {tab === 'coverage' && <CoverageTab library={library} />}
       {tab === 'templates' && <TemplatesTab onUse={useInEditor} onAdopt={(t) => { setLibrary((l) => [...l, { id: newId(), name: t.profile.name, discipline: t.discipline, versions: [{ version: 1, author: ME, date: TODAY, status: 'draft', note: r('From the template {{name}}.', { name: t.standard }), rules: t.profile.rules }], comments: [] }]); setTab('library') }} />}
@@ -351,6 +353,7 @@ function LibraryTab({ library, setLibrary, onUse }: { library: RuleSet[]; setLib
           </Panel>
         )}
 
+        <LibraryExtras set={s} />
         <Panel className="p-4">
           <p className="text-[13px] font-semibold">{r('Comments')}</p>
           <ul className="mt-2 space-y-2">
