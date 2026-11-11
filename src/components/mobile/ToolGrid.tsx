@@ -40,10 +40,10 @@ export function ToolGrid({ items, onPick }: ToolGridProps) {
             // 44px+ of target: the rail's 32px is a pointer measurement.
             'relative flex flex-col items-center justify-center gap-1.5 h-[68px] rounded-2xl',
             'active:scale-[0.96] transition-transform',
-            item.open ? 'text-white' : 'text-[rgba(255,255,255,0.62)]',
+            item.open ? 'text-[var(--text-primary)]' : 'text-[color-mix(in_srgb,var(--text-primary)_62%,transparent)]',
           ].join(' ')}
           style={{
-            background: item.open ? 'rgba(10,132,129,0.20)' : 'rgba(255,255,255,0.05)',
+            background: item.open ? 'rgba(10,132,129,0.20)' : 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
             border: item.open ? '0.5px solid rgba(10,132,129,0.42)' : '0.5px solid transparent',
             WebkitTapHighlightColor: 'transparent',
           }}
