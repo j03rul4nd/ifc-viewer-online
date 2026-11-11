@@ -14,9 +14,9 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>(readStoredMode)
+  // ?theme= only seeds this page view (not stored); a click on the toggle overrides it.
+  const [mode, setModeState] = useState<ThemeMode>(() => urlThemeOverride() ?? readStoredMode())
   const [prefersLight, setPrefersLight] = useState(systemPrefersLight)
-  const urlTheme = useMemo(() => urlThemeOverride(), [])
 
   useEffect(() => {
     if (mode !== 'system' || typeof matchMedia !== 'function') return
@@ -26,7 +26,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener?.('change', onChange)
   }, [mode])
 
-  const resolvedTheme = urlTheme ?? resolveTheme(mode, prefersLight)
+  const resolvedTheme = resolveTheme(mode, prefersLight)
 
   useEffect(() => {
     applyTheme(resolvedTheme)

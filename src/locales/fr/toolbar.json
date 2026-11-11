@@ -287,5 +287,11 @@
     "idsChecked": "{{file}} : maquettes vérifiées — résultats dans le panneau IDS",
     "documentsKept": "{{count}} document du projet conservé avec la scène",
     "documentsKept_other": "{{count}} documents du projet conservés avec la scène"
+  },
+  "theme": {
+    "toggle": "Thème : {{mode}}",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
   }
 }

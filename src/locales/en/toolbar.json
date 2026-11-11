@@ -287,5 +287,11 @@
     "idsChecked": "{{file}}: models checked — results in the IDS panel",
     "documentsKept": "{{count}} project document kept with the scene",
     "documentsKept_other": "{{count}} project documents kept with the scene"
+  },
+  "theme": {
+    "toggle": "Theme: {{mode}}",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }
