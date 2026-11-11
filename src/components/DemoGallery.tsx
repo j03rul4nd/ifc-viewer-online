@@ -185,7 +185,7 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
       {open && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-0 sm:p-6"
+          className="fixed inset-0 z-[80] bg-[var(--overlay)] flex items-center justify-center p-0 sm:p-6"
           style={{
             paddingTop:    'max(0px, env(safe-area-inset-top))',
             paddingBottom: 'max(0px, env(safe-area-inset-bottom))',
@@ -200,7 +200,7 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
             onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }}
             className="w-full h-full sm:max-w-[1040px] sm:h-[88dvh]
                        sm:rounded-2xl bg-[var(--bg)] border-[var(--border-strong)] sm:border
-                       shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+                       shadow-[var(--shadow)] overflow-hidden flex flex-col"
           >
             {/* Header: search stays in reach whatever the scroll position. */}
             <div className="flex-none px-4 sm:px-6 pt-3 sm:pt-4 pb-3 border-b border-[var(--border)] flex flex-col gap-2.5">
@@ -209,7 +209,7 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
                 <button
                   onClick={handleClose}
                   aria-label={t('demoGallery.close')}
-                  className="flex-none w-10 h-10 -mr-2 rounded-lg grid place-items-center text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5 transition-colors"
+                  className="flex-none w-10 h-10 -mr-2 rounded-lg grid place-items-center text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)] transition-colors"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                     <path d="M6 6l12 12M18 6L6 18" />
