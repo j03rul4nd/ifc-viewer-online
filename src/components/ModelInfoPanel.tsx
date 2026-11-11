@@ -20,7 +20,7 @@ interface ModelInfoPanelProps {
   gpuBackend?:  GpuBackend
 }
 
-const FM_COLOR: Record<FmTier, string> = { ready: '#3FA866', partial: '#E9A23B', insufficient: '#E0523F' }
+const FM_COLOR: Record<FmTier, string> = { ready: 'var(--ok)', partial: 'var(--warn)', insufficient: 'var(--danger)' }
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '—'
@@ -43,19 +43,19 @@ interface SizeHealth {
 
 function getSizeHealth(bytes: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
   const mb = bytes / 1024 / 1024
-  if (bytes === 0) return { label: t('health.unknown'), color: '#888', bg: 'rgba(136,136,136,0.12)', tip: t('info.sizeUnavailable') }
-  if (mb < 1)     return { label: t('health.tiny'),    color: '#3FA866', bg: 'rgba(63,168,102,0.12)', tip: t('info.sizeTip.tiny') }
-  if (mb < 10)    return { label: t('health.light'),   color: '#3FA866', bg: 'rgba(63,168,102,0.12)', tip: t('info.sizeTip.light') }
+  if (bytes === 0) return { label: t('health.unknown'), color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', tip: t('info.sizeUnavailable') }
+  if (mb < 1)     return { label: t('health.tiny'),    color: 'var(--ok)', bg: 'color-mix(in srgb, var(--ok) 12%, transparent)', tip: t('info.sizeTip.tiny') }
+  if (mb < 10)    return { label: t('health.light'),   color: 'var(--ok)', bg: 'color-mix(in srgb, var(--ok) 12%, transparent)', tip: t('info.sizeTip.light') }
   if (mb < 50)    return { label: t('health.normal'),  color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.sizeTip.normal') }
-  if (mb < 150)   return { label: t('health.large'),   color: '#E9A23B', bg: 'rgba(233,162,59,0.12)', tip: t('info.sizeTip.large') }
-  return            { label: t('health.heavy'),   color: '#E0523F', bg: 'rgba(224,82,63,0.12)', tip: t('info.sizeTip.heavy') }
+  if (mb < 150)   return { label: t('health.large'),   color: 'var(--warn)', bg: 'color-mix(in srgb, var(--warn) 12%, transparent)', tip: t('info.sizeTip.large') }
+  return            { label: t('health.heavy'),   color: 'var(--danger)', bg: 'color-mix(in srgb, var(--danger) 12%, transparent)', tip: t('info.sizeTip.heavy') }
 }
 
 function getElementHealth(count: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
-  if (count < 1_000)  return { label: t('health.small'),   color: '#3FA866', bg: 'rgba(63,168,102,0.12)', tip: t('info.elementTip.small') }
+  if (count < 1_000)  return { label: t('health.small'),   color: 'var(--ok)', bg: 'color-mix(in srgb, var(--ok) 12%, transparent)', tip: t('info.elementTip.small') }
   if (count < 10_000) return { label: t('health.typical'), color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.elementTip.typical') }
-  if (count < 50_000) return { label: t('health.complex'), color: '#E9A23B', bg: 'rgba(233,162,59,0.12)', tip: t('info.elementTip.complex') }
-  return                { label: t('health.dense'),   color: '#E0523F', bg: 'rgba(224,82,63,0.12)', tip: t('info.elementTip.dense') }
+  if (count < 50_000) return { label: t('health.complex'), color: 'var(--warn)', bg: 'color-mix(in srgb, var(--warn) 12%, transparent)', tip: t('info.elementTip.complex') }
+  return                { label: t('health.dense'),   color: 'var(--danger)', bg: 'color-mix(in srgb, var(--danger) 12%, transparent)', tip: t('info.elementTip.dense') }
 }
 
 function HealthBadge({ h }: { h: SizeHealth }) {
@@ -137,8 +137,8 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
           <span
             className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold border"
             style={(() => {
-              const c = qualityScore >= 80 ? '#3FA866' : qualityScore >= 50 ? '#E9A23B' : '#E0523F'
-              return { color: c, borderColor: `${c}44`, background: `${c}14` }
+              const c = qualityScore >= 80 ? 'var(--ok)' : qualityScore >= 50 ? 'var(--warn)' : 'var(--danger)'
+              return { color: c, borderColor: `color-mix(in srgb, ${c} 27%, transparent)`, background: `color-mix(in srgb, ${c} 8%, transparent)` }
             })()}
             title={t('info.qualityScore', { score: qualityScore })}
           >
@@ -148,7 +148,7 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
         {fm && (
           <span
             className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold border leading-none"
-            style={{ color: FM_COLOR[fm.tier], borderColor: `${FM_COLOR[fm.tier]}44`, background: `${FM_COLOR[fm.tier]}14` }}
+            style={{ color: FM_COLOR[fm.tier], borderColor: `color-mix(in srgb, ${FM_COLOR[fm.tier]} 27%, transparent)`, background: `color-mix(in srgb, ${FM_COLOR[fm.tier]} 8%, transparent)` }}
             title={t('fm.tip', { score: fm.score })}
           >
             FM {fm.score}
@@ -159,8 +159,8 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
             className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold border leading-none"
             style={
               gpuBackend === 'webgpu'
-                ? { color: '#0A8481', borderColor: '#0A848144', background: '#0A848114' }
-                : { color: '#888', borderColor: '#88888844', background: '#88888814' }
+                ? { color: 'var(--accent)', borderColor: 'color-mix(in srgb, var(--accent) 27%, transparent)', background: 'color-mix(in srgb, var(--accent) 8%, transparent)' }
+                : { color: 'var(--text-muted)', borderColor: 'color-mix(in srgb, var(--text-muted) 27%, transparent)', background: 'color-mix(in srgb, var(--text-muted) 8%, transparent)' }
             }
             title={gpuBackend === 'webgpu' ? t('info.rendererTip.webgpu') : t('info.rendererTip.webgl')}
           >
@@ -200,8 +200,8 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
               sub={qualityLabel}
               badge={{
                 label: qualityBadgeLabel,
-                color: qualityScore >= 80 ? '#3FA866' : qualityScore >= 50 ? '#E9A23B' : '#E0523F',
-                bg:    qualityScore >= 80 ? 'rgba(63,168,102,0.12)' : qualityScore >= 50 ? 'rgba(233,162,59,0.12)' : 'rgba(224,82,63,0.12)',
+                color: qualityScore >= 80 ? 'var(--ok)' : qualityScore >= 50 ? 'var(--warn)' : 'var(--danger)',
+                bg:    qualityScore >= 80 ? 'color-mix(in srgb, var(--ok) 12%, transparent)' : qualityScore >= 50 ? 'color-mix(in srgb, var(--warn) 12%, transparent)' : 'color-mix(in srgb, var(--danger) 12%, transparent)',
                 tip:   t('info.qualityScore', { score: qualityScore }),
               }}
             />
@@ -213,9 +213,9 @@ export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFrom
               value={gpuBackend === 'detecting' ? t('info.detecting') : gpuBackend === 'webgpu' ? 'WebGPU' : 'WebGL'}
               badge={
                 gpuBackend === 'webgpu'
-                  ? { label: 'GPU', color: '#0A8481', bg: 'rgba(10,132,129,0.12)', tip: t('info.rendererTip.webgpu') }
+                  ? { label: 'GPU', color: 'var(--accent)', bg: 'color-mix(in srgb, var(--accent) 12%, transparent)', tip: t('info.rendererTip.webgpu') }
                   : gpuBackend === 'webgl'
-                  ? { label: 'GL', color: '#888', bg: 'rgba(136,136,136,0.12)', tip: t('info.rendererTip.webgl') }
+                  ? { label: 'GL', color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', tip: t('info.rendererTip.webgl') }
                   : undefined
               }
             />

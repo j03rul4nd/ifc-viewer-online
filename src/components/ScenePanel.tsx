@@ -104,7 +104,7 @@ function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInp
       const n = Math.round((value + dir * step) * 1000) / 1000
       commit(String(n))
     }
-    const stepBtn = 'w-11 h-10 shrink-0 rounded-[10px] bg-white/[0.06] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
+    const stepBtn = 'w-11 h-10 shrink-0 rounded-[10px] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
     return (
       <div className="flex items-center gap-1.5 w-full">
         <span className="w-[64px] shrink-0 text-[10.5px] text-[var(--text-muted)] uppercase tracking-wide truncate">{label}</span>
@@ -120,7 +120,7 @@ function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInp
           onChange={(e) => setDraft(e.target.value)}
           onBlur={(e) => commit(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') commit((e.target as HTMLInputElement).value) }}
-          className="flex-1 min-w-0 h-10 text-center bg-[rgba(255,255,255,0.05)] border border-[var(--border)] rounded-[10px] text-[16px] text-[var(--text)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
+          className="flex-1 min-w-0 h-10 text-center bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] border border-[var(--border)] rounded-[10px] text-[16px] text-[var(--text)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
         />
         <button type="button" className={stepBtn} onClick={() => nudge(1)} aria-label={`${label} +${step}`}>+</button>
       </div>
@@ -139,7 +139,7 @@ function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInp
         onChange={(e) => setDraft(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') commit((e.target as HTMLInputElement).value) }}
-        className="w-full bg-[rgba(255,255,255,0.05)] border border-[var(--border)] rounded px-1.5 py-1 text-[11px] text-[var(--text)] tabular-nums focus:outline-none focus:border-[var(--accent)] transition-colors"
+        className="w-full bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] border border-[var(--border)] rounded px-1.5 py-1 text-[11px] text-[var(--text)] tabular-nums focus:outline-none focus:border-[var(--accent)] transition-colors"
       />
     </label>
   )
@@ -181,13 +181,13 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
     ]
     return (
       <div className={`w-full flex items-center gap-1.5 pl-1 pr-1 py-1.5 rounded-[12px] ${
-        isActive ? 'bg-[rgba(10,132,129,0.18)] border border-[rgba(10,132,129,0.35)]' : 'border border-transparent'
+        isActive ? 'bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] border border-[color-mix(in_srgb,var(--accent)_35%,transparent)]' : 'border border-transparent'
       }`}>
         <button
           onClick={() => { haptic('tick'); onVisible(!model.visible) }}
           aria-label={model.visible ? t('scene.hideModel') : t('scene.showModel')}
           aria-pressed={model.visible}
-          className={`flex-none w-10 h-10 flex items-center justify-center rounded-[10px] ${model.visible ? 'text-[var(--accent)] bg-[rgba(10,132,129,0.12)]' : 'text-[var(--text-muted)] bg-white/[0.04]'}`}
+          className={`flex-none w-10 h-10 flex items-center justify-center rounded-[10px] ${model.visible ? 'text-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]' : 'text-[var(--text-muted)] bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)]'}`}
         >
           <svg width="18" height="18" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
             {model.visible
@@ -208,7 +208,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
           onClick={() => { haptic('tick'); setMenuOpen(true) }}
           aria-label={model.fileName}
           aria-haspopup="menu"
-          className="flex-none w-10 h-10 flex items-center justify-center rounded-[10px] bg-white/[0.04] text-[var(--text-dim)]"
+          className="flex-none w-10 h-10 flex items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)] text-[var(--text-dim)]"
         >
           <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <circle cx="3" cy="8" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="13" cy="8" r="1.5" />
@@ -223,8 +223,8 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
     <div
       className={`w-full flex items-center gap-1 px-2 py-2 rounded-lg transition-colors cursor-default ${
         isActive
-          ? 'bg-[rgba(10,132,129,0.18)] border border-[rgba(10,132,129,0.35)]'
-          : 'border border-transparent hover:bg-[rgba(255,255,255,0.04)]'
+          ? 'bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] border border-[color-mix(in_srgb,var(--accent)_35%,transparent)]'
+          : 'border border-transparent hover:bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)]'
       }`}
     >
       {/* Visibility toggle */}
@@ -260,7 +260,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
             // following its georeference looks like a bug.
             <span
               title={t('scene.placedByHandHint')}
-              className="ml-1.5 px-1 py-px rounded bg-[rgba(233,162,59,0.12)] text-[var(--warn)] text-[9px] font-medium"
+              className="ml-1.5 px-1 py-px rounded bg-[color-mix(in_srgb,var(--warn)_12%,transparent)] text-[var(--warn)] text-[9px] font-medium"
             >
               {t('scene.placedByHand')}
             </span>
@@ -271,7 +271,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
                 east: Math.round(model.mapCoordsKm.east).toLocaleString(),
                 north: Math.round(model.mapCoordsKm.north).toLocaleString(),
               })}
-              className="ml-1.5 px-1 py-px rounded bg-[rgba(10,132,129,0.14)] text-[var(--accent-2)] text-[9px] font-medium"
+              className="ml-1.5 px-1 py-px rounded bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent-2)] text-[9px] font-medium"
             >
               {t('scene.mapCoords')}
             </span>
@@ -285,7 +285,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
           onClick={(e) => { e.stopPropagation(); onIsolate() }}
           title={isIsolated ? t('scene.showAllModels') : t('scene.isolateModel')}
           className={`flex-none w-6 h-6 flex items-center justify-center rounded transition-colors ${
-            isIsolated ? 'text-[var(--warn)] bg-[rgba(233,162,59,0.12)]' : 'text-[var(--text-muted)] hover:text-[var(--warn)]'
+            isIsolated ? 'text-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,transparent)]' : 'text-[var(--text-muted)] hover:text-[var(--warn)]'
           }`}
         >
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
@@ -328,7 +328,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
         className={`flex-none w-6 h-6 flex items-center justify-center rounded transition-colors ${
           canDelete
             ? 'text-[var(--text-muted)] hover:text-[var(--danger)]'
-            : 'text-[rgba(255,255,255,0.15)] cursor-not-allowed'
+            : 'text-[color-mix(in_srgb,var(--text-primary)_15%,transparent)] cursor-not-allowed'
         }`}
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -420,7 +420,7 @@ function TransformSection({ model, placement, viewerApiRef }: TransformSectionPr
         <button
           onClick={() => placement.reset([model.id])}
           title={tViewer('transform.resetHint')}
-          className="flex-1 h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(224,82,63,0.6)] transition-colors"
+          className="flex-1 h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[color-mix(in_srgb,var(--danger)_60%,transparent)] transition-colors"
         >
           {tViewer('transform.reset')}
         </button>
@@ -510,7 +510,7 @@ function RigidTransformSection({ ids, placement, containsAnchor }: {
       <button
         onClick={() => placement.reset(ids)}
         title={t('scene.rigid.resetHint')}
-        className="w-full h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(224,82,63,0.6)] transition-colors"
+        className="w-full h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[color-mix(in_srgb,var(--danger)_60%,transparent)] transition-colors"
       >
         {t('transform.reset')}
       </button>
@@ -538,7 +538,7 @@ function HistoryBar({ placement }: { placement: ScenePlacement }) {
         )}
       </div>
       {temporary && (
-        <div className="rounded-md border border-[rgba(233,162,59,0.45)] bg-[rgba(233,162,59,0.08)] px-2 py-1.5">
+        <div className="rounded-md border border-[color-mix(in_srgb,var(--warn)_45%,transparent)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] px-2 py-1.5">
           <p className="text-[10px] text-[var(--warn)] mb-1.5 leading-snug">{t('scene.history.temporaryOn')}</p>
           <div className="flex gap-1">
             <button className={`${btn} flex-1`} onClick={() => placement.endTemporary(true)}>{t('scene.history.restore')}</button>
@@ -710,11 +710,11 @@ export default function ScenePanel({
             <rect x="7" y="7" width="5" height="5" rx="0.8" />
           </svg>
           <span className="text-[12px] font-semibold text-[var(--text)]">{t('scene.title')}</span>
-          <span className="text-[10px] text-[var(--text-muted)] bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 rounded-full">
+          <span className="text-[10px] text-[var(--text-muted)] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] px-1.5 py-0.5 rounded-full">
             {t('scene.models', { count: models.length })}
           </span>
           {isolatedId && (
-            <span className="text-[10px] text-[var(--warn)] bg-[rgba(233,162,59,0.12)] px-1.5 py-0.5 rounded-full">
+            <span className="text-[10px] text-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,transparent)] px-1.5 py-0.5 rounded-full">
               {t('scene.isolated')}
             </span>
           )}
@@ -725,7 +725,7 @@ export default function ScenePanel({
             <button
               onClick={handleFrameAll}
               title={t('scene.frameAll')}
-              className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-white/[0.05] max-md:rounded-[10px] flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+              className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] max-md:rounded-[10px] flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                 <path d="M1 4.5V2a1 1 0 0 1 1-1h2.5M8.5 1H11a1 1 0 0 1 1 1v2.5M12 8.5V11a1 1 0 0 1-1 1H8.5M4.5 12H2a1 1 0 0 1-1-1V8.5"/>
@@ -735,7 +735,7 @@ export default function ScenePanel({
           )}
           <button
             onClick={onClose}
-            className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-white/[0.05] max-md:rounded-[10px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] max-md:rounded-[10px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
               <path d="M1 1l9 9M10 1L1 10" />
@@ -920,7 +920,7 @@ export default function ScenePanel({
               className={[
                 'flex-1 h-[28px] rounded-[7px] text-[11px] font-medium transition-all border',
                 renderQuality === 'quality'
-                  ? 'bg-[var(--surface-2)] text-[var(--accent)] border-[rgba(10,132,129,0.5)]'
+                  ? 'bg-[var(--surface-2)] text-[var(--accent)] border-[color-mix(in_srgb,var(--accent)_50%,transparent)]'
                   : 'text-[var(--text-dim)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text)]',
               ].join(' ')}
               title={t('renderQuality.qualityHint')}
@@ -937,7 +937,7 @@ export default function ScenePanel({
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 border-t border-[var(--border)] bg-[rgba(255,255,255,0.02)]">
+      <div className="px-3 py-2 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)]">
         {isolatedId ? (
           <button
             onClick={() => handleIsolate(isolatedId)}
