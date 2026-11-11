@@ -278,7 +278,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
           type="button"
           onClick={onClose}
           aria-label={tc('actions.close')}
-          className="w-7 h-7 max-md:w-10 max-md:h-10 rounded-[7px] max-md:rounded-[11px] hover:text-[var(--text)] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+          className="w-7 h-7 max-md:w-10 max-md:h-10 rounded-[7px] max-md:rounded-[11px] hover:text-[var(--text)] bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] text-[var(--text-dim)] flex items-center justify-center"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
         </button>
@@ -365,13 +365,13 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
                   <span className="flex-1 truncate text-[11px]">{m.fileName}</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleVisible(m.id, !m.visible) }}
-                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-white/[0.05] text-[var(--text-faint)] hover:text-[var(--text)]"
+                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] text-[var(--text-faint)] hover:text-[var(--text)]"
                   >
                     {m.visible ? t('actions.visible') : t('actions.hidden')}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleRemove(m.id) }}
-                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-white/[0.05] text-[var(--text-faint)] hover:text-[var(--danger,#e05252)]"
+                    className="text-[10px] max-md:text-[12.5px] max-md:px-2.5 max-md:py-2 max-md:rounded-[9px] max-md:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] text-[var(--text-faint)] hover:text-[var(--danger)]"
                   >
                     {t('actions.remove')}
                   </button>
@@ -428,7 +428,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
                         aria-pressed={active.frame!.upAxis === axis}
                         className={`px-2 py-1 max-md:px-4 max-md:py-2.5 max-md:text-[12.5px] text-[10px] font-medium transition-colors ${
                           active.frame!.upAxis === axis
-                            ? 'bg-[var(--accent)] text-[var(--accent-contrast,#fff)]'
+                            ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
                             : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
                         }`}
                       >
@@ -511,7 +511,7 @@ function Slider(props: {
       const n = Math.min(max, Math.max(min, Math.round((value + dir * fine) / step) * step))
       onChange(Number(n.toFixed(6)))
     }
-    const btn = 'w-10 h-10 shrink-0 rounded-[10px] bg-white/[0.06] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
+    const btn = 'w-10 h-10 shrink-0 rounded-[10px] bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
     return (
       <div className="flex flex-col">
         <span className="flex justify-between text-[12px] text-[var(--text-faint)]">
