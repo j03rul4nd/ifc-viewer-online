@@ -6,7 +6,7 @@
 
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles, Boxes, TrendingUp, Workflow } from 'lucide-react'
+import { LayoutGrid, FolderKanban, Cpu, BadgeCheck, CreditCard, Users, Settings as SettingsIcon, ShieldCheck, LifeBuoy, Clapperboard, Plug, ListTodo, ShieldHalf, Inbox, Blocks, Code2, Sparkles, Boxes, TrendingUp, Workflow, Send } from 'lucide-react'
 import type { WorkspaceData, TicketKind } from './sample-data'
 import type { CheckoutItem } from '../../lib/pricing/checkout'
 import Overview from './sections/Overview'
@@ -29,9 +29,10 @@ import Ai from './sections/Ai'
 import Middleware from './sections/Middleware'
 import Automations from './sections/team/TeamAutomations'
 import Value from './sections/Value'
+import ClientMail from './sections/mail/ClientMail'
 
 export type SectionId = 'overview' | 'projects' | 'jobs' | 'certificates' | 'team' | 'billing' | 'settings' | 'privacy' | 'support' | 'scenes' | 'data'
-  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai' | 'middleware' | 'automations' | 'value'
+  | 'issues' | 'quality' | 'reception' | 'integrations' | 'api' | 'ai' | 'middleware' | 'automations' | 'value' | 'mail'
 
 /** Plans in rank order; a section is open to its plan and every plan above. */
 export const PLAN_RANK = { pro: 1, team: 2 } as const
@@ -81,6 +82,7 @@ export const SECTIONS: SectionDef[] = [
   { id: 'quality', label: 'Quality gate', short: 'Quality', icon: ShieldHalf, requires: 'team', secondary: true, soon: true, pitch: 'Validate every upload with your house standard and publish only what passes.', Component: Quality },
   { id: 'reception', label: 'Reception', icon: Inbox, requires: 'team', secondary: true, soon: true, pitch: 'Receive supplier models that already meet your requirements, and see who delivers well.', Component: Reception },
   { id: 'automations', label: 'Automations', icon: Workflow, requires: 'team', secondary: true, soon: true, pitch: 'The routine checks and chasing of a BIM coordinator, done every time, by rules you own.', Component: Automations },
+  { id: 'mail', label: 'Client updates', short: 'Updates', icon: Send, requires: 'team', secondary: true, soon: true, pitch: 'Keep clients up to date with real project data: Health Score, accepted models, closed issues and milestones.', Component: ClientMail },
   { id: 'value', label: 'Value report', short: 'Value', icon: TrendingUp, requires: 'team', secondary: true, soon: true, pitch: 'Hours and money saved, on measured counts, ready for the board.', Component: Value },
   { id: 'integrations', label: 'Integrations', icon: Blocks, requires: 'pro', secondary: true, soon: true, Component: Integrations },
   { id: 'api', label: 'API', icon: Code2, requires: 'pro', secondary: true, soon: true, Component: Api },
