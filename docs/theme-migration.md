@@ -38,7 +38,7 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 
 | # | Grupo | Archivos | Estado | PR | Notas |
 |---|---|---|---|---|---|
-| 1 | **base** (Fase 1) | `src/index.css` (tokens `[data-theme]`), `src/theme/*` (ThemeProvider, useTheme, sceneTheme.ts), `index.html` (script anti-FOUC), `tailwind.config.js`, `docs/theming.md` | pendiente | | Definir `--text-muted`. Oscuro idéntico. Toggle claro/oscuro/sistema. Mantener alias de los nombres actuales (`--bg`, `--text-dim`…) hacia los semánticos para no tocar 4.000 usos |
+| 1 | **base** (Fase 1) | `src/index.css` (tokens `[data-theme]`), `src/theme/*` (ThemeProvider, useTheme, sceneTheme.ts), `index.html` (script anti-FOUC), `tailwind.config.js`, `docs/theming.md` | PR abierta | [#515](https://github.com/j03rul4nd/ifc-viewer-online/pull/515) | Definir `--text-muted`. Oscuro idéntico. Toggle claro/oscuro/sistema. Mantener alias de los nombres actuales (`--bg`, `--text-dim`…) hacia los semánticos para no tocar 4.000 usos |
 | 2 | primitivas-modal-toast | `Modal.tsx`, `ToastContainer.tsx`, `lib/ui/modal-stack.ts` | pendiente | | Las usan muchos componentes |
 | 3 | primitivas-móvil | `mobile/mobileUi.tsx`, `mobile/MobileSheet.tsx`, `MobileBottomNav.tsx` | pendiente | | `ScoreHero`/`StatPill` reciben color por prop |
 | 4 | layout-toolbar | `Toolbar.tsx`, `Sidebar.tsx`, `PanelRail.tsx`, `OverlayHud.tsx`, `CameraControls.tsx` | pendiente | | Aquí va también el toggle de tema |
