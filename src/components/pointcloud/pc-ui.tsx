@@ -26,7 +26,7 @@ export function Badge({ tint, children }: { tint: string; children: React.ReactN
   return (
     <span
       className="px-1.5 py-0.5 rounded-[6px] text-[10.5px] font-medium border whitespace-nowrap"
-      style={{ color: tint, borderColor: `${tint}55`, background: `${tint}18` }}
+      style={{ color: tint, borderColor: `color-mix(in srgb, ${tint} 33%, transparent)`, background: `color-mix(in srgb, ${tint} 9%, transparent)` }}
     >
       {children}
     </span>

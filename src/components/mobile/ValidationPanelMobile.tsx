@@ -130,7 +130,7 @@ const NAME_EDIT_RULES = new Set([
 const editField = (ruleId: string): 'Name' | 'LongName' => (ruleId === 'RULE_EMPTY_LONGNAME' ? 'LongName' : 'Name')
 
 function sevColor(sev: ValidationIssue['severity']): string {
-  return sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warn)' : '#5E9ED6'
+  return sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warn)' : 'var(--info)'
 }
 function scoreColor(s: number): string {
   return s >= 70 ? 'var(--ok)' : s >= 50 ? 'var(--warn)' : 'var(--danger)'
@@ -301,7 +301,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
                     <>
                       {stats.errors > 0 && <StatPill value={stats.errors} label="E" color="var(--danger)" />}
                       {stats.warnings > 0 && <StatPill value={stats.warnings} label="W" color="var(--warn)" />}
-                      {stats.info > 0 && <StatPill value={stats.info} label="I" color="#5E9ED6" />}
+                      {stats.info > 0 && <StatPill value={stats.info} label="I" color="var(--info)" />}
                       {stats.total === 0 && <StatPill value={'✓'} label={t('results.noIssues')} color="var(--ok)" />}
                     </>
                   )
@@ -450,7 +450,7 @@ export default function ValidationPanelMobile({ vm, open }: { vm: ValidationMobi
                   <Chip active={filters.activeTab === 'all'} onClick={() => setFilters({ activeTab: 'all' })}>{t('filters.all')} {stats ? stats.total : ''}</Chip>
                   {(stats?.errors ?? 0) > 0 && <Chip active={filters.activeTab === 'errors'} color="var(--danger)" onClick={() => setFilters({ activeTab: filters.activeTab === 'errors' ? 'all' : 'errors' })}>{stats!.errors}E</Chip>}
                   {(stats?.warnings ?? 0) > 0 && <Chip active={filters.activeTab === 'warnings'} color="var(--warn)" onClick={() => setFilters({ activeTab: filters.activeTab === 'warnings' ? 'all' : 'warnings' })}>{stats!.warnings}W</Chip>}
-                  {(stats?.info ?? 0) > 0 && <Chip active={filters.activeTab === 'info'} color="#5E9ED6" onClick={() => setFilters({ activeTab: filters.activeTab === 'info' ? 'all' : 'info' })}>{stats!.info}I</Chip>}
+                  {(stats?.info ?? 0) > 0 && <Chip active={filters.activeTab === 'info'} color="var(--info)" onClick={() => setFilters({ activeTab: filters.activeTab === 'info' ? 'all' : 'info' })}>{stats!.info}I</Chip>}
                   <span className="w-px h-5 bg-[var(--border)] shrink-0 mx-0.5" />
                   {(['rule', 'storey', 'class'] as GroupBy[]).map((g) => (
                     <Chip key={g} active={filters.groupBy === g} onClick={() => setFilters({ groupBy: g })}>{t(`filters.${g}`)}</Chip>
@@ -592,7 +592,7 @@ function IssueGroup({
         <span className="flex items-center gap-1.5 shrink-0 font-mono text-[10px]">
           {e > 0 && <span style={{ color: 'var(--danger)' }}>{e}E</span>}
           {w > 0 && <span style={{ color: 'var(--warn)' }}>{w}W</span>}
-          {inf > 0 && <span style={{ color: '#5E9ED6' }}>{inf}I</span>}
+          {inf > 0 && <span style={{ color: 'var(--info)' }}>{inf}I</span>}
         </span>
         <span className="w-6 text-right text-[11px] font-mono text-[var(--text-faint)] shrink-0">{groupIssues.length}</span>
       </button>
@@ -654,7 +654,7 @@ function IssueCard({
   const isNameEditable = NAME_EDIT_RULES.has(issue.ruleId)
   const ruleMeta = RULE_METADATA[issue.ruleId]
   const ruleLabel = getRuleLabel(issue.ruleId, i18n.language)
-  const ruleColor = ruleMeta?.defaultSeverity === 'error' ? 'var(--danger)' : ruleMeta?.defaultSeverity === 'warning' ? 'var(--warn)' : '#5E9ED6'
+  const ruleColor = ruleMeta?.defaultSeverity === 'error' ? 'var(--danger)' : ruleMeta?.defaultSeverity === 'warning' ? 'var(--warn)' : 'var(--info)'
 
   useLayoutEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
 
@@ -669,7 +669,7 @@ function IssueCard({
     <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderLeft: `3px solid ${hasPendingFix ? 'var(--ok)' : sevColor(issue.severity)}` }}>
       <div className="px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold leading-none" style={{ background: `${ruleColor}18`, color: ruleColor, border: `1px solid ${ruleColor}30` }}>{ruleLabel}</span>
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold leading-none" style={{ background: `color-mix(in srgb, ${ruleColor} 9%, transparent)`, color: ruleColor, border: `1px solid color-mix(in srgb, ${ruleColor} 19%, transparent)` }}>{ruleLabel}</span>
           {hasPendingFix && <span className="text-[9px] font-mono text-[var(--ok)] border border-[var(--ok)] border-opacity-30 px-1 rounded leading-none">{t('issue.edited')}</span>}
           <span className="text-[10px] text-[var(--text-faint)] font-mono ml-auto shrink-0">{issue.ifcClass}</span>
         </div>

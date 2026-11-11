@@ -129,13 +129,13 @@ const QUALITY_LEVELS = [
 ] as const
 /** Samples shown before "show all" — the featured ones first. */
 const SAMPLES_COLLAPSED = 4
-const SEVERITY_TINT: Record<Issue['severity'], string> = { error: '#E0523F', warn: '#E9A23B', info: '#5E9ED6' }
+const SEVERITY_TINT: Record<Issue['severity'], string> = { error: '#E0523F', warn: '#E9A23B', info: 'var(--info)' }
 type DemoViewMode = 'point-cloud' | 'ifc' | 'overlay' | 'xray' | 'scan-vs-bim' | 'comparison'
 
 /** Confidence → badge colour. A guess must never look like a measurement. */
 const CONFIDENCE_TINT: Record<string, string> = {
   exact: '#3FA866',
-  high: '#5E9ED6',
+  high: 'var(--info)',
   approximate: '#E9A23B',
   manual: '#E0523F',
 }
@@ -1487,7 +1487,7 @@ export default function PointCloudPanel({
             >
               <div className="flex items-center gap-2">
                 <span className="text-[13px] font-medium text-[var(--text)] truncate flex-1">{demo.name}</span>
-                {demo.featured && <Badge tint="#5E9ED6">{t('ui.featured')}</Badge>}
+                {demo.featured && <Badge tint="var(--info)">{t('ui.featured')}</Badge>}
                 <span className="text-[11px] font-mono text-[var(--text-faint)] shrink-0">
                   {formatDemoSize(demo.sizeBytes)}
                 </span>
@@ -2510,13 +2510,13 @@ function CheckUp({ issues, onFix, t, describeError, cloud, title, children }: {
   const worst = issues[0]?.severity ?? 'info'
   const tint = issues.length === 0 ? '#3FA866' : SEVERITY_TINT[worst]
   return (
-    <div className="rounded-[12px] border overflow-hidden" style={{ borderColor: `${tint}55` }} data-testid="pc-checkup">
+    <div className="rounded-[12px] border overflow-hidden" style={{ borderColor: `color-mix(in srgb, ${tint} 33%, transparent)` }} data-testid="pc-checkup">
       <button
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-2 px-3 py-2 max-md:py-3 text-left"
-        style={{ background: `${tint}14` }}
+        style={{ background: `color-mix(in srgb, ${tint} 8%, transparent)` }}
       >
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: tint }} />
         <span className="flex-1 min-w-0 truncate text-[12.5px] font-semibold text-[var(--text)]">{title}</span>

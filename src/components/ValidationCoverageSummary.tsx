@@ -29,13 +29,13 @@ export function getCoveredCategories(rules: RulesConfig): ValidationCategoryType
 // ── Category badge ────────────────────────────────────────────────────────────
 
 const CATEGORY_COLORS: Partial<Record<ValidationCategoryType, string>> = {
-  schema:         '#5E9ED6',
-  spatial:        '#5E9ED6',
+  schema:         'var(--info)',
+  spatial:        'var(--info)',
   quality:        'var(--success)',
   lod:            'var(--warning)',
   iso19650:       '#9B8EF7',
   classification: 'var(--warning)',
-  mep:            '#5E9ED6',
+  mep:            'var(--info)',
   clash:          'var(--danger)',
 }
 

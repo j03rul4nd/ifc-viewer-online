@@ -21,7 +21,7 @@ interface OverlayHudProps {
 const SEV_META: { key: Severity; color: string }[] = [
   { key: 'error',   color: 'var(--danger)' },
   { key: 'warning', color: 'var(--warning)' },
-  { key: 'info',    color: '#5E9ED6' },
+  { key: 'info',    color: 'var(--info)' },
 ]
 
 const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
@@ -89,7 +89,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
                   className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                   style={{ opacity: on ? 1 : 0.4 }}
                 >
-                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: color, boxShadow: on ? `0 0 0 2px ${color}33` : 'none' }} />
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: color, boxShadow: on ? `0 0 0 2px color-mix(in srgb, ${color} 20%, transparent)` : 'none' }} />
                   <span className="tabular-nums text-[var(--text)]">{n}</span>
                   <span className="text-[var(--text-dim)] hidden sm:inline">{label(key)}</span>
                 </button>

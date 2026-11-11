@@ -46,14 +46,14 @@ function getSizeHealth(bytes: number, t: (key: string, opts?: Record<string, unk
   if (bytes === 0) return { label: t('health.unknown'), color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', tip: t('info.sizeUnavailable') }
   if (mb < 1)     return { label: t('health.tiny'),    color: 'var(--ok)', bg: 'color-mix(in srgb, var(--ok) 12%, transparent)', tip: t('info.sizeTip.tiny') }
   if (mb < 10)    return { label: t('health.light'),   color: 'var(--ok)', bg: 'color-mix(in srgb, var(--ok) 12%, transparent)', tip: t('info.sizeTip.light') }
-  if (mb < 50)    return { label: t('health.normal'),  color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.sizeTip.normal') }
+  if (mb < 50)    return { label: t('health.normal'),  color: 'var(--info)', bg: 'color-mix(in srgb, var(--info) 12%, transparent)', tip: t('info.sizeTip.normal') }
   if (mb < 150)   return { label: t('health.large'),   color: 'var(--warn)', bg: 'color-mix(in srgb, var(--warn) 12%, transparent)', tip: t('info.sizeTip.large') }
   return            { label: t('health.heavy'),   color: 'var(--danger)', bg: 'color-mix(in srgb, var(--danger) 12%, transparent)', tip: t('info.sizeTip.heavy') }
 }
 
 function getElementHealth(count: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
   if (count < 1_000)  return { label: t('health.small'),   color: 'var(--ok)', bg: 'color-mix(in srgb, var(--ok) 12%, transparent)', tip: t('info.elementTip.small') }
-  if (count < 10_000) return { label: t('health.typical'), color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.elementTip.typical') }
+  if (count < 10_000) return { label: t('health.typical'), color: 'var(--info)', bg: 'color-mix(in srgb, var(--info) 12%, transparent)', tip: t('info.elementTip.typical') }
   if (count < 50_000) return { label: t('health.complex'), color: 'var(--warn)', bg: 'color-mix(in srgb, var(--warn) 12%, transparent)', tip: t('info.elementTip.complex') }
   return                { label: t('health.dense'),   color: 'var(--danger)', bg: 'color-mix(in srgb, var(--danger) 12%, transparent)', tip: t('info.elementTip.dense') }
 }

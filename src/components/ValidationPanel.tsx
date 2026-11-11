@@ -230,7 +230,7 @@ function buildCopyForAIText(result: ValidationResult, fileName: string): string 
 function severityBorderColor(sev: ValidationIssue['severity']): string {
   if (sev === 'error')   return 'var(--danger)'
   if (sev === 'warning') return 'var(--warning)'
-  return '#5E9ED6'
+  return 'var(--info)'
 }
 
 function SeverityDot({ severity }: { severity: ValidationIssue['severity'] }) {
@@ -249,7 +249,7 @@ function RuleBadge({ ruleId }: { ruleId: string }) {
   const meta   = RULE_METADATA[ruleId]
   const label  = getRuleLabel(ruleId, i18n.language)
   const sev    = meta?.defaultSeverity ?? 'info'
-  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warning)' : '#5E9ED6'
+  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warning)' : 'var(--info)'
   const std    = meta?.standard
 
   return (
@@ -556,7 +556,7 @@ function GroupHeaderRow({
       <div className="flex items-center gap-1 shrink-0">
         {eCount > 0 && <span className="text-[9px] font-mono text-[var(--danger)]">{eCount}E</span>}
         {wCount > 0 && <span className="text-[9px] font-mono" style={{ color: 'var(--warning)' }}>{wCount}W</span>}
-        {iCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#5E9ED6' }}>{iCount}I</span>}
+        {iCount > 0 && <span className="text-[9px] font-mono" style={{ color: 'var(--info)' }}>{iCount}I</span>}
       </div>
 
       {/* Total count */}
@@ -759,7 +759,7 @@ function MiniBarChart({
     <div className="flex h-2 w-14 rounded overflow-hidden gap-px shrink-0" style={{ background: 'var(--border)' }}>
       {errors > 0   && <div style={{ width: `${pE * 100}%`, background: 'var(--danger)', transition: 'width 300ms' }} />}
       {warnings > 0 && <div style={{ width: `${pW * 100}%`, background: 'var(--warning)', transition: 'width 300ms' }} />}
-      {info > 0     && <div style={{ width: `${pI * 100}%`, background: '#5E9ED6', transition: 'width 300ms' }} />}
+      {info > 0     && <div style={{ width: `${pI * 100}%`, background: 'var(--info)', transition: 'width 300ms' }} />}
     </div>
   )
 }
@@ -1204,7 +1204,7 @@ function ProfileDropdown({
 // quality score + category chips (covered = colored, uncovered = muted).
 
 const CAT_COLOR: Record<string, string> = {
-  schema:         '#5E9ED6',
+  schema:         'var(--info)',
   spatial:        'var(--accent)',
   quality:        'var(--ok)',
   lod:            'var(--warning)',
@@ -2671,7 +2671,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span className="text-[11px] font-mono" style={{ color: 'var(--warning)' }}>{stats.warnings}W</span>
             )}
             {stats.info > 0 && (
-              <span className="text-[11px] font-mono" style={{ color: '#5E9ED6' }}>{stats.info}I</span>
+              <span className="text-[11px] font-mono" style={{ color: 'var(--info)' }}>{stats.info}I</span>
             )}
             {stats.errors === 0 && stats.warnings === 0 && stats.info === 0 && (
               <span className="text-[11px] text-[var(--ok)] font-mono">✓ {t('results.noIssues')}</span>
@@ -2731,7 +2731,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span style={{ color: 'var(--warning)' }} className="shrink-0">{stats.warnings}W</span>
             )}
             {stats.info > 0 && (
-              <span style={{ color: '#5E9ED6' }} className="shrink-0">{stats.info}I</span>
+              <span style={{ color: 'var(--info)' }} className="shrink-0">{stats.info}I</span>
             )}
             {stats.total === 0 && (
               <span className="text-[var(--ok)] shrink-0">✓</span>
@@ -3114,7 +3114,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
                 const tabColor =
                   tab === 'errors'   ? 'var(--danger)' :
                   tab === 'warnings' ? 'var(--warning)' :
-                  tab === 'info'     ? '#5E9ED6' : undefined
+                  tab === 'info'     ? 'var(--info)' : undefined
 
                 return (
                   <button
