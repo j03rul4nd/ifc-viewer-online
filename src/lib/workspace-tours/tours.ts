@@ -25,15 +25,13 @@ export interface Tour {
 
 export const TOURS: Tour[] = [
   {
-    id: 'overview', section: 'overview', title: 'Your workspace', summary: 'Where to look first each morning.',
+    id: 'overview', section: 'overview', title: 'Your workspace', summary: 'What you get back, and where to look first.',
     steps: [
-      { target: 'setup', title: 'Start here', body: 'Five steps take a new account to its first certificate. The highlighted one is next; the rest can wait.' },
-      { target: 'attention', title: 'Needs your attention', body: 'Only what changed for the worse: a delivery that scored lower, a job that failed, credits running out. Empty means nothing to do.' },
-      { target: 'credits', title: 'Credits', body: 'Plan credits renew monthly and are spent first; pack credits last 12 months. Cloud jobs show their cost before they run.' },
-      { target: 'running', title: 'Running jobs', body: 'Real progress of cloud jobs, step by step. You can close the tab: results wait for you in Cloud jobs.' },
-      { target: 'projects', title: 'Projects at a glance', body: 'Latest Health Score per project and how it moved since the previous delivery. A drop shows in red.' },
-      { target: 'usage', title: 'Where the credits went', body: 'This period, by tool. Refunds for jobs that failed on our side are already deducted.' },
-      { target: 'page-action', title: 'Run a cloud job', body: 'Auto-fix, large-file validation, clash detection… pick one, see the cost, confirm.' },
+      { target: 'gain', title: 'What you get back', body: 'Hours and euros a month, estimated from your own figures. The assumptions are written under it, not hidden.' },
+      { target: 'roi', title: 'Put in your numbers', body: 'How many models you check a month and how long each takes by hand. We never ask what you would pay.' },
+      { target: 'attention', title: 'Only what got worse', body: 'A delivery that scored lower, a job that failed, credits running out. Empty means nothing to do today.' },
+      { target: 'projects', title: 'Every delivery on record', body: 'Latest Health Score per project and how it moved since the last delivery: the record you show a client.' },
+      { target: 'trust', title: 'Why you can trust it', body: 'Data in the EU, certificates anyone can verify with one link, and an open-source engine reading your files.' },
     ],
   },
   {

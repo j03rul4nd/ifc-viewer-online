@@ -7,6 +7,7 @@ import { Panel, Head, SectionLabel, Primary, Quiet, SettingGroup, SettingRow, fm
 import CreditBar from '../CreditBar'
 import CancelFlow from '../CancelFlow'
 import { useTx } from '../i18n'
+import PlanComparison from '../PlanComparison'
 
 
 // Money in and out is not good or bad news, so only expired credits get colour.
@@ -43,6 +44,10 @@ export default function Billing({ data, actions }: SectionProps) {
                 </>}
           </div>
         </Panel>
+      </div>
+
+      <div className="mt-8">
+        <PlanComparison current={a.plan} onPick={(p) => actions.buy({ kind: 'plan', plan: p, period: a.billing })} onContact={() => actions.contact('question')} />
       </div>
 
       <div className="mt-8"><SectionLabel id="topup">{tx("Top up")}</SectionLabel></div>

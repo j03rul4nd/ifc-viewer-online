@@ -6,6 +6,8 @@ import CreditBar from '../CreditBar'
 import { ProjectList } from './Projects'
 import { useTx, rich, type Tx } from '../i18n'
 import { useAccess, type PersonaId } from '../roles'
+import GainPanel from '../GainPanel'
+import TrustStrip from '../TrustStrip'
 import type { SectionId } from '../registry'
 
 /** The first thing each person came for. Sample counts, one line each, each with its way forward. */
@@ -153,8 +155,10 @@ export default function Overview({ data, actions }: SectionProps) {
     return (
       <>
         <Head title={tx("Your workspace")} sub={`${data.account.org} · ${plan}`} />
+        <GainPanel plan={data.account.plan} />
         <Panel className="p-4 sm:p-5 mb-6"><CreditBar data={data} onTopUp={actions.topUp} /></Panel>
         <SetupChecklist actions={actions} />
+        <TrustStrip />
       </>
     )
   }
@@ -164,6 +168,8 @@ export default function Overview({ data, actions }: SectionProps) {
   return (
     <>
       <Head title={tx("Overview")} sub={`${data.account.org} · ${plan}`} action={can('version.upload') ? <Primary onClick={actions.newJob}>{tx("Run a cloud job")}</Primary> : undefined} />
+
+      <GainPanel plan={data.account.plan} />
 
       {data.account.plan === 'team' && <Today go={actions.go} />}
 
@@ -220,6 +226,7 @@ export default function Overview({ data, actions }: SectionProps) {
         </div>
       </div>
       <RecentActivity data={data} />
+      <TrustStrip />
     </>
   )
 }
