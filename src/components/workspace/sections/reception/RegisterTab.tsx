@@ -40,7 +40,7 @@ export default function RegisterTab({ project, chain, supplierName, rx, lang }: 
     <>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <p className="flex-1 text-[12.5px] text-[var(--text-dim)]">
-          {rx('{{n}} entries · last hash {{hash}}', { n: chain.length, hash: short(chain.at(-1)!.hash) })}
+          {rx('{{n}} entries · last hash {{hash}}', { n: chain.length, hash: short(chain.slice(-1)[0]!.hash) })}
         </p>
         <div className="flex gap-2">
           <Quiet onClick={() => void runCheck()} disabled={busy}>{busy ? rx('Checking…') : rx('Check the chain')}</Quiet>

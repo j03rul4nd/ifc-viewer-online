@@ -219,7 +219,7 @@ export function supplierStats(project: RxProject, s: RxSupplier, deliveries: RxD
   const scores = mine.map((d) => d.score).filter((x): x is number => x !== null)
   const counts = new Map<string, number>()
   for (const d of mine) for (const f of d.failures) counts.set(f.rule, (counts.get(f.rule) ?? 0) + 1)
-  const lastAt = mine.at(-1)?.receivedAt ?? null
+  const lastAt = mine.slice(-1)[0]?.receivedAt ?? null
   return {
     deliveries: mine.length,
     decided: decided.length,
@@ -266,7 +266,7 @@ export function milestoneStates(project: RxProject, s: RxSupplier, deliveries: R
   const cut = '2026-10-28'
   const basic: MilestoneState = mine.some((d) => d.receivedAt < cut && d.verdict === 'accepted') ? 'done' : s.invitedAt >= cut ? 'none' : 'late'
   const st = supplierStats(project, s, deliveries, now)
-  const last = mine.at(-1)
+  const last = mine.slice(-1)[0]
   let current: MilestoneState = 'none'
   if (s.state === 'bounced') current = 'late'
   else if (!last) current = s.state === 'invited' ? 'risk' : 'none'
