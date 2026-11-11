@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 
 function Key({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--surface-2)] text-[10px] font-mono font-semibold text-[var(--text)] leading-none shadow-[inset_0_-1px_0_var(--border)] min-w-[22px] justify-center">
+    <kbd className="inline-flex items-center px-1.5 py-[3px] rounded-[4px] border border-[var(--border-subtle)] bg-[var(--bg-surface-raised)] text-[11px] font-mono font-medium text-[var(--text)] leading-none min-w-[22px] justify-center">
       {children}
     </kbd>
   )
@@ -34,7 +34,7 @@ function KeyCombo({ keys }: { keys: string[] }) {
 
 function Row({ label, keys }: { label: string; keys: string[] }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-1.5 border-b border-[var(--border)] last:border-0">
+    <div className="flex items-center justify-between gap-4 py-1.5 border-b border-[var(--border-subtle)] last:border-0">
       <span className="text-[11px] text-[var(--text-dim)]">{label}</span>
       <KeyCombo keys={keys} />
     </div>
@@ -46,10 +46,10 @@ function Row({ label, keys }: { label: string; keys: string[] }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col">
-      <span className="text-[9px] text-[var(--text-faint)] uppercase tracking-wider font-semibold mb-1 px-0.5">
+      <span className="text-[9px] text-[var(--text-faint)] uppercase tracking-wider font-semibold pb-1.5 border-b border-[var(--border-subtle)]">
         {title}
       </span>
-      <div className="border border-[var(--border)] rounded-lg overflow-hidden bg-[var(--surface)] divide-y divide-[var(--border)] px-3">
+      <div className="flex flex-col">
         {children}
       </div>
     </div>
