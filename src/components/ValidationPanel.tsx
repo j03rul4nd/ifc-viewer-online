@@ -811,8 +811,7 @@ function RunButton({
       <button
         onClick={onClick}
         disabled={disabled}
-        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium border transition-all disabled:opacity-40 shrink-0"
-        style={{ color: 'var(--ok)', borderColor: 'var(--ok)33', background: 'var(--ok)12' }}
+        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium border border-[var(--border-subtle)] text-[var(--text-dim)] bg-transparent hover:text-[var(--text)] hover:bg-[var(--bg-surface-raised)] transition-all disabled:opacity-40 shrink-0"
         title={note}
       >
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
@@ -1237,13 +1236,13 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
     score >= 50 ? 'var(--warning)'   : 'var(--danger)'
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
-      {/* Score pill */}
+    <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-subtle)] shrink-0">
+      {/* Score */}
       <span
-        className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border shrink-0 leading-none"
-        style={{ color: scoreColor, borderColor: `color-mix(in srgb, ${scoreColor} 27%, transparent)`, background: `color-mix(in srgb, ${scoreColor} 8%, transparent)` }}
+        className="inline-flex items-center gap-1.5 text-[12px] font-semibold tabular-nums text-[var(--text)] shrink-0 leading-none"
         title={t('coverage.qualityTitle')}
       >
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: scoreColor }} aria-hidden />
         {score}
       </span>
 
@@ -1260,11 +1259,11 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
           return (
             <span
               key={cat}
-              className="shrink-0 text-[9px] px-1.5 py-0.5 rounded border leading-none font-mono whitespace-nowrap"
+              className="shrink-0 text-[11px] px-2 py-0.5 rounded-full leading-tight whitespace-nowrap"
               style={
                 isActive
-                  ? { background: `color-mix(in srgb, ${color} 8%, transparent)`, color, borderColor: `color-mix(in srgb, ${color} 20%, transparent)` }
-                  : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }
+                  ? { background: `color-mix(in srgb, ${color} 12%, var(--bg-surface))`, color }
+                  : { background: 'transparent', color: 'var(--text-faint)', boxShadow: 'inset 0 0 0 1px var(--border-subtle)' }
               }
               title={full}
             >
@@ -1335,8 +1334,8 @@ function CoverageIntegrityStrip({ coverage, language }: { coverage: ValidationCo
             <span
               key={e.ruleId}
               title={e.error ?? (e.status === 'failed' ? t('coverage.statusFailed') : t('coverage.statusNotRun'))}
-              className="text-[9px] font-mono px-1.5 py-0.5 rounded border whitespace-nowrap"
-              style={{ color: 'var(--danger)', borderColor: 'color-mix(in srgb, var(--danger) 33%, transparent)', background: 'color-mix(in srgb, var(--danger) 10%, transparent)' }}
+              className="text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ color: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 12%, var(--bg-surface))' }}
             >
               {e.status === 'failed' ? '✕' : '○'} {getRuleLabel(e.ruleId, language)}
             </span>
@@ -1410,7 +1409,7 @@ function ExecutiveSummary({
   const gradeColor = score >= 70 ? 'var(--ok)' : score >= 50 ? 'var(--warning)' : 'var(--danger)'
 
   return (
-    <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+    <div className="px-3 py-3 border-b border-[var(--border-subtle)] shrink-0">
       <div className="flex items-center gap-1.5 mb-2">
         {/* Bimo reads the score so the grade lands emotionally, not just as a colour. */}
         <Bimo emotion={emotionForScore(score)} size={26} className="-my-1 -ml-0.5" />
@@ -2739,11 +2738,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
             )}
             {displayScore != null && (
               <span
-                className="ml-0.5 px-1.5 py-0.5 rounded-full font-bold text-[9px] border leading-none shrink-0"
-                style={(() => {
-                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? 'var(--warning)' : 'var(--danger)'
-                  return { color: c, borderColor: `color-mix(in srgb, ${c} 27%, transparent)`, background: `color-mix(in srgb, ${c} 8%, transparent)` }
-                })()}
+                className="ml-0.5 inline-flex items-center gap-1 font-sans font-semibold text-[12px] tabular-nums text-[var(--text)] leading-none shrink-0"
                 title={[
                   t('coverage.qualityTitle'),
                   coverageIncomplete
@@ -2755,6 +2750,11 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
                     : null,
                 ].filter(Boolean).join(' · ')}
               >
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  aria-hidden
+                  style={{ background: displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? 'var(--warning)' : 'var(--danger)' }}
+                />
                 {displayScore}
                 {coverageIncomplete && (
                   <span className="ml-0.5" style={{ color: 'var(--danger)' }}>⚠</span>
@@ -2802,8 +2802,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
           <button
             onClick={handleShareReport}
             title={t('actions.shareReportTitle')}
-            className="flex items-center gap-1 px-2 h-6 rounded text-[10px] font-medium border transition-colors shrink-0"
-            style={{ background: 'var(--accent)14', color: 'var(--accent)', borderColor: 'var(--accent)33' }}
+            className="flex items-center gap-1 px-2 h-6 rounded text-[11px] font-medium border border-[var(--border-subtle)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--bg-surface-raised)] transition-colors shrink-0"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <circle cx="7.5" cy="2" r="1.5" />
@@ -3007,32 +3006,23 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
         />
       )}
 
-      {/* ── Next step after the score: price-free interest capture, shown to everyone ── */}
-      {/* The rule it names skips what this panel already fixes free (GUIDs, names). */}
-      {result && (
-        <ScoreUpsell
-          score={result.qualityScore ?? 0}
-          modelId={result.issues.find((i) => i.modelId)?.modelId}
-          topRule={pickUpsellRule(result.stats?.byRule ?? {})}
-        />
-      )}
 
       {/* ── Phantom rules notice (Bug 2 fix) ── */}
       {/* Shows when configurable rules are active but won't produce issues with current (empty) config. */}
       {/* Prevents false confidence: user sees "Naming Convention: 0 issues" and thinks model is fine. */}
       {result && showPhantomNotice && unconfiguredRules.length > 0 && (
-        <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-subtle)] shrink-0">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--warning)" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
             <circle cx="5" cy="5" r="4.5" />
             <path d="M5 3v2.5M5 7h.01" />
           </svg>
-          <span className="text-[9px] text-[var(--text-faint)] shrink-0">{t('phantom.notice')}:</span>
+          <span className="text-[11px] text-[var(--text-faint)] shrink-0">{t('phantom.notice')}:</span>
           <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-none">
             {unconfiguredRules.map((ruleId) => (
               <span
                 key={ruleId}
-                className="shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border whitespace-nowrap"
-                style={{ color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 20%, transparent)', background: 'color-mix(in srgb, var(--warning) 8%, transparent)' }}
+                className="shrink-0 text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
+                style={{ color: 'var(--warning)', background: 'color-mix(in srgb, var(--warning) 12%, var(--bg-surface))' }}
                 title={t('phantom.ruleTooltip')}
               >
                 ⚙ {getRuleLabel(ruleId, i18n.language)}
@@ -3053,7 +3043,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
 
       {/* ── Clash cap notice (Bug 1 fix) ── */}
       {result?.metadata?.clashCapped && (
-        <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-subtle)] shrink-0">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--warning)" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
             <circle cx="5" cy="5" r="4.5" />
             <path d="M5 3v2.5M5 7h.01" />
@@ -3070,6 +3060,16 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
       {/* ── Coverage integrity (honest score) — only when a run is incomplete ── */}
       {coverageIncomplete && coverage && (
         <CoverageIntegrityStrip coverage={coverage} language={i18n.language} />
+      )}
+
+      {/* ── Next step after the score: price-free interest capture, shown to everyone ── */}
+      {/* The rule it names skips what this panel already fixes free (GUIDs, names). */}
+      {result && (
+        <ScoreUpsell
+          score={result.qualityScore ?? 0}
+          modelId={result.issues.find((i) => i.modelId)?.modelId}
+          topRule={pickUpsellRule(result.stats?.byRule ?? {})}
+        />
       )}
       </div>
 
@@ -3223,7 +3223,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
 
             {/* Waiver bar — muted issues are excluded from the score/counts above */}
             {!isRunning && mutedCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-subtle)] shrink-0">
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--text-faint)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                   <path d="M2 4.5h2L6.5 2.5v7L4 7.5H2z" />
                   <path d="M8 4.5l2.5 3M10.5 4.5l-2.5 3" />

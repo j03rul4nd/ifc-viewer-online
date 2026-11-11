@@ -19,16 +19,16 @@ export default function ScoreUpsell({ score, topRule, modelId }: { score: number
   if (dismissed) return null
 
   return (
-    <div className="px-3 py-2 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+    <div className="px-3 py-2.5 border-b border-[var(--border-subtle)] shrink-0">
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-[11.5px] font-medium text-[var(--text)]">{t(fix ? 'upsell.fixTitle' : 'upsell.certTitle')}</p>
+          <p className="text-[11.5px] font-medium text-[var(--text-dim)]">{t(fix ? 'upsell.fixTitle' : 'upsell.certTitle')}</p>
           <p className="text-[10.5px] text-[var(--text-dim)]">{t(fix ? 'upsell.fixDesc' : 'upsell.certDesc')}</p>
         </div>
         {!open && (
           <button
             onClick={() => { trackPricingIntent({ kind: 'feature', item: feature, surface: 'score_upsell', score }); setOpen(true) }}
-            className="shrink-0 h-[26px] px-2.5 text-[11px] font-medium rounded-[6px] bg-[var(--accent)] text-white hover:brightness-110"
+            className="shrink-0 h-[26px] px-2 text-[11px] font-medium rounded-[6px] text-[var(--accent)] hover:bg-[var(--bg-surface-raised)]"
           >
             {t('upsell.cta')}
           </button>
