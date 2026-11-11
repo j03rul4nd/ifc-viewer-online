@@ -17,6 +17,10 @@ export interface SceneTheme {
   outline: string
   edges: string
   gizmo: string
+  /** Rubber-band line while measuring (neutral, max contrast on the background). */
+  measurePreview: string
+  /** Snapped edge/face highlight and section plane/box gizmos. */
+  measureHighlight: string
   hemiSky: string
   hemiGround: string
   ambientIntensity: number
@@ -36,6 +40,8 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
     outline: '#55cac3',
     edges: '#1c1b16',
     gizmo: '#ecebe7',
+    measurePreview: '#ffffff',
+    measureHighlight: '#6ce0ff',
     hemiSky: '#b8c4e0',
     hemiGround: '#1a1a22',
     ambientIntensity: 0.6,
@@ -53,6 +59,8 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
     outline: '#00696a',
     edges: '#3a3933',
     gizmo: '#1c1b16',
+    measurePreview: '#1c1b16',
+    measureHighlight: '#0077a8',
     hemiSky: '#dfe6f2',
     hemiGround: '#8a8984',
     ambientIntensity: 0.8,

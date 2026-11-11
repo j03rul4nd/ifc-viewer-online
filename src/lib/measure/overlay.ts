@@ -21,6 +21,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { getSceneTheme, getSceneThemeName, subscribeSceneTheme, type SceneTheme } from '../../theme/sceneTheme'
 
 export const OVERLAY_COLORS = {
   distance: 0xFFB224,
@@ -29,13 +30,33 @@ export const OVERLAY_COLORS = {
   angle: 0xF76B8A,
   point: 0xB49CFF,
   dimension: 0x5EEAD4,
-  preview: 0xFFFFFF,
-  highlight: 0x6CE0FF,
+  /** Theme-dependent: read at use time (see sceneTheme). */
+  get preview(): number { return hex(getSceneTheme().measurePreview) },
+  get highlight(): number { return hex(getSceneTheme().measureHighlight) },
   axisX: 0xFF5A5A,
   axisY: 0x4CD964,
   axisZ: 0x4C8DFF,
-  section: 0x6CE0FF,
+  get section(): number { return hex(getSceneTheme().measureHighlight) },
 } as const
+
+function hex(css: string): number { return parseInt(css.slice(1), 16) }
+
+// Live theme switch: every overlay colour is tracked, and one that currently
+// holds a theme-dependent value is recoloured in place when the theme changes.
+// Kind colours (distance, area, axes...) are the same in both themes.
+const trackedColors = new Set<THREE.Color>()
+function trackColor(c: THREE.Color): THREE.Color { trackedColors.add(c); return c }
+function themedHexes(t: SceneTheme): [number, number] { return [hex(t.measurePreview), hex(t.measureHighlight)] }
+let lastHexes = themedHexes(getSceneTheme())
+subscribeSceneTheme((t) => {
+  const prev = lastHexes
+  const next = themedHexes(t)
+  lastHexes = next
+  for (const c of trackedColors) {
+    const i = prev.indexOf(c.getHex())
+    if (i >= 0) c.setHex(next[i])
+  }
+})
 
 /** Above the model and its selection box; below nothing that matters. */
 const ORDER = { fill: 990, ghost: 995, line: 1000, dots: 1005 }
@@ -54,6 +75,7 @@ function lineMaterial(color: number, width: number, opacity: number, depthTest: 
   })
   m.clipping = false
   m.toneMapped = false
+  trackColor(m.color)
   return m
 }
 
@@ -138,6 +160,8 @@ export class Stroke {
   dispose(): void {
     this.object.removeFromParent()
     this.geometry.dispose()
+    trackedColors.delete(this.frontMat.color)
+    if (this.backMat) trackedColors.delete(this.backMat.color)
     this.frontMat.dispose()
     this.backMat?.dispose()
   }
@@ -196,6 +220,8 @@ export class Segments {
   dispose(): void {
     this.object.removeFromParent()
     this.geometry.dispose()
+    trackedColors.delete(this.frontMat.color)
+    if (this.backMat) trackedColors.delete(this.backMat.color)
     this.frontMat.dispose()
     this.backMat?.dispose()
   }
@@ -234,7 +260,7 @@ export class Dots {
   constructor(color: number, sizePx = 9) {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
-        color: { value: new THREE.Color(color) },
+        color: { value: trackColor(new THREE.Color(color)) },
         size: { value: sizePx },
         pixelRatio: { value: 1 },
       },
@@ -267,6 +293,7 @@ export class Dots {
 
   dispose(): void {
     this.object.removeFromParent()
+    trackedColors.delete(this.material.uniforms.color.value as THREE.Color)
     this.geometry.dispose()
     this.material.dispose()
   }
@@ -317,7 +344,7 @@ export class Fill {
 
   constructor(color: number, opacity = 0.18) {
     this.material = new THREE.ShaderMaterial({
-      uniforms: { color: { value: new THREE.Color(color) }, opacity: { value: opacity } },
+      uniforms: { color: { value: trackColor(new THREE.Color(color)) }, opacity: { value: opacity } },
       vertexShader: FILL_VERTEX,
       fragmentShader: FILL_FRAGMENT,
       transparent: true,
@@ -352,6 +379,7 @@ export class Fill {
 
   dispose(): void {
     this.object.removeFromParent()
+    trackedColors.delete(this.material.uniforms.color.value as THREE.Color)
     this.geometry.dispose()
     this.material.dispose()
   }
@@ -480,11 +508,22 @@ const LABEL_INK: Record<string, string> = {
  */
 const CHECK_INK = { pass: '#3DD68C', fail: '#FF5A5A' } as const
 
+/** Pill colours; light mirrors the light tokens used in measure.css. */
+const DARK_CHIP = { bg: 'rgba(10,10,14,0.86)', subBg: 'rgba(10,10,14,0.74)', rim: 'rgba(255,255,255,0.12)', text: '#F2F3F5', subMix: 0 }
+const LIGHT_CHIP = { bg: 'rgba(255,255,255,0.9)', subBg: 'rgba(255,255,255,0.82)', rim: 'rgba(28,27,22,0.16)', text: '#1C1B16', subMix: 0.45 }
+
+function mixToward(css: string, target: string, t: number): string {
+  if (!t) return css
+  return '#' + new THREE.Color(css).lerp(new THREE.Color(target), t).getHexString()
+}
+
 export function paintLabel(ctx: CanvasRenderingContext2D, label: Label, x: number, y: number, s: number): void {
   const text = label.text
   if (!text) return
   const sub = label.isSub
   const ink = LABEL_INK[label.kind] ?? '#E9A23B'
+  // Same look as measure.css for the current theme.
+  const chip = getSceneThemeName() === 'light' ? LIGHT_CHIP : DARK_CHIP
   const size = (sub ? 10.5 : 11.5) * s
   const lines = text.split('\n')
   ctx.save()
@@ -505,12 +544,12 @@ export function paintLabel(ctx: CanvasRenderingContext2D, label: Label, x: numbe
   const r = (sub ? 6 : 8) * s
   ctx.beginPath()
   ctx.roundRect(left, top, w, h, r)
-  ctx.fillStyle = sub ? 'rgba(10,10,14,0.74)' : 'rgba(10,10,14,0.86)'
+  ctx.fillStyle = sub ? chip.subBg : chip.bg
   ctx.fill()
   ctx.lineWidth = Math.max(1, s)
   const check = label.check
   ctx.lineWidth = check ? Math.max(1.5, 1.5 * s) : Math.max(1, s)
-  ctx.strokeStyle = check ? CHECK_INK[check] : label.isSelected ? ink : 'rgba(255,255,255,0.12)'
+  ctx.strokeStyle = check ? CHECK_INK[check] : label.isSelected ? ink : chip.rim
   ctx.stroke()
   if (!sub) {
     ctx.beginPath()
@@ -518,7 +557,7 @@ export function paintLabel(ctx: CanvasRenderingContext2D, label: Label, x: numbe
     ctx.fillStyle = ink
     ctx.fill()
   }
-  ctx.fillStyle = sub ? ink : '#F2F3F5'
+  ctx.fillStyle = sub ? mixToward(ink, chip.text, chip.subMix) : chip.text
   lines.forEach((line, i) => {
     ctx.fillText(line, left + padX + dotW, top + padY + lineH * (i + 0.5))
   })

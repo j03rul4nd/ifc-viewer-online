@@ -97,3 +97,24 @@
 /* Requirement status: the rim says pass/fail without opening the panel. */
 .pv-mlabel[data-check='pass'] { border-color: rgba(61, 214, 140, 0.9); box-shadow: 0 0 0 1px rgba(61, 214, 140, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45); }
 .pv-mlabel[data-check='fail'] { border-color: rgba(255, 90, 90, 0.95); box-shadow: 0 0 0 1px rgba(255, 90, 90, 0.4), 0 4px 14px rgba(0, 0, 0, 0.45); }
+
+/* Light theme: light pills from the UI tokens; dark keeps the rules above.
+   Kind colours stay (they carry meaning); as text they are mixed toward the
+   ink so they keep contrast on a light pill. */
+:root[data-theme='light'] .pv-mlabel {
+  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+  border-color: var(--border-subtle);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text-primary) 14%, transparent);
+  color: var(--text-primary);
+}
+:root[data-theme='light'] .pv-mlabel__dot { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-primary) 18%, transparent); }
+:root[data-theme='light'] .pv-mlabel.is-selected { box-shadow: 0 0 0 1px var(--c), 0 4px 12px color-mix(in srgb, var(--text-primary) 18%, transparent); }
+:root[data-theme='light'] .pv-mlabel--sub {
+  background: color-mix(in srgb, var(--bg-surface) 82%, transparent);
+  box-shadow: none;
+  color: color-mix(in srgb, var(--c) 55%, var(--text-primary));
+}
+:root[data-theme='light'] .pv-mlabel__del { background: var(--bg-hover); color: var(--text-secondary); }
+:root[data-theme='light'] .pv-mlabel__del:hover { background: var(--danger); color: var(--accent-contrast); }
+:root[data-theme='light'] .pv-mlabel[data-check='pass'] { border-color: var(--success); box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent); }
+:root[data-theme='light'] .pv-mlabel[data-check='fail'] { border-color: var(--danger); box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent); }
