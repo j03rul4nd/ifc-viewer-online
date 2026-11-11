@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>料金 — IFC Viewer Online</title>
+  <meta name="description" content="ブラウザで動く機能はすべて無料：IFC ビューア、Health Score、IDS、BCF。Pro、Team、納品受付プランは EU 内の保存、クライアント用リンク、品質ゲート、納品物の受領を追加します。" />
+  <meta name="robots" content="index, follow" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ja/pricing/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/precios/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/preise/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/tarifs/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/precos/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/prezzi/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/preus/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/pricing/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/pricing/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/pricing/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/pricing/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ja/pricing/" />
+  <meta property="og:title" content="料金 — IFC Viewer Online" />
+  <meta property="og:description" content="ブラウザで動く機能はすべて無料：IFC ビューア、Health Score、IDS、BCF。Pro、Team、納品受付プランは EU 内の保存、クライアント用リンク、品質ゲート、納品物の受領を追加します。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image-ja.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://www.ifcvieweronline.eu/ja/pricing/","url":"https://www.ifcvieweronline.eu/ja/pricing/","name":"料金 — IFC Viewer Online","description":"ブラウザで動く機能はすべて無料：IFC ビューア、Health Score、IDS、BCF。Pro、Team、納品受付プランは EU 内の保存、クライアント用リンク、品質ゲート、納品物の受領を追加します。","isPartOf":{"@id":"https://www.ifcvieweronline.eu/"},"inLanguage":"ja"},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"どのプランが合っていますか？","acceptedAnswer":{"@type":"Answer","text":"モデルを開いて確認するだけなら無料。個人でクライアントに納品するなら Pro。社内の複数人が納品するなら Team（編集者 3 人から）。協力会社からモデルを受け取るなら納品受付プラン。"}},{"@type":"Question","name":"無料のビューアはずっと無料ですか？","acceptedAnswer":{"@type":"Answer","text":"はい。ブラウザで動く機能はずっと無料です：ビューア、計測、断面、Health Score、44 ルール、IDS 1.0、BCF、SDK。有料プランが加えるのは、サーバーが必要な機能とチーム向けの新しいツールだけです。"}},{"@type":"Question","name":"今すぐ支払えますか？","acceptedAnswer":{"@type":"Answer","text":"まだです。有料プランはウェイティングリストから順に開きます。メールアドレスを登録いただければ、プラン開始時に一度だけご連絡します。開始前に価格が変わる可能性がありますが、リストの方には早期登録特典が適用されます。"}},{"@type":"Question","name":"有料プランのファイルはどこに保存されますか？","acceptedAnswer":{"@type":"Answer","text":"EU 内のサーバーです。無料プランでは何もアップロードされず、ブラウザがファイルを開きます。"}},{"@type":"Question","name":"協力会社は納品受付プランの料金を払いますか？","acceptedAnswer":{"@type":"Answer","text":"いいえ。協力会社はブラウザで無料で貴社の要件に対してチェックします。料金は納品を受け取る側が支払います。"}}]}]}</script>
+  <style>
+:root{
+  --canvas:#100f0c;--panel:#181714;--raised:#21201d;--line:#34332e;
+  --text-3:#94928d;--text-2:#b2b1ab;--text:#ecebe7;
+  --accent:#0a8481;--on-accent:#ffffff;--accent-text:#55cac3;--warn:#f2af48;
+  --pick:rgba(85,202,195,.08);--scrim:rgba(0,0,0,.6);
+  --t-s:13px;--t-b:16px;--t-l:18px;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --canvas:#f4f3f0;--panel:#fefdfc;--raised:#e9e8e4;--line:#d5d4d0;
+  --text-3:#65635e;--text-2:#4e4d48;--text:#1c1b16;
+  --accent:#00696a;--on-accent:#ffffff;--accent-text:#00696a;--warn:#915c08;
+  --pick:rgba(0,105,106,.07);--scrim:rgba(28,27,22,.45);
+}}
+:root[data-theme="light"]{
+  --canvas:#f4f3f0;--panel:#fefdfc;--raised:#e9e8e4;--line:#d5d4d0;
+  --text-3:#65635e;--text-2:#4e4d48;--text:#1c1b16;
+  --accent:#00696a;--on-accent:#ffffff;--accent-text:#00696a;--warn:#915c08;
+  --pick:rgba(0,105,106,.07);--scrim:rgba(28,27,22,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--canvas);color:var(--text);font:400 var(--t-b)/1.55 'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-text-size-adjust:100%}
+body{background:var(--canvas);min-height:100vh}
+a{color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:8px;z-index:9;background:var(--panel);padding:8px 12px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+@media (min-width:720px){.wrap{padding:0 28px}}
+h1,h2,h3{font-weight:650;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(28px,4.4vw,44px);max-width:22ch}
+h2{font-size:clamp(22px,2.6vw,28px)}
+h3{font-size:var(--t-l)}
+.meta,.sub,.note{color:var(--text-2);font-size:var(--t-s)}
+.sub{font-size:var(--t-b);max-width:62ch;margin-top:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border-radius:8px;font:inherit;font-size:var(--t-s);font-weight:600;text-decoration:none;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.btn-main{background:var(--accent);color:var(--on-accent)}
+.btn-main:hover{filter:brightness(1.08)}
+.btn-quiet{background:none;color:var(--text);border-color:var(--line)}
+.btn-quiet:hover{border-color:var(--text-3)}
+
+.top{border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px}
+.logo{color:var(--text);font-weight:650;text-decoration:none;font-size:var(--t-s)}
+.top nav{display:flex;align-items:center;gap:16px;font-size:var(--t-s)}
+.top nav a:not(.btn){color:var(--text-2);text-decoration:none}
+.top nav a:not(.btn):hover{color:var(--text)}
+.theme{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--text-2);cursor:pointer}
+@media (max-width:719px){.hide-s{display:none}}
+
+.hero{padding-top:56px;padding-bottom:8px}
+.lead{color:var(--text-2);max-width:62ch;margin-top:16px}
+.status{display:flex;gap:10px;align-items:baseline;margin-top:18px;font-size:var(--t-s);color:var(--text-2);max-width:62ch}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--warn);transform:translateY(-1px)}
+
+.pick{padding-top:36px}
+.pick fieldset{border:0}
+.pick legend{font-weight:650;font-size:var(--t-l);margin-bottom:12px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{position:relative}
+.opts input,.show input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.opts span{display:block;padding:9px 14px;border:1px solid var(--line);border-radius:999px;font-size:var(--t-s);color:var(--text-2);background:var(--panel)}
+.opts input:hover+span{border-color:var(--text-3);color:var(--text)}
+.opts input:checked+span{border-color:var(--accent-text);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent-text)}
+.opts input:focus-visible+span,.show input:focus-visible+span{outline:2px solid var(--accent-text);outline-offset:2px}
+.answers{min-height:24px;margin-top:14px}
+.answer{font-size:var(--t-b)}
+.answer a{white-space:nowrap;font-weight:600}
+
+.sec{padding-top:64px}
+.cmp{width:100%;border-collapse:separate;border-spacing:0;margin-top:24px;table-layout:fixed}
+.cmp col.c-label{width:34%}
+.cmp thead th,.cmp thead td{position:sticky;top:0;z-index:2;background:var(--canvas);vertical-align:top;text-align:left;padding:16px 14px 18px;border-bottom:1px solid var(--line)}
+.cmp thead th{font-weight:400}
+.plan-name{display:block;font-weight:650;font-size:var(--t-l)}
+.cmp .price{margin-top:4px;font-size:var(--t-b)}
+.cmp .price strong{font-weight:600}
+.cmp .who{margin:6px 0 14px}
+.cmp tbody th,.cmp td{padding:14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:var(--t-s)}
+.cmp tbody th{font-weight:500;color:var(--text)}
+.cmp td{color:var(--text)}
+.note{display:block;font-weight:400;margin-top:4px;max-width:46ch}
+.yes{color:var(--accent-text);font-weight:700}
+.no{color:var(--text-3)}
+.grp-h th{padding:28px 0 0!important;border-bottom:1px solid var(--line)!important}
+.grp-h button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;padding:0 14px 10px;font-weight:650;font-size:var(--t-s);color:var(--text-2);letter-spacing:.04em;text-transform:uppercase;box-sizing:border-box}
+.grp-h button:focus-visible{outline:2px solid var(--accent-text)}
+.grp-h button::before{content:'';width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.grp-h button[aria-expanded="false"]::before{transform:rotate(-45deg)}
+.pick-tag{display:none;font-size:var(--t-s);font-weight:600;color:var(--accent-text);margin-bottom:4px}
+.cmp[data-pick="free"] .c-free,.cmp[data-pick="pro"] .c-pro,.cmp[data-pick="team"] .c-team{background:var(--pick)}
+.cmp[data-pick="free"] thead .c-free,.cmp[data-pick="pro"] thead .c-pro,.cmp[data-pick="team"] thead .c-team{box-shadow:inset 0 3px 0 var(--accent-text);background:linear-gradient(var(--pick),var(--pick)),var(--canvas)}
+.cmp[data-pick="free"] thead .c-free .pick-tag,.cmp[data-pick="pro"] thead .c-pro .pick-tag,.cmp[data-pick="team"] thead .c-team .pick-tag{display:block}
+.founder{margin-top:14px;font-size:var(--t-s);color:var(--text-2)}
+.show{display:none;border:0}
+@media (max-width:719px){
+  .show{display:flex;gap:4px;margin-top:20px;padding:4px;border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:3;background:var(--canvas)}
+  .show legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .show label{position:relative;flex:1}
+  .show span{display:block;text-align:center;padding:9px 6px;border-radius:7px;font-size:var(--t-s);font-weight:600;color:var(--text-2)}
+  .show input:checked+span{background:var(--raised);color:var(--text)}
+  .cmp{margin-top:8px;table-layout:auto}
+  .cmp col{width:auto}
+  .cmp col.c-label{width:55%}
+  .cmp thead,.cmp thead tr,.cmp thead th{display:block;width:100%}
+  .cmp thead th,.cmp thead td{position:static;padding:16px 10px 18px}
+  .cmp thead .corner{display:none}
+  .cmp[data-show="free"] .c-pro,.cmp[data-show="free"] .c-team,
+  .cmp[data-show="pro"] .c-free,.cmp[data-show="pro"] .c-team,
+  .cmp[data-show="team"] .c-free,.cmp[data-show="team"] .c-pro{display:none}
+  .grp-h th{padding-top:22px!important}
+  .cmp tbody th,.cmp td{padding:12px 10px}
+  .note{display:none}
+}
+
+.recv{display:grid;gap:28px;margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+@media (min-width:720px){.recv{grid-template-columns:1fr 1fr;padding:28px}}
+.recv .price{margin-top:6px}
+.recv .body{color:var(--text-2);margin:14px 0 18px}
+.recv ol{padding-left:20px;display:grid;gap:10px;color:var(--text-2)}
+.recv ol strong{color:var(--text);font-weight:600}
+#reception.picked .recv{border-color:var(--accent-text);box-shadow:inset 0 3px 0 var(--accent-text)}
+#reception.picked .pick-tag,#row-developer.picked .pick-tag{display:block}
+
+.rows{margin-top:20px;border-top:1px solid var(--line)}
+.row{display:grid;gap:8px 28px;padding:20px 0;border-bottom:1px solid var(--line)}
+@media (min-width:720px){.row{grid-template-columns:240px 1fr}}
+.row dt{font-weight:650;font-size:var(--t-l)}
+.row dt .meta{display:block;font-weight:400;margin-top:2px}
+.row dd p{color:var(--text-2);margin-bottom:12px;max-width:62ch}
+.row.picked{box-shadow:inset 3px 0 0 var(--accent-text);padding-left:16px}
+
+.faq{margin-top:20px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
+.faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
+
+dialog{margin:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(440px,calc(100% - 32px))}
+dialog::backdrop{background:var(--scrim)}
+dialog h3{margin-bottom:6px}
+dialog label{display:block;font-size:var(--t-s);color:var(--text-2);margin:14px 0 6px}
+dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.msg{font-size:var(--t-s);margin-top:12px;min-height:1.4em}
+.msg.ok{color:var(--accent-text)}
+
+.foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
+.foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
+.foot a:hover{color:var(--text)}
+.langs{display:flex;flex-wrap:wrap;gap:4px 0;margin-bottom:14px}
+.langs span{margin-right:16px;color:var(--text)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+  <a class="skip" href="#plans">モデルを納品する方へ</a>
+  <header class="top">
+    <div class="wrap bar">
+      <a href="/ja/" class="logo">IFC Viewer Online</a>
+      <nav aria-label="Main">
+        <a href="/ja/ifc-validator-online/" class="hide-s">バリデータ</a>
+        <a href="/sdk/" class="hide-s">SDK</a>
+        <a href="/ja/blog/" class="hide-s">ブログ</a>
+        <button type="button" class="theme" id="theme" aria-label="ライト／ダーク切替" title="ライト／ダーク切替"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+        <a href="/ja/" class="btn btn-quiet" data-cta="header_open">ビューアを開く</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <h1>ブラウザでは無料。サーバーを使うときだけ有料。</h1>
+      <p class="lead">IFC ファイルを開く・測る・チェックするのはずっと無料です。有料プランでは EU 内の保存、クライアント用リンク、チームの品質ゲート、協力会社からの納品を受け取る受付箱が加わります。</p>
+      <p class="status"><span class="dot" aria-hidden="true"></span>有料プランはまだ販売していません。ウェイティングリストの方から順に、早期登録特典付きでご案内します。</p>
+    </section>
+
+    <section class="pick wrap" aria-labelledby="pick-l">
+      <fieldset><legend id="pick-l">IFC ファイルで何をしていますか？</legend><div class="opts"><label><input type="radio" name="role" value="open" data-plan-for="free" /><span>ときどきモデルを開いて確認する</span></label><label><input type="radio" name="role" value="solo" data-plan-for="pro" /><span>個人でクライアントにモデルを納品する</span></label><label><input type="radio" name="role" value="team" data-plan-for="team" /><span>設計事務所や建設コンサルとして納品する</span></label><label><input type="radio" name="role" value="receive" data-plan-for="reception" /><span>協力会社からモデルを受け取る</span></label><label><input type="radio" name="role" value="build" data-plan-for="developer" /><span>自社のソフトウェアに組み込む</span></label></div></fieldset>
+      <div class="answers" aria-live="polite"><p class="answer" data-role="open" hidden><span>無料プランで十分です：ビューア、Health Score、IDS、BCF。アップロードは不要です。</span> <a href="#plans">プランを見る ↓</a></p><p class="answer" data-role="solo" hidden><span>Pro：ブラウザでは重すぎるファイルを開き、クライアントにリンクを送れます。</span> <a href="#plans">プランを見る ↓</a></p><p class="answer" data-role="team" hidden><span>Team：社内標準、アップロードごとの品質ゲート、クライアント用ポータル。</span> <a href="#plans">プランを見る ↓</a></p><p class="answer" data-role="receive" hidden><span>納品受付：協力会社が送る前に貴社の要件でチェックします。</span> <a href="#reception">プランを見る ↓</a></p><p class="answer" data-role="build" hidden><span>Developer：ホスト型の検証 API。クライアント SDK は無料のままです。</span> <a href="#more">プランを見る ↓</a></p></div>
+    </section>
+    <section class="sec wrap" id="plans" aria-labelledby="plans-h">
+      <h2 id="plans-h">モデルを納品する方へ</h2>
+      <p class="sub">クライアントに IFC を送る建築家、エンジニア、BIM コーディネーター。</p>
+      <fieldset class="show" aria-controls="cmp"><legend>プラン</legend><label><input type="radio" name="show" value="free" /><span>無料</span></label><label><input type="radio" name="show" value="pro" checked /><span>Pro</span></label><label><input type="radio" name="show" value="team" /><span>Team</span></label></fieldset>
+      <table class="cmp" id="cmp" data-show="pro">
+        <colgroup><col class="c-label" /><col class="c-free" /><col class="c-pro" /><col class="c-team" /></colgroup>
+        <thead><tr><td class="corner"></td>
+          <th scope="col" class="c-free" id="h-free">
+            <span class="pick-tag">あなたの業務に合うプラン</span>
+            <span class="plan-name">無料</span>
+            <p class="price"><strong>€0、ずっと無料</strong></p>
+            <p class="meta who">IFC を扱うすべての方</p>
+            <a class="btn btn-quiet" href="/ja/" data-cta="table_free" hreflang="ja">ビューアを開く</a>
+          </th>
+          <th scope="col" class="c-pro" id="h-pro">
+            <span class="pick-tag">あなたの業務に合うプラン</span>
+            <span class="plan-name">Pro</span>
+            <p class="price"><strong>€39 / 月（年払い）</strong></p><p class="meta">年額 €468 · 月払いは €47 / 月</p>
+            <p class="meta who">個人</p>
+            <button type="button" class="btn btn-main" data-plan="pro">ウェイティングリストに登録</button>
+          </th>
+          <th scope="col" class="c-team" id="h-team">
+            <span class="pick-tag">あなたの業務に合うプラン</span>
+            <span class="plan-name">Team</span>
+            <p class="price"><strong>編集者 1 人あたり €59 / 月（年払い）</strong></p><p class="meta">年額 €708 · 月払いは €71 / 月</p><p class="meta">編集者 3 人から</p>
+            <p class="meta who">設計事務所・建設コンサル</p>
+            <button type="button" class="btn btn-main" data-plan="team">ウェイティングリストに登録</button>
+          </th>
+        </tr></thead>
+        <tbody class="grp" id="g-files">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-files">ファイルと保存</button></th></tr>
+          <tr>
+            <th scope="row">ブラウザで動くすべての機能<span class="note">ビューア、断面、計測、44 ルールの Health Score、IDS 1.0、BCF、地図、埋め込み SDK。アカウント不要。ファイルはブラウザの外に出ません。</span></th>
+            <td class="c-free"><span class="yes" aria-hidden="true">✓</span><span class="sr">含まれる</span></td><td class="c-pro"><span class="yes" aria-hidden="true">✓</span><span class="sr">含まれる</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">含まれる</span></td>
+          </tr>
+          <tr>
+            <th scope="row">EU 内の保存（バージョン管理付き）</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro">20 GB</td><td class="c-team">編集者 1 人あたり 100 GB、共有</td>
+          </tr>
+          <tr>
+            <th scope="row">ブラウザでは重すぎるファイル</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro">1 ファイル最大 1 GB</td><td class="c-team">1 ファイル最大 3 GB</td>
+          </tr>
+        </tbody>
+        <tbody class="grp" id="g-share">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-share">クライアントとの共有</button></th></tr>
+          <tr>
+            <th scope="row">クライアント用リンク</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro">パスワードと有効期限</td><td class="c-team">自社ロゴ入りのクライアントポータル</td>
+          </tr>
+          <tr>
+            <th scope="row">レビュアーとゲスト</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-team">無料、編集者数に含めない</td>
+          </tr>
+        </tbody>
+        <tbody class="grp" id="g-quality">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-quality">チーム全体の品質</button></th></tr>
+          <tr>
+            <th scope="row">アップロードごとの品質ゲート</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">含まれる</span></td>
+          </tr>
+          <tr>
+            <th scope="row">社内標準、ロール、ISO 19650 のステータス</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">含まれる</span></td>
+          </tr>
+        </tbody>
+        <tbody class="grp" id="g-contract">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-contract">自動化と契約</button></th></tr>
+          <tr>
+            <th scope="row">ホスト型検証 API</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro">月 500 回</td><td class="c-team">チームあたり月 2,000 回</td>
+          </tr>
+          <tr>
+            <th scope="row">データ処理契約（DPA）</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">含まれない</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">含まれる</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="founder">Team と納品受付の早期特典：先着 10 社は 12 か月間 30% オフ（導入事例の公開が条件）。</p>
+    </section>
+
+    <section class="sec wrap" id="reception" aria-labelledby="reception-h">
+      <h2 id="reception-h">モデルを受け取る方へ</h2>
+      <p class="sub">多くの協力会社からモデルを集めるゼネコン、デベロッパー、発注者、施設管理者。</p>
+      <div class="recv">
+        <div>
+          <span class="pick-tag">あなたの業務に合うプラン</span>
+          <h3>納品受付</h3>
+          <p class="price"><strong>稼働中のプロジェクトごとに €290 / 月から（協力会社 15 社まで）</strong></p>
+          <p class="meta">ポートフォリオ：€790 / 月から、プロジェクトと協力会社は無制限</p>
+          <p class="body">差し戻しが必要なモデルを受け取るのはもう終わりです。協力会社は送る前に貴社の要件に対して無料でファイルをチェックします。届くのは要件を満たしたものだけで、誰の納品が良いかも分かります。</p>
+          <button type="button" class="btn btn-main" data-plan="reception">お問い合わせ</button>
+        </div>
+        <ol><li><strong>要件を公開</strong> 入札や契約向けにリンクや QR で：IDS、ルール、最低スコア、命名規則。</li><li><strong>協力会社は無料でチェック</strong> ブラウザで修正してから送ります。</li><li><strong>納品受付箱</strong> が各ファイルを再チェックし、バージョンを保存して、BCF の指摘付きで受理または差し戻します。</li><li><strong>協力会社ごとの記録：</strong> 納品数、初回受理率、スコアの推移。</li><li><strong>竣工時の引き渡しレポート</strong> 受け取った情報をまとめ、維持管理にそのまま使えます。</li></ol>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="more" aria-labelledby="more-h">
+      <h2 id="more-h">自社製品に組み込む、またはポートフォリオ全体で</h2>
+      <dl class="rows">
+        <div class="row" id="row-developer"><dt><span class="pick-tag">あなたの業務に合うプラン</span>Developer<span class="meta">€149 / 月（年払い）+ 従量</span></dt>
+          <dd><p>クライアント SDK は無料です。Developer はプラットフォーム、CDE、自動化向けのホスト型検証 API を追加します。</p><button type="button" class="btn btn-main" data-plan="developer">ウェイティングリストに登録</button></dd></div>
+        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">年額 €15,000 から</span></dt>
+          <dd><p>ポートフォリオ全体での納品受付、シングルサインオン、データ処理契約、インターネット接続不要のオンプレミス版。 <a href="/on-premise-ifc-validator/">オンプレミス版バリデータ</a></p><button type="button" class="btn btn-main" data-plan="enterprise">お問い合わせ</button></dd></div>
+      </dl>
+    </section>
+
+    <section class="sec wrap" aria-labelledby="faq-h">
+      <h2 id="faq-h">よくある質問</h2>
+      <div class="faq"><details><summary>どのプランが合っていますか？</summary><p>モデルを開いて確認するだけなら無料。個人でクライアントに納品するなら Pro。社内の複数人が納品するなら Team（編集者 3 人から）。協力会社からモデルを受け取るなら納品受付プラン。</p></details><details><summary>無料のビューアはずっと無料ですか？</summary><p>はい。ブラウザで動く機能はずっと無料です：ビューア、計測、断面、Health Score、44 ルール、IDS 1.0、BCF、SDK。有料プランが加えるのは、サーバーが必要な機能とチーム向けの新しいツールだけです。</p></details><details><summary>今すぐ支払えますか？</summary><p>まだです。有料プランはウェイティングリストから順に開きます。メールアドレスを登録いただければ、プラン開始時に一度だけご連絡します。開始前に価格が変わる可能性がありますが、リストの方には早期登録特典が適用されます。</p></details><details><summary>有料プランのファイルはどこに保存されますか？</summary><p>EU 内のサーバーです。無料プランでは何もアップロードされず、ブラウザがファイルを開きます。</p></details><details><summary>協力会社は納品受付プランの料金を払いますか？</summary><p>いいえ。協力会社はブラウザで無料で貴社の要件に対してチェックします。料金は納品を受け取る側が支払います。</p></details></div>
+    </section>
+  </main>
+
+  <dialog id="waitlist" aria-labelledby="wl-title">
+    <form id="wl-form" method="dialog">
+      <h3 id="wl-title"> のウェイティングリスト</h3>
+      <p class="meta">プラン開始時に一度だけご連絡します。ニュースレターは送りません。</p>
+      <label for="wl-email">仕事用メールアドレス</label>
+      <input id="wl-email" name="email" type="email" required autocomplete="email" placeholder="you@company.co.jp" />
+      <label for="wl-role">主な業務</label>
+      <select id="wl-role" name="role">
+        <option value="deliver">クライアントにモデルを納品</option>
+        <option value="receive">協力会社からモデルを受け取る</option>
+        <option value="build">自社ソフトに組み込む</option>
+        <option value="other">その他</option>
+      </select>
+      <p class="msg" id="wl-msg" role="status"></p>
+      <div class="actions">
+        <button type="button" class="btn btn-quiet" id="wl-cancel">閉じる</button>
+        <button type="submit" class="btn btn-main" id="wl-submit">登録する</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="wrap foot">
+    <nav aria-label="プラン" class="langs"><a href="/pricing/" hreflang="en" lang="en">English</a><a href="/es/precios/" hreflang="es" lang="es">Español</a><a href="/de/preise/" hreflang="de" lang="de">Deutsch</a><a href="/fr/tarifs/" hreflang="fr" lang="fr">Français</a><a href="/pt/precos/" hreflang="pt" lang="pt">Português</a><a href="/it/prezzi/" hreflang="it" lang="it">Italiano</a><a href="/ca/preus/" hreflang="ca" lang="ca">Català</a><a href="/zh/pricing/" hreflang="zh" lang="zh">中文</a><span aria-current="page">日本語</span><a href="/th/pricing/" hreflang="th" lang="th">ไทย</a></nav>
+    <p><a href="/ja/">IFC Viewer Online</a><a href="/ja/ifc-validator-online/">バリデータ</a><a href="/on-premise-ifc-validator/">オンプレミス</a><a href="/sdk/">SDK</a><a href="/privacy">プライバシー</a><a href="/terms">利用規約</a></p>
+  </footer>
+
+  <script type="application/json" id="pricing-i18n">{"names":{"free":"無料","pro":"Pro","team":"Team","reception":"納品受付","developer":"Developer","enterprise":"Enterprise"},"title":"{plan} のウェイティングリスト","titleTalk":"{plan} について相談する","saving":"保存中…","ok":"登録しました。開始時に一度だけご連絡します。","err":"保存できませんでした。しばらくしてからもう一度お試しください。"}</script>
+  <script>(function(){
+var LANG='ja';
+var T=JSON.parse(document.getElementById('pricing-i18n').textContent);
+var TABLE={free:1,pro:1,team:1};
+var cmp=document.getElementById('cmp');
+var PH_KEY='phc_mAs9WpD6z8RTQbqR8ZVvqbxhF8QUz59Yz4ZmDRjByXwr',PH_HOST='https://eu.i.posthog.com';
+// One id per page view, in memory only (no cookie, no storage): the distinct id
+// and PostHog's session id, a UUIDv7 so the events group into one session.
+function uuid7(){var h=Date.now().toString(16);while(h.length<12)h='0'+h;var r='';for(var i=0;i<20;i++)r+=Math.floor(Math.random()*16).toString(16);
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-7'+r.slice(0,3)+'-'+'89ab'[Math.floor(Math.random()*4)]+r.slice(3,6)+'-'+r.slice(6,18)}
+var visit=uuid7();
+var LOCAL=/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|.*\.localhost|.*\.local)$/i;
+function optedOut(){try{var s=localStorage.getItem('ifc-analytics-optout:v1');if(s==='1')return true;if(s==='0')return false}catch(e){}
+  if(navigator.globalPrivacyControl===true)return true;var d=navigator.doNotTrack||window.doNotTrack;return d==='1'||d==='yes'}
+function local(){if(LOCAL.test(location.hostname))return true;try{return!!document.referrer&&LOCAL.test(new URL(document.referrer).hostname)}catch(e){return false}}
+function ref(){try{return document.referrer?new URL(document.referrer).origin:'$direct'}catch(e){return'$direct'}}
+function track(n,p){if(optedOut()||local())return;var q={$current_url:location.origin+location.pathname,$pathname:location.pathname,$referrer:ref(),$process_person_profile:false,$session_id:visit,visit_id:visit,surface:'pricing_page',lang:LANG};
+  for(var k in p||{})q[k]=p[k];try{fetch(PH_HOST+'/i/v0/e/',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:PH_KEY,event:n,distinct_id:visit,properties:q})}).catch(function(){})}catch(e){}}
+track('$pageview');track('pricing_viewed',{role:new URLSearchParams(location.search).get('role')||null});
+
+// Phone: one plan at a time.
+function show(plan){cmp.dataset.show=plan;var r=document.querySelector('.show input[value="'+plan+'"]');if(r)r.checked=true}
+document.querySelectorAll('.show input').forEach(function(i){i.addEventListener('change',function(){show(i.value)})});
+
+// "What do you do with IFC files?"
+function pick(role,fromUser){
+  var input=document.querySelector('.pick input[value="'+role+'"]');if(!input)return;input.checked=true;
+  var plan=input.dataset.planFor;
+  document.querySelectorAll('.answer').forEach(function(a){a.hidden=a.dataset.role!==role});
+  if(TABLE[plan]){cmp.dataset.pick=plan;show(plan)}else{delete cmp.dataset.pick}
+  document.getElementById('reception').classList.toggle('picked',plan==='reception');
+  document.getElementById('row-developer').classList.toggle('picked',plan==='developer');
+  if(fromUser){var u=new URL(location.href);u.searchParams.set('role',role);history.replaceState(null,'',u);track('pricing_role_picked',{role:role,plan:plan})}
+}
+document.querySelectorAll('.pick input').forEach(function(i){i.addEventListener('change',function(){pick(i.value,true)})});
+var start=new URLSearchParams(location.search).get('role');if(start)pick(start,false);
+
+// Fold a group of rows.
+document.querySelectorAll('.grp-h button').forEach(function(b){b.addEventListener('click',function(){
+  var open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',String(open));
+  var rows=b.closest('tbody').querySelectorAll('tr:not(.grp-h)');rows.forEach(function(r){r.hidden=!open})})});
+
+// Light or dark; remembered with the landing's own key.
+document.getElementById('theme').addEventListener('click',function(){
+  var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+  var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}});
+
+document.querySelectorAll('[data-cta]').forEach(function(a){a.addEventListener('click',function(){track('pricing_cta_clicked',{cta:a.dataset.cta})})});
+
+// Waitlist: the email Worker the app's forms use, tagged by plan and role.
+var ENDPOINT='https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe';
+var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-form'),msg=document.getElementById('wl-msg'),
+    submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
+document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
+  plan=b.dataset.plan;
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
+  msg.textContent='';msg.className='msg';submit.disabled=false;
+  track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});
+  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');document.getElementById('wl-email').focus()})});
+document.getElementById('wl-cancel').addEventListener('click',function(){dlg.close?dlg.close():dlg.removeAttribute('open')});
+form.addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('wl-email').value.trim();if(!email)return;
+  submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
+  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'pricing:'+plan+':'+roleSel.value,locale:LANG})})
+   .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
+   .then(function(res){if(res.ok||res.d.already){msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:'pricing:'+plan,already_subscribed:!!res.d.already})}else{throw new Error()}})
+   .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false})});
+})();</script>
+</body>
+</html>

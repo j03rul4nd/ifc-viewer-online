@@ -128,7 +128,7 @@ const GooeyNav: React.FC<GooeyNavProps> = ({
         :root { --gooey-linear-ease: linear(0, 0.068, 0.19 2.7%, 0.804 8.1%, 1.037, 1.199 13.2%, 1.245, 1.27 15.8%, 1.274, 1.272 17.4%, 1.249 19.1%, 0.996 28%, 0.949, 0.928 33.3%, 0.926, 0.933 36.8%, 1.001 45.6%, 1.013, 1.019 50.8%, 1.018 54.4%, 1 63.1%, 0.995 68%, 1.001 85%, 1); }
         .gooey-effect { position: absolute; opacity: 1; pointer-events: none; display: grid; place-items: center; z-index: 1; }
         .gooey-effect.gooey-text { color: white; transition: color 0.3s ease; }
-        .gooey-effect.gooey-text.active { color: #0A0A0C; }
+        .gooey-effect.gooey-text.active { color: #100F0C; }
         .gooey-effect.gooey-filter { filter: blur(7px) contrast(100) blur(0); mix-blend-mode: lighten; }
         .gooey-effect.gooey-filter::before { content: ""; position: absolute; inset: -75px; z-index: -2; background: black; }
         .gooey-effect.gooey-filter::after { content: ""; position: absolute; inset: 0; background: white; transform: scale(0); opacity: 0; z-index: -1; border-radius: 9999px; }
@@ -151,7 +151,7 @@ const GooeyNav: React.FC<GooeyNavProps> = ({
           85% { transform: scale(var(--scale)); opacity: 1; }
           100% { transform: scale(0); opacity: 0; }
         }
-        .gooey-nav-li.active { color: #0A0A0C; text-shadow: none; }
+        .gooey-nav-li.active { color: #100F0C; text-shadow: none; }
         .gooey-nav-li.active::after { opacity: 1; transform: scale(1); }
         .gooey-nav-li::after { content: ""; position: absolute; inset: 0; border-radius: 8px; background: white; opacity: 0; transform: scale(0); transition: all 0.3s ease; z-index: -1; }
       `}</style>

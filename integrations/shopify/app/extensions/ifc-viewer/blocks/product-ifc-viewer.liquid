@@ -1,0 +1,161 @@
+{% comment %}
+  App-only product block: each product (and each variant) brings its own IFC
+  file from a metafield, so one block in the product template serves the whole
+  catalogue. The viewer loads on click (or when scrolled into view), so the
+  product page stays as fast as without it. The explorer, element details,
+  views and Health Score blocks drive this viewer from anywhere on the page.
+  Not part of the copy-paste sections.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.namespace | strip | default: 'custom'
+  assign key = s.key | strip | default: 'ifc_model'
+
+  assign field = product.metafields[ns][key].value
+  assign product_model = field.url | default: field | strip
+  assign head = product_model | slice: 0, 8 | downcase
+  if head != 'https://'
+    assign product_model = ''
+  endif
+
+  assign current = product.selected_or_first_available_variant
+  assign map = ''
+  assign current_model = product_model
+  for variant in product.variants
+    assign vfield = variant.metafields[ns][key].value
+    assign vmodel = vfield.url | default: vfield | strip
+    assign vhead = vmodel | slice: 0, 8 | downcase
+    if vhead != 'https://'
+      assign vmodel = product_model
+    endif
+    if vmodel != ''
+      if map != ''
+        assign map = map | append: ','
+      endif
+      assign vjson = vmodel | json
+      assign map = map | append: '"' | append: variant.id | append: '":' | append: vjson
+      if variant.id == current.id
+        assign current_model = vmodel
+      endif
+    endif
+  endfor
+  assign title = s.title | default: product.title
+
+  assign files_key = s.files_key | strip
+  assign files = ''
+  if files_key != ''
+    assign files = product.metafields[ns][files_key].value
+  endif
+  assign specs_ns = s.specs_namespace | strip
+
+  assign stage_bg = '#11161a'
+  case s.background
+    when 'white'
+      assign stage_bg = '#ffffff'
+    when 'paper'
+      assign stage_bg = '#f4f3ef'
+    when 'brand'
+      assign stage_bg = s.bg_bottom | default: s.bg_top
+  endcase
+-%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+{%- if current_model != '' -%}
+  <div class="ifcvo-product" data-ifcvo-viewer data-models="{{ map | escape }}" data-model="{{ current_model | escape }}"
+    data-load="{{ s.load }}" data-title="{{ title | escape }}" data-ui="{{ s.ui }}" data-view="{{ s.view }}"
+    data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
+    data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}">
+    <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:{{ s.radius }}px;overflow:hidden;background:{{ stage_bg }}">
+      {%- if product.featured_media -%}
+        {{ product.featured_media | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '', style: 'width:100%;height:100%;object-fit:contain;opacity:.55' }}
+      {%- endif -%}
+      <button type="button" class="ifcvo-open" style="position:absolute;inset:0;margin:auto;width:max-content;height:max-content;padding:12px 20px;border:0;border-radius:999px;background:#fff;color:#11161a;font:inherit;font-weight:600;cursor:pointer">{{ s.open_label | escape }}</button>
+    </div>
+    {%- if s.download -%}
+      <p style="margin:8px 0 0"><a class="ifcvo-download" href="{{ current_model | escape }}" download rel="noopener">{{ s.download_label | escape }}</a></p>
+    {%- endif -%}
+    {%- if files != blank -%}
+      <ul class="ifcvo-files" style="margin:8px 0 0;padding-left:18px">
+        {%- for f in files -%}
+          {%- assign furl = f.url | default: f | strip -%}
+          {%- assign fname = furl | split: '?' | first | split: '/' | last -%}
+          <li><a href="{{ furl | escape }}" download rel="noopener" data-file="{{ fname | escape }}">{{ fname | escape }}</a></li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+    {%- if specs_ns != '' and product.metafields[specs_ns] != blank -%}
+      <table class="ifcvo-specs" style="margin:12px 0 0;border-collapse:collapse;width:100%">
+        <caption style="text-align:left;font-weight:600;padding-bottom:4px">{{ s.specs_label | escape }}</caption>
+        {%- for pair in product.metafields[specs_ns] -%}
+          <tr><th scope="row" style="text-align:left;font-weight:400;padding:4px 8px 4px 0;border-top:1px solid rgba(0,0,0,.1)">{{ pair[0] | replace: '_', ' ' | capitalize | escape }}</th><td style="padding:4px 0;border-top:1px solid rgba(0,0,0,.1)">{{ pair[1].value | escape }}</td></tr>
+        {%- endfor -%}
+      </table>
+    {%- endif -%}
+  </div>
+  <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- elsif request.design_mode -%}
+  <p>IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file).</p>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Product IFC model",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "paragraph", "content": "Reads the IFC file from a product or variant metafield (URL or file). A variant without its own file shows the product's." },
+    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
+    { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
+    { "type": "text", "id": "title", "label": "Accessible title", "info": "Defaults to the product title." },
+    { "type": "range", "id": "height", "label": "Height", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
+    { "type": "select", "id": "load", "label": "Load the 3D viewer", "default": "click", "info": "On click keeps the product page as fast as without the viewer.", "options": [
+      { "value": "click", "label": "When the visitor clicks" },
+      { "value": "visible", "label": "When it scrolls into view" }
+    ] },
+    { "type": "text", "id": "open_label", "label": "Button text", "default": "View in 3D" },
+    { "type": "select", "id": "ui", "label": "Viewer layout", "default": "article", "options": [
+      { "value": "article", "label": "Article (clean, scroll-friendly)" },
+      { "value": "minimal", "label": "Minimal" },
+      { "value": "client", "label": "Client review" },
+      { "value": "kiosk", "label": "Kiosk (model only, pair with the explorer block)" }
+    ] },
+    { "type": "select", "id": "view", "label": "Starting view", "default": "iso", "options": [
+      { "value": "iso", "label": "Isometric" },
+      { "value": "front", "label": "Front" },
+      { "value": "top", "label": "Top" }
+    ] },
+    { "type": "checkbox", "id": "validate", "label": "Show the Health Score", "default": true },
+    { "type": "select", "id": "lang", "label": "Language", "default": "auto", "options": [
+      { "value": "auto", "label": "Visitor's language" },
+      { "value": "en", "label": "English" },
+      { "value": "es", "label": "Español" },
+      { "value": "ca", "label": "Català" },
+      { "value": "de", "label": "Deutsch" },
+      { "value": "fr", "label": "Français" },
+      { "value": "it", "label": "Italiano" },
+      { "value": "pt", "label": "Português" },
+      { "value": "ja", "label": "日本語" },
+      { "value": "zh", "label": "中文" },
+      { "value": "th", "label": "ไทย" }
+    ] },
+    { "type": "header", "content": "Brand" },
+    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Selection and buttons inside the viewer." },
+    { "type": "select", "id": "background", "label": "Scene background", "default": "studio", "options": [
+      { "value": "studio", "label": "Studio (dark)" },
+      { "value": "white", "label": "White" },
+      { "value": "paper", "label": "Paper" },
+      { "value": "sky", "label": "Sky" },
+      { "value": "brand", "label": "My brand colours" }
+    ] },
+    { "type": "color", "id": "bg_top", "label": "Background top", "default": "#ffffff", "visible_if": "{{ block.settings.background == 'brand' }}" },
+    { "type": "color", "id": "bg_bottom", "label": "Background bottom", "default": "#e9e7e1", "visible_if": "{{ block.settings.background == 'brand' }}" },
+    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
+    { "type": "header", "content": "Downloads" },
+    { "type": "checkbox", "id": "download", "label": "Show a download link for the IFC file", "default": true },
+    { "type": "text", "id": "download_label", "label": "Download link text", "default": "Download BIM model (IFC)" },
+    { "type": "text", "id": "files_key", "label": "More files metafield key", "default": "bim_files", "info": "List of files or URLs in the same namespace: RFA, DWG, datasheet PDF…" },
+    { "type": "header", "content": "Technical data" },
+    { "type": "text", "id": "specs_namespace", "label": "Specification metafield namespace", "default": "bim", "info": "Every metafield in this namespace shows as a row (dimensions, U-value, fire rating…). Leave empty to hide." },
+    { "type": "text", "id": "specs_label", "label": "Table title", "default": "Technical data" }
+  ]
+}
+{% endschema %}

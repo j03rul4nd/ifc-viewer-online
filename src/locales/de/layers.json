@@ -767,7 +767,70 @@
     "alertsActive": "{{count}} mit Alarm",
     "summaryFilter": "Nur diese Verknüpfungen zeigen",
     "mqttTopics": "MQTT-Topics, eines pro Zeile (leer = einfacher WebSocket mit JSON-Nachrichten)",
-    "mqttHint": "Mit Topics ist diese Adresse der WebSocket-Listener eines MQTT-Brokers. Jede Nachricht wird als { topic, …payload } gelesen, einmal pro Sekunde; Nachrichten ohne Geräte-ID werden übersprungen."
+    "mqttHint": "Mit Topics ist diese Adresse der WebSocket-Listener eines MQTT-Brokers. Jede Nachricht wird als { topic, …payload } gelesen, einmal pro Sekunde; Nachrichten ohne Geräte-ID werden übersprungen.",
+    "panel": {
+      "tabs": {
+        "sources": "Quellen",
+        "devices": "Geräte",
+        "bindings": "Verknüpfungen",
+        "project": "Projekt"
+      },
+      "failed": "Dieser Bereich konnte nicht geladen werden",
+      "retry": "Erneut versuchen",
+      "back": "Zurück",
+      "summaryDevices": "{{count}} Geräte",
+      "paused": "Pausiert",
+      "summaryErrors": "{{count}} Quellen mit Fehler",
+      "needModel": "Öffne ein Modell, um eine Demo zu testen",
+      "connectApi": "API verbinden",
+      "importFile": ".twin.json importieren",
+      "demoSection": "Mit simulierten Daten testen",
+      "editSource": "Quelle bearbeiten",
+      "url": "Adresse",
+      "test": "Verbindung testen",
+      "testing": "Wird getestet…",
+      "testOk": "{{count}} Geräte gefunden",
+      "detected": "Liste erkannt in {{path}}",
+      "testFields": "Felder: {{list}}",
+      "testNone": "Verbunden, aber keine Geräte gefunden. Prüfe den Listenpfad in den erweiterten Optionen.",
+      "streamNoTest": "Live-Verbindungen werden beim Speichern geprüft.",
+      "advanced": "Erweiterte Optionen",
+      "confirmRemoveSource": "Auch {{count}} Verknüpfungen entfernen",
+      "confirm": "Bestätigen",
+      "searchDevices": "Gerät suchen…",
+      "noDevices": "Noch keine Messwerte",
+      "noDevicesHint": "Geräte erscheinen hier, sobald eine Quelle antwortet.",
+      "noResults": "Keine Ergebnisse",
+      "pastReadOnly": "Zum Verknüpfen zurück zu Live",
+      "bound": "{{count}} verknüpft",
+      "noBindings": "Noch keine Verknüpfungen",
+      "noBindingsHint": "Wähle ein Element im Modell und verknüpfe ein Gerät damit.",
+      "locate": "Im Modell zeigen",
+      "editBinding": "Verknüpfung bearbeiten",
+      "noRules": "Keine Regeln: Die Elemente behalten ihr Aussehen.",
+      "display": "Darstellung und Daten",
+      "conditions": "Bedingungen",
+      "matchAll": "Alle Bedingungen",
+      "matchAny": "Eine der Bedingungen",
+      "value": "Wert",
+      "addCondition": "+ Bedingung",
+      "opacity": "Deckkraft",
+      "importReplace": "Das ersetzt deine {{sources}} Quellen und {{bindings}} Verknüpfungen. Fortfahren?",
+      "operated": "Betriebszustand",
+      "fiware": {
+        "kind": "Quellentyp",
+        "kindApi": "REST-API",
+        "kindBroker": "FIWARE-Broker",
+        "broker": "Context-Broker-URL",
+        "brokerHint": "Orion, Orion-LD, Scorpio oder Stellio. Er muss Anfragen von dieser Website erlauben (CORS) und https verwenden.",
+        "type": "Entitätstyp",
+        "tenant": "Tenant (optional)",
+        "context": "JSON-LD-Kontext (optional)",
+        "contextHint": "Gibt den Attributen ihre Kurznamen.",
+        "servicePath": "Service-Pfad (optional)",
+        "api": "API"
+      }
+    }
   },
   "add": {
     "title": "Daten hinzufügen"
@@ -849,5 +912,25 @@
     "generic": "Wird bearbeitet… {{s}} s",
     "announce": "Warte noch auf {{host}}",
     "announceGeneric": "Wird noch bearbeitet"
+  },
+  "portLibrary": {
+    "intro": "Zäune, Kräne, Stadtmobiliar und Denkmäler, modelliert vom Hafen Barcelona. Öffne ein Objekt im Viewer und füge es deiner Szene hinzu.",
+    "search": "Objekte suchen",
+    "all": "Alle",
+    "count_one": "{{count}} Objekt",
+    "count_other": "{{count}} Objekte",
+    "empty": "Kein Objekt passt zu dieser Suche.",
+    "onPortSite": "{{size}} · Download auf der Website des Hafens",
+    "credit": "Objektbibliothek von",
+    "categories": {
+      "fences": "Zäune",
+      "port": "Hafenelemente",
+      "road": "Straßenelemente",
+      "equipment": "Hafenausrüstung",
+      "operation": "Betriebsmittel",
+      "transport": "Transportmittel",
+      "furniture": "Stadtmobiliar",
+      "monument": "Denkmäler"
+    }
   }
 }

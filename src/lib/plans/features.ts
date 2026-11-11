@@ -25,10 +25,19 @@ export const PAID_FEATURE_DEFS: PaidFeatureDef[] = [
     title: 'Server auto-fix for big files', pitch: 'Get a corrected IFC and a before/after report for files the browser cannot hold.' },
   { id: 'hosted_api', code: 'P9', family: 'api', plan: 'pro', status: 'preview', server: true, section: 'api',
     title: 'Hosted validation API', pitch: '500 calls a month on Pro, 2,000 on Team, with a visible usage counter.' },
+  { id: 'cloud_sheets', code: 'D1', family: 'files', plan: 'pro', status: 'planned', server: true, section: 'projects',
+    title: 'Drawing sheets in the cloud', pitch: 'A register per project, revisions that are never overwritten, and a CSV for handover.' },
+  { id: 'dwg_conversion', code: 'D2', family: 'files', plan: 'pro', status: 'planned', server: true, section: 'jobs',
+    title: 'DWG to DXF on our servers', pitch: 'Send a DWG, get a DXF back as the next revision. Charged in credits, returned if the file cannot be read.' },
+  { id: 'team_sheets', code: 'D3', family: 'sharing', plan: 'team', status: 'planned', server: true, section: 'projects',
+    title: 'Sheets shared with the team', pitch: 'The same register with roles, reviewers for free and guests limited to one project.' },
   { id: 'cloud_storage_pickers', code: 'W1', family: 'integrations', plan: 'pro', status: 'soon', server: false, section: 'integrations',
     title: 'Open from SharePoint, Google Drive and Dropbox', pitch: 'Pick files in the provider\'s own picker. Files go straight to your browser, never through us.' },
   { id: 'email_preview', code: 'V4', family: 'sales', plan: 'pro', status: 'live', server: false,
     title: 'Email-ready GIF of the model', pitch: 'A 600 px GIF for Mailchimp, HubSpot or Outlook, linked to the 3D model.' },
+
+  { id: 'email_tracking', code: 'V5', family: 'sales', plan: 'pro', status: 'live', server: false,
+    title: 'Shipment tracking for email campaigns', pitch: 'Personal links for Mailchimp, HubSpot or Salesforce and a branded tracking page with offers, products and reviews.' },
 
   // ── Team ──
   { id: 'quality_gate', code: 'T1', family: 'quality', plan: 'team', status: 'soon', server: true, section: 'quality',
@@ -87,6 +96,13 @@ export const PAID_FEATURE_DEFS: PaidFeatureDef[] = [
     title: 'Client SDK with no request limits', pitch: 'The SDK runs in the browser, so it has no quota. Free forever.' },
   { id: 'api_credits', code: 'DEV', family: 'api', plan: 'developer', status: 'preview', server: true, section: 'api',
     title: 'Hosted API with credits', pitch: '5,000 credits a month, then €0.01 a credit. Validate, store and compare by API.' },
+
+  { id: 'automations', code: 'AU', family: 'api', plan: 'team', status: 'preview', server: true, section: 'automations',
+    title: 'Automations', pitch: 'The routine checks and chasing of a BIM coordinator, done every time, by rules you own.' },
+  { id: 'value_report', code: 'VR', family: 'api', plan: 'team', status: 'preview', server: true, section: 'value',
+    title: 'Value report', pitch: 'Hours and money saved, on measured counts, ready for the board.' },
+  { id: 'data_middleware', code: 'MW', family: 'api', plan: 'enterprise', status: 'preview', server: true, section: 'middleware',
+    title: 'Data middleware', pitch: 'Verified containers that feed the twin from your data. By agreement: Enterprise, or an extra on your plan.' },
 
   // ── Optional AI (doc 18 §0: never the core, always disclosed, capped) ──
   { id: 'ai_eir_draft', code: 'AI1', family: 'ai', plan: 'team', status: 'planned', server: true, ai: true, section: 'ai',

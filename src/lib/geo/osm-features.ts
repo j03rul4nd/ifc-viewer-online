@@ -45,6 +45,9 @@ import { outsetRing } from './plaza-paving'
 /** How far a partly-described outline is set back inside itself, metres. */
 const OUTLINE_INSET_M = 0.25
 import { shanghaiBridgeWidth } from './shanghai-bridges'
+import { riverfrontPromenades, waterfrontEdge } from './riverfront-promenade'
+import { sidewalkWidthM, SIDEWALK_TONE } from './sidewalks'
+import { isBarcelona } from './barcelona-barris'
 import { hydrologyQueryParts } from './osm-hydro'
 import {
   buildHydroNetwork, joinPatches, structureOf, waterRegimeOf,
@@ -860,6 +863,13 @@ const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
  *
  * `area=no` is a statement and is honoured: somebody looked and said ribbon.
  */
+/** Relation types that describe an area. One without a type is read as the old multipolygon. */
+const AREA_RELATION_TYPES = new Set(['multipolygon', 'boundary', 'building'])
+export function isAreaRelation(tags: Record<string, string> | undefined): boolean {
+  const type = tags?.['type']
+  return type === undefined || AREA_RELATION_TYPES.has(type)
+}
+
 export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
   if (isPavedArtwork(t)) return true
@@ -871,6 +881,7 @@ export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   // A surface car park is paved ground — the bus apron by the cruise
   // terminals, the lots along the Moll de Barcelona — and it is only ever an area.
   if (isSurfaceParking(t)) return true
+  if (t['place'] === 'square') return true
   return t['highway'] === 'pedestrian'
 }
 
@@ -1259,6 +1270,8 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (t['public_transport'] === 'platform' && t['railway'] !== undefined) return 'rail'
 
   if (ROAD_VALUES.has(t['highway'] ?? '') || (t['area:highway'] && t['area:highway'] !== 'no')) return 'road'
+  // A square mapped only as a place is still a paved floor (isPavedArea).
+  if (t['place'] === 'square') return 'road'
   if (isPavedArtwork(t)) return 'road'
   if (isSurfaceParking(t)) return 'road'
   if (t['leisure'] === 'playground' || isHardPitch(t)) return 'road'
@@ -1992,6 +2005,17 @@ export function parseOsmFeatures(
           // metro tunnel is often named only by its line's ref.
           name: el.tags?.['name'] ?? el.tags?.['ref'],
         })
+        // The pavement either side, as a floor under the carriageway (sidewalks).
+        const vertical = readVerticalTags(el.tags)
+        const pavementM = kind === 'road' && style.roadClass !== 'pedestrian' && vertical.structure === 'ground'
+          ? sidewalkWidthM(el.tags, isBarcelona(pts[0].lat, pts[0].lon)) : null
+        const pavement = pavementM ? bufferWaterway(pts, roadWidth(el.tags) + 2 * pavementM) : null
+        if (pavement) {
+          out.push({
+            id: `w${el.id}-sidewalk`, kind, ring: pavement, height,
+            style: { ...style, roadClass: 'pedestrian', surface: 'paving_stones', tone: SIDEWALK_TONE, crossing: undefined },
+          })
+        }
         continue
       }
 
@@ -2021,6 +2045,13 @@ export function parseOsmFeatures(
       continue
     }
 
+    // Only relations that ARE areas become areas. A `type=waterway` relation
+    // groups a river's centreline ways; closed into a ring it made the Huangpu
+    // a polygon over the Bund, with its buildings and streets standing in it.
+    if (el.type === 'relation' && !isAreaRelation(el.tags)) {
+      drop(el, 'geometry', 'relation-not-an-area')
+      continue
+    }
     if (el.type === 'relation' && Array.isArray(el.members)) {
       // ASSEMBLE FIRST, then close. A relation does not store rings, it stores
       // member ways; the ring is what they make joined end to end, in whatever
@@ -2080,6 +2111,12 @@ export function parseOsmFeatures(
   }
 
   out.push(...stitchWaterNetwork(out, structures))
+  // The floor of a waterfront promenade, from its footways (riverfront-promenade).
+  out.push(...riverfrontPromenades(out, bufferWaterway))
+  out.push(...waterfrontEdge(out, {
+    railing: resolveFeatureStyle('barrier', { barrier: 'handrail', height: '1.1' }),
+    lamp: resolveFeatureStyle('furniture', { highway: 'street_lamp' }),
+  }))
 
   return supersedeOutlinesWithParts(out)
 }

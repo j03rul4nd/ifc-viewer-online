@@ -871,7 +871,7 @@ const QS_JS =
 const QS_WC =
 `<script type="module" src="${HOSTED}"></script>
 
-<ifc-viewer model="https://your-cde.com/model.ifc" ui="minimal" accent="#22c55e"
+<ifc-viewer model="https://your-cde.com/model.ifc" ui="minimal" accent="#3fa866"
             style="display:block;height:520px"></ifc-viewer>`
 
 const QS_REACT =
@@ -1090,10 +1090,10 @@ await viewer.addLayer({ url: "https://example.org/sensors.geojson", live: 60 });
 const { link, sources } = await viewer.exportScene({ title: "Our twin" });`
 
 const REC_THEME =
-`new IfcViewer("#viewer", { accent: "#22c55e" });
+`new IfcViewer("#viewer", { accent: "#3fa866" });
 
 // …or on the web component:
-// <ifc-viewer accent="#22c55e" model="…"></ifc-viewer>`
+// <ifc-viewer accent="#3fa866" model="…"></ifc-viewer>`
 
 const REC_LANG =
 `// build a <select> from the bundled languages
@@ -1440,19 +1440,19 @@ const CSS = `
 html{scroll-behavior:smooth}
 :root{
   --maxw:1180px; --rail:212px; --bar-h:54px;
-  --bg:#0b0b0f; --bg2:#0e0e13; --surface:#15151b; --raised:#1b1b23;
+  --bg:#100f0c; --bg2:#0e0e13; --surface:#15151b; --raised:#1b1b23;
   --border:#262630; --border2:#33333f; --chip:#1a1a21;
   --text:#ECECF1; --dim:#B7B7C4; --faint:#8E8E9E;
-  --accent:#828CF2; --accent-strong:#9aa3ff; --accent-ink:#0b0b13;
-  --accent-tint:rgba(130,140,242,.14); --accent-line:rgba(130,140,242,.40);
+  --accent:#55CAC3; --accent-strong:#55cac3; --accent-ink:#0b0b13;
+  --accent-tint:rgba(85,202,195,.14); --accent-line:rgba(85,202,195,.40);
   --code-bg:#0a0a10; --code-bd:#1d1d27; --shadow:0 1px 0 rgba(255,255,255,.02);
 }
 :root[data-theme="light"]{
-  --bg:#FbFbFd; --bg2:#fff; --surface:#fff; --raised:#fff;
+  --bg:#fefdfc; --bg2:#fff; --surface:#fff; --raised:#fff;
   --border:#E7E7EE; --border2:#DADAE3; --chip:#F1F1F5;
   --text:#16161D; --dim:#54545F; --faint:#74747F;
-  --accent:#4F46E5; --accent-strong:#4338CA; --accent-ink:#fff;
-  --accent-tint:rgba(79,70,229,.08); --accent-line:rgba(79,70,229,.30);
+  --accent:#00696A; --accent-strong:#00696A; --accent-ink:#fff;
+  --accent-tint:rgba(0,105,106,.08); --accent-line:rgba(0,105,106,.30);
   --code-bg:#0d0d14; --code-bd:#21212c; --shadow:0 1px 2px rgba(20,20,40,.05);
 }
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}

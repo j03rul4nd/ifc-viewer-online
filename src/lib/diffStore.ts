@@ -355,16 +355,22 @@ async function meshesFromFragments(
   return group
 }
 
-/** True when a subtree has no vertex data a serialiser could read. */
+/**
+ * True when a serialiser could read every vertex in a subtree. One freed
+ * attribute is enough to fail: a fragments model can hold readable and GPU-only
+ * meshes side by side, and the exporter stops at the first of the latter.
+ */
 function hasReadableGeometry(obj: import('three').Object3D): boolean {
-  let readable = false
+  let found = false
+  let freed = false
   obj.traverse((node) => {
-    if (readable) return
     const geometry = (node as { geometry?: { attributes?: Record<string, { array?: unknown }> } }).geometry
-    const position = geometry?.attributes?.position
-    if (position && position.array) readable = true
+    for (const attribute of Object.values(geometry?.attributes ?? {})) {
+      if (attribute.array) found = true
+      else freed = true
+    }
   })
-  return readable
+  return found && !freed
 }
 
 /**
@@ -393,6 +399,10 @@ export async function exportAsGlb(
     }
     log.info('Scene geometry is GPU-only; rebuilding from the fragments model')
     rebuilt = await meshesFromFragments(model)
+    // The library's transforms stop at the model: where the model was moved to
+    // in the scene (federation, placement) has to come along too.
+    obj.updateWorldMatrix(true, false)
+    rebuilt.applyMatrix4(obj.matrixWorld)
     target = rebuilt
   }
 

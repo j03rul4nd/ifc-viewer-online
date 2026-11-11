@@ -2,7 +2,7 @@
 //
 // Problem this solves
 // ───────────────────
-// Only EN (/) and ES (/es/, a hand-authored static page in public/es/) ever had
+// Only EN (/) and ES (/es/, then a hand-authored static page in public/es/) had
 // a real home page. /de/, /fr/, /pt/, /it/, /ca/, /zh/, /ja/ and /th/ fell
 // through the SPA rewrite in vercel.json and were served the ENGLISH shell,
 // which declares `<link rel="canonical" href="https://www.ifcvieweronline.eu/">`.
@@ -23,11 +23,24 @@
 // shells render English under a `lang="de"` document, which is worse for hreflang
 // than not having them.
 //
-// ES is deliberately NOT generated here. public/es/index.html is a hand-authored
-// static landing (its own CSS, no SPA mount) that is currently the only language
-// home Google has indexed, so it keeps its own file; Vite copies it to dist/es/
-// before this generator runs and we leave it alone. Its <head> is maintained by
-// hand — see the hreflang cluster note below.
+// ES is generated like the rest since 2026-11-10. Until then /es/ was a
+// hand-authored static page (public/es/index.html: its own CSS, no app, not one
+// picture) kept apart because it was the only language home Google had indexed.
+// By November the other eight were indexed too, and the static page had fallen
+// behind the home everyone else gets: no captures of the viewer, no comparison,
+// a hand-synced hreflang cluster, and every button a link to the English root.
+// Its title and description — the ones that earn its clicks — live on in
+// src/locales/es/landing.json (`seo`), and every Spanish landing it linked is
+// linked from the shell below. Do not bring public/es/index.html back: Vite
+// would copy it to dist/es/ and this generator would overwrite it.
+//
+// What a shell says without running the app
+// ─────────────────────────────────────────
+// The <noscript> block states the page as text: h1, pictures, the «open an IFC
+// file» answers (home-guide.ts, where the language has them), the comparison
+// with Solibri and Flinker, features, FAQ, and links to the language's own
+// landings and to the other nine homes. Google indexes what the app renders;
+// this block is for the crawlers that read only the HTML as served.
 //
 // The hreflang cluster is emitted identically on all ten home pages. A cluster
 // is only valid if every member links to every other member AND to itself; miss
@@ -36,7 +49,12 @@
 
 import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
-import { validatorPath } from '../../src/lib/localized-landings'
+import { solibriPath, toolLandings, validatorPath } from '../../src/lib/localized-landings'
+import { pricingPath } from '../../src/lib/pricing/pricing-paths'
+import { HOME_COPY } from '../../src/components/landing/home-copy'
+import { HOME_GUIDE, HOME_LANGUAGE_NAMES, guideHref } from '../../src/components/landing/home-guide'
+import { COMPARE_ROWS, SHOWCASE_COPY, examplesPath } from '../../src/components/landing/home-showcase'
+import { heroPreloads, homePictures, imageObjects, noscriptFigures } from './home-images'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -45,8 +63,8 @@ const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').rep
 const ALL_LANGS = ['en', 'es', 'fr', 'de', 'pt', 'it', 'zh', 'ja', 'th', 'ca'] as const
 
 /** Languages whose shell THIS generator writes: everything except EN (which is
- *  dist/index.html itself) and ES (hand-authored, see the header note). */
-const GENERATED = ['fr', 'de', 'pt', 'it', 'zh', 'ja', 'th', 'ca'] as const
+ *  dist/index.html itself). */
+const GENERATED = ['es', 'fr', 'de', 'pt', 'it', 'zh', 'ja', 'th', 'ca'] as const
 
 type Lang = (typeof ALL_LANGS)[number]
 
@@ -72,6 +90,8 @@ interface LandingLocale {
   hero:            { h1: string; h1Accent: string; subtitle: string; subtitleFull: string }
   featuresSection: { title: string; subtitle: string }
   faqSection:      { title: string }
+  /** Link label reused from the page's own header. */
+  nav?:            { pricing?: string }
   features:        Array<{ title: string; body: string }>
   faq:             Array<{ q: string; a: string }>
   /** Optional: present in every locale today, but the shell degrades gracefully
@@ -144,6 +164,11 @@ function tweakHead(template: string, meta: ShellMeta, jsonLd: Record<string, unk
   // og:locale is EN in the template; point it at this shell's language.
   html = html.replace(/(<meta\s+property="og:locale"\s+content=")[^"]*(")/, `$1${OG_LOCALE[meta.lang]}$2`)
 
+  // The share image is the skyline capture; say what it shows in this language.
+  const shareAlt = esc(homePictures(meta.lang)[2].alt).replace(/"/g, '&quot;')
+  html = html.replace(/(<meta\s+property="og:image:alt"\s+content=")[^"]*(")/, `$1${shareAlt}$2`)
+  html = html.replace(/(<meta\s+name="twitter:image:alt"\s+content=")[^"]*(")/, `$1${shareAlt}$2`)
+
   // Drop the template's own (EN-only) alternates before injecting the full
   // cluster, or the page would advertise two competing sets.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
@@ -154,7 +179,8 @@ function tweakHead(template: string, meta: ShellMeta, jsonLd: Record<string, unk
   html = html.replace(/<noscript>[\s\S]*?<\/noscript>\s*/g, '')
 
   const ld = `<script type="application/ld+json">${jsonEsc(JSON.stringify(jsonLd))}</script>`
-  html = html.replace('</head>', `  ${hreflangCluster()}\n  ${ld}\n</head>`)
+  // The first picture is the page's largest paint: fetch it before the app boots.
+  html = html.replace('</head>', `  ${hreflangCluster()}\n  ${heroPreloads()}\n  ${ld}\n</head>`)
 
   return html
 }
@@ -172,24 +198,75 @@ function tweakHead(template: string, meta: ShellMeta, jsonLd: Record<string, unk
  * There is no translation key for the "JavaScript is required" notice the English
  * block carries, so it is omitted here rather than shipped untranslated.
  */
+/** «Open an IFC file», as text. Empty for a language without a guide. */
+function guideBlock(lang: Lang): string {
+  const g = HOME_GUIDE[lang]
+  if (!g) return ''
+  const items = g.items.map((i) => {
+    const link = i.link ? ` <a href="${SITE}/${guideHref(lang, i.link.to)}">${esc(i.link.text)}</a>` : ''
+    return `<article><h3>${esc(i.q)}</h3><p>${esc(i.a)}${link}</p></article>`
+  }).join('\n')
+  return `<section><h2>${esc(g.title)}</h2><p>${esc(g.intro)}</p>\n${items}</section>`
+}
+
+/** The comparison with Solibri and Flinker, as the table the page renders. */
+function compareBlock(lang: Lang): string {
+  const c = SHOWCASE_COPY[lang].compare
+  const rows = COMPARE_ROWS.map((r) =>
+    `<tr><th scope="row">${esc(c.rows[r].label)}</th><td>${esc(c.rows[r].us)}</td><td>${esc(c.rows[r].solibri)}</td><td>${esc(c.rows[r].flinker)}</td></tr>`,
+  ).join('\n')
+  return [
+    `<section><h2>${esc(c.title)}</h2><p>${esc(c.sub)}</p>`,
+    `<table><thead><tr><td></td><th scope="col">IFC Viewer Online</th><th scope="col">Solibri</th><th scope="col">Flinker</th></tr></thead><tbody>`,
+    rows,
+    `</tbody></table><p>${esc(c.note)} <a href="${SITE}/${solibriPath(lang)}">${esc(c.more)}</a></p></section>`,
+  ].join('\n')
+}
+
+/**
+ * This language's own landings. Every Spanish landing the hand-authored /es/
+ * page linked (validator, editor, classification, health check) is here.
+ */
+function landingLinks(lang: Lang, t: LandingLocale): string[] {
+  const shots = SHOWCASE_COPY[lang].shots
+  return [
+    `<li><a href="${SITE}/${lang}/fix/">${esc(t.fixGuides?.title ?? 'Fix IFC validation errors')}</a></li>`,
+    `<li><a href="${SITE}/${validatorPath(lang)}">${esc(shots.validation.cta)}</a></li>`,
+    `<li><a href="${SITE}/${examplesPath(lang)}">${esc(shots.skyline.cta)}</a></li>`,
+    ...toolLandings(lang).map((l) => `<li><a href="${SITE}/${l.path}">${esc(l.label)}</a></li>`),
+    `<li><a href="${SITE}${pricingPath(lang)}">${esc(t.nav?.pricing ?? 'Pricing')}</a></li>`,
+    `<li><a href="${SITE}/${lang}/blog/">Blog</a></li>`,
+  ]
+}
+
+/** The ten homes, each named in its own language and by the term it is searched with. */
+function languageLinks(): string {
+  return ALL_LANGS.map((l) =>
+    `<li><a href="${SITE}${homePath(l)}" hreflang="${l}" lang="${l}">${esc(HOME_LANGUAGE_NAMES[l])}: ${esc(HOME_COPY[l].kicker)}</a></li>`,
+  ).join('')
+}
+
 function noscriptBlock(lang: Lang, t: LandingLocale): string {
   const features = t.features.map((f) => `<article><h3>${esc(f.title)}</h3><p>${esc(f.body)}</p></article>`).join('\n')
   const faq      = t.faq.map((i) => `<div><h3>${esc(i.q)}</h3><p>${esc(i.a)}</p></div>`).join('\n')
 
-  const links = [
-    `<li><a href="${SITE}/${lang}/fix/">${esc(t.fixGuides?.title ?? 'Fix IFC validation errors')}</a></li>`,
-    `<li><a href="${SITE}/${validatorPath(lang)}">${esc(t.hero.subtitle)}</a></li>`,
-  ]
+  const links = landingLinks(lang, t)
 
   return [
     '<noscript>',
-    `<h1>${esc(t.hero.h1)} ${esc(t.hero.h1Accent)}</h1>`,
+    // Same h1 as the rendered page (home-copy.ts): search term, then the result.
+    `<h1>${esc(HOME_COPY[lang].kicker)}: ${esc(HOME_COPY[lang].h1)}</h1>`,
     `<p>${esc(t.hero.subtitleFull)}</p>`,
+    // The page's pictures, with alt text in this language (home-images.ts).
+    noscriptFigures(lang),
+    guideBlock(lang),
+    compareBlock(lang),
     `<section><h2>${esc(t.featuresSection.title)}</h2><p>${esc(t.featuresSection.subtitle)}</p>${features}</section>`,
     `<section><h2>${esc(t.faqSection.title)}</h2>${faq}</section>`,
     `<ul>${links.join('')}</ul>`,
+    `<ul>${languageLinks()}</ul>`,
     '</noscript>',
-  ].join('\n')
+  ].filter(Boolean).join('\n')
 }
 
 /** WebPage + SoftwareApplication + FAQPage, all in the shell's own language. */
@@ -205,6 +282,8 @@ function jsonLdFor(lang: Lang, t: LandingLocale, canonical: string): Record<stri
         description:  t.hero.subtitleFull,
         isPartOf:     { '@id': `${SITE}/` },
         inLanguage:   lang,
+        primaryImageOfPage: { '@id': imageObjects(lang)[0]['@id'] },
+        image:        imageObjects(lang),
       },
       {
         '@type':             'SoftwareApplication',
@@ -217,7 +296,8 @@ function jsonLdFor(lang: Lang, t: LandingLocale, canonical: string): Record<stri
       },
       {
         '@type': 'FAQPage',
-        mainEntity: t.faq.map((i) => ({
+        // The «open an IFC file» answers are questions on the page too.
+        mainEntity: [...(HOME_GUIDE[lang]?.items ?? []), ...t.faq].map((i) => ({
           '@type':        'Question',
           name:           i.q,
           acceptedAnswer: { '@type': 'Answer', text: i.a },
@@ -261,7 +341,7 @@ export interface LangShellsResult {
 
 /**
  * Write dist/<lang>/index.html for every language in GENERATED, and register
- * every localized home (ES included) in dist/sitemap.xml.
+ * every localized home in dist/sitemap.xml.
  */
 export function generateLangShells(distDir: string): LangShellsResult {
   const result: LangShellsResult = { shells: 0, errors: 0, sitemap: false, sitemapAdded: 0 }
@@ -310,7 +390,8 @@ export function generateLangShells(distDir: string): LangShellsResult {
 
   // Register every non-EN home. Idempotent per URL (same rule as the blog
   // generator): only append a <loc> that is absent, so hand-maintained entries —
-  // including the existing /es/ one in public/sitemap.xml — stay untouched.
+  // the EN and /es/ ones in public/sitemap.xml, which list the same ten-language
+  // cluster — stay untouched.
   const sitemapPath = path.join(distDir, 'sitemap.xml')
   if (existsSync(sitemapPath)) {
     const xml = readFileSync(sitemapPath, 'utf-8')

@@ -45,7 +45,7 @@ export interface ModelTreeHandle {
    * Returns what it did, because it cannot always do what was asked and a
    * button that silently does nothing is worse than one that says why.
    */
-  revealElement: (expressId: number, modelId?: string) => RevealOutcome
+  revealElement: (expressId: number, modelId?: string, opts?: { follow?: boolean }) => RevealOutcome
 }
 
 // The flattening, filtering, expansion and issue-indexing all live in
@@ -84,10 +84,10 @@ const CLASS_ABBR: Record<string, string> = {
 }
 
 const CLASS_COLOR: Record<string, string> = {
-  IfcProject:        '#5E6AD2',
-  IfcSite:           '#30A46C',
-  IfcBuilding:       '#8B93E8',
-  IfcBuildingStorey: '#F5A623',
+  IfcProject:        '#0A8481',
+  IfcSite:           '#3FA866',
+  IfcBuilding:       '#55CAC3',
+  IfcBuildingStorey: '#E9A23B',
   IfcSpace:          '#6FB8D9',
   IfcZone:           '#D4A373',
 }
@@ -204,7 +204,7 @@ function TreeContextMenu({
 
 function ClassBadge({ cls }: { cls: string }) {
   const abbr  = CLASS_ABBR[cls] ?? cls.replace('Ifc', '').slice(0, 3).toUpperCase()
-  const color = CLASS_COLOR[cls] ?? '#54555E'
+  const color = CLASS_COLOR[cls] ?? '#7F7D78'
   return (
     <span
       className="inline-flex items-center justify-center rounded px-1 text-[9px] font-mono font-bold leading-none shrink-0"
@@ -227,16 +227,16 @@ function IssueBadge({
       onClick={onClick}
       className="inline-flex items-center gap-0.5 px-1 rounded text-[10px] font-mono font-semibold leading-none shrink-0 hover:brightness-125 transition-all"
       style={{
-        background: errors > 0 ? '#E5484D22' : '#F5A62322',
-        color:      errors > 0 ? '#E5484D'   : '#F5A623',
-        border: `1px solid ${errors > 0 ? '#E5484D44' : '#F5A62344'}`,
+        background: errors > 0 ? '#E0523F22' : '#E9A23B22',
+        color:      errors > 0 ? '#E0523F'   : '#E9A23B',
+        border: `1px solid ${errors > 0 ? '#E0523F44' : '#E9A23B44'}`,
         height: 16,
       }}
       title={t('issueBadge', { errors, warnings })}
     >
       {errors > 0 && <span className="text-[var(--danger)]">{errors}</span>}
       {errors > 0 && warnings > 0 && <span className="opacity-40">·</span>}
-      {warnings > 0 && <span style={{ color: '#F5A623' }}>{warnings}</span>}
+      {warnings > 0 && <span style={{ color: '#E9A23B' }}>{warnings}</span>}
     </button>
   )
 }
@@ -571,18 +571,24 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     }, [decompMaps])
 
     useImperativeHandle(ref, () => ({
-      revealElement(expressId: number, modelId?: string): RevealOutcome {
+      revealElement(expressId: number, modelId?: string, opts?: { follow?: boolean }): RevealOutcome {
         // Which model, decided once and up front. The old version expanded
         // ancestors in whichever tree matched first and then selected without a
         // model at all, so revealing an issue in a federated set opened the
         // right row number in the wrong building.
         const target = resolveRevealTarget(allTrees, expressId, modelId, hostOf)
         if (!target) return { ok: false }
+        // Following a selection made elsewhere (the dual-screen tree tracking
+        // the 3D view) must not change it: only open and scroll, and never to
+        // a host — that would swap the user's pick for its container.
+        const follow = opts?.follow === true
+        // A search in progress is the user's; following must not clear it.
+        if (follow && (target.viaHost || isFiltering)) return { ok: false }
 
         // Functional updates: on a phone the tree has only just mounted, and
         // its first-levels auto-expansion may not have landed in the state
         // this handle closed over. Copying that stale set dropped it.
-        setQuery('')   // a filtered list may not contain the target row
+        if (!follow) setQuery('')   // a filtered list may not contain the target row
         setCollapsedModels((prev) => {
           if (!prev.has(target.modelId)) return prev
           const next = new Set(prev)
@@ -605,6 +611,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         // effect below.
         setPendingReveal({ key: scopedElementKey(target.modelId, target.expressId) })
 
+        if (follow) return { ok: true, viaHost: false }
         setSelection([{ expressId: target.expressId, modelId: target.modelId }])
         onSelectElement?.(target.expressId, target.modelId, 'reveal')
 
@@ -614,7 +621,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
           ?? `#${target.expressId}`
         return { ok: true, viaHost: true, hostName }
       },
-    }), [allTrees, hostOf, setSelection, onSelectElement, sceneGroups])
+    }), [allTrees, hostOf, setSelection, onSelectElement, sceneGroups, isFiltering])
 
     // Scroll to a revealed row once it is actually in the list. This used to
     // happen two animation frames after the state was set, against a list
@@ -1087,7 +1094,7 @@ function SpatialRow({
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: allHidden ? 0.45 : 1,
-        backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
+        backgroundColor: isSelected ? 'rgba(10,132,129,0.12)' : undefined,
       }}
       onClick={() => onSelect(node.expressId, modelId)}
       onDoubleClick={(e) => {
@@ -1269,7 +1276,7 @@ function ElementRow({
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: isHidden ? 0.4 : 1,
-        backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
+        backgroundColor: isSelected ? 'rgba(10,132,129,0.12)' : undefined,
       }}
       onClick={() => !editing && onSelect(element.expressId, modelId)}
       onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId], modelId) }}

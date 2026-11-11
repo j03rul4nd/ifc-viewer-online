@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preise — IFC Viewer Online</title>
+  <meta name="description" content="Alles, was im Browser läuft, ist kostenlos: IFC-Viewer, Health Score, IDS, BCF. Pro, Team und Annahme ergänzen EU-Speicher, Links für Auftraggeber, Qualitätsprüfung und die Annahme von Lieferungen." />
+  <meta name="robots" content="index, follow" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/de/preise/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/precios/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/preise/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/tarifs/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/precos/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/prezzi/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/preus/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/pricing/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/pricing/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/pricing/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/pricing/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/de/preise/" />
+  <meta property="og:title" content="Preise — IFC Viewer Online" />
+  <meta property="og:description" content="Alles, was im Browser läuft, ist kostenlos: IFC-Viewer, Health Score, IDS, BCF. Pro, Team und Annahme ergänzen EU-Speicher, Links für Auftraggeber, Qualitätsprüfung und die Annahme von Lieferungen." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image-de.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://www.ifcvieweronline.eu/de/preise/","url":"https://www.ifcvieweronline.eu/de/preise/","name":"Preise — IFC Viewer Online","description":"Alles, was im Browser läuft, ist kostenlos: IFC-Viewer, Health Score, IDS, BCF. Pro, Team und Annahme ergänzen EU-Speicher, Links für Auftraggeber, Qualitätsprüfung und die Annahme von Lieferungen.","isPartOf":{"@id":"https://www.ifcvieweronline.eu/"},"inLanguage":"de"},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Welcher Plan passt zu mir?","acceptedAnswer":{"@type":"Answer","text":"Wenn Sie Modelle öffnen und prüfen: Kostenlos. Wenn Sie allein Modelle an Auftraggeber liefern: Pro. Wenn mehrere Personen im Büro liefern: Team, ab drei Bearbeitern. Wenn Sie Modelle von Nachunternehmern erhalten: Annahme."}},{"@type":"Question","name":"Bleibt der kostenlose Viewer kostenlos?","acceptedAnswer":{"@type":"Answer","text":"Ja. Alles, was im Browser läuft, bleibt dauerhaft kostenlos: Viewer, Messen, Schnitte, Health Score, 44 Regeln, IDS 1.0, BCF und das SDK. Bezahlte Pläne ergänzen nur, was unsere Server braucht, oder neue Werkzeuge für Teams."}},{"@type":"Question","name":"Kann ich schon bezahlen?","acceptedAnswer":{"@type":"Answer","text":"Noch nicht. Die bezahlten Pläne öffnen zuerst für die Warteliste. Hinterlassen Sie Ihre E-Mail, wir schreiben einmal, wenn Ihr Plan startet. Die Preise können sich vor dem Start noch ändern; die Warteliste behält das Gründerangebot."}},{"@type":"Question","name":"Wo liegen die Dateien in den bezahlten Plänen?","acceptedAnswer":{"@type":"Answer","text":"Auf Servern in der EU. Im kostenlosen Plan wird nichts hochgeladen: Ihr Browser öffnet die Datei."}},{"@type":"Question","name":"Zahlen meine Nachunternehmer für die Annahme?","acceptedAnswer":{"@type":"Answer","text":"Nein. Sie prüfen ihre Dateien kostenlos im Browser gegen Ihre Anforderungen. Die Annahme bezahlt, wer die Lieferungen erhält."}}]}]}</script>
+  <style>
+:root{
+  --canvas:#100f0c;--panel:#181714;--raised:#21201d;--line:#34332e;
+  --text-3:#94928d;--text-2:#b2b1ab;--text:#ecebe7;
+  --accent:#0a8481;--on-accent:#ffffff;--accent-text:#55cac3;--warn:#f2af48;
+  --pick:rgba(85,202,195,.08);--scrim:rgba(0,0,0,.6);
+  --t-s:13px;--t-b:16px;--t-l:18px;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --canvas:#f4f3f0;--panel:#fefdfc;--raised:#e9e8e4;--line:#d5d4d0;
+  --text-3:#65635e;--text-2:#4e4d48;--text:#1c1b16;
+  --accent:#00696a;--on-accent:#ffffff;--accent-text:#00696a;--warn:#915c08;
+  --pick:rgba(0,105,106,.07);--scrim:rgba(28,27,22,.45);
+}}
+:root[data-theme="light"]{
+  --canvas:#f4f3f0;--panel:#fefdfc;--raised:#e9e8e4;--line:#d5d4d0;
+  --text-3:#65635e;--text-2:#4e4d48;--text:#1c1b16;
+  --accent:#00696a;--on-accent:#ffffff;--accent-text:#00696a;--warn:#915c08;
+  --pick:rgba(0,105,106,.07);--scrim:rgba(28,27,22,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--canvas);color:var(--text);font:400 var(--t-b)/1.55 'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-text-size-adjust:100%}
+body{background:var(--canvas);min-height:100vh}
+a{color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:8px;z-index:9;background:var(--panel);padding:8px 12px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+@media (min-width:720px){.wrap{padding:0 28px}}
+h1,h2,h3{font-weight:650;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(28px,4.4vw,44px);max-width:22ch}
+h2{font-size:clamp(22px,2.6vw,28px)}
+h3{font-size:var(--t-l)}
+.meta,.sub,.note{color:var(--text-2);font-size:var(--t-s)}
+.sub{font-size:var(--t-b);max-width:62ch;margin-top:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border-radius:8px;font:inherit;font-size:var(--t-s);font-weight:600;text-decoration:none;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.btn-main{background:var(--accent);color:var(--on-accent)}
+.btn-main:hover{filter:brightness(1.08)}
+.btn-quiet{background:none;color:var(--text);border-color:var(--line)}
+.btn-quiet:hover{border-color:var(--text-3)}
+
+.top{border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px}
+.logo{color:var(--text);font-weight:650;text-decoration:none;font-size:var(--t-s)}
+.top nav{display:flex;align-items:center;gap:16px;font-size:var(--t-s)}
+.top nav a:not(.btn){color:var(--text-2);text-decoration:none}
+.top nav a:not(.btn):hover{color:var(--text)}
+.theme{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--text-2);cursor:pointer}
+@media (max-width:719px){.hide-s{display:none}}
+
+.hero{padding-top:56px;padding-bottom:8px}
+.lead{color:var(--text-2);max-width:62ch;margin-top:16px}
+.status{display:flex;gap:10px;align-items:baseline;margin-top:18px;font-size:var(--t-s);color:var(--text-2);max-width:62ch}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--warn);transform:translateY(-1px)}
+
+.pick{padding-top:36px}
+.pick fieldset{border:0}
+.pick legend{font-weight:650;font-size:var(--t-l);margin-bottom:12px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{position:relative}
+.opts input,.show input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.opts span{display:block;padding:9px 14px;border:1px solid var(--line);border-radius:999px;font-size:var(--t-s);color:var(--text-2);background:var(--panel)}
+.opts input:hover+span{border-color:var(--text-3);color:var(--text)}
+.opts input:checked+span{border-color:var(--accent-text);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent-text)}
+.opts input:focus-visible+span,.show input:focus-visible+span{outline:2px solid var(--accent-text);outline-offset:2px}
+.answers{min-height:24px;margin-top:14px}
+.answer{font-size:var(--t-b)}
+.answer a{white-space:nowrap;font-weight:600}
+
+.sec{padding-top:64px}
+.cmp{width:100%;border-collapse:separate;border-spacing:0;margin-top:24px;table-layout:fixed}
+.cmp col.c-label{width:34%}
+.cmp thead th,.cmp thead td{position:sticky;top:0;z-index:2;background:var(--canvas);vertical-align:top;text-align:left;padding:16px 14px 18px;border-bottom:1px solid var(--line)}
+.cmp thead th{font-weight:400}
+.plan-name{display:block;font-weight:650;font-size:var(--t-l)}
+.cmp .price{margin-top:4px;font-size:var(--t-b)}
+.cmp .price strong{font-weight:600}
+.cmp .who{margin:6px 0 14px}
+.cmp tbody th,.cmp td{padding:14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:var(--t-s)}
+.cmp tbody th{font-weight:500;color:var(--text)}
+.cmp td{color:var(--text)}
+.note{display:block;font-weight:400;margin-top:4px;max-width:46ch}
+.yes{color:var(--accent-text);font-weight:700}
+.no{color:var(--text-3)}
+.grp-h th{padding:28px 0 0!important;border-bottom:1px solid var(--line)!important}
+.grp-h button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;padding:0 14px 10px;font-weight:650;font-size:var(--t-s);color:var(--text-2);letter-spacing:.04em;text-transform:uppercase;box-sizing:border-box}
+.grp-h button:focus-visible{outline:2px solid var(--accent-text)}
+.grp-h button::before{content:'';width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.grp-h button[aria-expanded="false"]::before{transform:rotate(-45deg)}
+.pick-tag{display:none;font-size:var(--t-s);font-weight:600;color:var(--accent-text);margin-bottom:4px}
+.cmp[data-pick="free"] .c-free,.cmp[data-pick="pro"] .c-pro,.cmp[data-pick="team"] .c-team{background:var(--pick)}
+.cmp[data-pick="free"] thead .c-free,.cmp[data-pick="pro"] thead .c-pro,.cmp[data-pick="team"] thead .c-team{box-shadow:inset 0 3px 0 var(--accent-text);background:linear-gradient(var(--pick),var(--pick)),var(--canvas)}
+.cmp[data-pick="free"] thead .c-free .pick-tag,.cmp[data-pick="pro"] thead .c-pro .pick-tag,.cmp[data-pick="team"] thead .c-team .pick-tag{display:block}
+.founder{margin-top:14px;font-size:var(--t-s);color:var(--text-2)}
+.show{display:none;border:0}
+@media (max-width:719px){
+  .show{display:flex;gap:4px;margin-top:20px;padding:4px;border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:3;background:var(--canvas)}
+  .show legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .show label{position:relative;flex:1}
+  .show span{display:block;text-align:center;padding:9px 6px;border-radius:7px;font-size:var(--t-s);font-weight:600;color:var(--text-2)}
+  .show input:checked+span{background:var(--raised);color:var(--text)}
+  .cmp{margin-top:8px;table-layout:auto}
+  .cmp col{width:auto}
+  .cmp col.c-label{width:55%}
+  .cmp thead,.cmp thead tr,.cmp thead th{display:block;width:100%}
+  .cmp thead th,.cmp thead td{position:static;padding:16px 10px 18px}
+  .cmp thead .corner{display:none}
+  .cmp[data-show="free"] .c-pro,.cmp[data-show="free"] .c-team,
+  .cmp[data-show="pro"] .c-free,.cmp[data-show="pro"] .c-team,
+  .cmp[data-show="team"] .c-free,.cmp[data-show="team"] .c-pro{display:none}
+  .grp-h th{padding-top:22px!important}
+  .cmp tbody th,.cmp td{padding:12px 10px}
+  .note{display:none}
+}
+
+.recv{display:grid;gap:28px;margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+@media (min-width:720px){.recv{grid-template-columns:1fr 1fr;padding:28px}}
+.recv .price{margin-top:6px}
+.recv .body{color:var(--text-2);margin:14px 0 18px}
+.recv ol{padding-left:20px;display:grid;gap:10px;color:var(--text-2)}
+.recv ol strong{color:var(--text);font-weight:600}
+#reception.picked .recv{border-color:var(--accent-text);box-shadow:inset 0 3px 0 var(--accent-text)}
+#reception.picked .pick-tag,#row-developer.picked .pick-tag{display:block}
+
+.rows{margin-top:20px;border-top:1px solid var(--line)}
+.row{display:grid;gap:8px 28px;padding:20px 0;border-bottom:1px solid var(--line)}
+@media (min-width:720px){.row{grid-template-columns:240px 1fr}}
+.row dt{font-weight:650;font-size:var(--t-l)}
+.row dt .meta{display:block;font-weight:400;margin-top:2px}
+.row dd p{color:var(--text-2);margin-bottom:12px;max-width:62ch}
+.row.picked{box-shadow:inset 3px 0 0 var(--accent-text);padding-left:16px}
+
+.faq{margin-top:20px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
+.faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
+
+dialog{margin:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(440px,calc(100% - 32px))}
+dialog::backdrop{background:var(--scrim)}
+dialog h3{margin-bottom:6px}
+dialog label{display:block;font-size:var(--t-s);color:var(--text-2);margin:14px 0 6px}
+dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.msg{font-size:var(--t-s);margin-top:12px;min-height:1.4em}
+.msg.ok{color:var(--accent-text)}
+
+.foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
+.foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
+.foot a:hover{color:var(--text)}
+.langs{display:flex;flex-wrap:wrap;gap:4px 0;margin-bottom:14px}
+.langs span{margin-right:16px;color:var(--text)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+  <a class="skip" href="#plans">Für alle, die Modelle liefern</a>
+  <header class="top">
+    <div class="wrap bar">
+      <a href="/de/" class="logo">IFC Viewer Online</a>
+      <nav aria-label="Main">
+        <a href="/de/ifc-validator-online/" class="hide-s">Validator</a>
+        <a href="/sdk/" class="hide-s">SDK</a>
+        <a href="/de/blog/" class="hide-s">Blog</a>
+        <button type="button" class="theme" id="theme" aria-label="Hell oder dunkel" title="Hell oder dunkel"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+        <a href="/de/" class="btn btn-quiet" data-cta="header_open">Viewer öffnen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <h1>Kostenlos im Browser. Kostenpflichtig, wenn unsere Server arbeiten.</h1>
+      <p class="lead">IFC-Dateien öffnen, messen und prüfen bleibt dauerhaft kostenlos. Die bezahlten Pläne ergänzen Speicher in der EU, Links für Ihren Auftraggeber, Qualitätsprüfung im Team und einen Eingang für Lieferungen Ihrer Nachunternehmer.</p>
+      <p class="status"><span class="dot" aria-hidden="true"></span>Die bezahlten Pläne sind noch nicht buchbar. Die Warteliste bekommt sie zuerst, mit dem Gründerangebot.</p>
+    </section>
+
+    <section class="pick wrap" aria-labelledby="pick-l">
+      <fieldset><legend id="pick-l">Was machen Sie mit IFC-Dateien?</legend><div class="opts"><label><input type="radio" name="role" value="open" data-plan-for="free" /><span>Ab und zu ein Modell öffnen und prüfen</span></label><label><input type="radio" name="role" value="solo" data-plan-for="pro" /><span>Modelle an Auftraggeber liefern, allein</span></label><label><input type="radio" name="role" value="team" data-plan-for="team" /><span>Modelle als Büro oder Ingenieurbüro liefern</span></label><label><input type="radio" name="role" value="receive" data-plan-for="reception" /><span>Modelle von Nachunternehmern erhalten</span></label><label><input type="radio" name="role" value="build" data-plan-for="developer" /><span>Software darauf aufbauen</span></label></div></fieldset>
+      <div class="answers" aria-live="polite"><p class="answer" data-role="open" hidden><span>Kostenlos reicht: Viewer, Health Score, IDS und BCF, ohne Upload.</span> <a href="#plans">Zum Plan ↓</a></p><p class="answer" data-role="solo" hidden><span>Pro: Dateien öffnen, die für den Browser zu groß sind, und Ihrem Auftraggeber einen Link schicken.</span> <a href="#plans">Zum Plan ↓</a></p><p class="answer" data-role="team" hidden><span>Team: ein Bürostandard, Qualitätsprüfung bei jedem Upload und ein Portal für Ihren Auftraggeber.</span> <a href="#plans">Zum Plan ↓</a></p><p class="answer" data-role="receive" hidden><span>Annahme: Nachunternehmer prüfen gegen Ihre Anforderungen, bevor sie liefern.</span> <a href="#reception">Zum Plan ↓</a></p><p class="answer" data-role="build" hidden><span>Developer: die gehostete Validierungs-API. Das Client-SDK bleibt kostenlos.</span> <a href="#more">Zum Plan ↓</a></p></div>
+    </section>
+    <section class="sec wrap" id="plans" aria-labelledby="plans-h">
+      <h2 id="plans-h">Für alle, die Modelle liefern</h2>
+      <p class="sub">Architekten, Ingenieure und BIM-Koordinatoren, die IFC an einen Auftraggeber schicken.</p>
+      <fieldset class="show" aria-controls="cmp"><legend>Plan</legend><label><input type="radio" name="show" value="free" /><span>Kostenlos</span></label><label><input type="radio" name="show" value="pro" checked /><span>Pro</span></label><label><input type="radio" name="show" value="team" /><span>Team</span></label></fieldset>
+      <table class="cmp" id="cmp" data-show="pro">
+        <colgroup><col class="c-label" /><col class="c-free" /><col class="c-pro" /><col class="c-team" /></colgroup>
+        <thead><tr><td class="corner"></td>
+          <th scope="col" class="c-free" id="h-free">
+            <span class="pick-tag">Passt zu Ihrer Arbeit</span>
+            <span class="plan-name">Kostenlos</span>
+            <p class="price"><strong>0 €, dauerhaft</strong></p>
+            <p class="meta who">Alle mit einer IFC-Datei</p>
+            <a class="btn btn-quiet" href="/de/" data-cta="table_free" hreflang="de">Viewer öffnen</a>
+          </th>
+          <th scope="col" class="c-pro" id="h-pro">
+            <span class="pick-tag">Passt zu Ihrer Arbeit</span>
+            <span class="plan-name">Pro</span>
+            <p class="price"><strong>39 € / Monat, jährlich abgerechnet</strong></p><p class="meta">468 € pro Jahr · 47 € / Monat bei monatlicher Zahlung</p>
+            <p class="meta who">Eine Person</p>
+            <button type="button" class="btn btn-main" data-plan="pro">Auf die Warteliste</button>
+          </th>
+          <th scope="col" class="c-team" id="h-team">
+            <span class="pick-tag">Passt zu Ihrer Arbeit</span>
+            <span class="plan-name">Team</span>
+            <p class="price"><strong>59 € pro Bearbeiter / Monat, jährlich abgerechnet</strong></p><p class="meta">708 € pro Jahr · 71 € / Monat bei monatlicher Zahlung</p><p class="meta">Mindestens 3 Bearbeiter</p>
+            <p class="meta who">Architektur- und Ingenieurbüros</p>
+            <button type="button" class="btn btn-main" data-plan="team">Auf die Warteliste</button>
+          </th>
+        </tr></thead>
+        <tbody class="grp" id="g-files">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-files">Dateien und Speicher</button></th></tr>
+          <tr>
+            <th scope="row">Alles im Browser<span class="note">Viewer, Schnitte, Messen, Health Score mit 44 Regeln, IDS 1.0, BCF, Karte, Einbettungs-SDK. Ohne Konto; Dateien verlassen Ihren Browser nicht.</span></th>
+            <td class="c-free"><span class="yes" aria-hidden="true">✓</span><span class="sr">Enthalten</span></td><td class="c-pro"><span class="yes" aria-hidden="true">✓</span><span class="sr">Enthalten</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">Enthalten</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Speicher in der EU, mit Versionen</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro">20 GB</td><td class="c-team">100 GB pro Bearbeiter, gemeinsam</td>
+          </tr>
+          <tr>
+            <th scope="row">Dateien, die für den Browser zu groß sind</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro">Bis 1 GB pro Datei</td><td class="c-team">Bis 3 GB pro Datei</td>
+          </tr>
+        </tbody>
+        <tbody class="grp" id="g-share">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-share">Mit dem Auftraggeber teilen</button></th></tr>
+          <tr>
+            <th scope="row">Ein Link für Ihren Auftraggeber</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro">Mit Passwort und Ablaufdatum</td><td class="c-team">Kundenportal mit Ihrem Logo</td>
+          </tr>
+          <tr>
+            <th scope="row">Prüfer und Gäste</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-team">Kostenlos, zählen nicht als Bearbeiter</td>
+          </tr>
+        </tbody>
+        <tbody class="grp" id="g-quality">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-quality">Qualität im ganzen Team</button></th></tr>
+          <tr>
+            <th scope="row">Qualitätsprüfung bei jedem Upload</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">Enthalten</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Bürostandard, Rollen, Status nach ISO 19650</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">Enthalten</span></td>
+          </tr>
+        </tbody>
+        <tbody class="grp" id="g-contract">
+          <tr class="grp-h"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true" aria-controls="g-contract">Automatisierung und Vertrag</button></th></tr>
+          <tr>
+            <th scope="row">Gehostete Validierungs-API</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro">500 Prüfungen / Monat</td><td class="c-team">2.000 Prüfungen / Monat pro Team</td>
+          </tr>
+          <tr>
+            <th scope="row">Auftragsverarbeitungsvertrag (AVV)</th>
+            <td class="c-free"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-pro"><span class="no" aria-hidden="true">—</span><span class="sr">Nicht enthalten</span></td><td class="c-team"><span class="yes" aria-hidden="true">✓</span><span class="sr">Enthalten</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="founder">Gründerangebot für Team und Annahme: 30 % Rabatt für 12 Monate für die ersten 10 Kunden, im Austausch gegen eine veröffentlichte Fallstudie.</p>
+    </section>
+
+    <section class="sec wrap" id="reception" aria-labelledby="reception-h">
+      <h2 id="reception-h">Für alle, die Modelle erhalten</h2>
+      <p class="sub">Bauunternehmen, Projektentwickler, Bauherren und Facility Manager, die Modelle vieler Nachunternehmer sammeln.</p>
+      <div class="recv">
+        <div>
+          <span class="pick-tag">Passt zu Ihrer Arbeit</span>
+          <h3>Annahme</h3>
+          <p class="price"><strong>Ab 290 € / Monat pro aktivem Projekt, bis 15 Nachunternehmer</strong></p>
+          <p class="meta">Portfolio: ab 790 € / Monat, unbegrenzt Projekte und Nachunternehmer</p>
+          <p class="body">Keine Modelle mehr annehmen, die Sie zurückschicken müssen. Ihre Nachunternehmer prüfen ihre Dateien kostenlos gegen Ihre Anforderungen, bevor sie liefern; Sie erhalten nur, was passt, und sehen, wer gut liefert.</p>
+          <button type="button" class="btn btn-main" data-plan="reception">Kontakt aufnehmen</button>
+        </div>
+        <ol><li><strong>Anforderungen veröffentlichen</strong> als Link oder QR-Code für Ausschreibungen und Verträge: IDS, Regeln, Mindestnote, Benennung.</li><li><strong>Nachunternehmer prüfen kostenlos</strong> im Browser und korrigieren vor dem Versand.</li><li><strong>Ein Liefereingang</strong> prüft jede Datei erneut, speichert die Version und nimmt sie an oder lehnt sie mit BCF-Issues ab.</li><li><strong>Ein Verlauf pro Nachunternehmer:</strong> Lieferungen, beim ersten Mal angenommen, Entwicklung der Note.</li><li><strong>Ein Abschlussbericht</strong> über die erhaltenen Informationen, bereit für den Betrieb.</li></ol>
+      </div>
+    </section>
+
+    <section class="sec wrap" id="more" aria-labelledby="more-h">
+      <h2 id="more-h">Darauf aufbauen oder ein ganzes Portfolio</h2>
+      <dl class="rows">
+        <div class="row" id="row-developer"><dt><span class="pick-tag">Passt zu Ihrer Arbeit</span>Developer<span class="meta">149 € / Monat, jährlich abgerechnet, + Nutzung</span></dt>
+          <dd><p>Das Client-SDK ist kostenlos. Developer ergänzt eine gehostete Validierungs-API für Plattformen, CDEs und Automatisierungen.</p><button type="button" class="btn btn-main" data-plan="developer">Auf die Warteliste</button></dd></div>
+        <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">Ab 15.000 € / Jahr</span></dt>
+          <dd><p>Annahme über das ganze Portfolio, Single Sign-on, Auftragsverarbeitungsvertrag und eine On-Premise-Option ohne Internetzugang. <a href="/on-premise-ifc-validator/">On-Premise-Validator</a></p><button type="button" class="btn btn-main" data-plan="enterprise">Kontakt aufnehmen</button></dd></div>
+      </dl>
+    </section>
+
+    <section class="sec wrap" aria-labelledby="faq-h">
+      <h2 id="faq-h">Fragen</h2>
+      <div class="faq"><details><summary>Welcher Plan passt zu mir?</summary><p>Wenn Sie Modelle öffnen und prüfen: Kostenlos. Wenn Sie allein Modelle an Auftraggeber liefern: Pro. Wenn mehrere Personen im Büro liefern: Team, ab drei Bearbeitern. Wenn Sie Modelle von Nachunternehmern erhalten: Annahme.</p></details><details><summary>Bleibt der kostenlose Viewer kostenlos?</summary><p>Ja. Alles, was im Browser läuft, bleibt dauerhaft kostenlos: Viewer, Messen, Schnitte, Health Score, 44 Regeln, IDS 1.0, BCF und das SDK. Bezahlte Pläne ergänzen nur, was unsere Server braucht, oder neue Werkzeuge für Teams.</p></details><details><summary>Kann ich schon bezahlen?</summary><p>Noch nicht. Die bezahlten Pläne öffnen zuerst für die Warteliste. Hinterlassen Sie Ihre E-Mail, wir schreiben einmal, wenn Ihr Plan startet. Die Preise können sich vor dem Start noch ändern; die Warteliste behält das Gründerangebot.</p></details><details><summary>Wo liegen die Dateien in den bezahlten Plänen?</summary><p>Auf Servern in der EU. Im kostenlosen Plan wird nichts hochgeladen: Ihr Browser öffnet die Datei.</p></details><details><summary>Zahlen meine Nachunternehmer für die Annahme?</summary><p>Nein. Sie prüfen ihre Dateien kostenlos im Browser gegen Ihre Anforderungen. Die Annahme bezahlt, wer die Lieferungen erhält.</p></details></div>
+    </section>
+  </main>
+
+  <dialog id="waitlist" aria-labelledby="wl-title">
+    <form id="wl-form" method="dialog">
+      <h3 id="wl-title">Warteliste für </h3>
+      <p class="meta">Wir schreiben einmal, wenn dieser Plan startet. Kein Newsletter.</p>
+      <label for="wl-email">Geschäftliche E-Mail</label>
+      <input id="wl-email" name="email" type="email" required autocomplete="email" placeholder="sie@firma.de" />
+      <label for="wl-role">Sie vor allem</label>
+      <select id="wl-role" name="role">
+        <option value="deliver">Liefern Modelle an Auftraggeber</option>
+        <option value="receive">Erhalten Modelle von Nachunternehmern</option>
+        <option value="build">Bauen Software darauf auf</option>
+        <option value="other">Anderes</option>
+      </select>
+      <p class="msg" id="wl-msg" role="status"></p>
+      <div class="actions">
+        <button type="button" class="btn btn-quiet" id="wl-cancel">Schließen</button>
+        <button type="submit" class="btn btn-main" id="wl-submit">Eintragen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="wrap foot">
+    <nav aria-label="Plan" class="langs"><a href="/pricing/" hreflang="en" lang="en">English</a><a href="/es/precios/" hreflang="es" lang="es">Español</a><span aria-current="page">Deutsch</span><a href="/fr/tarifs/" hreflang="fr" lang="fr">Français</a><a href="/pt/precos/" hreflang="pt" lang="pt">Português</a><a href="/it/prezzi/" hreflang="it" lang="it">Italiano</a><a href="/ca/preus/" hreflang="ca" lang="ca">Català</a><a href="/zh/pricing/" hreflang="zh" lang="zh">中文</a><a href="/ja/pricing/" hreflang="ja" lang="ja">日本語</a><a href="/th/pricing/" hreflang="th" lang="th">ไทย</a></nav>
+    <p><a href="/de/">IFC Viewer Online</a><a href="/de/ifc-validator-online/">Validator</a><a href="/on-premise-ifc-validator/">On-Premise</a><a href="/sdk/">SDK</a><a href="/privacy">Datenschutz</a><a href="/terms">AGB</a></p>
+  </footer>
+
+  <script type="application/json" id="pricing-i18n">{"names":{"free":"Kostenlos","pro":"Pro","team":"Team","reception":"Annahme","developer":"Developer","enterprise":"Enterprise"},"title":"Warteliste für {plan}","titleTalk":"Sprechen wir über {plan}","saving":"Wird gespeichert…","ok":"Sie stehen auf der Liste. Wir schreiben einmal, wenn es losgeht.","err":"Speichern fehlgeschlagen. Bitte gleich noch einmal versuchen."}</script>
+  <script>(function(){
+var LANG='de';
+var T=JSON.parse(document.getElementById('pricing-i18n').textContent);
+var TABLE={free:1,pro:1,team:1};
+var cmp=document.getElementById('cmp');
+var PH_KEY='phc_mAs9WpD6z8RTQbqR8ZVvqbxhF8QUz59Yz4ZmDRjByXwr',PH_HOST='https://eu.i.posthog.com';
+// One id per page view, in memory only (no cookie, no storage): the distinct id
+// and PostHog's session id, a UUIDv7 so the events group into one session.
+function uuid7(){var h=Date.now().toString(16);while(h.length<12)h='0'+h;var r='';for(var i=0;i<20;i++)r+=Math.floor(Math.random()*16).toString(16);
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-7'+r.slice(0,3)+'-'+'89ab'[Math.floor(Math.random()*4)]+r.slice(3,6)+'-'+r.slice(6,18)}
+var visit=uuid7();
+var LOCAL=/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|.*\.localhost|.*\.local)$/i;
+function optedOut(){try{var s=localStorage.getItem('ifc-analytics-optout:v1');if(s==='1')return true;if(s==='0')return false}catch(e){}
+  if(navigator.globalPrivacyControl===true)return true;var d=navigator.doNotTrack||window.doNotTrack;return d==='1'||d==='yes'}
+function local(){if(LOCAL.test(location.hostname))return true;try{return!!document.referrer&&LOCAL.test(new URL(document.referrer).hostname)}catch(e){return false}}
+function ref(){try{return document.referrer?new URL(document.referrer).origin:'$direct'}catch(e){return'$direct'}}
+function track(n,p){if(optedOut()||local())return;var q={$current_url:location.origin+location.pathname,$pathname:location.pathname,$referrer:ref(),$process_person_profile:false,$session_id:visit,visit_id:visit,surface:'pricing_page',lang:LANG};
+  for(var k in p||{})q[k]=p[k];try{fetch(PH_HOST+'/i/v0/e/',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:PH_KEY,event:n,distinct_id:visit,properties:q})}).catch(function(){})}catch(e){}}
+track('$pageview');track('pricing_viewed',{role:new URLSearchParams(location.search).get('role')||null});
+
+// Phone: one plan at a time.
+function show(plan){cmp.dataset.show=plan;var r=document.querySelector('.show input[value="'+plan+'"]');if(r)r.checked=true}
+document.querySelectorAll('.show input').forEach(function(i){i.addEventListener('change',function(){show(i.value)})});
+
+// "What do you do with IFC files?"
+function pick(role,fromUser){
+  var input=document.querySelector('.pick input[value="'+role+'"]');if(!input)return;input.checked=true;
+  var plan=input.dataset.planFor;
+  document.querySelectorAll('.answer').forEach(function(a){a.hidden=a.dataset.role!==role});
+  if(TABLE[plan]){cmp.dataset.pick=plan;show(plan)}else{delete cmp.dataset.pick}
+  document.getElementById('reception').classList.toggle('picked',plan==='reception');
+  document.getElementById('row-developer').classList.toggle('picked',plan==='developer');
+  if(fromUser){var u=new URL(location.href);u.searchParams.set('role',role);history.replaceState(null,'',u);track('pricing_role_picked',{role:role,plan:plan})}
+}
+document.querySelectorAll('.pick input').forEach(function(i){i.addEventListener('change',function(){pick(i.value,true)})});
+var start=new URLSearchParams(location.search).get('role');if(start)pick(start,false);
+
+// Fold a group of rows.
+document.querySelectorAll('.grp-h button').forEach(function(b){b.addEventListener('click',function(){
+  var open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',String(open));
+  var rows=b.closest('tbody').querySelectorAll('tr:not(.grp-h)');rows.forEach(function(r){r.hidden=!open})})});
+
+// Light or dark; remembered with the landing's own key.
+document.getElementById('theme').addEventListener('click',function(){
+  var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+  var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}});
+
+document.querySelectorAll('[data-cta]').forEach(function(a){a.addEventListener('click',function(){track('pricing_cta_clicked',{cta:a.dataset.cta})})});
+
+// Waitlist: the email Worker the app's forms use, tagged by plan and role.
+var ENDPOINT='https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe';
+var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-form'),msg=document.getElementById('wl-msg'),
+    submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
+document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
+  plan=b.dataset.plan;
+  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
+  roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
+  msg.textContent='';msg.className='msg';submit.disabled=false;
+  track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});
+  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');document.getElementById('wl-email').focus()})});
+document.getElementById('wl-cancel').addEventListener('click',function(){dlg.close?dlg.close():dlg.removeAttribute('open')});
+form.addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('wl-email').value.trim();if(!email)return;
+  submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
+  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'pricing:'+plan+':'+roleSel.value,locale:LANG})})
+   .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
+   .then(function(res){if(res.ok||res.d.already){msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:'pricing:'+plan,already_subscribed:!!res.d.already})}else{throw new Error()}})
+   .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false})});
+})();</script>
+</body>
+</html>

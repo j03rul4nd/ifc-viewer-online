@@ -465,7 +465,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
           {sunInfo && (sunInfo.altitudeDeg > 0
             ? ` · ${Math.round(sunInfo.altitudeDeg)}°`
             : ` · ${t('chip.belowHorizon')}`)}
-          {location && location.source !== 'ifc' && <span className="ml-1 text-[#F5A623]">⚠</span>}
+          {location && location.source !== 'ifc' && <span className="ml-1 text-[#E9A23B]">⚠</span>}
         </button>
       )}
 
@@ -550,9 +550,9 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                           <div className="absolute left-[13px] right-[13px] top-[6px] h-[6px] pointer-events-none">
                             {times && !times.alwaysUp && !times.alwaysDown && (
                               <>
-                                <Marker pct={markerPct(times.sunrise)} title={t('time.sunrise')} color="#F5A623" />
+                                <Marker pct={markerPct(times.sunrise)} title={t('time.sunrise')} color="#E9A23B" />
                                 <Marker pct={markerPct(times.solarNoon)} title={t('time.solarNoon')} color="#FFD966" />
-                                <Marker pct={markerPct(times.sunset)} title={t('time.sunset')} color="#E5484D" />
+                                <Marker pct={markerPct(times.sunset)} title={t('time.sunset')} color="#E0523F" />
                               </>
                             )}
                           </div>
@@ -561,7 +561,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                             value={wall.minutesOfDay}
                             onChange={(e) => { setPlaying(false); setWallMinutes(parseInt(e.target.value, 10)) }}
                             className="m-range"
-                            style={{ '--m-range-c': '#F5A623', '--m-range-p': `${(wall.minutesOfDay / 1439) * 100}%` } as React.CSSProperties}
+                            style={{ '--m-range-c': '#E9A23B', '--m-range-p': `${(wall.minutesOfDay / 1439) * 100}%` } as React.CSSProperties}
                             aria-label={t('time.date')}
                             data-testid="solar-time-slider"
                           />
@@ -585,7 +585,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                           <button key={label} type="button" onClick={() => jumpToSeason(m, d)}
                             className={[
                               'shrink-0 h-10 px-3 rounded-full text-[12px] font-medium whitespace-nowrap border',
-                              wall.month === m && wall.day === d ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+                              wall.month === m && wall.day === d ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
                             ].join(' ')}>
                             {label}
                           </button>
@@ -689,10 +689,10 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                   <div className="relative h-1">
                     {times && !times.alwaysUp && !times.alwaysDown && (
                       <>
-                        <Marker pct={markerPct(times.sunrise)} title={t('time.sunrise')} color="#F5A623" />
+                        <Marker pct={markerPct(times.sunrise)} title={t('time.sunrise')} color="#E9A23B" />
                         <Marker pct={markerPct(times.solarNoon)} title={t('time.solarNoon')} color="#FFD966" />
-                        <Marker pct={markerPct(times.goldenHour)} title={t('time.goldenHour')} color="#F59E0B" />
-                        <Marker pct={markerPct(times.sunset)} title={t('time.sunset')} color="#E5484D" />
+                        <Marker pct={markerPct(times.goldenHour)} title={t('time.goldenHour')} color="#E9A23B" />
+                        <Marker pct={markerPct(times.sunset)} title={t('time.sunset')} color="#E0523F" />
                       </>
                     )}
                   </div>
@@ -887,7 +887,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                     >
                       {timelapse !== null && timelapse < 1 ? t('timelapse.rendering', { pct: Math.round(timelapse * 100) }) : t('timelapse.export')}
                     </button>
-                    {timelapseError && <div className="text-[10px] text-[#F5A623]">{timelapseError}</div>}
+                    {timelapseError && <div className="text-[10px] text-[#E9A23B]">{timelapseError}</div>}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-[var(--text-faint)]">{t('quality.label')}</span>
@@ -920,7 +920,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
             className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(0,0,0,0.5)] pointer-events-auto"
           >
             <div className="glass-md border border-[var(--border-strong)] rounded-[12px] p-4 max-w-[360px] mx-3">
-              <div className="text-[13px] font-semibold mb-1.5 text-[#F5A623]">⚠ {t('defaultNotice.title')}</div>
+              <div className="text-[13px] font-semibold mb-1.5 text-[#E9A23B]">⚠ {t('defaultNotice.title')}</div>
               <div className="text-[11.5px] text-[var(--text-dim)] leading-relaxed mb-3">{t('defaultNotice.body')}</div>
               <div className="flex gap-2">
                 <button
@@ -962,7 +962,7 @@ function Badge({ label, warn }: { label: string; warn?: boolean }) {
     <span
       className="px-1.5 py-0.5 rounded-[5px] text-[9.5px] font-medium border"
       style={warn
-        ? { color: '#F5A623', borderColor: 'rgba(245,166,35,0.4)', background: 'rgba(245,166,35,0.08)' }
+        ? { color: '#E9A23B', borderColor: 'rgba(233,162,59,0.4)', background: 'rgba(233,162,59,0.08)' }
         : { color: 'var(--text-faint)', borderColor: 'var(--border)' }}
     >
       {label}

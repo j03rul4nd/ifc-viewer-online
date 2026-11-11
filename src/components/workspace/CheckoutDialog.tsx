@@ -12,7 +12,7 @@ import {
   quote, fmtEur, looksLikeVatId, CHECKOUT_COUNTRIES, EU_VAT_RATES, previewProvider,
   type Buyer, type CheckoutItem, type CheckoutOutcome, type CheckoutProvider,
 } from '../../lib/pricing/checkout'
-import { Dialog, Primary, Quiet } from './ui'
+import { Dialog, Primary, Quiet, inputClass } from './ui'
 import { useTx, wsLocale, type Tx } from './i18n'
 import { PLANS, CREDIT_PACKS } from '../../lib/pricing/catalog'
 
@@ -106,23 +106,25 @@ export default function CheckoutDialog({ item: initial, onClose, provider = prev
     )
   }
 
-  const field = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-[13px] text-[var(--text)]'
+  const field = inputClass
 
   return (
-    <Dialog title={tx("Confirm purchase")} onClose={onClose}
+    <Dialog title={tx("Confirm purchase")} onClose={onClose} size="lg"
       footer={<>
         <Quiet onClick={onClose}>{tx("Cancel")}</Quiet>
         <Primary onClick={pay} disabled={!canPay}>{q.recurring === 'yearly' ? tx('Pay {{amount}} / year', { amount: fmtEur(q.totalEur) }) : q.recurring ? tx('Pay {{amount}} / month', { amount: fmtEur(q.totalEur) }) : tx('Pay {{amount}}', { amount: fmtEur(q.totalEur) })}</Primary>
       </>}>
+      <div className="grid gap-5 sm:grid-cols-[1fr_240px]">
+        <div className="min-w-0 order-2 sm:order-1">
       {item.kind === 'plan' && (
-        <div role="radiogroup" aria-label={tx("Billing period")} className="grid grid-cols-2 gap-2 mb-4">
+        <div role="radiogroup" aria-label={tx("Billing period")} className="grid grid-cols-2 gap-2 mb-5">
           {(['monthly', 'yearly'] as const).map((period) => {
             const p = quote({ ...item, period }, buyer)
             const on = item.period === period
             return (
               <button key={period} role="radio" aria-checked={on} onClick={() => setItem({ ...item, period })}
                 className={`text-left rounded-[9px] border px-3 py-2.5 ${on ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)]'}`}>
-                <span className="block text-[12.5px] font-medium">{period === 'yearly' ? tx('Yearly') : tx('Monthly')}</span>
+                <span className="block text-[13px] font-medium">{period === 'yearly' ? tx('Yearly') : tx('Monthly')}</span>
                 <span className="block text-[12px] text-[var(--text-dim)] tabular-nums">{period === 'yearly' ? tx('{{amount}} / yr', { amount: fmtEur(p.totalEur) }) : tx('{{amount}} / mo', { amount: fmtEur(p.totalEur) })}</span>
                 {period === 'yearly' && p.savingEur > 0 && <span className="block text-[11.5px] text-[var(--text-dim)]">{tx("Save")} {fmtEur(p.savingEur)}</span>}
               </button>
@@ -131,25 +133,7 @@ export default function CheckoutDialog({ item: initial, onClose, provider = prev
         </div>
       )}
 
-      <div className="rounded-[10px] bg-[var(--surface-2)] p-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[13.5px] font-medium">{text.label}</p>
-            <p className="text-[12px] text-[var(--text-dim)]">{text.detail}</p>
-          </div>
-          <span className="text-[22px] font-semibold tabular-nums">{fmtEur(q.totalEur)}</span>
-        </div>
-        <dl className="mt-3 pt-3 border-t border-[var(--border)] grid grid-cols-[1fr_auto] gap-y-1 text-[12px] text-[var(--text-dim)] tabular-nums">
-          <dt>{tx("Subtotal")}</dt><dd className="text-right">{fmtEur(q.netEur)}</dd>
-          <dt>{q.reverseCharge ? tx("VAT — reverse charge") : inEu ? tx('VAT {{rate}}% ({{country}})', { rate: q.vatRate, country: buyer.country }) : tx("VAT — not applicable outside the EU")}</dt>
-          <dd className="text-right">{fmtEur(q.vatEur)}</dd>
-        </dl>
-      </div>
-      <p className="mt-2 text-[11.5px] text-[var(--text-faint)]">
-        {q.recurring ? tx("Renews automatically until you cancel. Cancel any time from Credits & billing.") : tx("One-off payment. Credits are valid for 12 months.")}
-      </p>
-
-      <fieldset className="mt-5 grid gap-3 sm:grid-cols-2">
+      <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="sr-only">{tx("Billing details")}</legend>
         <label className="text-[12px] text-[var(--text-dim)] sm:col-span-1">
           {tx("Country")}
@@ -158,7 +142,7 @@ export default function CheckoutDialog({ item: initial, onClose, provider = prev
           </select>
         </label>
         <label className="flex items-center gap-2 text-[12.5px] sm:self-end sm:h-[34px]">
-          <input type="checkbox" checked={buyer.business} onChange={(e) => setBuyer({ ...buyer, business: e.target.checked })} />
+          <input type="checkbox" checked={buyer.business} onChange={(e) => setBuyer({ ...buyer, business: e.target.checked })} className="accent-[var(--accent)]" />
           {tx("Buying for a company")}
         </label>
         {buyer.business && (
@@ -182,16 +166,36 @@ export default function CheckoutDialog({ item: initial, onClose, provider = prev
       </fieldset>
 
       <label className="mt-5 flex items-start gap-2.5 text-[12.5px]">
-        <input type="checkbox" checked={startNow} onChange={(e) => setStartNow(e.target.checked)} className="mt-0.5 shrink-0" />
+        <input type="checkbox" checked={startNow} onChange={(e) => setStartNow(e.target.checked)} className="mt-0.5 shrink-0 accent-[var(--accent)]" />
         <span>{tx("I want to use my credits and cloud features straight away, and I understand that I lose the 14-day right of withdrawal for whatever I have already used. Unused credits remain refundable within 14 days.")}</span>
       </label>
       <label className="mt-3 flex items-start gap-2.5 text-[12.5px]">
-        <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 shrink-0" />
+        <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 shrink-0 accent-[var(--accent)]" />
         <span>{tx("I accept the Terms of Use and have read the Privacy Policy.")}</span>
       </label>
       {!startNow && terms && (
         <p className="mt-3 text-[11.5px] text-[var(--text-dim)]">{tx("Without the first box, cloud features unlock once the 14-day withdrawal period ends.")}</p>
       )}
+        </div>
+        <div className="order-1 sm:order-2 sm:sticky sm:top-0 self-start">
+      <div className="rounded-[10px] bg-[var(--surface-2)] p-4">
+        <div className="min-w-0">
+          <p className="text-[13.5px] font-medium">{text.label}</p>
+          <p className="text-[12px] text-[var(--text-dim)]">{text.detail}</p>
+        </div>
+        <p className="mt-3 text-[24px] font-semibold tabular-nums tracking-[-0.015em]">{fmtEur(q.totalEur)}</p>
+        <dl className="mt-3 pt-3 border-t border-[var(--border-strong)] grid grid-cols-[1fr_auto] gap-y-1 text-[12px] text-[var(--text-dim)] tabular-nums">
+          <dt>{tx("Subtotal")}</dt><dd className="text-right">{fmtEur(q.netEur)}</dd>
+          <dt>{q.reverseCharge ? tx("VAT — reverse charge") : inEu ? tx('VAT {{rate}}% ({{country}})', { rate: q.vatRate, country: buyer.country }) : tx("VAT — not applicable outside the EU")}</dt>
+          <dd className="text-right">{fmtEur(q.vatEur)}</dd>
+        </dl>
+      </div>
+      <p className="mt-2 text-[11.5px] text-[var(--text-faint)]">
+        {q.recurring ? tx("Renews automatically until you cancel. Cancel any time from Credits & billing.") : tx("One-off payment. Credits are valid for 12 months.")}
+      </p>
+
+        </div>
+      </div>
     </Dialog>
   )
 }

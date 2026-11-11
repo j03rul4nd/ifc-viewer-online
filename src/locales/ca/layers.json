@@ -767,7 +767,70 @@
     "alertsActive": "{{count}} en alerta",
     "summaryFilter": "Mostrar només aquests vincles",
     "mqttTopics": "Topics MQTT, un per línia (buit = WebSocket simple amb missatges JSON)",
-    "mqttHint": "Amb topics, aquesta adreça és l’escolta WebSocket d’un broker MQTT. Cada missatge es llegeix com { topic, …payload }, un cop per segon; els missatges sense id de dispositiu s’ignoren."
+    "mqttHint": "Amb topics, aquesta adreça és l’escolta WebSocket d’un broker MQTT. Cada missatge es llegeix com { topic, …payload }, un cop per segon; els missatges sense id de dispositiu s’ignoren.",
+    "panel": {
+      "tabs": {
+        "sources": "Fonts",
+        "devices": "Dispositius",
+        "bindings": "Vincles",
+        "project": "Projecte"
+      },
+      "failed": "Aquesta secció no s'ha pogut carregar",
+      "retry": "Reintenta",
+      "back": "Enrere",
+      "summaryDevices": "{{count}} dispositius",
+      "paused": "En pausa",
+      "summaryErrors": "{{count}} fonts amb error",
+      "needModel": "Obre un model per provar una demo",
+      "connectApi": "Connecta una API",
+      "importFile": "Importa .twin.json",
+      "demoSection": "Prova amb dades simulades",
+      "editSource": "Edita la font",
+      "url": "Adreça",
+      "test": "Prova la connexió",
+      "testing": "Provant…",
+      "testOk": "{{count}} dispositius trobats",
+      "detected": "llista detectada a {{path}}",
+      "testFields": "Camps: {{list}}",
+      "testNone": "Connecta, però no hi ha dispositius. Revisa la ruta de la llista a Opcions avançades.",
+      "streamNoTest": "Les connexions en directe es comproven en desar.",
+      "advanced": "Opcions avançades",
+      "confirmRemoveSource": "Treu també {{count}} vincles",
+      "confirm": "Confirma",
+      "searchDevices": "Cerca un dispositiu…",
+      "noDevices": "Encara no hi ha lectures",
+      "noDevicesHint": "Els dispositius apareixen aquí quan una font respon.",
+      "noResults": "Sense resultats",
+      "pastReadOnly": "Torna al directe per vincular",
+      "bound": "{{count}} vinculats",
+      "noBindings": "Encara no hi ha vincles",
+      "noBindingsHint": "Selecciona un element del model i vincula-hi un dispositiu.",
+      "locate": "Mostra al model",
+      "editBinding": "Edita el vincle",
+      "noRules": "Sense regles: els elements conserven el seu aspecte.",
+      "display": "Aspecte i dades",
+      "conditions": "Condicions",
+      "matchAll": "Totes les condicions",
+      "matchAny": "Alguna condició",
+      "value": "Valor",
+      "addCondition": "+ Condició",
+      "opacity": "Opacitat",
+      "importReplace": "Això substitueix les teves {{sources}} fonts i {{bindings}} vincles. Vols continuar?",
+      "operated": "Estat operatiu",
+      "fiware": {
+        "kind": "Tipus de font",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL del Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio o Stellio. Ha de permetre peticions des d’aquest lloc (CORS) i fer servir https.",
+        "type": "Tipus d’entitat",
+        "tenant": "Tenant (opcional)",
+        "context": "Context JSON-LD (opcional)",
+        "contextHint": "Dona als atributs els seus noms curts.",
+        "servicePath": "Service path (opcional)",
+        "api": "API"
+      }
+    }
   },
   "add": {
     "title": "Afegir dades"
@@ -849,5 +912,25 @@
     "generic": "Treballant… {{s}} s",
     "announce": "Encara esperant {{host}}",
     "announceGeneric": "Encara treballant"
+  },
+  "portLibrary": {
+    "intro": "Tancaments, grues, mobiliari urbà i monuments modelats pel Port de Barcelona. Obre’n qualsevol al visor i afegeix-lo a la teva escena.",
+    "search": "Cerca objectes",
+    "all": "Tots",
+    "count_one": "{{count}} objecte",
+    "count_other": "{{count}} objectes",
+    "empty": "Cap objecte coincideix amb aquesta cerca.",
+    "onPortSite": "{{size}} · descàrrega al web del Port",
+    "credit": "Biblioteca d’objectes del",
+    "categories": {
+      "fences": "Tancaments",
+      "port": "Elements portuaris",
+      "road": "Elements viaris",
+      "equipment": "Equipament portuari",
+      "operation": "Mitjans d’operació",
+      "transport": "Mitjans de transport",
+      "furniture": "Mobiliari urbà",
+      "monument": "Monuments"
+    }
   }
 }

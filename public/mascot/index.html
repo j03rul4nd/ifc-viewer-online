@@ -7,12 +7,12 @@
 <title>Bimo Mascot</title>
 <style>
   :root {
-    --bg: #0A0A0C; --surface: #101014; --border: #23232c; --text: #EDEEF5;
-    --text-dim: #9A9CB0; --accent: #5E6AD2; --accent-2: #8B93E8;
+    --bg: #100F0C; --surface: #181714; --border: #23232c; --text: #EDEEF5;
+    --text-dim: #9A9CB0; --accent: #0A8481; --accent-2: #55CAC3;
   }
   :root[data-theme="light"] {
-    --bg: #F5F6FA; --surface: #FFFFFF; --border: #DEE0EA; --text: #16171F;
-    --text-dim: #5B6180; --accent: #3645C4; --accent-2: #5E6AD2;
+    --bg: #F4F3F0; --surface: #FFFFFF; --border: #DEE0EA; --text: #16171F;
+    --text-dim: #65635E; --accent: #00696A; --accent-2: #0A8481;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
@@ -112,12 +112,12 @@ Object.assign(key.shadow.camera, { left: -1.5, right: 1.5, top: 1.5, bottom: -1.
 scene.add(key);
 const fill = new THREE.DirectionalLight(0xb8c2ff, 0.35); fill.position.set(-2.2, 1.2, 1.4); scene.add(fill);
 const rim = new THREE.DirectionalLight(0x8b93e8, 1.8); rim.position.set(-0.6, 2.0, -2.2); scene.add(rim);
-const kick = new THREE.PointLight(0x5e6ad2, 1.5, 5); kick.position.set(1.8, 0.5, -1.2); scene.add(kick);
+const kick = new THREE.PointLight(0x0a8481, 1.5, 5); kick.position.set(1.8, 0.5, -1.2); scene.add(kick);
 
 // Ground: soft radial glow + shadow catcher, fades into the page background.
 const groundMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
-  uniforms: { uColor: { value: new THREE.Color(0x5e6ad2) }, uStrength: { value: 0.22 } },
+  uniforms: { uColor: { value: new THREE.Color(0x0a8481) }, uStrength: { value: 0.22 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
   fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec2 vUv;
     void main(){ float d = length(vUv-.5)*2.; float g = pow(max(0.,1.-d),2.2);

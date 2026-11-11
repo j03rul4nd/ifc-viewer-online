@@ -24,7 +24,7 @@ export type PanelId =
  * (PanelName in ifc-viewer-sdk.ts and public/sdk/ifc-viewer.es.d.ts); these
  * are promoted into it only with an SDK version bump.
  */
-export type AppOnlyPanelId = 'layers' | 'video'
+export type AppOnlyPanelId = 'layers' | 'video' | 'drawings'
 
 /** Everything the rail can show: host panels plus app-only entries. */
 export type RailId = PanelId | AppOnlyPanelId
@@ -64,7 +64,7 @@ export const ALL_PANEL_IDS: readonly PanelId[] = [
  * Rail order: the host panels, then the app-only entries. Appending keeps every
  * earlier icon where it was when a layer or a clip arrives.
  */
-export const RAIL_ORDER: readonly RailId[] = [...ALL_PANEL_IDS, 'layers', 'video']
+export const RAIL_ORDER: readonly RailId[] = [...ALL_PANEL_IDS, 'layers', 'video', 'drawings']
 
 /** True for ids a host may name (panels=, openPanel, get-panels). */
 export function isHostPanel(id: string): id is PanelId {

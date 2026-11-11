@@ -35,7 +35,7 @@ const RULE_TYPES: EirRuleType[] = [
 
 const SEVERITIES: EirSeverity[] = ['error', 'warning', 'info', 'ignored']
 const SEV_COLOR: Record<EirSeverity, string> = {
-  error: 'var(--danger)', warning: '#F5A623', info: 'var(--accent)', ignored: 'var(--text-faint)',
+  error: 'var(--danger)', warning: '#E9A23B', info: 'var(--accent)', ignored: 'var(--text-faint)',
 }
 const OPERATORS: NumericOperator[] = ['>', '>=', '<', '<=', '=']
 
@@ -387,7 +387,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                   {/* Footer actions */}
                   <div className="p-3 border-t border-[var(--border)] flex items-center gap-2">
                     <span className="text-[10.5px] text-[var(--text-faint)]">{t('footer', { rules: ruleCount, active: compiledCount })}</span>
-                    {!hasBuffer && <span className="text-[10px] text-[#F5A623] flex items-center gap-1">⚠ {t('noModelHint')}</span>}
+                    {!hasBuffer && <span className="text-[10px] text-[#E9A23B] flex items-center gap-1">⚠ {t('noModelHint')}</span>}
                     <div className="ml-auto flex items-center gap-1.5">
                       <button onClick={duplicate} title={t('actions.duplicate')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Copy size={13} /></button>
                       <button onClick={onExport} title={t('actions.export')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Download size={13} /></button>
@@ -432,9 +432,9 @@ function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleC
     : rule.predefinedType || rule.where?.property ? t('applies.upper', { count: applies })
     : applies > 0 ? t('applies.match', { count: applies })
     : t('applies.none')
-  const appliesColor = applies && applies > 0 ? 'var(--text-faint)' : '#F5A623'
+  const appliesColor = applies && applies > 0 ? 'var(--text-faint)' : '#E9A23B'
   return (
-    <div className={`rounded-lg border bg-[var(--surface)] p-2 flex flex-col gap-1.5 ${lint?.length ? 'border-[#F5A623]/50' : 'border-[var(--border)]'}`}>
+    <div className={`rounded-lg border bg-[var(--surface)] p-2 flex flex-col gap-1.5 ${lint?.length ? 'border-[#E9A23B]/50' : 'border-[var(--border)]'}`}>
       <div className="flex items-center gap-1.5 flex-wrap">
         <select value={rule.type} onChange={(e) => onType(rule.id, e.target.value as EirRuleType)} className={`${inputCls} w-[150px]`}>
           {RULE_TYPES.map((rt) => <option key={rt} value={rt}>{t(`ruleTypes.${rt}`)}</option>)}
@@ -458,7 +458,7 @@ function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleC
       {lint?.length ? (
         <div className="flex flex-col gap-0.5 pt-0.5">
           {lint.map((c) => (
-            <span key={c} className="text-[10px] leading-snug" style={{ color: '#F5A623' }}>⚠ {t(`lint.${c}`)}</span>
+            <span key={c} className="text-[10px] leading-snug" style={{ color: '#E9A23B' }}>⚠ {t(`lint.${c}`)}</span>
           ))}
         </div>
       ) : null}

@@ -7,7 +7,7 @@ import React, { useRef, useEffect } from 'react'
 export interface ParticlesProps {
   /** Number of particles. Default 80. */
   quantity?: number
-  /** Particle colour as a hex string e.g. '#5E6AD2'. Default '#5E6AD2'. */
+  /** Particle colour as a hex string e.g. '#0A8481'. Default '#0A8481'. */
   color?: string
   /** Spring return strength (higher = slower return / more elastic). Default 40. */
   ease?: number
@@ -45,7 +45,7 @@ interface Particle {
 
 export default function Particles({
   quantity  = 80,
-  color     = '#5E6AD2',
+  color     = '#0A8481',
   ease      = 40,
   staticity = 60,
   size      = 0.5,

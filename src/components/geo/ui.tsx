@@ -57,9 +57,9 @@ export function Notice({ tone = 'muted', children, action }: {
   action?: { label: string; onClick: () => void }
 }) {
   const style =
-    tone === 'danger' ? 'border-[rgba(229,72,77,0.4)] bg-[rgba(229,72,77,0.08)] text-[var(--text-dim)]'
-    : tone === 'warn' ? 'border-[rgba(245,166,35,0.4)] bg-[rgba(245,166,35,0.08)] text-[var(--text-dim)]'
-    : tone === 'info' ? 'border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.08)] text-[var(--text-dim)]'
+    tone === 'danger' ? 'border-[rgba(224,82,63,0.4)] bg-[rgba(224,82,63,0.08)] text-[var(--text-dim)]'
+    : tone === 'warn' ? 'border-[rgba(233,162,59,0.4)] bg-[rgba(233,162,59,0.08)] text-[var(--text-dim)]'
+    : tone === 'info' ? 'border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.08)] text-[var(--text-dim)]'
     : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-faint)]'
   return (
     <div className={`text-[10px] leading-snug px-2 py-1.5 rounded-[7px] border ${style} flex items-start gap-2`} role={tone === 'danger' ? 'alert' : undefined}>
@@ -67,7 +67,7 @@ export function Notice({ tone = 'muted', children, action }: {
       {action && (
         <button
           onClick={action.onClick}
-          className="shrink-0 -my-0.5 px-1.5 py-0.5 max-md:py-2 max-md:px-2.5 max-md:text-[12px] rounded-[5px] text-[10px] font-medium text-[var(--accent-2)] hover:bg-[rgba(94,106,210,0.14)] transition-colors"
+          className="shrink-0 -my-0.5 px-1.5 py-0.5 max-md:py-2 max-md:px-2.5 max-md:text-[12px] rounded-[5px] text-[10px] font-medium text-[var(--accent-2)] hover:bg-[rgba(10,132,129,0.14)] transition-colors"
         >
           {action.label}
         </button>
@@ -410,8 +410,8 @@ export function StatusDot({ status }: { status: GeorefExtraction['status'] }) {
 export function ModeChip({ mode, label }: { mode: string; label: string }) {
   const tone =
     mode === 'on' ? { fg: 'var(--ok)', bg: 'rgba(48,163,108,0.12)' }
-    : mode === 'starting' ? { fg: 'var(--accent-2)', bg: 'rgba(94,106,210,0.14)' }
-    : mode === 'error' ? { fg: 'var(--danger)', bg: 'rgba(229,72,77,0.12)' }
+    : mode === 'starting' ? { fg: 'var(--accent-2)', bg: 'rgba(10,132,129,0.14)' }
+    : mode === 'error' ? { fg: 'var(--danger)', bg: 'rgba(224,82,63,0.12)' }
     : { fg: 'var(--text-faint)', bg: 'var(--surface-2)' }
   return (
     <span
@@ -444,7 +444,7 @@ export function Button({ variant = 'secondary', size = 'md', className = '', chi
 ) {
   const v =
     variant === 'primary' ? 'bg-[var(--accent)] text-white font-semibold hover:brightness-110'
-    : variant === 'accent-outline' ? 'border border-[var(--accent)] text-[var(--accent-2)] font-medium hover:bg-[rgba(94,106,210,0.12)]'
+    : variant === 'accent-outline' ? 'border border-[var(--accent)] text-[var(--accent-2)] font-medium hover:bg-[rgba(10,132,129,0.12)]'
     : variant === 'ghost' ? 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
     : 'border border-[var(--border-strong)] text-[var(--text-dim)] font-medium hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
   const s = size === 'lg'

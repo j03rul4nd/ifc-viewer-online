@@ -194,7 +194,7 @@
   "openSource": {
     "label": "CÓDIGO ABIERTO",
     "title": "Construido en público, gratis para siempre",
-    "body": "El código fuente está en GitHub. Construido con @thatopen/components, three.js, web-ifc y React. Si necesitas un visor web BIM personalizado, validador o herramientas IFC — el autor está disponible para trabajo por contrato."
+    "body": "El código fuente está en GitHub. Construido con @thatopen/components, three.js, web-ifc y React."
   },
   "sdk": {
     "label": "SDK · INTEGRACIONES",
@@ -309,16 +309,96 @@
       "infrastructure": "Infraestructura"
     },
     "loadAll": "Cargar todo",
-    "disciplines": "{{count}} disciplinas"
+    "disciplines": "{{count}} disciplinas",
+    "pickTitle": "Prueba una demo",
+    "searchPlaceholder": "Busca: vivienda, puente, tuberías, Barcelona…",
+    "byDomain": "Ámbito",
+    "byGoal": "Quiero",
+    "startHere": "Empieza por aquí",
+    "clear": "Borrar filtros",
+    "resultCount_one": "{{count}} demo",
+    "resultCount_other": "{{count}} demos",
+    "emptyTitle": "Ninguna demo coincide",
+    "emptyHint": "Prueba con otra palabra o borra los filtros.",
+    "onMap": "En el mapa",
+    "scan": "Escaneo 3D",
+    "fileCount_one": "{{count}} archivo",
+    "fileCount_other": "{{count}} archivos",
+    "moreInfo": "Más sobre {{title}}",
+    "domains": {
+      "housing": "Viviendas",
+      "buildings": "Edificios",
+      "structure": "Estructura",
+      "services": "Tuberías, conductos y electricidad",
+      "civil": "Puentes y túneles",
+      "city": "Ciudades",
+      "scans": "Escaneos 3D",
+      "port": "Equipos de puerto"
+    },
+    "goals": {
+      "quick": "Algo rápido",
+      "map": "Verlo en un mapa",
+      "live": "Ver datos en directo",
+      "combine": "Juntar varios archivos",
+      "scan": "Comparar con un escaneo",
+      "heavy": "Probar un archivo grande"
+    },
+    "items": {
+      "duplex-architecture": "Dúplex de dos plantas",
+      "sample-house": "Casa unifamiliar",
+      "twin-home": "Casa con sensores en directo",
+      "twin-community": "Bloque de pisos con sensores en directo",
+      "shanghai-tower": "Torre de Shanghái",
+      "oriental-pearl-tower": "Torre Perla Oriental",
+      "shanghai-world-financial-center": "Centro Financiero de Shanghái",
+      "cras-feup-as-built": "Laboratorios universitarios reales",
+      "hello-world": "El ejemplo mínimo: una sala",
+      "operations-pavilion-video": "Pabellón con vídeo de obra",
+      "warehouse-operations-lidar": "Almacén con carretilla en marcha",
+      "construction-progress-lidar": "Avance de obra",
+      "utility-tunnel-lidar": "Inspección de galería de servicios",
+      "japanese-temple": "Templo japonés",
+      "poblenou": "Pabellón: muros, estructura y conductos",
+      "torre-poblenou": "Torre de 16 plantas",
+      "hotel-vela": "Hotel en forma de vela",
+      "metro-drassanes": "Estación de metro subterránea",
+      "ciutadella-pavilion": "Pabellón junto a un parque de Barcelona",
+      "office-architecture": "Edificio de oficinas",
+      "tall-building": "Edificio alto y esbelto",
+      "large-building": "Edificio de varias alas",
+      "duplex-electrical": "Electricidad de un dúplex",
+      "duplex-mechanical": "Climatización de un dúplex",
+      "office-mep": "Todas las instalaciones de una oficina",
+      "office-structure": "Estructura de una oficina",
+      "school-structure": "Estructura de una escuela",
+      "infra-bridge": "Puente de hormigón",
+      "scene-barcelona-placa-catalunya": "Barcelona con datos en directo",
+      "scene-helsinki-rautatientori": "Estación central de Helsinki",
+      "scene-tokyo-tochomae": "Salida de metro en Tokio",
+      "scene-tokyo-waseda": "Parada de tranvía en Tokio",
+      "cloud-cras-feup-labs": "Escaneo real de laboratorios",
+      "cloud-poblenou-site-scan": "Escaneo que encaja con su modelo"
+    },
+    "hints": {
+      "duplex-architecture": "Lo más sencillo para empezar: una vivienda pequeña que se abre al momento.",
+      "scene-barcelona-placa-catalunya": "Edificios sobre el mapa real, con bicis y tráfico actualizándose.",
+      "torre-poblenou": "Una torre detallada que puedes recorrer planta a planta.",
+      "japanese-temple": "Un pequeño templo de madera, rápido de abrir."
+    },
+    "seeAll_one": "Ver las {{count}}",
+    "seeAll_other": "Ver las {{count}}"
   },
   "footer": {
     "poweredBy": "Impulsado por IFC.js",
     "openSource": "Código abierto",
     "copyright": "IFC Viewer Online © 2026",
     "builtWith": "Construido con @thatopen/components · three.js · web-ifc",
-    "fixGuide": "Corregir errores IFC"
+    "fixGuide": "Corregir errores IFC",
+    "validator": "Validador IFC",
+    "solibri": "Alternativa a Solibri"
   },
   "seo": {
+    "title": "Visor IFC Online — Gratis, Sin Instalación, en tu Navegador",
     "description": "Abre un IFC en el navegador y obtén un Health Score de 0 a 100 en menos de 30 segundos. Sin cuenta, sin subir nada, sin instalar."
   }
 }

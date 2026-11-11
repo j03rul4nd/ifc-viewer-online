@@ -644,7 +644,7 @@ export function createFloodSystem(ctx: FloodContext): FloodSystemAPI {
     const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.95 })
     const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, top - yGround, 8), mat)
     stem.position.set(x, (top + yGround) / 2, z)
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: 0x5e6ad2, depthTest: false }))
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: 0x0a8481, depthTest: false }))
     head.position.set(x, top, z)
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.75, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: 0.9 }))
     ring.rotation.x = -Math.PI / 2

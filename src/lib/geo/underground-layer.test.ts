@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { OsmFeature } from './osm-features'
 import { createGroundFrame } from './ground-frame'
+import { latLonToNormalized as latLonToNormalizedForTest } from './geo-math'
 import {
-  buildUndergroundLayer, depthProfile, fullDepthM, LAYER_STEP_M, portalEnds, selectUnderground,
+  buildUndergroundLayer, buildUndergroundTraces, depthProfile, fullDepthM, LAYER_STEP_M, portalEnds, selectUnderground,
   TYPICAL_DEPTH_M, type UndergroundWay,
 } from './underground-layer'
 
@@ -86,6 +87,25 @@ describe('buildUndergroundLayer', () => {
     for (let i = 0; i < pos.count; i++) maxZ = Math.max(maxZ, pos.getZ(i))
     // The roof of an 18 m-deep, 5.5 m-tall tube is still 12.5 m under the ground.
     expect(maxZ / frame.mToN).toBeCloseTo(-(TYPICAL_DEPTH_M.metro - 5.5), 3)
+  })
+
+  it('hides the surface trace behind buildings instead of drawing it over the roofs', () => {
+    const traces = buildUndergroundTraces([metro], { frame })!
+    expect((traces.material as import('three').Material).depthTest).toBe(true)
+  })
+
+  it('follows the ground along a long tunnel instead of drawing one chord over it', () => {
+    // A dip of 10 m between the two ends of a 270 m segment.
+    const dipped = createGroundFrame({ anchorLat: 41.38, anchorElevationM: 0, exaggeration: 1,
+      sampleGroundM: (nx: number, ny: number) => {
+        const mid = latLonToNormalizedForTest(41.3810, 2.1712)
+        return Math.hypot(nx - mid.nx, ny - mid.ny) < 60 * frame.mToN ? -10 : 0
+      } })
+    const traces = buildUndergroundTraces([metro], { frame: dipped })!
+    const pos = traces.geometry.getAttribute('position')
+    let minZ = Infinity
+    for (let i = 0; i < pos.count; i++) minZ = Math.min(minZ, pos.getZ(i))
+    expect(minZ / dipped.mToN).toBeLessThan(-5)
   })
 
   it('leaves out what stands inside a model’s footprint', () => {

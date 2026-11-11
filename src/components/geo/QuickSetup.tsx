@@ -139,7 +139,7 @@ function PresetCard({ preset, active, onSelect }: { preset: ScenePreset; active:
       className={[
         'text-left p-2 rounded-[9px] border flex flex-col gap-1 min-h-[70px] transition-colors active:scale-[0.99]',
         active
-          ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.12)]'
+          ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.12)]'
           : 'border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
       ].join(' ')}
     >

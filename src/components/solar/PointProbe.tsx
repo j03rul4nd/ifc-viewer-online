@@ -127,7 +127,7 @@ export default function PointProbe({ viewerApiRef, lat, lon, yawDeg, timeZone, e
           </>
         )}
       </div>
-      {error && <p className="text-[#F5A623] text-[10.5px]">{error}</p>}
+      {error && <p className="text-[#E9A23B] text-[10.5px]">{error}</p>}
       {!probe && !error && <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('probe.hint')}</p>}
       {probe && r && (
         <>
@@ -176,7 +176,7 @@ function SunTable({ report, monthName, t }: { report: PointSunReport; monthName:
                   key={h}
                   title={v < 0 ? '' : `${monthName(m)} ${h}:00 · ${Math.round(v * 100)} %`}
                   className="h-[9px] rounded-[1px]"
-                  style={{ background: v < 0 ? 'transparent' : v === 0 ? 'var(--surface-2)' : `rgba(245,166,35,${0.25 + 0.75 * v})`, outline: v === 0 ? '1px solid var(--border)' : undefined }}
+                  style={{ background: v < 0 ? 'transparent' : v === 0 ? 'var(--surface-2)' : `rgba(233,162,59,${0.25 + 0.75 * v})`, outline: v === 0 ? '1px solid var(--border)' : undefined }}
                 />
               )
             })}

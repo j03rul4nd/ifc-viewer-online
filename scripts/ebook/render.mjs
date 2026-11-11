@@ -318,7 +318,7 @@ body{width:1200px;height:630px;display:flex;align-items:center;gap:64px;padding:
     ? `radial-gradient(110% 80% at 88% 6%, rgba(13,148,136,.20) 0%, rgba(13,148,136,0) 58%),
        radial-gradient(80% 60% at 4% 98%, rgba(15,118,110,.16) 0%, rgba(15,118,110,0) 62%), #F4F2EC`
     : `radial-gradient(110% 80% at 88% 6%, rgba(94,106,232,.42) 0%, rgba(94,106,232,0) 55%),
-       radial-gradient(80% 60% at 4% 98%, rgba(54,69,196,.32) 0%, rgba(54,69,196,0) 60%), #08090E`};}
+       radial-gradient(80% 60% at 4% 98%, rgba(0,105,106,.32) 0%, rgba(0,105,106,0) 60%), #08090E`};}
 .txt{flex:1}
 .badge{display:inline-block;padding:7px 14px;border-radius:999px;
   border:1px solid ${paper ? 'rgba(15,118,110,.35)' : 'rgba(255,255,255,.18)'};
@@ -361,8 +361,8 @@ function CSS(fonts) {
 @font-face { font-family:'Instrument Serif'; font-weight:400; src:url('${fonts}/instrument-serif-400.woff2') format('woff2'); }
 
 :root{
-  --ink:#0B0D1A; --body:#23283A; --dim:#5B6478; --faint:#8A92A6;
-  --accent:#3645C4; --accent-2:#5E6AD2; --line:#E2E6F0; --panel:#F6F7FB;
+  --ink:#1C1B16; --body:#23283A; --dim:#5B6478; --faint:#8A92A6;
+  --accent:#00696A; --accent-2:#0A8481; --line:#E2E6F0; --panel:#F6F7FB;
   --err:#DC2626; --warn:#D97706; --info:#64748B; --ok:#16A34A;
   --pad:32mm;
 }
@@ -378,7 +378,7 @@ body{
 }
 p{margin:0 0 .85em}
 strong{color:var(--ink); font-weight:600}
-a{color:var(--accent); text-decoration:none; border-bottom:.4pt solid rgba(54,69,196,.35)}
+a{color:var(--accent); text-decoration:none; border-bottom:.4pt solid rgba(0,105,106,.35)}
 code{font-family:'Geist Mono',monospace; font-size:.88em; color:var(--ink);
   background:var(--panel); border:.4pt solid var(--line); border-radius:2pt; padding:.5pt 2.5pt}
 
@@ -387,7 +387,7 @@ code{font-family:'Geist Mono',monospace; font-size:.88em; color:var(--ink);
   width:210mm; height:297mm; padding:26mm 24mm 22mm; color:#EDEFF5;
   background:
     radial-gradient(120% 80% at 82% 8%, rgba(94,106,232,.42) 0%, rgba(94,106,232,0) 55%),
-    radial-gradient(90% 60% at 8% 96%, rgba(54,69,196,.34) 0%, rgba(54,69,196,0) 60%),
+    radial-gradient(90% 60% at 8% 96%, rgba(0,105,106,.34) 0%, rgba(0,105,106,0) 60%),
     #08090E;
   display:flex; flex-direction:column; justify-content:space-between;
   break-after:page;
@@ -522,8 +522,8 @@ figcaption{font-size:8.4pt; color:var(--dim); margin-top:2.5mm; line-height:1.45
 .cat__n{font-size:8pt; color:var(--faint); margin:0 0 1.8mm}
 .cat__b{font-size:8.6pt; line-height:1.45; margin:0; color:var(--dim)}
 .cat__dot{width:2.6mm; height:2.6mm; border-radius:50%; flex:none; background:var(--accent)}
-.cat--schema{background:#DC2626} .cat--spatial{background:#EA580C} .cat--quality{background:#3645C4}
-.cat--lod{background:#7C3AED} .cat--iso19650{background:#0891B2} .cat--classification{background:#0D9488}
+.cat--schema{background:#DC2626} .cat--spatial{background:#EA580C} .cat--quality{background:#00696A}
+.cat--lod{background:#b08d5f} .cat--iso19650{background:#0891B2} .cat--classification{background:#0D9488}
 .cat--mep{background:#CA8A04} .cat--clash{background:#BE185D}
 
 /* ── Rule reference ────────────────────────────────────────────────────── */

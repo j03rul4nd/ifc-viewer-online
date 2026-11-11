@@ -1076,12 +1076,12 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
 
   // A weather file waiting for a decision, or one that could not be read.
   const weatherCard = weatherNote && (weatherNote.kind === 'error' ? (
-    <div role="alert" className="rounded-[8px] border border-[#F5A623]/50 bg-[#F5A623]/10 px-2 py-1.5 text-[10.5px] text-[#F5A623] flex gap-2 items-start">
+    <div role="alert" className="rounded-[8px] border border-[#E9A23B]/50 bg-[#E9A23B]/10 px-2 py-1.5 text-[10.5px] text-[#E9A23B] flex gap-2 items-start">
       <span className="flex-1">{weatherNote.message}</span>
       <button onClick={() => setWeatherNote(null)} className="hover:text-[var(--text)]" title={t('analysis.close')}>✕</button>
     </div>
   ) : (
-    <div role="alert" className="rounded-[10px] border border-[#F5A623]/60 bg-[#F5A623]/10 p-2.5 flex flex-col gap-1.5 text-[10.5px]">
+    <div role="alert" className="rounded-[10px] border border-[#E9A23B]/60 bg-[#E9A23B]/10 p-2.5 flex flex-col gap-1.5 text-[10.5px]">
       <p className="text-[var(--text)] leading-snug">
         {weatherNote.km === null
           ? t('analysis.weather.noSite', { label: weatherNote.w.label })
@@ -1112,7 +1112,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
         })}
       </div>
       <p className="text-[10px] leading-snug">{t('analysis.link.needs')}</p>
-      {linkError && <p role="alert" className="text-[10px] leading-snug text-[#F5A623]">{linkError}</p>}
+      {linkError && <p role="alert" className="text-[10px] leading-snug text-[#E9A23B]">{linkError}</p>}
       <div className="flex flex-wrap gap-1.5">
         <button disabled={linkBusy} onClick={() => { void acceptLink() }} className="px-2.5 py-1.5 rounded-[8px] text-[11.5px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40">
           {linkBusy && !busy ? t('analysis.climate.loading') : t('analysis.link.run')}
@@ -1193,7 +1193,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                       return (
                         <li key={k} className={`flex items-center gap-1.5 ${state === 'todo' ? 'opacity-50' : ''}`}>
                           <span className="w-3.5 text-center">{state === 'done' ? '✓' : state === 'fail' ? '!' : state === 'now' ? '…' : '·'}</span>
-                          <span className={state === 'fail' ? 'text-[#F5A623]' : state === 'done' ? 'text-[var(--text)]' : ''}>{t(`workspace.quick.steps.${k}`)}</span>
+                          <span className={state === 'fail' ? 'text-[#E9A23B]' : state === 'done' ? 'text-[var(--text)]' : ''}>{t(`workspace.quick.steps.${k}`)}</span>
                         </li>
                       )
                     })}
@@ -1234,7 +1234,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                 </div>
               )}
               {s.status === 'error' && (
-                <div className="rounded-[8px] border border-[#F5A623]/50 bg-[#F5A623]/10 px-2 py-1.5 text-[10.5px] text-[#F5A623] flex gap-2 items-start">
+                <div className="rounded-[8px] border border-[#E9A23B]/50 bg-[#E9A23B]/10 px-2 py-1.5 text-[10.5px] text-[#E9A23B] flex gap-2 items-start">
                   <span className="flex-1">{t('analysis.error', { message: s.error ?? '' })}</span>
                   <button onClick={() => s.setRun({ status: ref.last ? 'done' : 'idle', error: null })} className="hover:text-[var(--text)]">✕</button>
                 </div>
@@ -1252,7 +1252,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     <button disabled={s.climateStatus === 'loading'} onClick={() => { void loadClimate() }} className="self-start px-2.5 py-1.5 rounded-[8px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)] disabled:opacity-50">
                       {s.climateStatus === 'loading' ? t('analysis.climate.loading') : t('analysis.climate.load')}
                     </button>
-                    {s.climateStatus === 'error' && <p className="text-[#F5A623] text-[10.5px]">{t('analysis.climate.error', { message: s.climateError ?? '' })}</p>}
+                    {s.climateStatus === 'error' && <p className="text-[#E9A23B] text-[10.5px]">{t('analysis.climate.error', { message: s.climateError ?? '' })}</p>}
                   </div>
                 )}
                 {/* An ERA5 climate cached before the hours were kept: one more click pairs them. */}
@@ -1266,7 +1266,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                     </div>
                     {/* The hours' own failure: the daily climate above came, the hours did not. */}
                     {hoursLoad?.status === 'error' && distanceKm(location, hoursLoad.at) <= ERA5_NEAR_KM && (
-                      <p role="alert" className="text-[#F5A623] text-[10px] leading-snug">{t('analysis.climate.hoursError', { message: hoursLoad.message })}</p>
+                      <p role="alert" className="text-[#E9A23B] text-[10px] leading-snug">{t('analysis.climate.hoursError', { message: hoursLoad.message })}</p>
                     )}
                   </div>
                 )}
@@ -1356,14 +1356,14 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                         ))}
                         <BaseInput value={s.passiveBaseC} onChange={s.setPassiveBaseC} label={t('analysis.passive.custom')} />
                       </div>
-                      <p className={`text-[10px] leading-snug ${s.hourly || s.sky ? '' : 'text-[#F5A623]'}`}>{temperatureLine}</p>
+                      <p className={`text-[10px] leading-snug ${s.hourly || s.sky ? '' : 'text-[#E9A23B]'}`}>{temperatureLine}</p>
                       {passiveStale && (
-                        <div className="flex items-center gap-2 text-[10.5px] text-[#F5A623]">
+                        <div className="flex items-center gap-2 text-[10.5px] text-[#E9A23B]">
                           <span className="flex-1">{t('analysis.passive.stale')}</span>
                           <button disabled={busy || models.length === 0} onClick={() => { void run() }} className="px-2 py-1 rounded-[7px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40">{t('analysis.run')}</button>
                         </div>
                       )}
-                      {passiveMissing && <p className="text-[10px] leading-snug text-[#F5A623]">{t('analysis.passive.noTemps')}</p>}
+                      {passiveMissing && <p className="text-[10px] leading-snug text-[#E9A23B]">{t('analysis.passive.noTemps')}</p>}
                       <p className="text-[9.5px] leading-snug">{t('analysis.passive.explain')}</p>
                       <p className="text-[9.5px] leading-snug text-[var(--text-faint)]">
                         {t('analysis.passive.credit')}{' '}
@@ -1393,7 +1393,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
                   </div>
                 </div>
                 {s.skyModel !== effectiveSky && (
-                  <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('analysis.sky.fallback', { model: t(`analysis.sky.${effectiveSky}`) })}</p>
+                  <p className="text-[9.5px] text-[#E9A23B] leading-snug">{t('analysis.sky.fallback', { model: t(`analysis.sky.${effectiveSky}`) })}</p>
                 )}
                 </Disclosure>
               </div>
@@ -1675,7 +1675,7 @@ export default function SolarAnalysisPanel({ viewerApiRef }: Props) {
               </>
             ) : s.status === 'error' ? (
               <>
-                <div className="text-[#F5A623]">{t('analysis.overlay.failed', { message: s.error ?? '' })}</div>
+                <div className="text-[#E9A23B]">{t('analysis.overlay.failed', { message: s.error ?? '' })}</div>
                 <button onClick={() => s.setPanelOpen(true)} className="mt-1 text-[var(--accent)] font-medium">{t('analysis.overlay.open')}</button>
               </>
             ) : runNote ? (
@@ -1767,8 +1767,8 @@ function Pane({ id, tab, t, order, children }: { id: WorkTab; tab: WorkTab; t: T
     <div hidden={tab !== id} className="flex flex-col gap-3" style={order !== undefined ? { order } : undefined} role="tabpanel">
       <ErrorBoundary
         fallback={(error, reset) => (
-          <div className="rounded-[8px] border border-[#F5A623]/50 bg-[#F5A623]/10 p-2.5 flex flex-col gap-1.5 text-[10.5px]">
-            <div className="font-semibold text-[#F5A623]">{t('workspace.crashed')}</div>
+          <div className="rounded-[8px] border border-[#E9A23B]/50 bg-[#E9A23B]/10 p-2.5 flex flex-col gap-1.5 text-[10.5px]">
+            <div className="font-semibold text-[#E9A23B]">{t('workspace.crashed')}</div>
             <div className="font-mono text-[9.5px] break-words opacity-80">{error.message}</div>
             <button onClick={reset} className="self-start px-2 py-1 rounded-[7px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('workspace.retry')}</button>
           </div>
@@ -1796,7 +1796,7 @@ function Disclosure({ title, summary, defaultOpen = false, children }: { title: 
 
 function StatusChip({ tone, title, className = '', children }: { tone: 'ok' | 'warn'; title?: string; className?: string; children: React.ReactNode }) {
   return (
-    <span title={title} className={`px-1.5 py-0.5 rounded-full text-[9.5px] font-medium border ${tone === 'ok' ? 'border-[#4caf7a]/50 text-[#4caf7a]' : 'border-[#F5A623]/50 text-[#F5A623]'} ${className}`}>
+    <span title={title} className={`px-1.5 py-0.5 rounded-full text-[9.5px] font-medium border ${tone === 'ok' ? 'border-[#3fa866]/50 text-[#3fa866]' : 'border-[#E9A23B]/50 text-[#E9A23B]'} ${className}`}>
       {children}
     </span>
   )

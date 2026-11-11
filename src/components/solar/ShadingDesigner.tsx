@@ -241,7 +241,7 @@ function Big({ label, value, good }: { label: string; value: string; good: boole
   return (
     <div className="flex flex-col rounded-[8px] border border-[var(--border)] px-1.5 py-1">
       <span className="text-[9px] text-[var(--text-faint)] leading-tight">{label}</span>
-      <span className={['font-mono tabular-nums text-[13px] font-semibold', good ? 'text-[#4caf7a]' : 'text-[#F5A623]'].join(' ')}>{value}</span>
+      <span className={['font-mono tabular-nums text-[13px] font-semibold', good ? 'text-[#3fa866]' : 'text-[#E9A23B]'].join(' ')}>{value}</span>
     </div>
   )
 }

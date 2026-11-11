@@ -90,3 +90,60 @@ export function lowerQuality(q: BasemapQuality): BasemapQuality | null {
 export function stylePixelScale(effectiveDpr: number, errorTarget: number): number {
   return (Math.max(1, effectiveDpr) * Math.SQRT2) / Math.max(0.5, errorTarget)
 }
+
+/** One step up; null at `ceiling`. */
+export function raiseQuality(q: BasemapQuality, ceiling: BasemapQuality = 'balanced'): BasemapQuality | null {
+  if (q === ceiling) return null
+  if (q === 'economy') return 'balanced'
+  return q === 'balanced' && ceiling === 'high' ? 'high' : null
+}
+
+export interface QualityGovernor {
+  /** Feed one frame-watch verdict (≈ one a second). Returns the new level, or null. */
+  step(current: BasemapQuality, verdict: { fps: number; slow: boolean }): BasemapQuality | null
+  reset(): void
+}
+
+/**
+ * Sharpness is lowered when the view is slow — and given BACK when it is fast
+ * again.
+ *
+ * It used to be one-way (measured 2026-11): the frame watch reports "slow"
+ * once a second for as long as it lasts, each report took one level off, and
+ * nothing ever put it back but changing the map provider. Building the 3D
+ * surroundings is a slow stretch on any machine, so two seconds into it the
+ * map was at `economy` — a texel 2.2–3 device pixels wide at every distance —
+ * and stayed there for the rest of the session.
+ *
+ * Coming back needs a clearly fast view (`fastFps`) for `fastWindows` reports
+ * in a row. If the sharper level then turns out to be what made it slow, the
+ * wait doubles each time, so a machine that cannot hold it settles at the
+ * lower level instead of flickering between the two.
+ */
+export function createQualityGovernor(opts: { fastFps?: number; fastWindows?: number; maxWindows?: number } = {}): QualityGovernor {
+  const fastFps = opts.fastFps ?? 40
+  const base = opts.fastWindows ?? 3
+  const max = opts.maxWindows ?? 60
+  let need = base
+  let fastRun = 0
+  let raisedTo: BasemapQuality | null = null
+  return {
+    step(current, verdict) {
+      if (verdict.slow) {
+        fastRun = 0
+        const lower = lowerQuality(current)
+        // Dropping the level we had just raised to: it was too much.
+        if (lower && raisedTo === current) need = Math.min(max, need * 2)
+        raisedTo = null
+        return lower
+      }
+      if (verdict.fps < fastFps) { fastRun = 0; return null }
+      if (++fastRun < need) return null
+      fastRun = 0
+      const up = raiseQuality(current)
+      if (up) raisedTo = up
+      return up
+    },
+    reset() { need = base; fastRun = 0; raisedTo = null },
+  }
+}

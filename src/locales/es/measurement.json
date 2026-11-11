@@ -38,6 +38,8 @@
     "routeHint": "El camino más rápido entre dos puntos: dentro del edificio por pasillos y escaleras; fuera, por las calles a pie, en bici o en coche",
     "aligned": "Alineada",
     "alignedHint": "Dos puntos, con su línea de cota al lado",
+    "linear": "Lineal",
+    "linearHint": "Dos puntos medidos sobre un eje: el desarrollo horizontal, el fondo o la altura, no en diagonal",
     "chain": "Encadenada",
     "chainHint": "Varios puntos en una línea: cada tramo y la longitud total",
     "baseline": "Desde base",
@@ -46,6 +48,12 @@
     "levelHint": "Cotas de nivel: el primer punto es ±0,00 y los demás, por encima o por debajo",
     "radius": "Radio",
     "radiusHint": "Tres puntos de un arco: centro, radio y diámetro",
+    "leader": "Directriz",
+    "leaderHint": "Una flecha a un punto con una nota: escríbela en el campo de nota",
+    "angular": "Angular",
+    "angularHint": "Tres puntos —un lado, el vértice, el otro lado—: el ángulo con su arco",
+    "ordinate": "Coordenadas",
+    "ordinateHint": "El primer punto es el origen; cada uno de los demás muestra su X (este) e Y (norte) respecto a él",
     "dimensionFinishHint": "Doble clic o Intro para terminar"
   },
   "steps": {
@@ -84,11 +92,18 @@
     "face": "Cara",
     "surface": "Superficie",
     "cloud": "Punto del escaneo",
+    "perpendicular": "Perpendicular",
+    "polar": "Polar {{deg}}°",
+    "polarToggle": "Polar 15°",
     "axis": "Eje {{axis}}",
     "close": "Cerrar área"
   },
   "settings": {
     "units": "Unidades",
+    "terminator": "Extremos de cota",
+    "terminatorTick": "Marca",
+    "terminatorArrow": "Flecha",
+    "terminatorDot": "Punto",
     "precision": "Precisión",
     "ftin": "pie-pulg",
     "components": "Mostrar los tramos X · Y · Z de cada distancia"

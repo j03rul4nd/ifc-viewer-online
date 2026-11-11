@@ -40,6 +40,7 @@ interface Props {
   onEvolution: () => void
   onAnatomy: () => void
   onCutout: () => void
+  onSketch: () => void
   /** Visible models — the coordination capture needs two or more. */
   modelCount: number
   /** Each visible model's discipline (guessed or set by hand), for the coordination capture. */
@@ -92,7 +93,7 @@ export default function ViewsPanel(p: Props) {
             <button className={cls.btn} onClick={p.onFrameFocus} disabled={!p.focusCat || !!busy} title={t('cover.frameFocus')} aria-label={t('cover.frameFocus')}><Icons.Search size={13} /></button>
           </div>
         </label>
-        {LOOKS[p.look].wantsFocus && !p.focusCat && <div className="text-[11px] text-[var(--warn,#F5A623)] mb-2">{t('cover.focusHint')}</div>}
+        {LOOKS[p.look].wantsFocus && !p.focusCat && <div className="text-[11px] text-[var(--warn,#E9A23B)] mb-2">{t('cover.focusHint')}</div>}
       </Section>
 
       <Section title={t('cover.viral.title')}>
@@ -103,6 +104,7 @@ export default function ViewsPanel(p: Props) {
             ['night', p.onNight, 'Sparkles'],
             ['anatomy', p.onAnatomy, 'Ruler'],
             ['cutout', p.onCutout, 'Palette'],
+            ['sketch', p.onSketch, 'Palette'],
           ] as const).map(([kind, run, icon]) => {
             const Icon = Icons[icon]
             return (

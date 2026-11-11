@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} IFC alhora. Necessites revisar la carpeta sencera en un sol informe?",
+    "action": "Validar carpeta (Pro)",
+    "title": "Validar una carpeta sencera",
+    "soon": "Properament.",
+    "body": "Revisar una carpeta sencera d'IFC d'una vegada, amb un sol informe, encara no està disponible. Els teus fitxers s'obren un a un com sempre.",
+    "notifyLabel": "Deixa'm el teu correu i t'aviso una vegada, quan estigui llest.",
+    "submit": "Avisa'm",
+    "thanks": "Gràcies. T'escriuré una vegada, quan estigui llest.",
+    "error": "No s'ha pogut desar. Torna-ho a provar."
+  },
   "title": "Compte",
   "close": "Tanca",
   "signInIntro": "Inicia sessió per guardar l'històric dels teus certificats, sincronitzar perfils de regles entre dispositius i gestionar claus d'API. El validador gratuït continua sent gratuït — no cal cap compte per fer-lo servir.",
@@ -98,5 +109,232 @@
     "hint": "El teu compte viu darrere del botó Compte a la barra del visor."
   },
   "manageProfile": "Gestiona el perfil",
-  "backHome": "Torna a IFC Viewer Online"
+  "backHome": "Torna a IFC Viewer Online",
+  "authTitle": "El teu compte reuneix projectes, certificats i facturació",
+  "authPoint1": "El visor i el validador continuen gratis i sense compte",
+  "authPoint2": "El que obres al navegador es queda al navegador",
+  "authPoint3": "Els teus fitxers només arriben als nostres servidors si fas servir una funció al núvol",
+  "legacy": {
+    "title": "Hem millorat el teu compte",
+    "body1": "Estem introduint canvis al producte i millorant els plans per als usuaris registrats. El nostre full de ruta és donar-te un servei millor, i per això hem passat els comptes a un nou sistema de producció.",
+    "body2": "El teu compte i el teu correu s’han conservat. Si abans entraves amb contrasenya, ara entra amb Google o amb el codi que t’enviem per correu; si vols, pots crear una contrasenya nova des del teu perfil.",
+    "body3": "Sentim les molèsties d’haver de tornar a iniciar sessió tot i que ja tenies compte. Gràcies per continuar amb nosaltres.",
+    "ok": "Entesos",
+    "signInHint": "Ja tenies compte? Hem canviat de sistema i el teu compte es conserva: entra amb Google o amb el codi que t’enviem per correu. La teva contrasenya anterior ja no serveix."
+  },
+  "requests": {
+    "entryTitle": "Demanar una funció",
+    "entryHint": "Digues-me què et falta. Ho llegeixo jo i et contesto.",
+    "entryCta": "Demanar",
+    "title": "Què t’ajudaria més?",
+    "intro": "Tria el que més et frena avui. Llegeixo cada resposta jo mateix i et contesto aquí.",
+    "feature": {
+      "big_files": {
+        "title": "Obrir fitxers molt grans",
+        "hint": "Models de més de 400 MB que avui no caben al navegador"
+      },
+      "versions": {
+        "title": "Projectes al núvol amb versions",
+        "hint": "Veure què ha canviat en pujar una versió nova"
+      },
+      "client_link": {
+        "title": "Compartir amb el meu client",
+        "hint": "Un enllaç al model i a l’informe, sense instal·lar res"
+      },
+      "bcf_team": {
+        "title": "Incidències BCF amb el meu equip",
+        "hint": "Assignar, estats, terminis i vistes desades"
+      },
+      "auto_check": {
+        "title": "Validar cada lliurament automàticament",
+        "hint": "Amb l’estàndard de la meva empresa (IDS, EIR, noms)"
+      },
+      "cloud_drives": {
+        "title": "Obrir des de Google Drive, OneDrive o Dropbox",
+        "hint": "I desar-hi sense descarregar"
+      },
+      "batch_tools": {
+        "title": "Eines per lots",
+        "hint": "Editar, reanomenar o dividir molts IFC alhora"
+      },
+      "reception_inbox": {
+        "title": "Rebre lliuraments dels meus proveïdors",
+        "hint": "Una bústia on els proveïdors deixen el seu IFC i es revisa amb els meus requisits"
+      },
+      "managed_requirements": {
+        "title": "Requisits gestionats per a la meva empresa",
+        "hint": "Els meus IDS, EIR i nota mínima en un sol lloc, enviats amb cada petició"
+      },
+      "iso_naming": {
+        "title": "Revisar noms de fitxer (ISO 19650)",
+        "hint": "Marcar fitxers i contenidors que no segueixen la nostra convenció de noms"
+      },
+      "other": {
+        "title": "Una altra cosa",
+        "hint": "Escriu-ho a sota"
+      }
+    },
+    "needLabel": "L’última vegada que et va caldre: què havies de lliurar i a qui? (opcional)",
+    "needLabelOther": "Què necessites? Explica’m l’última vegada que et va passar",
+    "needPlaceholder": "P. ex.: divendres havia d’enviar el model a la promotora i vaig acabar exportant un PDF per planta",
+    "needPlaceholderOther": "Què intentaves fer, amb quin fitxer i on t’hi vas encallar",
+    "moreToggle": "Més context (opcional)",
+    "frequencyLabel": "Cada quant et passa?",
+    "frequency": {
+      "daily": "Cada dia",
+      "weekly": "Cada setmana",
+      "sometimes": "De tant en tant"
+    },
+    "todayLabel": "Com ho resols avui?",
+    "today": {
+      "nothing": "No ho resolc",
+      "manual": "A mà o amb Excel",
+      "paid_tool": "Pago una altra eina",
+      "free_tool": "Amb una altra eina gratuïta"
+    },
+    "todayToolPlaceholder": "Quina? (p. ex. Solibri, BIMcollab)",
+    "payerLabel": "Si existís, qui ho pagaria?",
+    "payer": {
+      "me": "Jo",
+      "company": "La meva empresa",
+      "nobody": "Ningú: no hi ha pressupost"
+    },
+    "roleLabel": "El teu perfil",
+    "role": {
+      "bim": "BIM manager o coordinador",
+      "architect": "Arquitectura",
+      "engineer": "Enginyeria",
+      "contractor": "Constructora",
+      "owner": "Promotor o manteniment",
+      "developer": "Desenvolupament de programari",
+      "student": "Estudiant",
+      "other": "Altre"
+    },
+    "teamLabel": "Mida de l’equip",
+    "team": {
+      "solo": "Només jo",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Més de 50"
+    },
+    "beta": "Vull provar-ho amb un projecte real quan estigui a punt",
+    "call": "Puc parlar 15 minuts per videotrucada",
+    "contactOk": "Em pots escriure al correu sobre això",
+    "privacy": "Deso la teva resposta amb el teu compte i el teu correu només per entendre-la i, si m’hi deixes, escriure’t. No la publico ni la comparteixo.",
+    "send": "Enviar",
+    "sending": "Enviant…",
+    "cancel": "Cancel·lar",
+    "done": "Tancar",
+    "thanksTitle": "Anotat",
+    "thanksContact": "T’escric al correu del teu compte.",
+    "thanksNoContact": "Si tira endavant, ho veuràs aquí.",
+    "thanksStatus": "L’estat i les meves respostes, a «Les teves peticions»",
+    "mineLink": "Les teves peticions · {{count}}",
+    "mineTitle": "Les teves peticions",
+    "newRequest": "Nova petició",
+    "replyFrom": "Joel:",
+    "status": {
+      "new": "Rebuda",
+      "reviewing": "En estudi",
+      "planned": "Planificada",
+      "building": "En desenvolupament",
+      "shipped": "Ja disponible",
+      "declined": "Ara no"
+    },
+    "directMail": "Prefereixes escriure directament?",
+    "error": {
+      "missing": "Tria una opció (si és «Una altra cosa», escriu què necessites).",
+      "unauthorized": "La sessió ha caducat. Torna a iniciar sessió i envia-ho de nou.",
+      "need_too_short": "Explica’ns en poques paraules què necessites.",
+      "daily_limit": "Avui has enviat 5 peticions. Demà en pots enviar més, o escriu-me a hola@ifcvieweronline.eu.",
+      "rate_limited": "Massa intents seguits. Espera un minut.",
+      "unavailable": "Ara mateix no ha funcionat. Torna-ho a provar d’aquí a un moment.",
+      "network": "Sense connexió. Comprova la xarxa i torna-ho a provar.",
+      "invalid": "Revisa el formulari i torna-ho a provar."
+    },
+    "tellUs": "Explica’m el teu cas",
+    "somethingElse": "Et falta una altra cosa? Digues-m’ho",
+    "nudgeTitle": "Què t’ajudaria més?",
+    "nudgeBody": "N’hi ha prou amb un toc. Ho llegeixo jo.",
+    "nudgeCta": "Respondre",
+    "nudgeDismiss": "Tancar",
+    "entryButton": "Suggerir",
+    "signinTitle": "Per enviar-ho, entra amb el teu compte",
+    "signinBody": "La resposta queda desada en aquesta pestanya i torna tal qual quan entris. Així et puc contestar i avisar si surt.",
+    "signinFree": "El compte és gratuït i el visor continua sent gratuït.",
+    "signinLater": "Ara no",
+    "signinCta": "Entrar i enviar",
+    "resumed": "Ja has entrat. Aquí tens la resposta: revisa-la i envia.",
+    "nudgeOther": "Una altra cosa…",
+    "updateOne": "«{{feature}}»: {{status}}.",
+    "updateMany": "Novetats en {{count}} de les teves peticions.",
+    "updateCta": "Veure",
+    "callBook": "Puc parlar 15 minuts per videotrucada (tries l’hora en enviar)",
+    "updateReply": "En Joel ha contestat la teva petició «{{feature}}».",
+    "mineLinkReply": "Les teves peticions · {{count}} · tens resposta",
+    "mineEmpty": "Encara no n’has enviat cap.",
+    "loading": "Carregant les teves peticions",
+    "you": "Tu",
+    "answerLabel": "Contestar en Joel",
+    "answerPlaceholder": "Contesta en Joel…",
+    "answerSend": "Contestar",
+    "showAll": "Veure’n {{count}} més",
+    "receiptTool": "avui amb {{tool}}",
+    "bookCta": "Triar hora per a la trucada",
+    "bookByMail": "T’escric per quedar a una hora que et vagi bé.",
+    "nudgeContext": {
+      "large_file": "Aquest fitxer no cabia al navegador.",
+      "exported": "Acabes d’exportar l’informe.",
+      "shared": "Acabes de compartir el model.",
+      "ids": "Acabes de comprovar un IDS.",
+      "bcf": "Acabes de treballar amb incidències BCF.",
+      "multi_model": "Tens diversos models oberts.",
+      "map": "Has col·locat el model al mapa.",
+      "measured": "Has estat mesurant.",
+      "validated": "Ja tens el model validat."
+    }
+  },
+  "call": {
+    "back": "Tornar al visor",
+    "title": "{{minutes}} minuts per parlar del teu cas",
+    "intro": "Soc en Joel i faig IFC Viewer Online. No és una demo ni una trucada comercial: vull veure com treballes per construir bé el que m’has demanat.",
+    "point1": "M’expliques l’última vegada que et va caldre i què vas fer.",
+    "point2": "Si vols, comparteixes pantalla amb el model o el lliurable.",
+    "point3": "Et dic què puc fer i quan, sense compromís.",
+    "signin": "Entra amb el teu compte per triar hora. Així sé de quina petició parlem.",
+    "signinCta": "Iniciar sessió",
+    "loadError": "No he pogut carregar les hores. Torna-ho a provar d’aquí a un moment.",
+    "retry": "Tornar-ho a provar",
+    "noSlots": "No em queden forats les pròximes dues setmanes. Escriu-me i busquem un altre moment:",
+    "pickDay": "Dia",
+    "pickTime": "Hora",
+    "zone": "Hores a la teva zona ({{zone}}).",
+    "email": "T’envio la invitació a",
+    "note": "Alguna cosa que hagi de saber abans?",
+    "optional": "(opcional)",
+    "notePlaceholder": "Per exemple: lliuro models a una enginyeria cada setmana i el client no té Revit.",
+    "error": {
+      "unauthorized": "La sessió ha caducat. Torna a iniciar sessió.",
+      "slot_gone": "Algú acaba d’agafar aquesta hora. Tria’n una altra.",
+      "already_booked": "Ja tens una trucada reservada.",
+      "email": "Revisa el correu.",
+      "rate_limited": "Massa intents. Espera un minut.",
+      "unavailable": "No s’ha pogut desar. Torna-ho a provar.",
+      "network": "Sense connexió. Torna-ho a provar."
+    },
+    "booking": "Reservant…",
+    "confirm": "Tria una hora",
+    "confirmAt": "Reservar a les {{when}}",
+    "bookedLabel": "Trucada reservada",
+    "bookedMeta": "{{minutes}} min · videotrucada · hora de {{zone}}",
+    "join": "Entra des del navegador, sense instal·lar res:",
+    "mailed": "T’he enviat la invitació a {{email}}.",
+    "notMailed": "Desa-la al calendari amb un d’aquests botons; l’enllaç de dalt és el de la trucada.",
+    "mailedEarlier": "La invitació va a {{email}}. Si no la trobes, desa-la aquí:",
+    "addIcs": "Descarregar .ics",
+    "changeHint": "No et va bé? Anul·la-la i tria una altra hora.",
+    "cancel": "Anul·lar la trucada",
+    "footer": "Prefereixes escriure’m?",
+    "eventTitle": "Trucada amb en Joel (IFC Viewer Online)"
+  }
 }

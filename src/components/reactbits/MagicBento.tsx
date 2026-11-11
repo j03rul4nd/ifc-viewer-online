@@ -23,7 +23,7 @@ export interface MagicBentoProps {
   enableMagnetism?: boolean;
 }
 
-const DEFAULT_GLOW_COLOR = '94, 106, 210';
+const DEFAULT_GLOW_COLOR = '10,132,129';
 
 const createParticleElement = (x: number, y: number, color: string): HTMLDivElement => {
   const el = document.createElement('div');

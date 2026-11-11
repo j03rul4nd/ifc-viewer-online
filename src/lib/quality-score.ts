@@ -1,10 +1,11 @@
-// ─── Quality score (pure) ──────────────────────────────────────────────────────
-// The Health Score formula, with no store or DOM imports, so the browser and the
-// server-side validation runner (server/validation-runner) share one definition.
+// ─── quality-score.ts ─────────────────────────────────────────────────────────
+// The Health Score: 0–100 from a run's issues. Pure, no stores — the app and the
+// local MCP server compute it the same way.
 
 import type { ValidationResult, ValidationCategoryType } from '../types'
 import { RULE_METADATA } from '../types'
 
+// ── Quality score ─────────────────────────────────────────────────────────────
 
 /**
  * Penalty weights per category per severity.
@@ -86,4 +87,3 @@ export function calculateQualityScore(result: Pick<ValidationResult, 'issues'>):
   for (const c of explainQualityScore(result)) penalty += c.penalty
   return Math.max(0, Math.round(100 - penalty))
 }
-

@@ -2,50 +2,47 @@
 //
 //   npx tsx scripts/seo/build-demo-landings.ts
 //
-// Writes public/<slug>/index.html for every page in PAGES. The screenshots are
-// real captures of the product and live in public/demos/<file>.jpg (full size)
-// and public/demos/<file>-800.jpg (srcset). Each <img> carries a descriptive
-// filename, alt text and caption, and each page lists its images as
-// schema.org ImageObject with creator and licence, so they can surface in
-// image search. scripts/seo/demo-landings.test.ts keeps the image files and
-// the sitemap in step with this list.
+// Writes public/<slug>/index.html for every page in PAGES. The pictures are
+// captures of the product (scripts/seo/landing-captures/capture.cjs) and live
+// in public/images/landings/: <file>.jpg is the indexed one, with the IPTC
+// rights inside, and <file>-<w>.webp are what browsers download. Each picture
+// carries a descriptive file name, alt text and caption, and each page lists
+// its pictures as schema.org ImageObject with creator and licence, so they can
+// surface in image search. landing-pictures.mjs holds the markup and the
+// metadata; landing-pictures.test.ts keeps files, pages and sitemap in step.
+// Run `npm run seo:chrome` afterwards.
 
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { withRights } from './image-metadata'
 import { LANG_PACKS, type LangPack } from './demo-landings-i18n'
+import { SHARED, filesOf, imageObject, jpgUrl, pictureHtml, preloadHtml, rightsOf, sitemapImage } from './landing-pictures.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SITE = 'https://www.ifcvieweronline.eu'
 const AUTHOR = { '@type': 'Person', name: 'Joel Benítez', url: 'https://github.com/j03rul4nd' }
 const CONTACT = '/msp-global/#contact'
-// Same terms page the blog's images point to (license + acquireLicensePage).
-const TERMS = `${SITE}/terms/`
-const OWN = 'IFC Viewer Online'
-const MAP_CREDIT = `${OWN} · map data © OpenStreetMap contributors (ODbL)`
 
-interface Shot { alt: string; cap: string; credit?: string }
+interface Shot { alt: string; cap: string }
 
-/** Every screenshot: file stem in public/demos/, alt text, caption. */
+/** Every picture: file stem in public/images/landings/, alt text, caption. Sizes are in landing-pictures.mjs. */
 export const IMAGES: Record<string, Shot> = {
   'agv-warehouse-digital-twin': {
     alt: 'AGV warehouse digital twin: six automated guided vehicles, racks and docks in a live 3D view',
     cap: 'Six AGVs pick, deliver and charge in a live 3D warehouse.',
   },
   'agv-warehouse-digital-twin-phone': {
-    alt: 'AGV fleet digital twin open in a phone browser',
+    alt: 'AGV warehouse digital twin open in a phone browser: the 3D floor above the list of cases to try',
     cap: 'The same warehouse twin on a phone. Nothing to install.',
   },
   'china-import-tracker-map': {
     alt: 'Import tracker map: purchase orders from China by sea, air and rail with the orders that need attention',
     cap: 'Every order from China on one map, with what needs you first.',
-    credit: MAP_CREDIT,
   },
   'china-import-tracker-phone': {
     alt: 'China import tracking dashboard on a phone with a bottom sheet of late orders',
     cap: 'On a phone: the map, and the late orders underneath.',
-    credit: MAP_CREDIT,
   },
   'china-import-order-landed-cost': {
     alt: 'Landed cost of an import order: FOB, freight, duty by HS code, VAT and cost per unit',
@@ -60,7 +57,7 @@ export const IMAGES: Record<string, Shot> = {
     cap: 'Office IT on the building: access points, racks, UPS, camera, badge reader.',
   },
   'ifc-viewer-hotel-model': {
-    alt: 'IFC viewer online showing the architecture, structure and MEP models of a curved hotel tower in 3D',
+    alt: 'IFC viewer online showing the architecture, structure and MEP models of a curved hotel tower in 3D, with the model tree beside it',
     cap: 'A hotel tower: architecture, structure and MEP IFC models together.',
   },
   'office-it-digital-twin-phone': {
@@ -70,7 +67,6 @@ export const IMAGES: Record<string, Shot> = {
   'ifc-viewer-hotel-in-city': {
     alt: 'IFC viewer with a hotel BIM model placed in the real 3D city of Barcelona',
     cap: 'A hotel IFC model in the real city, with terrain and buildings around it.',
-    credit: MAP_CREDIT,
   },
   'ifc-solar-facade-analysis': {
     alt: 'Solar analysis on an IFC model: a year of sun and heat on every facade from real weather data',
@@ -87,12 +83,10 @@ export const IMAGES: Record<string, Shot> = {
   'city-digital-twin-barcelona': {
     alt: 'City digital twin of Barcelona: Plaça de Catalunya with live bikes, chargers and traffic',
     cap: 'Barcelona, Plaça de Catalunya: bikes, chargers and traffic, live.',
-    credit: MAP_CREDIT,
   },
   'city-digital-twin-helsinki-transit': {
     alt: 'Helsinki digital twin: central station bus bays updated live as buses arrive',
     cap: 'Helsinki central station: bus bays, live as buses arrive.',
-    credit: MAP_CREDIT,
   },
 }
 
@@ -219,12 +213,25 @@ export const PAGES: Page[] = [
 
 const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const jsonEsc = (s: string) => s.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
-const imgUrl = (stem: string, small = false) => `/demos/${stem}${small ? '-800' : ''}.jpg`
+/** Size and map credit of a shared picture. */
+const dims = (stem: string): { width: number; height: number; map?: boolean } => {
+  const d = (SHARED as Record<string, { width: number; height: number; map?: boolean }>)[stem]
+  if (!d) throw new Error(`no size for picture ${stem} in landing-pictures.mjs`)
+  return d
+}
+const isPhone = (stem: string) => dims(stem).height > dims(stem).width
+/** The column is 900 px wide with 16 px gutters; a phone screen is drawn 300 px wide. */
+const SIZES = '(max-width: 900px) 100vw, 868px'
+const SIZES_PHONE = '300px'
+const sizesOf = (stem: string) => (isPhone(stem) ? SIZES_PHONE : SIZES)
+/** Thumbnail of a wide picture in the "more examples" grid. */
+const SIZES_THUMB = '(max-width: 520px) 100vw, 280px'
+const pic = (stem: string, alt: string, sizes: string, eager = false) => pictureHtml({ file: stem, width: dims(stem).width, height: dims(stem).height, alt, sizes, eager })
 
 function figure(L: Lang, stem: string, i: number) {
   const im = L.images[stem]
-  return `<figure class="shot">
-          <img src="${imgUrl(stem)}" srcset="${imgUrl(stem, true)} 800w, ${imgUrl(stem)} 1600w" sizes="(max-width: 900px) 100vw, 852px" width="1600" height="900" alt="${esc(im.alt)}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" />
+  return `<figure class="shot${isPhone(stem) ? ' phone' : ''}">
+          ${pic(stem, im.alt, sizesOf(stem), i === 0)}
           <figcaption>${esc(im.cap)}</figcaption>
         </figure>`
 }
@@ -280,27 +287,28 @@ function hreflangs(base: string, indent: string, tag: 'link' | 'xhtml:link') {
 const BUILD_KIND: Record<string, string> = { 'agv-digital-twin': 'agv', 'china-import-tracker': 'imports' }
 
 export const STYLE = `    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    html, body { background: #100F0C; color: #ecebe7; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; height: auto; display: block; }
     .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
     header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 16px 0; }
     .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .logo { font-size: 14px; font-weight: 600; color: #8B96E9; }
+    .logo { font-size: 14px; font-weight: 600; color: #55CAC3; }
     .nav-cta { font-size: 13px; color: rgba(255,255,255,0.6); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; white-space: nowrap; }
     .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
-    .hero { padding: 56px 0 32px; text-align: center; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
-    .badge { display: inline-block; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #A5AEF0; margin-bottom: 22px; font-weight: 500; }
+    .hero { padding: 56px 0 32px; }
+    .badge { font-size: 14px; color: rgba(255,255,255,0.62); margin-bottom: 18px; font-weight: 500; }
     h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
-    .accent { color: #8B96E9; }
-    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 auto 28px; }
-    .cta { display: inline-block; background: #5E6AD2; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
-    .cta:hover { background: #4F5ABF; }
-    .cta2 { display: inline-block; margin-left: 10px; padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #E8E8F0; font-size: 15px; font-weight: 600; }
-    .cta2:hover { border-color: rgba(139,150,233,0.6); }
+    .accent { color: #55CAC3; }
+    .lead { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.62); max-width: 640px; margin: 0 0 28px; }
+    .cta { display: inline-block; background: #0A8481; color: #fff; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .cta:hover { background: #0A8481; }
+    .cta2 { display: inline-block; margin-left: 10px; padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #ecebe7; font-size: 15px; font-weight: 600; }
+    .cta2:hover { border-color: rgba(85,202,195,0.6); }
     @media (max-width: 520px) { .cta2 { margin: 10px 0 0; } }
-    .shots { display: grid; gap: 28px; padding: 24px 0 8px; }
-    .shot img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: #111216; aspect-ratio: 16 / 9; object-fit: cover; }
+    .shots { display: grid; gap: 28px; padding: 24px 16px 8px; }
+    .shot img { width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: #111216; }
+    .shot.phone { max-width: 300px; }
     .shot figcaption { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; }
     .section { padding: 48px 0; border-top: 1px solid rgba(255,255,255,0.06); }
     h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
@@ -315,8 +323,8 @@ export const STYLE = `    *, *::before, *::after { box-sizing: border-box; margi
     .faq p { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.65; }
     .more { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
     .more a { display: block; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
-    .more a:hover { border-color: rgba(139,150,233,0.5); }
-    .more img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; }
+    .more a:hover { border-color: rgba(85,202,195,0.5); }
+    .more img { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; width: 100%; }
     .more span { display: block; padding: 10px 12px; font-size: 14px; font-weight: 600; }
     .end { text-align: center; padding: 56px 0 72px; border-top: 1px solid rgba(255,255,255,0.06); }
     .end p { color: rgba(255,255,255,0.55); margin-bottom: 22px; }
@@ -324,12 +332,11 @@ export const STYLE = `    *, *::before, *::after { box-sizing: border-box; margi
     footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; margin-bottom: 10px; }
     footer a:hover { color: rgba(255,255,255,0.7); }`
 
-const copyright = (stem: string) => `© 2026 ${IMAGES[stem].credit ?? OWN}`
-
 function render(L: Lang, base: string) {
   const p = L.pages[base]
   const url = `${SITE}${pathOf(L, base)}`
-  const hero = `${SITE}${imgUrl(p.images[0])}`
+  const hero = jpgUrl(p.images[0])
+  const heroDims = dims(p.images[0])
   const others = PAGES.filter((o) => o.slug !== base)
   const home = L.prefix ? `${L.prefix}/` : '/'
   const u = L.ui
@@ -341,25 +348,13 @@ function render(L: Lang, base: string) {
       description: p.description,
       url,
       inLanguage: L.lang,
-      primaryImageOfPage: hero,
+      primaryImageOfPage: { '@id': `${hero}#image` },
       author: AUTHOR,
       publisher: { '@type': 'Organization', name: 'IFC Viewer Online', url: SITE },
     },
-    ...p.images.map((stem) => ({
+    ...p.images.map((stem, i) => ({
       '@context': 'https://schema.org',
-      '@type': 'ImageObject',
-      contentUrl: `${SITE}${imgUrl(stem)}`,
-      thumbnailUrl: `${SITE}${imgUrl(stem, true)}`,
-      name: L.images[stem].cap,
-      description: L.images[stem].alt,
-      inLanguage: L.lang,
-      width: 1600,
-      height: 900,
-      creator: AUTHOR,
-      creditText: IMAGES[stem].credit ?? OWN,
-      copyrightNotice: copyright(stem),
-      license: TERMS,
-      acquireLicensePage: TERMS,
+      ...imageObject({ file: stem, width: dims(stem).width, height: dims(stem).height, alt: L.images[stem].alt, caption: L.images[stem].cap, lang: L.lang, map: !!dims(stem).map, primary: i === 0 }),
     })),
     {
       '@context': 'https://schema.org',
@@ -387,15 +382,15 @@ ${hreflangs(base, '  ', 'link')}
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="${L.locale}" />
   <meta property="og:image" content="${hero}" />
-  <meta property="og:image:width" content="1600" />
-  <meta property="og:image:height" content="900" />
+  <meta property="og:image:width" content="${heroDims.width}" />
+  <meta property="og:image:height" content="${heroDims.height}" />
   <meta property="og:image:alt" content="${esc(L.images[p.images[0]].alt)}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(p.title)}" />
   <meta name="twitter:description" content="${esc(p.description)}" />
   <meta name="twitter:image" content="${hero}" />
 
-  <link rel="preload" as="image" href="${imgUrl(p.images[0])}" imagesrcset="${imgUrl(p.images[0], true)} 800w, ${imgUrl(p.images[0])} 1600w" imagesizes="(max-width: 900px) 100vw, 852px" />
+  ${preloadHtml({ file: p.images[0], width: heroDims.width, sizes: sizesOf(p.images[0]) })}
   <link rel="stylesheet" href="/fonts.css" />
 ${ld.map((o) => `  <script type="application/ld+json">${jsonEsc(JSON.stringify(o))}</script>`).join('\n')}
 
@@ -443,7 +438,7 @@ ${STYLE}
       <div class="container">
         <h2>${esc(u.more)}</h2>
         <div class="more">
-          ${others.map((o) => `<a href="${pathOf(L, o.slug)}"><img src="${imgUrl(o.images[0], true)}" width="800" height="450" alt="${esc(L.images[o.images[0]].alt)}" loading="lazy" decoding="async" /><span>${esc(cap1(L.pages[o.slug].h1[0]))}</span></a>`).join('\n          ')}
+          ${others.map((o) => `<a href="${pathOf(L, o.slug)}">${pic(o.images[0], L.images[o.images[0]].alt, SIZES_THUMB)}<span>${esc(cap1(L.pages[o.slug].h1[0]))}</span></a>`).join('\n          ')}
         </div>
       </div>
     </section>
@@ -481,7 +476,7 @@ export function sitemapBlock(lastmod: string) {
     <changefreq>monthly</changefreq>
     <priority>${L === EN ? '0.8' : '0.7'}</priority>
 ${hreflangs(b.slug, '    ', 'xhtml:link')}
-${b.images.map((s) => `    <image:image><image:loc>${SITE}${imgUrl(s)}</image:loc></image:image>`).join('\n')}
+${b.images.map((s) => sitemapImage(s)).join('\n')}
   </url>`)).join('\n')
 }
 
@@ -490,15 +485,10 @@ export const PAGE_PATHS = LANGS.flatMap((L) => PAGES.map((b) => ({ lang: L.lang,
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   for (const s of Object.keys(IMAGES)) {
-    for (const small of [false, true]) {
-      const f = path.join(ROOT, 'public', imgUrl(s, small))
-      if (!existsSync(f)) throw new Error(`missing ${f}`)
-      // Credit, copyright and licence inside the file, as the ImageObject says.
-      writeFileSync(f, withRights(readFileSync(f), {
-        creator: OWN, credit: IMAGES[s].credit ?? OWN, copyright: copyright(s),
-        webStatement: TERMS, licensorUrl: TERMS, description: IMAGES[s].alt, sourceType: 'screenCapture',
-      }))
-    }
+    const [jpg, ...webp] = filesOf(s, dims(s).width).map((rel: string) => path.join(ROOT, 'public', rel))
+    for (const f of [jpg, ...webp]) if (!existsSync(f)) throw new Error(`missing ${f}`)
+    // Credit, copyright and licence inside the file, as the ImageObject says.
+    writeFileSync(jpg, withRights(readFileSync(jpg), rightsOf({ alt: IMAGES[s].alt, map: !!dims(s).map })))
   }
   for (const L of LANGS) {
     for (const b of PAGES) {
@@ -510,7 +500,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   // The pages and their images in the sitemap, between markers.
   const sm = path.join(ROOT, 'public/sitemap.xml')
-  let xml = readFileSync(sm, 'utf-8')
+  // A CRLF checkout would hide the markers' line ends from the patterns below.
+  let xml = readFileSync(sm, 'utf-8').split('\r\n').join('\n')
   if (!xml.includes('xmlns:image=')) xml = xml.replace('xmlns:xhtml="http://www.w3.org/1999/xhtml"', 'xmlns:xhtml="http://www.w3.org/1999/xhtml"\n        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
   const block = `  <!-- demo-landings:start (scripts/seo/build-demo-landings.ts) -->\n${sitemapBlock(new Date().toISOString().slice(0, 10))}\n  <!-- demo-landings:end -->\n`
   const re = /  <!-- demo-landings:start[\s\S]*?<!-- demo-landings:end -->\n/

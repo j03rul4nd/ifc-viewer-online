@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "Add my sketch"
   },
   "cover": {
     "open": "Cover studio — covers, slides and posts from the model",
@@ -1100,7 +1101,9 @@
         "grow": "Grow",
         "stack": "Stack",
         "crown": "Crown"
-      }
+      },
+      "sketch": "Sketch",
+      "sketchHint": "Your latest 3D sketch sent from the studio; opens the studio if there is none"
     }
   },
   "mobileMenu": "Capture",

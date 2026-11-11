@@ -179,5 +179,128 @@ const basePayload = { v: 1, score: 100, file: 'Tower-A.ifc', e: 0, w: 0, i: 0, m
   check('report leaks no workers.dev url', !body.includes('workers.dev'))
 }
 
+// ── /requests: feature requests from signed-in users ──
+// Signs tokens with a key generated here and serves its JWKS through a fetch
+// mock, so the RS256 path is the real one.
+{
+  const ISS = 'https://clerk.test'
+  const ADMIN = 'user_admin1'
+  const pair = await crypto.subtle.generateKey(
+    { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    true, ['sign', 'verify'],
+  )
+  const jwk = { ...(await crypto.subtle.exportKey('jwk', pair.publicKey)), kid: 'k1', alg: 'RS256', use: 'sig' }
+  const realFetch = globalThis.fetch
+  let jwksHits = 0
+  globalThis.fetch = async (u) => {
+    if (String(u) === `${ISS}/.well-known/jwks.json`) { jwksHits++; return new Response(JSON.stringify({ keys: [jwk] })) }
+    throw new Error(`unexpected fetch ${u}`)
+  }
+  const b64 = (o) => Buffer.from(typeof o === 'string' ? o : JSON.stringify(o)).toString('base64url')
+  async function token(claims, { kid = 'k1', key = pair.privateKey } = {}) {
+    const now = Math.floor(Date.now() / 1000)
+    const head = b64({ alg: 'RS256', kid, typ: 'JWT' })
+    const body = b64({ iss: ISS, sub: 'user_abc', exp: now + 60, nbf: now - 5, azp: ORIGIN, email: 'Ana@Example.com', ...claims })
+    const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${head}.${body}`))
+    return `${head}.${body}.${Buffer.from(sig).toString('base64url')}`
+  }
+  const store = {}
+  const leads = {
+    async get(k) { return store[k] ?? null },
+    async put(k, v) { store[k] = v },
+    async list({ prefix }) { return { keys: Object.keys(store).filter((k) => k.startsWith(prefix)).map((name) => ({ name })), list_complete: true } },
+  }
+  const env = { CLERK_ISSUER: ISS, FEEDBACK_ADMIN_IDS: ` ${ADMIN} , user_other`, LEADS: leads }
+  const good = { feature: 'client_link', need: 'Export clashes to BCF per storey', frequency: 'weekly', today: 'paid_tool', today_tool: 'Solibri', payer: 'company', beta: true, call: false, contact_ok: false, lang: 'es' }
+  const post = (tok, body = good, origin = ORIGIN) => worker.fetch(req('https://w/requests', {
+    method: 'POST',
+    headers: { Origin: origin, 'Content-Type': 'application/json', ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
+    body: JSON.stringify(body),
+  }), env)
+  const list = (tok) => worker.fetch(req('https://w/requests', { headers: { Origin: ORIGIN, Authorization: `Bearer ${tok}` } }), env)
+
+  check('requests: no token → 401', (await post(null)).status === 401)
+  check('requests: unknown origin → 403', (await post(await token({}), good, 'https://evil.example')).status === 403)
+  check('requests: expired token → 401', (await post(await token({ exp: Math.floor(Date.now() / 1000) - 600 }))).status === 401)
+  check('requests: other issuer → 401', (await post(await token({ iss: 'https://clerk.other' }))).status === 401)
+  check('requests: unknown kid → 401', (await post(await token({}, { kid: 'nope' }))).status === 401)
+  const other = await crypto.subtle.generateKey(
+    { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify'])
+  check('requests: forged signature → 401', (await post(await token({}, { key: other.privateKey }))).status === 401)
+  check('requests: tampered claims → 401', (await post((await token({})).replace(/^([^.]+)\.[^.]+/, (m, h) => `${h}.${b64({ iss: ISS, sub: 'user_admin1', exp: 9e9 })}`))).status === 401)
+  check('requests: other with no words → 400', (await post(await token({}), { ...good, feature: 'other', need: 'abc' })).status === 400)
+  check('requests: unknown feature → 400', (await post(await token({}), { ...good, feature: 'nope' })).status === 400)
+
+  const ok = await post(await token({}), { ...good, user_id: 'user_admin1', email: 'spoof@x.com' })
+  check('requests: valid → 200', ok.status === 200)
+  check('requests: CORS echoes origin', ok.headers.get('Access-Control-Allow-Origin') === ORIGIN)
+  const saved = Object.entries(store).filter(([k]) => k.startsWith('request:')).map(([, v]) => JSON.parse(v))
+  check('requests: one stored', saved.length === 1)
+  check('requests: user id comes from the token', saved[0]?.user_id === 'user_abc')
+  check('requests: email comes from the token, lower-cased', saved[0]?.email === 'ana@example.com')
+  check('requests: fields kept', saved[0]?.payer === 'company' && saved[0]?.today === 'paid_tool' && saved[0]?.today_tool === 'Solibri' && saved[0]?.beta === true)
+  check('requests: beta implies we may write', saved[0]?.contact_ok === true)
+  check('requests: JWKS fetched once (cached)', jwksHits === 1)
+
+  for (let i = 0; i < 4; i++) await post(await token({}))
+  check('requests: 6th of the day → 429', (await post(await token({}))).status === 429)
+  check('requests: daily limit is per user', (await post(await token({ sub: 'user_xyz' }))).status === 200)
+
+  check('requests list: non-admin → 404', (await list(await token({}))).status === 404)
+  const res = await list(await token({ sub: ADMIN }))
+  const data = await res.json()
+  check('requests list: admin → 200', res.status === 200)
+  check('requests list: all six, newest first', data.requests?.length === 6 && data.requests[0].created_at >= data.requests[5].created_at)
+  check('requests list: no-store', res.headers.get('Cache-Control') === 'no-store')
+  check('requests list: counters not listed', data.requests.every((r) => typeof r.need === 'string'))
+  check('requests: no LEADS → 503', (await worker.fetch(req('https://w/requests', {
+    method: 'POST', headers: { Origin: ORIGIN, Authorization: `Bearer ${await token({})}` }, body: JSON.stringify(good),
+  }), { CLERK_ISSUER: ISS })).status === 503)
+  // ── v2: own list, one-tap requests, source, admin status + reply ──
+  {
+    const mine = async (tok) => worker.fetch(req('https://w/requests?mine=1', { headers: { Origin: ORIGIN, Authorization: `Bearer ${tok}` } }), env)
+    const patch = (tok, id, body) => worker.fetch(req(`https://w/requests?id=${encodeURIComponent(id)}`, {
+      method: 'PATCH', headers: { Origin: ORIGIN, 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` }, body: JSON.stringify(body),
+    }), env)
+    const u = await token({ sub: 'user_v2' })
+    const r1 = await post(u, { feature: 'big_files', role: 'bim', team: '2-10', source: 'large_file:320<script>' })
+    const r2 = await post(u, { ...good, role: 'hacker', team: 'huge', payer: 'bank', today: 'magic' })
+    const id1 = (await r1.json()).id, id2 = (await r2.json()).id
+    check('requests v2: POST returns the id', typeof id1 === 'string' && /Z:[0-9a-f]{8}$/.test(id1))
+    const s1 = JSON.parse(store[`request:${id1}`]), s2 = JSON.parse(store[`request:${id2}`])
+    check('requests v2: one tap is a whole request', r1.status === 200 && s1.need === '' && s1.frequency === '' && s1.contact_ok === false)
+    check('requests v2: unknown answers dropped', s2.payer === '' && s2.today === '')
+    check('requests v2: role/team kept when valid', s1.role === 'bim' && s1.team === '2-10')
+    check('requests v2: role/team dropped when unknown', s2.role === '' && s2.team === '')
+    check('requests v2: source sanitized', s1.source === 'large_file:320script')
+    check('requests v2: new status by default', s1.status === 'new' && s1.reply === '')
+    check('requests v2: index key written', store[`request-by:user_v2:${id1}`] === id1)
+
+    const m = await (await mine(u)).json()
+    check('requests v2: mine lists only own', m.requests?.length === 2 && m.requests.every((r) => r.id === id1 || r.id === id2))
+    check('requests v2: mine hides email and user id', m.requests.every((r) => !('email' in r) && !('user_id' in r)))
+    check('requests v2: mine needs a token', (await worker.fetch(req('https://w/requests?mine=1', { headers: { Origin: ORIGIN } }), env)).status === 401)
+    const other = await (await mine(await token({ sub: 'user_nobody' }))).json()
+    check('requests v2: another user sees none', other.requests?.length === 0)
+
+    check('requests v2: PATCH by non-admin → 404', (await patch(u, id1, { status: 'planned' })).status === 404)
+    const adminTok = await token({ sub: ADMIN })
+    check('requests v2: PATCH bad status → 400', (await patch(adminTok, id1, { status: 'nope' })).status === 400)
+    check('requests v2: PATCH bad id → 400', (await patch(adminTok, '../x', { status: 'planned' })).status === 400)
+    check('requests v2: PATCH unknown id → 404', (await patch(adminTok, '2026-01-01T00:00:00.000Z:deadbeef', { status: 'planned' })).status === 404)
+    const pr = await patch(adminTok, id1, { status: 'planned', reply: 'Lo hacemos en diciembre' })
+    check('requests v2: admin PATCH → 200', pr.status === 200)
+    const after = JSON.parse(store[`request:${id1}`])
+    check('requests v2: status, reply and updated_at stored', after.status === 'planned' && after.reply === 'Lo hacemos en diciembre' && !!after.updated_at)
+    check('requests v2: PATCH keeps the rest', after.feature === 'big_files' && after.role === 'bim' && after.user_id === 'user_v2')
+    const m2 = await (await mine(u)).json()
+    const seen = m2.requests.find((r) => r.id === id1)
+    check('requests v2: user sees status and reply', seen?.status === 'planned' && seen?.reply === 'Lo hacemos en diciembre')
+    const all = await (await list(adminTok)).json()
+    check('requests v2: admin list has no index rows', all.requests.every((r) => typeof r.need === 'string' && r.status))
+  }
+  globalThis.fetch = realFetch
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail === 0 ? 0 : 1)

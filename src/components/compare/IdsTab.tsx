@@ -116,7 +116,7 @@ export default function IdsTab() {
                 {d.introduced.slice(0, 300).map((f, i) => (
                   <li key={i}>
                     <b className="font-medium">{f.name || f.ifcClass}</b> · {f.spec}
-                    {f.elementChanged && <span className="text-[#F5A623]"> · {t('ids.changedElement')}</span>}
+                    {f.elementChanged && <span className="text-[#E9A23B]"> · {t('ids.changedElement')}</span>}
                     <div className="text-[var(--text-faint)]">{f.reasons.join('; ')}</div>
                   </li>
                 ))}

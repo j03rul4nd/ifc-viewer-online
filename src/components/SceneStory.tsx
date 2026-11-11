@@ -123,7 +123,7 @@ export default function SceneStory({ viewerApiRef, story, cardOpen, cta }: Props
         </p>
         {item && (
           <div className="mt-2 inline-flex items-center gap-2 h-7 px-2.5 rounded-full bg-white/[0.05] border border-white/10 text-[11.5px]" data-testid="scene-story-live">
-            <span className={`w-2 h-2 rounded-full ${item.state === 'live' ? 'animate-pulse' : ''}`} style={{ background: item.state === 'live' ? (item.color ?? '#22c55e') : '#8a8f98' }} aria-hidden />
+            <span className={`w-2 h-2 rounded-full ${item.state === 'live' ? 'animate-pulse' : ''}`} style={{ background: item.state === 'live' ? (item.color ?? '#3fa866') : '#a09e98' }} aria-hidden />
             <span className="text-[var(--text-faint)]">{item.state === 'live' ? t('explorer.story.now') : t(`explorer.state.${item.state}`)}</span>
             {item.value !== null && <span className="font-mono tabular-nums text-[var(--text)]">{item.value}</span>}
             {item.state === 'live' && item.ruleName && <span className="text-[var(--text-dim)] truncate max-w-[180px]">· {item.ruleName}</span>}

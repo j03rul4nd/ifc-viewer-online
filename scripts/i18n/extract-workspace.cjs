@@ -134,7 +134,8 @@ for (const k of [...keys].sort((a, b) => a.localeCompare(b))) {
 const json = JSON.stringify(out, null, 2) + '\n'
 
 if (process.argv.includes('--check')) {
-  const now = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : ''
+  // A Windows checkout turns the file's line endings into CRLF; that is not staleness.
+  const now = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') : ''
   if (now !== json) { console.error('src/locales/en/workspace.json is stale — run node scripts/i18n/extract-workspace.cjs'); process.exit(1) }
   console.log('workspace catalogue up to date:', Object.keys(out).length, 'keys')
 } else {

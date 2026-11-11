@@ -23,6 +23,9 @@ export interface DropCaps {
   scene: boolean
   /** Weather files for the solar analysis (off where its panel cannot mount). Default off. */
   weather?: boolean
+  /** Technical drawings: .dxf/.dwg go to the drawings pane; a PDF too while it is open. */
+  drawings?: boolean
+  drawingsOpen?: boolean
 }
 
 export type DeferredReasonKey = 'unsupported.e57' | 'unsupported.proprietary'
@@ -38,6 +41,8 @@ export interface DropPlan {
    * the scene (documentStore) so the set arrives whole.
    */
   documents: File[]
+  /** CAD sheets (and PDFs, with the pane open) for the drawings pane. */
+  drawings: File[]
   bcf: File[]
   pointcloud: File[]
   /** Entry files, sidecars and textures — one selection for the mesh loader. */
@@ -70,7 +75,12 @@ export const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set([
 
 export function planDrop(files: readonly File[], caps: DropCaps): DropPlan {
   const r = classifyFiles(files)
-  const documents = r.other.filter((f) => DOCUMENT_EXTENSIONS.has(fileExtensionOf(f.name)))
+  const isDrawing = (f: File) => {
+    const ext = fileExtensionOf(f.name)
+    return !!caps.drawings && (ext === '.dxf' || ext === '.dwg' || (ext === '.pdf' && !!caps.drawingsOpen))
+  }
+  const drawings = r.other.filter(isDrawing)
+  const documents = r.other.filter((f) => !isDrawing(f) && DOCUMENT_EXTENSIONS.has(fileExtensionOf(f.name)))
   const unsupported: File[] = r.other.filter((f) => !DOCUMENT_EXTENSIONS.has(fileExtensionOf(f.name)))
 
   const ids = r.ids[0] ?? null
@@ -105,12 +115,12 @@ export function planDrop(files: readonly File[], caps: DropCaps): DropPlan {
     else deferred.push({ reasonKey, files: [file] })
   }
 
-  return { ifc: r.ifc, ids, moreIds, documents, bcf: r.bcf, pointcloud, mesh, video, vector: r.vector, weather, scene, deferred, unsupported }
+  return { ifc: r.ifc, ids, moreIds, documents, drawings, bcf: r.bcf, pointcloud, mesh, video, vector: r.vector, weather, scene, deferred, unsupported }
 }
 
 /** Number of files some subsystem will open (mesh counts its entry files). */
 export function plannedCount(plan: DropPlan): number {
-  return plan.ifc.length + (plan.ids ? 1 : 0) + plan.moreIds.length + plan.documents.length + plan.bcf.length + plan.pointcloud.length
+  return plan.ifc.length + (plan.ids ? 1 : 0) + plan.moreIds.length + plan.documents.length + plan.drawings.length + plan.bcf.length + plan.pointcloud.length
     + groupMeshFiles(plan.mesh).length + plan.video.length + plan.vector.length + plan.weather.length + (plan.scene ? 1 : 0)
 }
 

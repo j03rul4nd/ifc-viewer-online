@@ -19,8 +19,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MoreHorizontal, Lock, LifeBuoy } from 'lucide-react'
 import { SCENARIOS, scenarioData, type Scenario, type TicketKind } from './sample-data'
 import { SoonChip } from './Soon'
-import { SECTIONS, canUse, sectionFromPath, type SectionActions, type SectionId, type SectionDef } from './registry'
+import { ChevronRight } from 'lucide-react'
+import { SECTIONS, canUse, sectionFromPath, type PaidPlan, type SectionActions, type SectionId, type SectionDef } from './registry'
+import { usePaidLive, usePaidQuery } from '../../hooks/usePaidQuery'
+import { paidApi, type ApiMe } from '../../lib/cloud/paid-client'
 import { Banner, Primary, Quiet, Skeleton, fmtInt, NAV_EVENT, notifyNav } from './ui'
+import { AccessContext, PERSONAS, SAMPLE_POLICIES, accessFor, canSee, type Action, type PersonaId } from './roles'
 import { previewProvider, type CheckoutItem, type CheckoutOutcome } from '../../lib/pricing/checkout'
 import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
@@ -46,16 +50,16 @@ function NavLink({ s, active, locked, go, variant }: { s: SectionDef; active: bo
   }[variant]
   const tone = active
     ? (variant === 'tab' ? 'text-[var(--text)] font-medium' : 'bg-[var(--surface-2)] text-[var(--text)] font-medium')
-    : 'text-[var(--text-faint)] hover:text-[var(--text)]'
+    : 'text-[var(--text-dim)] hover:text-[var(--text)]'
   return (
     <a href={hrefOf(s.id)} title={variant === 'rail' ? tx(s.label) : undefined} aria-label={variant === 'rail' ? tx(s.label) : undefined}
       onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); go(s.id) }}
       aria-current={active ? 'page' : undefined}
       className={`shrink-0 flex items-center no-underline ${base} ${tone}`}>
       <Icon aria-hidden size={variant === 'tab' ? 20 : 16} strokeWidth={active ? 2.1 : 1.7} />
-      {variant !== 'rail' && <span className={variant === 'side' || variant === 'menu' ? 'flex-1' : ''}>{variant === 'tab' ? tx(s.short ?? s.label) : tx(s.label)}</span>}
-      {s.soon && (variant === 'side' || variant === 'menu') && <SoonChip />}
-      {locked && variant !== 'tab' && variant !== 'rail' && <Lock aria-label={tx("Needs an upgrade")} size={12} className="text-[var(--text-faint)]" />}
+      {variant !== 'rail' && <span className={variant === 'side' || variant === 'menu' ? 'flex-1 min-w-0 truncate' : ''}>{variant === 'tab' ? tx(s.short ?? s.label) : tx(s.label)}</span>}
+      {s.soon && variant === 'menu' && <SoonChip />}
+      {locked && !s.soon && variant !== 'tab' && variant !== 'rail' && <Lock aria-label={tx("Needs an upgrade")} size={12} className="text-[var(--text-faint)]" />}
     </a>
   )
 }
@@ -64,6 +68,9 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const tx = useTx()
   const [section, setSection] = useState<SectionId>(() => (typeof location !== 'undefined' ? sectionFromPath(location.pathname) : 'overview'))
   const [scenario, setScenario] = useState<Scenario>('active')
+  const [previewPlan, setPreviewPlan] = useState<PaidPlan>('pro')
+  const [persona, setPersona] = useState<PersonaId>('owner')
+  const [policies, setPolicies] = useState(SAMPLE_POLICIES)
   const [checkoutOutcome, setCheckoutOutcome] = useState<CheckoutOutcome['status']>('paid')
   const [jobOpen, setJobOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -79,7 +86,16 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     addEventListener(NAV_EVENT, sync)
     return () => { removeEventListener('popstate', sync); removeEventListener(NAV_EVENT, sync) }
   }, [])
-  const data = useMemo(() => scenarioData(scenario), [scenario])
+  const limit = PERSONAS.find((p) => p.id === persona)!.projects
+  const data = useMemo(() => { const d = scenarioData(scenario); return { ...d, projects: limit === null ? d.projects : d.projects.slice(0, limit), account: { ...d.account, plan: previewPlan } } }, [scenario, previewPlan, limit])
+  // Live, what this person may do comes from the API; the screen only follows it.
+  const me = usePaidQuery<ApiMe | null>(() => paidApi.me(), null)
+  const access = useMemo(() => {
+    const preview = accessFor(persona, policies, setPolicies)
+    if (me.source !== 'live' || !me.data) return preview
+    const allowed = new Set(me.data.can)
+    return { ...preview, role: me.data.role, can: (a: Action) => allowed.has(a) }
+  }, [persona, policies, me.source, me.data])
   const top = useRef<HTMLDivElement>(null)
   const provider = useMemo(() => previewProvider(checkoutOutcome), [checkoutOutcome])
 
@@ -118,14 +134,19 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     },
   }), [go])
 
-  const plan = data.account.plan
+  // Live (API connected): the API enforces plan and role per call, so the shell
+  // locks nothing and each screen shows the API's own answer.
+  const live = usePaidLive()
+  const plan = live ? 'team' : data.account.plan
   const current = SECTIONS.find((s) => s.id === section)!
-  const tabs = SECTIONS.filter((s) => !s.secondary)
-  const more = SECTIONS.filter((s) => s.secondary)
-  const work = SECTIONS.filter((s) => s.group !== 'account')
-  const account = SECTIONS.filter((s) => s.group === 'account')
+  const visible = SECTIONS.filter((s) => canSee(s.id, access.can))
+  const tabs = visible.filter((s) => !s.secondary)
+  const more = visible.filter((s) => s.secondary)
+  const work = visible.filter((s) => s.group !== 'account')
+  const account = visible.filter((s) => s.group === 'account')
   const initials = data.account.name.split(' ').map((w) => w[0]).slice(0, 2).join('')
   const moreActive = more.some((s) => s.id === section)
+  const soonActive = !!SECTIONS.find((s) => s.id === section)?.soon
 
   let body: React.ReactNode
   if (scenario === 'loading') body = <><div className="h-[28px] w-[180px] mb-5 rounded-[6px] bg-[var(--surface-2)]" /><Skeleton rows={4} /></>
@@ -134,6 +155,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
       {rich(tx('Your projects and credits are safe. Check your connection; if it keeps failing, <0>tell us</0> — the report includes what we need.'), [(c) => <button className="text-[var(--accent)] hover:underline" onClick={() => setContact({ kind: 'bug' })}>{c}</button>])}
     </Banner>
   )
+  else if (!canSee(section, access.can)) body = <Banner tone="info" title={tx('Your role does not include this')} action={<Quiet onClick={() => go('overview')}>{tx('Go to overview')}</Quiet>}>{tx('Ask an admin of your company if you need it: they decide what each role can do.')}</Banner>
   else if (!canUse(plan, current)) body = <LockedSection section={current} current={plan} period={data.account.billing} onUpgrade={setCheckout} />
   else body = <current.Component key={section} data={data} actions={actions} />
 
@@ -144,14 +166,28 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const offerTour = pageTour && !seen.has(pageTour.id) && !tour ? pageTour : undefined
   const status = data.account.status
   return (
+    <AccessContext.Provider value={access}>
     <div ref={top} className="min-h-[100dvh] bg-[var(--bg)] text-[var(--text)]">
       <header className="sticky top-0 z-20 flex items-center gap-2 sm:gap-3 px-4 sm:px-6 h-[48px] border-b border-[var(--border)] bg-[var(--bg)] pt-[env(safe-area-inset-top)] box-content">
         <button onClick={onNavigateHome} className="text-[13.5px] font-semibold truncate">{tx("IFC Viewer Online")}</button>
-        <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-dim)] whitespace-nowrap">{tx("Design preview · sample data")}</span>
+        <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-dim)] whitespace-nowrap">{tx(live ? "Preview" : "Design preview · sample data")}</span>
         <span className="flex-1" />
         <details className="relative">
           <summary className="list-none cursor-pointer text-[11.5px] px-2 h-[28px] flex items-center rounded-[6px] border border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text)]">{tx("Preview")}</summary>
           <div className="absolute right-0 mt-2 w-[240px] rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl z-30 space-y-3">
+            <label className="block text-[11.5px] text-[var(--text-faint)]">
+              {tx("Plan")}
+              <select value={previewPlan} onChange={(e) => setPreviewPlan(e.target.value as PaidPlan)} className="mt-1 w-full h-[32px] bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-1.5 text-[12.5px] text-[var(--text)]">
+                <option value="pro">{tx("Pro")}</option>
+                <option value="team">{tx("Team")}</option>
+              </select>
+            </label>
+            <label className="block text-[11.5px] text-[var(--text-faint)]">
+              {tx("See it as")}
+              <select value={persona} onChange={(e) => setPersona(e.target.value as PersonaId)} className="mt-1 w-full h-[32px] bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-1.5 text-[12.5px] text-[var(--text)]">
+                {PERSONAS.map((p) => <option key={p.id} value={p.id}>{tx(p.label)}</option>)}
+              </select>
+            </label>
             <label className="block text-[11.5px] text-[var(--text-faint)]">
               {tx("Account state")}
               <select value={scenario} onChange={(e) => setScenario(e.target.value as Scenario)} className="mt-1 w-full h-[32px] bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-1.5 text-[12.5px] text-[var(--text)]">
@@ -178,7 +214,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
               <p className="text-[11.5px] text-[var(--text-faint)] truncate" title={data.account.email}>{data.account.email}</p>
               <p className="mt-1 text-[11.5px] text-[var(--text-dim)]">{data.account.plan === 'team' ? tx("Team") : tx("Pro")} · {tx('{{n}} credits', { n: fmtInt(data.account.credits.balance) })}</p>
             </div>
-            {[...account, SECTIONS.find((s) => s.id === 'billing')!].map((s) => (
+            {[...account.filter((s) => s.id !== 'billing'), ...visible.filter((s) => s.id === 'billing')].map((s) => (
               <button key={s.id} onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; go(s.id) }}
                 className="w-full text-left px-4 h-[36px] text-[13px] hover:bg-[var(--surface-2)] flex items-center gap-2.5"><s.icon size={15} aria-hidden className="text-[var(--text-dim)]" />{tx(s.label)}</button>
             ))}
@@ -197,16 +233,31 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
 
       <div className="flex max-w-[1240px] mx-auto">
         <nav aria-label={tx("Workspace")} className="hidden md:flex md:flex-col md:shrink-0 md:sticky md:top-[48px] md:self-start md:h-[calc(100dvh-48px)] md:py-5 md:px-2 lg:px-3 md:gap-0.5 md:items-center lg:items-stretch lg:w-[200px]">
-          {[work, account].map((group, gi) => (
-            <div key={gi} className={`flex flex-col gap-0.5 md:items-center lg:items-stretch ${gi ? 'mt-auto pt-3 border-t border-[var(--border)] w-full' : ''}`}>
-              {group.map((s) => (
-                <span key={s.id} className="contents">
-                  <span className="lg:hidden"><NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="rail" /></span>
-                  <span className="hidden lg:contents"><NavLink s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="side" /></span>
-                </span>
-              ))}
-            </div>
-          ))}
+          {/* Rail (tablet): icons only. Sidebar (desktop): grouped, unbuilt screens folded away. */}
+          <div className="flex flex-col gap-0.5 items-center lg:hidden">
+            {visible.filter((s) => !s.soon && s.group !== 'account').map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="rail" />)}
+          </div>
+          <div className="hidden lg:flex flex-col gap-0.5">
+            {work.filter((s) => !s.soon && canUse(plan, s)).map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={false} go={go} variant="side" />)}
+            {work.some((s) => !s.soon && !canUse(plan, s)) && <p className="mt-4 mb-1 px-2.5 text-[12px] text-[var(--text-faint)]">{tx("Team plan")}</p>}
+            {work.filter((s) => !s.soon && !canUse(plan, s)).map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked go={go} variant="side" />)}
+            <details className="mt-4 group" open={soonActive || undefined}>
+              <summary className="list-none cursor-pointer flex items-center gap-1.5 h-[28px] px-2.5 text-[12px] text-[var(--text-faint)] hover:text-[var(--text)]">
+                <ChevronRight aria-hidden size={13} className="transition-transform group-open:rotate-90" />{tx("Coming soon")}
+              </summary>
+              <div className="mt-0.5 flex flex-col gap-0.5">
+                {work.filter((s) => s.soon).map((s) => <NavLink key={s.id} s={s} active={section === s.id} locked={!canUse(plan, s)} go={go} variant="side" />)}
+              </div>
+            </details>
+          </div>
+          <div className="mt-auto pt-3 border-t border-[var(--border)] w-full flex flex-col gap-0.5 md:items-center lg:items-stretch">
+            {account.map((s) => (
+              <span key={s.id} className="contents">
+                <span className="lg:hidden"><NavLink s={s} active={section === s.id} locked={false} go={go} variant="rail" /></span>
+                <span className="hidden lg:contents"><NavLink s={s} active={section === s.id} locked={false} go={go} variant="side" /></span>
+              </span>
+            ))}
+          </div>
         </nav>
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-5 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-8">
           {status === 'past_due' && scenario !== 'loading' && scenario !== 'error' && (
@@ -225,8 +276,8 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
             <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-[10px] border border-[var(--border)] px-4 py-2.5" data-tour-offer>
               <p className="flex-1 min-w-0 text-[12.5px] text-[var(--text-dim)]"><span className="text-[var(--text)] font-medium">{tx("New here?")}</span> {tx('A 1-minute tour: {{title}}. {{summary}}', { title: tx(offerTour.title), summary: tx(offerTour.summary) })}</p>
               <div className="flex gap-2 shrink-0">
-                <Quiet onClick={() => { markSeen(offerTour.id); setSeen(seenTours()) }}>{tx("Not now")}</Quiet>
-                <Primary onClick={() => setTour(offerTour)}>{tx("Show me")}</Primary>
+                <button onClick={() => { markSeen(offerTour.id); setSeen(seenTours()) }} className="h-[38px] sm:h-[32px] px-2 text-[13px] text-[var(--text-faint)] hover:text-[var(--text)]">{tx("Not now")}</button>
+                <Quiet onClick={() => setTour(offerTour)}>{tx("Show me")}</Quiet>
               </div>
             </div>
           )}
@@ -265,5 +316,6 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
       {contact && <ContactDialog kind={contact.kind} refId={contact.ref} section={section} onClose={() => setContact(null)} />}
       {checkout && <CheckoutDialog item={checkout} provider={provider} onClose={() => setCheckout(null)} />}
     </div>
+    </AccessContext.Provider>
   )
 }

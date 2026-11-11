@@ -10,6 +10,7 @@
     "scanLoadFailed": "无法加载链接中的扫描数据：{{message}}",
     "loadFailedNamed": "无法加载 \"{{fileName}}\" — {{reason}}",
     "serverProcessingAction": "在服务器上处理（即将推出）",
+    "serverProcessingOffer": "此文件对浏览器来说太大。在服务器上处理会对您有帮助吗？",
     "serverProcessingNoted": "已记录：大文件的服务器处理即将加入 Pro。在此之前，请尝试分段导出模型或减少属性。",
     "batchLoaded_other": "{{name}} — 已加载 {{count}} 个模型",
     "batchPartial": "{{name}} — 已加载 {{loaded}} 个，{{failed}} 个失败",

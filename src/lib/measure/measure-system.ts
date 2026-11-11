@@ -32,11 +32,12 @@ import { minDistance } from './clearance-math'
 import type { SavedMeasurement } from './measure-file'
 import * as M from './measure-math'
 import { createTaskQueue } from './async'
+import { gripAt, movePoint } from './grips'
 import {
   DEFAULT_MEASURE_SETTINGS,
   type AreaMode, type DistanceMode, type IfcAxis, type MeasureHover, type MeasureItem,
   type MeasureKind, type MeasureSettings, type MeasureSnapshot, type MeasureStep, type MeasureTool,
-  type Vec3, type DistanceItem, type DimensionItem, type DimensionMode, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
+  type Vec3, type SnapKind, type DistanceItem, type DimensionItem, type DimensionMode, type MeasureNotice, type Anchor, type GeoPoint, type RouteMode, type RoutePlan, type PathItem,
 } from './measure-types'
 
 export interface MeasureSystemDeps {
@@ -56,6 +57,10 @@ export interface MeasureSystemDeps {
   planRoute?(req: { from: Vec3; to: Vec3; fromAnchor: Anchor | null; toAnchor: Anchor | null; mode: RouteMode }): Promise<RoutePlan | string>
   /** Client coordinates the pointer is aiming at (canvas centre under pointer lock). */
   aim(e: { clientX: number; clientY: number }): { x: number; y: number }
+  /** Where presses are caught before the camera controls (grips). Without it, no grips. */
+  container?: HTMLElement
+  /** Turn the camera controls off while a grip is dragged. */
+  setControlsEnabled?(enabled: boolean): void
 }
 
 export interface MeasureSystem {
@@ -114,6 +119,8 @@ export interface MeasureSystem {
   paintLabels(ctx: CanvasRenderingContext2D, width: number, height: number, s: number): boolean
   /** Hide the whole overlay for one render (a clean presentation image). Returns the undo. */
   hideForCapture(): () => void
+  /** A grip of the selected measurement is being dragged. */
+  isDraggingGrip(): boolean
   dispose(): void
 }
 
@@ -152,6 +159,8 @@ const plain = (p: THREE.Vector3): Vec3 => ({ x: p.x, y: p.y, z: p.z })
 
 /** Pixels within which a click on the first vertex closes an area. */
 const CLOSE_PX = 12
+/** How near the cursor must be to the foot of a perpendicular for PER to take it. */
+const PERP_PX = 12
 /** A second click this close to the previous point is the second half of a double-click. */
 const DUPLICATE_PX = 4
 
@@ -194,6 +203,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     point: THREE.Vector3
     axis: IfcAxis | null
     closing: boolean
+    /** What the point locked onto when it is not what the picker found (perpendicular). */
+    snap: SnapKind | null
+    /** Polar tracking angle, when the point was pulled onto one. */
+    polarDeg: number | null
     cursor: { x: number; y: number }
     camera: string
   }
@@ -339,10 +352,26 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     let closing = false
     const anchor = draft.points[draft.points.length - 1]
     const lockable = tool === 'distance' ? distanceMode === 'point' : tool === 'path' || tool === 'area' && areaMode === 'polygon' || tool === 'angle' || tool === 'dimension'
+    let snap: SnapKind | null = null
+    let polarDeg: number | null = null
     if (anchor && shiftDown && lockable) {
       const locked = M.lockToAxis(anchor, point)
       point = v3(locked.point)
       axis = locked.axis
+    } else if (anchor && lockable) {
+      // Perpendicular (PER): over an edge, the foot of the perpendicular from
+      // the last point, when the cursor is near it — the shortest distance to a
+      // wall line, square to it.
+      const foot = pick.edge && settings.snaps.edge ? M.perpendicularOnSegment(plain(anchor), plain(pick.edge[0]), plain(pick.edge[1])) : null
+      const footPx = foot ? deps.picker.project(v3(foot)) : null
+      if (foot && footPx && Math.hypot(footPx.x - cursor.x, footPx.y - cursor.y) <= PERP_PX) {
+        point = v3(foot)
+        snap = 'perpendicular'
+      } else if (settings.polar && pick.kind !== 'vertex' && pick.kind !== 'midpoint') {
+        // Polar tracking attracts toward 15° rays in plan; a real snap wins.
+        const tracked = M.polarTrack(plain(anchor), plain(point))
+        if (tracked) { point = v3(tracked.point); polarDeg = tracked.angleDeg }
+      }
     }
     if (tool === 'area' && areaMode === 'polygon' && draft.points.length >= 3) {
       const first = deps.picker.project(draft.points[0])
@@ -350,9 +379,11 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
         closing = true
         point = draft.points[0].clone()
         axis = null
+        snap = null
+        polarDeg = null
       }
     }
-    hover = { pick, point, axis, closing, cursor, camera: lastPick.camera }
+    hover = { pick, point, axis, closing, snap, polarDeg, cursor, camera: lastPick.camera }
     renderDraft()
     publishHud()
   }
@@ -381,7 +412,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'angle':
         return n === 2 ? { kind: 'angle', value: M.angleAt(draft.points[0], draft.points[1], p) } : null
       case 'dimension': {
-        const d = layoutDimension(dimensionMode, [...draft.points, p].map(plain), { toward: facingFrom(draft.points[0] ?? p) })
+        const d = layoutDimension(dimensionMode, [...draft.points, p].map(plain), { toward: facingFrom(draft.points[0] ?? p), terminator: settings.dimTerminator })
         return d ? { kind: 'length', value: Math.abs(d.value) } : null
       }
       default:
@@ -402,7 +433,8 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     hudHover = {
       clientX: screen.x,
       clientY: screen.y,
-      kind: hover.closing ? 'vertex' : hover.pick.kind,
+      kind: hover.closing ? 'vertex' : hover.snap ?? hover.pick.kind,
+      polarDeg: hover.polarDeg,
       axis: hover.axis,
       live: liveValue(),
       closing: hover.closing,
@@ -465,7 +497,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     }
     if (h && pts.length > 0) {
       const last = pts[pts.length - 1]
-      rubber.setColor(h.axis ? AXIS_COLOR[h.axis] : OVERLAY_COLORS.preview)
+      rubber.setColor(h.axis ? AXIS_COLOR[h.axis] : h.polarDeg !== null ? OVERLAY_COLORS.highlight : OVERLAY_COLORS.preview)
       rubber.setDashScale(deps.picker.worldPerPixel(h.point))
       rubber.setPoints([last, h.point])
       if (tool === 'area' && areaMode === 'polygon' && pts.length >= 2) {
@@ -480,7 +512,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       // before the click, not discovered after it.
       if (tool === 'dimension') {
         const poly = [...pts, h.point]
-        const d = layoutDimension(dimensionMode, poly.map(plain), { toward: facingFrom(pts[0]), markSize: markSizeAt(pts[0]), labelSize: labelSizeAt(pts[0]) })
+        const d = layoutDimension(dimensionMode, poly.map(plain), { toward: facingFrom(pts[0]), markSize: markSizeAt(pts[0]), labelSize: labelSizeAt(pts[0]), terminator: settings.dimTerminator })
         if (d) { draftDims.setSegments(d.segments.map(v3)); rubber.object.visible = dimensionMode === 'radius' }
       }
     }
@@ -504,12 +536,12 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
 
   function dimensionLayoutOf(item: DimensionItem): DimensionLayout | null {
     const p0 = v3(item.points[0])
-    return layoutDimension(item.mode, item.points, { toward: item.facing ?? facingFrom(p0), markSize: markSizeAt(p0), labelSize: labelSizeAt(p0) })
+    return layoutDimension(item.mode, item.points, { toward: item.facing ?? facingFrom(p0), markSize: markSizeAt(p0), labelSize: labelSizeAt(p0), terminator: settings.dimTerminator })
   }
 
   /** Which tag carries the headline (and the select / delete handle). */
   function headlineTag(item: DimensionItem, tags: readonly DimensionTag[]): number {
-    if (item.mode === 'chain' || item.mode === 'baseline' || item.mode === 'level') return tags.length - 1
+    if (item.mode === 'chain' || item.mode === 'baseline' || item.mode === 'level' || item.mode === 'ordinate') return tags.length - 1
     return 0
   }
 
@@ -518,6 +550,10 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'level': return M.formatLevel(t.value, settings)
       case 'radius': return `R ${M.formatLength(t.value, settings)}`
       case 'diameter': return `Ø ${M.formatLength(t.value, settings)}`
+      case 'arc': return `⌒ ${M.formatLength(t.value, settings)}`
+      case 'note': return '✎'
+      case 'angle': return M.formatAngle(t.value, settings)
+      case 'ordinate': return `X ${M.formatLevel(t.value, settings)} · Y ${M.formatLevel(t.value2 ?? 0, settings)}`
       default: return M.formatLength(t.value, settings)
     }
   }
@@ -579,11 +615,16 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
 
   function labelText(item: MeasureItem): string {
     let text = baseLabelText(item)
+    // Text override, as CAD writes it: a note with <> replaces the label, the
+    // measured value standing where the <> is ("<> libre" → "1,20 m libre").
+    const override = item.note && item.note.includes('<>')
+    if (override) text = item.note!.split('<>').join(text)
     // A glyph as well as the colour: red/green alone fails one reader in twelve.
     const check = checkStatus(item)
     if (check) text = text.replace(/^[^\n]*/, (first) => `${first} ${check === 'pass' ? '✓' : '✗'}`)
     if (item.kind === 'area' && item.extrusion) text += `\n${M.formatVolume(volumeOf(item.value, item.extrusion), settings)}`
-    if (item.note) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
+    // A leader's note IS its label; every other item adds it under the value.
+    if (item.note && !override && !(item.kind === 'dimension' && item.mode === 'leader')) text += `\n${item.note.length > 28 ? item.note.slice(0, 27) + '…' : item.note}`
     return text
   }
 
@@ -609,6 +650,7 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       case 'dimension': {
         const d = dimensionLayoutOf(item)
         if (!d || !d.tags.length) return M.formatItemValue(item, settings)
+        if (item.mode === 'leader') return item.note ? item.note : '✎'
         const head = tagText(d.tags[headlineTag(item, d.tags)])
         return item.mode === 'chain' && item.points.length > 2 ? `Σ ${head}` : item.mode === 'baseline' ? `⊢ ${head}` : head
       }
@@ -1072,6 +1114,126 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     })
   }
 
+  // ── Grips: drag a point of the selected measurement ──────────────────────────
+  //
+  // A press within GRIP_PX of a point of the SELECTED item grabs it (caught in
+  // the capture phase, before camera-controls, as the section handles are).
+  // While it moves the point snaps exactly as a new one would; on release the
+  // item is recomputed (grips.ts says what a moved point keeps and drops).
+  // Escape puts it back.
+  interface GripDrag { id: string; index: number; original: MeasureItem; anchor: Anchor | null; pending: boolean; queued: { x: number; y: number } | null }
+  let grip: GripDrag | null = null
+
+  function replaceItem(entry: Entry, next: MeasureItem): void {
+    entry.item = next
+    disposeVisuals(entry.visuals)
+    entry.visuals = buildVisuals(next)
+    refreshVisual(entry)
+  }
+
+  function gripMoveTo(x: number, y: number): void {
+    const g = grip
+    if (!g) return
+    if (g.pending) { g.queued = { x, y }; return }
+    g.pending = true
+    void deps.picker.pick(x, y, { snaps: settings.snaps }).then((pick) => {
+      g.pending = false
+      if (grip !== g) return
+      const entry = entries.get(g.id)
+      if (pick && entry) {
+        let p = pick.point.clone()
+        // Polar tracking from the neighbouring point, as when it was drawn.
+        const pts = entry.item.points
+        const neighbour = pts[g.index - 1] ?? pts[g.index + 1]
+        if (settings.polar && neighbour && pick.kind !== 'vertex' && pick.kind !== 'midpoint') {
+          const tr = M.polarTrack(neighbour, plain(p))
+          if (tr) p = v3(tr.point)
+        }
+        let next: MeasureItem | null
+        if (entry.item.kind === 'point') {
+          const { coords, frame } = deps.toModelCoordinates(p, pick.modelId)
+          const geo = deps.geoOf ? deps.geoOf(p, pick.map?.kind === 'terrain') : null
+          next = { ...entry.item, points: [plain(p)], coords, frame, geo: geo ?? null }
+        } else {
+          next = movePoint(entry.item, g.index, plain(p))
+        }
+        if (next) {
+          g.anchor = anchorOf(pick)
+          replaceItem(entry, next)
+          // The panel's value follows the drag, not just the drop.
+          emit()
+        }
+      }
+      if (g.queued) { const q = g.queued; g.queued = null; gripMoveTo(q.x, q.y) }
+    }, () => { g.pending = false })
+  }
+
+  const onGripMove = (e: PointerEvent): void => {
+    if (!grip) return
+    e.preventDefault()
+    e.stopPropagation()
+    const at = deps.aim(e)
+    gripMoveTo(at.x, at.y)
+  }
+
+  function endGrip(cancel: boolean): void {
+    const g = grip
+    if (!g) return
+    grip = null
+    window.removeEventListener('pointermove', onGripMove, true)
+    window.removeEventListener('pointerup', onGripUp, true)
+    window.removeEventListener('pointercancel', onGripUp, true)
+    window.removeEventListener('keydown', onGripKey, true)
+    deps.setControlsEnabled?.(true)
+    deps.canvas.style.cursor = tool === 'none' ? '' : 'crosshair'
+    const entry = entries.get(g.id)
+    if (!entry) return
+    if (cancel) {
+      replaceItem(entry, g.original)
+    } else if (entry.item.anchors || g.anchor) {
+      const anchors = entry.item.points.map((_, i) => (i === g.index ? g.anchor : entry.item.anchors?.[i] ?? null))
+      entry.item = { ...entry.item, anchors: anchors.some(Boolean) ? anchors : undefined } as MeasureItem
+    }
+    emit()
+  }
+
+  const onGripUp = (e: PointerEvent): void => {
+    if (!grip) return
+    // Swallowed: a release here must not also reach the viewer as a click
+    // (which would select an element, or place a point of the active tool).
+    e.preventDefault()
+    e.stopPropagation()
+    endGrip(false)
+  }
+
+  const onGripKey = (e: KeyboardEvent): void => {
+    if (!grip || e.key !== 'Escape') return
+    e.preventDefault()
+    e.stopPropagation()
+    endGrip(true)
+  }
+
+  const onGripDown = (e: PointerEvent): void => {
+    if (e.button !== 0 || e.target !== deps.canvas || grip || !selectedId) return
+    // Not while a new measurement is half drawn: that click belongs to it.
+    if (hasDraft()) return
+    const entry = entries.get(selectedId)
+    if (!entry || !entry.item.visible) return
+    const at = deps.aim(e)
+    const index = gripAt(entry.item.points.map((q) => deps.picker.project(v3(q))), at.x, at.y)
+    if (index === null) return
+    e.preventDefault()
+    e.stopPropagation()
+    grip = { id: entry.item.id, index, original: entry.item, anchor: entry.item.anchors?.[index] ?? null, pending: false, queued: null }
+    deps.setControlsEnabled?.(false)
+    deps.canvas.style.cursor = 'grabbing'
+    window.addEventListener('pointermove', onGripMove, true)
+    window.addEventListener('pointerup', onGripUp, true)
+    window.addEventListener('pointercancel', onGripUp, true)
+    window.addEventListener('keydown', onGripKey, true)
+  }
+  deps.container?.addEventListener('pointerdown', onGripDown, true)
+
   // ── Public API ───────────────────────────────────────────────────────────────
 
   function setTool(next: MeasureTool): void {
@@ -1239,6 +1401,13 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
     },
     setSettings(patch) {
       settings = { ...settings, ...patch, snaps: { ...settings.snaps, ...(patch.snaps ?? {}) } }
+      // A dimension's strokes and tags are built from the settings (units,
+      // precision, terminators): rebuild them, or they keep the old ones.
+      for (const e of entries.values()) {
+        if (e.item.kind !== 'dimension') continue
+        disposeVisuals(e.visuals)
+        e.visuals = buildVisuals(e.item)
+      }
       refreshAll()
       publishHud()
       emit()
@@ -1405,12 +1574,17 @@ export function createMeasureSystem(deps: MeasureSystemDeps): MeasureSystem {
       }
       return painted
     },
+    isDraggingGrip() {
+      return grip !== null
+    },
     hideForCapture() {
       const was = root.visible
       root.visible = false
       return () => { root.visible = was }
     },
     dispose() {
+      endGrip(true)
+      deps.container?.removeEventListener('pointerdown', onGripDown, true)
       clear()
       for (const o of [draftStroke, rubber, draftDots, draftFill, draftArc, edgeHighlight, faceFill, faceOutline, planeFill, planeOutline, draftDims]) o.dispose()
       root.removeFromParent()

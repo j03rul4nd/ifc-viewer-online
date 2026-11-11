@@ -310,3 +310,41 @@ export function overtureFootprintTags(f: OvertureFootprint): Record<string, stri
   if (f.src?.length) t['source:overture'] = f.src.join(';')
   return t
 }
+
+/**
+ * The districts of the shipped index whose box overlaps the site's.
+ *
+ * A model's site reaches 700 m every way, and the districts are extracted
+ * round a landmark each: from Lujiazui the Bund is across the river, in
+ * another district's file. Keyed off the point alone it was never read.
+ */
+export function districtsTouching<D extends { slug?: string; bbox?: [number, number, number, number] }>(
+  districts: ReadonlyArray<D>,
+  site: { south: number; west: number; north: number; east: number },
+): D[] {
+  return districts.filter((d) => {
+    if (!d.slug || !d.bbox) return false
+    const [w, s, e, n] = d.bbox
+    return w <= site.east && e >= site.west && s <= site.north && n >= site.south
+  })
+}
+
+/**
+ * Several districts as one extract. Footprints are kept once by id, since
+ * neighbouring boxes overlap; OSM enrichments by key, first one wins.
+ */
+export function mergeExtracts(
+  parts: ReadonlyArray<OvertureExtract | null | undefined>,
+): OvertureExtract | null {
+  const ok = parts.filter((p): p is OvertureExtract => !!p && Array.isArray(p.footprints))
+  if (ok.length === 0) return null
+  if (ok.length === 1) return ok[0]
+  const seen = new Set<string>()
+  const footprints: OvertureFootprint[] = []
+  const osm: Record<string, OvertureOsmAttributes> = {}
+  for (const p of ok) {
+    for (const f of p.footprints) if (!seen.has(f.id)) { seen.add(f.id); footprints.push(f) }
+    for (const [k, v] of Object.entries(p.osm ?? {})) if (!(k in osm)) osm[k] = v
+  }
+  return { ...ok[0], footprints, osm }
+}

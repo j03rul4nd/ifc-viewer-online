@@ -19,6 +19,7 @@ import { useSolarStore } from '../stores/solarStore'
 import { useTwinDeviceStore } from '../stores/twinDeviceStore'
 import { useFloodStore } from '../features/flood/store'
 import { useVectorLayerStore } from '../stores/vectorLayerStore'
+import { useDrawingStore } from '../stores/drawingStore'
 import { useVideoStore } from '../stores/videoStore'
 import { applicablePanels, type PanelId, type RailId } from '../lib/ui/panel-rail'
 import type { RailItem } from '../components/PanelRail'
@@ -69,17 +70,19 @@ export function usePanelRail({ icons, labels, badges, available, allow }: PanelR
   const setLayers = useVectorLayerStore((s) => s.setPanelOpen)
   const video = useVideoStore((s) => s.panelOpen)
   const setVideo = useVideoStore((s) => s.setPanelOpen)
+  const drawings = useDrawingStore((s) => s.panelOpen)
+  const setDrawings = useDrawingStore((s) => s.setPanelOpen)
 
   return useMemo(() => {
     const open: Record<RailId, boolean> = {
-      properties, scene, measurement, section, plans, map, solar, flood, pointcloud, mesh, devices, layers, video,
+      properties, scene, measurement, section, plans, map, solar, flood, pointcloud, mesh, devices, layers, video, drawings,
     }
     const set: Record<RailId, (v: boolean) => void> = {
       properties: setProperties,
       scene: setScene, measurement: setMeasurement, section: setSection,
       plans: setPlans, map: setMap, solar: setSolar, flood: setFlood,
       pointcloud: setPointcloud, mesh: setMesh, devices: setDevices,
-      layers: setLayers, video: setVideo,
+      layers: setLayers, video: setVideo, drawings: setDrawings,
     }
     return applicablePanels({ available, allow })
       .filter((id) => icons[id])
@@ -98,6 +101,6 @@ export function usePanelRail({ icons, labels, badges, available, allow }: PanelR
     properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar, flood, setFlood,
     pointcloud, setPointcloud, mesh, setMesh, devices, setDevices,
-    layers, setLayers, video, setVideo,
+    layers, setLayers, video, setVideo, drawings, setDrawings,
   ])
 }

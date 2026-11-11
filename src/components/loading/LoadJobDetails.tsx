@@ -52,7 +52,7 @@ function ErrorBlock({ job, advanced }: { job: LoadJobView; advanced: boolean }) 
   const c = job.capabilities
   const { reason, generic } = errorText(error, job.kind, t, resolveDetail)
   return (
-    <div className="rounded-[6px] border border-[rgba(229,72,77,0.3)] bg-[rgba(229,72,77,0.07)] p-2">
+    <div className="rounded-[6px] border border-[rgba(224,82,63,0.3)] bg-[rgba(224,82,63,0.07)] p-2">
       <p className="text-[11.5px] leading-snug text-[var(--text)]">{reason}</p>
       {advanced && generic && (
         <p className="mt-1 text-[10.5px] leading-snug text-[var(--text-dim)]">{generic}</p>

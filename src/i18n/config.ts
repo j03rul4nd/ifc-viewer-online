@@ -50,6 +50,7 @@ import enPointCloud  from '../locales/en/pointcloud.json'
 import enMesh        from '../locales/en/mesh.json'
 import enLayers      from '../locales/en/layers.json'
 import enVideo       from '../locales/en/video.json'
+import enDrawings    from '../locales/en/drawings.json'
 import enLoading     from '../locales/en/loading.json'
 import enCompare     from '../locales/en/compare.json'
 
@@ -80,6 +81,7 @@ const EN_RESOURCES = {
   mesh:        enMesh,
   layers:      enLayers,
   video:       enVideo,
+  drawings:    enDrawings,
   loading:     enLoading,
   compare:     enCompare,
 } as const
@@ -99,7 +101,7 @@ void i18n
     resourcesToBackend(
       (language: string, namespace: string) => {
         // The paid workspace namespace is never bundled, not even in EN: it loads with its route.
-        if (language === DEFAULT_LOCALE && namespace !== 'workspace') return Promise.resolve({}) // already bundled; guard for Rollup
+        if (language === DEFAULT_LOCALE && namespace !== 'workspace' && namespace !== 'sketch') return Promise.resolve({}) // already bundled; guard for Rollup
         return loadLocaleNamespace(language, namespace)
       },
     ),

@@ -1,5 +1,8 @@
 // ─── DemoGallery ──────────────────────────────────────────────────────────────
-// A modal gallery for picking one of the curated demo IFC models.
+// The modal for picking a demo. Someone opening it for the first time sees three
+// recommended demos; someone looking for something searches, or filters by their
+// field or by what they want to do. Cards carry a picture, a short title and the
+// size: the long text waits behind the info button.
 //
 // With `onSetSelected` (the app's path) the gallery only PICKS: the whole set
 // goes to the loading manager as one batch of URL jobs, which downloads with
@@ -9,31 +12,27 @@
 // Without it (the legacy path) the gallery downloads each member itself, with
 // a live progress bar, and hands each File to `onModelReady` in turn.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
-import { CATEGORY_META, type DemoCategory } from '../demo-models/categories'
-import { demoSets, activeCategories, twinDemoSets, type DemoModel, type DemoSet } from '../demo-models/models'
-import { SCENE_DEMOS, sceneDemoUrl } from '../demo-models/scene-demos'
+import {
+  DEMO_DOMAINS, DEMO_GOALS, demoCatalog, formatDemoBytes, matchesQuery, recommendedDemos,
+  type DemoDomain, type DemoEntry, type DemoGoal,
+} from '../demo-models/catalog'
+import type { DemoModel, DemoSet } from '../demo-models/models'
 import { isGisEnabled } from '../lib/geo/gis-flag'
+import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { fetchDemoModel, type FetchProgress } from '../demo-models/fetchDemoModel'
 import { ModelIllustration } from '../demo-models/illustrations'
 import { createLogger } from '../lib/logger'
 import { trackDemoGalleryOpened, trackDemoModelSelected } from '../lib/analytics'
 
 const log = createLogger('DemoGallery')
+const PortLibrary = lazy(() => import('./PortLibrary'))
 
-// Typed i18n keys for category labels (keeps react-i18next's key-literal typing happy).
-const CATEGORY_KEY = {
-  Reference:      'demoGallery.categories.reference',
-  Residential:    'demoGallery.categories.residential',
-  Commercial:     'demoGallery.categories.commercial',
-  Industrial:     'demoGallery.categories.industrial',
-  MEP:            'demoGallery.categories.mep',
-  Structural:     'demoGallery.categories.structural',
-  Infrastructure: 'demoGallery.categories.infrastructure',
-} as const satisfies Record<DemoCategory, string>
+// Dynamic keys: the ids come from the catalogue, and the parity test pins them.
+type Tr = (key: string, options?: Record<string, unknown>) => string
 
 interface DemoGalleryProps {
   open: boolean
@@ -55,18 +54,53 @@ interface DemoGalleryProps {
 }
 
 export default function DemoGallery({ open, onClose, onModelReady, onSetSelected }: DemoGalleryProps) {
-  const { t } = useTranslation('landing')
-  const [filter, setFilter]       = useState<DemoCategory | 'all'>('all')
+  const { t: tRaw } = useTranslation('landing')
+  const { t: tLayersRaw } = useTranslation('layers')
+  const { t: tCloudRaw } = useTranslation('pointcloud')
+  const t = tRaw as unknown as Tr
+  const tLayers = tLayersRaw as unknown as Tr
+  const tCloud = tCloudRaw as unknown as Tr
+  const [query, setQuery]         = useState('')
+  const [domain, setDomain]       = useState<DemoDomain | 'port' | null>(null)
+  const [goal, setGoal]           = useState<DemoGoal | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [progress, setProgress]   = useState<FetchProgress | null>(null)
   const [errorId, setErrorId]     = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const deferredQuery = useDeferredValue(query)
 
-  const categories = useMemo(() => activeCategories(), [])
-  // Sets, not models: a federated project is one demo that happens to be three
-  // files, and offering it as three cards makes the reader federate by hand.
-  const sets       = useMemo(() => demoSets(), [])
-  const visible    = filter === 'all' ? sets : sets.filter((s) => s.category === filter)
+  // Twins and clouds start from the app, which the legacy path has no way into.
+  const catalog = useMemo(() => demoCatalog({
+    maps: isGisEnabled(), clouds: Boolean(onSetSelected) && isPointCloudEnabled(), twins: Boolean(onSetSelected),
+  }), [onSetSelected])
+  const recommended = useMemo(() => recommendedDemos(catalog), [catalog])
+
+  const describe = (e: DemoEntry): string => {
+    if (e.kind === 'scene') return tLayers(`scene.demos.${e.scene.key}.description`)
+    if (e.kind === 'cloud') return tCloud(`demos.items.${e.cloud.descriptionKey}`)
+    if (e.set.twin) return tLayers(`devices.gallery.${e.set.twin}.description`)
+    return e.set.models[0].description
+  }
+  const titleOf = (e: DemoEntry): string => t(`demoGallery.items.${e.id}`)
+
+  // One predicate for the results AND for the chip counts: a chip counts what
+  // it would show with the other filters kept, so it never leads to nothing.
+  const matches = (e: DemoEntry, d: DemoDomain | 'port' | null, g: DemoGoal | null): boolean => {
+    if (d && e.domain !== d) return false
+    if (g && !e.goals.includes(g)) return false
+    if (!deferredQuery.trim()) return true
+    // Everything the visitor can read about a card, plus the file's own English
+    // name and format, so a specialist's "IFC2x3" or "LiDAR" still finds it.
+    const technical = e.kind === 'set' ? `${e.set.name} ${e.set.models.map((m) => `${m.schema} ${m.description}`).join(' ')}`
+      : e.kind === 'cloud' ? `${e.cloud.name} ${e.cloud.format}` : ''
+    const labels = [t(`demoGallery.domains.${e.domain}`), ...e.goals.map((g) => t(`demoGallery.goals.${g}`))].join(' ')
+    return matchesQuery(`${titleOf(e)} ${describe(e)} ${technical} ${labels}`, deferredQuery)
+  }
+  const results = catalog.filter((e) => matches(e, domain, goal))
+  const domainCount = (d: DemoDomain): number => catalog.filter((e) => matches(e, d, goal)).length
+  const goalCount = (g: DemoGoal): number => catalog.filter((e) => matches(e, domain, g)).length
+
+  const filtering = domain !== null || goal !== null || deferredQuery.trim() !== ''
 
   useEffect(() => {
     if (open) trackDemoGalleryOpened()
@@ -129,76 +163,141 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
     onClose()
   }
 
+  const clearFilters = (): void => { setQuery(''); setDomain(null); setGoal(null) }
+
+  const card = (e: DemoEntry, large = false): ReactNode => (
+    <DemoCard
+      key={e.id}
+      entry={e}
+      large={large}
+      title={titleOf(e)}
+      hint={large || recommended.includes(e) && !filtering ? t(`demoGallery.hints.${e.id}`, { defaultValue: '' }) : ''}
+      description={describe(e)}
+      loadingPct={loadingId === e.id ? Math.round((progress?.ratio ?? 0) * 100) : null}
+      error={errorId === e.id}
+      disabled={loadingId !== null && loadingId !== e.id}
+      onLoad={(s) => void handleLoad(s)}
+    />
+  )
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-0 sm:p-6"
           style={{
-            paddingTop:    'max(0.75rem, env(safe-area-inset-top))',
-            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+            paddingTop:    'max(0px, env(safe-area-inset-top))',
+            paddingBottom: 'max(0px, env(safe-area-inset-bottom))',
           }}
           onClick={handleClose}
         >
           <motion.div
-            role="dialog" aria-modal="true" aria-label={t('demoGallery.title')}
-            initial={{ opacity: 0, scale: 0.97, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 16 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            role="dialog" aria-modal="true" aria-label={t('demoGallery.pickTitle')}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full sm:max-w-[1040px] max-h-full sm:max-h-[88dvh]
-                       rounded-2xl bg-[rgba(12,12,16,0.98)] backdrop-blur-[20px] border border-[var(--border-strong)]
+            onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }}
+            className="w-full h-full sm:max-w-[1040px] sm:h-[88dvh]
+                       sm:rounded-2xl bg-[var(--bg)] border-[var(--border-strong)] sm:border
                        shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
           >
-            {/* Header */}
-            <div className="flex-none px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--border)] flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-[15px] sm:text-[18px] font-semibold tracking-tight">{t('demoGallery.title')}</h2>
-                <p className="mt-1 text-[11.5px] sm:text-[13px] text-[var(--text-faint)] max-w-[640px]">{t('demoGallery.subtitle')}</p>
+            {/* Header: search stays in reach whatever the scroll position. */}
+            <div className="flex-none px-4 sm:px-6 pt-3 sm:pt-4 pb-3 border-b border-[var(--border)] flex flex-col gap-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-[16px] sm:text-[18px] font-semibold tracking-tight">{t('demoGallery.pickTitle')}</h2>
+                <button
+                  onClick={handleClose}
+                  aria-label={t('demoGallery.close')}
+                  className="flex-none w-10 h-10 -mr-2 rounded-lg grid place-items-center text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5 transition-colors"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={handleClose}
-                aria-label={t('demoGallery.close')}
-                className="flex-none w-8 h-8 rounded-lg grid place-items-center text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5 transition-colors"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Category filter */}
-            <div className="flex-none px-4 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--border)] flex gap-2 overflow-x-auto sm:flex-wrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
-                {t('demoGallery.all')}
-              </FilterChip>
-              {categories.map((c) => (
-                <FilterChip key={c} active={filter === c} accent={CATEGORY_META[c].accent} onClick={() => setFilter(c)}>
-                  {t(CATEGORY_KEY[c])}
-                </FilterChip>
-              ))}
-            </div>
-
-            {/* Cards */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 [-webkit-overflow-scrolling:touch]">
-              {filter === 'all' && <SceneDemos />}
-              {onSetSelected && filter === 'all' && <TwinDemos onPick={(s) => void handleLoad(s)} />}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                {visible.map((s) => (
-                  <DemoCard
-                    key={s.id}
-                    set={s}
-                    categoryLabel={t(CATEGORY_KEY[s.category])}
-                    loading={loadingId === s.id}
-                    progress={loadingId === s.id ? progress : null}
-                    error={errorId === s.id}
-                    disabled={loadingId !== null && loadingId !== s.id}
-                    onLoad={() => void handleLoad(s)}
-                  />
+              {domain !== 'port' && (
+                <input
+                  type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('demoGallery.searchPlaceholder')} aria-label={t('demoGallery.searchPlaceholder')}
+                  data-testid="demo-search"
+                  className="w-full h-10 px-3 rounded-lg text-[13px] max-md:text-[16px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]"
+                />
+              )}
+              <ChipRow label={t('demoGallery.byDomain')}>
+                {DEMO_DOMAINS.map((d) => ({ d, n: domainCount(d) })).filter(({ d, n }) => n > 0 || domain === d).map(({ d, n }) => (
+                  <FilterChip key={d} active={domain === d} count={n} onClick={() => setDomain(domain === d ? null : d)}>
+                    {t(`demoGallery.domains.${d}`)}
+                  </FilterChip>
                 ))}
-              </div>
+                <FilterChip active={domain === 'port'} onClick={() => setDomain(domain === 'port' ? null : 'port')}>
+                  {t('demoGallery.domains.port')}
+                </FilterChip>
+              </ChipRow>
+              {domain !== 'port' && DEMO_GOALS.some((g) => goal === g || goalCount(g) > 0) && (
+                <ChipRow label={t('demoGallery.byGoal')}>
+                  {DEMO_GOALS.map((g) => ({ g, n: goalCount(g) })).filter(({ g, n }) => n > 0 || goal === g).map(({ g, n }) => (
+                    <FilterChip key={g} active={goal === g} count={n} onClick={() => setGoal(goal === g ? null : g)}>
+                      {t(`demoGallery.goals.${g}`)}
+                    </FilterChip>
+                  ))}
+                </ChipRow>
+              )}
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 [-webkit-overflow-scrolling:touch]">
+              {domain === 'port' ? (
+                <Suspense fallback={null}><PortLibrary onPick={(s) => void handleLoad(s)} /></Suspense>
+              ) : filtering ? (
+                <>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p aria-live="polite" className="text-[12px] text-[var(--text-faint)]">
+                      {t('demoGallery.resultCount', { count: results.length })}
+                    </p>
+                    <button type="button" onClick={clearFilters} className="min-h-8 text-[12px] text-[var(--accent-2)] hover:underline">
+                      {t('demoGallery.clear')}
+                    </button>
+                  </div>
+                  {results.length === 0 ? (
+                    <div className="py-12 text-center" data-testid="demo-empty">
+                      <p className="text-[14px] text-[var(--text)]">{t('demoGallery.emptyTitle')}</p>
+                      <p className="mt-1 text-[12.5px] text-[var(--text-faint)]">{t('demoGallery.emptyHint')}</p>
+                    </div>
+                  ) : (
+                    <CardGrid>{results.map((e) => card(e))}</CardGrid>
+                  )}
+                </>
+              ) : (
+                <>
+                  <section aria-labelledby="demo-start" data-testid="demo-recommended">
+                    <h3 id="demo-start" className="text-[13px] font-semibold tracking-tight mb-2.5">{t('demoGallery.startHere')}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {recommended.map((e, i) => (
+                        <div key={e.id} className={i === 0 ? 'col-span-2 sm:col-span-1' : ''}>{card(e, i === 0)}</div>
+                      ))}
+                    </div>
+                  </section>
+                  {/* Browse rows, not every card: one row per field with a way into
+                      the rest, so the whole catalogue reads in a couple of screens. */}
+                  {DEMO_DOMAINS.map((d) => {
+                    const members = catalog.filter((e) => e.domain === d && !recommended.includes(e))
+                    if (members.length === 0) return null
+                    return (
+                      <section key={d} className="mt-6" data-testid={`demo-row-${d}`}>
+                        <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                          <h3 className="text-[13px] font-semibold tracking-tight">{t(`demoGallery.domains.${d}`)}</h3>
+                          {members.length > ROW && (
+                            <button type="button" onClick={() => setDomain(d)} className="min-h-8 text-[12px] text-[var(--accent-2)] hover:underline">
+                              {t('demoGallery.seeAll', { count: members.length })}
+                            </button>
+                          )}
+                        </div>
+                        <CardGrid>{members.slice(0, ROW).map((e) => card(e))}</CardGrid>
+                      </section>
+                    )
+                  })}
+                </>
+              )}
             </div>
           </motion.div>
         </motion.div>
@@ -207,232 +306,139 @@ export default function DemoGallery({ open, onClose, onModelReady, onSetSelected
   )
 }
 
-// ── Filter chip ────────────────────────────────────────────────────────────────
-function FilterChip({
-  active, accent, onClick, children,
-}: { active: boolean; accent?: string; onClick: () => void; children: React.ReactNode }) {
+/** Cards per browse row: one row of four on desktop, two rows of two on a phone. */
+const ROW = 4
+
+function CardGrid({ children }: { children: ReactNode }) {
+  return <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">{children}</div>
+}
+
+function ChipRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 min-w-0" role="group" aria-label={label}>
+      <span className="flex-none w-[52px] text-[11px] leading-tight text-[var(--text-faint)]">{label}</span>
+      <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{children}</div>
+    </div>
+  )
+}
+
+function FilterChip({ active, count, onClick, children }: { active: boolean; count?: number; onClick: () => void; children: ReactNode }) {
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors border ${
+      className={`flex-none h-8 px-2.5 rounded-lg text-[12px] whitespace-nowrap border transition-colors ${
         active
-          ? 'bg-white/10 border-[var(--border-strong)] text-[var(--text)]'
-          : 'bg-transparent border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text)] hover:border-[var(--border-strong)]'
+          ? 'bg-[var(--surface-2)] border-[var(--accent)] text-[var(--text)]'
+          : 'border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)]'
       }`}
     >
-      <span className="inline-flex items-center gap-1.5">
-        {accent && <span className="w-2 h-2 rounded-full" style={{ background: accent }} />}
-        {children}
-      </span>
+      {children}
+      {count != null && <span className="ml-1.5 text-[var(--text-faint)] [font-variant-numeric:tabular-nums]">{count}</span>}
     </button>
   )
 }
 
 // ── Card ───────────────────────────────────────────────────────────────────────
 function DemoCard({
-  set, categoryLabel, loading, progress, error, disabled, onLoad,
+  entry, large, title, hint, description, loadingPct, error, disabled, onLoad,
 }: {
-  set: DemoSet
-  categoryLabel: string
-  loading: boolean
-  progress: FetchProgress | null
+  entry: DemoEntry
+  large: boolean
+  title: string
+  hint: string
+  description: string
+  loadingPct: number | null
   error: boolean
   disabled: boolean
-  onLoad: () => void
+  onLoad: (set: DemoSet) => void
 }) {
-  const { t } = useTranslation('landing')
-  // The first member stands for the set on the card: its illustration, its
-  // schema, its source link. For a set of one that IS the model, which is why
-  // the gallery has only one card component rather than two.
-  const model: DemoModel = set.models[0]
-  const federated = set.models.length > 1
-  const accent = CATEGORY_META[set.category].accent
-  const pct = progress?.ratio != null ? Math.round(progress.ratio * 100) : null
-  const sizeLabel = federated
-    ? `${(set.sizeBytes / 1_048_576).toFixed(1)} MB`
-    : model.approximateSize
+  const { t: tRaw } = useTranslation('landing')
+  const t = tRaw as unknown as Tr
+  const [imageFailed, setImageFailed] = useState(false)
+  const [details, setDetails] = useState(false)
+
+  const facts: string[] = []
+  if (entry.kind === 'scene') facts.push(t('demoGallery.onMap'))
+  if (entry.kind === 'cloud') facts.push(t('demoGallery.scan'))
+  if (entry.kind === 'set' && entry.set.models.length > 1) facts.push(t('demoGallery.fileCount', { count: entry.set.models.length }))
+  if (entry.sizeBytes != null) facts.push(formatDemoBytes(entry.sizeBytes))
+
+  const body = (
+    <>
+      <span className={`relative block ${large ? 'aspect-[16/9] sm:aspect-[16/10]' : 'aspect-[16/10]'} bg-[var(--surface-2)]`}>
+        {imageFailed ? (
+          <span className="absolute inset-0 px-8 py-5 block">
+            <ModelIllustration id={entry.kind === 'set' ? entry.set.models[0].id : entry.id} accent="#A09E98" />
+          </span>
+        ) : (
+          <img
+            src={entry.image} alt="" width={640} height={400} loading="lazy" decoding="async"
+            onError={() => setImageFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+      </span>
+      <span className="block p-2.5">
+        <span className={`block font-medium leading-snug text-[var(--text)] ${large ? 'text-[15px]' : 'text-[13px]'}`}>{title}</span>
+        {hint && <span className="block mt-1 text-[12px] leading-snug text-[var(--text-dim)]">{hint}</span>}
+        <span className="block mt-1 pr-8 text-[11.5px] text-[var(--text-faint)] [font-variant-numeric:tabular-nums]">
+          {loadingPct != null ? `${t('demoGallery.loading')} ${loadingPct}%` : facts.join(' · ')}
+        </span>
+      </span>
+    </>
+  )
+  const cls = 'block w-full text-left no-underline hover:bg-[var(--surface-2)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]'
 
   return (
     <div
-      className={`group relative rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden flex flex-col transition-colors hover:border-[var(--border-strong)] ${
+      data-testid={`demo-card-${entry.id}`}
+      className={`relative min-w-0 rounded-[10px] border border-[var(--border)] overflow-hidden hover:border-[var(--border-strong)] transition-colors ${
         disabled ? 'opacity-50 pointer-events-none' : ''
       }`}
     >
-      {/* Thumbnail — model illustration (or an external image if provided) */}
-      <div
-        className="relative h-[104px] overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${accent}26, ${accent}05)` }}
+      {entry.kind === 'set'
+        ? <button type="button" className={cls} disabled={loadingPct != null} onClick={() => onLoad(entry.set)}>{body}</button>
+        : <a className={cls} href={entry.href}>{body}</a>}
+
+      {/* A sibling of the card's main action, never nested in it. */}
+      <button
+        type="button"
+        aria-expanded={details}
+        aria-label={t('demoGallery.moreInfo', { title })}
+        onClick={() => setDetails((v) => !v)}
+        className="absolute right-0 bottom-0 w-10 h-10 grid place-items-center text-[var(--text-faint)] hover:text-[var(--text)]"
       >
-        {model.thumbnail ? (
-          <img src={model.thumbnail} alt="" className="w-full h-full" style={{ objectFit: model.thumbnailFit ?? 'cover' }} loading="lazy" />
-        ) : (
-          <div className="absolute inset-0 px-6 py-3.5">
-            <ModelIllustration id={model.id} accent={accent} />
-          </div>
-        )}
-        <span
-          className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide"
-          style={{ background: `${accent}22`, color: accent }}
-        >
-          {categoryLabel}
-        </span>
-        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/30 text-[var(--text-faint)] border border-[var(--border)]">
-          {model.schema}
-        </span>
-        {federated && (
-          <span
-            className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium border"
-            style={{ background: `${accent}22`, color: accent, borderColor: `${accent}44` }}
-          >
-            {t('demoGallery.disciplines', {
-              count: set.models.length,
-              defaultValue: '{{count}} disciplines',
-            })}
-          </span>
-        )}
-      </div>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+          {details ? <path d="M6 15l6-6 6 6" /> : <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>}
+        </svg>
+      </button>
 
-      {/* Body */}
-      <div className="flex-1 flex flex-col p-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[13.5px] font-semibold tracking-tight">{set.name}</h3>
-          <span className="flex-none text-[11px] text-[var(--text-faint)]">{sizeLabel}</span>
-        </div>
-        <p className="mt-1.5 text-[12px] leading-snug text-[var(--text-faint)] flex-1">{model.description}</p>
-        {federated && (
-          <ul className="mt-2 flex flex-wrap gap-1">
-            {set.models.map((m) => (
-              <li
-                key={m.id}
-                className="px-1.5 py-0.5 rounded text-[10px] text-[var(--text-faint)] bg-white/5 border border-[var(--border)]"
-                title={m.description}
-              >
-                {m.name.includes('—') ? m.name.split('—')[1].trim() : m.name}
-              </li>
-            ))}
-          </ul>
-        )}
+      {error && <p className="px-2.5 pb-2.5 text-[11.5px] text-[var(--err,#e5707e)]">{t('demoGallery.loadFailed')}</p>}
 
-        {/* Footer: source + load */}
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <a
-            href={model.sourceUrl} target="_blank" rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-[10.5px] text-[var(--text-faint)] hover:text-[var(--accent-2)] inline-flex items-center gap-1 truncate max-w-[150px]"
-            title={model.sourceLabel}
-          >
-            <Icons.Link size={11} className="flex-none" />
-            <span className="truncate">{model.sourceLabel}</span>
-          </a>
-
-          <button
-            onClick={onLoad}
-            disabled={loading}
-            className="flex-none px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] text-white hover:opacity-90 transition-opacity disabled:opacity-70 inline-flex items-center gap-1.5"
-          >
-            {loading ? (
-              <>
-                <Spinner />
-                {pct != null ? `${pct}%` : t('demoGallery.loading')}
-              </>
-            ) : error ? (
-              <>
-                <Icons.Reset size={13} />
-                {t('demoGallery.retry')}
-              </>
-            ) : (
-              <>
-                <Icons.ArrowRight size={13} />
-                {federated
-                  ? t('demoGallery.loadAll', { defaultValue: 'Load all' })
-                  : t('demoGallery.load')}
-              </>
-            )}
-          </button>
-        </div>
-
-        {error && (
-          <p className="mt-2 text-[10.5px] text-[var(--err,#e5707e)]">{t('demoGallery.loadFailed')}</p>
-        )}
-      </div>
-
-      {/* Progress bar pinned to the bottom while loading */}
-      {loading && (
-        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/5">
-          <div
-            className="h-full transition-[width] duration-150"
-            style={{ width: pct != null ? `${pct}%` : '40%', background: accent }}
-          />
+      {details && (
+        <div className="px-2.5 pb-2.5 pt-2 border-t border-[var(--border)] text-[12px] leading-snug text-[var(--text-dim)]">
+          <p>{description}</p>
+          <SourceLine entry={entry} />
         </div>
       )}
     </div>
   )
 }
 
-function Spinner() {
+/** Attribution: several of these licences require it, so it stays one tap away. */
+function SourceLine({ entry }: { entry: DemoEntry }) {
+  const source = entry.kind === 'set' ? entry.set.models[0] : entry.kind === 'cloud' ? entry.cloud : null
+  if (!source) return null
+  const format = entry.kind === 'set' ? entry.set.models[0].schema : entry.kind === 'cloud' ? entry.cloud.format : ''
   return (
-    <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-/** The live digital-twin demos: a model plus simulated devices, one click. */
-/**
- * Whole digital-twin scenes (models + live data + devices + map), opened as
- * `?scene=` — the same way a visitor opens a scene someone shared.
- */
-function SceneDemos() {
-  const { t } = useTranslation('layers', { keyPrefix: 'scene.demos' })
-  // They stand on the map: without map mode in the build there is no scene to show.
-  if (!isGisEnabled() || SCENE_DEMOS.length === 0) return null
-  return (
-    <div className="mb-4 flex flex-col gap-2" data-testid="scene-demos">
-      <div className="flex items-baseline gap-2">
-        <span className="text-[12px] font-semibold tracking-tight">{t('title')}</span>
-        <span className="text-[11px] text-[var(--text-faint)]">{t('subtitle')}</span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {SCENE_DEMOS.map((d) => (
-          <a key={d.id} href={sceneDemoUrl(d)} data-testid={`scene-demo-card-${d.id}`}
-            className="text-left p-3 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex gap-3 items-start no-underline text-[var(--text)]">
-            <span className="mt-0.5 w-2 h-2 rounded-full bg-[#2fb7ff] animate-pulse shrink-0" aria-hidden />
-            <span className="min-w-0">
-              <span className="block text-[13px] font-medium">{t(`${d.key}.name` as never)}</span>
-              <span className="block mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug">{t(`${d.key}.description` as never)}</span>
-              <span className="block mt-1 text-[10px] text-[var(--text-dim)]">{t('models', { count: d.models })} · {t('live', { count: d.live })}</span>
-            </span>
-          </a>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function TwinDemos({ onPick }: { onPick: (set: DemoSet) => void }) {
-  const { t } = useTranslation('layers', { keyPrefix: 'devices.gallery' })
-  const sets = useMemo(() => twinDemoSets(), [])
-  if (sets.length === 0) return null
-  return (
-    <div className="mb-4 flex flex-col gap-2" data-testid="twin-demos">
-      <div className="flex items-baseline gap-2">
-        <span className="text-[12px] font-semibold tracking-tight">{t('title')}</span>
-        <span className="text-[11px] text-[var(--text-faint)]">{t('subtitle')}</span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {sets.map((s) => (
-          <button key={s.id} type="button" onClick={() => onPick(s)} data-testid={`twin-demo-card-${s.twin}`}
-            className="text-left p-3 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex gap-3 items-start">
-            <span className="mt-0.5 w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" aria-hidden />
-            <span className="min-w-0">
-              <span className="block text-[13px] font-medium">{t(`${s.twin}.name` as never)}</span>
-              <span className="block mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug">{t(`${s.twin}.description` as never)}</span>
-              <span className="block mt-1 text-[10px] text-[var(--text-dim)]">{s.models.length > 1 ? t('files', { count: s.models.length }) : s.models[0].name}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
+    <p className="mt-2 text-[11.5px] text-[var(--text-faint)] [overflow-wrap:anywhere]">
+      {format} ·{' '}
+      <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-[var(--accent-2)]">
+        <Icons.Link size={11} className="flex-none" />
+        {source.sourceLabel}
+      </a>
+    </p>
   )
 }

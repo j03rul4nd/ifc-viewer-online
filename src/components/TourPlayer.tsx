@@ -73,7 +73,7 @@ function stepHighlightIssues(step: TourStep): ValidationIssue[] {
   }))
 }
 
-const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#F5A623', info: '#3B82F6' } as const
+const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#E9A23B', info: '#3B82F6' } as const
 
 /** Accent for manual (camera-only) stops; severity colour for issue steps. */
 function stepColor(step: TourStep): string {
@@ -540,7 +540,7 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
             onClick={next}
             title={stepIndex >= total - 1 ? t('player.finish') : t('player.next')}
             className={`${navBtn} !text-white rounded-lg`}
-            style={{ background: stepIndex >= total - 1 ? 'var(--ok, #22c55e)' : 'var(--accent)' }}
+            style={{ background: stepIndex >= total - 1 ? 'var(--ok, #3fa866)' : 'var(--accent)' }}
           >
             {stepIndex >= total - 1
               ? <Icons.Check size={14} />

@@ -202,6 +202,18 @@ export interface ModelLoadedEvent {
     fileName: string;
     elementCount: number;
     fromCache: boolean;
+    /**
+     * How far the viewer moved this model's geometry to draw it precisely, in
+     * metres and IFC axes (X east, Y north, Z up): `shown = real + coordination`.
+     * Non-zero for files modelled at map coordinates (e.g. UTM in the vertices);
+     * null when the viewer does not know. Measurements, BCF and exports already
+     * give REAL coordinates; this is for a host that reads positions itself.
+     */
+    coordination?: {
+        x: number;
+        y: number;
+        z: number;
+    } | null;
 }
 export interface ModelErrorEvent {
     message: string;
@@ -715,6 +727,17 @@ export interface SiteContextOptions {
     terrainStyle?: 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem';
     /** Terrain vertical exaggeration, 1–3. */
     exaggeration?: number;
+    /**
+     * Underground view, for tunnels, metro stations and buried utilities:
+     * `xray` makes the ground see-through, `cut` opens a pit over the model.
+     * Either lets the camera orbit below the surface. Default `surface`.
+     */
+    subsurface?: 'surface' | 'xray' | 'cut';
+    /**
+     * Mark what is under the ground ON the ground, in every mode: a buried
+     * model's outline and OpenStreetMap metro lines and tunnels. Default true.
+     */
+    subsurfaceMarkers?: boolean;
     /** Decorative cars and trains. */
     vehicles?: boolean;
 }
@@ -727,6 +750,18 @@ export interface SiteContextState {
     detail: 'simple' | 'detailed' | 'showcase';
     terrainStyle: string;
     exaggeration: number;
+    subsurface: 'surface' | 'xray' | 'cut';
+    subsurfaceMarkers: boolean;
+    /**
+     * What the underground view draws from OpenStreetMap, at ESTIMATED depth
+     * (OSM maps no depth). Null when nothing is drawn.
+     */
+    underground: {
+        road: number;
+        rail: number;
+        metro: number;
+        platform: number;
+    } | null;
     vehicles: boolean;
     placement: {
         lat: number;

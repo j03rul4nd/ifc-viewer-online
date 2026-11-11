@@ -68,8 +68,8 @@ export function TmbKeysBox() {
           onChange={(e) => setAppKey(e.target.value)} aria-label="app_key" />
       </div>
       <div className="text-[10px] text-[var(--text-faint)]">{t('tmb.privacy')}</div>
-      {state === 'bad' && <div className="text-[10px] text-[#f25c54]">{t('tmb.bad')}</div>}
-      {state === 'network' && <div className="text-[10px] text-[#f25c54]">{t('error.network')}</div>}
+      {state === 'bad' && <div className="text-[10px] text-[#e0523f]">{t('tmb.bad')}</div>}
+      {state === 'network' && <div className="text-[10px] text-[#e0523f]">{t('error.network')}</div>}
       <div className="flex gap-1">
         <button className={btn} disabled={state === 'testing' || !appId.trim() || !appKey.trim()} onClick={() => void save()}>
           {state === 'testing' ? '…' : t('tmb.save')}
@@ -111,7 +111,7 @@ export function TmbArrivals({ stopCode }: { stopCode: string }) {
   return (
     <div className="flex flex-col gap-0.5 pt-1 border-t border-[var(--border)]" data-testid="tmb-arrivals">
       <div className="text-[10px] font-medium text-[var(--text)]">{t('tmb.nextBuses')}</div>
-      {error && <div className="text-[10px] text-[#f25c54]">{t(error)}</div>}
+      {error && <div className="text-[10px] text-[#e0523f]">{t(error)}</div>}
       {!error && rows === null && <div className="text-[10px] text-[var(--text-faint)]">…</div>}
       {rows && rows.length === 0 && <div className="text-[10px] text-[var(--text-faint)]">{t('tmb.noBuses')}</div>}
       {rows?.slice(0, 12).map((r, i) => (

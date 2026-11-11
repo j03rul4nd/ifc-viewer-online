@@ -716,7 +716,7 @@ export default function CapturePreviewModal() {
                 size: formatBytes(estimate.bytes),
               })}</span>
               {estimate.capped && (
-                <span className="text-[var(--warn,#F5A623)]">{t('frameCapNotice', { max: MAX_GIF_FRAMES })}</span>
+                <span className="text-[var(--warn,#E9A23B)]">{t('frameCapNotice', { max: MAX_GIF_FRAMES })}</span>
               )}
             </div>
           )}

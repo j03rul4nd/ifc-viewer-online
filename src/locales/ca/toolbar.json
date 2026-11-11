@@ -27,6 +27,7 @@
   "section": "Secció",
   "clippingPlanes": "Plans de tall — seccions",
   "plans": "Plànols",
+  "drawings": "Plànols tècnics",
   "floorPlanViews": "Plantes — seccions per planta",
   "export": "Exporta",
   "exportModels": "Exporta {{count}} models",
@@ -286,5 +287,11 @@
     "idsChecked": "{{file}}: models comprovats — resultats al panell IDS",
     "documentsKept": "{{count}} document del projecte desat amb l'escena",
     "documentsKept_other": "{{count}} documents del projecte desats amb l'escena"
+  },
+  "theme": {
+    "toggle": "Tema: {{mode}}",
+    "light": "Clar",
+    "dark": "Fosc",
+    "system": "Sistema"
   }
 }

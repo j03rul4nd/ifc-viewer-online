@@ -49,7 +49,7 @@ export default function InviteView({ context, onOpenFile, onOpenDemo, onDismiss 
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
       className="fixed inset-0 z-[60] overflow-y-auto bg-[var(--bg)]"
-      style={{ backgroundImage: 'radial-gradient(120% 80% at 50% -10%, rgba(94,106,210,0.10), transparent 60%)' }}
+      style={{ backgroundImage: 'radial-gradient(120% 80% at 50% -10%, rgba(10,132,129,0.10), transparent 60%)' }}
     >
       <div className="min-h-full flex items-center justify-center px-5 py-12">
         <motion.div

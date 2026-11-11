@@ -83,3 +83,6 @@ __pycache__/
 
 # Server validation runner bundle (npm run build:runner)
 dist-runner/
+
+# DeltaDTM tile cache of scripts/bake-shanghai-ground.mjs
+.tmp-terrain/

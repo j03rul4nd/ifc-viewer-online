@@ -1,0 +1,203 @@
+{
+  "title": "Plànols",
+  "sheet": "Plànol",
+  "none": "Encara no hi ha plànols",
+  "blank": "Plànol en blanc nou",
+  "blankName": "Plànol {{n}}",
+  "fit": "Enquadrar",
+  "paper": "Paper",
+  "dark": "Fosc",
+  "panel": "Panell",
+  "close": "Tanca els plànols",
+  "undo": "Desfés",
+  "redo": "Refés",
+  "working": "Treballant…",
+  "dismiss": "Tanca",
+  "empty": {
+    "title": "Els teus plànols, al costat del model",
+    "body": "Obre un DXF o un PDF, o talla una planta de l'IFC. Els fitxers es queden en aquest navegador."
+  },
+  "import": {
+    "button": "Obre DXF / PDF",
+    "skipped": "No llegit d'aquest fitxer: {{list}}.",
+    "pdfTruncated": "Aquesta pàgina té més línies de les que es poden llegir: en falten algunes a l’ajust i al DXF."
+  },
+  "errors": {
+    "dwg": "{{name}} és un DWG (AutoCAD {{detail}}). Encara no es pot obrir DWG aquí. Desa'l com a DXF: a AutoCAD, Desa com a → DXF, o converteix-lo a l'ordinador amb l'ODA File Converter gratuït, i obre el DXF.",
+    "dxfBinary": "{{name}} és un DXF binari. Torna'l a desar com a DXF ASCII i obre aquest.",
+    "notDxf": "{{name}} no és un DXF ni un PDF que aquest visor pugui llegir.",
+    "tooBig": "{{name}} s'expandeix a massa entitats per dibuixar-les en un navegador.",
+    "pdfPassword": "{{name}} està protegit amb contrasenya. Treu-la i torna-ho a provar.",
+    "pdfBroken": "{{name}} no s'ha pogut llegir com a PDF: {{detail}}",
+    "unknown": "{{name}} no s'ha pogut obrir: {{detail}}",
+    "emptyCut": "Aquest tall no travessa cap geometria. Prova un altre nivell o alçada.",
+    "cutFailed": "El tall ha fallat: {{detail}}",
+    "emptyScan": "Aquest tall no travessa cap punt. Prova una altra alçada o un tall més gruixut."
+  },
+  "tools": {
+    "label": "Eines de dibuix",
+    "select": "Selecciona i mou",
+    "pan": "Desplaça",
+    "line": "Línia",
+    "polyline": "Polilínia",
+    "rect": "Rectangle",
+    "circle": "Cercle",
+    "text": "Text",
+    "dimension": "Cota",
+    "calibrate": "Fixa l'escala",
+    "align": "Alinea amb el model"
+  },
+  "hints": {
+    "select": "Clic per seleccionar, arrossega per moure, Supr per esborrar.",
+    "pan": "Arrossega per desplaçar, roda per apropar.",
+    "line": "Clic en dos punts.",
+    "polyline": "Clic als punts; doble clic o Retorn per acabar.",
+    "rect": "Clic en dues cantonades.",
+    "circle": "Clic al centre i després a la vora.",
+    "text": "Clic on va el text.",
+    "dimension": "Clic en dos punts per mesurar-los i retolar-los.",
+    "calibrate": "Clic als extrems d'una longitud coneguda.",
+    "align": "Clic en aquest plànol i després al mateix punt de la referència. Dues vegades."
+  },
+  "ask": {
+    "text": "Text",
+    "length": "Longitud real (m)",
+    "ok": "D'acord",
+    "cancel": "Cancel·la"
+  },
+  "calibrate": {
+    "done": "Escala fixada: 1 unitat = {{value}} m."
+  },
+  "generate": {
+    "title": "Des de l'IFC",
+    "needModel": "Carrega un model per tallar plantes i seccions.",
+    "kind": "Què tallar",
+    "plan": "Planta",
+    "sectionX": "Secció per X",
+    "sectionY": "Secció per Y",
+    "level": "Nivell",
+    "base": "Base del model",
+    "height": "Alçada de tall sobre el nivell",
+    "position": "Posició de la secció",
+    "run": "Genera",
+    "planName": "Planta {{level}} +{{height}} m",
+    "sectionName": "Secció {{axis}} {{pos}}%"
+  },
+  "sheetSection": "Aquest plànol",
+  "elevation": "Alçada",
+  "live": "Dispositius en viu ({{count}})",
+  "page": "Pàgina {{n}} de {{total}}",
+  "units": "1 unitat = {{value}} m",
+  "noUnits": "Sense escala: fes servir Fixa l'escala o Alinea.",
+  "fileCoords": "Coordenades del fitxer",
+  "remove": "Tanca el plànol",
+  "layers": {
+    "title": "Capes ({{count}})",
+    "new": "Capa",
+    "visible": "Mostra {{name}}",
+    "color": "Color de {{name}}",
+    "lock": "Bloqueja {{name}}",
+    "delete": "Esborra {{name}} i el que conté",
+    "add": "Nova",
+    "search": "Cerca capes",
+    "allOn": "Mostra-les totes",
+    "allOff": "Amaga-les totes",
+    "isolate": "Mostra només {{name}}",
+    "makeActive": "Dibuixa a {{name}}",
+    "more": "{{count}} més: cerca per acotar la llista."
+  },
+  "export": {
+    "title": "Exporta",
+    "sheetTitle": "Títol del plànol",
+    "project": "Projecte",
+    "author": "Dibuixat per",
+    "paper": "Mida de paper",
+    "dxfNoPage": "El DXF porta les línies i textos afegits, no la pàgina del PDF.",
+    "pdfLatin": "Aquest PDF només escriu text llatí: altres alfabets surten com a “?”. L'SVG els conserva.",
+    "all": "Els {{count}} fulls (ZIP: PDF + DXF)"
+  },
+  "inspector": "Inspector",
+  "noSheet": "Obre o crea un full primer.",
+  "tabs": {
+    "scene": "Escena",
+    "create": "Crea",
+    "layers": "Capes",
+    "sheet": "Full",
+    "output": "Sortida"
+  },
+  "scene": {
+    "title": "En aquesta escena",
+    "frame": "Enquadra-ho tot",
+    "empty": "Encara no hi ha res. Deixa anar al visor un IFC, un núvol (LAS, LAZ, PLY…) o un DXF: comparteixen una escena i un mateix sistema de coordenades.",
+    "models": "Models IFC ({{count}})",
+    "scans": "Núvols de punts ({{count}})",
+    "show": "Mostra {{name}}",
+    "sheets": "Fulls ({{count}})",
+    "noSheets": "Encara no hi ha fulls. Talla’n un a Crea o obre un fitxer.",
+    "stack": "Apila en 3D",
+    "in3d": "En 3D"
+  },
+  "create": {
+    "what": "Què crear",
+    "plan": {
+      "title": "Planta",
+      "blurb": "Talla l’IFC a una alçada, amb el que queda a sota."
+    },
+    "section": {
+      "title": "Secció",
+      "blurb": "Un tall vertical amb el que queda al darrere."
+    },
+    "set": {
+      "title": "Joc de plànols",
+      "blurb": "Una planta per nivell, d’un cop.",
+      "count": "{{count}} plantes trobades.",
+      "none": "No hi ha plantes als models carregats.",
+      "run": "Genera totes les plantes"
+    },
+    "scan": {
+      "title": "Plànol des del núvol",
+      "blurb": "Talla el núvol de punts i compara’l amb el model.",
+      "need": "Carrega abans un núvol de punts en aquesta escena.",
+      "cloud": "Núvol de punts",
+      "thickness": "Gruix del tall (m)",
+      "cell": "Cel·la de la malla (m)",
+      "against": "Compara amb el model",
+      "tolerance": "Tolerància (m)"
+    },
+    "compare": {
+      "title": "Compara fulls",
+      "blurb": "Què s’ha afegit i què s’ha tret entre revisions.",
+      "need": "Obre dos fulls per comparar.",
+      "before": "Abans",
+      "after": "Després",
+      "run": "Compara"
+    },
+    "beyond": "Mostra darrere el tall (m)",
+    "poche": "Omple murs i estructura tallats",
+    "done": "{{count}} entitats en {{seconds}} s.",
+    "setDone": "{{count}} fulls en {{seconds}} s.",
+    "scanName": "Tall del núvol +{{height}} m",
+    "scanReport": "Núvol davant model: {{matches}} % dins de {{tolerance}} mm, {{check}} % per revisar, {{differs}} % difereix. Mesurat sobre el núvol tal com està carregat: depèn de com s’hagi alineat.",
+    "scanPlain": "{{count}} punts al tall.",
+    "diffName": "{{before}} → {{after}}",
+    "diffReport": "{{added}} segments afegits, {{removed}} trets, {{same}} sense canvis."
+  },
+  "place": {
+    "title": "Posició al model",
+    "anchored": "Tallat en aquesta escena: ja és sobre el model.",
+    "scale": "Metres per unitat",
+    "rotation": "Rotació (°)",
+    "look": "Aspecte",
+    "opacity": "Opacitat"
+  },
+  "stats": {
+    "source": "Origen",
+    "entities": "Entitats",
+    "vectors": "Línies / text del PDF",
+    "scanned": "Aquesta pàgina no té línies vectorials: probablement és un escaneig. Fes-la servir com a imatge i fixa l’escala a mà."
+  },
+  "status": {
+    "layer": "Capa activa: les línies noves van aquí",
+    "notSaved": "No desat en aquest navegador"
+  }
+}

@@ -23,7 +23,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { getRuleLabel, type TourStep } from '../types'
 import type { ViewerAPI } from '../lib/viewer'
 
-const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#F5A623', info: '#3B82F6' } as const
+const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#E9A23B', info: '#3B82F6' } as const
 
 interface TourRecorderProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>

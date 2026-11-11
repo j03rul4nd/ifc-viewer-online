@@ -4,512 +4,501 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Free Solibri Alternative — Validate IFC in the Browser</title>
-  <meta name="description" content="A free, browser-based Solibri alternative for IFC validation: Health Score 0–100, 44 quality rules, full IDS 1.0, zero upload. No install, no account." />
-  <meta name="keywords" content="solibri alternative, solibri anywhere alternative, free solibri replacement, solibri ifc viewer, solibri webchecker alternative, ifc validator alternative to solibri, online ifc checker, solibri free alternative, ifc quality check free, bim validator free, ifc model checker browser" />
-  <meta name="author" content="Joel Benitez" />
-  <meta name="robots" content="index, follow" />
+  <meta name="description" content="When a free browser validator is enough and when you need Solibri: prices, clash detection, rules and IDS compared from Solibri's own pages, read on 2026-11-10." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
-
-  <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.ifcvieweronline.eu/solibri-alternative/" />
   <meta property="og:title" content="Free Solibri Alternative — Validate IFC in the Browser" />
-  <meta property="og:description" content="A free, browser-based Solibri alternative for IFC validation. Health Score 0–100, 44 quality rules, full IDS 1.0, zero upload. No install, no account, no file-size limit. Mac, Windows & Linux." />
+  <meta property="og:description" content="When a free browser validator is enough and when you need Solibri: prices, clash detection, rules and IDS compared from Solibri's own pages, read on 2026-11-10." />
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="en_US" />
-  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="IFC Viewer Online — a free browser-based Solibri alternative" />
-
-  <!-- Twitter Card -->
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="IFC model checked in the browser with the clash rule switched on: Health Score 70, 36 element clashes first in the list of fixes, and the elements involved highlighted in the 3D view" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Free Solibri Alternative — IFC Validation in the Browser" />
-  <meta name="twitter:description" content="Health Score 0–100, 44 quality rules, full IDS 1.0, zero upload. No install, no account, no file-size limit. Runs via WebAssembly." />
-  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-
-  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
-  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
-  <link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
-  <link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
-  <link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
-  <link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
-  <link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
-  <link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
-  <link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
-  <link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+  <meta name="twitter:title" content="Free Solibri Alternative — Validate IFC in the Browser" />
+  <meta name="twitter:description" content="When a free browser validator is enough and when you need Solibri: prices, clash detection, rules and IDS compared from Solibri's own pages, read on 2026-11-10." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
   <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
-
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/landings/ifc-model-check-bounding-box-clash-rule-800.webp 800w, /images/landings/ifc-model-check-bounding-box-clash-rule-1600.webp 1600w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="/fonts.css" />
-
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebPage",
-        "@id": "https://www.ifcvieweronline.eu/solibri-alternative/",
-        "url": "https://www.ifcvieweronline.eu/solibri-alternative/",
-        "name": "Free Solibri Alternative — Browser-Based IFC Validation",
-        "description": "Free, browser-based IFC validator as a Solibri alternative. 44 quality rules, full IDS 1.0, Health Score 0–100, no upload, no install — works on Mac, Windows and Linux.",
-        "isPartOf": { "@id": "https://www.ifcvieweronline.eu/" },
-        "inLanguage": "en"
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/solibri-alternative/",
+      "url": "https://www.ifcvieweronline.eu/solibri-alternative/",
+      "name": "Free Solibri Alternative — Validate IFC in the Browser",
+      "description": "When a free browser validator is enough and when you need Solibri: prices, clash detection, rules and IDS compared from Solibri's own pages, read on 2026-11-10.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
       },
-      {
-        "@type": "SoftwareApplication",
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg#image"
+      },
+      "dateModified": "2026-11-10"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (web browser)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg",
+        "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-model-check-bounding-box-clash-rule.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "IFC model checked in the browser with the clash rule switched on: Health Score 70, 36 element clashes first in the list of fixes, and the elements involved highlighted in the 3D view",
+      "caption": "The sample model with the clash rule switched on: 36 overlaps between bounding boxes, and the score drops from 77 to 70. It is a first filter inside one model, not the clash detection Solibri sells.",
+      "inLanguage": "en",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
         "name": "IFC Viewer Online",
-        "url": "https://www.ifcvieweronline.eu/",
-        "applicationCategory": "AEC / BIM software",
-        "operatingSystem": "Any (browser-based — Mac, Windows, Linux)",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "featureList": [
-          "44 IFC validation rules",
-          "Full IDS 1.0 validation (buildingSMART Information Delivery Specification)",
-          "Health Score 0–100",
-          "GUID duplicate detection and auto-fix",
-          "Spatial hierarchy validation",
-          "ISO 19650 naming checks",
-          "BCF 2.1 issue export",
-          "Clash detection (bounding box)",
-          "Non-destructive editing with undo/redo",
-          "IFC export — no server",
-          "Works offline — no upload, no account"
-        ]
+        "url": "https://www.ifcvieweronline.eu/"
       },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is IFC Viewer Online a good Solibri alternative?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "For IFC validation — GUID checks, spatial hierarchy, orphan elements, naming conventions — yes. It runs 44 quality rules entirely in your browser with no install, no account, and no file-size limit. It also supports full IDS 1.0 validation (buildingSMART Information Delivery Specification): load any .ids file and check your model against it locally. It does not aim to replace Solibri's enterprise rule authoring or full BCF lifecycle, but for individual BIM Coordinators checking models before delivery it is a practical, free option — and many teams use both at different stages."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is there a free version of Solibri?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Solibri Anywhere has historically been offered free for non-commercial use; commercial project work requires a paid Solibri Model Checker licence (pricing on request). Availability and tiers change over time, so verify the current Solibri offering. IFC Viewer Online is free for all use cases, including commercial work, with no account required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does IFC Viewer Online work on Mac?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Because it runs in the browser, IFC Viewer Online works on any modern browser — Chrome, Edge, Firefox, and Safari — on Mac, Windows and Linux. No plugin, no installation required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are IFC files uploaded to a server?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. All processing happens in your browser via WebAssembly. Your IFC files never leave your machine — suitable for confidential project models under NDA."
-            }
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "IDS check in the browser: an IDS specification that requires a fire rating on walls, failed by the 57 walls of the IFC model shown in 3D",
+      "caption": "An IDS 1.0 file checked against the model, free and without an account: 57 walls lack the fire rating the specification asks for.",
+      "inLanguage": "en",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is IFC Viewer Online a replacement for Solibri?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "For checking one IFC before delivery (identifiers, spatial structure, names, properties, IDS), yes. For clash detection between disciplines, custom rules and governance across projects, no: that is what Solibri Essential and Advanced are for."
           }
-        ]
-      }
-    ]
-  }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does Solibri cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Solibri publishes starting prices per licence per year: Starter €99, Essential €1,428, Advanced €2,109 and Premium €2,772. Security+ is priced on request (solibri.com/pricing, read on 2026-11-10)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a free version of Solibri?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Solibri Anywhere, which had a free version, is now a legacy product and is not available to new customers; existing free users can keep versions before 26.4.0 (solibri.com/products/legacy-products, read on 2026-11-10). The cheapest current plan is Starter at €99 a year."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the €99 Starter plan check models?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "According to Solibri, Starter is for visual inspection and for reviewing results made by others: \"Model checking is performed in Solibri Essential, Advanced, or Premium\" (solibri.com/products/starter, read on 2026-11-10)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does Solibri do that this cannot?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Clash detection on real geometry and between models, rules written for your organisation, quantity takeoff rules, native Revit models, BCF servers and CDE connections, and a fully offline plan. See the table above."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use both?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, and it is a common split: authors and clients check a file in the browser before it is sent, and the coordination team runs Solibri on the federated model."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Solibri alternative",
+          "item": "https://www.ifcvieweronline.eu/solibri-alternative/"
+        }
+      ]
+    }
+  ]
+}
   </script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
-    a { color: inherit; text-decoration: none; }
-    .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
-    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
-    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
-    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
-
-    .hero { position: relative; overflow: hidden; padding: 64px 0 52px; text-align: center; } .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; } .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); } .hero .container { position: relative; z-index: 1; }
-    .notice-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #F5A623; margin-bottom: 28px; font-weight: 500; }
-    .hero h1 { font-size: clamp(1.8rem, 5vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
-    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
-    .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
-    .cta-primary:hover { background: #4F5ABF; }
-    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); }
-
-    .section { padding: 60px 0; }
-    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
-    .section-title { font-size: clamp(1.4rem, 3vw, 1.85rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 580px; }
-    .divider { border-top: 1px solid rgba(255,255,255,0.06); }
-
-    /* Comparison table */
-    .compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
-    .compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
-    .compare-table tr:last-child td { border-bottom: none; }
-    .compare-table tr:hover td { background: rgba(255,255,255,0.015); }
-    .col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
-    .col-solibri { color: rgba(255,255,255,0.35); }
-    .col-ours { color: #E8E8F0; }
-    .badge-ok   { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
-    .badge-no   { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; font-size: 11px; padding: 2px 7px; }
-    .badge-warn { display: inline-block; background: rgba(245,166,35,0.1); color: #F5A623; border: 1px solid rgba(245,166,35,0.2); border-radius: 4px; font-size: 11px; padding: 2px 7px; }
-
-    /* Feature grid */
-    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-    .feature-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
-    .feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    .feature-card p { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
-
-    /* Health score visual */
-    .score-demo { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; margin: 32px 0; }
-    .score-ring { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .score-ring-num { font-size: 28px; font-weight: 700; font-family: monospace; }
-    .score-ring-label { font-size: 11px; color: rgba(255,255,255,0.4); }
-
-    /* FAQ */
-    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
-    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .faq-item:last-child { border-bottom: none; }
-    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
-
-    /* Bottom CTA */
-    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
-    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
-    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
-
-    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
-    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
-    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
-    .footer-link:hover { color: rgba(255,255,255,0.65); }
-    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
-
-    @media (max-width: 600px) {
-      .compare-table { font-size: 12px; }
-      .compare-table td, .compare-table th { padding: 10px 12px; }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
     }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
   </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
 </head>
 <body>
-
-  <header>
-    <div class="container">
-      <div class="header-inner">
-        <a href="../" class="logo">IFC Viewer Online</a>
-        <a href="../" class="nav-cta">Try it free →</a>
-      </div>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="Main menu">
+        <a href="/">Viewer</a>
+        <a href="/ifc-viewer-examples/">Examples</a>
+        <a href="/fix/">Fix guides</a>
+        <a href="/blog/">Blog</a>
+        <a href="/pricing/">Pricing</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="Switch light or dark" title="Switch light or dark"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/" class="lc-btn">Open the viewer</a>
     </div>
   </header>
-
   <main>
-
     <section class="hero">
-      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
       <div class="container">
-        <div class="notice-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Free · 44 rules · Full IDS 1.0 · Nothing uploaded
+        <p class="badge">Free · In the browser · Compared with Solibri's published plans</p>
+        <h1>Free Solibri alternative <span>for checking an IFC before it is delivered</span></h1>
+        <p class="lead">Solibri is a rule-based checking platform sold in plans from €99 to €2,772 per licence per year. IFC Viewer Online is a free web page that opens an IFC, runs 44 fixed rules and your IDS, and shows what fails. It replaces Solibri for some jobs and not for others; this page says which.</p>
+        <div class="go">
+          <a href="/" class="btn">Validate an IFC file</a>
+          <a href="/?model=/Ifc2x3_Duplex_Architecture.ifc" class="alt">or open the sample model</a>
         </div>
-        <h1>A Free <span class="accent">Solibri Alternative</span><br>for IFC Validation</h1>
-        <p class="hero-desc">IFC Viewer Online is a free, browser-based IFC validator with 44 quality rules, full IDS 1.0 validation, a Health Score from 0 to 100, and full privacy — your files never leave your browser. No install. No account. Works on Mac, Windows and Linux. Try it live on a sample model below.</p>
-        <div class="cta-row">
-          <a href="../" class="cta-primary">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Validate your IFC file — free
-          </a>
-          <span class="cta-note">No account · No upload · Works offline · No file size limit</span>
-        </div>
+        <p class="note">No account, nothing to install, and the file is not uploaded.</p>
+        <p class="src" data-vendors="solibri">Sources: <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> · read on <time datetime="2026-11-10">2026-11-10</time></p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-model-check-bounding-box-clash-rule.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-model-check-bounding-box-clash-rule-800.webp 800w, /images/landings/ifc-model-check-bounding-box-clash-rule-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-model-check-bounding-box-clash-rule.jpg" width="1600" height="1000" alt="IFC model checked in the browser with the clash rule switched on: Health Score 70, 36 element clashes first in the list of fixes, and the elements involved highlighted in the 3D view" fetchpriority="high" />
+          </picture></a>
+          <figcaption>The sample model with the clash rule switched on: 36 overlaps between bounding boxes, and the score drops from 77 to 70. It is a first filter inside one model, not the clash detection Solibri sells.</figcaption>
+        </figure>
       </div>
     </section>
 
-    <!-- Live in-browser validator -->
-    <section class="section divider">
+    <section class="section">
       <div class="container">
-        <p class="section-label">Live tool · in your browser</p>
-        <h2 class="section-title">Validate an IFC file — right here, no install</h2>
-        <p class="section-sub">Coming from Solibri? Run the real validator on a sample model below, then drop your own file. It parses, scores and checks the IFC entirely in your browser via WebAssembly — exactly like Solibri did on your desktop, except nothing is uploaded and there is nothing to install.</p>
-        <div data-live-embed
-             data-app="../"
-             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
-             data-validate data-panel data-lang="en"
-             data-title="Live IFC validation — sample model"
-             data-cta="Run live validation on a sample IFC"
-             data-sub="Loads the real validator in your browser — nothing is uploaded"
-             style="--le-h:560px"></div>
-        <div class="cta-row" style="margin-top:22px">
-          <a href="../" class="cta-primary">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Validate your own IFC file — free
-          </a>
-          <span class="cta-note">No account · No upload · Works offline · No file-size limit</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Comparison -->
-    <section class="section divider">
-      <div class="container">
-        <p class="section-label">Comparison</p>
-        <h2 class="section-title">IFC Viewer Online vs Solibri</h2>
-        <p class="section-sub">An honest comparison for BIM Coordinators who use Solibri for pre-delivery IFC checks — where the browser tool is enough, and where Solibri still wins.</p>
-
-        <div class="cmp-filter" id="compareFilter" role="group" aria-label="Filter comparison rows by category">
-          <button type="button" class="cmp-chip is-active" data-cat="all" aria-pressed="true">All</button>
-          <button type="button" class="cmp-chip" data-cat="price" aria-pressed="false">Price</button>
-          <button type="button" class="cmp-chip" data-cat="privacy" aria-pressed="false">Privacy</button>
-          <button type="button" class="cmp-chip" data-cat="platform" aria-pressed="false">Platform</button>
-          <button type="button" class="cmp-chip" data-cat="features" aria-pressed="false">Features</button>
-        </div>
-
-        <table class="compare-table">
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th>Solibri<br><span style="font-weight:400;color:rgba(255,255,255,0.4)">Desktop · paid (free non-commercial tier)</span></th>
-              <th>IFC Viewer Online<br><span style="font-weight:400;color:rgba(94,106,210,0.8)">Free · Open source</span></th>
-            </tr>
-          </thead>
+        <p class="label">Comparison</p>
+        <h2>Solibri and IFC Viewer Online, side by side</h2>
+        <p class="sub">The Solibri column says only what Solibri publishes. Where its pages do not state something (operating systems, file-size limits), there is no row.</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col"></th><th scope="col">Solibri</th><th scope="col">IFC Viewer Online</th></tr></thead>
           <tbody>
-            <tr>
-              <td class="col-feature">Price</td>
-              <td class="col-solibri">Paid licence (contact sales) · free non-commercial tier</td>
-              <td class="col-ours"><span class="badge-ok">Free forever — all use cases</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Installation required</td>
-              <td class="col-solibri">Desktop install (Windows / Mac)</td>
-              <td class="col-ours"><span class="badge-ok">No install — browser only</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Runs anywhere (any OS)</td>
-              <td class="col-solibri">Desktop app only</td>
-              <td class="col-ours"><span class="badge-ok">Any browser — Mac · Windows · Linux</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">File upload to server</td>
-              <td class="col-solibri">Processes locally</td>
-              <td class="col-ours"><span class="badge-ok">Zero upload — WebAssembly in browser</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">File size limit</td>
-              <td class="col-solibri">~500 MB</td>
-              <td class="col-ours"><span class="badge-ok">Up to ~2 GB</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Validation rules</td>
-              <td class="col-solibri">Rule-based (requires setup)</td>
-              <td class="col-ours"><span class="badge-ok">44 rules — zero configuration needed</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Health Score</td>
-              <td class="col-solibri"><span class="badge-no">Not available</span></td>
-              <td class="col-ours"><span class="badge-ok">0–100 score · instant</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">GUID auto-fix</td>
-              <td class="col-solibri"><span class="badge-no">View only</span></td>
-              <td class="col-ours"><span class="badge-ok">One-click fix + export corrected IFC</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">3D viewer</td>
-              <td class="col-solibri">Yes</td>
-              <td class="col-ours"><span class="badge-ok">Yes — WebGL, SSAO, section planes</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">BCF export</td>
-              <td class="col-solibri">BCF 2.1</td>
-              <td class="col-ours"><span class="badge-ok">BCF 2.1 export from issues</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Shareable report</td>
-              <td class="col-solibri"><span class="badge-no">Not available</span></td>
-              <td class="col-ours"><span class="badge-ok">Share Health Score via URL — zero server</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Full geometry clash detection</td>
-              <td class="col-solibri">Yes (polygon-level)</td>
-              <td class="col-ours"><span class="badge-warn">Bounding-box only</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">IDS validation</td>
-              <td class="col-solibri">Yes (paid tier)</td>
-              <td class="col-ours"><span class="badge-ok">Full IDS 1.0 — free, in browser</span></td>
-            </tr>
-            <tr>
-              <td class="col-feature">Multi-user collaboration</td>
-              <td class="col-solibri">Yes (paid tier)</td>
-              <td class="col-ours"><span class="badge-warn">On roadmap</span></td>
-            </tr>
+            <tr><th scope="row">Price</th><td data-h="Solibri">Starter €99, Essential €1,428, Advanced €2,109, Premium €2,772: starting prices per licence per year. Security+ on request</td><td data-h="IFC Viewer Online">Free. Paid plans for server features are not on sale yet</td></tr>
+            <tr><th scope="row">Model checking</th><td data-h="Solibri">From Essential. Starter is for viewing models and reviewing results: &quot;Model checking is performed in Solibri Essential, Advanced, or Premium&quot;</td><td data-h="IFC Viewer Online">Included: 44 fixed rules, 25 on by default</td></tr>
+            <tr><th scope="row">Clash detection</th><td data-h="Solibri">Essential: rule-based clash checking, hard and soft clashes. Advanced: a clash matrix between disciplines with tolerances</td><td data-h="IFC Viewer Online">Bounding boxes only, inside one model, 5 cm overlap, up to 800 elements and 100 results. Off by default</td></tr>
+            <tr><th scope="row">Your own rules</th><td data-h="Solibri">Advanced and Premium: &quot;Custom rule creation and modification&quot;</td><td data-h="IFC Viewer Online">No rule editor. You can switch rules, change their severity, and set naming patterns and required property sets; anything else goes in as IDS</td></tr>
+            <tr><th scope="row">IDS</th><td data-h="Solibri">Essential checks required properties against IDS definitions. Advanced adds IDS workflows, an IDS editor and an IDS validator</td><td data-h="IFC Viewer Online">IDS 1.0 with its six facets. Three restrictions (totalDigits, fractionDigits, whiteSpace) are not read</td></tr>
+            <tr><th scope="row">BCF</th><td data-h="Solibri">From Essential: &quot;BCF issue management and CDE integrations&quot;</td><td data-h="IFC Viewer Online">Reads and writes BCF 2.1 and 3.0 files. No connection to a BCF server or a CDE</td></tr>
+            <tr><th scope="row">Native Revit models</th><td data-h="Solibri">From Essential: &quot;IFC and native Revit model federation&quot;</td><td data-h="IFC Viewer Online">IFC only</td></tr>
+            <tr><th scope="row">Quantity takeoff</th><td data-h="Solibri">Advanced: &quot;Quantity / Information Takeoff (QTO / ITO)&quot;</td><td data-h="IFC Viewer Online">Adds up the quantities already written in the IFC. No takeoff rules</td></tr>
+            <tr><th scope="row">Without internet</th><td data-h="Solibri">Security+: &quot;Fully offline operation (no telemetry)&quot;</td><td data-h="IFC Viewer Online">The page loads from the internet; the file is not uploaded. An <a href="/on-premise-ifc-validator/">on-premise installation</a> exists</td></tr>
           </tbody>
-        </table>
+        </table></div>
+        <p class="after">Choose Solibri when you coordinate several disciplines and need real clash detection, when your organisation writes its own rules, or when checking has to be governed across many projects. Nothing on this page does that.</p>
+        <p class="after">Choose IFC Viewer Online when you want to know today whether one IFC is fit to send: identifiers, structure, names, properties, your IDS. It is also the tool for the people around a Solibri team who have no licence: the architect exporting the model, the client receiving it.</p>
+        <p class="after">Many teams will use both: a quick check in the browser before export, and Solibri for coordination.</p>
+        <p class="src" data-vendors="solibri">Sources: <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a>, <a href="https://www.solibri.com/products/starter" rel="nofollow noopener">solibri.com/products/starter</a>, <a href="https://www.solibri.com/products/essential" rel="nofollow noopener">solibri.com/products/essential</a>, <a href="https://www.solibri.com/products/advanced" rel="nofollow noopener">solibri.com/products/advanced</a> · read on <time datetime="2026-11-10">2026-11-10</time></p>
       </div>
     </section>
 
-    <!-- Health Score -->
-    <section class="section divider">
+    <section class="section">
       <div class="container">
-        <p class="section-label">Health Score</p>
-        <h2 class="section-title">One number. Zero configuration.</h2>
-        <p class="section-sub">Solibri's rule-based approach is powerful but requires setup per project. IFC Viewer Online runs 44 checks automatically and gives every model a Health Score from 0 to 100 — in under 30 seconds, with zero configuration.</p>
+        <p class="label">Solibri today</p>
+        <h2>If you are looking for Solibri Office or Solibri Anywhere</h2>
+        <p class="prose">Solibri's site lists Solibri Office, CheckPoint, Anywhere and Site as legacy products that are &quot;no longer available for new customers&quot;. The current plans are Starter, Essential, Advanced, Premium and Security+.</p>
+        <p class="prose">The free version of Solibri Anywhere still runs for people who already have it, on versions before 26.4.0; Solibri says the free entitlement is not available in newer releases. If you used Anywhere to open and look at IFC files, the <a href="/">viewer</a> does that for free, in the browser, on any operating system.</p>
+        <p class="src" data-vendors="solibri">Sources: <a href="https://www.solibri.com/products/legacy-products" rel="nofollow noopener">solibri.com/products/legacy-products</a>, <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> · read on <time datetime="2026-11-10">2026-11-10</time></p>
+      </div>
+    </section>
 
-        <div class="score-demo">
-          <div class="score-ring">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(82,196,26,0.15)" stroke-width="7"/>
-              <circle cx="36" cy="36" r="30" fill="none" stroke="#52C41A" stroke-width="7" stroke-linecap="round"
-                stroke-dasharray="188.5" stroke-dashoffset="18.85" transform="rotate(-90 36 36)"/>
-              <text x="36" y="40" text-anchor="middle" font-size="18" font-weight="700" font-family="monospace" fill="#52C41A">92</text>
-            </svg>
-            <span class="score-ring-label" style="color:#52C41A">Excellent</span>
-          </div>
-          <div class="score-ring">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(245,166,35,0.15)" stroke-width="7"/>
-              <circle cx="36" cy="36" r="30" fill="none" stroke="#F5A623" stroke-width="7" stroke-linecap="round"
-                stroke-dasharray="188.5" stroke-dashoffset="94.25" transform="rotate(-90 36 36)"/>
-              <text x="36" y="40" text-anchor="middle" font-size="18" font-weight="700" font-family="monospace" fill="#F5A623">50</text>
-            </svg>
-            <span class="score-ring-label" style="color:#F5A623">Fair</span>
-          </div>
-          <div class="score-ring">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(220,53,69,0.15)" stroke-width="7"/>
-              <circle cx="36" cy="36" r="30" fill="none" stroke="#DC3545" stroke-width="7" stroke-linecap="round"
-                stroke-dasharray="188.5" stroke-dashoffset="150.8" transform="rotate(-90 36 36)"/>
-              <text x="36" y="40" text-anchor="middle" font-size="18" font-weight="700" font-family="monospace" fill="#DC3545">20</text>
-            </svg>
-            <span class="score-ring-label" style="color:#DC3545">Critical</span>
-          </div>
-        </div>
-
-        <div class="feature-grid">
-          <div class="feature-card">
-            <h3>No ruleset to configure</h3>
-            <p>44 rules run automatically. No XML, no .smc files, no per-project setup. Open a file and get a score.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Results in under 30 seconds</h3>
-            <p>A background Web Worker processes rules concurrently. Issues stream in as each check completes — the UI stays responsive throughout.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Share the report</h3>
-            <p>Click Share Report to copy a URL that encodes the full Health Score and issue list. Open it in any browser — no account required.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Fix, not just read</h3>
-            <p>GUID duplicates auto-fix with one click. Edit names and property values inline. Export the corrected IFC — all in the browser.</p>
-          </div>
+    <section class="section">
+      <div class="container">
+        <p class="label">Scope</p>
+        <h2>What you get here, and what you do not</h2>
+        <div class="cols">
+          <div class="col"><h3>You get</h3><ul>
+            <li>A Health Score from 0 to 100 and the fixes that recover the most points.</li>
+            <li>The failing elements highlighted in the 3D model, and listed by rule, storey or class.</li>
+            <li>IDS 1.0 checks and five built-in validation profiles, from basic delivery to ISO 19650 and LOD 300.</li>
+            <li>Automatic fixes for GlobalIds and names, manual edits of names and property values, and the corrected IFC.</li>
+            <li>Findings as BCF 2.1, CSV, JSON, an HTML report or a COBie spreadsheet.</li>
+          </ul></div>
+          <div class="col"><h3>You do not get</h3><ul>
+            <li>Clash detection between models, or at the level of the real geometry.</li>
+            <li>A rule editor, code checking (accessibility, fire, escape routes) or space analysis.</li>
+            <li>Issue tracking with assignments on a server. BCF files are exchanged by hand.</li>
+            <li>Files of 2 GB or more. The limit depends on the memory of your computer.</li>
+          </ul></div>
         </div>
       </div>
     </section>
 
-    <!-- What's covered -->
-    <section class="section divider">
+    <section class="section">
       <div class="container">
-        <p class="section-label">44 validation rules</p>
-        <h2 class="section-title">What gets checked</h2>
-        <p class="section-sub">Rules span schema quality, spatial hierarchy, ISO 19650 compliance, LOD completeness, and coordination checks.</p>
+        <p class="label">Try it</p>
+        <h2>Run it on a sample model</h2>
+        <p class="sub">The demo below loads the validator in this page.</p>
+        <figure class="shot">
+          <a href="/images/landings/ids-check-ifc-model-in-browser.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ids-check-ifc-model-in-browser-800.webp 800w, /images/landings/ids-check-ifc-model-in-browser-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ids-check-ifc-model-in-browser.jpg" width="1600" height="1000" alt="IDS check in the browser: an IDS specification that requires a fire rating on walls, failed by the 57 walls of the IFC model shown in 3D" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>An IDS 1.0 file checked against the model, free and without an account: 57 walls lack the fire rating the specification asks for.</figcaption>
+        </figure>
+        <div data-live-embed data-app="/" data-model="/Ifc2x3_Duplex_Architecture.ifc" data-validate data-panel data-lang="en"
+             data-title="Free Solibri alternative" data-cta="Run the validation on a sample IFC" data-sub="Loads the validator in this page. Nothing is uploaded." style="--le-h:560px;margin-top:32px"></div>
+      </div>
+    </section>
 
-        <div class="feature-grid">
-          <div class="feature-card">
-            <h3>GUID checks</h3>
-            <p>Duplicate GlobalIds, invalid base64 format. Most common export error from Revit, ArchiCAD, Tekla. Auto-fixable with one click.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Spatial hierarchy</h3>
-            <p>IfcSite → IfcBuilding → IfcBuildingStorey chain. Orphan elements with no spatial containment. Missing project context.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Naming &amp; ISO 19650</h3>
-            <p>Empty Name / LongName attributes. Generic placeholders. Naming convention patterns configurable per project.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Property sets</h3>
-            <p>Missing required Psets for walls, slabs, columns, beams. Empty or null property values that break downstream QTO.</p>
-          </div>
-          <div class="feature-card">
-            <h3>LOD completeness</h3>
-            <p>Verifies expected property sets are present at LOD 200 / 300 / 400 for common structural element classes.</p>
-          </div>
-          <div class="feature-card">
-            <h3>Schema &amp; geometry</h3>
-            <p>IFC schema version compatibility, unit assignments, type assignments, material associations, degenerate geometry.</p>
-          </div>
+    <section class="section">
+      <div class="container">
+        <p class="label">Price</p>
+        <h2>What it costs</h2>
+        <p class="prose">The viewer, the rules, IDS, the fixes and the exports are free, without an account, also for commercial projects. The source is public under the MIT licence on <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener">GitHub</a>.</p>
+        <p class="prose">Paid plans (Pro at €19 a month, Team at €35 per editor a month) will add things that need a server; they are not on sale yet. See the <a href="/pricing/">pricing page</a>.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">FAQ</p>
+        <h2>Questions</h2>
+        <div class="faq">
+          <div><h3>Is IFC Viewer Online a replacement for Solibri?</h3><p>For checking one IFC before delivery (identifiers, spatial structure, names, properties, IDS), yes. For clash detection between disciplines, custom rules and governance across projects, no: that is what Solibri Essential and Advanced are for.</p></div>
+          <div><h3>How much does Solibri cost?</h3><p>Solibri publishes starting prices per licence per year: Starter €99, Essential €1,428, Advanced €2,109 and Premium €2,772. Security+ is priced on request (solibri.com/pricing, read on 2026-11-10).</p></div>
+          <div><h3>Is there a free version of Solibri?</h3><p>Solibri Anywhere, which had a free version, is now a legacy product and is not available to new customers; existing free users can keep versions before 26.4.0 (solibri.com/products/legacy-products, read on 2026-11-10). The cheapest current plan is Starter at €99 a year.</p></div>
+          <div><h3>Does the €99 Starter plan check models?</h3><p>According to Solibri, Starter is for visual inspection and for reviewing results made by others: &quot;Model checking is performed in Solibri Essential, Advanced, or Premium&quot; (solibri.com/products/starter, read on 2026-11-10).</p></div>
+          <div><h3>What does Solibri do that this cannot?</h3><p>Clash detection on real geometry and between models, rules written for your organisation, quantity takeoff rules, native Revit models, BCF servers and CDE connections, and a fully offline plan. See the table above.</p></div>
+          <div><h3>Can I use both?</h3><p>Yes, and it is a common split: authors and clients check a file in the browser before it is sent, and the coordination team runs Solibri on the federated model.</p></div>
         </div>
+        <p class="src" data-vendors="solibri">Sources: <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a>, <a href="https://www.solibri.com/products/legacy-products" rel="nofollow noopener">solibri.com/products/legacy-products</a>, <a href="https://www.solibri.com/products/starter" rel="nofollow noopener">solibri.com/products/starter</a> · read on <time datetime="2026-11-10">2026-11-10</time></p>
       </div>
     </section>
 
-    <!-- FAQ -->
-    <section class="section divider">
+    <section class="section">
       <div class="container">
-        <p class="section-label">FAQ</p>
-        <h2 class="section-title">Questions</h2>
-        <br/>
-        <div class="faq-list">
-          <div class="faq-item">
-            <p class="faq-q">Is IFC Viewer Online a good Solibri alternative?</p>
-            <p class="faq-a">For individual BIM Coordinators who need to check IFC models before delivery — yes. It runs 44 validation rules in your browser with zero setup, gives a Health Score from 0 to 100, and lets you fix GUID errors and export a corrected IFC without a server. It also supports full IDS 1.0 validation — load a buildingSMART .ids file and check your model against it locally. It does not aim to replace Solibri's enterprise rule authoring, COBie checking or full BCF lifecycle, but for the core pre-delivery check workflow it is a practical, free, and private option — and the two work well side by side.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Can it replace the Solibri IFC viewer for inspecting models?</p>
-            <p class="faq-a">Yes — for viewing and inspecting an IFC, it is a full replacement: WebGL 3D navigation, section planes, isolate/hide, a spatial tree, and click-to-inspect property sets, all in the browser. Drop a file and it loads in seconds with nothing uploaded. Solibri remains stronger for geometric (polygon-level) clash detection and very large federated models where desktop RAM is the limit.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Does IFC Viewer Online work on Mac?</p>
-            <p class="faq-a">Yes. Because it runs in the browser, IFC Viewer Online works on Mac, Windows, and Linux — Chrome, Edge, Firefox, and Safari are all supported. No plugin, no installation required, no operating-system restriction.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Can I use it with confidential models under NDA?</p>
-            <p class="faq-a">Yes. All processing happens in your browser via WebAssembly — no data is ever transmitted to any server. You can safely use it with confidential project models under NDA. There is no service agreement to review with your client.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Is there a file size limit?</p>
-            <p class="faq-a">There is no hard limit — the validator handles files up to ~2 GB. Performance depends on your device. Files under 200 MB load well on most modern hardware. Parsed geometry is cached in the browser's Origin Private File System (OPFS) so subsequent loads of the same file are instant.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Does it have BCF export like Solibri?</p>
-            <p class="faq-a">Yes. After running validation, you can export all issues as a BCF 2.1 file for coordination with Navisworks, BIMcollab, and other BCF-compatible tools. Individual issues can also be added to a BCF topic directly from the issue panel.</p>
-          </div>
-        </div>
+        <p class="label">Related pages</p>
+        <ul class="related">
+          <li><a href="/ifc-validator/">IFC Validator</a></li>
+          <li><a href="/cloud-ifc-validator/">Cloud IFC Validator</a></li>
+          <li><a href="/on-premise-ifc-validator/">On-premise IFC validation</a></li>
+          <li><a href="/solibri-webchecker-alternative/">Solibri WebChecker alternative</a></li>
+          <li><a href="/ifc-viewer-mac/">IFC Viewer for Mac</a></li>
+          <li><a href="/blog/solibri-alternative/">Solibri or a browser validator: the long comparison</a></li>
+          <li><a href="/fix/">Fix IFC errors</a></li>
+          <li><a href="/pricing/">Pricing</a></li>
+        </ul>
       </div>
     </section>
 
-    <section class="cta-bottom">
+    <section class="bottom">
       <div class="container">
-        <h2>Try the free Solibri alternative now.</h2>
-        <p>44 rules · Full IDS 1.0 · Health Score 0–100 · No install · No upload · Mac, Windows &amp; Linux</p>
-        <a href="../" class="cta-primary">Open IFC Viewer Online →</a>
+        <h2>Check one file before you decide</h2>
+        <p>It takes a minute, costs nothing and the model stays on your computer.</p>
+        <a href="/" class="btn">Validate an IFC file</a>
       </div>
     </section>
-
   </main>
-
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">Your next step</h2>
+      <p class="lc-lead">Free, in your browser. Nothing is uploaded.</p>
+      <ol>
+        <li><a href="/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>Open a sample model</strong><span>See the Health Score and the failing rules on a real IFC in under a minute.</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>Create a free account</strong><span>Keep your checks and share the report with your team or client.</span></a></li>
+        <li><a href="/pricing/"><span class="lc-n">3</span><strong>Compare the plans</strong><span>Pro, Team and model reception for whoever receives the deliveries.</span></a></li>
+      </ol>
+    </div>
+  </section>
   <footer>
     <div class="container">
-      <div class="footer-links">
-        <a href="../" class="footer-link">IFC Viewer Online</a>
-        <a href="../ifc-validator/" class="footer-link">IFC Validator</a>
-        <a href="../cloud-ifc-validator/" class="footer-link">Cloud IFC Validator</a>
-        <a href="../solibri-webchecker-alternative/" class="footer-link">Solibri WebChecker Alternative</a>
-        <a href="../ifc-viewer-mac/" class="footer-link">IFC Viewer for Mac</a>
-        <a href="../tools/fix-duplicate-guids/" class="footer-link">Fix Duplicate GUIDs</a>
-        <!-- tool-links -->
-        <a href="../ifc-editor/" class="footer-link">Free IFC Editor</a>
-        <a href="../ifc-classification-checker/" class="footer-link">IFC Classification Checker</a>
-        <a href="../ifc-health-check/" class="footer-link">IFC Model Health Check</a>
-        <!-- /tool-links -->
-        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      <div class="links">
+        <a href="/">IFC Viewer Online</a>
+        <a href="/ifc-validator/">IFC Validator</a>
+        <a href="/cloud-ifc-validator/">Cloud IFC Validator</a>
+        <a href="/on-premise-ifc-validator/">On-premise IFC validation</a>
+        <a href="/solibri-webchecker-alternative/">Solibri WebChecker alternative</a>
+        <a href="/ifc-viewer-mac/">IFC Viewer for Mac</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
       </div>
-      <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license</p>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
     </div>
   </footer>
-
-  <script defer src="../seo/dot-grid.js"></script>
-  <script defer src="../seo/live-embed.js"></script>
-
+  <script defer src="/seo/live-embed.js"></script>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
 </body>
 </html>
-

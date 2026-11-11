@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "Afegeix el meu esbós"
   },
   "cover": {
     "open": "Estudi de portades — portades, diapositives i posts del model",
@@ -1100,7 +1101,9 @@
         "grow": "Créixer",
         "stack": "Apilar",
         "crown": "Coronar"
-      }
+      },
+      "sketch": "Esbós",
+      "sketchHint": "El teu últim esbós 3D enviat des de l'estudi; obre l'estudi si no n'hi ha cap"
     }
   },
   "mobileMenu": "Capturar",

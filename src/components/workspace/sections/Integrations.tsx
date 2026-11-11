@@ -4,6 +4,9 @@ import { INTEGRATIONS } from '../../../lib/plans/features'
 import { planDef } from '../../../lib/plans/plans'
 import { Head, Panel, SectionLabel, DataList } from '../ui'
 import { SoonBanner } from '../Soon'
+import { paidApi } from '../../../lib/cloud/paid-client'
+import { usePaidQuery } from '../../../hooks/usePaidQuery'
+import { SAMPLE_ENDPOINTS } from '../api-samples'
 import { WEBHOOK_EVENTS } from '../plan-sample-data'
 import { useTx } from '../i18n'
 
@@ -12,10 +15,11 @@ const STATUS: Record<FeatureStatus, string> = { live: 'Available', preview: 'Pre
 /** W1, W4, I1–I7: where the viewer is used, and where its events go. */
 export default function Integrations(_: SectionProps) {
   const tx = useTx()
+  const endpoints = usePaidQuery(() => paidApi.endpoints(), SAMPLE_ENDPOINTS)
   return (
     <>
       <Head title={tx('Integrations')} sub={tx('Open files from your storage, send alerts to your chat and events to your automations. Files picked from storage go straight to your browser.')} />
-      <SoonBanner section="integrations" />
+      <SoonBanner section="integrations" source={endpoints.source} error={endpoints.error} />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-8">
         {INTEGRATIONS.map((i) => (
           <Panel key={i.id} className="p-4">
@@ -28,6 +32,11 @@ export default function Integrations(_: SectionProps) {
           </Panel>
         ))}
       </div>
+      <SectionLabel>{tx('Your webhooks')}</SectionLabel>
+      <DataList rows={endpoints.data.endpoints} rowKey={(e) => e.id} primaryHeader={tx('Endpoint')}
+        primary={(e) => <code className="text-[12px] [overflow-wrap:anywhere]">{e.url}</code>}
+        columns={[{ key: 'events', header: tx('Events'), wide: true, cell: (e) => <span className="text-[12px] text-[var(--text-dim)]">{e.events.join(', ')}</span> }]} />
+      <div className="h-6" />
       <SectionLabel>{tx('Webhook events')}</SectionLabel>
       <DataList rows={WEBHOOK_EVENTS} rowKey={(e) => e.event} primaryHeader={tx('Event')}
         primary={(e) => <code className="text-[12.5px]">{e.event}</code>}

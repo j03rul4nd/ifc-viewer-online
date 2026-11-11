@@ -1,0 +1,106 @@
+{% comment %}
+  Health Score: the quality score of the IFC file and its error and warning
+  counts, checked in the visitor's browser.
+  Attaches to the first "Product IFC model" block on the page; works in any
+  section or column, so it can sit beside the product form or below the fold.
+{% endcomment %}
+{%- capture ifcvo_style -%}
+  {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
+  --ifcvo-radius:{{ block.settings.radius }}px;
+{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+{%- capture ifcvo_labels -%}{"excellent":{{ block.settings.l_excellent | json }},"good":{{ block.settings.l_good | json }},"fair":{{ block.settings.l_fair | json }},"poor":{{ block.settings.l_poor | json }},"errors":{{ block.settings.l_errors | json }},"warnings":{{ block.settings.l_warnings | json }},"note":{{ block.settings.note | json }}}{%- endcapture -%}
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="score" style="{{ ifcvo_style }}" data-open-label="{{ block.settings.open_label | escape }}" data-labels="{{ ifcvo_labels | escape }}" {{ block.shopify_attributes }}>
+  {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body"></div>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC Health Score",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Model quality"
+    },
+    {
+      "type": "text",
+      "id": "open_label",
+      "label": "Button before the 3D view opens",
+      "default": "Open the 3D model"
+    },
+    {
+      "type": "text",
+      "id": "l_excellent",
+      "label": "Score 90 to 100",
+      "default": "Excellent"
+    },
+    {
+      "type": "text",
+      "id": "l_good",
+      "label": "Score 75 to 89",
+      "default": "Good"
+    },
+    {
+      "type": "text",
+      "id": "l_fair",
+      "label": "Score 50 to 74",
+      "default": "Fair"
+    },
+    {
+      "type": "text",
+      "id": "l_poor",
+      "label": "Score below 50",
+      "default": "Needs work"
+    },
+    {
+      "type": "text",
+      "id": "l_errors",
+      "label": "Errors word",
+      "default": "errors"
+    },
+    {
+      "type": "text",
+      "id": "l_warnings",
+      "label": "Warnings word",
+      "default": "warnings"
+    },
+    {
+      "type": "text",
+      "id": "note",
+      "label": "Note",
+      "default": "Checked in your browser by IFC Viewer Online."
+    },
+    {
+      "type": "header",
+      "content": "Brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "Accent colour",
+      "info": "Empty uses the theme's button colour."
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "Show a frame around the block",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

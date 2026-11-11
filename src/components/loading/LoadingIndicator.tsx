@@ -272,7 +272,7 @@ function IndicatorButton({
         {...common}
         className={[
           'inline-flex items-center gap-1.5 h-[26px] px-2 rounded-full border text-[11px] font-medium tabular-nums select-none',
-          failed ? 'border-[rgba(229,72,77,0.35)] bg-[rgba(229,72,77,0.1)]' : 'border-[var(--border)] bg-[rgba(255,255,255,0.04)]',
+          failed ? 'border-[rgba(224,82,63,0.35)] bg-[rgba(224,82,63,0.1)]' : 'border-[var(--border)] bg-[rgba(255,255,255,0.04)]',
           toneText,
         ].join(' ')}
       >
@@ -290,7 +290,7 @@ function IndicatorButton({
         className={[
           'relative inline-flex items-center gap-2 h-[28px] max-w-[min(320px,calc(100vw-32px))] pl-2 pr-2.5 rounded-[8px] overflow-hidden',
           'bg-[rgba(12,12,16,0.92)] backdrop-blur-[14px] border shadow-lg text-[11px] select-none transition-colors duration-100',
-          failed ? 'border-[rgba(229,72,77,0.4)]' : open ? 'border-[var(--border-strong)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]',
+          failed ? 'border-[rgba(224,82,63,0.4)]' : open ? 'border-[var(--border-strong)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]',
           toneText,
         ].join(' ')}
       >
@@ -316,7 +316,7 @@ function IndicatorButton({
         'inline-flex items-center gap-1.5 h-[22px] max-w-[180px] min-w-0 shrink pl-1.5 pr-2 rounded-[6px] border text-[11px] select-none transition-colors duration-100',
         'focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)]',
         failed
-          ? 'border-[rgba(229,72,77,0.35)] bg-[rgba(229,72,77,0.08)]'
+          ? 'border-[rgba(224,82,63,0.35)] bg-[rgba(224,82,63,0.08)]'
           : open ? 'border-[var(--border-strong)] bg-[var(--surface-2)]' : 'border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--border-strong)]',
         toneText,
       ].join(' ')}

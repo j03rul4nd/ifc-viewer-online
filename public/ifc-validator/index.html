@@ -4,440 +4,509 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IFC Model Validation Online — Free Checker, 44 Rules</title>
-  <meta name="description" content="Free online IFC validation in your browser. 44 quality rules and a Health Score 0–100 in 30 seconds. No upload, no login. IFC2x3, IFC4, IFC4x3." />
-  <meta name="keywords" content="online IFC validation, IFC validator online, validate IFC file, cloud IFC validator, IFC quality check, check IFC file, IFC GUID validation, spatial hierarchy IFC, orphan elements IFC, IFC checker, buildingSMART IFC validation, IFC error check, free IFC validator, IFC file quality" />
-  <meta name="author" content="Joel Benitez" />
-  <meta name="robots" content="index, follow" />
+  <meta name="description" content="Check an IFC file in your browser: 44 rules, IDS 1.0 and a Health Score from 0 to 100. The file is not uploaded. Free, no account. IFC2x3, IFC4, IFC4x3." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://www.ifcvieweronline.eu/ifc-validator/" />
-
-  <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.ifcvieweronline.eu/ifc-validator/" />
   <meta property="og:title" content="IFC Model Validation Online — Free Checker, 44 Rules" />
-  <meta property="og:description" content="Online IFC validation in your browser: GUID duplicates, spatial hierarchy, orphan elements and 41 more rules. Health Score 0–100 in 30 seconds. No upload, no login." />
+  <meta property="og:description" content="Check an IFC file in your browser: 44 rules, IDS 1.0 and a Health Score from 0 to 100. The file is not uploaded. Free, no account. IFC2x3, IFC4, IFC4x3." />
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="en_US" />
-  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Online IFC validation — Health Score and 44 rules in the browser" />
-
-  <!-- Twitter Card -->
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="IFC validation of a two-storey house in the browser: Health Score 77, one error and 161 warnings, the three fixes that recover the most points, and the 3D view stepping through the 119 elements without a type" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="IFC Model Validation Online — Free, 44 Rules" />
-  <meta name="twitter:description" content="GUID duplicates, spatial hierarchy, orphan elements & more. IFC Health Score 0–100 in 30s. No upload, runs via WebAssembly." />
-  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-
-  <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://www.ifcvieweronline.eu/ifc-validator/" />
-  <meta property="og:title"       content="Online IFC Validation — Free IFC Validator | 44 Rules" />
-  <meta property="og:description" content="Online IFC validation against 44 quality rules directly in your browser. GUID duplicates, spatial hierarchy, orphan elements and more. No upload, no login, works offline." />
-  <meta property="og:site_name"   content="IFC Viewer Online" />
-  <meta property="og:locale"      content="en_US" />
-  <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="Online IFC Validation — Free IFC Validator | 44 Rules" />
-  <meta name="twitter:description" content="Online IFC validation against 44 quality rules in your browser. No upload, no login." />
-
-  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
-  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
-  <link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
-  <link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
-  <link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
-  <link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
-  <link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
-  <link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
-  <link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
-  <link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+  <meta name="twitter:title" content="IFC Model Validation Online — Free Checker, 44 Rules" />
+  <meta name="twitter:description" content="Check an IFC file in your browser: 44 rules, IDS 1.0 and a Health Score from 0 to 100. The file is not uploaded. Free, no account. IFC2x3, IFC4, IFC4x3." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
   <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
-
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/landings/ifc-validation-health-score-failing-elements-3d-800.webp 800w, /images/landings/ifc-validation-health-score-failing-elements-3d-1600.webp 1600w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="/fonts.css" />
-
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebPage",
-        "@id": "https://www.ifcvieweronline.eu/ifc-validator/",
-        "url": "https://www.ifcvieweronline.eu/ifc-validator/",
-        "name": "IFC Model Validation Online — Free Checker, 44 Rules",
-        "description": "Free online IFC validation. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements and 41 more quality rules — directly in your browser, no upload.",
-        "isPartOf": { "@id": "https://www.ifcvieweronline.eu/" },
-        "inLanguage": "en"
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/ifc-validator/",
+      "url": "https://www.ifcvieweronline.eu/ifc-validator/",
+      "name": "IFC Model Validation Online — Free Checker, 44 Rules",
+      "description": "Check an IFC file in your browser: 44 rules, IDS 1.0 and a Health Score from 0 to 100. The file is not uploaded. Free, no account. IFC2x3, IFC4, IFC4x3.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
       },
-      {
-        "@type": "SoftwareApplication",
-        "name": "IFC Validator Online",
-        "url": "https://www.ifcvieweronline.eu/",
-        "applicationCategory": "AEC / BIM software",
-        "operatingSystem": "Any (browser-based)",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "featureList": [
-          "GUID format and uniqueness validation",
-          "Spatial hierarchy check (IfcSite > IfcBuilding > IfcBuildingStorey)",
-          "Orphan element detection",
-          "Missing type assignment detection",
-          "Naming convention validation (ISO 19650)",
-          "Schema version compatibility check",
-          "Clash detection (bounding box)",
-          "Property set completeness",
-          "Runs in browser — no upload, no server"
-        ]
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg#image"
       },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is online IFC validation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Online IFC validation means checking an IFC model against quality rules from a web browser, without installing desktop software. IFC Viewer Online runs 44 quality rules plus full buildingSMART IDS 1.0 entirely client-side via WebAssembly, returning a Health Score from 0 to 100 in about 30 seconds. Unlike most cloud validators, nothing is uploaded — the IFC is parsed on your own device, so it is safe for confidential models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is my IFC file uploaded to a server during validation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Validation runs entirely in your browser via web-ifc WebAssembly. Your IFC file never leaves your machine. The validator works completely offline once the page is loaded."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use this IFC validator for confidential project models under NDA?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Because all processing happens locally in your browser and no data is ever transmitted to any server, you can safely validate confidential project models under NDA. No data changes hands."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which IFC versions does the validator support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "IFC2x3, IFC4, IFC4x1, and IFC4x3. Outdated schemas are automatically flagged by a dedicated validation rule."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fix errors found during IFC validation and re-export the corrected IFC?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. GUID errors can be auto-fixed with one click. Other violations can be edited inline with full undo/redo. Export IFC applies all corrections in a Web Worker and downloads the corrected file — no server involved."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does the IFC validator work on Mac?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. It works on any modern browser — Chrome, Edge, Firefox, and Safari on both Mac and Windows. No plugin, no installation required."
-            }
+      "dateModified": "2026-11-10"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (web browser)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg",
+        "https://www.ifcvieweronline.eu/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-health-score-failing-elements-3d.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "IFC validation of a two-storey house in the browser: Health Score 77, one error and 161 warnings, the three fixes that recover the most points, and the 3D view stepping through the 119 elements without a type",
+      "caption": "The public Duplex sample (2.3 MB, 7,181 entities) scores 77. \"Show in 3D\" on the first fix frames the 119 elements without a type, with a counter to step through them one by one.",
+      "inLanguage": "en",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "List of IFC validation issues grouped by rule, with the number of elements failing each rule and the explanation of how to fix it",
+      "caption": "Each rule opens to its elements and to the steps that fix it in Revit, Archicad or Tekla.",
+      "inLanguage": "en",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is the IFC file uploaded to a server?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The file is read by code running in your browser tab. Only anonymous usage statistics (file size and element count, never content) and the share links you create yourself leave the browser."
           }
-        ]
-      }
-    ]
-  }
+        },
+        {
+          "@type": "Question",
+          "name": "Which IFC versions does it read?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "IFC2x3, IFC4, IFC4x1 and IFC4x3, as .ifc files or inside .ifczip and .zip archives. Files of 2 GB or more are refused."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it replace a clash detection tool?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The clash rules compare bounding boxes inside a single model and are off by default. They find obvious overlaps before you send a model on; coordination between disciplines needs a clash tool."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I check a model against my own requirements?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Load an IDS 1.0 file, or start from one of seven ready-made requirement sets (ISO 19650 delivery, LOD 200 and LOD 400, COBie handover and others). You can also build a validation profile with your own naming patterns and required property sets."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I fix the errors and export the IFC again?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "GlobalIds and names can be fixed automatically; names, descriptions and property values can be edited by hand, with undo. The export writes the IFC again with those changes. Geometry and relationships cannot be edited."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it work without an internet connection?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The page has to load from the internet. For networks without internet access there is an on-premise installation."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "IFC Validator",
+          "item": "https://www.ifcvieweronline.eu/ifc-validator/"
+        }
+      ]
+    }
+  ]
+}
   </script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
-    a { color: inherit; text-decoration: none; }
-
-    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-
-    /* Header */
-    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; letter-spacing: 0.01em; }
-    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
-    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
-
-    /* Hero */
-    .hero { position: relative; overflow: hidden; padding: 72px 0 56px; text-align: center; } .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; } .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); } .hero .container { position: relative; z-index: 1; }
-    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
-    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
-    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 620px; margin: 0 auto 36px; }
-    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; transition: background 0.15s; }
-    .cta-primary:hover { background: #4F5ABF; }
-    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
-
-    /* Rules */
-    .section { padding: 64px 0; }
-    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
-    .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 600px; }
-    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; gap: 1px; }
-    .rule { background: #0A0A0C; padding: 18px 20px; }
-    .rule-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-    .rule-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
-    .rule-tag { display: inline-block; margin-top: 8px; background: rgba(94,106,210,0.12); color: #8B96E9; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
-
-    /* How it works */
-    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px; margin-top: 36px; }
-    .step { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
-    .step-n { font-size: 11px; font-weight: 700; color: #5E6AD2; letter-spacing: 0.08em; margin-bottom: 10px; }
-    .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-    .step-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6; }
-
-    /* FAQ */
-    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
-    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .faq-item:last-child { border-bottom: none; }
-    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
-
-    /* Bottom CTA */
-    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
-    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
-    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
-
-    /* Footer */
-    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
-    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
-    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
-    .footer-link:hover { color: rgba(255,255,255,0.65); }
-    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
   </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
 </head>
 <body>
-
-  <header>
-    <div class="container">
-      <div class="header-inner">
-        <a href="../" class="logo">IFC Viewer Online</a>
-        <a href="../" class="nav-cta">Open Validator →</a>
-      </div>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="Main menu">
+        <a href="/">Viewer</a>
+        <a href="/ifc-viewer-examples/">Examples</a>
+        <a href="/fix/">Fix guides</a>
+        <a href="/blog/">Blog</a>
+        <a href="/pricing/">Pricing</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="Switch light or dark" title="Switch light or dark"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/" class="lc-btn">Open the viewer</a>
     </div>
   </header>
-
   <main>
-
     <section class="hero">
-      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
       <div class="container">
-        <div class="hero-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          44 validation rules · No upload · Free
+        <p class="badge">44 rules · IDS 1.0 · The file stays in your browser · Free</p>
+        <h1>IFC Model Validation Online <span>What is wrong with the file, and where</span></h1>
+        <p class="lead">Drop an IFC file and get a Health Score from 0 to 100, the list of problems grouped by rule, and the failing elements highlighted in the 3D model. The file is read in your browser tab and is not uploaded.</p>
+        <div class="go">
+          <a href="/" class="btn">Validate an IFC file</a>
+          <a href="/?model=/Ifc2x3_Duplex_Architecture.ifc" class="alt">or open the sample model</a>
         </div>
-        <h1>IFC Model <span class="accent">Validation</span> Online</h1>
-        <p class="hero-desc">Free online IFC validation in your browser: catch GUID duplicates, spatial hierarchy violations, orphan elements, proxy overuse, coordinate offsets and 38 more quality checks — and get a Health Score 0–100 in 30 seconds. No upload. No login. Works with IFC2x3, IFC4, IFC4x3.</p>
-        <a href="../" class="cta-primary">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Validate an IFC file — free
-        </a>
-        <p class="cta-note">No account required · Runs entirely in your browser via WebAssembly · Works offline</p>
-      </div>
-    </section>
-
-    <!-- Live in-browser validator -->
-    <section class="section divider">
-      <div class="container">
-        <p class="section-label">Live tool · in your browser</p>
-        <h2 class="section-title">Run online IFC validation — right here</h2>
-        <p class="section-sub">Run the real validator on a sample model below, then drop your own <code style="font-family:'Geist Mono','Cascadia Code',monospace;color:#8B96E9">.ifc</code>. It parses, scores and checks the file entirely in your browser via WebAssembly — nothing is uploaded, the file never leaves your machine.</p>
-        <div data-live-embed
-             data-app="../"
-             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
-             data-validate data-panel data-lang="en"
-             data-title="Live IFC validation — sample model"
-             data-cta="Run live IFC validation on a sample model"
-             data-sub="Loads the real validator in your browser — nothing is uploaded"
-             style="--le-h:560px"></div>
-        <p class="cta-note" style="text-align:center;margin-top:18px">
-          <a href="../" class="cta-primary" style="margin-top:8px">Validate your own IFC file — free →</a>
-        </p>
+        <p class="note">No account. IFC2x3, IFC4, IFC4x1 and IFC4x3, up to 2 GB per file.</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-validation-health-score-failing-elements-3d.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-validation-health-score-failing-elements-3d-800.webp 800w, /images/landings/ifc-validation-health-score-failing-elements-3d-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-validation-health-score-failing-elements-3d.jpg" width="1600" height="1000" alt="IFC validation of a two-storey house in the browser: Health Score 77, one error and 161 warnings, the three fixes that recover the most points, and the 3D view stepping through the 119 elements without a type" fetchpriority="high" />
+          </picture></a>
+          <figcaption>The public Duplex sample (2.3 MB, 7,181 entities) scores 77. &quot;Show in 3D&quot; on the first fix frames the 119 elements without a type, with a counter to step through them one by one.</figcaption>
+        </figure>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
-        <p class="section-label">Validation Rules</p>
-        <h2 class="section-title">44 built-in IFC quality checks</h2>
-        <p class="section-sub">Each rule runs in a background Web Worker — the interface stays responsive while results stream in.</p>
-        <div class="rules-grid">
-          <div class="rule">
-            <div class="rule-name">GUID Format</div>
-            <div class="rule-desc">Validates every GlobalId against the IFC base64 22-character format. Flags malformed identifiers that break downstream tools.</div>
-            <span class="rule-tag">ISO 16739</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">GUID Uniqueness</div>
-            <div class="rule-desc">Detects duplicate GlobalIds across all entities — the most common export error from Revit, ArchiCAD, and Tekla.</div>
-            <span class="rule-tag">ISO 16739</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Spatial Hierarchy</div>
-            <div class="rule-desc">Verifies the IfcSite → IfcBuilding → IfcBuildingStorey containment chain is complete and correct.</div>
-            <span class="rule-tag">IFC schema</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Orphan Elements</div>
-            <div class="rule-desc">Identifies IfcElement instances with no spatial containment (IfcRelContainedInSpatialStructure) — invisible in most viewers.</div>
-            <span class="rule-tag">Containment</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Type Assignments</div>
-            <div class="rule-desc">Checks that each IfcElement has an associated IfcTypeObject via IfcRelDefinesByType where required by the schema.</div>
-            <span class="rule-tag">Schema</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Naming Conventions</div>
-            <div class="rule-desc">Detects empty Name attributes and generic placeholder names that violate ISO 19650 naming requirements.</div>
-            <span class="rule-tag">ISO 19650</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Schema Version</div>
-            <div class="rule-desc">Flags files using deprecated IFC schema versions or non-standard schema identifiers causing interoperability issues.</div>
-            <span class="rule-tag">Compatibility</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Clash Detection</div>
-            <div class="rule-desc">Bounding-box clash check between structural elements — fast first-pass before running full geometry clash detection in Solibri or Navisworks.</div>
-            <span class="rule-tag">Coordination</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Property Set Completeness</div>
-            <div class="rule-desc">Verifies required Psets are present and not empty for major IFC element classes (walls, slabs, columns, beams).</div>
-            <span class="rule-tag">Data quality</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Units Defined</div>
-            <div class="rule-desc">Checks that IfcProject contains an IfcUnitAssignment with at least length, area, and volume units — required for quantity takeoff.</div>
-            <span class="rule-tag">IFC schema</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Geometry Validity</div>
-            <div class="rule-desc">Identifies elements with null, degenerate, or missing geometric representations that will render blank in BIM viewers.</div>
-            <span class="rule-tag">Geometry</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Material Assignments</div>
-            <div class="rule-desc">Detects elements missing IfcMaterial associations where material data is expected for quantity takeoff and scheduling.</div>
-            <span class="rule-tag">Data quality</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Coordinate Offset</div>
-            <div class="rule-desc">Flags models positioned more than 10 km from the IFC origin — a common federation error when discipline models use inconsistent survey points.</div>
-            <span class="rule-tag">Georeferencing</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">Proxy Overuse</div>
-            <div class="rule-desc">More than 5% of physical elements are IfcBuildingElementProxy — typically unconverted Revit families. Signals incomplete IFC export configuration.</div>
-            <span class="rule-tag">Export quality</span>
-          </div>
-          <div class="rule">
-            <div class="rule-name">File Size Anomaly</div>
-            <div class="rule-desc">Average file size per element exceeds 500 KB — suggests geometry bloat, embedded textures, or excessive detail inappropriate for coordination use.</div>
-            <span class="rule-tag">Performance</span>
-          </div>
+        <p class="label">Scope</p>
+        <h2>What the check covers, and what it does not</h2>
+        <p class="sub">There are 44 rules in eight groups. 25 run by default; the other 19 are switched on from a profile because they need a decision from you (a LOD level, a naming pattern, a classification system).</p>
+        <div class="cols">
+          <div class="col"><h3>It checks</h3><ul>
+            <li>Identifiers: duplicate GlobalIds and GlobalIds that are not valid 22-character IFC GUIDs.</li>
+            <li>Structure: one IfcProject, the Project → Site → Building → Storey chain, elements without a storey, broken or circular aggregations, openings without a host.</li>
+            <li>Storeys: missing, duplicated or unordered elevations.</li>
+            <li>Data: empty names, duplicated names, empty property values, elements without a type or a material, spaces without floor area.</li>
+            <li>Export quality: more than 5% of elements as IfcBuildingElementProxy, a model more than 10 km from the origin, more than 500 KB per element, imperial length units.</li>
+            <li>On request: required property sets per class, naming patterns, classification, LOD 100–400 properties and quantities, ISO 19650 project and author fields, MEP systems.</li>
+            <li>Your own requirements: an IDS 1.0 file, one of five built-in profiles (basic delivery, quality review, BIM coordination, ISO 19650, LOD 300) or a profile you define.</li>
+          </ul></div>
+          <div class="col"><h3>It does not check</h3><ul>
+            <li>Clashes between two models. The clash rules compare bounding boxes inside one model, with a 5 cm overlap, up to 800 elements and 100 results. They are a first filter, not coordination.</li>
+            <li>Building codes: accessibility, fire safety, escape routes or clear heights. No rule here reads a regulation.</li>
+            <li>The whole IFC schema. It is not an EXPRESS conformance test: it runs these 44 rules and your IDS.</li>
+            <li>ISO 19650 codes. The file-name rule reads the name written in the IFC header and counts its fields; it does not verify each code.</li>
+            <li>Native files. It reads IFC, not Revit or Archicad files.</li>
+          </ul></div>
         </div>
       </div>
     </section>
 
-    <section class="section" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 64px;">
+    <section class="section">
       <div class="container">
-        <p class="section-label">How it works</p>
-        <h2 class="section-title">From IFC file to validation report in seconds</h2>
-        <div class="steps">
-          <div class="step">
-            <div class="step-n">01</div>
-            <div class="step-title">Open your IFC</div>
-            <div class="step-desc">Drag & drop any IFC file. web-ifc WebAssembly parses it entirely in your browser — no upload, no network required.</div>
-          </div>
-          <div class="step">
-            <div class="step-n">02</div>
-            <div class="step-title">Run validation</div>
-            <div class="step-desc">44 rules run in a background Web Worker. Results stream in as each check completes — GUID issues, hierarchy errors, orphans, proxy overuse, coordinate offsets, all flagged instantly.</div>
-          </div>
-          <div class="step">
-            <div class="step-n">03</div>
-            <div class="step-title">Fix errors inline</div>
-            <div class="step-desc">GUID errors auto-fix with one click. Edit names and property values inline. Full undo/redo. Share the validation report URL with your client.</div>
-          </div>
-          <div class="step">
-            <div class="step-n">04</div>
-            <div class="step-title">Export corrected IFC</div>
-            <div class="step-desc">All diffs applied to the original binary in a Web Worker. Download the corrected IFC — no server, no account, no cost.</div>
-          </div>
+        <p class="label">Limits</p>
+        <h2>Limits, with numbers</h2>
+        <div class="table-wrap"><table class="facts">
+          <thead><tr><th scope="col"></th><th scope="col">Limit</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">File size</th><td data-h="Limit">2 GB per file is refused. A notice appears from 200 MB and a memory warning from 1 GB. On phones, tablets and computers with 4 GB of memory or less, the warning starts at 80 MB.</td></tr>
+            <tr><th scope="row">Formats</th><td data-h="Limit">IFC2x3, IFC4, IFC4x1 and IFC4x3, as .ifc or inside .ifczip and .zip.</td></tr>
+            <tr><th scope="row">Rules</th><td data-h="Limit">44 in total, 25 on by default. Severity and thresholds can be changed per rule.</td></tr>
+            <tr><th scope="row">IDS</th><td data-h="Limit">IDS 1.0 with its six facets. The restrictions totalDigits, fractionDigits and whiteSpace are not read. Up to 200 failing elements are listed per specification.</td></tr>
+            <tr><th scope="row">Automatic fixes</th><td data-h="Limit">Invalid and duplicate GlobalIds, and empty or duplicated names. Everything else you edit by hand or fix in the authoring tool.</td></tr>
+            <tr><th scope="row">Speed</th><td data-h="Limit">The sample in the picture (2.3 MB, 7,181 entities) was validated in about 20 seconds on the computer used for these captures. Time grows with the number of entities.</td></tr>
+            <tr><th scope="row">Connection</th><td data-h="Limit">The page has to load from the internet. It does not work offline.</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">Your file</p>
+        <h2>What happens to the file</h2>
+        <p class="prose">The IFC is opened by code running in your browser tab. It is not sent to us or to anyone else, so there is no upload to wait for and nothing to delete afterwards.</p>
+        <p class="prose">To reopen a model faster, the browser keeps a converted copy of its geometry in its own private storage on your computer (up to 4 GB, oldest first out). Clearing the site data in your browser removes it.</p>
+        <p class="prose">Two things do leave the browser, and both are yours to control. Usage statistics without cookies record that a file was opened, its size and its number of elements, never its content; they can be switched off and respect Do Not Track. And if you press Share, the link itself carries the score, the file name and the 50 first issues with their element names, so anyone with the link can read those.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">The result</p>
+        <h2>From the score to the element</h2>
+        <p class="sub">Try it here on the sample model, then open your own file.</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix-800.webp 800w, /images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-validation-issues-grouped-by-rule-how-to-fix.jpg" width="1600" height="1000" alt="List of IFC validation issues grouped by rule, with the number of elements failing each rule and the explanation of how to fix it" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>Each rule opens to its elements and to the steps that fix it in Revit, Archicad or Tekla.</figcaption>
+        </figure>
+        <div data-live-embed data-app="/" data-model="/Ifc2x3_Duplex_Architecture.ifc" data-validate data-panel data-lang="en"
+             data-title="IFC Model Validation Online" data-cta="Run the validation on a sample IFC" data-sub="Loads the validator in this page. Nothing is uploaded." style="--le-h:560px;margin-top:32px"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">How it goes</p>
+        <h2>From the file to a corrected IFC</h2>
+        <ol class="steps">
+          <li><h3>Open the file</h3><p>Drag the .ifc into the page. Several files can be open at once; each one is validated on its own.</p></li>
+          <li><h3>Read the verdict</h3><p>The score, the errors and warnings, and the three fixes that recover the most points. One click highlights the failing elements.</p></li>
+          <li><h3>Fix what can be fixed here</h3><p>Regenerate invalid GlobalIds, rename in bulk, edit names and property values. Every edit can be undone.</p></li>
+          <li><h3>Export</h3><p>The corrected IFC, written again by the parser, and the findings as BCF 2.1, CSV, JSON, an HTML delivery report or a COBie spreadsheet.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">Price</p>
+        <h2>What it costs</h2>
+        <p class="prose">Nothing. The viewer, the 44 rules, IDS, the fixes and every export on this page are free, without an account, also for commercial work. The source code is public under the MIT licence on <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener">GitHub</a>.</p>
+        <p class="prose">Paid plans (Pro at €19 a month, Team at €35 per editor a month) are for things that need a server, such as storing models and saved rule sets. They are not on sale yet; the <a href="/pricing/">pricing page</a> says what each one will include.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">FAQ</p>
+        <h2>Questions</h2>
+        <div class="faq">
+          <div><h3>Is the IFC file uploaded to a server?</h3><p>No. The file is read by code running in your browser tab. Only anonymous usage statistics (file size and element count, never content) and the share links you create yourself leave the browser.</p></div>
+          <div><h3>Which IFC versions does it read?</h3><p>IFC2x3, IFC4, IFC4x1 and IFC4x3, as .ifc files or inside .ifczip and .zip archives. Files of 2 GB or more are refused.</p></div>
+          <div><h3>Does it replace a clash detection tool?</h3><p>No. The clash rules compare bounding boxes inside a single model and are off by default. They find obvious overlaps before you send a model on; coordination between disciplines needs a clash tool.</p></div>
+          <div><h3>Can I check a model against my own requirements?</h3><p>Yes. Load an IDS 1.0 file, or start from one of seven ready-made requirement sets (ISO 19650 delivery, LOD 200 and LOD 400, COBie handover and others). You can also build a validation profile with your own naming patterns and required property sets.</p></div>
+          <div><h3>Can I fix the errors and export the IFC again?</h3><p>GlobalIds and names can be fixed automatically; names, descriptions and property values can be edited by hand, with undo. The export writes the IFC again with those changes. Geometry and relationships cannot be edited.</p></div>
+          <div><h3>Does it work without an internet connection?</h3><p>No. The page has to load from the internet. For networks without internet access there is an <a href="/on-premise-ifc-validator/">on-premise installation</a>.</p></div>
         </div>
       </div>
     </section>
 
-    <section class="section" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 64px;">
+    <section class="section">
       <div class="container">
-        <p class="section-label">FAQ</p>
-        <h2 class="section-title">IFC Validator — Questions</h2>
-        <br />
-        <div class="faq-list">
-          <div class="faq-item">
-            <p class="faq-q">What is online IFC validation, and how is this different from a cloud validator?</p>
-            <p class="faq-a">Online IFC validation means checking an IFC model against quality rules from a web browser, with no desktop install. Most cloud IFC validators upload your file to a server to process it. IFC Viewer Online does the opposite: all 44 quality rules, the Health Score, and the full IDS 1.0 engine run client-side via WebAssembly, so the IFC is parsed on your own device and nothing is uploaded. You get the convenience of a cloud tool without handing over your model.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Is my IFC file uploaded to a server during validation?</p>
-            <p class="faq-a">No. Validation runs entirely in your browser via web-ifc WebAssembly. Your IFC file never leaves your machine. The validator works completely offline once the page is loaded — no server, no account, no data transfer.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Can I use this IFC validator for confidential project models under NDA?</p>
-            <p class="faq-a">Yes. Because all processing happens locally in your browser and no data is ever transmitted to any server, you can safely validate confidential project models under NDA. There is no service agreement to review with your client — no data changes hands.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Which IFC versions does the validator support?</p>
-            <p class="faq-a">IFC2x3, IFC4, IFC4x1, and IFC4x3 are all supported. The validator uses the open-source web-ifc parser — the same engine used by most modern BIM tools. Outdated schemas are automatically flagged as a dedicated validation rule.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Can I fix errors found during validation and re-export the corrected IFC?</p>
-            <p class="faq-a">Yes. GUID errors can be auto-fixed with one click. Other violations (names, property values) can be edited inline with full undo/redo. Clicking Export IFC applies all corrections to the original binary in a Web Worker and downloads the corrected file — no server involved.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Can I share validation results with my team or client?</p>
-            <p class="faq-a">Yes. After running validation, use the Share Report button to generate a URL that encodes the full results. Your client opens it in any browser without installing anything or creating an account. The IFC file itself is never included in the link.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Does the IFC validator work on Mac?</p>
-            <p class="faq-a">Yes, fully. It works on any modern browser — Chrome, Edge, Firefox, and Safari on both Mac and Windows. No plugin, no installation, no operating system restriction.</p>
-          </div>
-        </div>
+        <p class="label">Related pages</p>
+        <ul class="related">
+          <li><a href="/cloud-ifc-validator/">Cloud IFC Validator</a></li>
+          <li><a href="/on-premise-ifc-validator/">On-premise IFC validation</a></li>
+          <li><a href="/solibri-alternative/">Solibri alternative</a></li>
+          <li><a href="/solibri-webchecker-alternative/">Solibri WebChecker alternative</a></li>
+          <li><a href="/ifc-viewer-mac/">IFC Viewer for Mac</a></li>
+          <li><a href="/blog/solibri-alternative/">Solibri or a browser validator: the long comparison</a></li>
+          <li><a href="/fix/">Fix IFC errors</a></li>
+          <li><a href="/pricing/">Pricing</a></li>
+        </ul>
       </div>
     </section>
 
-    <section class="cta-bottom">
+    <section class="bottom">
       <div class="container">
-        <h2>Validate your IFC file now.</h2>
-        <p>No login. No upload. Works in your browser.</p>
-        <a href="../" class="cta-primary">Open IFC Validator →</a>
+        <h2>Check a file now</h2>
+        <p>Free, no account, and the file stays in your browser.</p>
+        <a href="/" class="btn">Validate an IFC file</a>
       </div>
     </section>
-
   </main>
-
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">Your next step</h2>
+      <p class="lc-lead">Free, in your browser. Nothing is uploaded.</p>
+      <ol>
+        <li><a href="/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>Open a sample model</strong><span>See the Health Score and the failing rules on a real IFC in under a minute.</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>Create a free account</strong><span>Keep your checks and share the report with your team or client.</span></a></li>
+        <li><a href="/pricing/"><span class="lc-n">3</span><strong>Compare the plans</strong><span>Pro, Team and model reception for whoever receives the deliveries.</span></a></li>
+      </ol>
+    </div>
+  </section>
   <footer>
     <div class="container">
-      <div class="footer-links">
-        <a href="../" class="footer-link">IFC Viewer Online</a>
-        <a href="../blog/ifc-model-checker/" class="footer-link">IFC Model Checker Guide</a>
-        <a href="../cloud-ifc-validator/" class="footer-link">Cloud IFC Validator</a>
-        <a href="../solibri-alternative/" class="footer-link">Solibri Alternative</a>
-        <a href="../solibri-webchecker-alternative/" class="footer-link">Solibri WebChecker Alternative</a>
-        <a href="../ifc-viewer-mac/" class="footer-link">IFC Viewer for Mac</a>
-        <a href="../es/ifc-validador/" class="footer-link">Validador IFC (ES)</a>
-        <!-- tool-links -->
-        <a href="../ifc-editor/" class="footer-link">Free IFC Editor</a>
-        <a href="../ifc-classification-checker/" class="footer-link">IFC Classification Checker</a>
-        <a href="../ifc-health-check/" class="footer-link">IFC Model Health Check</a>
-        <!-- /tool-links -->
-        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      <div class="links">
+        <a href="/">IFC Viewer Online</a>
+        <a href="/cloud-ifc-validator/">Cloud IFC Validator</a>
+        <a href="/on-premise-ifc-validator/">On-premise IFC validation</a>
+        <a href="/solibri-alternative/">Solibri alternative</a>
+        <a href="/solibri-webchecker-alternative/">Solibri WebChecker alternative</a>
+        <a href="/ifc-viewer-mac/">IFC Viewer for Mac</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
       </div>
-      <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license · Built with web-ifc &amp; three.js</p>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
     </div>
   </footer>
-
-  <script defer src="../seo/dot-grid.js"></script>
-  <script defer src="../seo/live-embed.js"></script>
-
+  <script defer src="/seo/live-embed.js"></script>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
 </body>
 </html>

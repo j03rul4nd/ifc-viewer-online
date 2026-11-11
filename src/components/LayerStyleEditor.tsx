@@ -31,7 +31,7 @@ import { toast } from '../stores/toastStore'
 
 type T = (k: string, o?: Record<string, unknown>) => string
 
-const PALETTE = ['#2fb7ff', '#5ce27a', '#ffd23f', '#f25c54', '#b18cff', '#ff7a1a', '#3ee0d0', '#ff4f8b', '#c0ca33', '#ffffff']
+const PALETTE = ['#2fb7ff', '#5ce27a', '#ffd23f', '#e0523f', '#c8a97e', '#ff7a1a', '#3ee0d0', '#ff4f8b', '#c0ca33', '#ffffff']
 const OPS: FilterOp[] = ['eq', 'neq', 'in', 'notIn', 'contains', 'startsWith', 'gt', 'gte', 'lt', 'lte', 'between', 'exists', 'missing', 'isTrue', 'isFalse']
 const NO_VALUE_OPS = new Set<FilterOp>(['exists', 'missing', 'isTrue', 'isFalse'])
 
@@ -274,7 +274,7 @@ function GroupCard({ g, count, kinds, schema, rows, open, onToggle, onChange, on
           <input className={sel} value={g.name} onChange={(e) => onChange({ ...g, name: e.target.value })} aria-label={t('groups.name')} />
           <Conditions g={g} schema={schema} rows={rows} onChange={onChange} t={t} />
           <LookEditor style={g.style} kinds={kinds} schema={schema} t={t} onChange={(style) => onChange({ ...g, style })} />
-          <button className="self-start text-[10px] text-[#f25c54] hover:underline" onClick={onDelete}>{t('groups.delete')}</button>
+          <button className="self-start text-[10px] text-[#e0523f] hover:underline" onClick={onDelete}>{t('groups.delete')}</button>
         </div>
       )}
     </div>

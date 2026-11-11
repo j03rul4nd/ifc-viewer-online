@@ -767,7 +767,70 @@
     "alertsActive": "{{count}} en alerta",
     "summaryFilter": "Mostrar solo estos vínculos",
     "mqttTopics": "Topics MQTT, uno por línea (vacío = WebSocket simple con mensajes JSON)",
-    "mqttHint": "Con topics, esta dirección es la escucha WebSocket de un broker MQTT. Cada mensaje se lee como { topic, …payload }, una vez por segundo; los mensajes sin id de dispositivo se ignoran."
+    "mqttHint": "Con topics, esta dirección es la escucha WebSocket de un broker MQTT. Cada mensaje se lee como { topic, …payload }, una vez por segundo; los mensajes sin id de dispositivo se ignoran.",
+    "panel": {
+      "tabs": {
+        "sources": "Fuentes",
+        "devices": "Dispositivos",
+        "bindings": "Vínculos",
+        "project": "Proyecto"
+      },
+      "failed": "Esta sección no se pudo cargar",
+      "retry": "Reintentar",
+      "back": "Volver",
+      "summaryDevices": "{{count}} dispositivos",
+      "paused": "En pausa",
+      "summaryErrors": "{{count}} fuentes con error",
+      "needModel": "Abre un modelo para probar una demo",
+      "connectApi": "Conectar una API",
+      "importFile": "Importar .twin.json",
+      "demoSection": "Probar con datos simulados",
+      "editSource": "Editar fuente",
+      "url": "Dirección",
+      "test": "Probar conexión",
+      "testing": "Probando…",
+      "testOk": "{{count}} dispositivos encontrados",
+      "detected": "lista detectada en {{path}}",
+      "testFields": "Campos: {{list}}",
+      "testNone": "Conecta, pero no hay dispositivos. Revisa la ruta de la lista en Opciones avanzadas.",
+      "streamNoTest": "Las conexiones en directo se comprueban al guardar.",
+      "advanced": "Opciones avanzadas",
+      "confirmRemoveSource": "Quitar también {{count}} vínculos",
+      "confirm": "Confirmar",
+      "searchDevices": "Buscar dispositivo…",
+      "noDevices": "Aún no hay lecturas",
+      "noDevicesHint": "Los dispositivos aparecen aquí en cuanto una fuente responde.",
+      "noResults": "Sin resultados",
+      "pastReadOnly": "Vuelve al directo para vincular",
+      "bound": "{{count}} vinculados",
+      "noBindings": "Aún no hay vínculos",
+      "noBindingsHint": "Selecciona un elemento del modelo y vincúlale un dispositivo.",
+      "locate": "Ver en el modelo",
+      "editBinding": "Editar vínculo",
+      "noRules": "Sin reglas: los elementos conservan su aspecto.",
+      "display": "Aspecto y datos",
+      "conditions": "Condiciones",
+      "matchAll": "Todas las condiciones",
+      "matchAny": "Alguna condición",
+      "value": "Valor",
+      "addCondition": "+ Condición",
+      "opacity": "Opacidad",
+      "importReplace": "Esto sustituye tus {{sources}} fuentes y {{bindings}} vínculos. ¿Continuar?",
+      "operated": "Estado operativo",
+      "fiware": {
+        "kind": "Tipo de fuente",
+        "kindApi": "API REST",
+        "kindBroker": "Broker FIWARE",
+        "broker": "URL del Context Broker",
+        "brokerHint": "Orion, Orion-LD, Scorpio o Stellio. Debe permitir peticiones desde este sitio (CORS) y usar https.",
+        "type": "Tipo de entidad",
+        "tenant": "Tenant (opcional)",
+        "context": "Contexto JSON-LD (opcional)",
+        "contextHint": "Da a los atributos sus nombres cortos.",
+        "servicePath": "Service path (opcional)",
+        "api": "API"
+      }
+    }
   },
   "add": {
     "title": "Añadir datos"
@@ -849,5 +912,25 @@
     "generic": "Trabajando… {{s}} s",
     "announce": "Sigue esperando a {{host}}",
     "announceGeneric": "Sigue trabajando"
+  },
+  "portLibrary": {
+    "intro": "Cerramientos, grúas, mobiliario urbano y monumentos modelados por el Port de Barcelona. Abre cualquiera en el visor y añádelo a tu escena.",
+    "search": "Buscar objetos",
+    "all": "Todos",
+    "count_one": "{{count}} objeto",
+    "count_other": "{{count}} objetos",
+    "empty": "Ningún objeto coincide con esa búsqueda.",
+    "onPortSite": "{{size}} · descarga en la web del Port",
+    "credit": "Biblioteca de objetos del",
+    "categories": {
+      "fences": "Cerramientos",
+      "port": "Elementos portuarios",
+      "road": "Elementos viales",
+      "equipment": "Equipamiento portuario",
+      "operation": "Medios de operación",
+      "transport": "Medios de transporte",
+      "furniture": "Mobiliario urbano",
+      "monument": "Monumentos"
+    }
   }
 }

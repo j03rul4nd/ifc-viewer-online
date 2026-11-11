@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "Aggiungi il mio schizzo"
   },
   "cover": {
     "open": "Studio copertine — copertine, slide e post dal modello",
@@ -1100,7 +1101,9 @@
         "grow": "Crescere",
         "stack": "Impilare",
         "crown": "Coronare"
-      }
+      },
+      "sketch": "Schizzo",
+      "sketchHint": "Il tuo ultimo schizzo 3D inviato dallo studio; apre lo studio se non ce n'è uno"
     }
   },
   "mobileMenu": "Cattura",

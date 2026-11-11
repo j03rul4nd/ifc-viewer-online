@@ -699,7 +699,8 @@
     "direct": {
       "hint": "Preview: tap a caption or picture to select it, drag to move, drag the corner to resize, double-tap a caption to edit it. Tap empty picture to play.",
       "resize": "Resize"
-    }
+    },
+    "addSketch": "スケッチを追加"
   },
   "cover": {
     "open": "カバースタジオ — モデルから表紙・スライド・投稿を作成",
@@ -1100,7 +1101,9 @@
         "grow": "成長",
         "stack": "積層",
         "crown": "頂部"
-      }
+      },
+      "sketch": "スケッチ",
+      "sketchHint": "スタジオから送った最新の 3D スケッチ。なければスタジオを開きます"
     }
   },
   "mobileMenu": "キャプチャ",

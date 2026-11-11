@@ -22,8 +22,8 @@
 //     edgeFadeWidth={0.15}
 //     colorCycleSpeed={0.0}
 //     brightness={0.07}
-//     color1="#5E6AD2"
-//     color2="#8B93E8"
+//     color1="#0A8481"
+//     color2="#55CAC3"
 //     color3="#4a5280"
 //     enableMouseInteraction={true}
 //     mouseInfluence={0.8}

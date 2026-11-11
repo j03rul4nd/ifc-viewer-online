@@ -1,13 +1,26 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && find dist/models -mindepth 1 -maxdepth 1 ! -name video-demo -exec rm -rf {} +",
   "outputDirectory": "dist",
   "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "redirects": [
+    { "source": "/models/:path((?!video-demo/).*)", "destination": "https://ifc-viewer-models.joelbenitezdonari.workers.dev/models/:path", "permanent": false },
     { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/:rule(broken-aggregate|circular-reference|clash-mep-structural|connected-mep|coordinate-offset|duplicate-name|element-clash|element-in-building|empty-longname|empty-name|empty-property-value|empty-storey|file-author-missing|file-description-missing|file-size-anomaly|invalid-ifc-version|iso19650-author-info|iso19650-filename|iso19650-project-info|lod-material-layer-missing|lod-pset-missing|lod-quantity-missing|mep-system-missing|missing-building|missing-classification|missing-material|missing-project|missing-property-set|missing-storey|missing-type|naming-convention|opening-without-host|orphan-element|project-longname-missing|proxy-overuse|space-area-missing|spatial-hierarchy|storey-elevation-duplicate|storey-elevation-missing|storey-elevation-order|unit-consistency|wrong-container)", "destination": "/:lang/fix/:rule/", "permanent": true },
     { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/:rule(broken-aggregate|circular-reference|clash-mep-structural|connected-mep|coordinate-offset|duplicate-name|element-clash|element-in-building|empty-longname|empty-name|empty-property-value|empty-storey|file-author-missing|file-description-missing|file-size-anomaly|invalid-ifc-version|iso19650-author-info|iso19650-filename|iso19650-project-info|lod-material-layer-missing|lod-pset-missing|lod-quantity-missing|mep-system-missing|missing-building|missing-classification|missing-material|missing-project|missing-property-set|missing-storey|missing-type|naming-convention|opening-without-host|orphan-element|project-longname-missing|proxy-overuse|space-area-missing|spatial-hierarchy|storey-elevation-duplicate|storey-elevation-missing|storey-elevation-order|unit-consistency|wrong-container)/", "destination": "/:lang/fix/:rule/", "permanent": true },
     { "source": "/:rule(broken-aggregate|circular-reference|clash-mep-structural|connected-mep|coordinate-offset|duplicate-name|element-clash|element-in-building|empty-longname|empty-name|empty-property-value|empty-storey|file-author-missing|file-description-missing|file-size-anomaly|invalid-ifc-version|iso19650-author-info|iso19650-filename|iso19650-project-info|lod-material-layer-missing|lod-pset-missing|lod-quantity-missing|mep-system-missing|missing-building|missing-classification|missing-material|missing-project|missing-property-set|missing-storey|missing-type|naming-convention|opening-without-host|orphan-element|project-longname-missing|proxy-overuse|space-area-missing|spatial-hierarchy|storey-elevation-duplicate|storey-elevation-missing|storey-elevation-order|unit-consistency|wrong-container)", "destination": "/fix/:rule/", "permanent": true },
     { "source": "/:rule(broken-aggregate|circular-reference|clash-mep-structural|connected-mep|coordinate-offset|duplicate-name|element-clash|element-in-building|empty-longname|empty-name|empty-property-value|empty-storey|file-author-missing|file-description-missing|file-size-anomaly|invalid-ifc-version|iso19650-author-info|iso19650-filename|iso19650-project-info|lod-material-layer-missing|lod-pset-missing|lod-quantity-missing|mep-system-missing|missing-building|missing-classification|missing-material|missing-project|missing-property-set|missing-storey|missing-type|naming-convention|opening-without-host|orphan-element|project-longname-missing|proxy-overuse|space-area-missing|spatial-hierarchy|storey-elevation-duplicate|storey-elevation-missing|storey-elevation-order|unit-consistency|wrong-container)/", "destination": "/fix/:rule/", "permanent": true },
+    { "source": "/blog/ifc-model-checker-vs-ifc-viewer", "destination": "/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/blog/ifc-model-checker-vs-ifc-viewer/", "destination": "/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-vs-ifc-viewer", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-vs-ifc-viewer/", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/blog/how-to-validate-ifc-file", "destination": "/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/blog/how-to-validate-ifc-file/", "destination": "/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/how-to-validate-ifc-file", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/how-to-validate-ifc-file/", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
+    { "source": "/blog/free-online-ifc-viewers-compared", "destination": "/blog/best-free-ifc-viewer/", "permanent": true },
+    { "source": "/blog/free-online-ifc-viewers-compared/", "destination": "/blog/best-free-ifc-viewer/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/free-online-ifc-viewers-compared", "destination": "/:lang/blog/best-free-ifc-viewer/", "permanent": true },
+    { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/free-online-ifc-viewers-compared/", "destination": "/:lang/blog/best-free-ifc-viewer/", "permanent": true },
     { "source": "/blog/ifc-model-checker-guide", "destination": "/blog/ifc-model-checker/", "permanent": true },
     { "source": "/blog/ifc-model-checker-guide/", "destination": "/blog/ifc-model-checker/", "permanent": true },
     { "source": "/:lang(es|de|fr|pt|it|ca|zh|ja|th)/blog/ifc-model-checker-guide", "destination": "/:lang/blog/ifc-model-checker/", "permanent": true },
@@ -22,10 +35,13 @@
     { "source": "/badge", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_badge" },
     { "source": "/r",     "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_r" },
     { "source": "/api/lead", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/lead" },
+    { "source": "/api/requests", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/requests" },
+    { "source": "/api/booking", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/booking" },
     { "source": "/bench", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/bench" },
     { "source": "/((?!assets/|blog/images/|blog/covers/|sdk/[0-9]+[.][0-9]+[.][0-9]+[^/]*/).*)", "destination": "/index.html" }
   ],
   "headers": [
+    { "source": "/track/v1/:file(tracker.js|engine.js|page.js)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=604800" }, { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" }, { "key": "Access-Control-Allow-Origin", "value": "*" }] },
     { "source": "/models-frag/:file((?!manifest).*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
     {
       "source": "/(.*)",
@@ -46,6 +62,12 @@
       "source": "/mascot/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=2592000" }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=2592000" }
       ]
     },
     {

@@ -29,6 +29,7 @@ import type * as FRAGS from '@thatopen/fragments'
 import * as OBC from '@thatopen/components'
 import type { MapRef, SnapKind, SnapSettings } from './measure-types'
 import { withTimeout } from './async'
+import { edgesNear, hitMatrix } from './mesh-snap'
 
 /** Pixel radii for each snap tier. */
 export const SNAP_PX = { vertex: 14, midpoint: 12, edge: 9 } as const
@@ -238,23 +239,65 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
     return null
   }
 
-  /** Vertex snap on an imported mesh: triangle corners only (see below). */
+  /** Vertex snap on an imported mesh: the corners of the triangle hit. */
   function snapMeshVertex(hit: RawHit, clientX: number, clientY: number): THREE.Vector3 | null {
-    // Edges are deliberately NOT offered on meshes: a triangle soup has no idea
-    // which of its edges are real and which are the diagonal that split a quad,
-    // and snapping to the diagonal of a wall is worse than not snapping.
     const i = hit.intersection
     const mesh = i?.object as THREE.Mesh | undefined
     const pos = mesh?.geometry?.getAttribute?.('position') as THREE.BufferAttribute | undefined
     if (!i?.face || !mesh || !pos) return null
+    const m = hitMatrix(i)
     let best: THREE.Vector3 | null = null
     let bestPx: number = SNAP_PX.vertex
     for (const idx of [i.face.a, i.face.b, i.face.c]) {
-      const v = new THREE.Vector3().fromBufferAttribute(pos, idx).applyMatrix4(mesh.matrixWorld)
+      const v = new THREE.Vector3().fromBufferAttribute(pos, idx).applyMatrix4(m)
       const px = screenDistance(v, clientX, clientY)
       if (px <= bestPx) { bestPx = px; best = v }
     }
     return best
+  }
+
+  /**
+   * Midpoint / edge snap on an imported mesh, against its FEATURE edges only
+   * (mesh-snap): the fold of a wall, never the diagonal splitting its quad.
+   */
+  function snapMeshEdge(hit: RawHit, clientX: number, clientY: number, snaps: SnapSettings):
+    { point: THREE.Vector3; kind: 'midpoint' | 'edge'; edge: [THREE.Vector3, THREE.Vector3] } | null {
+    const i = hit.intersection
+    const mesh = i?.object as THREE.Mesh | undefined
+    if (!i?.face || !mesh?.geometry) return null
+    const wpp = worldPerPixel(hit.point)
+    const near = edgesNear(mesh.geometry, hitMatrix(i), hit.point, wpp * SNAP_PX.midpoint * 3)
+    for (const e of near) {
+      const mid = e.a.clone().add(e.b).multiplyScalar(0.5)
+      if (snaps.midpoint && screenDistance(mid, clientX, clientY) <= SNAP_PX.midpoint) {
+        return { point: mid, kind: 'midpoint', edge: [e.a, e.b] }
+      }
+    }
+    for (const e of near) {
+      if (snaps.edge && screenDistance(e.nearest, clientX, clientY) <= SNAP_PX.edge) {
+        return { point: e.nearest, kind: 'edge', edge: [e.a, e.b] }
+      }
+    }
+    return null
+  }
+
+  /**
+   * A point feature of a data layer (GeoJSON marker, a dot): its own position,
+   * not where the ray grazed the marker's sphere.
+   */
+  function snapLayerPoint(hit: RawHit): THREE.Vector3 | null {
+    const i = hit.intersection
+    if (!i) return null
+    const inst = i.object as THREE.InstancedMesh
+    if (inst.isInstancedMesh && i.instanceId !== undefined && inst.userData?.instanceFeature) {
+      return new THREE.Vector3().setFromMatrixPosition(hitMatrix(i))
+    }
+    const pts = i.object as THREE.Points
+    if (pts.isPoints && i.index !== undefined) {
+      const pos = pts.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
+      if (pos) return new THREE.Vector3().fromBufferAttribute(pos, i.index).applyMatrix4(pts.matrixWorld)
+    }
+    return null
   }
 
   async function pick(clientX: number, clientY: number, options: PickOptions): Promise<PickResult | null> {
@@ -296,9 +339,17 @@ export function createScenePicker(deps: ScenePickerDeps): ScenePicker {
 
     // ── Imported mesh / point cloud ───────────────────────────────────────────
     if (!hit.fragModel) {
-      if (options.snaps?.vertex && result.kind === 'surface') {
-        const v = snapMeshVertex(hit, clientX, clientY)
+      const marker = snapLayerPoint(hit)
+      if (marker && options.snaps?.vertex && screenDistance(marker, clientX, clientY) <= SNAP_PX.vertex * 1.5) {
+        result.point = marker
+        result.kind = 'vertex'
+      } else if (options.snaps && result.kind === 'surface') {
+        const v = options.snaps.vertex ? snapMeshVertex(hit, clientX, clientY) : null
         if (v) { result.point = v; result.kind = 'vertex' }
+        else {
+          const e = snapMeshEdge(hit, clientX, clientY, options.snaps)
+          if (e) { result.point = e.point; result.kind = e.kind; result.edge = e.edge }
+        }
       }
       result.normal = faceCamera(result.normal, result.surfacePoint)
       return result

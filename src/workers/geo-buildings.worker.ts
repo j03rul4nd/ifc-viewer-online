@@ -16,10 +16,11 @@
 //
 // No three.js here — the mesh is extruded in geo-system.
 
-import { bboxAround, DATA_SOURCE_TAG, OVERPASS_ENDPOINT, overpassRemarkError } from '../lib/geo/buildings'
+import { bboxAround, DATA_SOURCE_TAG, fetchOverpassWithMirrors } from '../lib/geo/buildings'
 import { fetchOmtFallback } from '../lib/geo/omt-fallback'
+import { fetchOsmApiElements, osmCacheKey, readOsmCache, writeOsmCache } from '../lib/geo/osm-api-source'
 import {
-  newFootprints, extractCovers, clearsModelPlan,
+  newFootprints, districtsTouching, mergeExtracts, clearsModelPlan,
   type OvertureExtract, type OvertureFootprint, fuseOvertureAttributes, overtureFootprintTags,
 } from '../lib/geo/overture-footprints'
 import { latLonToNormalized } from '../lib/geo/geo-math'
@@ -30,6 +31,8 @@ import { extractHydrology, type Hydrology } from '../lib/geo/osm-hydro'
 const QUERY_TIMEOUT_S = 25
 /** Client-side budget, longer than the server's so we see its error, not ours. */
 const FETCH_TIMEOUT_MS = 35_000
+/** The whole chain must fit inside BUILDINGS_TIMEOUT_MS, with the tiles still to come. */
+const OSM_API_TIMEOUT_MS = 45_000
 /**
  * Cap on elements returned; a dense centre must not stream tens of megabytes.
  * Raised from the buildings-only era because ONE query now serves every layer.
@@ -85,54 +88,33 @@ self.onmessage = (e: MessageEvent<BuildingsRequest>): void => {
   if (msg?.type === 'fetch-buildings') void handleFetch(msg)
 }
 
-/** One Overpass query; throws on HTTP errors, timeouts and "busy" remarks. */
-async function fetchOverpass(query: string): Promise<unknown> {
-  // AbortController rather than a bare race: a hung request must actually be
-  // cancelled, not merely ignored while it keeps the connection open.
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-  let json: unknown
-  try {
-    const res = await fetch(OVERPASS_ENDPOINT, {
-      method: 'POST',
-      // Overpass expects the QL in a form body; this is the documented shape.
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: controller.signal,
-    })
-    if (!res.ok) {
-      // 429/504 are Overpass telling us it is busy — surface that plainly
-      // rather than as a generic failure, since retrying later works.
-      throw new Error(`Overpass HTTP ${res.status}`)
-    }
-    json = await res.json()
-  } finally {
-    clearTimeout(timer)
-  }
-  // A busy Overpass answers 200 with an empty body and a `remark`. Treated as
-  // success it becomes "nothing is mapped here", which the caller then CACHES
-  // — so one unlucky moment blanks the neighbourhood for the whole session
-  // and retrying does nothing. Surface it as the failure it is.
-  const remark = overpassRemarkError(json)
-  if (remark) throw new Error(`Overpass: ${remark}`)
-  return json
-}
-
 async function handleFetch(req: BuildingsRequest): Promise<void> {
   try {
     const bbox = bboxAround(req.lat, req.lon, req.halfSizeM)
     const query = buildFeaturesQuery(bbox, QUERY_TIMEOUT_S, MAX_ELEMENTS)
 
+    const cacheKey = osmCacheKey(req.lat, req.lon, req.halfSizeM)
     let json: unknown
     let fallback = false
     try {
       if (req.forceFallback) throw new Error('Overpass skipped (forced fallback)')
-      json = await fetchOverpass(query)
+      json = await readOsmCache(cacheKey)
+      if (!json) {
+        json = await fetchOverpassWithMirrors(query, FETCH_TIMEOUT_MS)
+        void writeOsmCache(cacheKey, json)
+      }
     } catch (overpassErr) {
       // Overpass is busy, rate-limited or down. Build the city from the
       // basemap's own vector tiles instead (same OSM data, coarser tags) —
       // a thinner city, labelled as such, rather than no city at all.
       try {
+        if (req.forceFallback) throw overpassErr
+        json = { elements: await fetchOsmApiElements(bbox, OSM_API_TIMEOUT_MS) }
+        void writeOsmCache(cacheKey, json)
+      } catch {
+        json = null
+      }
+      if (!json) try {
         json = { elements: await fetchOmtFallback(bbox) }
         fallback = true
       } catch (fallbackErr) {
@@ -151,7 +133,7 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     // grain, the audit's estimated count — then treats them exactly like a
     // building that arrived from Overpass. A second parallel path would have to
     // re-derive all of it and would drift the first time one side changed.
-    const extra = await overtureExtras(req.lat, req.lon, elements, req.modelPlan ?? [])
+    const extra = await overtureExtras(bbox, elements, req.modelPlan ?? [])
     const merged = extra.length > 0 && Array.isArray(elements)
       ? { ...(json as object), elements: [...elements, ...extra] }
       : json
@@ -262,21 +244,24 @@ async function fetchJsonWithin<T>(url: string, timeoutMs: number): Promise<T | n
  * time somebody maps another block.
  */
 async function overtureExtras(
-  lat: number, lon: number, elements: readonly unknown[] | undefined,
+  site: { south: number; west: number; north: number; east: number },
+  elements: readonly unknown[] | undefined,
   modelPlan: readonly PlanPolygon[],
 ): Promise<PseudoOverpassWay[]> {
   try {
     const idx = await fetchJsonWithin<OvertureIndex>(OVERTURE_INDEX, OVERTURE_TIMEOUT_MS)
     if (!idx) return []
-    const district = (idx.districts ?? []).find(
-      (d) => d.bbox !== undefined && extractCovers({ bbox: d.bbox }, lat, lon),
-    )
-    if (!district?.slug) return []
+    // EVERY district the site's box reaches, not just the one under the model:
+    // from Lujiazui the Bund across the river is in view, and with one
+    // district it stood there as the gaps OSM leaves.
+    const districts = districtsTouching(idx.districts ?? [], site)
+    if (districts.length === 0) return []
 
-    const data = await fetchJsonWithin<OvertureExtract>(
-      `/geo/overture/${encodeURIComponent(district.slug)}.json`, OVERTURE_TIMEOUT_MS,
-    )
-    if (!data || !Array.isArray(data.footprints)) return []
+    const parts = await Promise.all(districts.map((d) => fetchJsonWithin<OvertureExtract>(
+      `/geo/overture/${encodeURIComponent(d.slug!)}.json`, OVERTURE_TIMEOUT_MS,
+    )))
+    const data = mergeExtracts(parts)
+    if (!data) return []
 
     // FUSION, field by field, by OSM id. Overture records which OSM element a
     // building's geometry came from, so its enrichment lands on that exact

@@ -24,6 +24,8 @@ import {
   type FixGuideLang,
 } from '../../src/lib/fix-guide-url'
 import { validatorPath, solibriPath, toolLandings } from '../../src/lib/localized-landings'
+import { pricingPath } from '../../src/lib/pricing/pricing-paths'
+import { withRights } from './image-metadata'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -119,7 +121,7 @@ function fixCoverUrl(lang: Lang, cat: string): string {
 }
 
 /** Browser theme color (matches the app shell) + inline SVG favicon. */
-const THEME_COLOR = '#0A0A0C'
+const THEME_COLOR = '#100F0C'
 // Rules already covered by a richer, hand-authored page — skip them here so we
 // don't publish a thinner competing page. Shared with the app, which links to
 // the hand-authored page for exactly these rules.
@@ -204,6 +206,14 @@ interface UI {
   hubTitleSuffix: string; hubMeta: string; hubBadge: (n: number) => string
   hubH1Pre: string; hubH1Accent: string; hubHeroDesc: string
   hubCta: string; hubNote: string
+  /** Link to the blog's model-checker pillar, and to the pricing page. */
+  hubGuide: string; hubPlans: string
+  /** Links to the page that owns "IFC model validation" (the validator landing) and to the checker comparison. */
+  hubValidate: string; hubCompare: string
+  /** The table of categories above the list of checks. */
+  hubSumTitle: string; hubSumSub: string; thChecks: string; thExamples: string
+  /** The capture of a validation result. */
+  hubImgAlt: string; hubImgCap: string
   hubRefLabel: string; hubRefTitle: string; hubRefSubPre: string; hubRefLink: string; hubRefSubPost: string
   hubCtaTitle: string; hubCtaBody: string; hubCtaBtn: string
   // category page (everything else is reused from the hub strings above)
@@ -253,8 +263,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Every IFC validation check with concrete, tool-specific fixes for Revit, ArchiCAD, Tekla and Allplan. Free, in the browser, nothing uploaded.',
     hubBadge: (n) => `Free · No upload · ${n} checks documented`,
     hubH1Pre: 'How to fix', hubH1Accent: 'IFC validation errors',
-    hubHeroDesc: 'Every check the IFC Health Score runs, with concrete fixes for Revit, ArchiCAD, Tekla and Allplan. Pick an issue below, or open the validator and check your own model in seconds.',
+    hubHeroDesc: 'The errors an IFC model validation reports, one page each: what the check means, why it fails and how to fix it in Revit, ArchiCAD, Tekla and Allplan. Pick an error below, or open the validator and check your own model.',
     hubCta: 'Check your IFC file — free', hubNote: 'No account · No upload · Runs in your browser',
+    hubGuide: "Read the IFC model checker guide", hubPlans: "Checking every delivery as a team? See plans",
+    hubValidate: 'IFC model validation online', hubCompare: 'IFC model checkers compared',
+    hubSumTitle: 'What an IFC validation checks', hubSumSub: 'The checks by category. An error blocks a delivery; warnings and notes lower the Health Score.',
+    thChecks: 'Checks', thExamples: 'Examples',
+    hubImgAlt: 'IFC validation errors grouped by rule in IFC Viewer Online: each failing rule with its number of elements, next to the 3D model and the Health Score',
+    hubImgCap: 'A validation result in the viewer: the failing rules, how many elements each one affects and the Health Score.',
     hubRefLabel: 'Reference', hubRefTitle: 'IFC checks by category',
     hubRefSubPre: 'Also see the dedicated tool for ', hubRefLink: 'fixing duplicate GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Get your IFC Health Score.',
@@ -302,8 +318,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Cada comprobación de validación IFC con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, en el navegador, sin subir nada.',
     hubBadge: (n) => `Gratis · Sin subida · ${n} comprobaciones documentadas`,
     hubH1Pre: 'Cómo corregir', hubH1Accent: 'errores de validación IFC',
-    hubHeroDesc: 'Cada comprobación que ejecuta el IFC Health Score, con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Elige un problema abajo o abre el validador y analiza tu propio modelo en segundos.',
+    hubHeroDesc: 'Los errores que devuelve una validación de modelos IFC, cada uno en su página: qué significa la comprobación, por qué falla y cómo corregirla en Revit, ArchiCAD, Tekla y Allplan. Elige un error abajo o abre el validador y revisa tu modelo.',
     hubCta: 'Analiza tu archivo IFC — gratis', hubNote: 'Sin cuenta · Sin subida · Se ejecuta en tu navegador',
+    hubGuide: "Lee la guía del verificador de modelos IFC", hubPlans: "¿Revisáis cada entrega en equipo? Ver planes",
+    hubValidate: 'Validación de modelos IFC online', hubCompare: 'Comparativa de verificadores de modelos IFC',
+    hubSumTitle: 'Qué comprueba una validación IFC', hubSumSub: 'Las comprobaciones por categoría. Un error bloquea la entrega; los avisos y las notas bajan el Health Score.',
+    thChecks: 'Comprobaciones', thExamples: 'Ejemplos',
+    hubImgAlt: 'Errores de validación IFC agrupados por regla en IFC Viewer Online: cada regla que falla con su número de elementos, junto al modelo 3D y el Health Score',
+    hubImgCap: 'El resultado de una validación en el visor: las reglas que fallan, cuántos elementos afecta cada una y el Health Score.',
     hubRefLabel: 'Referencia', hubRefTitle: 'Comprobaciones IFC por categoría',
     hubRefSubPre: 'Consulta también la herramienta dedicada para ', hubRefLink: 'corregir GUID duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén tu IFC Health Score.',
@@ -351,8 +373,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Jede IFC-Validierungsprüfung mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, im Browser, ohne Upload.',
     hubBadge: (n) => `Kostenlos · Kein Upload · ${n} Prüfungen dokumentiert`,
     hubH1Pre: 'So beheben Sie', hubH1Accent: 'IFC-Validierungsfehler',
-    hubHeroDesc: 'Jede Prüfung des IFC Health Score, mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Wählen Sie unten ein Problem oder öffnen Sie den Validator und prüfen Sie Ihr eigenes Modell in Sekunden.',
+    hubHeroDesc: 'Die Fehler, die eine IFC-Modellvalidierung meldet, jeweils auf einer eigenen Seite: was die Prüfung bedeutet, warum sie fehlschlägt und wie Sie sie in Revit, ArchiCAD, Tekla und Allplan beheben. Wählen Sie unten einen Fehler oder öffnen Sie den Validator und prüfen Sie Ihr Modell.',
     hubCta: 'IFC-Datei prüfen — kostenlos', hubNote: 'Kein Konto · Kein Upload · Läuft im Browser',
+    hubGuide: "Zum Leitfaden IFC-Modellprüfung", hubPlans: "Prüfen Sie jede Lieferung im Team? Zu den Tarifen",
+    hubValidate: 'IFC-Modellvalidierung online', hubCompare: 'IFC-Modellprüfer im Vergleich',
+    hubSumTitle: 'Was eine IFC-Validierung prüft', hubSumSub: 'Die Prüfungen nach Kategorie. Ein Fehler blockiert die Lieferung; Warnungen und Hinweise senken den Health Score.',
+    thChecks: 'Prüfungen', thExamples: 'Beispiele',
+    hubImgAlt: 'IFC-Validierungsfehler nach Regel gruppiert in IFC Viewer Online: jede verletzte Regel mit der Zahl der betroffenen Elemente, neben dem 3D-Modell und dem Health Score',
+    hubImgCap: 'Ein Validierungsergebnis im Viewer: die verletzten Regeln, die Zahl der betroffenen Elemente und der Health Score.',
     hubRefLabel: 'Referenz', hubRefTitle: 'IFC-Prüfungen nach Kategorie',
     hubRefSubPre: 'Siehe auch das spezielle Tool zum ', hubRefLink: 'Beheben doppelter GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Holen Sie sich Ihren IFC Health Score.',
@@ -400,8 +428,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Chaque vérification de validation IFC avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Gratuit, sans téléversement.',
     hubBadge: (n) => `Gratuit · Sans téléversement · ${n} vérifications documentées`,
     hubH1Pre: 'Comment corriger', hubH1Accent: 'les erreurs de validation IFC',
-    hubHeroDesc: 'Chaque vérification du IFC Health Score, avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Choisissez un problème ci-dessous ou ouvrez le validateur et vérifiez votre propre modèle en quelques secondes.',
+    hubHeroDesc: 'Les erreurs que signale une validation de maquette IFC, chacune sur sa page : ce que signifie la vérification, pourquoi elle échoue et comment la corriger dans Revit, ArchiCAD, Tekla et Allplan. Choisissez une erreur ci-dessous ou ouvrez le validateur et contrôlez votre maquette.',
     hubCta: 'Vérifiez votre fichier IFC — gratuit', hubNote: 'Sans compte · Sans téléversement · Dans le navigateur',
+    hubGuide: "Lire le guide du vérificateur de modèles IFC", hubPlans: "Vous contrôlez chaque livrable en équipe ? Voir les offres",
+    hubValidate: 'Validation de maquettes IFC en ligne', hubCompare: 'Comparatif des vérificateurs de maquettes IFC',
+    hubSumTitle: 'Ce que vérifie une validation IFC', hubSumSub: 'Les vérifications par catégorie. Une erreur bloque la livraison ; les avertissements et les notes font baisser le Health Score.',
+    thChecks: 'Vérifications', thExamples: 'Exemples',
+    hubImgAlt: 'Erreurs de validation IFC regroupées par règle dans IFC Viewer Online : chaque règle en échec avec son nombre d’éléments, à côté de la maquette 3D et du Health Score',
+    hubImgCap: 'Le résultat d’une validation dans la visionneuse : les règles en échec, le nombre d’éléments concernés et le Health Score.',
     hubRefLabel: 'Référence', hubRefTitle: 'Vérifications IFC par catégorie',
     hubRefSubPre: 'Voir aussi l’outil dédié pour ', hubRefLink: 'corriger les GUID en double', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenez votre IFC Health Score.',
@@ -449,8 +483,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Cada verificação de validação IFC com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Grátis, no navegador, sem upload.',
     hubBadge: (n) => `Grátis · Sem upload · ${n} verificações documentadas`,
     hubH1Pre: 'Como corrigir', hubH1Accent: 'erros de validação IFC',
-    hubHeroDesc: 'Cada verificação que o IFC Health Score executa, com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Escolha um problema abaixo ou abra o validador e verifique o seu próprio modelo em segundos.',
+    hubHeroDesc: 'Os erros que uma validação de modelos IFC aponta, cada um na sua página: o que a verificação significa, por que falha e como corrigir no Revit, ArchiCAD, Tekla e Allplan. Escolha um erro abaixo ou abra o validador e verifique o seu modelo.',
     hubCta: 'Verifique o seu ficheiro IFC — grátis', hubNote: 'Sem conta · Sem upload · Funciona no navegador',
+    hubGuide: "Ler o guia do verificador de modelos IFC", hubPlans: "Verificam cada entrega em equipa? Ver planos",
+    hubValidate: 'Validação de modelos IFC online', hubCompare: 'Comparativo de verificadores de modelos IFC',
+    hubSumTitle: 'O que uma validação IFC verifica', hubSumSub: 'As verificações por categoria. Um erro bloqueia a entrega; avisos e notas baixam o Health Score.',
+    thChecks: 'Verificações', thExamples: 'Exemplos',
+    hubImgAlt: 'Erros de validação IFC agrupados por regra no IFC Viewer Online: cada regra que falha com o número de elementos, ao lado do modelo 3D e do Health Score',
+    hubImgCap: 'O resultado de uma validação no visualizador: as regras que falham, quantos elementos cada uma afeta e o Health Score.',
     hubRefLabel: 'Referência', hubRefTitle: 'Verificações IFC por categoria',
     hubRefSubPre: 'Veja também a ferramenta dedicada para ', hubRefLink: 'corrigir GUIDs duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenha o seu IFC Health Score.',
@@ -498,8 +538,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Ogni controllo di validazione IFC con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Gratis, nel browser, senza caricamento.',
     hubBadge: (n) => `Gratis · Senza caricamento · ${n} controlli documentati`,
     hubH1Pre: 'Come correggere', hubH1Accent: 'gli errori di validazione IFC',
-    hubHeroDesc: 'Ogni controllo eseguito dall’IFC Health Score, con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Scegli un problema qui sotto o apri il validatore e controlla il tuo modello in pochi secondi.',
+    hubHeroDesc: 'Gli errori segnalati da una validazione di modelli IFC, ognuno nella sua pagina: che cosa significa il controllo, perché fallisce e come correggerlo in Revit, ArchiCAD, Tekla e Allplan. Scegli un errore qui sotto o apri il validatore e controlla il tuo modello.',
     hubCta: 'Controlla il tuo file IFC — gratis', hubNote: 'Senza account · Senza caricamento · Funziona nel browser',
+    hubGuide: "Leggi la guida al checker di modelli IFC", hubPlans: "Controllate ogni consegna in team? Vedi i piani",
+    hubValidate: 'Validazione di modelli IFC online', hubCompare: 'Confronto tra model checker IFC',
+    hubSumTitle: 'Che cosa controlla una validazione IFC', hubSumSub: 'I controlli per categoria. Un errore blocca la consegna; avvisi e note abbassano l’Health Score.',
+    thChecks: 'Controlli', thExamples: 'Esempi',
+    hubImgAlt: 'Errori di validazione IFC raggruppati per regola in IFC Viewer Online: ogni regola non superata con il numero di elementi, accanto al modello 3D e all’Health Score',
+    hubImgCap: 'Il risultato di una validazione nel visualizzatore: le regole non superate, quanti elementi riguarda ciascuna e l’Health Score.',
     hubRefLabel: 'Riferimento', hubRefTitle: 'Controlli IFC per categoria',
     hubRefSubPre: 'Vedi anche lo strumento dedicato per ', hubRefLink: 'correggere i GUID duplicati', hubRefSubPost: '.',
     hubCtaTitle: 'Ottieni il tuo IFC Health Score.',
@@ -547,8 +593,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'Cada comprovació de validació IFC amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Gratis, al navegador, sense pujar res.',
     hubBadge: (n) => `Gratis · Sense pujada · ${n} comprovacions documentades`,
     hubH1Pre: 'Com corregir', hubH1Accent: 'errors de validació IFC',
-    hubHeroDesc: 'Cada comprovació que executa l’IFC Health Score, amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Tria un problema a sota o obre el validador i analitza el teu propi model en segons.',
+    hubHeroDesc: 'Els errors que retorna una validació de models IFC, cadascun a la seva pàgina: què significa la comprovació, per què falla i com corregir-la a Revit, ArchiCAD, Tekla i Allplan. Tria un error a sota o obre el validador i revisa el teu model.',
     hubCta: 'Analitza el teu fitxer IFC — gratis', hubNote: 'Sense compte · Sense pujada · S’executa al navegador',
+    hubGuide: "Llegeix la guia del verificador de models IFC", hubPlans: "Reviseu cada lliurament en equip? Veure plans",
+    hubValidate: 'Validació de models IFC en línia', hubCompare: 'Comparativa de verificadors de models IFC',
+    hubSumTitle: 'Què comprova una validació IFC', hubSumSub: 'Les comprovacions per categoria. Un error bloqueja el lliurament; els avisos i les notes abaixen el Health Score.',
+    thChecks: 'Comprovacions', thExamples: 'Exemples',
+    hubImgAlt: 'Errors de validació IFC agrupats per regla a IFC Viewer Online: cada regla que falla amb el nombre d’elements, al costat del model 3D i el Health Score',
+    hubImgCap: 'El resultat d’una validació al visor: les regles que fallen, quants elements afecta cadascuna i el Health Score.',
     hubRefLabel: 'Referència', hubRefTitle: 'Comprovacions IFC per categoria',
     hubRefSubPre: 'Consulta també l’eina dedicada per ', hubRefLink: 'corregir GUID duplicats', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén el teu IFC Health Score.',
@@ -596,8 +648,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: '浏览每一项 IFC 验证检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复步骤。免费、基于浏览器、无需上传 — 修复你的 IFC 并提升 Health Score。',
     hubBadge: (n) => `免费 · 无需上传 · 已记录 ${n} 项检查`,
     hubH1Pre: '如何修复', hubH1Accent: 'IFC 验证错误',
-    hubHeroDesc: 'IFC Health Score 运行的每一项检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复方法。在下方选择一个问题，或打开验证器在数秒内检查你自己的模型。',
+    hubHeroDesc: 'IFC 模型验证报告的各类错误，每项一页：这项检查的含义、失败原因，以及在 Revit、ArchiCAD、Tekla 和 Allplan 中的修复方法。在下方选择一个错误，或打开验证器检查你自己的模型。',
     hubCta: '检查你的 IFC 文件 — 免费', hubNote: '无需账户 · 无需上传 · 在浏览器中运行',
+    hubGuide: "阅读 IFC 模型检查指南", hubPlans: "团队需要检查每次交付？查看方案",
+    hubValidate: '在线 IFC 模型验证', hubCompare: 'IFC 模型检查工具对比',
+    hubSumTitle: 'IFC 验证检查哪些内容', hubSumSub: '按类别列出的检查项。错误会阻止交付；警告和提示会拉低 Health Score。',
+    thChecks: '检查项', thExamples: '示例',
+    hubImgAlt: 'IFC Viewer Online 中按规则分组的 IFC 验证错误：每条未通过的规则及其构件数量，旁边是三维模型和 Health Score',
+    hubImgCap: '查看器中的一次验证结果：未通过的规则、各自影响的构件数量和 Health Score。',
     hubRefLabel: '参考', hubRefTitle: '按类别划分的 IFC 检查',
     hubRefSubPre: '另请参阅专用工具：', hubRefLink: '修复重复 GUID', hubRefSubPost: '。',
     hubCtaTitle: '获取你的 IFC Health Score。',
@@ -645,8 +703,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'すべての IFC 検証チェックを、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正手順とともに確認できます。無料、ブラウザベース、アップロード不要 — IFC を修正して Health Score を向上させましょう。',
     hubBadge: (n) => `無料 · アップロード不要 · ${n} 項目のチェックを掲載`,
     hubH1Pre: '修正方法：', hubH1Accent: 'IFC 検証エラー',
-    hubHeroDesc: 'IFC Health Score が実行するすべてのチェックを、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正方法とともに紹介します。下から問題を選ぶか、検証ツールを開いて自分のモデルを数秒でチェックしましょう。',
+    hubHeroDesc: 'IFCモデルの検証で報告されるエラーを1項目1ページで解説します。チェックの意味、失敗する理由、Revit、ArchiCAD、Tekla、Allplanでの修正方法がわかります。下からエラーを選ぶか、検証ツールを開いて自分のモデルを確認してください。',
     hubCta: 'IFC ファイルをチェック — 無料', hubNote: 'アカウント不要 · アップロード不要 · ブラウザで実行',
+    hubGuide: "IFC モデルチェックのガイドを読む", hubPlans: "チームで毎回の納品をチェックするなら：プランを見る",
+    hubValidate: 'オンラインIFCモデル検証', hubCompare: 'IFCモデルチェッカーの比較',
+    hubSumTitle: 'IFC検証でチェックする内容', hubSumSub: 'カテゴリー別のチェック項目です。エラーは納品を止め、警告と情報はHealth Scoreを下げます。',
+    thChecks: 'チェック数', thExamples: '例',
+    hubImgAlt: 'IFC Viewer Onlineでルール別にまとめたIFC検証エラー。不合格の各ルールと該当要素数を、3DモデルとHealth Scoreの横に表示',
+    hubImgCap: 'ビューアーでの検証結果。不合格のルール、それぞれの該当要素数、Health Scoreが表示されます。',
     hubRefLabel: 'リファレンス', hubRefTitle: 'カテゴリ別の IFC チェック',
     hubRefSubPre: '専用ツールもご覧ください：', hubRefLink: '重複 GUID の修正', hubRefSubPost: '。',
     hubCtaTitle: 'IFC Health Score を取得。',
@@ -694,8 +758,14 @@ export const UIS: Record<Lang, UI> = {
     hubMeta: 'การตรวจสอบ IFC ทุกรายการ พร้อมวิธีแก้ไขเฉพาะสำหรับ Revit, ArchiCAD, Tekla และ Allplan ฟรี ทำงานบนเบราว์เซอร์ ไม่ต้องอัปโหลด',
     hubBadge: (n) => `ฟรี · ไม่ต้องอัปโหลด · บันทึกไว้ ${n} การตรวจสอบ`,
     hubH1Pre: 'วิธีแก้ไข', hubH1Accent: 'ข้อผิดพลาดการตรวจสอบ IFC',
-    hubHeroDesc: 'ทุกการตรวจสอบที่ IFC Health Score เรียกใช้ พร้อมวิธีแก้ไขที่เฉพาะเจาะจงสำหรับ Revit, ArchiCAD, Tekla และ Allplan เลือกปัญหาด้านล่าง หรือเปิดเครื่องมือตรวจสอบแล้วตรวจโมเดลของคุณเองได้ในไม่กี่วินาที',
+    hubHeroDesc: 'ข้อผิดพลาดที่การตรวจสอบโมเดล IFC รายงาน แยกหน้าละหนึ่งรายการ: การตรวจสอบหมายถึงอะไร ทำไมจึงไม่ผ่าน และแก้ไขอย่างไรใน Revit, ArchiCAD, Tekla และ Allplan เลือกข้อผิดพลาดด้านล่าง หรือเปิดเครื่องมือตรวจสอบเพื่อตรวจโมเดลของคุณ',
     hubCta: 'ตรวจสอบไฟล์ IFC ของคุณ — ฟรี', hubNote: 'ไม่ต้องมีบัญชี · ไม่ต้องอัปโหลด · ทำงานในเบราว์เซอร์',
+    hubGuide: "อ่านคู่มือการตรวจสอบโมเดล IFC", hubPlans: "ตรวจทุกงานส่งมอบเป็นทีม? ดูแพ็กเกจ",
+    hubValidate: 'ตรวจสอบโมเดล IFC ออนไลน์', hubCompare: 'เปรียบเทียบเครื่องมือตรวจสอบโมเดล IFC',
+    hubSumTitle: 'การตรวจสอบ IFC ตรวจอะไรบ้าง', hubSumSub: 'รายการตรวจสอบตามหมวดหมู่ ข้อผิดพลาดทำให้ส่งมอบไม่ได้ ส่วนคำเตือนและหมายเหตุทำให้ Health Score ลดลง',
+    thChecks: 'รายการตรวจสอบ', thExamples: 'ตัวอย่าง',
+    hubImgAlt: 'ข้อผิดพลาดการตรวจสอบ IFC จัดกลุ่มตามกฎใน IFC Viewer Online แต่ละกฎที่ไม่ผ่านพร้อมจำนวนองค์ประกอบ ข้างโมเดล 3 มิติและ Health Score',
+    hubImgCap: 'ผลการตรวจสอบในโปรแกรมดู: กฎที่ไม่ผ่าน จำนวนองค์ประกอบที่เกี่ยวข้อง และ Health Score',
     hubRefLabel: 'ข้อมูลอ้างอิง', hubRefTitle: 'การตรวจสอบ IFC ตามหมวดหมู่',
     hubRefSubPre: 'ดูเครื่องมือเฉพาะสำหรับ ', hubRefLink: 'การแก้ไข GUID ที่ซ้ำกัน', hubRefSubPost: ' ด้วย',
     hubCtaTitle: 'รับ IFC Health Score ของคุณ',
@@ -821,77 +891,104 @@ function catAltLinks(cat: string): string {
 // ── Shared CSS ─────────────────────────────────────────────────────────────────
 
 const STYLE = `
+    /* docs/COLOR_SYSTEM.md roles. Dark is the default; light follows the system. */
+    :root { color-scheme: dark light;
+      --bg: #100f0c; --panel: #181714; --raised: #21201d; --line: #34332e;
+      --text-3: #94928d; --text-2: #b2b1ab; --text: #ecebe7;
+      --accent: #0a8481; --accent-text: #55cac3;
+      --warn: #f2af48; --danger: #f66e60; }
+    @media (prefers-color-scheme: light) { :root {
+      --bg: #f4f3f0; --panel: #fefdfc; --raised: #e9e8e4; --line: #d5d4d0;
+      --text-3: #65635e; --text-2: #4e4d48; --text: #1c1b16;
+      --accent-text: #00696a; --warn: #915c08; --danger: #af2b25; } }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    html, body { background: var(--bg); color: var(--text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
     a { color: inherit; text-decoration: none; }
     .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
-    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    header { border-bottom: 1px solid var(--line); padding: 18px 0; }
     .header-inner { display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
-    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
-    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+    .logo { font-size: 14px; font-weight: 600; color: var(--accent-text); }
+    .nav-cta { font-size: 13px; color: var(--text-2); padding: 6px 14px; border: 1px solid var(--line); border-radius: 6px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+    .nav-cta:hover { color: var(--text); border-color: var(--line); }
     .header-right { display: flex; align-items: center; gap: 12px; }
     .lang-switch { display: flex; align-items: center; gap: 1px; }
-    .lang-link { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.34); padding: 3px 6px; border-radius: 5px; transition: color 0.15s, background 0.15s; }
-    .lang-link:hover { color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.04); }
-    .lang-active { color: #8B96E9; background: rgba(94,106,210,0.12); }
+    .lang-link { font-size: 11px; font-weight: 500; color: var(--text-3); padding: 3px 6px; border-radius: 5px; transition: color 0.15s, background 0.15s; }
+    .lang-link:hover { color: var(--text-2); background: var(--raised); }
+    .lang-active { color: var(--accent-text); background: rgba(10,132,129,0.12); }
     @media (max-width: 560px) { .lang-switch { display: none; } }
-    .breadcrumb { font-size: 12px; color: rgba(255,255,255,0.3); padding: 16px 0 0; }
-    .breadcrumb a:hover { color: rgba(255,255,255,0.6); }
-    .hero { padding: 48px 0 44px; text-align: center; }
-    .tool-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 24px; font-weight: 500; }
-    .sev-error { background: rgba(255,77,79,0.1); border-color: rgba(255,77,79,0.25); color: #ff7875; }
-    .sev-warning { background: rgba(250,173,20,0.1); border-color: rgba(250,173,20,0.25); color: #ffc53d; }
-    .sev-info { background: rgba(94,106,210,0.1); border-color: rgba(94,106,210,0.22); color: #8B96E9; }
+    .breadcrumb { font-size: 12px; color: var(--text-3); padding: 16px 0 0; }
+    .breadcrumb a:hover { color: var(--text-2); }
+    .hero { padding: 48px 0 44px; }
+    .tool-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(10,132,129,0.1); border: 1px solid rgba(10,132,129,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: var(--accent-text); margin-bottom: 24px; font-weight: 500; }
+    .sev-error { background: rgba(255,77,79,0.1); border-color: rgba(255,77,79,0.25); color: var(--danger); }
+    .sev-warning { background: rgba(250,173,20,0.1); border-color: rgba(250,173,20,0.25); color: var(--warn); }
+    .sev-info { background: rgba(10,132,129,0.1); border-color: rgba(10,132,129,0.22); color: var(--accent-text); }
     .hero h1 { font-size: clamp(1.7rem, 5vw, 2.7rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 18px; }
-    .accent { color: #5E6AD2; }
-    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.55); max-width: 640px; margin: 0 auto 32px; }
-    .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
-    .cta-primary:hover { background: #4F5ABF; }
-    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); }
+    .accent { color: var(--accent-text); }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: var(--text-2); max-width: 640px; margin: 0 0 32px; }
+    .cta-row { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: var(--accent); }
+    .cta-note { font-size: 12px; color: var(--text-3); }
+    .hub-next { margin-top: 18px; font-size: 14px; line-height: 1.7; color: var(--text-2); }
+    .hub-next a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+    .hub-next a:hover { color: var(--text); }
     .section { padding: 52px 0; }
-    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--accent-text); text-transform: uppercase; margin-bottom: 12px; }
     .section-title { font-size: clamp(1.35rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 32px; max-width: 580px; }
-    .divider { border-top: 1px solid rgba(255,255,255,0.06); }
+    .section-sub { font-size: 15px; color: var(--text-3); margin-bottom: 32px; max-width: 580px; }
+    .divider { border-top: 1px solid var(--line); }
     .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 8px; }
-    .meta-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px 16px; }
-    .meta-k { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.32); text-transform: uppercase; margin-bottom: 6px; }
-    .meta-v { font-size: 13px; font-weight: 500; color: #E8E8F0; }
-    .causes-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; margin-top: 8px; }
-    .causes-table th { background: rgba(255,255,255,0.03); padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .causes-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; color: rgba(255,255,255,0.6); line-height: 1.6; }
+    .meta-card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+    .meta-k { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase; margin-bottom: 6px; }
+    .meta-v { font-size: 13px; font-weight: 500; color: var(--text); }
+    .causes-table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 13px; margin-top: 8px; }
+    .causes-table th { background: var(--panel); padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--text-3); text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    .causes-table td { padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text-2); line-height: 1.6; }
     .causes-table tr:last-child td { border-bottom: none; }
-    .causes-table tr:hover td { background: rgba(255,255,255,0.015); }
-    .tool-name { font-weight: 600; color: #E8E8F0; white-space: nowrap; }
+    .causes-table tr:hover td { background: var(--panel); }
+    .tool-name { font-weight: 600; color: var(--text); white-space: nowrap; }
     .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 20px; }
-    .step { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
-    .step-n { font-size: 11px; font-weight: 700; color: #5E6AD2; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .step { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+    .step-n { font-size: 11px; font-weight: 700; color: var(--accent-text); letter-spacing: 0.08em; margin-bottom: 10px; }
     .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-    .step-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+    .step-desc { font-size: 12px; color: var(--text-3); line-height: 1.6; }
     .related { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
-    .related a { font-size: 13px; color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 9px 14px; transition: color 0.15s, border-color 0.15s; }
-    .related a:hover { color: #fff; border-color: rgba(94,106,210,0.4); }
-    .cta-bottom { text-align: center; padding: 56px 0 76px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .related a { font-size: 13px; color: var(--text-2); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; transition: color 0.15s, border-color 0.15s; }
+    .related a:hover { color: var(--text); border-color: rgba(10,132,129,0.4); }
+    .cta-bottom { padding: 56px 0 76px; border-top: 1px solid var(--line); }
     .cta-bottom h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
-    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 28px; max-width: 560px; margin-left: auto; margin-right: auto; }
-    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
-    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
-    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
-    .footer-link:hover { color: rgba(255,255,255,0.65); }
-    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+    .cta-bottom p { font-size: 15px; color: var(--text-3); margin-bottom: 28px; max-width: 560px; }
+    footer { border-top: 1px solid var(--line); padding: 26px 0; }
+    .footer-links { display: flex; align-items: center; justify-content: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: var(--text-3); transition: color 0.15s; }
+    .footer-link:hover { color: var(--text-2); }
+    .footer-copy { font-size: 11px; color: var(--text-3); }
     .cat-group { margin-bottom: 36px; }
-    .cat-h { font-size: 13px; font-weight: 600; color: #8B96E9; margin-bottom: 14px; letter-spacing: -0.01em; }
+    .cat-h { font-size: 13px; font-weight: 600; color: var(--accent-text); margin-bottom: 14px; letter-spacing: -0.01em; }
     .cat-h a { transition: color 0.15s; }
-    .cat-h a:hover { color: #b3bbf2; }
+    .cat-h a:hover { color: var(--text); }
     .cat-link { color: inherit; transition: color 0.15s; }
-    .cat-link:hover { color: #8B96E9; }
+    .cat-link:hover { color: var(--accent-text); }
     .rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-    .rule-card { display: block; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px 18px; transition: border-color 0.15s, transform 0.15s; }
-    .rule-card:hover { border-color: rgba(94,106,210,0.4); transform: translateY(-1px); }
-    .rule-card .rc-t { font-size: 14px; font-weight: 600; color: #E8E8F0; margin-bottom: 5px; }
-    .rule-card .rc-d { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+    .rule-card { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; transition: border-color 0.15s, transform 0.15s; }
+    .rule-card:hover { border-color: rgba(10,132,129,0.4); transform: translateY(-1px); }
+    .rule-card .rc-t { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+    .rule-card .rc-d { font-size: 12px; color: var(--text-3); line-height: 1.55; }
+    .rc-sev { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; vertical-align: 1px; white-space: nowrap; }
+    td .rc-sev { margin: 0 4px 4px 0; }
+    .hub-owners { margin-top: 6px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .hub-table { min-width: 560px; }
+    .hub-table th[scope="row"] { background: none; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 600; color: var(--text); border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .hub-table tr:last-child th[scope="row"] { border-bottom: none; }
+    .hub-table a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+    .hub-figure { margin: 28px 0 0; }
+    .hub-figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .hub-figure figcaption { margin-top: 10px; font-size: 13px; color: var(--text-3); }
+    .meta-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .meta-card { background: none; border: none; border-radius: 0; box-shadow: inset -1px -1px 0 var(--line); }
+    .meta-k { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
 `
 
 // Self-hosted fonts (GDPR: never hit Google's CDN, so no visitor IP leaves to
@@ -931,7 +1028,8 @@ function pageHead(p: HeadParams): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="${THEME_COLOR}" />
+  <meta name="theme-color" content="${THEME_COLOR}" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f4f3f0" media="(prefers-color-scheme: light)" />
   <title>${esc(p.title)}</title>
   <meta name="description" content="${esc(p.desc)}" />
 ${p.keywords ? `  <meta name="keywords" content="${esc(p.keywords)}" />\n` : ''}  <meta name="author" content="Joel Benitez" />
@@ -1134,7 +1232,6 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
 
     <section class="section divider">
       <div class="container">
-        <p class="section-label">${esc(ui.whatLabel)}</p>
         <h2 class="section-title">${esc(ui.whatTitle(label))}</h2>
         <p class="section-sub">${esc(description)}</p>
         <div class="meta-grid">
@@ -1148,7 +1245,6 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
 
     <section class="section divider">
       <div class="container">
-        <p class="section-label">${esc(ui.fixLabel)}</p>
         <h2 class="section-title">${esc(ui.fixTitle(label))}</h2>
         <p class="section-sub">${esc(ui.fixSub)}</p>
         <table class="causes-table">
@@ -1161,7 +1257,6 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
 
     <section class="section divider">
       <div class="container">
-        <p class="section-label">${esc(ui.howLabel)}</p>
         <h2 class="section-title">${esc(ui.howTitle)}</h2>
         <p class="section-sub">${esc(ui.howSub)}</p>
         <div class="steps">${stepCards}
@@ -1171,7 +1266,6 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
 ${related.length > 0 ? `
     <section class="section divider">
       <div class="container">
-        <p class="section-label">${esc(ui.relatedLabel)}</p>
         <h2 class="section-title"><a class="cat-link" href="../category/${base.category}/">${esc(ui.relatedTitle(catLabel))} →</a></h2>
         <div class="related">
           ${relatedLinks}
@@ -1219,6 +1313,45 @@ function catLabelOf(cat: string, loc: LocaleData): string {
   return loc.catFull[cat] ?? VALIDATION_CATEGORY_LABELS[cat as keyof typeof VALIDATION_CATEGORY_LABELS] ?? cat
 }
 
+/**
+ * Where a hub reader goes next besides the checker: the blog's model-checker
+ * pillar (the page meant to win "IFC model checker" / "IFC model validation"),
+ * the plans, and on the classification category the classification checker.
+ * Search Console (2026-11-10): /fix/ and /fix/category/classification/ had
+ * 2,500 impressions and 6 clicks, and linked to neither.
+ */
+function hubNextLinks(ui: UI, lang: Lang, root: string, cat?: string): string {
+  const langPath = LANG_PATH[lang]
+  const links = [
+    `<a href="${root}${langPath}blog/ifc-model-checker/">${esc(ui.hubGuide)}</a>`,
+    `<a href="${root}${pricingPath(lang).slice(1)}">${esc(ui.hubPlans)}</a>`,
+  ]
+  if (cat === 'classification') {
+    const tool = toolLandings(lang).find((t) => t.key === 'classification')
+    if (tool) links.unshift(`<a href="${root}${tool.path}">${esc(tool.label)}</a>`)
+  }
+  return `<p class="hub-next">${links.join(' <span aria-hidden="true">·</span> ')}</p>`
+}
+
+/**
+ * Search Console (2026-11-10, query × page): Google showed the hub for
+ * "ifc model validation" (768 impressions, position 67) and other tool
+ * queries, none of which it answers. The hub is the reference of the errors;
+ * the validator landing owns the tool query, and the comparison post owns
+ * "best IFC model checkers". Both get a link with the query as its anchor.
+ */
+function hubOwnerLinks(ui: UI, lang: Lang, root: string): string {
+  const langPath = LANG_PATH[lang]
+  const links = [
+    `<a href="${root}${validatorPath(lang)}">${esc(ui.hubValidate)}</a>`,
+    `<a href="${root}${langPath}blog/best-ifc-model-checkers-2026/">${esc(ui.hubCompare)}</a>`,
+  ]
+  return `<p class="hub-next hub-owners">${links.join(' <span aria-hidden="true">·</span> ')}</p>`
+}
+
+/** The capture shown on the hub, and its 800 px cut. */
+export const HUB_IMAGE = { src: 'images/fix/ifc-validation-errors-by-rule.jpg', small: 'images/fix/ifc-validation-errors-by-rule-800.jpg', width: 1600, height: 900 }
+
 function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
   const ui = UIS[lang]
   const langPath = LANG_PATH[lang]
@@ -1235,10 +1368,11 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
     const cards = rules.map((r) => {
       const label = labelOf(r.ruleId, lang)
       const { summary } = remOf(r.ruleId, lang)
+      const sev = loc.severity[r.severity] ?? r.severity
       return `
           <a class="rule-card" href="./${r.slug}/">
-            <div class="rc-t">${esc(label)}</div>
-            <div class="rc-d">${esc(clip(summary, 96))}</div>
+            <div class="rc-t">${esc(label)} <span class="rc-sev sev-${r.severity}">${esc(sev)}</span></div>
+            <div class="rc-d">${esc(clip(summary, 180))}</div>
           </a>`
     }).join('')
     // Heading links to the dedicated category silo page.
@@ -1250,10 +1384,42 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
       </div>`
   }).join('')
 
+  // What a validation checks, by category: how many checks, how severe, and
+  // three of them by name. Built from the rule metadata, so it cannot drift.
+  const sevCount = (rules: RuleBase[]): string => (['error', 'warning', 'info'] as const)
+    .map((k) => ({ k, n: rules.filter((r) => r.severity === k).length }))
+    .filter((x) => x.n > 0)
+    .map((x) => `<span class="rc-sev sev-${x.k}">${x.n} ${esc(loc.severity[x.k] ?? x.k)}</span>`)
+    .join(' ')
+  const summaryRows = cats.map((cat) => {
+    const rules = byCat.get(cat) ?? []
+    const examples = rules.slice(0, 3).map((r) => `<a href="./${r.slug}/">${esc(labelOf(r.ruleId, lang))}</a>`).join(', ')
+    return `
+            <tr><th scope="row"><a href="./category/${cat}/">${esc(catLabelOf(cat, loc))}</a></th><td>${rules.length}</td><td>${sevCount(rules)}</td><td>${examples}</td></tr>`
+  }).join('')
+  const steps = [
+    { name: ui.sOpenName, text: ui.sOpenText },
+    { name: ui.sValidateName, text: ui.hubCtaBody },
+    { name: ui.sRevalName, text: ui.sRevalText },
+  ].map((st, i) => `
+          <div class="step">
+            <div class="step-n">${String(i + 1).padStart(2, '0')}</div>
+            <div class="step-title">${esc(st.name)}</div>
+            <div class="step-desc">${esc(st.text)}</div>
+          </div>`).join('')
+  const imgUrl = `${SITE}/${HUB_IMAGE.src}`
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'CollectionPage', '@id': url, url, name: ui.hubTitle + ui.hubTitleSuffix, description: ui.hubMeta, isPartOf: { '@id': `${SITE}/` }, inLanguage: lang },
+      { '@type': 'CollectionPage', '@id': url, url, name: ui.hubTitle + ui.hubTitleSuffix, description: ui.hubMeta, isPartOf: { '@id': `${SITE}/` }, inLanguage: lang, primaryImageOfPage: { '@id': `${imgUrl}#image` } },
+      {
+        '@type': 'ImageObject', '@id': `${imgUrl}#image`, contentUrl: imgUrl, url: imgUrl, width: HUB_IMAGE.width, height: HUB_IMAGE.height,
+        name: ui.hubImgAlt, caption: ui.hubImgCap, representativeOfPage: true, inLanguage: lang,
+        creator: { '@type': 'Organization', name: 'IFC Viewer Online', url: `${SITE}/` },
+        creditText: 'IFC Viewer Online', copyrightNotice: '© 2026 IFC Viewer Online',
+        license: `${SITE}/terms/`, acquireLicensePage: `${SITE}/terms/`,
+      },
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -1297,12 +1463,40 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, ''))}
           <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCta)}</a>
           <span class="cta-note">${esc(ui.hubNote)}</span>
         </div>
+        ${hubNextLinks(ui, lang, root)}
+        ${hubOwnerLinks(ui, lang, root)}
       </div>
     </section>
 
     <section class="section divider">
       <div class="container">
-        <p class="section-label">${esc(ui.hubRefLabel)}</p>
+        <h2 class="section-title">${esc(ui.hubSumTitle)}</h2>
+        <p class="section-sub">${esc(ui.hubSumSub)}</p>
+        <div class="table-scroll">
+        <table class="causes-table hub-table">
+          <thead><tr><th>${esc(ui.mCategory)}</th><th>${esc(ui.thChecks)}</th><th>${esc(ui.mSeverity)}</th><th>${esc(ui.thExamples)}</th></tr></thead>
+          <tbody>${summaryRows}
+          </tbody>
+        </table>
+        </div>
+        <figure class="hub-figure">
+          <img src="${root}${HUB_IMAGE.src}" srcset="${root}${HUB_IMAGE.small} 800w, ${root}${HUB_IMAGE.src} 1600w" sizes="(max-width: 1100px) 100vw, 1040px" width="${HUB_IMAGE.width}" height="${HUB_IMAGE.height}" alt="${esc(ui.hubImgAlt)}" loading="lazy" decoding="async">
+          <figcaption>${esc(ui.hubImgCap)}</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <h2 class="section-title">${esc(ui.howTitle)}</h2>
+        <p class="section-sub">${esc(ui.howSub)}</p>
+        <div class="steps">${steps}
+        </div>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
         <h2 class="section-title">${esc(ui.hubRefTitle)}</h2>
         <p class="section-sub">${esc(ui.hubRefSubPre)}<a class="accent" href="${root}tools/fix-duplicate-guids/">${esc(ui.hubRefLink)}</a>${esc(ui.hubRefSubPost)}</p>
 ${groupsHtml}
@@ -1406,12 +1600,12 @@ ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `category/${cat}/`))}
           <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCta)}</a>
           <span class="cta-note">${esc(ui.hubNote)}</span>
         </div>
+        ${hubNextLinks(ui, lang, root, cat)}
       </div>
     </section>
 
     <section class="section divider">
       <div class="container">
-        <p class="section-label">${esc(ui.hubRefLabel)}</p>
         <h2 class="section-title">${esc(ui.relatedTitle(catLabel))}</h2>
         <div class="rule-list">${cards}
         </div>
@@ -1562,6 +1756,27 @@ export function generateFixPages(distDir: string): FixPagesResult {
     for (const cat of COVER_CATS) {
       if (existsSync(path.join(distDir, 'fix', 'covers', lang, `${cat}.png`)))
         FIX_COVER_AVAILABLE.add(`${lang}/${cat}`)
+    }
+  }
+
+  // The hub's capture carries its credit and licence inside the file, like the
+  // blog's pictures (image-metadata.ts).
+  for (const rel of [HUB_IMAGE.src, HUB_IMAGE.small]) {
+    const file = path.join(distDir, rel)
+    if (!existsSync(file)) continue
+    try {
+      writeFileSync(file, withRights(readFileSync(file), {
+        creator: 'IFC Viewer Online',
+        credit: 'IFC Viewer Online',
+        copyright: '© 2026 IFC Viewer Online',
+        webStatement: `${SITE}/terms/`,
+        licensorUrl: `${SITE}/terms/`,
+        description: UIS.en.hubImgCap,
+        sourceType: 'screenCapture',
+      }))
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[fix-pages] could not write rights metadata into ${rel}: ${(err as Error).message}`)
     }
   }
 

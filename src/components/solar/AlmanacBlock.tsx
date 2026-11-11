@@ -181,23 +181,23 @@ function SunPathDiagram({ lat, lon, timeZone, year, month, dayOfMonth, sun, moon
       <path d={path(arcs.summer)} fill="none" stroke="#e8604c" strokeWidth={1.2} opacity={0.8} />
       <path d={path(arcs.equinox)} fill="none" stroke="#8a8fa3" strokeWidth={1} strokeDasharray="3 2" />
       <path d={path(arcs.winter)} fill="none" stroke="#4a8fd6" strokeWidth={1.2} opacity={0.8} />
-      <path d={path(arcs.today)} fill="none" stroke="#F5A623" strokeWidth={2} />
+      <path d={path(arcs.today)} fill="none" stroke="#E9A23B" strokeWidth={2} />
       {arcs.today.filter((p) => p.hour !== null && p.alt > 0).map((p) => {
         const [x, y] = project(p.az, p.alt, r, c)
         return (
           <g key={p.hour}>
-            <circle cx={x} cy={y} r={1.6} fill="#F5A623" />
+            <circle cx={x} cy={y} r={1.6} fill="#E9A23B" />
             <text x={x} y={y - 3.5} textAnchor="middle" fontSize="6.5" fill="var(--text-dim)" fontFamily="monospace">{p.hour}</text>
           </g>
         )
       })}
-      {moon.alt > 0 && <circle cx={mx} cy={my} r={4} fill="#d9dde8" stroke="#8a8fa3" />}
-      {sun.alt > 0 && <circle cx={sx} cy={sy} r={5.5} fill="#FFD966" stroke="#F5A623" strokeWidth={1.5} />}
+      {moon.alt > 0 && <circle cx={mx} cy={my} r={4} fill="#d5d4d0" stroke="#8a8fa3" />}
+      {sun.alt > 0 && <circle cx={sx} cy={sy} r={5.5} fill="#FFD966" stroke="#E9A23B" strokeWidth={1.5} />}
       <g fontSize="7" fontFamily="monospace">
         <text x={4} y={size - 22} fill="#e8604c">— {t('almanac.legend.summer')}</text>
         <text x={4} y={size - 13} fill="#8a8fa3">-- {t('almanac.legend.equinox')}</text>
         <text x={4} y={size - 4} fill="#4a8fd6">— {t('almanac.legend.winter')}</text>
-        <text x={size - 4} y={size - 4} textAnchor="end" fill="#F5A623">— {t('almanac.legend.today')}</text>
+        <text x={size - 4} y={size - 4} textAnchor="end" fill="#E9A23B">— {t('almanac.legend.today')}</text>
       </g>
     </svg>
   )

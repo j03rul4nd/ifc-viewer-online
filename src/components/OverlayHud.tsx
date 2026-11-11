@@ -19,8 +19,8 @@ interface OverlayHudProps {
 }
 
 const SEV_META: { key: Severity; color: string }[] = [
-  { key: 'error',   color: '#E5484D' },
-  { key: 'warning', color: '#F5A623' },
+  { key: 'error',   color: 'var(--danger)' },
+  { key: 'warning', color: 'var(--warning)' },
   { key: 'info',    color: '#5E9ED6' },
 ]
 
@@ -75,7 +75,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
   return (
     <div className="absolute top-3 max-md:top-[calc(var(--mobile-top-ui)+4px)] left-1/2 -translate-x-1/2 z-[8] select-none" style={{ pointerEvents: 'auto' }}>
       <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[rgba(12,12,16,0.9)] backdrop-blur-[14px] border border-[var(--border)] shadow-lg">
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_90%,transparent)] backdrop-blur-[14px] border border-[var(--border)] shadow-lg">
           {/* Severity legend + filter chips (validation only) */}
           {channel === 'validation' ? (
             SEV_META.map(({ key, color }) => {
@@ -86,7 +86,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
                   key={key}
                   onClick={() => toggleSeverity(key)}
                   title={t('overlayHud.toggleSeverity', { defaultValue: 'Show/hide this severity' })}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors hover:bg-[rgba(255,255,255,0.06)]"
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                   style={{ opacity: on ? 1 : 0.4 }}
                 >
                   <span className="inline-block w-2 h-2 rounded-full" style={{ background: color, boxShadow: on ? `0 0 0 2px ${color}33` : 'none' }} />
@@ -97,7 +97,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
             })
           ) : (
             <span className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium">
-              <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#E5484D' }} />
+              <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--danger)' }} />
               <span className="tabular-nums text-[var(--text)]">{counts.error}</span>
               <span className="text-[var(--text-dim)] hidden sm:inline">{t('overlayHud.idsFails', { defaultValue: 'IDS fails' })}</span>
             </span>
@@ -110,7 +110,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
             onClick={() => step(-1)}
             disabled={total === 0}
             title={t('overlayHud.prev', { defaultValue: 'Previous issue' })}
-            className="p-1 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)] transition-colors disabled:opacity-30"
+            className="p-1 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-colors disabled:opacity-30"
           >
             <Chevron dir="left" />
           </button>
@@ -121,7 +121,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
             onClick={() => step(1)}
             disabled={total === 0}
             title={t('overlayHud.next', { defaultValue: 'Next issue' })}
-            className="p-1 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)] transition-colors disabled:opacity-30"
+            className="p-1 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-colors disabled:opacity-30"
           >
             <Chevron dir="right" />
           </button>
@@ -132,8 +132,8 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
           <button
             onClick={() => setShowSettings((v) => !v)}
             title={t('overlayHud.settings', { defaultValue: 'Overlay appearance' })}
-            className="p-1 rounded-md transition-colors hover:bg-[rgba(255,255,255,0.06)]"
-            style={{ color: showSettings ? 'var(--accent, #5E6AD2)' : 'var(--text-dim)' }}
+            className="p-1 rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
+            style={{ color: showSettings ? 'var(--accent)' : 'var(--text-dim)' }}
           >
             <Gear />
           </button>
@@ -141,7 +141,7 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
 
         {/* Appearance popover */}
         {showSettings && (
-          <div className="flex flex-col gap-2.5 px-3 py-2.5 rounded-lg bg-[rgba(12,12,16,0.92)] backdrop-blur-[14px] border border-[var(--border)] shadow-lg min-w-[200px]">
+          <div className="flex flex-col gap-2.5 px-3 py-2.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_92%,transparent)] backdrop-blur-[14px] border border-[var(--border)] shadow-lg min-w-[200px]">
             <label className="flex items-center justify-between gap-3 text-[11px] text-[var(--text-dim)]">
               <span>{t('overlayHud.dim', { defaultValue: 'Context dimming' })}</span>
               <input
@@ -151,12 +151,12 @@ export default function OverlayHud({ viewerApiRef, channel, counts }: OverlayHud
                 step={0.01}
                 value={ghostOpacity}
                 onChange={(e) => setGhostOpacity(parseFloat(e.target.value))}
-                className="w-[96px] accent-[var(--accent,#5E6AD2)]"
+                className="w-[96px] accent-[var(--accent)]"
               />
             </label>
             <label className="flex items-center justify-between gap-3 text-[11px] text-[var(--text-dim)] cursor-pointer">
               <span>{t('overlayHud.xray', { defaultValue: 'X-ray (see through walls)' })}</span>
-              <input type="checkbox" checked={xray} onChange={toggleXray} className="accent-[var(--accent,#5E6AD2)]" />
+              <input type="checkbox" checked={xray} onChange={toggleXray} className="accent-[var(--accent)]" />
             </label>
           </div>
         )}

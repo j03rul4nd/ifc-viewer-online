@@ -27,6 +27,7 @@
   "section": "Coupe",
   "clippingPlanes": "Plans de coupe — sections",
   "plans": "Plans",
+  "drawings": "Plans techniques",
   "floorPlanViews": "Vues de plans d'étage — sections par niveau",
   "export": "Exporter",
   "exportModels": "Exporter {{count}} modèles",
@@ -286,5 +287,11 @@
     "idsChecked": "{{file}} : maquettes vérifiées — résultats dans le panneau IDS",
     "documentsKept": "{{count}} document du projet conservé avec la scène",
     "documentsKept_other": "{{count}} documents du projet conservés avec la scène"
+  },
+  "theme": {
+    "toggle": "Thème : {{mode}}",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
   }
 }

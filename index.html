@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0A0A0C" />
+    <meta name="theme-color" content="#100f0c" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -17,13 +17,29 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://www.ifcvieweronline.eu/" />
     <script>
+      // Theme before first paint (mirrors src/theme/themeCore.ts). Default dark.
+      (function () {
+        var t = 'dark'
+        try {
+          var m = localStorage.getItem('ifc-theme')
+          if (m === 'light' || m === 'dark') t = m
+          else if (m === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        } catch (e) {}
+        try {
+          var q = new URLSearchParams(location.search).get('theme')
+          if (q === 'light' || q === 'dark') t = q
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t)
+      })()
+    </script>
+    <script>
       // Soft-404 guard. vercel.json rewrites every unknown path to this shell,
       // so a mistyped or broken link answers 200 with the home page and Google
       // files it as a duplicate of "/". Paths the SPA does not own get
       // noindex and lose the home canonical. Keep in sync with App.tsx routes.
       (function () {
         var p = location.pathname
-        var known = /^\/(?:index\.html)?$|^\/(?:(?:es|de|fr|pt|it|ca|zh|ja|th)\/)?blog(?:\/|$)|^\/(?:privacy|terms|verify|welcome|ebook|msp-global|twin-builder|sign-in|sign-up|account|dashboard|admin)(?:\/|$)|^\/(?:i|invite)\/[A-Za-z0-9_-]{1,64}\/?$/
+        var known = /^\/(?:index\.html)?$|^\/(?:(?:es|de|fr|pt|it|ca|zh|ja|th)\/)?blog(?:\/|$)|^\/(?:privacy|terms|verify|welcome|ebook|msp-global|twin-builder|sketch|sign-in|sign-up|account|dashboard|admin)(?:\/|$)|^\/(?:i|invite)\/[A-Za-z0-9_-]{1,64}\/?$/
         if (known.test(p)) return
         document.querySelector('meta[name="robots"]').setAttribute('content', 'noindex, follow')
         var c = document.querySelector('link[rel="canonical"]')
@@ -55,17 +71,17 @@
     <meta property="og:description" content="Open any IFC file in your browser. Get a Health Score 0–100 in 30 seconds. 44 validation rules, fix GUIDs, edit properties, export corrected IFC — all client-side with no login required." />
     <meta property="og:site_name" content="IFC Viewer Online" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
+    <meta property="og:image" content="https://www.ifcvieweronline.eu/images/home/og-ifc-viewer-online-shanghai.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="IFC Viewer Online — 3D building model with Health Score 87/100, validation panel showing 44 rule checks, and element property inspector" />
+    <meta property="og:image:alt" content="IFC models of Shanghai Tower, Shanghai World Financial Center and Oriental Pearl Tower on a 3D map, rendered in the browser by IFC Viewer Online" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Free IFC Viewer Online — IFC File &amp; BIM Model Viewer" />
     <meta name="twitter:description" content="IFC Health Score 0–100 in 30 seconds. 44 validation rules, GUID auto-fix, IFC/GLB export. No login, no upload. Runs via WebAssembly." />
-    <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-    <meta name="twitter:image:alt" content="IFC Viewer Online — free browser-based BIM viewer showing a 3D IFC model with quality Health Score and validation panel" />
+    <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/home/og-ifc-viewer-online-shanghai.jpg" />
+    <meta name="twitter:image:alt" content="IFC models of the Shanghai skyline on a 3D map in IFC Viewer Online, a free browser-based IFC viewer" />
     <meta name="twitter:site" content="@ifcviewer" />
 
     <!-- JSON-LD Structured Data: WebApplication -->

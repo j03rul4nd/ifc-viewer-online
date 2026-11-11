@@ -269,7 +269,7 @@ export default function EmbedViewer({
       className={`relative w-full overflow-hidden bg-[#0d0d10] select-none ${
         isFullscreen
           ? 'fixed inset-0 z-[200] rounded-none border-0'
-          : 'rounded-2xl border border-[rgba(94,106,210,0.28)]'
+          : 'rounded-2xl border border-[rgba(10,132,129,0.28)]'
       }`}
       style={{ height: containerH }}
       aria-label={title ? `Interactive IFC model: ${title}` : 'Interactive IFC model'}
@@ -464,8 +464,8 @@ function IdleState({ title, description }: { title?: string; description?: strin
       )}
 
       {/* 3D box icon */}
-      <div className="w-12 h-12 rounded-xl bg-[rgba(94,106,210,0.15)] border border-[rgba(94,106,210,0.35)] flex items-center justify-center">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(129,140,248,0.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <div className="w-12 h-12 rounded-xl bg-[rgba(10,132,129,0.15)] border border-[rgba(10,132,129,0.35)] flex items-center justify-center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(85,202,195,0.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/>
           <path d="M2 17l10 5 10-5"/>
           <path d="M2 12l10 5 10-5"/>
@@ -518,7 +518,7 @@ function LoadingState({
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
-      <div className="w-10 h-10 rounded-full bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] flex items-center justify-center" aria-hidden="true">
+      <div className="w-10 h-10 rounded-full bg-[rgba(224,82,63,0.12)] border border-[rgba(224,82,63,0.3)] flex items-center justify-center" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>
@@ -563,7 +563,7 @@ function InspectorPanel({ selected, onClose }: { selected: SelectedInfo; onClose
       <p className="text-[13px] font-semibold text-white leading-snug break-words pr-5 mb-1.5">
         {selected.name || '(unnamed)'}
       </p>
-      <span className="inline-block px-1.5 py-0.5 rounded-md bg-[rgba(94,106,210,0.2)] border border-[rgba(94,106,210,0.3)] text-[10.5px] font-mono text-[rgba(129,140,248,0.9)]">
+      <span className="inline-block px-1.5 py-0.5 rounded-md bg-[rgba(10,132,129,0.2)] border border-[rgba(10,132,129,0.3)] text-[10.5px] font-mono text-[rgba(85,202,195,0.9)]">
         {prettyType}
       </span>
       {selected.storey && (
@@ -587,7 +587,7 @@ export interface ComparisonViewerProps {
 export function ComparisonViewer({ left, right, height = 400 }: ComparisonViewerProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-7 sm:my-10">
-      <LabelledViewer label={left.label} accent="rgba(94,106,210,0.8)">
+      <LabelledViewer label={left.label} accent="rgba(10,132,129,0.8)">
         <EmbedViewer {...left} height={height} allowFullscreen={false} title={undefined} />
       </LabelledViewer>
       <LabelledViewer label={right.label} accent="rgba(52,211,153,0.8)">

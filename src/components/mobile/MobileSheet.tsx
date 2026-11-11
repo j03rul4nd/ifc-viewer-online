@@ -263,7 +263,7 @@ export function MobileSheet({
     <>
       <motion.div
         key="sheet-scrim"
-        style={{ opacity: scrimOpacity, background: '#000', pointerEvents: resizable ? 'none' : 'auto' }}
+        style={{ opacity: scrimOpacity, background: 'var(--scrim, #000)', pointerEvents: resizable ? 'none' : 'auto' }}
         onClick={resizable ? undefined : onClose}
         className="fixed inset-0 z-[58]"
       />
@@ -286,7 +286,7 @@ export function MobileSheet({
         onPointerMoveCapture={onRootPointerMove}
         onPointerUp={clearArm}
         onPointerCancel={clearArm}
-        className="fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y outline-none"
+        className="dual-sheet fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y outline-none"
       >
         {/* ── THE VISIBLE BAND ──────────────────────────────────────────────
             The sheet is always `sheetH` tall — the largest detent — and lower

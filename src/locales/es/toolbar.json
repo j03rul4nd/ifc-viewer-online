@@ -27,6 +27,7 @@
   "section": "Sección",
   "clippingPlanes": "Planos de corte — secciones",
   "plans": "Planos",
+  "drawings": "Planos técnicos",
   "floorPlanViews": "Vistas de planta — secciones por planta",
   "export": "Exportar",
   "exportModels": "Exportar {{count}} modelos",
@@ -286,5 +287,11 @@
     "idsChecked": "{{file}}: modelos comprobados — resultados en el panel IDS",
     "documentsKept": "{{count}} documento del proyecto guardado con la escena",
     "documentsKept_other": "{{count}} documentos del proyecto guardados con la escena"
+  },
+  "theme": {
+    "toggle": "Tema: {{mode}}",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
   }
 }

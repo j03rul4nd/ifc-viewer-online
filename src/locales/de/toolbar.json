@@ -27,6 +27,7 @@
   "section": "Schnitt",
   "clippingPlanes": "Schnittebenen — Querschnitte",
   "plans": "Pläne",
+  "drawings": "Zeichnungen",
   "floorPlanViews": "Grundrissansichten — Geschossschnitte",
   "export": "Exportieren",
   "exportModels": "{{count}} Modelle exportieren",
@@ -286,5 +287,11 @@
     "idsChecked": "{{file}}: Modelle geprüft — Ergebnisse im IDS-Bereich",
     "documentsKept": "{{count}} Projektdokument bei der Szene abgelegt",
     "documentsKept_other": "{{count}} Projektdokumente bei der Szene abgelegt"
+  },
+  "theme": {
+    "toggle": "Design: {{mode}}",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
   }
 }

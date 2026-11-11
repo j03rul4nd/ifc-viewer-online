@@ -66,6 +66,15 @@ async function readGlb(blob: Blob) {
   }
 }
 
+describe('a model with readable and GPU-only meshes side by side', () => {
+  it('reads it back from the model instead of dying on the freed mesh', async () => {
+    const group = new THREE.Group()
+    group.add(readableMesh(), gpuOnlyMesh())
+    const blob = await exportAsGlb(group, fakeFragmentsModel(1))
+    expect(blob.size).toBeGreaterThan(0)
+  })
+})
+
 describe('geometry the GPU owns', () => {
   it('rebuilds from the model instead of throwing', async () => {
     // The whole bug in one assertion: this input used to reach GLTFExporter and

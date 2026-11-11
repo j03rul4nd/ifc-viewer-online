@@ -53,6 +53,18 @@ const OMT_DEFAULT_HEIGHT_M = 5
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
+/** Tiles drop the tag that makes the Arc de Triomf an arch, so its position stands in. */
+const ARC_DE_TRIOMF = { lat: 41.39106, lon: 2.18062 }
+function isArcDeTriomf(ring: ReadonlyArray<{ lat: number; lon: number }>): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j]
+    if ((a.lat > ARC_DE_TRIOMF.lat) !== (b.lat > ARC_DE_TRIOMF.lat)
+      && ARC_DE_TRIOMF.lon < ((b.lon - a.lon) * (ARC_DE_TRIOMF.lat - a.lat)) / (b.lat - a.lat) + a.lon) inside = !inside
+  }
+  return inside
+}
+
 /** OMT properties → the OSM tags the classifier understands (null = skip). */
 export function omtTags(f: Pick<OmtFeature, 'layer' | 'type' | 'props'>): Record<string, string> | null {
   const p = f.props
@@ -149,7 +161,7 @@ export function omtToOverpassElements(features: readonly OmtFeature[]): PseudoOv
     if (!tags) continue
     for (const part of f.parts) {
       if (part.length < (f.type === 3 ? 3 : 2)) continue
-      out.push({ type: 'way', id: id--, tags, geometry: part })
+      out.push({ type: 'way', id: id--, tags: tags.building && isArcDeTriomf(part) ? { ...tags, building: 'triumphal_arch' } : tags, geometry: part })
     }
   }
   return out

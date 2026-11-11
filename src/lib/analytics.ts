@@ -65,6 +65,14 @@
 
 import posthog from 'posthog-js'
 import { sanitizeAnalyticsUrl, URL_PROPERTIES } from './analytics-url'
+import { noteFeedbackSignal, type UsageSignal } from './feedback-gate'
+
+/** Which product actions tell the feedback prompt what this person is doing. */
+const FEATURE_SIGNAL: Partial<Record<string, UsageSignal>> = {
+  bcf_import: 'bcf', bcf_export: 'bcf', bcf_create_topic: 'bcf',
+  report_export_json: 'exported', report_export_csv: 'exported', report_export_cert: 'exported', report_export_delivery: 'exported',
+  multi_model: 'multi_model', measurement: 'measured', takeoff: 'measured',
+}
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
@@ -302,7 +310,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'workspace' | 'plans'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'sketch' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'feedbackAdmin' | 'call' | 'workspace' | 'plans'
 }): void {
   track('route_changed', props)
 }
@@ -350,6 +358,7 @@ export function trackValidationCompleted(props: {
   duration_ms:   number
   top_rule:      string | null
 }): void {
+  noteFeedbackSignal('validated')
   track('validation_completed', props)
 }
 
@@ -513,6 +522,7 @@ export function trackExportClicked(props: {
   model_count: number
   source?:     'export_modal' | 'toolbar' | 'batch_fix'
 }): void {
+  noteFeedbackSignal('exported')
   track('export_clicked', props)
 }
 
@@ -540,6 +550,8 @@ export function trackExportClicked(props: {
  *   blog_topic_opened      → a topic hub page opened
  *   blog_search            → a search settled (debounced) with its result count
  *   blog_tool_clicked      → a tool CTA clicked from the blog
+ *   foldable_report        → "did the split work?" answered in the foldable article
+ *   dual_screen_active     → a split in use, once per page load
  */
 export function trackFeatureUsed(props: {
   feature:
@@ -559,7 +571,18 @@ export function trackFeatureUsed(props: {
     | 'ebook_download'
     | 'batch_fix_preview'
     | 'validation_only'
+    | 'drawing_import'
+    | 'drawing_generate'
+    | 'drawing_export'
+    | 'drawing_dwg_refused'
+    | 'drawing_export_all'
+    | 'drawing_scene_stack'
+    | 'drawing_sheet_set'
+    | 'drawing_scan_slice'
+    | 'drawing_compare'
 }): void {
+  const signal = FEATURE_SIGNAL[props.feature]
+  if (signal) noteFeedbackSignal(signal)
   track('feature_used', props)
 }
 
@@ -602,6 +625,7 @@ export function trackMapModeEnabled(props: {
   georef_status: 'unknown' | 'extracting' | 'found' | 'partial' | 'none' | 'invalid'
   source:        'ifc' | 'manual'
 }): void {
+  noteFeedbackSignal('map')
   track('map_mode_enabled', props)
 }
 
@@ -669,6 +693,7 @@ export function trackIdsCheckCompleted(props: {
   model_mb:      number
   model_schema:  string | null
 }): void {
+  noteFeedbackSignal('ids')
   track('ids_check_completed', props)
 }
 
@@ -756,6 +781,7 @@ export function trackFileOpenFailed(props: {
  * This is a distribution signal — someone is about to share the tool with a client.
  */
 export function trackShareReportClicked(): void {
+  noteFeedbackSignal('shared')
   track('share_report_clicked')
 }
 
@@ -838,7 +864,76 @@ export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): voi
  * processing, which does not exist yet. Size only — never the file name.
  */
 export function trackServerProcessingInterest(props: { file_size_mb: number }): void {
+  noteFeedbackSignal('large_file')
   track('server_processing_interest', props)
+}
+
+/** The server-processing door was shown (exposure; no file name). */
+export function trackServerProcessingOffered(props: { file_size_mb: number }): void {
+  track('server_processing_offered', props)
+}
+
+/**
+ * Fake door: more than one IFC dropped at once, the "Validate folder (Pro)"
+ * button clicked. The feature does not exist; counts only, never file names.
+ */
+export function trackBatchFolderInterest(props: { file_count: number; step: 'clicked' | 'email_left' }): void {
+  track('batch_folder_interest', props)
+}
+
+/** The "what would help you most" form opened. `source` = entry point, never PII. */
+export function trackFeatureRequestOpened(props: { source: string; signed_in: boolean }): void {
+  track('feature_request_opened', props)
+}
+
+/**
+ * An anonymous visitor picked an answer and pressed Send, before signing in.
+ * Counted even if they never sign in — the choice only, no text, no identity.
+ */
+export function trackFeatureRequestChosen(props: { feature: string; source: string; signed_in: boolean }): void {
+  track('feature_request_chosen', props)
+}
+
+/**
+ * A feature request was sent. The choice and the buying signals only — never
+ * the free text, the tool name or anything that identifies the user.
+ */
+export function trackFeatureRequestSubmitted(props: {
+  feature: string
+  source: string
+  detailed: boolean
+  frequency: string
+  today: string
+  payer: string
+  beta: boolean
+  call: boolean
+  /** They described a concrete last time (length only is never sent). */
+  has_case: boolean
+}): void {
+  track('feature_request_submitted', props)
+}
+
+/**
+ * Steps between "chosen" and "submitted", and after it, so the funnel shows
+ * where people stop: the sign-in screen, its button, the draft coming back,
+ * an answer to Joel's reply, the call booking link.
+ */
+export function trackFeatureRequestStep(props: {
+  step: 'signin_shown' | 'signin_continue' | 'signin_later' | 'resumed' | 'answered' | 'booking_opened' | 'call_booked' | 'call_cancelled'
+  feature?: string
+  source?: string
+}): void {
+  track('feature_request_step', props)
+}
+
+/** The in-viewer "what would help you most?" card: shown, an option chosen, or dismissed. */
+export function trackFeatureRequestNudge(props: { action: 'shown' | 'chosen' | 'dismissed'; options: string }): void {
+  track('feature_request_nudge', props)
+}
+
+/** A signed-in user was told one of their requests moved (status or reply). */
+export function trackFeatureRequestUpdateSeen(props: { count: number; opened: boolean }): void {
+  track('feature_request_update', props)
 }
 
 /** Fired client-side when the post-checkout entitlement poll confirms the plan. */
@@ -852,6 +947,7 @@ export function trackCobieExported(props: {
   components: number
   spaces: number
 }): void {
+  noteFeedbackSignal('exported')
   track('cobie_exported', props)
 }
 
@@ -861,6 +957,7 @@ export function trackDeliveryReportGenerated(props: {
   warnings: number
   rules_evaluated: number
 }): void {
+  noteFeedbackSignal('exported')
   track('delivery_report_generated', props)
 }
 
@@ -909,6 +1006,16 @@ export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 
   track('blog_tool_clicked', props)
 }
 
+/** "Did it work on your device?" from the foldable article. Never a device name. */
+export function trackFoldableReport(props: { verdict: string; works: boolean; segments: number; lang: string }): void {
+  track('foldable_report', props)
+}
+
+/** A split actually in use, once per page load: the end of the foldable funnel. */
+export function trackDualScreenActive(props: { source: string; posture: string }): void {
+  track('dual_screen_active', props)
+}
+
 // ── Event page (/msp-global) ──────────────────────────────────────────────────
 // Four events, enum-only. `entry` is where the visit came from (the printed QR,
 // the event profile link, or neither) — never a name, address or form answer.
@@ -941,7 +1048,7 @@ export function trackEventContactSent(props: { event: string; entry: EventEntry;
 // link carries and coarse outcomes.
 
 /** A receiver built a requirements link. */
-export function trackRequirementsLinkCreated(props: { has_score: boolean; has_ids: boolean; has_profile: boolean }): void {
+export function trackRequirementsLinkCreated(props: { has_score: boolean; has_ids: boolean; has_profile: boolean; has_naming?: boolean; managed?: boolean }): void {
   track('requirements_link_created', props)
 }
 
@@ -951,6 +1058,6 @@ export function trackRequirementsLinkOpened(props: { has_score: boolean; has_ids
 }
 
 /** The model got its verdict against a requirements link. */
-export function trackRequirementsVerdict(props: { pass: boolean; score_bucket: string | null }): void {
+export function trackRequirementsVerdict(props: { pass: boolean; score_bucket: string | null; naming_pass?: boolean; managed_version?: number; version_moved?: boolean }): void {
   track('requirements_verdict', props)
 }

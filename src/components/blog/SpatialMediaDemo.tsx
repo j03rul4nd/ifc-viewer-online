@@ -176,7 +176,7 @@ export default function SpatialMediaDemo({
   return (
     <figure className="my-9">
       <div
-        className="relative overflow-hidden rounded-2xl border border-[rgba(94,106,210,0.32)] bg-[#0d0d10]"
+        className="relative overflow-hidden rounded-2xl border border-[rgba(10,132,129,0.32)] bg-[#0d0d10]"
         style={{ minHeight: phase === 'idle' ? 390 : height }}
       >
         {phase === 'idle' ? (
@@ -195,7 +195,7 @@ export default function SpatialMediaDemo({
               <span className="mb-3 rounded-full border border-[rgba(103,232,249,0.35)] bg-[rgba(6,182,212,0.12)] px-2.5 py-1 font-mono text-[10px] font-bold tracking-widest text-[#67e8f9]">LIVE 3D EXAMPLE</span>
               <h3 className="mb-2 text-[20px] font-semibold tracking-tight text-white sm:text-[24px]">{title}</h3>
               <p className="mb-5 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-[14px]">{description}</p>
-              <button type="button" onClick={start} className="rounded-lg bg-[#5e6ad2] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#67e8f9]">
+              <button type="button" onClick={start} className="rounded-lg bg-[#0a8481] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#67e8f9]">
                 {launchLabel}
               </button>
             </div>

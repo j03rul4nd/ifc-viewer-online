@@ -64,7 +64,7 @@ export default function EmbedConfigurator({
   const [preset, setPreset]             = useState<EmbedUiPreset>('minimal')
   const [autoValidate, setAutoValidate] = useState(true)
   const [openPanel, setOpenPanel]       = useState(false)
-  const [accent, setAccent]             = useState('#5E6AD2')
+  const [accent, setAccent]             = useState('#0A8481')
   // null = no opinion, and the preset decides. A Set would lose that
   // distinction: "every tool" and "I have not chosen" look identical.
   const [tools, setTools]               = useState<PanelId[] | null>(null)
@@ -86,7 +86,7 @@ export default function EmbedConfigurator({
     const embedUrl = buildEmbedUrl({
       baseUrl, modelUrl: trimmed, fileName: defaultFileName,
       preset, autoValidate, openPanel,
-      accent: accent.toLowerCase() !== '#5e6ad2' ? accent : undefined,
+      accent: accent.toLowerCase() !== '#0a8481' ? accent : undefined,
       panels: tools ?? undefined,
     })
     return buildIframeSnippet(embedUrl, { height })

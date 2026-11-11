@@ -189,7 +189,7 @@ export function FloodTimeline({ system, t }: { system: FloodSystemAPI | null; t:
         >
           <rect x="0" y="0" width={W} height={H} fill="rgba(255,255,255,0.03)" />
           <path d={rain.d} fill="rgba(140,180,255,0.55)" />
-          {area && <path d={area} fill="rgba(94,106,210,0.35)" stroke="rgba(140,150,240,0.95)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
+          {area && <path d={area} fill="rgba(10,132,129,0.35)" stroke="rgba(140,150,240,0.95)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />}
           {computedX < W && <rect x={computedX} y="0" width={W - computedX} height={H} fill="rgba(0,0,0,0.35)" />}
           {hoverT !== null && <line x1={(hoverT / endS) * W} x2={(hoverT / endS) * W} y1="0" y2={H} stroke="rgba(255,255,255,0.35)" strokeWidth="1" vectorEffect="non-scaling-stroke" />}
           {seaPath && <path d={seaPath} fill="none" stroke="rgb(56,189,248)" strokeWidth="1.5" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />}

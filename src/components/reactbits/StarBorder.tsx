@@ -4,7 +4,7 @@
 // tailwind.config.js → theme.extend.animation / keyframes.
 //
 // Usage:
-//   <StarBorder as="button" color="rgba(94,106,210,0.9)" speed="5s" onClick={fn}>
+//   <StarBorder as="button" color="rgba(10,132,129,0.9)" speed="5s" onClick={fn}>
 //     Click me
 //   </StarBorder>
 

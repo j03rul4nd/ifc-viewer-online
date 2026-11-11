@@ -541,7 +541,7 @@ export default function DaylightRooms(p: Props) {
         )}
         {rooms && <button onClick={exportCsv} className="ml-auto px-2 py-1 rounded-[7px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">CSV</button>}
       </div>
-      {grid && (grid.T !== T || grid.R !== R) && <p className="text-[9.5px] text-[#F5A623]">{t('daylight.gridStale')}</p>}
+      {grid && (grid.T !== T || grid.R !== R) && <p className="text-[9.5px] text-[#E9A23B]">{t('daylight.gridStale')}</p>}
       {rooms && (
         <div className="flex flex-col gap-1 border border-[var(--border)] rounded-[8px] px-2 py-1.5">
           <div className="flex items-center gap-1.5">
@@ -556,7 +556,7 @@ export default function DaylightRooms(p: Props) {
             {t('daylight.blinds')}
           </label>
           {!annual && <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('daylight.annualHint')}</p>}
-          {!p.measuredSky && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('daylight.annualClearSky')}</p>}
+          {!p.measuredSky && <p className="text-[9.5px] text-[#E9A23B] leading-snug">{t('daylight.annualClearSky')}</p>}
           {annual && (() => {
             const list = rooms.filter((r) => annual.byRoom.has(r.key))
             const ok = list.filter((r) => annual.byRoom.get(r.key)!.level !== 'none').length
@@ -575,14 +575,14 @@ export default function DaylightRooms(p: Props) {
                     if (was === undefined) return null
                     const v = Math.round((now - was) * 100)
                     if (v === 0) return null
-                    return <span className={`text-[8.5px] ml-0.5 ${(v > 0) === upGood ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{v > 0 ? '+' : ''}{v}</span>
+                    return <span className={`text-[8.5px] ml-0.5 ${(v > 0) === upGood ? 'text-[#3fa866]' : 'text-[#e2603a]'}`}>{v > 0 ? '+' : ''}{v}</span>
                   }
                   return (
                     <button key={r.key} onClick={() => frame(r.key)} className="grid grid-cols-[1fr_2.8rem_3.2rem_3.2rem_2.6rem] gap-x-1.5 text-left hover:bg-[var(--surface-2)] rounded px-0.5">
                       <span className="truncate flex items-center gap-1"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: LEVEL_COLOR[a.level] }} />{r.label}</span>
                       <span className="font-mono tabular-nums text-right">{Math.round(a.meanDA * 100)}%</span>
-                      <span className={`font-mono tabular-nums text-right ${a.sDA >= 0.55 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.sDA * 100)}%{d(a.sDA, b?.sDA, true)}</span>
-                      <span className={`font-mono tabular-nums text-right ${a.ASE <= 0.1 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(a.ASE * 100)}%{d(a.ASE, b?.ASE, false)}</span>
+                      <span className={`font-mono tabular-nums text-right ${a.sDA >= 0.55 ? 'text-[#3fa866]' : 'text-[#e2603a]'}`}>{Math.round(a.sDA * 100)}%{d(a.sDA, b?.sDA, true)}</span>
+                      <span className={`font-mono tabular-nums text-right ${a.ASE <= 0.1 ? 'text-[#3fa866]' : 'text-[#e2603a]'}`}>{Math.round(a.ASE * 100)}%{d(a.ASE, b?.ASE, false)}</span>
                       <span className="font-mono tabular-nums text-right">{a.blindHours === undefined ? '—' : `${Math.round(a.blindHours * 100)}%`}</span>
                     </button>
                   )
@@ -609,7 +609,7 @@ export default function DaylightRooms(p: Props) {
                 <button key={r.id} onClick={() => { void applyCandidate(r.id) }} title={t('optimizer.apply')}
                   className={`grid grid-cols-[1fr_2.6rem_2.6rem_2.6rem_2.6rem] gap-x-1.5 text-left rounded px-0.5 ${opt.applied === r.id ? 'bg-[var(--surface-2)] text-[var(--text)]' : 'hover:bg-[var(--surface-2)]'}`}>
                   <span className="truncate">{i === 0 ? '★ ' : ''}{t(`optimizer.c.${r.id}` as 'optimizer.c.none')}</span>
-                  <span className={`font-mono tabular-nums text-right ${r.ASE <= ASE_TARGET ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{Math.round(r.ASE * 100)}%</span>
+                  <span className={`font-mono tabular-nums text-right ${r.ASE <= ASE_TARGET ? 'text-[#3fa866]' : 'text-[#e2603a]'}`}>{Math.round(r.ASE * 100)}%</span>
                   <span className="font-mono tabular-nums text-right">{Math.round(r.meanDA * 100)}%</span>
                   <span className="font-mono tabular-nums text-right">{Math.round(r.sDA * 100)}%</span>
                   <span className="font-mono tabular-nums text-right">{Math.round(r.blindHours * 100)}%</span>
@@ -636,7 +636,7 @@ export default function DaylightRooms(p: Props) {
             const refl = lit.filter((r) => grid.byRoom.get(r.key)!.onReflections).length
             return <>
               <div className="text-[var(--text)] font-medium">{t('daylight.gridSummary', { ok, lit: lit.length, points: grid.points.toLocaleString(i18n.language), spacing: grid.spacing })}</div>
-              {refl > 0 && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('daylight.onReflections', { n: refl })}</p>}
+              {refl > 0 && <p className="text-[9.5px] text-[#E9A23B] leading-snug">{t('daylight.onReflections', { n: refl })}</p>}
             </>
           })()}
           {grid && floors.length > 0 && (
@@ -660,14 +660,14 @@ export default function DaylightRooms(p: Props) {
                 title={r.windows ? t('daylight.rowHint', { theta: Math.round(r.theta), depth: nf(r.depth), limit: nf(r.depthLimit) }) : t('daylight.noWindows')}>
                 <span className="truncate flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: r.windows ? LEVEL_COLOR[grid?.byRoom.get(r.key)?.level ?? r.level] : 'var(--border-strong)' }} />
-                  {r.label}{r.windows > 0 && r.depth > r.depthLimit && <span className="text-[#F5A623]" title={t('daylight.tooDeep')}> ⚠</span>}
+                  {r.label}{r.windows > 0 && r.depth > r.depthLimit && <span className="text-[#E9A23B]" title={t('daylight.tooDeep')}> ⚠</span>}
                 </span>
                 {grid ? (() => {
                   const g = grid.byRoom.get(r.key)
                   return <>
                     <span className="font-mono tabular-nums text-right">{r.windows ? nf(r.df) : '—'}</span>
-                    <span className={`font-mono tabular-nums text-right ${g && g.share.d300 >= 0.5 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{g ? `${Math.round(g.share.d300 * 100)}%` : '—'}</span>
-                    <span className={`font-mono tabular-nums text-right ${g && g.share.d100 >= 0.95 ? 'text-[#4caf7a]' : 'text-[#e2603a]'}`}>{g ? `${Math.round(g.share.d100 * 100)}%` : '—'}</span>
+                    <span className={`font-mono tabular-nums text-right ${g && g.share.d300 >= 0.5 ? 'text-[#3fa866]' : 'text-[#e2603a]'}`}>{g ? `${Math.round(g.share.d300 * 100)}%` : '—'}</span>
+                    <span className={`font-mono tabular-nums text-right ${g && g.share.d100 >= 0.95 ? 'text-[#3fa866]' : 'text-[#e2603a]'}`}>{g ? `${Math.round(g.share.d100 * 100)}%` : '—'}</span>
                   </>
                 })() : <>
                   <span className="font-mono tabular-nums text-right">{nf(r.floorArea, 0)}</span>
@@ -677,7 +677,7 @@ export default function DaylightRooms(p: Props) {
               </button>
             ))}
           </div>
-          {summary.deep > 0 && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('daylight.deepNote', { n: summary.deep })}</p>}
+          {summary.deep > 0 && <p className="text-[9.5px] text-[#E9A23B] leading-snug">{t('daylight.deepNote', { n: summary.deep })}</p>}
           <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('daylight.note')}</p>
         </>
       )}

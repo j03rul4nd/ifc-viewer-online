@@ -33,7 +33,7 @@ interface SyncedValidatorProfile {
 
 function severityColor(sev: 'error' | 'warning' | 'info'): string {
   if (sev === 'error')   return 'var(--danger)'
-  if (sev === 'warning') return '#F5A623'
+  if (sev === 'warning') return '#E9A23B'
   return '#5E9ED6'
 }
 

@@ -198,7 +198,7 @@ export default function ToastContainer() {
           Mobile: top, under the toolbar — at the bottom it covered the nav
           and whatever sheet was open. */}
       <div
-        className="fixed z-[300] flex flex-col gap-2.5 pointer-events-none
+        className="dual-toasts fixed z-[300] flex flex-col gap-2.5 pointer-events-none
                    bottom-5 right-5 w-[340px]
                    max-md:bottom-auto max-md:top-[calc(var(--mobile-top-ui)+4px)] max-md:right-3 max-md:left-3 max-md:w-auto"
         style={{

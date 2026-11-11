@@ -212,6 +212,76 @@
       "empty": "Afegeix almenys una nota mínima o un IDS",
       "tooLong": "Aquest IDS és massa gran per a un enllaç. Envia el fitxer .ids.",
       "failed": "No s'ha pogut crear l'enllaç"
+    },
+    "naming": {
+      "include": "Comprovar noms de fitxer (ISO 19650)",
+      "pending": "Nom de fitxer: esperant el model",
+      "pass": "El nom de fitxer compleix la regla",
+      "fail": "El nom de fitxer no compleix la regla ({{count}})",
+      "more": "+{{count}} més",
+      "separator": "Separador",
+      "reset": "Tornar a ISO 19650",
+      "fieldName": "Nom del camp",
+      "values": "Valors permesos (separats per comes)",
+      "anyValue": "Qualsevol valor",
+      "digits": "Dígits",
+      "removeField": "Treure camp",
+      "newField": "Camp",
+      "addField": "+ Afegir camp",
+      "status": "Codis d'estat",
+      "revision": "Revisió (P01, C01)",
+      "project": "Mateix estat i revisió a IfcProject",
+      "try": "Prova un nom de fitxer",
+      "tryOk": "Aquest nom compleix",
+      "fields": {
+        "project": "Projecte",
+        "originator": "Autor",
+        "volume": "Volum",
+        "level": "Nivell",
+        "type": "Tipus",
+        "role": "Disciplina",
+        "number": "Número"
+      },
+      "issue": {
+        "fieldCount": "{{got}} camps en lloc de {{expected}}",
+        "empty": "{{field}} és buit",
+        "chars": "{{field}} «{{value}}»: només lletres i dígits",
+        "value": "{{field}} «{{value}}» no està permès ({{allowed}})",
+        "case": "{{field}} «{{value}}» hauria de ser «{{expected}}»",
+        "length": "{{field}} «{{value}}» ha de tenir {{min}}–{{max}} caràcters",
+        "digits": "{{field}} «{{value}}» ha de ser numèric",
+        "statusMissing": "Falta el codi d'estat (S0–S4) al nom",
+        "status": "L'estat {{value}} no està permès ({{allowed}})",
+        "revisionMissing": "Falta la revisió (P01, C01) al nom",
+        "revisionStatus": "L'estat {{status}} va amb una revisió P, no {{revision}}",
+        "projectMissing": "El model no té IfcProject",
+        "projectStatus": "Estat a IfcProject {{project}}, al nom {{file}}",
+        "projectRevision": "Revisió a IfcProject {{project}}, al nom {{file}}"
+      }
+    },
+    "version": {
+      "checked": "Comprovat amb «{{name}}» v{{version}}",
+      "moved": "Comprovat amb «{{name}}» v{{version}} (enllaç creat a la v{{linked}})"
+    },
+    "managed": {
+      "title": "Requisits al teu compte",
+      "plan": "Recepció",
+      "upsell": "Desar requisits amb versions i historial forma part del pla Recepció. Els enllaços continuen gratuïts per als proveïdors.",
+      "seePlans": "Veure plans",
+      "profile": "Perfil",
+      "newProfile": "Perfil nou…",
+      "name": "Nom del perfil",
+      "namePlaceholder": "EIR Hospital",
+      "note": "Què canvia en aquesta versió",
+      "notePlaceholder": "Què canvia (obligatori)",
+      "publishFirst": "Desar com a v1",
+      "publishNext": "Publicar v{{version}}",
+      "copyCurrent": "Copiar enllaç (vigent: v{{version}})",
+      "history": "Historial",
+      "noVersions": "Encara no hi ha versions",
+      "published": "Versió {{version}} publicada. Els enllaços anteriors continuen funcionant.",
+      "noteRequired": "Escriu què canvia en aquesta versió",
+      "failed": "No s'ha pogut desar. Torna-ho a provar."
     }
   }
 }

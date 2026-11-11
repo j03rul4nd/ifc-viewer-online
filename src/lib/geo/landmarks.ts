@@ -106,6 +106,11 @@ export const LANDMARKS: readonly Landmark[] = [
   { featureId: 'r1574427-0', asset: 'castell-montjuic', origin: { lat: 41.3633906, lon: 2.1662499 },
     covers: ['r5739196-0', 'w646482521', 'w666192268', 'w996701694', 'w111986236',
       'w385708588', 'w385708590', 'w391984231', 'w466476916', 'w1307905428'] },
+
+  // Lujiazui (build-jin-mao-landmark.py). The outline is stood down for its
+  // parts — shaft, crown, spire — and the four entrance canopies against it.
+  { featureId: 'w376075961', asset: 'jin-mao', origin: { lat: 31.2372613, lon: 121.501405 },
+    covers: ['w188377486', 'w376016310', 'w376016312', 'w167061956', 'w167061957', 'w167061961', 'w524263611'] },
 ]
 
 /** Every id that says a landmark is in the scene, to the landmarks it finds. */
@@ -139,6 +144,38 @@ export function landmarksIn(
     if (l.inArea && lat >= area.south && lat <= area.north && lon >= area.west && lon <= area.east) found.add(l)
   }
   return LANDMARKS.filter((l) => found.has(l))
+}
+
+/** Is the point inside the closed ring? */
+function ringContains(ring: readonly LatLonPoint[], p: LatLonPoint): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j]
+    if ((a.lat > p.lat) !== (b.lat > p.lat)
+      && p.lon < ((b.lon - a.lon) * (p.lat - a.lat)) / (b.lat - a.lat) + a.lon) inside = !inside
+  }
+  return inside
+}
+
+/**
+ * Vector-tile surroundings have no OSM ids, so no landmark can be found by id.
+ * Position still finds them: every landmark inside the loaded area, plus the
+ * tile buildings standing on their origins, which the models replace.
+ */
+export function landmarksByPosition(
+  features: ReadonlyArray<Pick<OsmFeature, 'id' | 'kind' | 'ring'>>,
+  area: LandmarkArea,
+): { landmarks: Landmark[]; replaced: Set<string> } {
+  const landmarks = LANDMARKS.filter(({ origin: { lat, lon } }) =>
+    lat >= area.south && lat <= area.north && lon >= area.west && lon <= area.east)
+  const replaced = new Set<string>()
+  for (const l of landmarks) {
+    if (l.anchorOnly) continue
+    for (const f of features) {
+      if (f.kind === 'building' && f.ring && ringContains(f.ring, l.origin)) replaced.add(f.id)
+    }
+  }
+  return { landmarks, replaced }
 }
 
 function url(asset: string): string {

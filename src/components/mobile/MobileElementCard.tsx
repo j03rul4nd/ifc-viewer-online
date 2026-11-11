@@ -153,7 +153,7 @@ export function MobileElementCard({
         {/* Header */}
         <div className="shrink-0 flex items-start gap-2 pl-4 pr-2 pb-2">
           <div className="flex-1 min-w-0">
-            <span className="inline-block mb-1 px-2 py-0.5 rounded-full bg-[rgba(94,106,210,0.16)] text-[11px] font-semibold text-[var(--accent-2)] uppercase tracking-wide">
+            <span className="inline-block mb-1 px-2 py-0.5 rounded-full bg-[rgba(10,132,129,0.16)] text-[11px] font-semibold text-[var(--accent-2)] uppercase tracking-wide">
               {type}
             </span>
             <h2 ref={headingRef} tabIndex={-1} className="text-[17px] font-semibold text-[var(--text)] leading-snug break-words outline-none">

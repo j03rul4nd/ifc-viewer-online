@@ -134,7 +134,7 @@ export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
           <span className={label}>{t('scene.contents')}</span>
           {row(t('scene.models'), doc ? doc.models.length : '…')}
           {stats && stats.local > 0 && (
-            <div className="text-[10.5px] text-[#f5a524] leading-snug">{t('scene.localModels', { n: stats.local })}</div>
+            <div className="text-[10.5px] text-[#e9a23b] leading-snug">{t('scene.localModels', { n: stats.local })}</div>
           )}
           {row(t('scene.layers'), layerCount)}
           {row(t('scene.devices'), bindingCount)}
@@ -149,7 +149,7 @@ export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
         </div>
 
         {empty ? (
-          <div className="text-[12px] text-[#f5a524]">{t('scene.empty')}</div>
+          <div className="text-[12px] text-[#e9a23b]">{t('scene.empty')}</div>
         ) : (
           <>
             <div className="flex flex-wrap gap-2">
@@ -160,7 +160,7 @@ export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
                 <Icons.Link size={14} /> {copied === 'link' ? t('scene.copied') : t('scene.copyLink')}
               </button>
             </div>
-            {link === null && <div className="text-[10.5px] text-[#f5a524] leading-snug">{t('scene.tooBigForLink')}</div>}
+            {link === null && <div className="text-[10.5px] text-[#e9a23b] leading-snug">{t('scene.tooBigForLink')}</div>}
 
             <div className="flex flex-col gap-1.5">
               <span className={label}>{t('scene.embed')}</span>
@@ -191,7 +191,7 @@ export default function SceneShareModal({ viewerApiRef, onClose }: Props) {
                 <li key={`${s.url}-${i}`} className="text-[11px] leading-snug">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[var(--text)]">{s.name}</span>
-                    {s.live && <span className="px-1 rounded text-[8px] font-semibold bg-[#22c55e]/15 text-[#22c55e]">{t('scene.live')}</span>}
+                    {s.live && <span className="px-1 rounded text-[8px] font-semibold bg-[#3fa866]/15 text-[#3fa866]">{t('scene.live')}</span>}
                   </div>
                   <div className="text-[var(--text-faint)] font-mono break-all">{(() => { try { return new URL(s.url, window.location.href).host } catch { return s.url } })()}</div>
                   {s.attribution && <div className="text-[var(--text-dim)]">{s.attribution}</div>}

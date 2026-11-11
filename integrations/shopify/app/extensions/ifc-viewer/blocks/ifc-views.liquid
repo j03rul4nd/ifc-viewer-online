@@ -1,0 +1,289 @@
+{% comment %}
+  Views and guided tour: camera buttons and a self-running tour of the model,
+  placed wherever the theme needs them.
+  Attaches to the first "Product IFC model" block on the page; works in any
+  section or column, so it can sit beside the product form or below the fold.
+{% endcomment %}
+{%- capture ifcvo_style -%}
+  {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
+  --ifcvo-radius:{{ block.settings.radius }}px;
+{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{{ ifcvo_style }}" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
+  {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-views">
+    {%- for i in (1..4) -%}
+      {%- assign v = 'view_' | append: i -%}
+      {%- assign l = 'label_' | append: i -%}
+      {%- if block.settings[v] != 'none' -%}
+        <button type="button" class="ifcvo-btn" data-view="{{ block.settings[v] }}">{{ block.settings[l] | escape }}</button>
+      {%- endif -%}
+    {%- endfor -%}
+    {%- if block.settings.tour -%}<button type="button" class="ifcvo-btn" data-tour>{{ block.settings.tour_label | escape }}</button>{%- endif -%}
+  </div>
+  <p class="ifcvo-caption" aria-live="polite"></p>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC views and tour",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Views"
+    },
+    {
+      "type": "text",
+      "id": "open_label",
+      "label": "Button before the 3D view opens",
+      "default": "Open the 3D model"
+    },
+    {
+      "type": "select",
+      "id": "view_1",
+      "label": "View 1",
+      "default": "iso",
+      "options": [
+        {
+          "value": "none",
+          "label": "Hidden"
+        },
+        {
+          "value": "iso",
+          "label": "Isometric"
+        },
+        {
+          "value": "front",
+          "label": "Front"
+        },
+        {
+          "value": "back",
+          "label": "Back"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        },
+        {
+          "value": "top",
+          "label": "Top"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_1",
+      "label": "View 1 label",
+      "default": "Overview"
+    },
+    {
+      "type": "select",
+      "id": "view_2",
+      "label": "View 2",
+      "default": "front",
+      "options": [
+        {
+          "value": "none",
+          "label": "Hidden"
+        },
+        {
+          "value": "iso",
+          "label": "Isometric"
+        },
+        {
+          "value": "front",
+          "label": "Front"
+        },
+        {
+          "value": "back",
+          "label": "Back"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        },
+        {
+          "value": "top",
+          "label": "Top"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_2",
+      "label": "View 2 label",
+      "default": "Front"
+    },
+    {
+      "type": "select",
+      "id": "view_3",
+      "label": "View 3",
+      "default": "top",
+      "options": [
+        {
+          "value": "none",
+          "label": "Hidden"
+        },
+        {
+          "value": "iso",
+          "label": "Isometric"
+        },
+        {
+          "value": "front",
+          "label": "Front"
+        },
+        {
+          "value": "back",
+          "label": "Back"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        },
+        {
+          "value": "top",
+          "label": "Top"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_3",
+      "label": "View 3 label",
+      "default": "Plan"
+    },
+    {
+      "type": "select",
+      "id": "view_4",
+      "label": "View 4",
+      "default": "none",
+      "options": [
+        {
+          "value": "none",
+          "label": "Hidden"
+        },
+        {
+          "value": "iso",
+          "label": "Isometric"
+        },
+        {
+          "value": "front",
+          "label": "Front"
+        },
+        {
+          "value": "back",
+          "label": "Back"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        },
+        {
+          "value": "top",
+          "label": "Top"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_4",
+      "label": "View 4 label",
+      "default": "Side"
+    },
+    {
+      "type": "checkbox",
+      "id": "tour",
+      "label": "Offer a guided tour",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "template",
+      "label": "Tour",
+      "default": "client-walkthrough",
+      "options": [
+        {
+          "value": "client-walkthrough",
+          "label": "Client walkthrough"
+        },
+        {
+          "value": "technical-review",
+          "label": "Technical review"
+        },
+        {
+          "value": "social",
+          "label": "Short showcase"
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "pace",
+      "label": "Seconds per stop",
+      "min": 3,
+      "max": 20,
+      "step": 1,
+      "unit": "s",
+      "default": 6
+    },
+    {
+      "type": "text",
+      "id": "tour_label",
+      "label": "Tour button",
+      "default": "Play guided tour"
+    },
+    {
+      "type": "text",
+      "id": "stop_label",
+      "label": "Stop button",
+      "default": "Stop tour"
+    },
+    {
+      "type": "header",
+      "content": "Brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "Accent colour",
+      "info": "Empty uses the theme's button colour."
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "Show a frame around the block",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

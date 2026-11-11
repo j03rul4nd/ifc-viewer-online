@@ -149,6 +149,8 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       return block.why ? `> 🛠 ${block.why}\n` : ''
     case 'bars':
       return [block.title ? `**${block.title}**` : '', ...block.items.map((i) => `- ${i.label}: ${i.value}${block.unit ?? ''}${i.note ? ` (${i.note})` : ''}`), ''].join('\n')
+    case 'foldable-check':
+      return [block.title ? `**${block.title}**` : '', ...Object.values(block.labels.verdicts).map((v) => `- ${v}`), ''].join('\n')
     case 'flood-hazard':
       return [
         block.title ? `**${block.title}**` : '',
@@ -176,6 +178,7 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       ].join('\n')
     case 'ifc-demo':
       return `> 💡 *${t('doc.demo')}: ${block.title} — ${block.description} ${t('doc.demoTry')} ${SITE}*\n`
+    case 'sketch-demo':
     case 'tool-demo':
       return `> 💡 *${t('doc.demo')}: ${block.title} — ${block.description} ${t('doc.demoTry')} ${SITE}*\n`
     case 'spatial-demo':
@@ -403,7 +406,9 @@ export default function CopyForAI({
   onCopied,
   onError,
 }: CopyForAIProps) {
-  const { t } = useTranslation('blog', { keyPrefix: 'copyForAI' })
+  // The article's language, not the reader's UI language: on an English
+  // article a Spanish browser used to get "Explicar con IA".
+  const { t } = useTranslation('blog', { keyPrefix: 'copyForAI', lng: post.lang ?? 'en' })
   const [open, setOpen] = useState(false)
   const { state, copy } = useClipboard()
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -468,7 +473,7 @@ export default function CopyForAI({
         className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 sm:h-9 px-4
                    text-[13px] sm:text-[12.5px] font-medium rounded-xl
                    border border-[var(--border)] bg-[var(--surface)] text-[var(--text-dim)]
-                   hover:border-[rgba(94,106,210,0.4)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]
+                   hover:border-[rgba(10,132,129,0.4)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]
                    active:bg-[var(--surface-2)] transition-all
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >

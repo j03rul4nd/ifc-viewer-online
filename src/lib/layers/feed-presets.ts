@@ -146,16 +146,16 @@ const group = (name: string, color: string, filters: StyleGroup['filters'], poin
  * never "chargers": a GELFS location can hold several stations.
  */
 function evStyle(t: (k: string) => string): LayerStyle {
-  const base = defaultLayerStyle('#8a8f98')
+  const base = defaultLayerStyle('#a09e98')
   const icon: Partial<PointStyle> = { symbol: { kind: 'icon', icon: 'charger' }, size: 5, labelField: 'name' }
   return {
     ...base,
     groups: [
-      group(t('ev.available'), '#22c55e', [{ field: 'state', op: 'eq', value: 'available' }], icon),
-      group(t('ev.busy'), '#f59e0b', [{ field: 'state', op: 'eq', value: 'busy' }], icon),
-      group(t('ev.outOfService'), '#ef4444', [{ field: 'state', op: 'eq', value: 'out_of_service' }], icon),
+      group(t('ev.available'), '#3fa866', [{ field: 'state', op: 'eq', value: 'available' }], icon),
+      group(t('ev.busy'), '#e9a23b', [{ field: 'state', op: 'eq', value: 'busy' }], icon),
+      group(t('ev.outOfService'), '#e0523f', [{ field: 'state', op: 'eq', value: 'out_of_service' }], icon),
     ],
-    fallback: { ...base.fallback, point: { ...base.fallback.point, ...icon, color: '#8a8f98' } },
+    fallback: { ...base.fallback, point: { ...base.fallback.point, ...icon, color: '#a09e98' } },
   }
 }
 
@@ -166,7 +166,7 @@ function evStyle(t: (k: string) => string): LayerStyle {
  * attribute, and the groups are ordinary groups the user can re-target.
  */
 function airStyle(t: (k: string) => string, field = 'NO2'): LayerStyle {
-  const base = defaultLayerStyle('#8a8f98')
+  const base = defaultLayerStyle('#a09e98')
   const pt: Partial<PointStyle> = { symbol: { kind: 'icon', icon: 'sensor' }, size: 5, labelField: field }
   const bands: Array<[string, string, number | null]> = [
     ['air.good', '#50f0e6', 40], ['air.fair', '#50ccaa', 90], ['air.moderate', '#f0e641', 120],
@@ -176,7 +176,7 @@ function airStyle(t: (k: string) => string, field = 'NO2'): LayerStyle {
     ...base,
     groups: bands.map(([key, color, below]) => group(`${field} · ${t(key)}`, color,
       below === null ? [{ field, op: 'gte', value: 340 }] : [{ field, op: 'lt', value: below }], pt)),
-    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#8a8f98' } },
+    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#a09e98' } },
   }
 }
 
@@ -186,7 +186,7 @@ function airStyle(t: (k: string) => string, field = 'NO2'): LayerStyle {
  */
 function aqIndexStyle(t: (k: string) => string): LayerStyle {
   const field = 'AQINDEX_PT1H_avg'
-  const base = defaultLayerStyle('#8a8f98')
+  const base = defaultLayerStyle('#a09e98')
   const pt: Partial<PointStyle> = { symbol: { kind: 'icon', icon: 'sensor' }, size: 5, labelField: 'NO2_PT1H_avg' }
   const bands: Array<[string, string, number]> = [
     ['air.good', '#50f0e6', 1], ['air.fair', '#50ccaa', 2], ['air.moderate', '#f0e641', 3], ['air.poor', '#ff5050', 4], ['air.veryPoor', '#960032', 5],
@@ -195,13 +195,13 @@ function aqIndexStyle(t: (k: string) => string): LayerStyle {
     ...base,
     groups: bands.map(([key, color, v]) => group(`AQI ${v} · ${t(key)}`, color,
       v === 5 ? [{ field, op: 'gte', value: 4.5 }] : [{ field, op: 'between', value: [v - 0.5, v + 0.49] }], pt)),
-    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#8a8f98' } },
+    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#a09e98' } },
   }
 }
 
 /** Weather stations coloured by air temperature, 5 °C bands. */
 function temperatureStyle(field = 'temp_c'): LayerStyle {
-  const base = defaultLayerStyle('#8a8f98')
+  const base = defaultLayerStyle('#a09e98')
   const pt: Partial<PointStyle> = { symbol: { kind: 'icon', icon: 'sensor' }, size: 5, labelField: field }
   const bands: Array<[string, string, number | null]> = [
     ['< 0 °C', '#3b4cc0', 0], ['0 – 5 °C', '#5d7ce6', 5], ['5 – 10 °C', '#82a6fb', 10], ['10 – 15 °C', '#aac7fd', 15],
@@ -211,7 +211,7 @@ function temperatureStyle(field = 'temp_c'): LayerStyle {
     ...base,
     groups: bands.map(([name, color, below]) => group(name, color,
       below === null ? [{ field, op: 'gte', value: 30 }] : [{ field, op: 'lt', value: below }], pt)),
-    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#8a8f98' } },
+    fallback: { ...base.fallback, point: { ...base.fallback.point, ...pt, color: '#a09e98' } },
   }
 }
 
@@ -286,11 +286,11 @@ export const FEED_PRESETS: FeedPreset[] = [
       rules: [
         rule('ok', '#5ce27a', { kind: 'icon', icon: 'bike' }),
         rule('low', '#ffd23f', { kind: 'icon', icon: 'bike' }),
-        rule('empty', '#f25c54', { kind: 'icon', icon: 'bike' }),
+        rule('empty', '#e0523f', { kind: 'icon', icon: 'bike' }),
         rule('full', '#2fb7ff', { kind: 'icon', icon: 'parking' }),
-        rule('out_of_service', '#8a8f98', { kind: 'icon', icon: 'warning' }),
+        rule('out_of_service', '#a09e98', { kind: 'icon', icon: 'warning' }),
       ],
-      fallback: fallback('#b18cff', { kind: 'icon', icon: 'bike' }),
+      fallback: fallback('#c8a97e', { kind: 'icon', icon: 'bike' }),
     },
   },
   {
@@ -301,7 +301,7 @@ export const FEED_PRESETS: FeedPreset[] = [
       field: 'en_hora',
       rules: [
         rule('True', '#5ce27a', { kind: 'icon', icon: 'train' }, 'on time'),
-        rule('False', '#f25c54', { kind: 'icon', icon: 'train' }, 'late'),
+        rule('False', '#e0523f', { kind: 'icon', icon: 'train' }, 'late'),
       ],
       fallback: fallback('#ff7a1a', { kind: 'icon', icon: 'train' }),
     },

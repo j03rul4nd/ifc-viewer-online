@@ -337,7 +337,7 @@ export default function BatchRenameDialog({
         {warnings.length > 0 && (
           <ul data-testid="batch-rename-warnings" className="m-0 pl-0 list-none flex flex-col gap-1">
             {warnings.map((w) => (
-              <li key={w} className="flex items-start gap-1.5 text-[11.5px] leading-snug" style={{ color: 'var(--warn, #F5A623)' }}>
+              <li key={w} className="flex items-start gap-1.5 text-[11.5px] leading-snug" style={{ color: 'var(--warn, #E9A23B)' }}>
                 <svg width="11" height="11" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" className="shrink-0 mt-0.5">
                   <circle cx="5" cy="5" r="4.5" />
                   <path d="M5 3v2.5M5 7h.01" />

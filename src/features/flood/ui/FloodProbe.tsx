@@ -46,7 +46,7 @@ export function FloodProbe({ system, t }: { system: FloodSystemAPI | null; t: T 
       {busy && !p && <div className="text-[10.5px] text-[var(--text-faint)]">{t('probe.reading')}</div>}
       {p && (
         <>
-          {p.obstacle && <div className="text-[10px] text-[#F5A623] mb-1">{t('probe.obstacle')}</div>}
+          {p.obstacle && <div className="text-[10px] text-[#E9A23B] mb-1">{t('probe.obstacle')}</div>}
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-variant-numeric tabular-nums">
             <span className="text-[var(--text-faint)]">{t('probe.depth', { time: fmtTime(p.t) })}</span>
             <span className="text-right font-mono text-[var(--text)]">{p.depth.toFixed(2)} m</span>
@@ -63,7 +63,7 @@ export function FloodProbe({ system, t }: { system: FloodSystemAPI | null; t: T 
           </div>
           {path && (
             <svg viewBox={`0 0 ${SW} ${SH}`} className="mt-1.5 w-full h-[46px]" aria-label={t('probe.chart')}>
-              <path d={`${path}L${SW} ${SH}L0 ${SH}Z`} fill="rgba(94,106,210,0.25)" />
+              <path d={`${path}L${SW} ${SH}L0 ${SH}Z`} fill="rgba(10,132,129,0.25)" />
               <path d={path} fill="none" stroke="rgba(150,160,245,1)" strokeWidth="1.5" />
               <line x1={marker} x2={marker} y1="0" y2={SH} stroke="#fff" strokeWidth="1" />
             </svg>

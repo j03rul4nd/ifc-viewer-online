@@ -13,6 +13,7 @@
 // persisted document) over lib/cover/ (templates, design layer, colour,
 // photo finish, facts, captions, recipes — all pure and tested).
 
+import { loadOutbox } from '../lib/sketch'
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
@@ -589,6 +590,14 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           onEvolution={() => void cap.captureEvolution().then(addShots)}
           onAnatomy={() => void cap.captureAnatomy().then(addShots)}
           onCutout={() => void cap.captureCutout().then(addShots)}
+          onSketch={() => {
+            void loadOutbox().then(async (outbox) => {
+              // Nothing sent yet: the studio is where to make one.
+              if (!outbox?.image) { window.open('/sketch', '_blank'); return }
+              const image = await createImageBitmap(outbox.image)
+              addShots([{ id: `sketch-${Date.now()}`, label: 'Sketch', image }])
+            })
+          }}
           modelCount={models.filter((m) => m.visible).length}
           modelDisciplines={models.filter((m) => m.visible).map((m) => ({ id: m.id, fileName: m.fileName, discipline: discOverrides[m.id] ?? disciplineOf(m), manual: m.id in discOverrides }))}
           setDiscipline={(id, d) => setDiscOverrides((o) => {
@@ -640,7 +649,7 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+        <div className="cover-body flex-1 min-h-0 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
           {/* Quick start + templates */}
           <aside className="lg:w-[250px] shrink-0 border-b lg:border-b-0 lg:border-r border-[var(--border)] p-3 lg:overflow-y-auto">
             <div className={cls.section}>{t('cover.quick')}</div>
@@ -680,7 +689,7 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
           <main className="order-first lg:order-none flex-1 min-w-0 flex flex-col bg-[var(--bg)]">
             {/* Phones: the preview comes first, at a fixed share of the screen,
                 so the cover is what you see; the galleries scroll under it. */}
-            <div ref={stageRef} className="h-[56dvh] shrink-0 lg:h-auto lg:shrink lg:flex-1 min-h-0 flex items-center justify-center p-3 sm:p-4 lg:p-6">
+            <div ref={stageRef} className="cover-stage h-[56dvh] shrink-0 lg:h-auto lg:shrink lg:flex-1 min-h-0 flex items-center justify-center p-3 sm:p-4 lg:p-6">
               <canvas ref={previewRef} className="max-w-full max-h-full shadow-[0_20px_60px_rgba(0,0,0,0.35)] rounded-[3px]"
                 style={fit ? { width: fit.width, height: fit.height } : { aspectRatio: `${fmt.width} / ${fmt.height}`, width: 'auto', height: 'auto' }} />
             </div>

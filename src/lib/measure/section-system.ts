@@ -185,7 +185,7 @@ const HANDLE_PX = 15
 const SHAFT_PX = 7
 const ARROW_PX = 30
 const MIN_BOX_GAP = 0.05
-export const POCHE_COLORS = ['#2B2F3A', '#C0392B', '#5E6AD2', '#E8E6E1'] as const
+export const POCHE_COLORS = ['#2B2F3A', '#C0392B', '#0A8481', '#E8E6E1'] as const
 
 let idCounter = 0
 const nextId = (): string => `s${Date.now().toString(36)}${(idCounter++).toString(36)}`

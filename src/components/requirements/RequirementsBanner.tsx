@@ -4,7 +4,7 @@
 // The checks themselves are the app's own (validator + IDS); this only reads
 // their results and compares them with the link (lib/requirements).
 
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRequirementsStore } from '../../stores/requirementsStore'
 import { useValidationStore } from '../../stores/validationStore'
@@ -13,6 +13,7 @@ import { useSceneStore } from '../../stores/sceneStore'
 import { useUIStore } from '../../stores/uiStore'
 import { calculateQualityScore } from '../../lib/validator'
 import { evaluateRequirements, type CheckState } from '../../lib/requirements/requirements-link'
+import { checkNaming, type NamingIssue, type ProjectTexts } from '../../lib/requirements/iso-naming'
 import { trackRequirementsVerdict } from '../../lib/analytics'
 
 const STATE_STYLE: Record<CheckState, { dot: string; text: string }> = {
@@ -21,21 +22,66 @@ const STATE_STYLE: Record<CheckState, { dot: string; text: string }> = {
   fail: { dot: 'bg-red-500', text: 'text-red-400' },
 }
 
-export default function RequirementsBanner({ onOpenFile }: { onOpenFile: () => void }) {
+/** One line per naming problem, in the supplier's language. */
+function issueText(tf: unknown, i: NamingIssue): string {
+  // Keys are built from the issue code, so the typed key union is bypassed here.
+  const t = tf as (k: string, o?: Record<string, unknown>) => string
+  switch (i.code) {
+    case 'value': return t('requirements.naming.issue.value', { field: i.field, value: i.value, allowed: i.allowed.slice(0, 8).join(', ') + (i.allowed.length > 8 ? '…' : '') })
+    case 'length': return t('requirements.naming.issue.length', { field: i.field, value: i.value, min: i.min ?? 1, max: i.max ?? i.min ?? 1 })
+    case 'status': return t('requirements.naming.issue.status', { value: i.value, allowed: i.allowed.join(', ') })
+    case 'projectStatus': return t('requirements.naming.issue.projectStatus', { file: i.file ?? '—', project: i.project ?? '—' })
+    case 'projectRevision': return t('requirements.naming.issue.projectRevision', { file: i.file ?? '—', project: i.project ?? '—' })
+    default: return t(`requirements.naming.issue.${i.code}`, i as unknown as Record<string, unknown>)
+  }
+}
+
+interface BannerProps {
+  onOpenFile: () => void
+  /** IfcProject text attributes of a loaded model (N1); undefined = unreadable. */
+  getProjectTexts?: (modelId: string) => Promise<ProjectTexts | null | undefined>
+}
+
+export default function RequirementsBanner({ onOpenFile, getProjectTexts }: BannerProps) {
   const { t } = useTranslation('ids')
   const req = useRequirementsStore((s) => s.active)
+  const version = useRequirementsStore((s) => s.version)
   const dismissed = useRequirementsStore((s) => s.dismissed)
   const result = useValidationStore((s) => s.result)
   const isRunning = useValidationStore((s) => s.isRunning)
   const hasModel = useSceneStore((s) => s.models.length > 0)
   const targetId = useSceneStore((s) => s.activeModelId ?? s.models[0]?.id ?? null)
   const idsResult = useIdsStore((s) => (targetId ? s.resultsByModel[targetId] ?? null : null))
+  const fileName = useSceneStore((s) => s.models.find((m) => m.id === targetId)?.fileName ?? null)
+
+  // N1: IfcProject is read once per model, only when the rule asks for it.
+  const wantsProject = !!req?.n?.pj
+  const [project, setProject] = useState<{ id: string; texts: ProjectTexts | null } | null>(null)
+  useEffect(() => {
+    if (!wantsProject || !targetId || !getProjectTexts) return
+    let cancelled = false
+    void getProjectTexts(targetId).then((texts) => {
+      // undefined (could not read) counts as "no IfcProject text": the
+      // supplier sees why and can fix the model.
+      if (!cancelled) setProject({ id: targetId, texts: texts ?? null })
+    })
+    return () => { cancelled = true }
+  }, [wantsProject, targetId, getProjectTexts ? 1 : 0]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const naming = useMemo(() => {
+    if (!req?.n || !fileName) return null
+    if (req.n.pj && getProjectTexts) {
+      if (project?.id !== targetId) return null // still reading IfcProject
+      return checkNaming(req.n, fileName, project.texts)
+    }
+    return checkNaming(req.n, fileName)
+  }, [req, fileName, project, targetId, getProjectTexts])
 
   const verdict = useMemo(() => {
     if (!req) return null
     const score = result && !isRunning ? calculateQualityScore(result) : null
-    return evaluateRequirements(req, { score, ids: idsResult })
-  }, [req, result, isRunning, idsResult])
+    return evaluateRequirements(req, { score, ids: idsResult, naming })
+  }, [req, result, isRunning, idsResult, naming])
 
   // One verdict event per model checked against the link.
   const reported = useRef<string | null>(null)
@@ -46,8 +92,10 @@ export default function RequirementsBanner({ onOpenFile }: { onOpenFile: () => v
     trackRequirementsVerdict({
       pass: verdict.state === 'pass',
       score_bucket: typeof value === 'number' ? `${Math.floor(value / 10) * 10}` : null,
+      ...(verdict.naming ? { naming_pass: verdict.naming.state === 'pass' } : {}),
+      ...(version ? { managed_version: version.checked, version_moved: version.checked !== version.linked } : {}),
     })
-  }, [verdict, targetId])
+  }, [verdict, targetId, version])
 
   if (!req || !verdict || dismissed) return null
 
@@ -92,7 +140,34 @@ export default function RequirementsBanner({ onOpenFile }: { onOpenFile: () => v
                   : t('requirements.banner.idsValue', { name: req.xn ?? 'IDS', passed: verdict.ids.passed, total: verdict.ids.total })}
               </li>
             )}
+            {verdict.naming && (
+              <li className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-2">
+                  <span className={`h-1.5 w-1.5 rounded-full ${STATE_STYLE[verdict.naming.state].dot}`} aria-hidden />
+                  {verdict.naming.state === 'pending'
+                    ? t('requirements.naming.pending')
+                    : verdict.naming.state === 'pass'
+                      ? t('requirements.naming.pass', { status: verdict.naming.result?.status ?? '', revision: verdict.naming.result?.revision ?? '' })
+                      : t('requirements.naming.fail', { count: verdict.naming.result?.issues.length ?? 0 })}
+                </span>
+                {verdict.naming.state === 'fail' && verdict.naming.result && (
+                  <ul className="m-0 pl-3.5 list-none flex flex-col gap-0.5 text-[11.5px] text-[var(--text-faint)]">
+                    <li className="truncate font-mono">{verdict.naming.result.stem}</li>
+                    {verdict.naming.result.issues.slice(0, 4).map((i, k) => <li key={k}>· {issueText(t, i)}</li>)}
+                    {verdict.naming.result.issues.length > 4 && <li>{t('requirements.naming.more', { count: verdict.naming.result.issues.length - 4 })}</li>}
+                  </ul>
+                )}
+              </li>
+            )}
           </ul>
+          {version && (
+            <p className="m-0 mt-2 text-[11.5px] text-[var(--text-faint)]">
+              {version.checked === version.linked
+                ? t('requirements.version.checked', { name: version.name ?? req.t, version: version.checked })
+                : t('requirements.version.moved', { name: version.name ?? req.t, version: version.checked, linked: version.linked })}
+              {version.note ? <> · <span className="italic">{version.note}</span></> : null}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           {needsRun && (

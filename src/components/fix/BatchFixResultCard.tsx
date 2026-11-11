@@ -18,7 +18,7 @@ import { trackExportClicked } from '../../lib/analytics'
 const OK_TINT     = 'color-mix(in srgb, var(--ok) 10%, transparent)'
 const OK_BORDER   = 'color-mix(in srgb, var(--ok) 30%, transparent)'
 const OK_WASH     = 'color-mix(in srgb, var(--ok) 6%, transparent)'
-const WARN        = 'var(--warn, #F5A623)'
+const WARN        = 'var(--warn, #E9A23B)'
 
 /**
  * Save a finished run's bytes. Called straight from the click: nothing is

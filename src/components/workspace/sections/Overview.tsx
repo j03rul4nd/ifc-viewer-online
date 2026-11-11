@@ -5,6 +5,40 @@ import { Panel, Head, SectionLabel, Primary, Quiet, type Tone } from '../ui'
 import CreditBar from '../CreditBar'
 import { ProjectList } from './Projects'
 import { useTx, rich, type Tx } from '../i18n'
+import { useAccess, type PersonaId } from '../roles'
+import type { SectionId } from '../registry'
+
+/** The first thing each person came for. Sample counts, one line each, each with its way forward. */
+function Today({ go }: { go: (s: SectionId) => void }) {
+  const tx = useTx()
+  const { persona } = useAccess()
+  const TODAY: Record<PersonaId, { title: string; detail: string; to: SectionId; action: string }[]> = {
+    owner: [{ title: tx('The tool returned ×{{n}} what it cost this quarter', { n: '4,1' }), detail: tx('On measured counts and your own assumptions.'), to: 'value', action: tx('See the report') }],
+    coordinator: [
+      { title: tx('{{n}} supplier deliveries were stopped without you', { n: 3 }), detail: tx('They went back with their report. Nothing for you to do unless they dispute it.'), to: 'reception', action: tx('See deliveries') },
+      { title: tx('{{n}} models got worse this week', { n: 2 }), detail: tx('Issues are open and assigned to their leads.'), to: 'issues', action: tx('See issues') },
+    ],
+    modeller: [{ title: tx('{{n}} issues are yours, {{late}} due tomorrow', { n: 4, late: 1 }), detail: tx('Each one opens at the element, with the rule that failed.'), to: 'issues', action: tx('Fix them') }],
+    reviewer: [{ title: tx('{{n}} versions wait for your approval', { n: 2 }), detail: tx('They already passed the house standard.'), to: 'projects', action: tx('Review') }],
+    management: [
+      { title: tx('The tool returned ×{{n}} what it cost this quarter', { n: '4,1' }), detail: tx('On measured counts and your own assumptions.'), to: 'value', action: tx('See the report') },
+    ],
+    subcontractor: [{ title: tx('{{n}} comments on your last delivery', { n: 2 }), detail: tx('You only see the project you were invited to.'), to: 'projects', action: tx('Open it') }],
+  }
+  return (
+    <section aria-labelledby="today" className="mb-6">
+      <SectionLabel id="today">{tx('For you today')}</SectionLabel>
+      <div className="flex flex-col gap-2">
+        {TODAY[persona].map((t) => (
+          <Panel key={t.title} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+            <div className="flex-1 min-w-0"><p className="text-[13.5px] font-medium [overflow-wrap:anywhere]">{t.title}</p><p className="mt-0.5 text-[12.5px] text-[var(--text-dim)]">{t.detail}</p></div>
+            <Quiet onClick={() => go(t.to)}>{t.action}</Quiet>
+          </Panel>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 
 export const featureName = (id: PaidFeatureId, tx: Tx = (s) => s) => tx(PAID_FEATURES.find((f) => f.id === id)?.title ?? id)
@@ -113,6 +147,7 @@ function RecentActivity({ data }: { data: WorkspaceData }) {
 
 export default function Overview({ data, actions }: SectionProps) {
   const tx = useTx()
+  const { can } = useAccess()
   const plan = data.account.plan === 'team' ? 'Team' : 'Pro'
   if (data.projects.length === 0 && data.jobs.length === 0) {
     return (
@@ -128,7 +163,9 @@ export default function Overview({ data, actions }: SectionProps) {
   const running = data.jobs.filter((j) => j.status === 'running')
   return (
     <>
-      <Head title={tx("Overview")} sub={`${data.account.org} · ${plan}`} action={<Primary onClick={actions.newJob}>{tx("Run a cloud job")}</Primary>} />
+      <Head title={tx("Overview")} sub={`${data.account.org} · ${plan}`} action={can('version.upload') ? <Primary onClick={actions.newJob}>{tx("Run a cloud job")}</Primary> : undefined} />
+
+      {data.account.plan === 'team' && <Today go={actions.go} />}
 
       <section aria-labelledby="attn" className="mb-6" data-tour="attention">
         <SectionLabel id="attn">{tx("Needs your attention")}</SectionLabel>

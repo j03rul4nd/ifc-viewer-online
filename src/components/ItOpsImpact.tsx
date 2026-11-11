@@ -93,8 +93,8 @@ export default function ItOpsImpact({ viewerApiRef }: { viewerApiRef: React.Muta
 
   const dot = (
     <span className="relative flex w-2 h-2" aria-hidden>
-      <span className={`absolute inset-0 rounded-full animate-ping opacity-60 ${alerting ? 'bg-[#ef4444]' : 'bg-[#22c55e]'}`} />
-      <span className={`relative w-2 h-2 rounded-full ${alerting ? 'bg-[#ef4444]' : 'bg-[#22c55e]'}`} />
+      <span className={`absolute inset-0 rounded-full animate-ping opacity-60 ${alerting ? 'bg-[#e0523f]' : 'bg-[#3fa866]'}`} />
+      <span className={`relative w-2 h-2 rounded-full ${alerting ? 'bg-[#e0523f]' : 'bg-[#3fa866]'}`} />
     </span>
   )
 
@@ -148,7 +148,7 @@ export default function ItOpsImpact({ viewerApiRef }: { viewerApiRef: React.Muta
       <div className="px-4 py-3.5" aria-live="polite">
         {!top ? (
           <div className="flex items-start gap-2.5" data-testid="itops-impact-status">
-            <span className="mt-0.5 flex w-6 h-6 shrink-0 items-center justify-center rounded-full bg-[#22c55e]/15 text-[#4ade80] text-[13px]" aria-hidden>✓</span>
+            <span className="mt-0.5 flex w-6 h-6 shrink-0 items-center justify-center rounded-full bg-[#3fa866]/15 text-[#4ade80] text-[13px]" aria-hidden>✓</span>
             <div>
               <p className="text-[14px] font-semibold">{t(`${k}.allOk`)}</p>
               <p className="mt-0.5 text-[12px] leading-snug text-[var(--text-dim)]">{t(`${k}.allOkLine`)}</p>
@@ -166,14 +166,14 @@ export default function ItOpsImpact({ viewerApiRef }: { viewerApiRef: React.Muta
                 className="shrink-0 h-8 px-2.5 rounded-[8px] text-[12px] font-medium text-[var(--text)] bg-white/[0.07] hover:bg-white/[0.13]">{t(`${k}.show`)}</button>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-[12px] border border-[#ef4444]/25 bg-[#ef4444]/[0.08] px-3 py-2.5">
+              <div className="rounded-[12px] border border-[#e0523f]/25 bg-[#e0523f]/[0.08] px-3 py-2.5">
                 <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#fca5a5]">{t(`${k}.withoutTitle`)}</p>
                 <p className="mt-1 text-[22px] leading-none font-semibold tabular-nums text-[#fca5a5]" data-testid="itops-lost">
                   {WITHOUT[top.kind].costEur ? eur(lost) : t(`${k}.minutes`, { n: lostMin })}
                 </p>
                 <p className="mt-1 text-[11px] leading-snug text-[var(--text-dim)]">{WITHOUT[top.kind].costEur ? t(`${k}.withoutCounting`) : t(`${k}.withoutUnseen`)}</p>
               </div>
-              <div className="rounded-[12px] border border-[#22c55e]/25 bg-[#22c55e]/[0.08] px-3 py-2.5">
+              <div className="rounded-[12px] border border-[#3fa866]/25 bg-[#3fa866]/[0.08] px-3 py-2.5">
                 <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#86efac]">{t(`${k}.withTitle`)}</p>
                 <p className="mt-1 text-[22px] leading-none font-semibold tabular-nums text-[#86efac]">{eur(0)}</p>
                 <p className="mt-1 text-[11px] leading-snug text-[var(--text-dim)]">{t(`${k}.withWarned`, { s: DETECT_S })}</p>

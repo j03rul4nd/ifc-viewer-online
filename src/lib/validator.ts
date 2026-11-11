@@ -29,12 +29,11 @@ import { RULE_METADATA }                      from '../types'
 import { recordValidationRun }                from './validation-analytics'
 import type { ValidatorOutMessage }            from '../workers/validator.worker'
 
-// ── Quality score ─────────────────────────────────────────────────────────────
-// Lives in quality-score.ts (pure, no stores) so the server-side validation
-// runner computes the very same number as the browser. Re-exported here so
-// existing imports keep working.
+// The quality score lives in its own module so it runs outside the browser
+// (the local MCP server scores models with it); re-exported for the app.
 import { calculateQualityScore } from './quality-score'
-export { explainQualityScore, calculateQualityScore, __scoreWeights, type ScoreContribution } from './quality-score'
+export { explainQualityScore, calculateQualityScore, __scoreWeights } from './quality-score'
+export type { ScoreContribution } from './quality-score'
 
 const log = createLogger('Validator')
 

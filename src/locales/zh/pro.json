@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "一次打开了 {{count}} 个 IFC。需要用一份报告检查整个文件夹吗？",
+    "action": "验证文件夹（Pro）",
+    "title": "验证整个文件夹",
+    "soon": "即将推出。",
+    "body": "一次检查整个 IFC 文件夹并生成一份报告的功能尚未提供。您的文件仍会像往常一样逐个打开。",
+    "notifyLabel": "留下您的邮箱，准备好时我会通知您一次。",
+    "submit": "通知我",
+    "thanks": "谢谢。准备好时我会给您发一次邮件。",
+    "error": "无法保存，请重试。"
+  },
   "title": "账户",
   "close": "关闭",
   "signInIntro": "登录后可保存证书历史、在设备间同步规则配置并管理 API 密钥。免费验证器依然免费 — 无需账户即可使用。",
@@ -98,5 +109,232 @@
     "hint": "账户入口位于查看器工具栏的“账户”按钮。"
   },
   "manageProfile": "管理个人资料",
-  "backHome": "返回 IFC Viewer Online"
+  "backHome": "返回 IFC Viewer Online",
+  "authTitle": "账户集中管理项目、证书和账单",
+  "authPoint1": "查看器和验证器继续免费，无需账户",
+  "authPoint2": "在浏览器中打开的文件只留在浏览器中",
+  "authPoint3": "只有使用云功能时，文件才会到达我们的服务器",
+  "legacy": {
+    "title": "我们升级了你的账户",
+    "body1": "我们正在对产品进行调整，并改进注册用户的套餐。我们的路线图是为你提供更好的服务，为此我们已将账户迁移到新的正式系统。",
+    "body2": "你的账户和邮箱均已保留。如果你之前使用密码登录，现在请使用 Google 或我们通过邮件发送的验证码登录；你也可以在个人资料中设置新密码。",
+    "body3": "很抱歉，即使你已有账户也需要重新登录，给你带来不便。感谢你一直以来的支持。",
+    "ok": "知道了",
+    "signInHint": "已有账户？我们已迁移到新系统，你的账户仍然保留：请使用 Google 或我们通过邮件发送的验证码登录。原来的密码已无法使用。"
+  },
+  "requests": {
+    "entryTitle": "提出功能需求",
+    "entryHint": "告诉我缺什么。我亲自读并回复。",
+    "entryCta": "提需求",
+    "title": "什么对你帮助最大？",
+    "intro": "选出今天最拖慢你的事。每条回答我都亲自读，并在这里回复。",
+    "feature": {
+      "big_files": {
+        "title": "打开超大文件",
+        "hint": "目前浏览器装不下的 400 MB 以上模型"
+      },
+      "versions": {
+        "title": "带版本的云端项目",
+        "hint": "上传新版本时查看有哪些变化"
+      },
+      "client_link": {
+        "title": "与客户分享",
+        "hint": "模型和报告的链接，无需安装"
+      },
+      "bcf_team": {
+        "title": "与团队管理 BCF 问题",
+        "hint": "指派、状态、期限和保存的视图"
+      },
+      "auto_check": {
+        "title": "自动检查每次交付",
+        "hint": "按公司标准（IDS、EIR、命名规则）"
+      },
+      "cloud_drives": {
+        "title": "从 Google Drive、OneDrive 或 Dropbox 打开",
+        "hint": "并直接保存回去，无需下载"
+      },
+      "batch_tools": {
+        "title": "批量工具",
+        "hint": "一次编辑、重命名或拆分多个 IFC"
+      },
+      "reception_inbox": {
+        "title": "接收供应商的交付",
+        "hint": "供应商上传 IFC 的收件箱，并按我的要求自动检查"
+      },
+      "managed_requirements": {
+        "title": "为我公司统一管理要求",
+        "hint": "我的 IDS、EIR 和最低分集中管理，随每次请求发送"
+      },
+      "iso_naming": {
+        "title": "检查文件命名（ISO 19650）",
+        "hint": "标出不符合我们命名规则的文件和容器"
+      },
+      "other": {
+        "title": "其他",
+        "hint": "写在下面"
+      }
+    },
+    "needLabel": "上一次需要它时：你要把什么交给谁？（可选）",
+    "needLabelOther": "你需要什么？讲讲上一次遇到的情况",
+    "needPlaceholder": "例如：周五要把模型发给业主，最后只好每层导出一份 PDF",
+    "needPlaceholderOther": "你想做什么、用的哪个文件、卡在哪里",
+    "moreToggle": "更多背景（可选）",
+    "frequencyLabel": "多久遇到一次？",
+    "frequency": {
+      "daily": "每天",
+      "weekly": "每周",
+      "sometimes": "偶尔"
+    },
+    "todayLabel": "你现在怎么处理？",
+    "today": {
+      "nothing": "还没解决",
+      "manual": "手工或用 Excel",
+      "paid_tool": "付费使用其他工具",
+      "free_tool": "用其他免费工具"
+    },
+    "todayToolPlaceholder": "哪个工具？（例如 Solibri、BIMcollab）",
+    "payerLabel": "如果有了，谁来付费？",
+    "payer": {
+      "me": "我自己",
+      "company": "我的公司",
+      "nobody": "没人：没有预算"
+    },
+    "roleLabel": "你的角色",
+    "role": {
+      "bim": "BIM 经理或协调员",
+      "architect": "建筑设计",
+      "engineer": "工程",
+      "contractor": "施工单位",
+      "owner": "业主或运维",
+      "developer": "软件开发",
+      "student": "学生",
+      "other": "其他"
+    },
+    "teamLabel": "团队规模",
+    "team": {
+      "solo": "只有我",
+      "2-10": "2–10 人",
+      "11-50": "11–50 人",
+      "51+": "50 人以上"
+    },
+    "beta": "准备好后我想在真实项目上试用",
+    "call": "我可以视频通话 15 分钟",
+    "contactOk": "可以就此事给我发邮件",
+    "privacy": "我把你的回答与账号和邮箱一起保存，仅用于理解它，并在你同意时联系你。不会公开或分享。",
+    "send": "发送",
+    "sending": "发送中…",
+    "cancel": "取消",
+    "done": "关闭",
+    "thanksTitle": "已记下",
+    "thanksContact": "我会发邮件到你账号的邮箱。",
+    "thanksNoContact": "有进展时会在这里显示。",
+    "thanksStatus": "状态和我的回复见「你的需求」",
+    "mineLink": "你的需求 · {{count}}",
+    "mineTitle": "你的需求",
+    "newRequest": "新需求",
+    "replyFrom": "Joel：",
+    "status": {
+      "new": "已收到",
+      "reviewing": "评估中",
+      "planned": "已排期",
+      "building": "开发中",
+      "shipped": "已上线",
+      "declined": "暂不考虑"
+    },
+    "directMail": "想直接写信？",
+    "error": {
+      "missing": "请选择一项（选“其他”时请写下你的需求）。",
+      "unauthorized": "会话已过期。请重新登录后再发送。",
+      "need_too_short": "请用几句话说明你的需求。",
+      "daily_limit": "你今天已发送 5 条需求。明天可以继续发送，或发邮件到 hola@ifcvieweronline.eu。",
+      "rate_limited": "尝试次数过多，请稍等一分钟。",
+      "unavailable": "暂时没有成功，请稍后再试。",
+      "network": "网络已断开。请检查网络后重试。",
+      "invalid": "请检查表单后重试。"
+    },
+    "tellUs": "讲讲你的情况",
+    "somethingElse": "还缺别的？告诉我",
+    "nudgeTitle": "什么对你帮助最大？",
+    "nudgeBody": "点一下就够了。我会亲自读。",
+    "nudgeCta": "回答",
+    "nudgeDismiss": "关闭",
+    "entryButton": "提建议",
+    "signinTitle": "登录后即可发送",
+    "signinBody": "你的回答已保存在此标签页，登录后原样恢复。这样我可以回复你，并在上线时通知你。",
+    "signinFree": "账户免费，查看器也一直免费。",
+    "signinLater": "暂不",
+    "signinCta": "登录并发送",
+    "resumed": "你已登录。这是你的回答：检查后发送。",
+    "nudgeOther": "其他…",
+    "updateOne": "「{{feature}}」：{{status}}。",
+    "updateMany": "你有 {{count}} 条需求有更新。",
+    "updateCta": "查看",
+    "callBook": "我可以视频通话 15 分钟（发送后选时间）",
+    "updateReply": "Joel 回复了你的需求「{{feature}}」。",
+    "mineLinkReply": "你的需求 · {{count}} · 有回复",
+    "mineEmpty": "你还没有发送过。",
+    "loading": "正在加载你的需求",
+    "you": "你",
+    "answerLabel": "回复 Joel",
+    "answerPlaceholder": "回复 Joel…",
+    "answerSend": "回复",
+    "showAll": "再显示 {{count}} 项",
+    "receiptTool": "目前用 {{tool}}",
+    "bookCta": "选择通话时间",
+    "bookByMail": "我会发邮件约一个你方便的时间。",
+    "nudgeContext": {
+      "large_file": "这个文件在浏览器里放不下。",
+      "exported": "你刚导出了报告。",
+      "shared": "你刚分享了模型。",
+      "ids": "你刚检查了 IDS。",
+      "bcf": "你刚处理了 BCF 问题。",
+      "multi_model": "你打开了多个模型。",
+      "map": "你把模型放到了地图上。",
+      "measured": "你一直在测量。",
+      "validated": "你的模型已完成校验。"
+    }
+  },
+  "call": {
+    "back": "返回查看器",
+    "title": "用 {{minutes}} 分钟聊聊你的情况",
+    "intro": "我是 Joel，IFC Viewer Online 的开发者。这不是演示，也不是销售电话：我想看看你是怎么工作的，好把你提的需求做好。",
+    "point1": "说说你上一次需要它是什么时候，当时是怎么解决的。",
+    "point2": "愿意的话，可以共享屏幕，展示模型或交付成果。",
+    "point3": "我会告诉你我能做什么、大概什么时候做好，没有任何附加条件。",
+    "signin": "登录后选择时间，这样我就知道我们要聊的是哪条需求。",
+    "signinCta": "登录",
+    "loadError": "无法加载可选时间，请稍后再试。",
+    "retry": "重试",
+    "noSlots": "未来两周已经约满。给我写信，我们另找时间：",
+    "pickDay": "日期",
+    "pickTime": "时间",
+    "zone": "按你所在时区（{{zone}}）显示。",
+    "email": "邀请发送至",
+    "note": "有什么需要我提前了解的吗？",
+    "optional": "（选填）",
+    "notePlaceholder": "例如：我每周把模型发给一家设计院，但业主没有 Revit。",
+    "error": {
+      "unauthorized": "登录已过期，请重新登录。",
+      "slot_gone": "这个时间刚被别人约走了，请换一个。",
+      "already_booked": "你已经预约了一次通话。",
+      "email": "请检查邮箱地址。",
+      "rate_limited": "尝试次数过多，请等一分钟。",
+      "unavailable": "保存失败，请重试。",
+      "network": "没有网络连接，请重试。"
+    },
+    "booking": "正在预约…",
+    "confirm": "请选择时间",
+    "confirmAt": "预约 {{when}}",
+    "bookedLabel": "已预约通话",
+    "bookedMeta": "{{minutes}} 分钟 · 视频通话 · {{zone}} 时间",
+    "join": "在浏览器中加入，无需安装：",
+    "mailed": "邀请已发送至 {{email}}。",
+    "notMailed": "用下面的按钮存到日历里；上面的链接就是通话链接。",
+    "mailedEarlier": "邀请会发到 {{email}}。如果找不到，可以在这里保存：",
+    "addIcs": "下载 .ics",
+    "changeHint": "时间不合适？取消后重新选择。",
+    "cancel": "取消通话",
+    "footer": "更想写信？",
+    "eventTitle": "与 Joel 通话（IFC Viewer Online）"
+  }
 }

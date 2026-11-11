@@ -280,7 +280,7 @@ export default function BimoMascot({
       {bubble && (
         <div
           role="status"
-          className={`absolute z-10 ${blog ? 'right-[70%] bottom-[78%] rounded-br-md' : BUBBLE_POS[bubbleSide]} w-[min(190px,48vw)] sm:w-[230px] rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-[12px] sm:text-[12.5px] leading-snug text-[var(--text)] shadow-[0_12px_40px_-12px_rgba(94,106,210,0.45)] animate-[bimoBubble_.35s_cubic-bezier(.2,1.4,.4,1)]`}
+          className={`absolute z-10 ${blog ? 'right-[70%] bottom-[78%] rounded-br-md' : BUBBLE_POS[bubbleSide]} w-[min(190px,48vw)] sm:w-[230px] rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2 text-[12px] sm:text-[12.5px] leading-snug text-[var(--text)] shadow-[0_12px_40px_-12px_rgba(10,132,129,0.45)] animate-[bimoBubble_.35s_cubic-bezier(.2,1.4,.4,1)]`}
         >
           {bubble}
         </div>

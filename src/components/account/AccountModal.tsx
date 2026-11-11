@@ -14,7 +14,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { SignIn, useClerk } from '@clerk/react'
-import { useCloudAccountStore } from '../../stores/cloudAccountStore'
+import { useCloudAccountStore, openFeatureRequest } from '../../stores/cloudAccountStore'
 import { useEntitlement } from '../../hooks/useEntitlement'
 import {
   createApiKey, createCheckout, createPortal as createBillingPortal,
@@ -240,7 +240,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-40"
           aria-hidden
-          style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(94,106,210,0.18), transparent 72%)' }}
+          style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(10,132,129,0.18), transparent 72%)' }}
         />
 
         <SheetGrip onClose={onClose} />
@@ -257,6 +257,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
             /* ── Anonymous: embedded Clerk sign-in (S-1 scenario A) ─────────── */
             <div className="flex flex-col items-center gap-3">
               <p className="text-[12px] text-[var(--text-muted)] leading-snug self-start">{t('signInIntro')}</p>
+              <p className="text-[12px] text-[var(--text-muted)] leading-snug self-start">{t('legacy.signInHint')}</p>
               {/* Combined sign-in-or-up, completing IN PLACE: the fallback
                   "redirect" is the URL the user is already on (SPA-routed by
                   main.tsx, so nothing reloads); OAuth is redirect-mode because
@@ -300,6 +301,17 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 </div>
               </section>
 
+              {/* ── Request a feature ────────────────────────────────────────── */}
+              <section className="rounded-xl border border-[rgba(10,132,129,0.4)] bg-[rgba(10,132,129,0.08)] p-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium text-[var(--text)]">{t('requests.entryTitle')}</p>
+                  <p className="text-[11px] leading-snug text-[var(--text-faint)]">{t('requests.entryHint')}</p>
+                </div>
+                <button onClick={() => { onClose(); openFeatureRequest('account') }} className={`shrink-0 ${smallBtn}`}>
+                  {t('requests.entryCta')}
+                </button>
+              </section>
+
               {/* ── Plan / billing ───────────────────────────────────────────── */}
               <section className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
@@ -308,14 +320,14 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                     className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
                     style={entitlement.plan === 'free'
                       ? { background: 'var(--surface-2)', color: 'var(--text-muted)' }
-                      : { background: 'rgba(94,106,210,0.15)', color: 'var(--accent)' }}
+                      : { background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }}
                   >
                     {entitlement.plan}
                   </span>
                 </div>
 
                 {entitlement.status === 'past_due' && (
-                  <p className="text-[11px] leading-snug rounded-lg px-2 py-1.5" style={{ background: 'rgba(245,166,35,0.10)', color: '#F5A623' }}>
+                  <p className="text-[11px] leading-snug rounded-lg px-2 py-1.5" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>
                     ! {t('plan.pastDue')}
                   </p>
                 )}
@@ -384,7 +396,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                       {k.last_used_at ? ` · ${t('keys.lastUsed')} ${new Date(k.last_used_at).toLocaleDateString()}` : ''}
                     </span>
                     <button onClick={() => void handleRevoke(k.id)} disabled={busy === k.id}
-                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
                       {t('keys.revoke')}
                     </button>
                   </div>
@@ -417,7 +429,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   <div className="flex items-center gap-3">
                     <img src={branding.logo} alt="" className="max-h-10 max-w-[160px] object-contain rounded bg-white p-1" />
                     <button onClick={() => void handleRemoveLogo()} disabled={busy === 'logo'}
-                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
                       {t('branding.remove')}
                     </button>
                   </div>
@@ -438,7 +450,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 )}
                 {history.phase === 'ready' && history.items.map((c) => (
                   <div key={c.cert_hash} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border)]">
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#F5A623' }}>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#E9A23B' }}>
                       {c.payload.health_score}
                     </span>
                     <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">

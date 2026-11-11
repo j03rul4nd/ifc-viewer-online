@@ -1,321 +1,510 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IFC Viewer for Mac — Free, No Install, Runs in Safari</title>
-  <meta name="description" content="Free IFC viewer for Mac. Open any IFC in Safari, Chrome or Firefox on macOS — no download, no plugin, no Revit licence. IFC2x3, IFC4, IFC4x3." />
-  <meta name="keywords" content="IFC viewer Mac, open IFC on Mac, IFC viewer macOS, free IFC viewer Mac, BIM viewer Mac browser, IFC file opener Mac, IFC viewer Safari, IFC viewer Chrome Mac, no install IFC viewer Mac, open IFC without Revit Mac" />
-  <meta name="author" content="Joel Benitez" />
-  <meta name="robots" content="index, follow" />
+  <meta name="description" content="Open IFC files on a Mac in Safari, Chrome or Firefox: 3D view, properties, sections, measuring and validation. Nothing to install, no account, free." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
-
-  <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
-  <meta property="og:title" content="IFC Viewer for Mac — Free, No Install, Runs in Safari & Chrome" />
-  <meta property="og:description" content="Open any IFC file on macOS in Safari, Chrome or Firefox — no download, no plugin, no Revit license. View, validate and edit IFC directly in your browser." />
+  <meta property="og:title" content="IFC Viewer for Mac — Free, No Install, Runs in Safari" />
+  <meta property="og:description" content="Open IFC files on a Mac in Safari, Chrome or Firefox: 3D view, properties, sections, measuring and validation. Nothing to install, no account, free." />
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="en_US" />
-  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="IFC Viewer Online — open IFC files on Mac in the browser" />
-
-  <!-- Twitter Card -->
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg" />
+  <meta property="og:image:width" content="1440" />
+  <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="IFC viewer in a 1440 by 900 browser window, the size of a MacBook screen: a two-storey house in 3D, the spatial tree on the left and the IFC attributes and property sets of a selected wall on the right" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="IFC Viewer for Mac — Free, No Install" />
-  <meta name="twitter:description" content="Open IFC files on macOS in Safari or Chrome. No download, no Revit license. View, validate & edit in the browser." />
-  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
-  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
+  <meta name="twitter:title" content="IFC Viewer for Mac — Free, No Install, Runs in Safari" />
+  <meta name="twitter:description" content="Open IFC files on a Mac in Safari, Chrome or Firefox: 3D view, properties, sections, measuring and validation. Nothing to install, no account, free." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/visor-ifc-mac/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/ifc-viewer-mac/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/visionneuse-ifc-mac/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/visualizador-ifc-mac/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/visualizzatore-ifc-mac/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/visor-ifc-mac/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/ifc-viewer-mac/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-mac/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-mac/" />
   <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
-
-  <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
-  <meta property="og:title"       content="IFC Viewer for Mac â€” Free, No Install" />
-  <meta property="og:description" content="Open any IFC file on Mac in Safari or Chrome â€” no download, no plugin. View, validate, and edit IFC files in your browser." />
-  <meta property="og:site_name"   content="IFC Viewer Online" />
-  <meta property="og:locale"      content="en_US" />
-  <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="IFC Viewer for Mac â€” Free, No Install" />
-  <meta name="twitter:description" content="Open any IFC file on Mac in Safari or Chrome â€” no download, no plugin." />
-
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/landings/ifc-viewer-mac-1440x900-wall-properties-720.webp 720w, /images/landings/ifc-viewer-mac-1440x900-wall-properties-1440.webp 1440w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="/fonts.css" />
-
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebPage",
-        "@id": "https://www.ifcvieweronline.eu/ifc-viewer-mac/",
-        "url": "https://www.ifcvieweronline.eu/ifc-viewer-mac/",
-        "name": "IFC Viewer for Mac â€” Free, No Install, Runs in Safari & Chrome",
-        "description": "Free IFC viewer for Mac. Open IFC files in Safari, Chrome, or Firefox on macOS â€” no download, no plugin, no Revit license.",
-        "isPartOf": { "@id": "https://www.ifcvieweronline.eu/" },
-        "inLanguage": "en"
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/ifc-viewer-mac/",
+      "url": "https://www.ifcvieweronline.eu/ifc-viewer-mac/",
+      "name": "IFC Viewer for Mac — Free, No Install, Runs in Safari",
+      "description": "Open IFC files on a Mac in Safari, Chrome or Firefox: 3D view, properties, sections, measuring and validation. Nothing to install, no account, free.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
       },
-      {
-        "@type": "SoftwareApplication",
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg#image"
+      },
+      "dateModified": "2026-11-10"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (web browser)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg",
+        "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-section-cut.jpg"
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg",
+      "width": 1440,
+      "height": 900,
+      "name": "IFC viewer in a 1440 by 900 browser window, the size of a MacBook screen: a two-storey house in 3D, the spatial tree on the left and the IFC attributes and property sets of a selected wall on the right",
+      "caption": "The viewer in a 1440 × 900 window, the default size of a MacBook Air screen (captured in Chrome). On the right, the attributes and property sets of the selected wall.",
+      "inLanguage": "en",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
         "name": "IFC Viewer Online",
-        "url": "https://www.ifcvieweronline.eu/",
-        "applicationCategory": "AEC / BIM software",
-        "operatingSystem": "macOS, Windows, Linux (any modern browser)",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "featureList": [
-          "Works on Mac in Safari, Chrome, Firefox, and Edge",
-          "No download or installation required",
-          "3D WebGL rendering of IFC geometry",
-          "44-rule IFC validation",
-          "GUID auto-fix and non-destructive property editing",
-          "IFC and GLB export",
-          "OPFS geometry cache for offline use"
-        ]
+        "url": "https://www.ifcvieweronline.eu/"
       },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does the IFC viewer work on Mac?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, fully. IFC Viewer Online works on any modern browser on macOS â€” Safari, Chrome, Firefox, and Edge. No plugin, no installation, no operating system restriction."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to download anything to view IFC files on Mac?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Just open the URL in Safari or Chrome on your Mac and drag your IFC file in. The viewer runs entirely in the browser via WebAssembly â€” no app to install, no plugin, no Revit license needed."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is the IFC viewer free for Mac users?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, completely free. No account required, no subscription, no hidden cost. The source code is MIT-licensed and available on GitHub."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does it work offline on Mac?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without an internet connection."
-            }
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-section-cut.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-section-cut.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-viewer-mac-1440x900-section-cut.jpg",
+      "width": 1440,
+      "height": 900,
+      "name": "Section plane cutting an IFC model of a house in the browser viewer, with the furniture inside visible, in a 1440 by 900 window",
+      "caption": "A section plane through the same model, moved with the slider or by dragging it in the view. No plug-in is involved.",
+      "inLanguage": "en",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is there an IFC viewer for Mac that needs no installation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes: this one is a web page. Open it in Safari, Chrome, Firefox or Edge on macOS and drop the file. There is nothing to download or install."
           }
-        ]
-      }
-    ]
-  }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it work in Safari?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. It needs WebGL and WebAssembly, which current versions of Safari include. The captures on this page were made in Chrome, so try Chrome if a model does not display well."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the IFC uploaded when I open it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The file is read by code running in the browser tab. Only anonymous usage statistics (file size and element count) leave the browser, and they can be switched off."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I open Revit or Archicad files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, only IFC. Export an IFC from the authoring tool first."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it work offline on a Mac?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The page has to load from the internet each time, although the model itself is never sent."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Flinker available for Mac?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Flinker's viewer runs in the browser, so it can be used on a Mac that way; its desktop app is published for Windows and its site does not mention macOS (flinker.app/products/ifc-viewer, read on 2026-11-10)."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "IFC Viewer for Mac",
+          "item": "https://www.ifcvieweronline.eu/ifc-viewer-mac/"
+        }
+      ]
+    }
+  ]
+}
   </script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
-    a { color: inherit; text-decoration: none; }
-
-    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-
-    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
-    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
-    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
-
-    .hero { position: relative; overflow: hidden; padding: 72px 0 56px; text-align: center; } .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; } .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); } .hero .container { position: relative; z-index: 1; }
-    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
-    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
-    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 620px; margin: 0 auto 36px; }
-    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
-    .cta-primary:hover { background: #4F5ABF; }
-    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
-
-    .section { padding: 64px 0; border-top: 1px solid rgba(255,255,255,0.06); }
-    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
-    .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 600px; }
-
-    .browsers { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
-    .browser-pill { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; }
-    .browser-check { color: #4CAF82; font-size: 11px; }
-
-    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-top: 8px; }
-    .feature-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
-    .feature-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    .feature-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.6; }
-
-    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
-    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .faq-item:last-child { border-bottom: none; }
-    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
-
-    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
-    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
-    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
-
-    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
-    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
-    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
-    .footer-link:hover { color: rgba(255,255,255,0.65); }
-    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
   </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
 </head>
 <body>
-
-  <header>
-    <div class="container">
-      <div class="header-inner">
-        <a href="../" class="logo">IFC Viewer Online</a>
-        <a href="../" class="nav-cta">Open Viewer â†’</a>
-      </div>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="Main menu">
+        <a href="/">Viewer</a>
+        <a href="/ifc-viewer-examples/">Examples</a>
+        <a href="/fix/">Fix guides</a>
+        <a href="/blog/">Blog</a>
+        <a href="/pricing/">Pricing</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="Switch light or dark" title="Switch light or dark"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/" class="lc-btn">Open the viewer</a>
     </div>
   </header>
-
   <main>
-
     <section class="hero">
-      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
       <div class="container">
-        <div class="hero-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          Works on Mac Â· Safari Â· Chrome Â· Firefox Â· Free
+        <p class="badge">macOS · Safari, Chrome, Firefox, Edge · Nothing to install · Free</p>
+        <h1>IFC Viewer for Mac <span>that runs in the browser you already have</span></h1>
+        <p class="lead">There is no app to download: the viewer is a web page. Open it in Safari or Chrome on macOS, drop an IFC file and you get the 3D model, the spatial tree, the properties of each element, sections, measurements and a validation report. The file is not uploaded.</p>
+        <div class="go">
+          <a href="/" class="btn">Open the viewer</a>
+          <a href="/?model=/Ifc2x3_Duplex_Architecture.ifc" class="alt">or open the sample model</a>
         </div>
-        <h1>IFC Viewer <span class="accent">for Mac</span></h1>
-        <p class="hero-desc">Open any IFC file on macOS â€” no download, no plugin, no Revit license. Drag your file into Safari or Chrome and get a full 3D viewer, validator, and editor instantly. Your files never leave your Mac.</p>
-        <a href="../" class="cta-primary">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Open an IFC file on Mac â€” free
-        </a>
-        <p class="cta-note">No account required Â· Runs in your browser Â· Works offline Â· IFC2x3 Â· IFC4 Â· IFC4x3</p>
+        <p class="note">No account. IFC2x3, IFC4, IFC4x1 and IFC4x3, up to 2 GB per file.</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-viewer-mac-1440x900-wall-properties-720.webp 720w, /images/landings/ifc-viewer-mac-1440x900-wall-properties-1440.webp 1440w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-viewer-mac-1440x900-wall-properties.jpg" width="1440" height="900" alt="IFC viewer in a 1440 by 900 browser window, the size of a MacBook screen: a two-storey house in 3D, the spatial tree on the left and the IFC attributes and property sets of a selected wall on the right" fetchpriority="high" />
+          </picture></a>
+          <figcaption>The viewer in a 1440 × 900 window, the default size of a MacBook Air screen (captured in Chrome). On the right, the attributes and property sets of the selected wall.</figcaption>
+        </figure>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
-        <p class="section-label">Browser Compatibility on Mac</p>
-        <h2 class="section-title">Works on every Mac browser</h2>
-        <p class="section-sub">No plugin required. The viewer uses WebAssembly and WebGL â€” both supported by every modern browser on macOS.</p>
-        <div class="browsers">
-          <div class="browser-pill"><span class="browser-check">âœ“</span> Safari (macOS)</div>
-          <div class="browser-pill"><span class="browser-check">âœ“</span> Chrome for Mac</div>
-          <div class="browser-pill"><span class="browser-check">âœ“</span> Firefox for Mac</div>
-          <div class="browser-pill"><span class="browser-check">âœ“</span> Edge for Mac</div>
-          <div class="browser-pill"><span class="browser-check">âœ“</span> Arc for Mac</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="container">
-        <p class="section-label">Features</p>
-        <h2 class="section-title">Full BIM toolset in your Mac browser</h2>
-        <p class="section-sub">Everything a BIM Coordinator needs before an IFC delivery â€” without installing a single app.</p>
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-title">3D IFC Viewer</div>
-            <div class="feature-desc">Full WebGL 3D rendering of IFC geometry. Camera presets, ISO view, SSAO, edge rendering, and bloom for presentation-quality stills.</div>
-          </div>
-          <div class="feature-card">
-            <div class=”feature-title”>44-Rule IFC Validator</div>
-            <div class=”feature-desc”>GUID duplicates, spatial hierarchy violations, orphan elements, coordinate offsets, proxy overuse — all 44 rules run in a background worker. Health Score 0–100. Results stream in real time.</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-title">GUID Auto-Fix</div>
-            <div class="feature-desc">One click to regenerate all invalid GlobalIds. The most common IFC export error from Revit â€” fixed without touching the original file.</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-title">Non-Destructive Editing</div>
-            <div class="feature-desc">Edit element names, descriptions, and property values inline with full undo/redo. No risk of corrupting your original IFC file.</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-title">IFC &amp; GLB Export</div>
-            <div class="feature-desc">Export corrected IFC binary (all diffs applied in a Web Worker) or visible geometry as a standard GLB. No server, no cost.</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-title">Floor Plans &amp; Section Cuts</div>
-            <div class="feature-desc">Generate accurate 2D floor plan views from any storey. Cut live section planes at any angle to inspect internal structure.</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-title">Quantity Takeoff</div>
-            <div class="feature-desc">Reads IfcElementQuantity data and aggregates area, volume, and length per IFC class. Results update in real time.</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-title">Offline Support via OPFS</div>
-            <div class="feature-desc">Parsed geometry is cached in the browser's Origin Private File System â€” ~10Ã— faster repeat loads. Works completely offline on Mac.</div>
-          </div>
+        <p class="label">On a Mac</p>
+        <h2>What works on macOS, and what to expect</h2>
+        <div class="cols">
+          <div class="col"><h3>It works</h3><ul>
+            <li>In Safari, Chrome, Firefox and Edge on macOS. The page needs WebGL and WebAssembly, which those browsers include.</li>
+            <li>Opening .ifc files, and .ifczip or .zip archives, by dragging them into the window or with the Open button.</li>
+            <li>Several models at once, each with its own tree and properties.</li>
+            <li>On an iPad or iPhone too, with smaller files.</li>
+          </ul></div>
+          <div class="col"><h3>Keep in mind</h3><ul>
+            <li>It is not a macOS application: no Dock icon, no Quick Look preview, and .ifc files do not open with a double click.</li>
+            <li>The page has to load from the internet. It does not work offline.</li>
+            <li>The file-size limit is 2 GB, and in practice the memory of the Mac: a warning appears from 1 GB, or from 80 MB on machines with 4 GB of memory or less and on iPad and iPhone.</li>
+            <li>The captures on this page were made in Chrome. If something looks wrong in Safari, try Chrome.</li>
+          </ul></div>
         </div>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
-        <p class="section-label">FAQ</p>
-        <h2 class="section-title">IFC Viewer on Mac â€” Questions</h2>
-        <br />
-        <div class="faq-list">
-          <div class="faq-item">
-            <p class="faq-q">Does the IFC viewer work on Mac?</p>
-            <p class="faq-a">Yes, fully. IFC Viewer Online works on any modern browser on macOS â€” Safari, Chrome, Firefox, and Edge. No plugin, no installation, no operating system restriction. If your browser supports WebGL and WebAssembly (all modern browsers do), it works.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Do I need to download anything to view IFC files on Mac?</p>
-            <p class="faq-a">No. Just open the URL in Safari or Chrome on your Mac and drag your IFC file into the browser window. The viewer runs entirely via WebAssembly â€” no app to install, no plugin, no Revit license needed.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Is the IFC viewer free for Mac users?</p>
-            <p class="faq-a">Yes, completely free. No account required, no subscription, no hidden cost. The source code is MIT-licensed and available on GitHub. You can fork it and deploy your own instance.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Are IFC files uploaded to a server when I open them on Mac?</p>
-            <p class="faq-a">No. Files are parsed entirely in your browser via web-ifc WebAssembly. Nothing leaves your Mac. You can safely use it with confidential project models under NDA â€” no data changes hands.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">Does it work offline on Mac?</p>
-            <p class="faq-a">Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Geometry is cached in OPFS so repeat file loads are instant even without an internet connection.</p>
-          </div>
-          <div class="faq-item">
-            <p class="faq-q">What IFC file formats and versions are supported on Mac?</p>
-            <p class="faq-a">IFC2x3, IFC4, IFC4x1, and IFC4x3 â€” the same as on Windows. The viewer uses the open-source web-ifc parser, which supports all current IFC schema versions exported by Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, and Solibri.</p>
-          </div>
+        <p class="label">Tools</p>
+        <h2>What you can do with a model</h2>
+        <div class="cols">
+          <div class="col"><h3>Look</h3><ul>
+            <li>Orbit, pan and zoom; hide and isolate elements; browse the spatial tree.</li>
+            <li>Section planes and 2D floor plans cut from the model, exported as DXF, SVG or PDF.</li>
+            <li>Measure distances, areas, angles and clearances.</li>
+            <li>Read every property set and the quantities written in the file.</li>
+          </ul></div>
+          <div class="col"><h3>Check and fix</h3><ul>
+            <li>A validation with 44 rules and a Health Score from 0 to 100; see the <a href="/ifc-validator/">IFC validator</a>.</li>
+            <li>IDS 1.0 checks against your own requirements.</li>
+            <li>Edit names and property values, fix GlobalIds, and export the corrected IFC or a GLB.</li>
+            <li>Open and write BCF 2.1 and 3.0 files.</li>
+          </ul></div>
         </div>
       </div>
     </section>
 
-    <section class="cta-bottom">
+    <section class="section">
       <div class="container">
-        <h2>Open an IFC file on your Mac now.</h2>
-        <p>No login. No download. Works in Safari, Chrome, Firefox.</p>
-        <a href="../" class="cta-primary">Open IFC Viewer â†’</a>
+        <p class="label">Comparison</p>
+        <h2>Other ways to open an IFC on a Mac</h2>
+        <p class="sub">Flinker is the other free browser viewer we are asked about. Its column says what Flinker publishes.</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col"></th><th scope="col">Flinker</th><th scope="col">IFC Viewer Online</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">What it is</th><td data-h="Flinker">&quot;The IFC viewer for Microsoft&quot;: SharePoint, Teams, Excel, Power BI, Windows and the browser</td><td data-h="IFC Viewer Online">A viewer, validator and editor in a web page</td></tr>
+            <tr><th scope="row">On a Mac</th><td data-h="Flinker">The browser viewer. The desktop app is for Windows; the site does not mention macOS</td><td data-h="IFC Viewer Online">Any current browser on macOS</td></tr>
+            <tr><th scope="row">To start</th><td data-h="Flinker">&quot;Open a model without creating an account&quot;</td><td data-h="IFC Viewer Online">No account</td></tr>
+            <tr><th scope="row">Formats</th><td data-h="Flinker">IFC 2x3, 4 and 4x3; BCF 2.1 and 3.0; IDS 1.0; DXF; PDF overlay</td><td data-h="IFC Viewer Online">IFC2x3, IFC4, IFC4x1 and IFC4x3; BCF 2.1 and 3.0; IDS 1.0</td></tr>
+            <tr><th scope="row">The file</th><td data-h="Flinker">Parsed in the browser; stays on the device or in the Microsoft storage you choose</td><td data-h="IFC Viewer Online">Read in the browser; not uploaded</td></tr>
+            <tr><th scope="row">Checking</th><td data-h="Flinker">IDS requirement checks with pass and fail highlighting</td><td data-h="IFC Viewer Online">44 rules with a Health Score, plus IDS</td></tr>
+            <tr><th scope="row">Price</th><td data-h="Flinker">Community: free. Enterprise: priced per deployment</td><td data-h="IFC Viewer Online">Free</td></tr>
+          </tbody>
+        </table></div>
+        <p class="after">Choose Flinker when your projects already live in SharePoint and Teams: opening the model next to the documents is what it is built for, and this viewer does not connect to Microsoft 365.</p>
+        <p class="after">Choose IFC Viewer Online when you also want to know whether the model is good: the validation, the score and the fixes are the difference.</p>
+        <p class="after">About Solibri: the product pages we read on the same day do not state which operating systems its plans run on, so we do not say. Check Solibri's system requirements before buying for a Mac.</p>
+        <p class="src" data-vendors="flinker solibri">Sources: <a href="https://flinker.app/products/ifc-viewer/" rel="nofollow noopener">flinker.app/products/ifc-viewer</a>, <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> · read on <time datetime="2026-11-10">2026-11-10</time></p>
       </div>
     </section>
 
+    <section class="section">
+      <div class="container">
+        <p class="label">Try it</p>
+        <h2>Open the sample model</h2>
+        <p class="sub">The demo below runs in this page, in the browser you are using now.</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-viewer-mac-1440x900-section-cut.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-viewer-mac-1440x900-section-cut-720.webp 720w, /images/landings/ifc-viewer-mac-1440x900-section-cut-1440.webp 1440w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-viewer-mac-1440x900-section-cut.jpg" width="1440" height="900" alt="Section plane cutting an IFC model of a house in the browser viewer, with the furniture inside visible, in a 1440 by 900 window" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>A section plane through the same model, moved with the slider or by dragging it in the view. No plug-in is involved.</figcaption>
+        </figure>
+        <div data-live-embed data-app="/" data-model="/Ifc2x3_Duplex_Architecture.ifc" data-validate data-panel data-lang="en"
+             data-title="IFC Viewer for Mac" data-cta="Run the validation on a sample IFC" data-sub="Loads the validator in this page. Nothing is uploaded." style="--le-h:560px;margin-top:32px"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">Price</p>
+        <h2>What it costs</h2>
+        <p class="prose">Nothing. There is no licence, no trial period and no account. The code is public under the MIT licence on <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener">GitHub</a>. Paid plans that add a server are on the <a href="/pricing/">pricing page</a> and are not on sale yet.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">FAQ</p>
+        <h2>Questions</h2>
+        <div class="faq">
+          <div><h3>Is there an IFC viewer for Mac that needs no installation?</h3><p>Yes: this one is a web page. Open it in Safari, Chrome, Firefox or Edge on macOS and drop the file. There is nothing to download or install.</p></div>
+          <div><h3>Does it work in Safari?</h3><p>Yes. It needs WebGL and WebAssembly, which current versions of Safari include. The captures on this page were made in Chrome, so try Chrome if a model does not display well.</p></div>
+          <div><h3>Is the IFC uploaded when I open it?</h3><p>No. The file is read by code running in the browser tab. Only anonymous usage statistics (file size and element count) leave the browser, and they can be switched off.</p></div>
+          <div><h3>Can I open Revit or Archicad files?</h3><p>No, only IFC. Export an IFC from the authoring tool first.</p></div>
+          <div><h3>Does it work offline on a Mac?</h3><p>No. The page has to load from the internet each time, although the model itself is never sent.</p></div>
+          <div><h3>Is Flinker available for Mac?</h3><p>Flinker's viewer runs in the browser, so it can be used on a Mac that way; its desktop app is published for Windows and its site does not mention macOS (flinker.app/products/ifc-viewer, read on 2026-11-10).</p></div>
+        </div>
+        <p class="src" data-vendors="flinker">Sources: <a href="https://flinker.app/products/ifc-viewer/" rel="nofollow noopener">flinker.app/products/ifc-viewer</a> · read on <time datetime="2026-11-10">2026-11-10</time></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">Related pages</p>
+        <ul class="related">
+          <li><a href="/ifc-validator/">IFC Validator</a></li>
+          <li><a href="/cloud-ifc-validator/">Cloud IFC Validator</a></li>
+          <li><a href="/on-premise-ifc-validator/">On-premise IFC validation</a></li>
+          <li><a href="/solibri-alternative/">Solibri alternative</a></li>
+          <li><a href="/solibri-webchecker-alternative/">Solibri WebChecker alternative</a></li>
+          <li><a href="/blog/solibri-alternative/">Solibri or a browser validator: the long comparison</a></li>
+          <li><a href="/fix/">Fix IFC errors</a></li>
+          <li><a href="/pricing/">Pricing</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>Open an IFC on your Mac</h2>
+        <p>In the browser, free, with nothing to install.</p>
+        <a href="/" class="btn">Open the viewer</a>
+      </div>
+    </section>
   </main>
-
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">Your next step</h2>
+      <p class="lc-lead">Free, in your browser. Nothing is uploaded.</p>
+      <ol>
+        <li><a href="/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>Open a sample model</strong><span>See the Health Score and the failing rules on a real IFC in under a minute.</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>Create a free account</strong><span>Keep your checks and share the report with your team or client.</span></a></li>
+        <li><a href="/pricing/"><span class="lc-n">3</span><strong>Compare the plans</strong><span>Pro, Team and model reception for whoever receives the deliveries.</span></a></li>
+      </ol>
+    </div>
+  </section>
   <footer>
     <div class="container">
-      <div class="footer-links">
-        <a href="../" class="footer-link">IFC Viewer Online</a>
-        <a href="../ifc-validator/" class="footer-link">IFC Validator</a>
-        <a href="../es/" class="footer-link">Visor IFC Online (ES)</a>
-        <!-- tool-links -->
-        <a href="../ifc-editor/" class="footer-link">Free IFC Editor</a>
-        <a href="../ifc-classification-checker/" class="footer-link">IFC Classification Checker</a>
-        <a href="../ifc-health-check/" class="footer-link">IFC Model Health Check</a>
-        <!-- /tool-links -->
-        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      <div class="links">
+        <a href="/">IFC Viewer Online</a>
+        <a href="/ifc-validator/">IFC Validator</a>
+        <a href="/cloud-ifc-validator/">Cloud IFC Validator</a>
+        <a href="/on-premise-ifc-validator/">On-premise IFC validation</a>
+        <a href="/solibri-alternative/">Solibri alternative</a>
+        <a href="/solibri-webchecker-alternative/">Solibri WebChecker alternative</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
       </div>
-      <p class="footer-copy">IFC Viewer Online Â© 2026 Â· Free Â· Open source Â· MIT license Â· Built with web-ifc &amp; three.js</p>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
     </div>
   </footer>
-
-  <script defer src="../seo/dot-grid.js"></script>
-
+  <script defer src="/seo/live-embed.js"></script>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
 </body>
 </html>
-

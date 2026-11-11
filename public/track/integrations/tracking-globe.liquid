@@ -1,0 +1,21 @@
+{% comment %}
+  Tracking Globe section. Copy to your theme's sections/ folder, then add
+  "Tracking globe" in the theme editor and paste the configuration value from
+  https://www.ifcvieweronline.eu/tracking-globe/
+{% endcomment %}
+<div class="page-width">
+  <tracking-globe config="{{ section.settings.config | escape }}" style="display:block;height:{{ section.settings.height }}px"></tracking-globe>
+</div>
+<script src="{{ section.settings.base | escape }}tracker.js" async></script>
+
+{% schema %}
+{
+  "name": "Tracking globe",
+  "settings": [
+    { "type": "textarea", "id": "config", "label": "Configuration value" },
+    { "type": "range", "id": "height", "label": "Height", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
+    { "type": "text", "id": "base", "label": "Script address", "default": "https://www.ifcvieweronline.eu/track/v1/" }
+  ],
+  "presets": [{ "name": "Tracking globe" }]
+}
+{% endschema %}

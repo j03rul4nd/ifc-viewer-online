@@ -21,7 +21,8 @@ import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './meas
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { ownerModelId } from './element-owner'
 import { pivotForYaw } from './geo/multi-placement'
-import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { resolveThemedBackground, followsTheme, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { getSceneTheme, subscribeSceneTheme } from '../theme/sceneTheme'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
@@ -780,6 +781,8 @@ export interface ViewerAPI {
   setTwinPaint(plan: { paint: Map<string, Map<number, string>>; hidden: Map<string, Set<number>> } | null): Promise<void>
   /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
   getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
+  /** IfcProject's text attributes (naming check, N1); null when the model has no IfcProject. */
+  getProjectTexts(modelId?: string): Promise<{ name: string | null; longName: string | null; description: string | null; phase: string | null } | null>
   /**
    * Swap the scene backdrop (solid colour or vertical gradient) and the derived
    * fog / grid colours. Purely visual: no geometry, camera or material state is
@@ -937,6 +940,18 @@ export interface ViewerAPI {
   /** Remove all section planes and the box, and close any open storey view. */
   cleanupSectionAndPlans(): void
 
+  // ─── Technical drawings (see docs/DRAWINGS.md) ───────────────────────────────
+  /** What drawings need of the scene: where to lay a sheet in 3D and how to redraw. */
+  drawingHost(): { scene: THREE.Scene; requestRender(): void }
+  /** Every visible model's triangles in scene space, per IFC class; the source of plans and sections. */
+  collectDrawingSoups(skip: RegExp): Promise<Map<string, Float32Array[]>>
+  /** The scene's box in scene space, or null with nothing loaded. */
+  drawingSceneBounds(): THREE.Box3 | null
+  /** Centres of elements by GlobalId in model XY (x, −z), across all models. */
+  drawingElementCenters(guids: string[]): Promise<Map<string, { x: number; y: number }>>
+  /** The 3D camera in model XY, for the marker on the sheet. */
+  drawingCamera(): { x: number; y: number; dx: number; dy: number } | null
+
   // ─── Floor plan / storey views ───────────────────────────────────────────────
   /**
    * Detect IfcBuildingStorey entities and create a section view for each one.
@@ -963,7 +978,7 @@ export interface ViewerAPI {
 // ─── Highlight material presets ──────────────────────────────────────────────
 
 const HOVER_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0x5E6AD2),
+  color: new THREE.Color(0x0a8481),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.45,
   transparent: true,
@@ -1292,8 +1307,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     return texture
   }
 
+  // Last settings applied; the default (`studio`) re-resolves on theme change.
+  let currentBackground: BackgroundSettings = DEFAULT_BACKGROUND
+
   function applyBackground(settings: BackgroundSettings): void {
-    const bg = resolveBackground(settings)
+    currentBackground = settings
+    const bg = resolveThemedBackground(settings, getSceneTheme())
     const previous = bgTexture
     bgTexture = null
 
@@ -1321,6 +1340,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   applyBackground(DEFAULT_BACKGROUND)
+
+  // UI theme switch: only the default backdrop follows it, updated in place.
+  const unsubscribeSceneTheme = subscribeSceneTheme(() => {
+    if (followsTheme(currentBackground)) applyBackground(currentBackground)
+  })
 
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
@@ -1362,6 +1386,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
   let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
   let vectorLoadPromise: Promise<import('./layers/vector-layer-system').VectorLayerSystemAPI> | null = null
+  /** The data layers, once loaded — their features are measurable like any geometry. */
+  let vectorInstance: import('./layers/vector-layer-system').VectorLayerSystemAPI | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
@@ -2586,7 +2612,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const extra = [...world.meshes].filter((o) => !roots.has(o)) as THREE.Object3D[]
       // The map's OSM buildings and relief: measure to the neighbour, on the street, up a slope.
       const geo = geoSystemInstance?.isActive() ? geoSystemInstance : null
-      return geo ? [...extra, ...geo.measureTargets()] : extra
+      const layers = vectorInstance?.measureTargets() ?? []
+      return [...extra, ...layers, ...(geo ? geo.measureTargets() : [])]
     },
     getClippingPlanes: () => wr.clippingPlanes,
     getSnapResolver: () => snapResolver,
@@ -2617,6 +2644,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
     aim: aimClient,
+    // Grips are caught on the container in the capture phase, before the camera.
+    container,
+    setControlsEnabled: (enabled) => { world.camera.controls.enabled = enabled },
     modelName: (modelId) => fileNameOfModelId(modelId),
     planRoute: async (req) => {
       const svc = await routeService()
@@ -4529,6 +4559,24 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async getProjectTexts(modelId?: string) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model) return null
+      try {
+        const ids = Object.values(await model.getItemsOfCategories([/^IFCPROJECT$/])).flat()
+        if (ids.length === 0) return null
+        const [d] = await model.getItemsData([ids[0]], { attributesDefault: false, attributes: ['Name', 'LongName', 'Description', 'Phase'] })
+        const r = d as Record<string, { value?: unknown } | undefined> | undefined
+        const pick = (k: string): string | null => {
+          const v = r?.[k]?.value
+          return typeof v === 'string' || typeof v === 'number' ? String(v).trim() || null : null
+        }
+        return { name: pick('Name'), longName: pick('LongName'), description: pick('Description'), phase: pick('Phase') }
+      } catch {
+        return null
+      }
+    },
+
     async getProjectNames(modelId?: string) {
       const none = { project: null, building: null }
       const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
@@ -4835,6 +4883,70 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return levels
     },
 
+    drawingHost() {
+      return { scene: world.scene.three, requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true } }
+    },
+
+    async collectDrawingSoups(skip) {
+      const out = new Map<string, Float32Array[]>()
+      const { collectItemTriangles } = await import('./scene/item-triangles')
+      const v = new THREE.Vector3()
+      for (const [modelId, model] of modelObjects) {
+        if (modelHidden.has(modelId)) continue
+        const soups = await collectItemTriangles(model as unknown as import('./scene/item-triangles').ItemGeometrySource, {
+          skip, bucket: (category) => category,
+          onWarn: (m, e) => console.debug('[Viewer] drawing soups:', m, e),
+        })
+        model.object.updateWorldMatrix(true, false)
+        const m = model.object.matrixWorld
+        for (const [category, chunks] of soups) {
+          for (const tri of chunks) {
+            for (let i = 0; i < tri.length; i += 3) {
+              v.set(tri[i], tri[i + 1], tri[i + 2]).applyMatrix4(m)
+              tri[i] = v.x; tri[i + 1] = v.y; tri[i + 2] = v.z
+            }
+          }
+          const list = out.get(category)
+          if (list) list.push(...chunks); else out.set(category, chunks)
+        }
+      }
+      return out
+    },
+
+    drawingSceneBounds() {
+      const box = combinedModelsBox()
+      return box.isEmpty() ? null : box
+    },
+
+    async drawingElementCenters(guids) {
+      const out = new Map<string, { x: number; y: number }>()
+      for (const model of modelObjects.values()) {
+        const missing = guids.filter((g) => !out.has(g))
+        if (!missing.length) break
+        try {
+          const ids = await model.getLocalIdsByGuids(missing)
+          for (let i = 0; i < missing.length; i++) {
+            const id = ids[i]
+            if (typeof id !== 'number') continue
+            const b = await model.getMergedBox([id])
+            if (b.isEmpty()) continue
+            const c = b.getCenter(new THREE.Vector3())
+            out.set(missing[i], { x: c.x, y: -c.z })
+          }
+        } catch (e) { console.debug('[Viewer] element centres:', e) }
+      }
+      return out
+    },
+
+    drawingCamera() {
+      try {
+        const controls = world.camera.controls
+        const pos = controls.getPosition(new THREE.Vector3())
+        const tgt = controls.getTarget(new THREE.Vector3())
+        return { x: pos.x, y: -pos.z, dx: tgt.x - pos.x, dy: -(tgt.z - pos.z) }
+      } catch { return null }
+    },
+
     cleanupSectionAndPlans() {
       // Every plane and the box go, and any face placement in progress.
       try { sectionSystem.cancelFacePlacement() } catch { /* ok */ }
@@ -4952,6 +5064,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           getModelFootprints: () => self.getLoadedModelIds()
             .map((id) => self.getModelFootprint(id))
             .filter((f): f is Array<{ x: number; z: number }> => f !== null && f.length >= 3),
+          // The top of each of those models, same order and same filter: map
+          // mode needs it to tell a station under a square from a building.
+          getModelTops: () => self.getLoadedModelIds()
+            .filter((id) => { const f = self.getModelFootprint(id); return f !== null && f.length >= 3 })
+            .map((id) => { const b = self.getModelBounds(id); return b ? b.center.y + b.size.y / 2 : Number.NaN }),
           // Where the model's own y = 0 ended up: its pivot, plus whatever the
           // loader's coordination moved it by. Normally both are zero, and it
           // is the moment they are NOT that this has to be read rather than
@@ -5252,7 +5369,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
             console.debug('[Viewer] vector layer fit failed:', e instanceof Error ? e.message : e)
           }
         },
-      }))
+      })).then((v) => { vectorInstance = v; return v })
       return vectorLoadPromise
     },
 
@@ -5321,6 +5438,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      unsubscribeSceneTheme()
       stopTurntable()
       uprightObserver?.disconnect()
       // Hand BCF back to "no datum" unless a newer viewer already took over.
@@ -5338,6 +5456,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pointCloudLoadPromise = null
       if (vectorLoadPromise) void vectorLoadPromise.then((v) => v.dispose()).catch(() => { /* ok */ })
       vectorLoadPromise = null
+      vectorInstance = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       try { solarAnalysisInstance?.dispose() } catch { /* ok */ }
       if (hazardPromise) void hazardPromise.then((h) => h.clear()).catch(() => { /* ok */ })

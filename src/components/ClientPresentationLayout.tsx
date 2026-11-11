@@ -110,8 +110,8 @@ export default function ClientPresentationLayout({ viewerApiRef, canExit = true 
           aria-expanded={gearOpen}
           className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 ${
             gearOpen
-              ? 'opacity-100 bg-[rgba(12,12,16,0.9)] border-[var(--border-strong)] text-[var(--text)]'
-              : 'opacity-25 hover:opacity-90 bg-[rgba(12,12,16,0.6)] border-transparent hover:border-[var(--border)] text-[var(--text-dim)]'
+              ? 'opacity-100 bg-[color-mix(in_srgb,var(--bg-surface)_90%,transparent)] border-[var(--border-strong)] text-[var(--text)]'
+              : 'opacity-25 hover:opacity-90 bg-[color-mix(in_srgb,var(--bg-surface)_60%,transparent)] border-transparent hover:border-[var(--border)] text-[var(--text-dim)]'
           }`}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -129,7 +129,7 @@ export default function ClientPresentationLayout({ viewerApiRef, canExit = true 
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="absolute right-0 top-full mt-1.5 min-w-[210px] py-1.5 rounded-xl bg-[rgba(12,12,16,0.95)] backdrop-blur-[18px] border border-[var(--border-strong)] shadow-2xl"
+                className="absolute right-0 top-full mt-1.5 min-w-[210px] py-1.5 rounded-xl bg-[color-mix(in_srgb,var(--bg-surface)_95%,transparent)] backdrop-blur-[18px] border border-[var(--border-strong)] shadow-2xl"
               >
                 <div className="px-3 py-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
                   {t('gear.advanced')}
@@ -201,7 +201,7 @@ export default function ClientPresentationLayout({ viewerApiRef, canExit = true 
               transition={{ type: 'spring', stiffness: 320, damping: 28, delay: 0.28 }}
               className="absolute bottom-16 sm:bottom-4 left-3 z-[24] pointer-events-auto"
             >
-              <div className="flex items-center px-1.5 py-1 rounded-xl bg-[rgba(12,12,16,0.88)] backdrop-blur-[18px] border border-[var(--border)] shadow-lg">
+              <div className="flex items-center px-1.5 py-1 rounded-xl bg-[color-mix(in_srgb,var(--bg-surface)_88%,transparent)] backdrop-blur-[18px] border border-[var(--border)] shadow-lg">
                 <CaptureToolbar viewerApiRef={viewerApiRef} replay={true} />
               </div>
             </motion.div>

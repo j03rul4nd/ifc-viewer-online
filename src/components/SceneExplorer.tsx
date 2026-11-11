@@ -259,7 +259,7 @@ function ExploreMenu({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<Vi
         {t('explorer.explore')}
         {liveCount > 0 && (
           <span className="flex items-center gap-1 pl-1 text-[10.5px] text-[var(--text-dim)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" aria-hidden />{t('explorer.liveCount', { count: liveCount })}
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3fa866] animate-pulse" aria-hidden />{t('explorer.liveCount', { count: liveCount })}
           </span>
         )}
       </button>
@@ -324,7 +324,7 @@ function CardHeader({ badge, title, subtitle, onClose, children }: {
   )
 }
 
-const chip = (text: string, cls = 'bg-[rgba(94,106,210,0.18)] text-[var(--accent-2)]') =>
+const chip = (text: string, cls = 'bg-[rgba(10,132,129,0.18)] text-[var(--accent-2)]') =>
   <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${cls}`}>{text}</span>
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {

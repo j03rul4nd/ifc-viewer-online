@@ -37,6 +37,8 @@ export interface MeshContext {
 }
 
 export interface MeshSystemAPI {
+  /** The object in the scene, placed: for exports. Null if there is no such mesh. */
+  getRoot(id: string): THREE.Object3D | null
   /**
    * Put a decoded object in the scene. Returns false when the system is already
    * disposed — the caller MUST treat that as a failure and free the object, or
@@ -138,6 +140,10 @@ export function createMeshSystem(ctx: MeshContext): MeshSystemAPI {
       applyPlacement(rec, frame, placement)
       ctx.registerRaycastTarget?.(root)
       return true
+    },
+
+    getRoot(id) {
+      return items.get(id)?.root ?? null
     },
 
     setPlacement(id, frame, placement) {

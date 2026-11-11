@@ -23,10 +23,11 @@
 //      ↳ heights/normals buffers and imagery bitmaps are TRANSFERRED.
 // NO three.js here — geometry assembly happens in geo-terrain.ts.
 
-import { latLonToTileFloat } from '../lib/geo/geo-math'
+import { latLonToTileFloat, normalizedToLatLon } from '../lib/geo/geo-math'
+import { applyShanghaiGround, inShanghaiGround, loadShanghaiGround } from '../lib/geo/shanghai-ground'
 import { demSourceById, demTileUrl, type DemSource, type DemSourceId } from '../lib/geo/dem-sources'
 import { clampHeightGrid, despeckleHeightGrid } from '../lib/geo/height-grid-clamp'
-import { lowerEnvelope } from '../lib/geo/lower-envelope'
+import { lowerEnvelope, isFlatGround, capFlatGround } from '../lib/geo/lower-envelope'
 import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
 import {
   TERRAIN_TILE_DIM,
@@ -205,6 +206,33 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
         `removed up to ${envelope.maxDropM.toFixed(0)} m of surface, ` +
         `${envelope.meanDropM.toFixed(1)} m on average`,
       )
+    }
+
+    // A surface model of a delta city keeps whole districts as plateaus the
+    // opening cannot see past (lower-envelope, flat river deltas).
+    if (!demSourceById(req.dem).bareEarth && isFlatGround(req.lat, req.lon)) {
+      // Where the ground itself is shipped with the app, the surface model is
+      // only asked where the water is (shanghai-ground). The cap is the
+      // fallback for the rest of the delta: its level depends on the patch.
+      const lats = new Float64Array(PATCH_PX)
+      const lons = new Float64Array(PATCH_PX)
+      for (let i = 0; i < PATCH_PX; i++) {
+        const t = (i + 0.5) / TERRAIN_TILE_DIM
+        lons[i] = normalizedToLatLon((cx - 1 + t) / n - 0.5, 0).lon
+        lats[i] = normalizedToLatLon(0, 0.5 - (cy - 1 + t) / n).lat
+      }
+      const covered = inShanghaiGround(lats[0], lons[0]) && inShanghaiGround(lats[PATCH_PX - 1], lons[PATCH_PX - 1])
+      const ground = covered ? await loadShanghaiGround().catch(() => null) : null
+      if (ground) {
+        const known = applyShanghaiGround(unified, lats, lons, ground)
+        console.info(
+          `[GeoTerrain] Shanghai ground: ${known.minM.toFixed(1)}–${known.maxM.toFixed(1)} m, ` +
+          `${known.water} samples of water`,
+        )
+      } else {
+        const flat = capFlatGround(unified)
+        console.info(`[GeoTerrain] flat ground: capped ${flat.capped} samples at ${flat.capM.toFixed(1)} m`)
+      }
     }
 
     const verts = req.grid + 1

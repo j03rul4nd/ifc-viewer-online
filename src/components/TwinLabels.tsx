@@ -8,7 +8,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTwinDeviceStore, selectShownReadings } from '../stores/twinDeviceStore'
 import { useValidationStore } from '../stores/validationStore'
-import { bindingState, buildCatalog, buildGuidIndex, deviceKey, metricOf, resolveLocs, type Binding, type Reading } from '../lib/twin/devices'
+import { bindingState, deviceKey, metricOf, resolveLocs, type Binding, type Reading } from '../lib/twin/devices'
+import { twinElements } from '../lib/twin/element-index'
 import type { ViewerAPI } from '../lib/viewer'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { declutter, paintTwinLabels, type TwinLabelPaint } from '../lib/twin/label-paint'
@@ -48,8 +49,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
     let cancelled = false
     const viewer = viewerApiRef.current
     if (!viewer || !active || labelled.length === 0) { setAnchors([]); return }
-    const guidIndex = buildGuidIndex(trees)
-    const catalog = buildCatalog(trees)
+    const { guidIndex, catalog } = twinElements(trees)
     void (async () => {
       const out: Anchor[] = []
       for (const b of labelled) {
@@ -146,7 +146,7 @@ export function TwinLabels({ viewerApiRef }: { viewerApiRef: React.MutableRefObj
               onClick={() => { const v = viewerApiRef.current; if (!v) return; void focusElements(v, a.ids, a.modelId); v.selectElement(a.firstId, a.modelId) }}
               className="pointer-events-auto flex items-center gap-1 px-1.5 py-0.5 max-md:px-2 max-md:py-1 mb-1 rounded-full text-[10px] max-md:text-[12.5px] font-medium whitespace-nowrap bg-[rgba(10,12,18,0.82)] text-white border border-white/15 shadow"
               title={`${b.name} · ${b.label.field}`}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: look.color ?? '#94a3b8' }} />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: look.color ?? '#a09e98' }} />
               {look.text}
             </button>
           </div>

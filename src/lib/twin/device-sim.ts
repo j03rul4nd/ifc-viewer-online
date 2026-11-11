@@ -33,10 +33,10 @@ export function simulatedSnapshot(name: string, tMs: number, motion: boolean): s
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">`
     + `<rect width="320" height="180" fill="#1f2937"/><rect y="120" width="320" height="60" fill="#374151"/>`
     + `<rect x="230" y="50" width="60" height="70" fill="#4b5563"/>`
-    + (motion ? `<rect x="${x}" y="70" width="34" height="62" fill="none" stroke="#ef4444" stroke-width="3"/><circle cx="${x + 17}" cy="88" r="9" fill="#9ca3af"/><rect x="${x + 9}" y="98" width="16" height="30" fill="#9ca3af"/>` : '')
+    + (motion ? `<rect x="${x}" y="70" width="34" height="62" fill="none" stroke="#e0523f" stroke-width="3"/><circle cx="${x + 17}" cy="88" r="9" fill="#9ca3af"/><rect x="${x + 9}" y="98" width="16" height="30" fill="#9ca3af"/>` : '')
     + `<text x="10" y="20" font-family="monospace" font-size="13" fill="#e5e7eb">${name}</text>`
     + `<text x="310" y="20" font-family="monospace" font-size="13" fill="#e5e7eb" text-anchor="end">${time}</text>`
-    + `<circle cx="300" cy="165" r="5" fill="${motion ? '#ef4444' : '#22c55e'}"/></svg>`
+    + `<circle cx="300" cy="165" r="5" fill="${motion ? '#e0523f' : '#3fa866'}"/></svg>`
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
 
@@ -212,29 +212,29 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
 
   const spaces = ofClass(all, 'IFCSPACE')
   spaces.slice(0, 6).forEach((s, i) => bind(`${refOf(s).label} · ${n.temperature}`, `room-${i + 1}`, [refOf(s)], [
-    rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#a855f7'),
+    rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#b08d5f'),
     rule(n.cold, [{ field: 'temp_c', op: 'lt', value: 20 }], '#3b82f6'),
-    rule(n.warm, [{ field: 'temp_c', op: 'gt', value: 23 }], '#ef4444'),
-    rule(n.comfort, [], '#22c55e', 0.6),
+    rule(n.warm, [{ field: 'temp_c', op: 'gt', value: 23 }], '#e0523f'),
+    rule(n.comfort, [], '#3fa866', 0.6),
   ], { label: { field: 'temp_c' } }))
 
   const doors = ofClass(all, 'IFCDOOR').map(refOf)
   if (doors.length) {
     bind(n.alarm, 'alarm', doors.slice(0, 1), [
       rule(n.triggered, [{ field: 'state', op: 'eq', value: 'triggered' }], '#ff1f1f', 1, false, 0),
-      rule(n.armed, [{ field: 'state', op: 'eq', value: 'armed' }], '#f59e0b'),
+      rule(n.armed, [{ field: 'state', op: 'eq', value: 'armed' }], '#e9a23b'),
     ])
     bind(n.camera, 'camera-1', doors.slice(0, 1), [
       rule(n.offline, [{ field: 'online', op: 'isFalse' }], '#7b8494'),
       rule(n.motion, [{ field: 'motion', op: 'isTrue' }], '#f97316'),
     ], { media: { field: 'snapshot_url' } })
-    bind(n.doors, 'front-door', doors.slice(1, 4), [rule(n.open, [{ field: 'open', op: 'isTrue' }], '#f59e0b')])
+    bind(n.doors, 'front-door', doors.slice(1, 4), [rule(n.open, [{ field: 'open', op: 'isTrue' }], '#e9a23b')])
   }
 
   const windows = ofClass(all, 'IFCWINDOW').map(refOf)
   if (spaces.length === 0) {
     windows.slice(0, 6).forEach((w, i) => bind(`${w.label} · ${n.window}`, `room-${i + 1}`, [w], [
-      rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#a855f7'),
+      rule(n.windowOpen, [{ field: 'window_open', op: 'isTrue' }], '#b08d5f'),
     ], { label: { field: 'temp_c' } }))
   }
 
@@ -243,7 +243,7 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
   bind(n.solar, 'solar', roofs.length ? roofs.slice(0, 4) : slabs.slice(-1), [
     rule(n.producingHigh, [{ field: 'pv_kw', op: 'gt', value: 2 }], '#facc15'),
     rule(n.producing, [{ field: 'pv_kw', op: 'gt', value: 0.1 }], '#fde68a'),
-    rule(n.night, [], '#334155'),
+    rule(n.night, [], '#45433d'),
   ], { label: { field: 'pv_kw' } })
 
   const water = ofClass(all, 'IFCPIPE', 'IFCFLOWSEGMENT', 'IFCSANITARYTERMINAL', 'IFCFLOWTERMINAL').map(refOf)
@@ -254,8 +254,8 @@ export function demoBindings(trees: Record<string, SpatialNode[]>, sourceId: str
 
   const bays = all.filter((e) => PARKING_NAME.test(e.name)).map(refOf)
   bays.slice(0, 8).forEach((b, i) => bind(`${b.label} · ${n.bay}`, `bay-${i + 1}`, [b], [
-    rule(n.occupied, [{ field: 'occupied', op: 'isTrue' }], '#ef4444'),
-    rule(n.free, [], '#22c55e'),
+    rule(n.occupied, [{ field: 'occupied', op: 'isTrue' }], '#e0523f'),
+    rule(n.free, [], '#3fa866'),
   ]))
 
   return ctx.out
@@ -274,10 +274,10 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
   // Dwellings: spaces that are not parking; fall back to storeys' slabs.
   const spaces = ofClass(all, 'IFCSPACE').filter((e) => !PARKING_NAME.test(e.name))
   spaces.slice(0, 24).forEach((s, i) => bind(`${refOf(s).label} · ${n.dwelling}`, `flat-${i + 1}`, [refOf(s)], [
-    rule(n.heatLoss, [{ field: 'heat_loss', op: 'isTrue' }], '#a855f7', 1, false, 1),
+    rule(n.heatLoss, [{ field: 'heat_loss', op: 'isTrue' }], '#b08d5f', 1, false, 1),
     rule(n.cold, [{ field: 'temp_c', op: 'lt', value: 20 }], '#3b82f6'),
-    rule(n.warm, [{ field: 'temp_c', op: 'gt', value: 22.5 }], '#ef4444'),
-    rule(n.comfort, [], '#22c55e', 0.6),
+    rule(n.warm, [{ field: 'temp_c', op: 'gt', value: 22.5 }], '#e0523f'),
+    rule(n.comfort, [], '#3fa866', 0.6),
   ], { label: { field: 'temp_c' } }))
 
   // Water per storey, by query: every element of that storey in every file.
@@ -295,12 +295,12 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
   const bays = all.filter((e) => PARKING_NAME.test(e.name)).map(refOf)
   bays.slice(0, 30).forEach((b, i) => bind(`${b.label} · ${n.bay}`, `bay-${i + 1}`, [b], [
     rule(n.charging, [{ field: 'ev_charging', op: 'isTrue' }], '#38bdf8'),
-    rule(n.occupied, [{ field: 'occupied', op: 'isTrue' }], '#ef4444'),
-    rule(n.free, [], '#22c55e'),
+    rule(n.occupied, [{ field: 'occupied', op: 'isTrue' }], '#e0523f'),
+    rule(n.free, [], '#3fa866'),
   ]))
 
   const doors = ofClass(all, 'IFCDOOR').map(refOf)
-  bind(n.entrance, 'entrance', doors.slice(0, 1), [rule(n.open, [{ field: 'open', op: 'isTrue' }], '#f59e0b')], { label: { field: 'access_today' } })
+  bind(n.entrance, 'entrance', doors.slice(0, 1), [rule(n.open, [{ field: 'open', op: 'isTrue' }], '#e9a23b')], { label: { field: 'access_today' } })
   bind(n.camera, 'camera-entrance', doors.slice(0, 1), [rule(n.motion, [{ field: 'motion', op: 'isTrue' }], '#f97316')], { media: { field: 'snapshot_url' } })
   if (bays.length) bind(n.parkingCamera, 'camera-parking', bays.slice(0, 1), [rule(n.offline, [{ field: 'online', op: 'isFalse' }], '#7b8494', 1, false, 0)], { media: { field: 'snapshot_url' } })
 
@@ -314,7 +314,7 @@ export function communityBindings(trees: Record<string, SpatialNode[]>, sourceId
   const slabs = ofClass(all, 'IFCSLAB').map(refOf)
   bind(n.solar, 'roof-solar', roofs.length ? roofs.slice(0, 4) : slabs.slice(-1), [
     rule(n.producing, [{ field: 'pv_kw', op: 'gt', value: 0.1 }], '#facc15'),
-    rule(n.night, [], '#334155'),
+    rule(n.night, [], '#45433d'),
   ], { label: { field: 'pv_kw' } })
 
   // Fire alarm: every storey slab, so the whole building goes red at once.
@@ -344,24 +344,24 @@ export function itopsBindings(trees: Record<string, SpatialNode[]>, sourceId: st
     const serverSpace = ofClass(all, 'IFCSPACE').filter((e) => /server/i.test(e.name)).map(refOf)
     bind(`${n.serverRoom}`, 'server-room', [...racks, ...ups, ...serverSpace], [
       rule(n.overheating, [{ field: 'temp_c', op: 'gt', value: 27 }], '#ff1f1f', 1, false, 0),
-      rule(n.healthy, [], '#22c55e', 1),
+      rule(n.healthy, [], '#3fa866', 1),
     ], { label: { field: 'temp_c' } })
     aps.slice(0, 12).forEach((ap, i) => bind(`${refOf(ap).label}`, `ap-${i + 1}`, [refOf(ap)], [
       rule(n.apDown, [{ field: 'online', op: 'isFalse' }], '#ff1f1f', 1, false, 0),
-      rule(n.unpatched, [{ field: 'patched_pct', op: 'lt', value: 85 }], '#f59e0b'),
-      rule(n.healthy, [], '#22c55e', 1),
+      rule(n.unpatched, [{ field: 'patched_pct', op: 'lt', value: 85 }], '#e9a23b'),
+      rule(n.healthy, [], '#3fa866', 1),
     ], { label: { field: 'clients' } }))
     const badge = ofClass(all, 'IFCSENSOR').map(refOf)
     const doors = ofClass(all, 'IFCDOOR').map(refOf)
     bind(n.badge, 'badge-main', [...badge, ...doors.slice(0, 1)], [
       rule(n.suspicious, [{ field: 'state', op: 'eq', value: 'suspicious' }], '#ff1f1f', 1, false, 0),
-      rule(n.healthy, [], '#22c55e', 1),
+      rule(n.healthy, [], '#3fa866', 1),
     ], { label: { field: 'failed_last_5min' } })
     const cams = ofClass(all, 'IFCAUDIOVISUALAPPLIANCE').map(refOf)
     bind(n.cctv, 'cctv-entrance', cams, [
       rule(n.offline, [{ field: 'online', op: 'isFalse' }], '#7b8494', 1, false, 0),
       rule(n.motion, [{ field: 'motion', op: 'isTrue' }], '#f97316'),
-      rule(n.healthy, [], '#22c55e', 1),
+      rule(n.healthy, [], '#3fa866', 1),
     ], { media: { field: 'snapshot_url' } })
     // The shell: exterior walls, roof and windows, faded so the inside reads.
     const shell = [
@@ -383,13 +383,13 @@ export function itopsBindings(trees: Record<string, SpatialNode[]>, sourceId: st
   const server = spaces.find((e) => /server|rack|it\b|comms|data|technical|mechanical|storage|garage/i.test(e.name)) ?? spaces[0]
   if (server) bind(`${refOf(server).label} · ${n.serverRoom}`, 'server-room', [refOf(server), ...windows.slice(-1)], [
     rule(n.overheating, [{ field: 'temp_c', op: 'gt', value: 27 }], '#ff1f1f', 1, false, 0),
-    rule(n.healthy, [], '#22c55e', 0.7),
+    rule(n.healthy, [], '#3fa866', 0.7),
   ], { label: { field: 'temp_c' } })
 
   spaces.filter((e) => e !== server).slice(0, 12).forEach((s, i) => bind(`${refOf(s).label} · ${n.accessPoint}`, `ap-${i + 1}`, [refOf(s), ...windows.slice(i, i + 1)], [
     rule(n.apDown, [{ field: 'online', op: 'isFalse' }], '#ff1f1f', 1, false, 0),
-    rule(n.unpatched, [{ field: 'patched_pct', op: 'lt', value: 85 }], '#f59e0b'),
-    rule(n.healthy, [], '#22c55e', 0.55),
+    rule(n.unpatched, [{ field: 'patched_pct', op: 'lt', value: 85 }], '#e9a23b'),
+    rule(n.healthy, [], '#3fa866', 0.55),
   ], { label: { field: 'clients' } }))
 
   const doors = ofClass(all, 'IFCDOOR').map(refOf)
@@ -406,7 +406,7 @@ export function itopsBindings(trees: Record<string, SpatialNode[]>, sourceId: st
   const roofs = ofClass(all, 'IFCROOF').map(refOf)
   const slabs = ofClass(all, 'IFCSLAB').map(refOf)
   bind(n.backup, 'backup', roofs.length ? roofs.slice(0, 4) : slabs.slice(-1), [
-    rule(n.healthy, [{ field: 'status', op: 'eq', value: 'ok' }], '#22c55e', 0.5),
+    rule(n.healthy, [{ field: 'status', op: 'eq', value: 'ok' }], '#3fa866', 0.5),
     rule(n.backupFailed, [{ field: 'status', op: 'eq', value: 'failed' }], '#ff1f1f', 1, false, 0),
   ])
   return ctx.out

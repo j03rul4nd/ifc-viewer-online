@@ -186,6 +186,8 @@ interface PageMeta {
   imageHeight?: number
   /** The hero's responsive set, so the preload fetches the file the page draws. */
   imageSrcSet?: string
+  /** False when the page draws no hero (an article without a real heroImage). */
+  preloadImage?: boolean
   alternates?: Array<{ lang: string; href: string }>
   ogType?: 'website' | 'article'
   bodyFallback?: string
@@ -284,7 +286,7 @@ function tweakHtml(template: string, meta: PageMeta): string {
         meta.modifiedTime ? `<meta property="article:modified_time" content="${esc(meta.modifiedTime)}" />` : '',
       ].filter(Boolean).join('\n  ')
     : ''
-  const imagePreload = preferredImage !== OG_IMAGE
+  const imagePreload = preferredImage !== OG_IMAGE && meta.preloadImage !== false
     ? `<link rel="preload" as="image" href="${esc(preferredImage)}"${meta.imageSrcSet ? ` imagesrcset="${esc(meta.imageSrcSet)}" imagesizes="${HERO_SIZES}"` : ''} fetchpriority="high" />`
     : ''
 
@@ -391,7 +393,7 @@ function postImages(post: BlogPost): SearchImage[] {
         width: block.width,
         height: block.height,
       })
-    } else if (block.type === 'tool-demo' || block.type === 'spatial-demo') {
+    } else if (block.type === 'tool-demo' || block.type === 'spatial-demo' || block.type === 'sketch-demo') {
       // A live demo shows its poster until the reader starts it — for a
       // crawler, the poster is the picture of the demo. The twin posts'
       // only capture of the full scene is one of these.
@@ -528,6 +530,8 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
       const t = toolCopy(tool, langOf(prefix))
       return `<aside><p><a href="${esc(toolHref(tool, langOf(prefix)))}">${esc(t.name)}</a> — ${esc(block.why ?? t.blurb)}</p></aside>`
     }
+    case 'foldable-check':
+      return `<figure>${block.title ? `<h3>${esc(block.title)}</h3>` : ''}<ul>${Object.values(block.labels.verdicts).map((v) => `<li>${esc(v)}</li>`).join('')}</ul></figure>`
     case 'flood-hazard':
       return `<figure>${block.title ? `<h3>${esc(block.title)}</h3>` : ''}<p>${esc(block.labels.rating)}: HR = d × (v + 0.5) + DF</p><table><tbody>${['&lt; 0.75', '0.75–1.25', '1.25–2.0', '&gt; 2.0'].map((r, i) => `<tr><td>${r}</td><td><strong>${esc(block.labels.classes[i])}</strong></td><td>${esc(block.labels.notes[i])}</td></tr>`).join('')}</tbody></table>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
     case 'bars':
@@ -539,6 +543,8 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
     }
     case 'spatial-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /><figcaption>${esc(block.readyLabel ?? block.title)}</figcaption></figure></section>`
+    case 'sketch-demo':
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="500" loading="lazy" decoding="async" /></figure><p><a href="/sketch/">${esc(block.labels.open)}</a></p></section>`
     case 'tool-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /></figure><p><a href="/${prefix}">${esc(editorialCopy(langOf(prefix)).post.openInteractiveViewer)}</a></p></section>`
     case 'video': {
@@ -574,7 +580,7 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchIm
   return `<noscript>
       <main id="blog-static-fallback">
         <article lang="${esc(post.lang ?? 'en')}">
-          <p><a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
+          <p><a href="${SITE}/${prefix}">IFC Viewer Online</a> · <a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
           <header>
             <p>${esc(post.category)} · ${esc(post.date)} · ${esc(ui.post.minutes(post.readTimeMin))}</p>
             <h1>${esc(post.title)}</h1>
@@ -927,6 +933,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             imageWidth: primaryImage.width,
             imageHeight: primaryImage.height,
             imageSrcSet: heroSrcSet(post, distDir),
+            preloadImage: Boolean(post.heroImage),
             ogType: 'article',
             bodyFallback: postBodyFallback(post, cfg.prefix, primaryImage),
             publishedTime: isoDateTime(post.date),

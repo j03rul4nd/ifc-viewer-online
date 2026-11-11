@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} fichiers IFC d'un coup. Besoin de vérifier tout le dossier en un seul rapport ?",
+    "action": "Valider le dossier (Pro)",
+    "title": "Valider un dossier entier",
+    "soon": "Bientôt disponible.",
+    "body": "Vérifier tout un dossier d'IFC en une fois, avec un seul rapport, n'est pas encore disponible. Vos fichiers s'ouvrent un par un comme d'habitude.",
+    "notifyLabel": "Laissez votre e-mail, je vous préviens une fois, quand ce sera prêt.",
+    "submit": "Me prévenir",
+    "thanks": "Merci. Je vous écrirai une fois, quand ce sera prêt.",
+    "error": "Enregistrement impossible. Réessayez."
+  },
   "title": "Compte",
   "close": "Fermer",
   "signInIntro": "Connectez-vous pour conserver l'historique de vos certificats, synchroniser vos profils de règles entre appareils et gérer vos clés API. Le validateur gratuit reste gratuit — aucun compte n'est requis pour l'utiliser.",
@@ -98,5 +109,232 @@
     "hint": "Votre compte se trouve derrière le bouton Compte de la barre du visualiseur."
   },
   "manageProfile": "Gérer le profil",
-  "backHome": "Retour à IFC Viewer Online"
+  "backHome": "Retour à IFC Viewer Online",
+  "authTitle": "Votre compte réunit projets, certificats et facturation",
+  "authPoint1": "Le visualiseur et le validateur restent gratuits, sans compte",
+  "authPoint2": "Ce que vous ouvrez dans le navigateur y reste",
+  "authPoint3": "Vos fichiers n’atteignent nos serveurs que si vous utilisez une fonction cloud",
+  "legacy": {
+    "title": "Nous avons amélioré votre compte",
+    "body1": "Nous apportons des changements au produit et améliorons les offres pour les utilisateurs inscrits. Notre feuille de route est de vous offrir un meilleur service, et pour cela nous avons migré les comptes vers un nouveau système de production.",
+    "body2": "Votre compte et votre e-mail ont été conservés. Si vous vous connectiez avec un mot de passe, connectez-vous désormais avec Google ou avec le code que nous vous envoyons par e-mail ; vous pouvez créer un nouveau mot de passe depuis votre profil.",
+    "body3": "Désolés pour le désagrément de devoir vous reconnecter alors que vous aviez déjà un compte. Merci de rester avec nous.",
+    "ok": "Compris",
+    "signInHint": "Vous aviez déjà un compte ? Nous avons changé de système et votre compte est conservé : connectez-vous avec Google ou avec le code envoyé par e-mail. Votre ancien mot de passe ne fonctionne plus."
+  },
+  "requests": {
+    "entryTitle": "Demander une fonction",
+    "entryHint": "Dites-moi ce qui vous manque. Je le lis moi-même et je réponds.",
+    "entryCta": "Demander",
+    "title": "Qu’est-ce qui vous aiderait le plus ?",
+    "intro": "Choisissez ce qui vous freine le plus aujourd’hui. Je lis chaque réponse moi-même et vous réponds ici.",
+    "feature": {
+      "big_files": {
+        "title": "Ouvrir de très gros fichiers",
+        "hint": "Des maquettes de plus de 400 Mo qui ne passent pas dans le navigateur"
+      },
+      "versions": {
+        "title": "Projets dans le cloud avec versions",
+        "hint": "Voir ce qui a changé à chaque nouvelle version"
+      },
+      "client_link": {
+        "title": "Partager avec mon client",
+        "hint": "Un lien vers la maquette et le rapport, sans rien installer"
+      },
+      "bcf_team": {
+        "title": "Sujets BCF avec mon équipe",
+        "hint": "Assigner, statuts, échéances et vues enregistrées"
+      },
+      "auto_check": {
+        "title": "Contrôler chaque livraison automatiquement",
+        "hint": "Selon le standard de mon entreprise (IDS, cahier des charges, nommage)"
+      },
+      "cloud_drives": {
+        "title": "Ouvrir depuis Google Drive, OneDrive ou Dropbox",
+        "hint": "Et y enregistrer sans télécharger"
+      },
+      "batch_tools": {
+        "title": "Outils par lot",
+        "hint": "Modifier, renommer ou découper de nombreux IFC d’un coup"
+      },
+      "reception_inbox": {
+        "title": "Recevoir les livrables de mes fournisseurs",
+        "hint": "Une boîte où les fournisseurs déposent leur IFC, vérifié selon mes exigences"
+      },
+      "managed_requirements": {
+        "title": "Exigences gérées pour mon entreprise",
+        "hint": "Mes IDS, EIR et note minimale au même endroit, envoyés avec chaque demande"
+      },
+      "iso_naming": {
+        "title": "Vérifier les noms de fichiers (ISO 19650)",
+        "hint": "Signaler les fichiers et conteneurs qui ne suivent pas notre convention de nommage"
+      },
+      "other": {
+        "title": "Autre chose",
+        "hint": "Écrivez-le ci-dessous"
+      }
+    },
+    "needLabel": "La dernière fois que vous en avez eu besoin : que deviez-vous livrer, et à qui ? (facultatif)",
+    "needLabelOther": "De quoi avez-vous besoin ? Racontez-moi la dernière fois que c’est arrivé",
+    "needPlaceholder": "Ex. : vendredi je devais envoyer la maquette au maître d’ouvrage et j’ai fini par exporter un PDF par niveau",
+    "needPlaceholderOther": "Ce que vous essayiez de faire, avec quel fichier, et où vous avez bloqué",
+    "moreToggle": "Plus de contexte (facultatif)",
+    "frequencyLabel": "À quelle fréquence ?",
+    "frequency": {
+      "daily": "Tous les jours",
+      "weekly": "Toutes les semaines",
+      "sometimes": "De temps en temps"
+    },
+    "todayLabel": "Comment faites-vous aujourd’hui ?",
+    "today": {
+      "nothing": "Je ne le fais pas",
+      "manual": "À la main ou avec Excel",
+      "paid_tool": "Je paie un autre outil",
+      "free_tool": "Avec un autre outil gratuit"
+    },
+    "todayToolPlaceholder": "Lequel ? (ex. Solibri, BIMcollab)",
+    "payerLabel": "Si cela existait, qui le paierait ?",
+    "payer": {
+      "me": "Moi",
+      "company": "Mon entreprise",
+      "nobody": "Personne : pas de budget"
+    },
+    "roleLabel": "Votre profil",
+    "role": {
+      "bim": "BIM manager ou coordinateur",
+      "architect": "Architecture",
+      "engineer": "Ingénierie",
+      "contractor": "Entreprise de construction",
+      "owner": "Maître d’ouvrage ou exploitation",
+      "developer": "Développement logiciel",
+      "student": "Étudiant",
+      "other": "Autre"
+    },
+    "teamLabel": "Taille de l’équipe",
+    "team": {
+      "solo": "Moi seul",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Plus de 50"
+    },
+    "beta": "Je veux l’essayer sur un vrai projet dès que c’est prêt",
+    "call": "Je peux faire un appel vidéo de 15 minutes",
+    "contactOk": "Vous pouvez m’écrire par e-mail à ce sujet",
+    "privacy": "Je garde votre réponse avec votre compte et votre e-mail uniquement pour la comprendre et, si vous le voulez, vous écrire. Je ne la publie ni ne la partage.",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "cancel": "Annuler",
+    "done": "Fermer",
+    "thanksTitle": "C’est noté",
+    "thanksContact": "Je vous écris à l’e-mail de votre compte.",
+    "thanksNoContact": "Si ça avance, vous le verrez ici.",
+    "thanksStatus": "Le statut et mes réponses sont dans « Vos demandes »",
+    "mineLink": "Vos demandes · {{count}}",
+    "mineTitle": "Vos demandes",
+    "newRequest": "Nouvelle demande",
+    "replyFrom": "Joel :",
+    "status": {
+      "new": "Reçue",
+      "reviewing": "À l’étude",
+      "planned": "Prévue",
+      "building": "En cours",
+      "shipped": "Disponible",
+      "declined": "Pas pour l’instant"
+    },
+    "directMail": "Vous préférez écrire directement ?",
+    "error": {
+      "missing": "Choisissez une option (pour « Autre chose », dites ce dont vous avez besoin).",
+      "unauthorized": "Votre session a expiré. Reconnectez-vous et renvoyez-la.",
+      "need_too_short": "Dites-nous en quelques mots ce dont vous avez besoin.",
+      "daily_limit": "Vous avez envoyé 5 demandes aujourd’hui. Vous pourrez en envoyer d’autres demain, ou m’écrire à hola@ifcvieweronline.eu.",
+      "rate_limited": "Trop de tentatives d’affilée. Patientez une minute.",
+      "unavailable": "Cela n’a pas fonctionné pour le moment. Réessayez dans un instant.",
+      "network": "Hors ligne. Vérifiez votre connexion et réessayez.",
+      "invalid": "Vérifiez le formulaire et réessayez."
+    },
+    "tellUs": "Racontez-moi votre cas",
+    "somethingElse": "Il vous manque autre chose ? Dites-le-moi",
+    "nudgeTitle": "Qu’est-ce qui vous aiderait le plus ?",
+    "nudgeBody": "Un clic suffit. Je le lis moi-même.",
+    "nudgeCta": "Répondre",
+    "nudgeDismiss": "Fermer",
+    "entryButton": "Suggérer",
+    "signinTitle": "Pour l’envoyer, connectez-vous",
+    "signinBody": "Votre réponse reste enregistrée dans cet onglet et revient telle quelle à la connexion. Je pourrai ainsi vous répondre et vous prévenir quand ce sera disponible.",
+    "signinFree": "Le compte est gratuit et la visionneuse reste gratuite.",
+    "signinLater": "Pas maintenant",
+    "signinCta": "Se connecter et envoyer",
+    "resumed": "Vous êtes connecté. Voici votre réponse : vérifiez-la et envoyez.",
+    "nudgeOther": "Autre chose…",
+    "updateOne": "« {{feature}} » : {{status}}.",
+    "updateMany": "Du nouveau sur {{count}} de vos demandes.",
+    "updateCta": "Voir",
+    "callBook": "Je peux faire un appel vidéo de 15 minutes (vous choisissez l’heure après l’envoi)",
+    "updateReply": "Joel a répondu à votre demande « {{feature}} ».",
+    "mineLinkReply": "Vos demandes · {{count}} · réponse reçue",
+    "mineEmpty": "Vous n’en avez encore envoyé aucune.",
+    "loading": "Chargement de vos demandes",
+    "you": "Vous",
+    "answerLabel": "Répondre à Joel",
+    "answerPlaceholder": "Répondre à Joel…",
+    "answerSend": "Répondre",
+    "showAll": "Voir {{count}} de plus",
+    "receiptTool": "aujourd’hui avec {{tool}}",
+    "bookCta": "Choisir l’heure de l’appel",
+    "bookByMail": "Je vous écris pour convenir d’une heure qui vous arrange.",
+    "nudgeContext": {
+      "large_file": "Ce fichier ne tenait pas dans le navigateur.",
+      "exported": "Vous venez d’exporter le rapport.",
+      "shared": "Vous venez de partager la maquette.",
+      "ids": "Vous venez de vérifier un IDS.",
+      "bcf": "Vous venez de travailler sur des issues BCF.",
+      "multi_model": "Vous avez plusieurs maquettes ouvertes.",
+      "map": "Vous avez placé la maquette sur la carte.",
+      "measured": "Vous avez pris des mesures.",
+      "validated": "Votre maquette est validée."
+    }
+  },
+  "call": {
+    "back": "Retour à la visionneuse",
+    "title": "{{minutes}} minutes pour parler de votre cas",
+    "intro": "Je suis Joel et je développe IFC Viewer Online. Ce n’est ni une démo ni un appel commercial : je veux voir comment vous travaillez pour bien construire ce que vous avez demandé.",
+    "point1": "Vous me racontez la dernière fois où vous en avez eu besoin et ce que vous avez fait.",
+    "point2": "Si vous voulez, vous partagez l’écran avec la maquette ou le livrable.",
+    "point3": "Je vous dis ce que je peux faire et quand, sans engagement.",
+    "signin": "Connectez-vous pour choisir un créneau : je saurai de quelle demande on parle.",
+    "signinCta": "Se connecter",
+    "loadError": "Impossible de charger les créneaux. Réessayez dans un instant.",
+    "retry": "Réessayer",
+    "noSlots": "Je n’ai plus de créneaux sur les deux prochaines semaines. Écrivez-moi et on trouve un autre moment :",
+    "pickDay": "Jour",
+    "pickTime": "Heure",
+    "zone": "Heures dans votre fuseau ({{zone}}).",
+    "email": "J’envoie l’invitation à",
+    "note": "Quelque chose à savoir avant ?",
+    "optional": "(facultatif)",
+    "notePlaceholder": "Par exemple : j’envoie des maquettes à un bureau d’études chaque semaine et le client n’a pas Revit.",
+    "error": {
+      "unauthorized": "Votre session a expiré. Reconnectez-vous.",
+      "slot_gone": "Quelqu’un vient de prendre ce créneau. Choisissez-en un autre.",
+      "already_booked": "Vous avez déjà un appel réservé.",
+      "email": "Vérifiez l’adresse e-mail.",
+      "rate_limited": "Trop d’essais. Attendez une minute.",
+      "unavailable": "Enregistrement impossible. Réessayez.",
+      "network": "Pas de connexion. Réessayez."
+    },
+    "booking": "Réservation…",
+    "confirm": "Choisissez une heure",
+    "confirmAt": "Réserver à {{when}}",
+    "bookedLabel": "Appel réservé",
+    "bookedMeta": "{{minutes}} min · visio · heure de {{zone}}",
+    "join": "Rejoignez depuis le navigateur, rien à installer :",
+    "mailed": "Je vous ai envoyé l’invitation à {{email}}.",
+    "notMailed": "Ajoutez-la à votre agenda avec l’un de ces boutons ; le lien ci-dessus est celui de l’appel.",
+    "mailedEarlier": "L’invitation part à {{email}}. Si vous ne la trouvez pas, enregistrez-la ici :",
+    "addIcs": "Télécharger le .ics",
+    "changeHint": "Un empêchement ? Annulez et choisissez un autre créneau.",
+    "cancel": "Annuler l’appel",
+    "footer": "Vous préférez m’écrire ?",
+    "eventTitle": "Appel avec Joel (IFC Viewer Online)"
+  }
 }

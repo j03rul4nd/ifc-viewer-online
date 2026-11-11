@@ -243,6 +243,27 @@ describe('buildBridgeLayer', () => {
     expect(built.count).toBe(1)
   })
 
+  it('leaves the hole of a ring-shaped deck open instead of lidding it', () => {
+    const sq = (d: number) => [
+      { lat: LAT - d, lon: LON - d }, { lat: LAT - d, lon: LON + d },
+      { lat: LAT + d, lon: LON + d }, { lat: LAT + d, lon: LON - d },
+    ]
+    const ring = area('bridge', 'b3', { ring: sq(0.0006), holes: [sq(0.0004)] })
+    const built = buildBridgeLayer([ring], OPTS)!
+    const solid = buildBridgeLayer([area('bridge', 'b4', { ring: sq(0.0006) })], OPTS)!
+    const area2 = (m: { object: THREE.Mesh }) => {
+      const p = m.object.geometry.getAttribute('position')
+      let top = 0
+      for (let i = 0; i < p.count; i += 3) {
+        const ax = p.getX(i), ay = p.getY(i), bx = p.getX(i + 1), by = p.getY(i + 1), cx = p.getX(i + 2), cy = p.getY(i + 2)
+        top += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2
+      }
+      return top
+    }
+    // The ring's faces cover (1.2² − 0.8²) / 1.2² of the solid one's: about 56 %, not all of it.
+    expect(area2(built) / area2(solid)).toBeLessThan(0.75)
+  })
+
   it('gives the deck real thickness rather than a flat decal', () => {
     const built = buildBridgeLayer([area('bridge', 'b2')], OPTS)!
     const p = built.object.geometry.getAttribute('position')

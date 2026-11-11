@@ -47,7 +47,7 @@ below. Concretely:
 
 ## 1. JS SDK & iframe embed
 
-**Status:** shipped (SDK `v1.7.0`). Source: [`src/sdk/ifc-viewer-sdk.ts`](../src/sdk/ifc-viewer-sdk.ts),
+**Status:** shipped (SDK `v1.10.1`, `SDK_VERSION` in the source). Source: [`src/sdk/ifc-viewer-sdk.ts`](../src/sdk/ifc-viewer-sdk.ts),
 built to `public/sdk/`. URL parsing: [`src/lib/url-params.ts`](../src/lib/url-params.ts).
 Reference: [`docs/EMBED_URL_PARAMS.md`](./EMBED_URL_PARAMS.md).
 
@@ -526,6 +526,28 @@ throttling is best-effort; correctness (signature, key check) is never fail-open
 The inverse holds for billing boundaries: **quota checks on workspace-bound writes are
 fail-closed** (`429 quota_exceeded`, see the §2 error table) — an unreadable counter
 refuses the write. This is the split `CONFORMANCE_DOMAIN.md` §3.9 pins.
+
+---
+
+---
+
+## 7. Platform plugins, widgets and agent tools
+
+Ready-made wrappers around the iframe embed (§1) for sites that cannot write code.
+They only build an embed URL from validated settings; none of them sends model bytes
+anywhere, so the invariant above holds unchanged.
+
+| Surface | Source | Distribution | What it embeds |
+|---|---|---|---|
+| WordPress plugin (block + `[ifc_viewer]`) | [`integrations/wordpress/`](../integrations/wordpress/) | wordpress.org directory (free, in review) | Viewer: Health Score, federated models, point clouds, map, sun study, plan, scenes |
+| Shopify section + theme app extension | [`integrations/shopify/`](../integrations/shopify/) | Copy-paste section today; App Store needs a paid developer registration, not started | Viewer (`ifc-viewer.liquid`) and tracking globe (`tracking-globe.liquid`) |
+| Tracking globe web component | `public/track/v1/tracker.js`, examples in [`integrations/tracking-globe-examples/`](../integrations/tracking-globe-examples/) | Script tag, configured at `/tracking-globe/` | Shipment globe, no IFC |
+| MCP server `ifc-viewer-mcp` | [`mcp/`](../mcp/) | npm + MCP registry | Local tools for agents; files stay on the user's machine |
+
+The Shopify app blocks are generated from the sections
+(`node integrations/shopify/build-extension.mjs`) and
+`scripts/shopify-integration.test.ts` fails if they drift, if a setting offers a
+`ui` preset the viewer does not know, or if the viewer stops reading the rendered URL.
 
 ---
 

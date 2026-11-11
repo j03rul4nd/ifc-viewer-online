@@ -19,7 +19,7 @@ export interface TwinLabelPaint {
 const BG = 'rgba(10,12,18,0.82)'
 const BORDER = 'rgba(255,255,255,0.15)'
 const FG = '#ffffff'
-const NEUTRAL = '#94a3b8'
+const NEUTRAL = '#a09e98'
 
 /**
  * Paint the pills. Returns true when at least one was drawn. `k` scales the

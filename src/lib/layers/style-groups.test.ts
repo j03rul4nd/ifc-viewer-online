@@ -22,12 +22,12 @@ describe('groups', () => {
       groups: [
         group('trains', [{ field: 'asset.type', op: 'eq', value: 'TRAIN' }], '#2fb7ff'),
         group('e-bikes', [{ field: 'asset.type', op: 'eq', value: 'bike' }, { field: 'asset.electric', op: 'isTrue' }], '#5ce27a'),
-        group('bikes', [{ field: 'asset.type', op: 'eq', value: 'bike' }], '#f25c54'),
+        group('bikes', [{ field: 'asset.type', op: 'eq', value: 'bike' }], '#e0523f'),
       ],
     }
     expect(groupCounts(rows, style)).toEqual({ byGroup: [80, 7, 13], fallback: 0 })
     expect(resolveStyle(rows[85], style).point.color).toBe('#5ce27a')
-    expect(resolveStyle(rows[95], style).point.color).toBe('#f25c54')
+    expect(resolveStyle(rows[95], style).point.color).toBe('#e0523f')
   })
 
   it('operators: in / numeric / between / exists / any-match', () => {
@@ -62,7 +62,7 @@ describe('groups', () => {
 
   it('ramps interpolate', () => {
     expect(rampColor(RAMPS.occupancy, 0)).toEqual([0x2f, 0xb7, 0xff])
-    expect(rampColor(RAMPS.occupancy, 1)).toEqual([0xf2, 0x5c, 0x54])
+    expect(rampColor(RAMPS.occupancy, 1)).toEqual([0xe0, 0x52, 0x3f])
     expect(rampColor(RAMPS.blues, 0.5)).toEqual([111, 142, 181])
   })
 })

@@ -58,6 +58,8 @@ export interface VectorLayerSystemAPI {
   frameHighlight(): boolean
   /** Frame any scene box with the same oblique rule. */
   frameBox(min: { x: number; y: number; z: number }, max: { x: number; y: number; z: number }): void
+  /** What the measuring tools may hit: every drawn layer (ribbons, fills, volumes, markers). */
+  measureTargets(): THREE.Object3D[]
   dispose(): void
 }
 
@@ -340,6 +342,9 @@ export function createVectorLayerSystem(ctx: VectorLayerContext): VectorLayerSys
       built.group.name = 'vector-highlight'
       highlight = built.group
       root.add(highlight)
+    },
+    measureTargets() {
+      return [...layers.values()].map((l) => l.group)
     },
     dispose() {
       cancelAnimationFrame(raf)

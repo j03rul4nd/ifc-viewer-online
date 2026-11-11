@@ -14,8 +14,8 @@ export interface Vec3 { x: number; y: number; z: number }
 export type MeasureToolId = 'distance' | 'path' | 'area' | 'angle' | 'point' | 'dimension'
 
 /** How a dimension reads its points — see dimension-math. */
-export type { DimensionMode } from './dimension-math'
-import type { DimensionMode } from './dimension-math'
+export type { DimensionMode, DimensionTerminator } from './dimension-math'
+import type { DimensionMode, DimensionTerminator } from './dimension-math'
 export type MeasureTool = 'none' | MeasureToolId
 
 /**
@@ -59,7 +59,7 @@ export type LengthUnit = 'm' | 'cm' | 'mm' | 'ft'
  * What the cursor locked onto. Shown to the person, because a measurement they
  * cannot see the anchor of is a measurement they cannot trust.
  */
-export type SnapKind = 'vertex' | 'midpoint' | 'edge' | 'face' | 'cloud' | 'surface'
+export type SnapKind = 'vertex' | 'midpoint' | 'edge' | 'face' | 'cloud' | 'surface' | 'perpendicular'
 
 export interface SnapSettings {
   vertex: boolean
@@ -76,6 +76,10 @@ export interface MeasureSettings {
   showComponents: boolean
   /** BCP-47 tag used for the decimal separator. */
   locale: string
+  /** How dimension lines end: architectural tick, arrow or dot (dimension style). */
+  dimTerminator: DimensionTerminator
+  /** Polar tracking: pull the next point onto 15° rays in plan when it is close to one. */
+  polar: boolean
 }
 
 export const DEFAULT_MEASURE_SETTINGS: MeasureSettings = {
@@ -84,6 +88,8 @@ export const DEFAULT_MEASURE_SETTINGS: MeasureSettings = {
   snaps: { vertex: true, midpoint: true, edge: true },
   showComponents: false,
   locale: 'en',
+  dimTerminator: 'tick',
+  polar: true,
 }
 
 export type IfcAxis = 'x' | 'y' | 'z'
@@ -275,4 +281,6 @@ export interface MeasureHover {
   live: { kind: 'length' | 'area' | 'angle'; value: number } | null
   /** The cursor is over the first vertex of an area: a click closes it. */
   closing: boolean
+  /** Polar tracking has pulled the point onto this plan angle (degrees from east). */
+  polarDeg?: number | null
 }

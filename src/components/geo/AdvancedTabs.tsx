@@ -70,7 +70,7 @@ export function AdvancedTabs({ tab, onTab, scroll = true }: {
       <div
         role="tablist"
         aria-label={t('panel.title')}
-        className={`${SECTION_X} flex gap-0.5 border-b border-[var(--border)] shrink-0 ${scroll ? '' : 'sticky top-0 z-[2] bg-[rgba(16,16,20,0.97)]'}`}
+        className={`${SECTION_X} flex gap-0.5 border-b border-[var(--border)] shrink-0 ${scroll ? '' : 'sticky top-0 z-[2] bg-[rgba(24,23,20,0.97)]'}`}
         onKeyDown={(e) => {
           const i = tabs.findIndex((x) => x.id === tab)
           if (e.key === 'ArrowRight') { e.preventDefault(); onTab(tabs[(i + 1) % tabs.length].id) }

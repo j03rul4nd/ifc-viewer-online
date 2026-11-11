@@ -8,11 +8,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'fs'
-import { generateFixPages, TITLE_BUDGET, type FixPagesResult } from './generate-fix-pages'
+import { generateFixPages, HUB_IMAGE, TITLE_BUDGET, UIS, type FixPagesResult } from './generate-fix-pages'
 import { fixGuideUrl, fixGuideSlug } from '../../src/lib/fix-guide-url'
+import { pricingPath } from '../../src/lib/pricing/pricing-paths'
+import { toolLandings, validatorPath } from '../../src/lib/localized-landings'
+import { BLOG_POSTS } from '../../src/lib/blog-posts'
 
 const SITE = 'https://www.ifcvieweronline.eu'
-const OUT = path.join(process.cwd(), '.seo-test-out')
+const ROOT = process.cwd()
+const OUT = path.join(ROOT, '.seo-test-out')
 const LANGS = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/', 'ca/', 'zh/', 'ja/', 'th/'] as const
 
 /** The languages we ask Google to index — the ones INDEXED_LANGS in the
@@ -199,6 +203,62 @@ describe('generateFixPages — category pages', () => {
     const hub = readFileSync(path.join(OUT, 'fix', 'index.html'), 'utf8')
     expect(hub).toContain('href="./category/spatial/"')
   })
+
+  it('sends hub readers on to the checker guide, the plans and (classification) the checker', () => {
+    // Every link must land on a page that is published: the pillar post (not
+    // a retired one), the localized pricing page, the classification landing.
+    const published = new Set([
+      ...LANGS.map((lp) => `/${lp}blog/ifc-model-checker/`),
+      ...LANGS.map((lp) => pricingPath(lp.replace('/', '') || 'en')),
+      ...LANGS.flatMap((lp) => toolLandings(lp.replace('/', '') || 'en').map((t) => `/${t.path}`)),
+    ])
+    expect(BLOG_POSTS.some((p) => p.slug === 'ifc-model-checker')).toBe(true)
+    for (const lp of LANGS) {
+      for (const [page, n] of [[`${lp}fix/`, 2], [`${lp}fix/category/classification/`, 3]] as const) {
+        const html = readFileSync(path.join(OUT, page, 'index.html'), 'utf8')
+        const block = html.match(/<p class="hub-next">(.*?)<\/p>/)?.[1] ?? ''
+        const hrefs = [...block.matchAll(/href="([^"]+)"/g)].map((m) => new URL(m[1], `https://x/${page}`).pathname)
+        expect(hrefs, page).toHaveLength(n)
+        for (const h of hrefs) expect(published.has(h), `${page} → ${h}`).toBe(true)
+      }
+    }
+  })
+})
+
+describe('generateFixPages — the hub is the reference of the errors, not the tool page', () => {
+  // Search Console 2026-11-10: the hub was shown for "ifc model validation"
+  // (768 impressions, position 67). The validator landing owns that query.
+  it('links the validator landing and the checker comparison with the query as anchor', () => {
+    expect(BLOG_POSTS.some((p) => p.slug === 'best-ifc-model-checkers-2026')).toBe(true)
+    for (const lp of LANGS) {
+      const lang = (lp.replace('/', '') || 'en') as keyof typeof UIS
+      const html = readFileSync(path.join(OUT, `${lp}fix/`, 'index.html'), 'utf8')
+      const block = html.match(/<p class="hub-next hub-owners">(.*?)<\/p>/)?.[1] ?? ''
+      const hrefs = [...block.matchAll(/href="([^"]+)"/g)].map((m) => new URL(m[1], `https://x/${lp}fix/`).pathname)
+      expect(hrefs, lp).toEqual([`/${validatorPath(lang)}`, `/${lp}blog/best-ifc-model-checkers-2026/`])
+      expect(existsSync(path.join(ROOT, 'public', validatorPath(lang), 'index.html')), lp).toBe(true)
+      expect(block).toContain(UIS[lang].hubValidate)
+    }
+  })
+
+  it('has a table of every category and a capture with its own alt text per language', () => {
+    expect(existsSync(path.join(ROOT, 'public', HUB_IMAGE.src))).toBe(true)
+    expect(existsSync(path.join(ROOT, 'public', HUB_IMAGE.small))).toBe(true)
+    const alts = new Set<string>()
+    for (const lp of LANGS) {
+      const lang = (lp.replace('/', '') || 'en') as keyof typeof UIS
+      const html = readFileSync(path.join(OUT, `${lp}fix/`, 'index.html'), 'utf8')
+      const table = html.match(/<table class="causes-table hub-table">[\s\S]*?<\/table>/)?.[0] ?? ''
+      expect((table.match(/<tr><th scope="row">/g) ?? []).length, lp).toBeGreaterThanOrEqual(6)
+      expect(table).toContain('href="./category/spatial/"')
+      const img = html.match(/<img src="[^"]*ifc-validation-errors-by-rule\.jpg"[^>]*>/)?.[0] ?? ''
+      expect(img, lp).toContain('width="1600"')
+      expect(html).toMatch(/"representativeOfPage":\s*true/)
+      alts.add(UIS[lang].hubImgAlt)
+      expect(UIS[lang].hubImgAlt.length, lp).toBeGreaterThan(40)
+    }
+    expect(alts.size).toBe(LANGS.length)
+  })
 })
 
 describe('generateFixPages — sitemap + skips', () => {
@@ -341,3 +401,35 @@ function titleOf(rel: string): string {
   const html = readFileSync(path.join(OUT, rel, 'index.html'), 'utf8')
   return (html.match(/<title[^>]*>([^<]*)<\/title>/) || [])[1] ?? ''
 }
+
+describe('fix pages follow the colour system (docs/COLOR_SYSTEM.md)', () => {
+  const html = () => readFileSync(path.join(OUT, 'fix', 'missing-type', 'index.html'), 'utf8')
+  const css = () => html().match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? ''
+  const tokens = (block: string) => Object.fromEntries([...block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]))
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+  }
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
+
+  it('has a light theme and no white-alpha or stray hex colours', () => {
+    expect(css()).toContain('@media (prefers-color-scheme: light)')
+    expect(css()).not.toMatch(/rgba\(255,\s*255,\s*255/)
+    const outsideTokens = css().replace(/:root\s*\{[^}]*\}/g, '').replace(/\.cta-primary[^}]*\}/, '')
+    expect(outsideTokens.match(/#[0-9a-f]{3,6}\b/gi) ?? []).toEqual([])
+  })
+
+  it('keeps every text token readable on the canvas in both themes (WCAG AA)', () => {
+    const [dark, light] = css().split('@media (prefers-color-scheme: light)')
+    for (const t of [tokens(dark), { ...tokens(dark), ...tokens(light) }]) {
+      for (const k of ['text', 'text-2', 'text-3', 'accent-text', 'warn', 'danger']) {
+        expect(ratio(t[k], t.bg), `${k} on ${t.bg}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  it('has no filler label above each heading, and one h1', () => {
+    expect(html()).not.toContain('class="section-label"')
+    expect(html().match(/<h1[\s>]/g)).toHaveLength(1)
+  })
+})

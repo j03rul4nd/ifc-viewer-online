@@ -132,7 +132,7 @@ export function BimoStage({
       {say && (
         <div
           role="status"
-          className={`bimo-bubble absolute top-[4%] ${bubbleSide === 'left' ? 'right-[74%] rounded-br-md' : 'left-[74%] rounded-bl-md'} w-max max-w-[min(260px,60vw)] rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] px-3.5 py-2.5 text-[13px] leading-snug text-[var(--text)] shadow-[0_14px_40px_-14px_rgba(94,106,210,0.5)]`}
+          className={`bimo-bubble absolute top-[4%] ${bubbleSide === 'left' ? 'right-[74%] rounded-br-md' : 'left-[74%] rounded-bl-md'} w-max max-w-[min(260px,60vw)] rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] px-3.5 py-2.5 text-[13px] leading-snug text-[var(--text)] shadow-[0_14px_40px_-14px_rgba(10,132,129,0.5)]`}
         >
           {say}
         </div>

@@ -63,6 +63,12 @@ const NOT_YET_MIGRATED = new Set([
   // A full-screen editing workspace (like the viewer itself), not a dialog:
   // its own dialogs (the director's template editor) do use Modal.
   'studio/ClipStudio.tsx',
+  'msp/FeatureSheet.tsx',
+  // A tour's spotlight and a phone's "more" menu, not dialogs.
+  'workspace/GuidedTour.tsx',
+  'workspace/WorkspacePreview.tsx',
+  // The paid workspace's own dialog, queued: every workspace screen goes through it.
+  'workspace/ui.tsx',
 ])
 
 /** A component that pins a full-screen layer is building a dialog shell. */

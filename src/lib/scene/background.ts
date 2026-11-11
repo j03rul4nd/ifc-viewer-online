@@ -48,7 +48,7 @@ export interface BackgroundPreset {
  */
 export const BACKGROUND_PRESETS: readonly BackgroundPreset[] = [
   // The shipped look — near-black with a matching fog.
-  { id: 'studio',    mode: 'solid',    top: '#0a0a0c', bottom: '#0a0a0c' },
+  { id: 'studio',    mode: 'solid',    top: '#100f0c', bottom: '#100f0c' },
   // Flat white — what a printed report or a slide deck wants.
   { id: 'white',     mode: 'solid',    top: '#ffffff', bottom: '#ffffff' },
   // Soft studio sweep: white overhead falling to a light grey floor line.
@@ -63,8 +63,8 @@ export const BACKGROUND_PRESETS: readonly BackgroundPreset[] = [
 export const DEFAULT_BACKGROUND: BackgroundSettings = {
   preset: 'studio',
   mode: 'solid',
-  top: '#0a0a0c',
-  bottom: '#0a0a0c',
+  top: '#100f0c',
+  bottom: '#100f0c',
 }
 
 export function presetById(id: BackgroundPresetId): BackgroundPreset | null {
@@ -153,6 +153,39 @@ export function resolveBackground(settings: BackgroundSettings): ResolvedBackgro
     // The horizon stop is what distant geometry actually fades into.
     fog: bottom,
     grid: gridColorFor(base),
+    light: isLightBackground(base),
+  }
+}
+
+// ── Theme default ──────────────────────────────────────────────────────────────
+// `studio` is the default preset (also what "reset" restores). It follows the
+// UI theme; any other preset or custom colour is an explicit choice and stays
+// as-is in both themes.
+
+/** The scene-theme colours the default backdrop needs (src/theme/sceneTheme.ts). */
+export interface ThemeBackdrop {
+  backgroundTop: string
+  backgroundBottom: string
+  fog: string
+  grid: string
+}
+
+/** True when the settings are the theme-driven default rather than a user pick. */
+export function followsTheme(settings: Pick<BackgroundSettings, 'preset'>): boolean {
+  return settings.preset === DEFAULT_BACKGROUND.preset
+}
+
+/** Resolve settings, letting the theme supply the default backdrop. */
+export function resolveThemedBackground(settings: BackgroundSettings, theme: ThemeBackdrop): ResolvedBackground {
+  if (!followsTheme(settings)) return resolveBackground(settings)
+  const top = normalizeHex(theme.backgroundTop) ?? DEFAULT_BACKGROUND.top
+  const bottom = normalizeHex(theme.backgroundBottom) ?? top
+  const mode: BackgroundMode = top === bottom ? 'solid' : 'gradient'
+  const base = { preset: settings.preset, mode, top, bottom }
+  return {
+    ...base,
+    fog: normalizeHex(theme.fog) ?? bottom,
+    grid: normalizeHex(theme.grid) ?? gridColorFor(base),
     light: isLightBackground(base),
   }
 }

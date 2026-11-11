@@ -4,10 +4,26 @@
 
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { LANDMARKS, landmarksIn, buildLandmarkLayer, replacedFeatureIds } from './landmarks'
+import { LANDMARKS, landmarksIn, landmarksByPosition, buildLandmarkLayer, replacedFeatureIds } from './landmarks'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 
 describe('landmarks', () => {
+  it('finds landmarks by position when tile buildings have no OSM ids', () => {
+    const o = LANDMARKS.find((l) => l.asset === 'hivernacle')!.origin
+    const d = 0.0001
+    const ring = [
+      { lat: o.lat - d, lon: o.lon - d }, { lat: o.lat - d, lon: o.lon + d },
+      { lat: o.lat + d, lon: o.lon + d }, { lat: o.lat + d, lon: o.lon - d },
+    ]
+    const area = { south: o.lat - 0.001, north: o.lat + 0.001, west: o.lon - 0.001, east: o.lon + 0.001 }
+    const found = landmarksByPosition([
+      { id: 'w-1', kind: 'building', ring },
+      { id: 'w-2', kind: 'building', ring: ring.map((p) => ({ ...p, lat: p.lat + 1 })) },
+    ], area)
+    expect(found.landmarks.map((l) => l.asset)).toContain('hivernacle')
+    expect([...found.replaced]).toEqual(['w-1'])
+  })
+
   it('finds landmarks by the feature id the parser emits, and nothing else', () => {
     const found = landmarksIn([{ id: 'w135115868' }, { id: 'n1497569358' }, { id: 'w1' }, { id: 'r135115868-0' }])
     expect(found.map((l) => l.asset)).toEqual(['cascada-ciutadella', 'mamut'])
@@ -35,6 +51,15 @@ describe('landmarks', () => {
     const shipped = Object.keys(import.meta.glob('../../../public/models/landmarks/*.glb'))
       .map((p) => p.replace(/^.*\//, '').replace(/\.glb$/, ''))
     for (const l of LANDMARKS) expect(shipped).toContain(l.asset)
+  })
+
+  it('replaces the Jin Mao, found by any of the parts OSM draws it with', () => {
+    // Shaft, pyramidal crown and spire: three prisms in OSM, one model here.
+    for (const id of ['w188377486', 'w376016310', 'w376016312']) {
+      expect(landmarksIn([{ id }]).map((l) => l.asset)).toEqual(['jin-mao'])
+    }
+    const jm = LANDMARKS.find((l) => l.asset === 'jin-mao')!
+    expect(replacedFeatureIds([jm])).toContain('w167061956') // an entrance canopy
   })
 
   it('finds a building by its parts, when the parser stood its outline down', () => {

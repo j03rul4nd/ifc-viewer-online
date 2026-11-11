@@ -141,7 +141,7 @@ add('IfcSlab','Circular arrival plaza — indicative',0,'Stone',[cylinder(55,-.3
 
 add('IfcSlab','18 m restaurant platform',18,'Concrete',[cylinder(19,18,.5)])
 add('IfcCurtainWall','18 m restaurant glazing',18,'DarkGlass',annulus(18.5,18.3,18.5,3.8))
-add('IfcRoof','Restaurant canopy',18,'Silver',[cylinder(19,22.3,.35)])
+add('IfcSlab','Restaurant canopy',18,'Silver',[cylinder(19,22.3,.35)]).PredefinedType='ROOF'
 axes=[]
 for k in range(3):
  a=math.radians(90+120*k);u,v=math.cos(a),math.sin(a);cx,cy=10.8*u,10.8*v;axes.append((cx,cy))

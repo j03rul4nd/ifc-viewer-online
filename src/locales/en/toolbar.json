@@ -27,6 +27,7 @@
   "section": "Section",
   "clippingPlanes": "Clipping planes — section cuts",
   "plans": "Plans",
+  "drawings": "Drawings",
   "floorPlanViews": "Floor plan views — storey sections",
   "export": "Export",
   "exportModels": "Export {{count}} models",
@@ -286,5 +287,11 @@
     "idsChecked": "{{file}}: models checked — results in the IDS panel",
     "documentsKept": "{{count}} project document kept with the scene",
     "documentsKept_other": "{{count}} project documents kept with the scene"
+  },
+  "theme": {
+    "toggle": "Theme: {{mode}}",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }

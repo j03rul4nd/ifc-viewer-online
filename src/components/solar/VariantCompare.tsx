@@ -160,7 +160,7 @@ export default function VariantCompare(p: Props) {
             </button>
             {cmp && <button onClick={() => { void back() }} className="px-2 py-1 rounded-[7px] border border-[var(--border-strong)] hover:bg-[var(--surface-2)]">{t('compare.back')}</button>}
           </div>
-          {mismatch && <p className="text-[9.5px] text-[#F5A623]">{t('compare.periodMismatch', mismatch)}</p>}
+          {mismatch && <p className="text-[9.5px] text-[#E9A23B]">{t('compare.periodMismatch', mismatch)}</p>}
         </>
       )}
       {cmp && (
@@ -178,8 +178,8 @@ export default function VariantCompare(p: Props) {
             <div key={k.kind} className="grid grid-cols-[4.2rem_1fr_1fr_1fr] gap-x-2 font-mono tabular-nums">
               <span className="font-sans truncate">{t(`analysis.kinds.${k.kind}`)}</span>
               <span>{nf(k.a, nd(cmp.c.metric))}</span>
-              <span className={k.b === k.a ? '' : (k.b > k.a) === up ? 'text-[#4caf7a]' : 'text-[#e2603a]'}>{nf(k.b, nd(cmp.c.metric))}</span>
-              <span><span className="text-[#4caf7a]">{Math.round(k.better * 100)}%</span> / <span className="text-[#e2603a]">{Math.round(k.worse * 100)}%</span></span>
+              <span className={k.b === k.a ? '' : (k.b > k.a) === up ? 'text-[#3fa866]' : 'text-[#e2603a]'}>{nf(k.b, nd(cmp.c.metric))}</span>
+              <span><span className="text-[#3fa866]">{Math.round(k.better * 100)}%</span> / <span className="text-[#e2603a]">{Math.round(k.worse * 100)}%</span></span>
             </div>
           ))}
           {cmp.c.movers.length > 0 && (
@@ -188,12 +188,12 @@ export default function VariantCompare(p: Props) {
               {cmp.c.movers.slice(0, 6).map((m) => (
                 <div key={m.label + m.a} className="flex justify-between gap-2">
                   <span className="truncate">{m.label}</span>
-                  <span className={['font-mono tabular-nums shrink-0', (m.delta > 0) === up ? 'text-[#4caf7a]' : 'text-[#e2603a]'].join(' ')}>{nf(m.a, nd(cmp.c.metric))} → {nf(m.b, nd(cmp.c.metric))} {unit}</span>
+                  <span className={['font-mono tabular-nums shrink-0', (m.delta > 0) === up ? 'text-[#3fa866]' : 'text-[#e2603a]'].join(' ')}>{nf(m.a, nd(cmp.c.metric))} → {nf(m.b, nd(cmp.c.metric))} {unit}</span>
                 </div>
               ))}
             </div>
           )}
-          {empty && <p className="text-[9.5px] text-[#F5A623] leading-snug">{t('compare.noValues', { name: empty, metric: t(`analysis.metric.${cmp.c.metric}`) })}</p>}
+          {empty && <p className="text-[9.5px] text-[#E9A23B] leading-snug">{t('compare.noValues', { name: empty, metric: t(`analysis.metric.${cmp.c.metric}`) })}</p>}
           <p className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('compare.paired', { pct: Math.round(cmp.c.paired * 100) })}</p>
         </div>
       )}

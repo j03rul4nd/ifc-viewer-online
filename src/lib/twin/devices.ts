@@ -14,6 +14,7 @@
 // files a project is split into. A binding is resolved against EVERY loaded
 // model, so the same rule paints the element in whichever file it lives.
 
+import { ngsiEntities, ngsiRecord, type NgsiConfig } from './ngsi'
 import { flattenProperties, type FlatProp } from './flatten-props'
 import { testFilter, type Filter } from '../layers/style-groups'
 import { isGelfs, gelfsRecords } from '../layers/records'
@@ -47,6 +48,8 @@ export interface DeviceSource {
    * WebSocket listener (mqtt-ws.ts) and every message is `{ topic, …payload }`.
    */
   topics?: string[]
+  /** A FIWARE broker: what `url` was built from, and the headers it needs (ngsi.ts). */
+  ngsi?: NgsiConfig
 }
 
 export type MetricValue = string | number | boolean | null
@@ -67,8 +70,8 @@ export function cleanTopics(v: unknown): string[] | undefined {
 }
 
 /** A source as it is written to a file or a scene: no secrets, no runtime state. */
-export function portableSource({ id, name, url, intervalS, mapping, enabled, topics }: DeviceSource): DeviceSource {
-  return { id, name, url, intervalS, mapping, enabled, ...(topics?.length ? { topics } : {}) }
+export function portableSource({ id, name, url, intervalS, mapping, enabled, topics, ngsi }: DeviceSource): DeviceSource {
+  return { id, name, url, intervalS, mapping, enabled, ...(topics?.length ? { topics } : {}), ...(ngsi ? { ngsi } : {}) }
 }
 
 /** Key of a device across sources. */
@@ -105,6 +108,14 @@ export function parseReadings(
   opts: { requireId?: boolean } = {},
 ): Reading[] {
   const { listPath, idField, timeField } = source.mapping
+  // A broker's entities say who they are and when; only an explicit path overrides that.
+  const entities = listPath ? null : ngsiEntities(body)
+  if (entities) {
+    return entities.map((e) => {
+      const record = ngsiRecord(e)
+      return { sourceId: source.id, deviceId: String(record.id), props: flattenProperties(record), at: parseTime(record.observedAt) ?? receivedAt }
+    })
+  }
   // Known shapes whose answer lies deeper than a rule can reach get the same
   // summary their data layer gets: a GELFS charging location becomes
   // "state: available, ports_available: 2" (records.ts) instead of a status
@@ -306,18 +317,76 @@ export function queryMatches(q: TargetQuery, e: CatalogEntry): boolean {
   return true
 }
 
+// A query walks the whole catalog, and a repaint resolves every binding: with
+// 200 k elements and 200 query bindings that was 6 s of frozen page per repaint
+// (measured). The answer only changes with the catalog, which is rebuilt when
+// the models change, so it is remembered per catalog and per query.
+const QUERY_CACHE_MAX = 2000
+const queryCache = new WeakMap<CatalogEntry[], Map<string, readonly ElementLoc[]>>()
+
+/** Every catalog element a query reaches. Cached: treat the result as read-only. */
+export function queryLocs(q: TargetQuery, catalog: CatalogEntry[]): readonly ElementLoc[] {
+  let cache = queryCache.get(catalog)
+  if (!cache) queryCache.set(catalog, cache = new Map())
+  const key = JSON.stringify([q.classes, q.storey.trim().toLowerCase(), q.nameContains.trim().toLowerCase()])
+  let locs = cache.get(key)
+  if (!locs) {
+    const found: ElementLoc[] = []
+    for (const e of catalog) if (queryMatches(q, e)) found.push({ modelId: e.modelId, expressId: e.expressId })
+    // Typing in the query box leaves a trail of keys: bounded, not per session.
+    if (cache.size >= QUERY_CACHE_MAX) cache.clear()
+    cache.set(key, locs = found)
+  }
+  return locs
+}
+
 /** Where a binding's elements are: explicit GlobalIds plus its query. */
 export function resolveLocs(b: Binding, guidIndex: Map<string, ElementLoc[]>, catalog: CatalogEntry[] = []): ElementLoc[] {
   const out = b.targets.flatMap((t) => guidIndex.get(t.globalId) ?? [])
   if (b.query && !isEmptyQuery(b.query)) {
     const seen = new Set(out.map((l) => `${l.modelId}#${l.expressId}`))
-    for (const e of catalog) {
-      if (!queryMatches(b.query, e)) continue
-      const k = `${e.modelId}#${e.expressId}`
-      if (!seen.has(k)) { seen.add(k); out.push({ modelId: e.modelId, expressId: e.expressId }) }
+    for (const l of queryLocs(b.query, catalog)) {
+      const k = `${l.modelId}#${l.expressId}`
+      if (!seen.has(k)) { seen.add(k); out.push(l) }
     }
   }
   return out
+}
+
+// ── Reading a source for the first time ───────────────────────────────────────
+
+export interface MappingGuess { listPath: string; idField: string; timeField: string; devices: number }
+
+const ID_FIELDS = ['id', 'deviceId', 'device_id', 'deviceID', 'uuid', 'uid', 'serial', 'sensorId', 'sensor_id', 'name', 'code']
+const TIME_FIELDS = ['timestamp', 'ts', 'time', 'updated', 'updated_at', 'updatedAt', 'observed_at', 'lastUpdate', 'last_update', 'datetime', 'date']
+
+/**
+ * The mapping a response most likely needs: its largest list of objects within
+ * three levels, the first conventional field that names every item uniquely,
+ * and a field that parses as a time. Null when nothing looks like a list; the
+ * source then reads as one device, which is what the empty mapping already does.
+ */
+export function guessMapping(body: unknown): MappingGuess | null {
+  let best: { path: string; items: Record<string, unknown>[] } | null = null
+  const visit = (v: unknown, path: string, depth: number): void => {
+    if (Array.isArray(v)) {
+      const items = v.filter(isPlainObject)
+      if (items.length > 0 && items.length === v.length && (!best || items.length > best.items.length)) best = { path, items }
+      return
+    }
+    if (!isPlainObject(v) || depth >= 3) return
+    for (const [k, x] of Object.entries(v)) visit(x, path ? `${path}.${k}` : k, depth + 1)
+  }
+  visit(body, '', 0)
+  const found = best as { path: string; items: Record<string, unknown>[] } | null
+  if (!found) return null
+  const sample = found.items.slice(0, 200)
+  const idField = ID_FIELDS.find((f) => {
+    const vals = sample.map((i) => i[f]).filter((x) => x !== undefined && x !== null && x !== '')
+    return vals.length === sample.length && new Set(vals.map(String)).size === sample.length
+  }) ?? ''
+  const timeField = TIME_FIELDS.find((f) => sample.every((i) => parseTime(i[f]) !== null)) ?? ''
+  return { listPath: found.path, idField, timeField, devices: found.items.length }
 }
 
 // ── Paint plan ────────────────────────────────────────────────────────────────

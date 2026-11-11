@@ -21,7 +21,7 @@ export function stamp(d = new Date()): string {
 export const STATUS_COLOR = {
   added: '#3B82F6',    // matches the overlay's info colour
   removed: 'var(--danger)',
-  modified: '#F5A623',
+  modified: '#E9A23B',
   unchanged: 'var(--text-faint)',
 } as const
 
@@ -67,7 +67,7 @@ export function Section({ title, children, right }: { title: string; children: R
 }
 
 export function Hint({ children, tone }: { children: React.ReactNode; tone?: 'warn' | 'error' }) {
-  const color = tone === 'error' ? 'var(--danger)' : tone === 'warn' ? '#F5A623' : 'var(--text-faint)'
+  const color = tone === 'error' ? 'var(--danger)' : tone === 'warn' ? '#E9A23B' : 'var(--text-faint)'
   return <p className="m-0 text-[11px] leading-relaxed" style={{ color }}>{children}</p>
 }
 

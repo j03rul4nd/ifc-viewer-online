@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
@@ -51,7 +51,8 @@ import WelcomeView from './components/WelcomeView'
 import { isPricingPreview } from './lib/pricing/pricing-preview'
 import DashboardView from './components/dashboard/DashboardView'
 import AdminView from './components/dashboard/AdminView'
-import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountStore'
+import { isAccountEnabled, openFeatureRequest, useCloudAccountStore } from './stores/cloudAccountStore'
+import { feedbackAllowed, hasPendingDraft, takePendingDraft } from './lib/feedback-gate'
 
 // Client-side admin gate: a UX fast-path only — the REAL boundary is the
 // Worker (users.global_role = super_admin; non-admins read 404 on /admin/*).
@@ -74,11 +75,17 @@ function georefKeyOf(g: { epsgCode: string | null; eastings: number | null; nort
 /** [x, y, z] (scene documents, `?camera=`) → the viewer's {x, y, z}. */
 const vec3 = (a: [number, number, number]): { x: number; y: number; z: number } => ({ x: a[0], y: a[1], z: a[2] })
 
-const ADMIN_USER_IDS = new Set(['user_3GP6gqE5WAmVzHobM0BosBk9A58'])
+const ADMIN_USER_IDS = new Set(['user_3LmQIZhfjNlCn5seaan6KVrLAnX', 'user_3GP6gqE5WAmVzHobM0BosBk9A58'])
 
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
 // @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
 const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
+// "Request a feature" (signed-in users) and its founder read-back. Clerk-free.
+const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
+const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
+const LazyCallBookingView = React.lazy(() => import('./components/account/CallBookingView'))
+const LazyRequestNudge = React.lazy(() => import('./components/account/RequestNudge'))
+const LazyRequestUpdates = React.lazy(() => import('./components/account/RequestUpdates'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
@@ -86,6 +93,8 @@ const LazyEbookView = React.lazy(() => import('./components/EbookView'))
 const LazyMspGlobalView = React.lazy(() => import('./components/MspGlobalView'))
 // /twin-builder — build your own AGV or import twin, all in the browser.
 const LazyTwinBuilderView = React.lazy(() => import('./components/twin-builder/TwinBuilderView'))
+// /sketch — draw in 3D with a pen, references beside the drawing.
+const LazySketchStudio = React.lazy(() => import('./components/sketch/SketchStudio'))
 // Paid-workspace design on sample data — team-only (pricing preview gate).
 const LazyWorkspacePreview = React.lazy(() =>
   // Its translations travel with the route: start both downloads together.
@@ -95,6 +104,9 @@ const LazyPlansSite = React.lazy(() => import('./components/plans/PlansSite'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
+import DualScreenPane, { DualScreenOffer } from './components/dual/DualScreenPane'
+import { useDualLayout } from './hooks/useDualLayout'
+import { useDualScreenStore } from './stores/dualScreenStore'
 import { MobileSheet } from './components/mobile/MobileSheet'
 import OverlayHud from './components/OverlayHud'
 import Blog from './components/Blog'
@@ -103,6 +115,8 @@ import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
+import BatchFolderDoor from './components/pricing/BatchFolderDoor'
+import { batchCountBucket, shouldOfferBatchFolder } from './lib/batch-folder-door'
 import { useCompareStore } from './stores/compareStore'
 import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
@@ -148,6 +162,7 @@ import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
 import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
+import { useDrawingStore } from './stores/drawingStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
 import { useModelGroups } from './hooks/useModelGroups'
@@ -182,6 +197,8 @@ const TimeBar = React.lazy(() => import('./components/TimeBar'))
 // Video resources are a separate lazy chunk: no media/Three implementation is
 // downloaded until the tool is opened.
 const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
+// Drawings pane: pdf.js and the 2D canvas load only when it first opens.
+const DrawingDock = React.lazy(() => import('./components/drawings/DrawingDock'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel, type DemoSet } from './demo-models/models'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -269,6 +286,7 @@ import { useBcfStore } from './stores/bcfStore'
 import { useOverlayStore } from './stores/overlayStore'
 import {
   trackFileOpened,
+  trackDualScreenActive,
   trackValidationCompleted,
   trackLandingCtaClicked,
   trackValidationPanelOpened,
@@ -278,6 +296,8 @@ import {
   trackFileOpenFailed,
   trackRequirementsLinkOpened,
   trackServerProcessingInterest,
+  trackServerProcessingOffered,
+  trackBatchFolderInterest,
   trackIdsFileLoaded,
 } from './lib/analytics'
 
@@ -631,7 +651,19 @@ export default function App() {
       if (!hash.startsWith('#r=')) return
       void (async () => {
         const { decodeRequirements, requirementsFromHash } = await import('./lib/requirements/requirements-link')
-        const req = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        const linked = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        // B2: a link made from a managed profile is checked against the
+        // version that is current now (public read, no account); the link's
+        // own snapshot is the fallback, so an old link never breaks.
+        let req = linked
+        let checkedVersion: import('./lib/requirements/managed-requirements').CheckedVersion | null = null
+        if (linked?.pr) {
+          const { publicFetcher, resolveManagedRequirements } = await import('./lib/requirements/managed-requirements')
+          const base = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+          const resolved = await resolveManagedRequirements(linked, base ? publicFetcher(base) : null)
+          req = resolved.req
+          checkedVersion = resolved.version
+        }
         trackRequirementsLinkOpened({ has_score: typeof req?.s === 'number', has_ids: typeof req?.x === 'string', valid: req !== null })
         if (!req) {
           toast(tToasts('requirements.invalid'), 'error', { duration: 8000 })
@@ -655,7 +687,7 @@ export default function App() {
             if (!(err instanceof IdsParseError)) throw err
           }
         }
-        useRequirementsStore.getState().setActive(req)
+        useRequirementsStore.getState().setActive(req, checkedVersion)
       })()
     }
     apply()
@@ -718,6 +750,7 @@ export default function App() {
       if (rel === '/ebook'   || rel.startsWith('/ebook/'))   return 'ebook'
       if (rel === '/msp-global' || rel === '/msp-global/') return 'msp'
       if (rel === '/twin-builder' || rel === '/twin-builder/') return 'twin'
+      if (rel === '/sketch' || rel === '/sketch/') return 'sketch'
       if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) return 'workspace'
       if ((rel === '/plans' || rel.startsWith('/plans/')) && isPricingPreview()) return 'plans'
       // Dedicated auth pages (F2) — only exist when accounts are enabled.
@@ -726,6 +759,8 @@ export default function App() {
         if (rel === '/sign-up' || rel.startsWith('/sign-up/')) return 'signup'
         if (rel === '/account' || rel.startsWith('/account/')) return 'account'
         if (rel === '/dashboard' || rel.startsWith('/dashboard/')) return 'dashboard'
+        if (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/')) return 'feedbackAdmin'
+        if (rel === '/call' || rel === '/call/') return 'call'
         if (rel === '/admin' || rel.startsWith('/admin/')) return 'admin'
       }
     }
@@ -735,7 +770,7 @@ export default function App() {
   // Locale-driven document meta. Disabled on routes that own their own title
   // and share metadata. This hook lives in the parent, so it would otherwise
   // overwrite blog/article meta after the child effect has set it.
-  useSeo({ enabled: route !== 'ebook' && route !== 'blog' && route !== 'msp' && route !== 'twin' })
+  useSeo({ enabled: route !== 'ebook' && route !== 'blog' && route !== 'msp' && route !== 'twin' && route !== 'sketch' })
 
   // /verify/<cert_hash> — public certificate verification (F1). NOT in the
   // sitemap (the space of hashes is unbounded).
@@ -772,10 +807,15 @@ export default function App() {
     const m = BLOG_LANG_RE.exec(rel)
     return m ? m[1] : 'en'
   })
-  const [accent, setAccent] = useState(() => urlParams.accent ?? '#5E6AD2')
+  const [accent, setAccent] = useState(() => urlParams.accent ?? '#0A8481')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
-    try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
+    // A saved choice wins; otherwise follow the system (light for most office desktops).
+    try {
+      const saved = localStorage.getItem('lp-theme')
+      if (saved === 'dark' || saved === 'light') return saved
+    } catch { /* ignore */ }
+    try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark' } catch { return 'dark' }
   })
   const handleToggleLandingTheme = useCallback((): void => {
     setLandingTheme((cur) => {
@@ -850,6 +890,8 @@ export default function App() {
         setRoute('msp')
       } else if (rel === '/twin-builder' || rel === '/twin-builder/') {
         setRoute('twin')
+      } else if (rel === '/sketch' || rel === '/sketch/') {
+        setRoute('sketch')
       } else if (rel === '/ebook' || rel.startsWith('/ebook/')) {
         setRoute('ebook')
         setEbookRoute(/^\/ebook\/([^/]*)\/?$/.exec(rel)?.[1] ?? '')
@@ -861,6 +903,10 @@ export default function App() {
         setRoute('account')
       } else if (isAccountEnabled() && (rel === '/dashboard' || rel.startsWith('/dashboard/'))) {
         setRoute('dashboard')
+      } else if (isAccountEnabled() && (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/'))) {
+        setRoute('feedbackAdmin')
+      } else if (isAccountEnabled() && (rel === '/call' || rel === '/call/')) {
+        setRoute('call')
       } else if (isAccountEnabled() && (rel === '/admin' || rel.startsWith('/admin/'))) {
         setRoute('admin')
       } else {
@@ -884,6 +930,7 @@ export default function App() {
   // never bounced later.
   const accountStatus = useCloudAccountStore((s) => s.status)
   const accountUserId = useCloudAccountStore((s) => s.userId)
+  const featureRequestOpen = useCloudAccountStore((s) => s.featureRequestOpen)
   const isSupremeAdmin = accountStatus === 'signed-in' && !!accountUserId && ADMIN_USER_IDS.has(accountUserId)
   useEffect(() => {
     if (accountStatus !== 'signed-in' || !accountUserId) return
@@ -984,6 +1031,8 @@ export default function App() {
   // The "+ Add data" hub (components/data/AddDataHub, docs/ADD_DATA.md).
   const [showAddData, setShowAddData]         = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
+  /** Fake door: files in the multi-IFC drop whose "Validate folder (Pro)" was clicked. */
+  const [batchDoorCount, setBatchDoorCount]   = useState<number | null>(null)
   const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
@@ -1015,6 +1064,30 @@ export default function App() {
       : embedChrome,
     [embedChrome, clientMode],
   )
+
+  // Where the app may talk to the user about feedback: the top-level full
+  // viewer only — never inside an SDK/WordPress/Shopify/blog iframe, never
+  // with ?embed=1 chrome, while presenting to a client, in a tour or a studio.
+  const feedbackSurfaceOk = isAccountEnabled() && feedbackAllowed({
+    route,
+    embedded: isEmbedded(),
+    embedParam: embedChrome.embed,
+    clientMode,
+    tourPlaying: tourMode === 'playing',
+    studioOpen: clipStudioOpen || coverStudioOpen,
+    quiet: Boolean(effectiveChrome.quiet),
+  })
+
+  // An answer chosen before signing in comes back after it, ready to send.
+  // OAuth sign-in reloads the page (often onto the landing), so this listens
+  // on every route, not only the viewer.
+  useEffect(() => {
+    if (accountStatus !== 'signed-in' || isEmbedded() || !hasPendingDraft()) return
+    const draft = takePendingDraft()
+    if (!draft) return
+    const { feature, need, source, ...detail } = draft
+    openFeatureRequest(source, { feature, need, detail, resumed: true })
+  }, [accountStatus])
 
   // Embedded presets are a contract, not a suggestion inherited from the
   // visitor's last full-viewer session. The column layout is intentionally
@@ -1090,6 +1163,7 @@ export default function App() {
     devices:     <Icons.Devices size={15} />,
     layers:      <Icons.DataLayers size={15} />,
     video:       <Icons.Video size={15} />,
+    drawings:    <Icons.Sheet size={15} />,
   }), [])
   const railLabels = useMemo(() => ({
     properties:  tSidebar('title'),
@@ -1105,6 +1179,7 @@ export default function App() {
     devices:     tLayers('devices.entry'),
     layers:      tLayers('title'),
     video:       tVideo('title'),
+    drawings:    tToolbar('drawings'),
   }), [tToolbar, tSidebar, tSolar, tCloud, tMesh, tLayers, tVideo])
   // Read here rather than from the destructured block below, which is declared
   // after this point in the component.
@@ -1225,6 +1300,7 @@ export default function App() {
     // App-only entries (not host PanelIds): once there is a layer or a clip.
     layers:      !clientMode && layerCount > 0,
     video:       isVideoEnabled() && !clientMode && videoCount > 0,
+    drawings:    !clientMode && !embedChrome.embed,
   }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount, railModelCount, layerCount, videoCount])
 
   // A parked tool can still be doing something; the rail and the mobile grid
@@ -1629,10 +1705,16 @@ export default function App() {
             label: tToasts('model.serverProcessingAction'),
             run: () => {
               trackServerProcessingInterest({ file_size_mb: sizeMb })
-              toast(tToasts('model.serverProcessingNoted'), 'info', { duration: 10000 })
+              // Ask the one who just hit the wall what they need it for: the
+              // form starts on "large files" and records the size as context.
+              toast(tToasts('model.serverProcessingNoted'), 'info', isAccountEnabled()
+                ? { duration: 12000, action: { label: i18n.t('pro:requests.tellUs'), run: () => openFeatureRequest(`large_file:${sizeMb}`) } }
+                : { duration: 10000 })
             },
           }
         : undefined
+      // Exposure, so zero clicks can be told apart from zero chances to click.
+      if (serverProcessingDoor) trackServerProcessingOffered({ file_size_mb: sizeMb })
       // The geometry did not fit (a 300–400 MB model, typically) but the file is
       // readable IFC: offer the Health Score without the 3D instead of a dead end.
       const source = getLoadManager().failedSource(job.id)
@@ -1656,6 +1738,9 @@ export default function App() {
             },
           },
         })
+        // The failure toast holds one action (validation only): the door gets
+        // its own, or nobody who skips validation-only ever sees it.
+        if (serverProcessingDoor) toast(tToasts('model.serverProcessingOffer'), 'info', { duration: 0, action: serverProcessingDoor })
         return
       }
       toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error',
@@ -1980,6 +2065,85 @@ export default function App() {
     return () => mq.removeEventListener('change', handler)
   }, [desktopQuery])
 
+  // ── Dual-screen layout (docs/DUAL_SCREEN.md) ──────────────────────────────
+  // One geometry listener for the whole app. Not in embeds (the segments are
+  // the host page's, not the iframe's) and not in the client skin, which is a
+  // presentation with nothing to inspect beside it.
+  const dualState = useDualLayout()
+  const dualAllowed = route === 'viewer' && !embedChrome.embed && !clientMode
+  const dualLayout = dualAllowed ? dualState.layout : null
+  const dualView = useDualScreenStore((s) => s.view)
+  const setDualView = useDualScreenStore((s) => s.setView)
+  const setDualStatus = useDualScreenStore((s) => s.setStatus)
+  useEffect(() => {
+    setDualStatus({ active: !!dualLayout, canSplit: dualAllowed && dualState.canSplit, hardware: dualState.hardware })
+  }, [dualLayout, dualAllowed, dualState.canSplit, dualState.hardware, setDualStatus])
+  const dualTracked = useRef(false)
+  useEffect(() => {
+    if (!dualLayout || dualTracked.current) return
+    dualTracked.current = true
+    trackDualScreenActive({ source: dualLayout.source, posture: dualLayout.posture })
+  }, [dualLayout])
+  // Dialogs, sheets and toasts portal to <body>, outside the viewer's box. They
+  // read its segment from here (index.css, "Overlays in a split") and stay off
+  // the hinge, without each one having to know the layout exists.
+  const dualViewerRect = dualLayout?.viewer ?? null
+  // The drawings pane takes its share of the window the way a split does: the
+  // viewer's box shrinks, the renderer resizes, no model reloads.
+  const drawingsLink = useMemo(() => new URLSearchParams(window.location.search).has('drawings'), [])
+  useEffect(() => { if (drawingsLink) useDrawingStore.getState().setPanelOpen(true) }, [drawingsLink])
+  const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && (!embedChrome.embed || drawingsLink)
+  const [drawingsWidth, setDrawingsWidth] = useState(() => Math.round((typeof window === 'undefined' ? 1200 : window.innerWidth) * 0.5))
+  const drawingsStacked = !isDesktop
+  const drawingsDockStyle = useMemo<React.CSSProperties | null>(() => {
+    if (!drawingsOpen) return null
+    if (dualLayout) return { left: dualLayout.pane.x, top: dualLayout.pane.y, width: dualLayout.pane.width, height: dualLayout.pane.height }
+    if (drawingsStacked) return { left: 0, right: 0, bottom: 0, height: '55dvh' }
+    return { right: 0, top: 0, bottom: 0, width: drawingsWidth }
+  }, [drawingsOpen, dualLayout, drawingsStacked, drawingsWidth])
+  const dualPaneRect = dualLayout?.pane ?? null
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (!dualViewerRect) { root.removeAttribute('data-dual'); return }
+    root.setAttribute('data-dual', '')
+    root.style.setProperty('--dual-x', `${dualViewerRect.x}px`)
+    root.style.setProperty('--dual-y', `${dualViewerRect.y}px`)
+    root.style.setProperty('--dual-w', `${dualViewerRect.width}px`)
+    root.style.setProperty('--dual-h', `${dualViewerRect.height}px`)
+    if (dualPaneRect) {
+      root.style.setProperty('--dual-pane-x', `${dualPaneRect.x}px`)
+      root.style.setProperty('--dual-pane-y', `${dualPaneRect.y}px`)
+      root.style.setProperty('--dual-pane-w', `${dualPaneRect.width}px`)
+      root.style.setProperty('--dual-pane-h', `${dualPaneRect.height}px`)
+    }
+  }, [dualViewerRect?.x, dualViewerRect?.y, dualViewerRect?.width, dualViewerRect?.height,
+      dualPaneRect?.x, dualPaneRect?.y, dualPaneRect?.width, dualPaneRect?.height]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dualActiveRef = useRef(false)
+  dualActiveRef.current = !!dualLayout
+
+  // Phone surfaces that open "the panel" open the companion pane's instead
+  // when split — there is no drawer to slide up over the model.
+  const openSidebarTab = useCallback((tab: 'props' | 'cats' | 'qty'): void => {
+    setPendingSidebarTab(tab)
+    if (dualActiveRef.current) {
+      if (useDualScreenStore.getState().view === 'tree') setDualView('explore')
+    } else {
+      setMobileSidebarOpen(true)
+    }
+  }, [setPendingSidebarTab, setMobileSidebarOpen, setDualView])
+
+  // The tree follows a selection made in the 3D view while both are on
+  // screen — the point of having them side by side. `follow` opens and
+  // scrolls without re-selecting, so this cannot loop back into the viewer.
+  useEffect(() => {
+    if (!dualLayout || dualView === 'inspect' || !selected) return
+    const id = window.setTimeout(() => {
+      const expressId = Number(selected.id)
+      if (Number.isFinite(expressId)) modelTreeRef.current?.revealElement(expressId, selected.modelId, { follow: true })
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [selected, dualLayout === null, dualView]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Detect WebGPU availability ────────────────────────────────────────────
   useEffect(() => {
     void (async () => {
@@ -2086,6 +2250,8 @@ export default function App() {
       scene: !embedChrome.embed,
       // The analysis panel reads weather files; it is not mounted in client mode.
       weather: isSolarEnabled() && !clientMode,
+      drawings: !clientMode && !embedChrome.embed,
+      drawingsOpen: useDrawingStore.getState().panelOpen,
     })
     // A scene replaces everything, so it is handled alone: loading the other
     // files first and then reloading would throw them away silently.
@@ -2099,6 +2265,20 @@ export default function App() {
     if (plan.ifc.length > 0) {
       setUploadInitial(plan.ifc)
       setShowUpload(true)
+    }
+    // Fake door: several IFC at once is when a folder check would help.
+    if (shouldOfferBatchFolder(plan.ifc.length, { interactive, embedded: isEmbedded() || embedChrome.embed })) {
+      const count = batchCountBucket(plan.ifc.length)
+      toast(i18n.t('pro:batchFolder.offer', { count: plan.ifc.length }), 'info', {
+        duration: 15000,
+        action: {
+          label: i18n.t('pro:batchFolder.action'),
+          run: () => {
+            trackBatchFolderInterest({ file_count: count, step: 'clicked' })
+            setBatchDoorCount(count)
+          },
+        },
+      })
     }
     if (plan.ids) {
       // With IFCs in the same drop the IDS checks them by itself once they
@@ -2135,6 +2315,7 @@ export default function App() {
     // GeoJSON never waits for the IFC dialog: a layer re-anchors on its own
     // when the model's placement arrives (vector-runner rebuilds on it).
     if (plan.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(plan.vector)
+    if (plan.drawings.length > 0) useDrawingStore.getState().enqueueFiles(plan.drawings)
     // BCF topics join the ones already open (never replace a session's issues).
     if (plan.bcf.length > 0) {
       void (async () => {
@@ -2597,6 +2778,8 @@ export default function App() {
   const handleSpaNavigate = useCallback((path: string): void => {
     history.pushState(null, '', path)
     if (path.startsWith('/dashboard')) setRoute('dashboard')
+    else if (path.startsWith('/admin/feedback')) setRoute('feedbackAdmin')
+    else if (path.startsWith('/call')) setRoute('call')
     else if (path.startsWith('/admin')) setRoute('admin')
     else if (path.startsWith('/sign-in')) setRoute('signin')
     else if (path.startsWith('/sign-up')) setRoute('signup')
@@ -4588,6 +4771,29 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  // The selection column, placed by the layout: the floating panel / phone
+  // drawer, or docked in the dual-screen pane. Only one placement renders.
+  const renderSidebar = (docked: boolean): React.ReactNode => (
+    <Sidebar
+      categories={legendCategories}
+      elementCount={legendElementCount}
+      sceneModels={sceneModels}
+      selected={selected}
+      hidden={hidden}
+      onToggleHidden={handleToggleHidden}
+      isolated={isolated}
+      onSetIsolated={handleSetIsolatedCategory}
+      onFrame={(id) => viewerRef.current?.frameCategory(id)}
+      onSelectElement={(id, modelId) => viewerApiRef.current?.selectElement(id, modelId)}
+      onFrameElement={handleFrameElement}
+      onRevealInTree={handleRevealInTree}
+      viewerApiRef={viewerApiRef}
+      mobileOpen={docked ? false : mobileSidebarOpen}
+      onMobileClose={() => setMobileSidebarOpen(false)}
+      docked={docked}
+    />
+  )
+
   return (
     <>
       <AnimatePresence>
@@ -4664,6 +4870,14 @@ export default function App() {
           </motion.div>
         )}
 
+        {route === 'sketch' && (
+          <div className="absolute inset-0">
+            <React.Suspense fallback={null}>
+              <LazySketchStudio />
+            </React.Suspense>
+          </div>
+        )}
+
         {route === 'msp' && (
           <motion.div
             key="msp"
@@ -4731,6 +4945,38 @@ export default function App() {
               authorized={isSupremeAdmin}
               theme={landingTheme}
             />
+          </motion.div>
+        )}
+
+        {route === 'call' && (
+          <motion.div
+            key="call"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyCallBookingView
+                onBack={handleNavigateToLanding}
+                onSignIn={() => { window.location.href = '/sign-in?redirect_url=' + encodeURIComponent(window.location.pathname + window.location.search) }}
+                theme={landingTheme}
+              />
+            </React.Suspense>
+          </motion.div>
+        )}
+
+        {route === 'feedbackAdmin' && (
+          <motion.div
+            key="feedback-admin"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyFeedbackAdminView onBack={() => handleSpaNavigate('/dashboard')} onSignIn={() => handleSpaNavigate('/sign-in')} theme={landingTheme} />
+            </React.Suspense>
           </motion.div>
         )}
 
@@ -4833,7 +5079,29 @@ export default function App() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
+            // Split: the viewer and its toolbar keep to their own segment, so
+            // nothing interactive lands on the hinge. Same element either way —
+            // only its box changes, so the renderer resizes rather than restarts.
+            style={dualLayout ? {
+              left: dualLayout.viewer.x, top: dualLayout.viewer.y,
+              width: dualLayout.viewer.width, height: dualLayout.viewer.height,
+              right: 'auto', bottom: 'auto',
+              // Above the pane, because the results drawer lives in this
+              // stacking context and is placed over the pane (index.css).
+              zIndex: 22,
+            } : drawingsOpen ? (drawingsStacked
+              ? { bottom: '55dvh' }
+              : { right: drawingsWidth }) : undefined}
           >
+            {drawingsDockStyle && (
+          <React.Suspense fallback={null}>
+            <DrawingDock
+              viewerApiRef={viewerApiRef}
+              style={drawingsDockStyle}
+              onResize={drawingsStacked || dualLayout ? undefined : (px) => setDrawingsWidth(Math.max(320, Math.min(window.innerWidth - 320, px)))}
+            />
+          </React.Suspense>
+            )}
             {effectiveChrome.showToolbar && (
               // Phones: the toolbar floats over the scene (capsules, see
               // Toolbar) instead of taking a 44px band; the scene gets the
@@ -4850,6 +5118,8 @@ export default function App() {
                   const displayCount = activeEntry?.elementCount ?? modelInfo?.elementCount ?? 0
                   return (
                     <Toolbar
+                      compact={!!dualLayout}
+                      canSuggest={feedbackSurfaceOk}
                       fileName={displayName}
                       elementCount={displayCount}
                       // Models already in the scene stay usable while others load;
@@ -4889,7 +5159,7 @@ export default function App() {
               {/* Collapsed tree: the strip stays on its own edge, and is the
                   control that brings it back. Before this the tree simply
                   vanished and the only way back was a menu two clicks away. */}
-              {!treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
+              {!treeVisible && sceneModels.length > 0 && isDesktop && !dualLayout && effectiveChrome.showTree && (
                 <ColumnStrip
                   edge="left"
                   label={tTree('spatialTree')}
@@ -4897,7 +5167,7 @@ export default function App() {
                 />
               )}
 
-              {treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
+              {treeVisible && sceneModels.length > 0 && isDesktop && !dualLayout && effectiveChrome.showTree && (
                 <>
                   <Panel
                     id="tree"
@@ -5188,25 +5458,11 @@ export default function App() {
                     />
                   )}
 
-                  {effectiveChrome.showSidebar && (
-                    <Sidebar
-                      categories={legendCategories}
-                      elementCount={legendElementCount}
-                      sceneModels={sceneModels}
-                      selected={selected}
-                      hidden={hidden}
-                      onToggleHidden={handleToggleHidden}
-                      isolated={isolated}
-                      onSetIsolated={handleSetIsolatedCategory}
-                      onFrame={(id) => viewerRef.current?.frameCategory(id)}
-                      onSelectElement={(id, modelId) => viewerApiRef.current?.selectElement(id, modelId)}
-                      onFrameElement={handleFrameElement}
-                      onRevealInTree={handleRevealInTree}
-                      viewerApiRef={viewerApiRef}
-                      mobileOpen={mobileSidebarOpen}
-                      onMobileClose={() => setMobileSidebarOpen(false)}
-                    />
+                  {dualState.hardware && !dualLayout && dualAllowed && sceneModels.length > 0 && (
+                    <DualScreenOffer hardware />
                   )}
+
+                  {effectiveChrome.showSidebar && !dualLayout && renderSidebar(false)}
 
                   {/* Spatial tree on a phone: the desktop column cannot fit, so the
                       same tree opens as a sheet (Tools → Tree). Picking an element
@@ -5215,7 +5471,7 @@ export default function App() {
                       The ref is the same one the desktop column takes (only one
                       of the two is ever mounted): without it, "Reveal in tree"
                       on a phone opened the sheet and never reached the tree. */}
-                  {!isDesktop && sceneModels.length > 0 && effectiveChrome.showTree && (
+                  {!isDesktop && !dualLayout && sceneModels.length > 0 && effectiveChrome.showTree && (
                     <MobileSheet open={treeVisible} onClose={() => setTreeVisible(false)} label={tTree('spatialTree')} snapPoints={[0.55, 0.92]}>
                       <div className="flex flex-col h-full min-h-0 overflow-hidden">
                         <ModelTree
@@ -5236,12 +5492,12 @@ export default function App() {
 
                   {/* Requirements link (doc 17, M1): who asks for what, and the verdict.
                       Inside the viewport so the toolbar's menus open over it. */}
-                  <RequirementsBanner onOpenFile={handleOpenUpload} />
+                  <RequirementsBanner onOpenFile={handleOpenUpload} getProjectTexts={(id) => viewerApiRef.current?.getProjectTexts(id) ?? Promise.resolve(undefined)} />
 
                   {effectiveChrome.showHome && (
                     <button
                       onClick={handleNavigateToLanding}
-                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                     >
                       <Icons.Chevron size={12} className="rotate-180" />
                       <span className="hidden xs:inline">{tCommon('actions.home')}</span>
@@ -5317,12 +5573,13 @@ export default function App() {
                     onHide={handleHideElement}
                     onIsolateCategory={handleIsolateCategory}
                     onReveal={(id, modelId) => { setElementCardOpen(false); handleRevealInTree(id, modelId) }}
-                    onAllProperties={() => { setElementCardOpen(false); setPendingSidebarTab('props'); setMobileSidebarOpen(true) }}
+                    onAllProperties={() => { setElementCardOpen(false); openSidebarTab('props') }}
                   />
                   )}
                   <div className="sr-only" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</div>
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
+                    canSuggest={feedbackSurfaceOk}
                     // Properties is excluded: the bottom nav already has its
                     // own tab for it, and the rail item toggles the desktop
                     // column's flag, which is not what a phone shows.
@@ -5330,10 +5587,7 @@ export default function App() {
                     visible={sceneModels.length > 0}
                     selected={selected}
                     canIsolate={!!selected}
-                    onOpenSidebarTab={(tab) => {
-                      setPendingSidebarTab(tab)
-                      setMobileSidebarOpen(true)
-                    }}
+                    onOpenSidebarTab={openSidebarTab}
                     onReset={() => viewerRef.current?.resetCamera()}
                     onUpload={openUploadModal}
                     onIsolate={handleIsolate}
@@ -5406,6 +5660,9 @@ export default function App() {
       {showIdsModal && (
         <IdsModal onClose={() => setShowIdsModal(false)} />
       )}
+      {batchDoorCount !== null && (
+        <BatchFolderDoor fileCount={batchDoorCount} onClose={() => setBatchDoorCount(null)} />
+      )}
 
       {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
       {showCompareModal && (
@@ -5463,6 +5720,26 @@ export default function App() {
       {/* ── Loading Center (popover on desktop, sheet on mobile; portals itself) ── */}
       {/* Quiet presets (kiosk, article) leave progress to the host: it gets
           model-progress events, and a figure is no place for a load panel. */}
+      {dualLayout && (
+        <DualScreenPane
+          layout={dualLayout}
+          hasModels={sceneModels.length > 0}
+          tree={effectiveChrome.showTree ? (
+            // The only tree mounted while split (the column and the phone
+            // sheet both step aside), so it takes the shared ref.
+            <ModelTree
+              ref={modelTreeRef}
+              onSelectElement={handleSelectTreeElement}
+              onFocusElements={handleFocusElements}
+              onFilterBySubtree={() => { useValidationStore.getState().setFilters({ ruleIds: [], search: '' }) }}
+              onRemoveModel={(id) => { void handleRemoveModel(id) }}
+              onOpenScene={(id) => { handleSetActiveModel(id); setScenePanelOpen(true) }}
+              onFrameItems={(ids) => { viewerApiRef.current?.frameItems(ids) }}
+            />
+          ) : null}
+          properties={effectiveChrome.showSidebar ? renderSidebar(true) : null}
+        />
+      )}
       {route === 'viewer' && !effectiveChrome.quiet && <LoadingCenter anchor={toolbarIsFull ? 'toolbar' : 'floating'} />}
 
       {/* ── Loading indicator for presets without a toolbar (kiosk, client) ── */}
@@ -5476,7 +5753,7 @@ export default function App() {
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
-          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
           style={{ bottom: `max(calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 8px), 16px)` }}
         >
           {activeFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
@@ -5503,6 +5780,28 @@ export default function App() {
       {/* ── Personalized invite — post-aha Mom-Test nudge (viewer) ── */}
       {route === 'viewer' && invite && feedbackNudgeOpen && (
         <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
+      )}
+
+      {/* "What would help you most?" — anyone (signed in or not) in the
+          full viewer, after real use of a validated model; the card paces
+          itself (lib/feedback-gate). Never next to the invite's own nudge. */}
+      {feedbackSurfaceOk && result && !feedbackNudgeOpen && (
+        <React.Suspense fallback={null}>
+          <LazyRequestNudge />
+        </React.Suspense>
+      )}
+
+      {/* "One of your requests moved" — signed-in users who have asked before. */}
+      {accountStatus === 'signed-in' && feedbackSurfaceOk && (
+        <React.Suspense fallback={null}>
+          <LazyRequestUpdates />
+        </React.Suspense>
+      )}
+
+      {featureRequestOpen && (
+        <React.Suspense fallback={null}>
+          <LazyFeatureRequestModal />
+        </React.Suspense>
       )}
 
       {/* ── Global toast notifications ── */}

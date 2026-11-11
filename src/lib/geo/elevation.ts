@@ -12,6 +12,7 @@
 
 import { latLonToTilePixel } from './geo-math'
 import { demSourceFor, demTileUrl, markDemSourceFailed } from './dem-sources'
+import { inShanghaiGround, loadShanghaiGround, shanghaiGroundM } from './shanghai-ground'
 import { createLogger } from '../logger'
 
 const log = createLogger('GeoElevation')
@@ -49,6 +50,12 @@ export function terrariumTileUrl(z: number, x: number, y: number): string {
  * treat elevation as best-effort.
  */
 export async function sampleElevation(lat: number, lon: number, zoom = SAMPLE_ZOOM): Promise<number> {
+  // Shanghai's ground ships with the app: the mosaic reads roofs there, 7 to
+  // 30 m over a city that stands at two (shanghai-ground).
+  if (inShanghaiGround(lat, lon)) {
+    const ground = await loadShanghaiGround().catch(() => null)
+    if (ground) return shanghaiGroundM(ground, lat, lon)
+  }
   const dem = demSourceFor(lat, lon)
   try {
     return await sampleFrom(dem, lat, lon, zoom)

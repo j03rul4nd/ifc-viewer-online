@@ -767,7 +767,70 @@
     "alertsActive": "{{count}} alerting",
     "summaryFilter": "Show only these bindings",
     "mqttTopics": "MQTT topics, one per line (empty = plain WebSocket with JSON messages)",
-    "mqttHint": "With topics, this address is an MQTT broker’s WebSocket listener. Each message is read as { topic, …payload }, once a second; messages without the device id are skipped."
+    "mqttHint": "With topics, this address is an MQTT broker’s WebSocket listener. Each message is read as { topic, …payload }, once a second; messages without the device id are skipped.",
+    "panel": {
+      "tabs": {
+        "sources": "Sources",
+        "devices": "Devices",
+        "bindings": "Bindings",
+        "project": "Project"
+      },
+      "failed": "This section failed to load",
+      "retry": "Retry",
+      "back": "Back",
+      "summaryDevices": "{{count}} devices",
+      "paused": "Paused",
+      "summaryErrors": "{{count}} sources failing",
+      "needModel": "Open a model to try a demo",
+      "connectApi": "Connect an API",
+      "importFile": "Import .twin.json",
+      "demoSection": "Try with simulated data",
+      "editSource": "Edit source",
+      "url": "Address",
+      "test": "Test connection",
+      "testing": "Testing…",
+      "testOk": "{{count}} devices found",
+      "detected": "list detected in {{path}}",
+      "testFields": "Fields: {{list}}",
+      "testNone": "Connected, but no devices found. Check the list path in Advanced options.",
+      "streamNoTest": "Live connections are checked when you save.",
+      "advanced": "Advanced options",
+      "confirmRemoveSource": "Also remove {{count}} bindings",
+      "confirm": "Confirm",
+      "searchDevices": "Search devices…",
+      "noDevices": "No readings yet",
+      "noDevicesHint": "Devices appear here as soon as a source responds.",
+      "noResults": "No results",
+      "pastReadOnly": "Return to live to bind",
+      "bound": "{{count}} bound",
+      "noBindings": "No bindings yet",
+      "noBindingsHint": "Select an element in the model, then bind a device to it.",
+      "locate": "Show in model",
+      "editBinding": "Edit binding",
+      "noRules": "No rules yet: the elements keep their own look.",
+      "display": "Appearance and data",
+      "conditions": "Conditions",
+      "matchAll": "All conditions",
+      "matchAny": "Any condition",
+      "value": "Value",
+      "addCondition": "+ Condition",
+      "opacity": "Opacity",
+      "importReplace": "This replaces your {{sources}} sources and {{bindings}} bindings. Continue?",
+      "operated": "Operating state",
+      "fiware": {
+        "kind": "Source type",
+        "kindApi": "REST API",
+        "kindBroker": "FIWARE broker",
+        "broker": "Context Broker URL",
+        "brokerHint": "Orion, Orion-LD, Scorpio or Stellio. It must allow requests from this site (CORS) and use https.",
+        "type": "Entity type",
+        "tenant": "Tenant (optional)",
+        "context": "JSON-LD context (optional)",
+        "contextHint": "Gives attributes their short names.",
+        "servicePath": "Service path (optional)",
+        "api": "API"
+      }
+    }
   },
   "add": {
     "title": "Add data"
@@ -849,5 +912,25 @@
     "generic": "Working… {{s}} s",
     "announce": "Still waiting for {{host}}",
     "announceGeneric": "Still working"
+  },
+  "portLibrary": {
+    "intro": "Fences, cranes, street furniture and monuments modelled by the Port de Barcelona. Open any of them in the viewer and add it to your scene.",
+    "search": "Search objects",
+    "all": "All",
+    "count_one": "{{count}} object",
+    "count_other": "{{count}} objects",
+    "empty": "No object matches that search.",
+    "onPortSite": "{{size}} · download on the Port site",
+    "credit": "Object library by the",
+    "categories": {
+      "fences": "Fences",
+      "port": "Port elements",
+      "road": "Road elements",
+      "equipment": "Port equipment",
+      "operation": "Operations",
+      "transport": "Transport",
+      "furniture": "Street furniture",
+      "monument": "Monuments"
+    }
   }
 }

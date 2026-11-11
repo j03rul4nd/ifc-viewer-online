@@ -65,7 +65,7 @@ export function ProgressBar({
         <div className="absolute inset-y-0 right-0 overflow-hidden" style={{ left: `${pct}%` }}>
           <div
             className="absolute inset-y-0 left-0 w-[35%] animate-toolbar-sweep"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(94,106,210,0.55), transparent)' }}
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(10,132,129,0.55), transparent)' }}
           />
         </div>
       )}

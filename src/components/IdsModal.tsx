@@ -235,20 +235,20 @@ export default function IdsModal({ onClose }: IdsModalProps) {
 
           {/* Parse warnings (e.g. unsupported XSD patterns) */}
           {doc?.warnings?.length ? (
-            <div className="text-[10.5px] leading-relaxed m-0" style={{ color: '#F5A623' }}>
+            <div className="text-[10.5px] leading-relaxed m-0" style={{ color: '#E9A23B' }}>
               {doc.warnings.map((w, i) => <p key={i} className="m-0">{w}</p>)}
             </div>
           ) : null}
 
           {/* Stale-result honesty banner (§5.4): results from a previously loaded IDS. */}
           {result && runMeta && fileName && runMeta.idsFileName !== fileName && !busy && (
-            <p className="text-[11px] m-0" style={{ color: '#F5A623' }}>
+            <p className="text-[11px] m-0" style={{ color: '#E9A23B' }}>
               {t('states.staleIds', { file: runMeta.idsFileName })}
             </p>
           )}
 
           {!hasBuffer && modelId && (
-            <p className="text-[11px] m-0" style={{ color: '#F5A623' }}>{t('states.bufferUnavailable')}</p>
+            <p className="text-[11px] m-0" style={{ color: '#E9A23B' }}>{t('states.bufferUnavailable')}</p>
           )}
           {error && (
             <p className="text-[11.5px] text-[var(--danger)] m-0" title={idsErrorDetail(t, error)}>
