@@ -25,9 +25,11 @@ import { SupplierCard, InviteDialog } from './SupplierCard'
 import RegisterTab from './RegisterTab'
 import ProjectTab, { NewProjectDialog } from './ProjectTab'
 import SupplierView from './SupplierView'
+import OverviewTab from './OverviewTab'
+import ReportDialog from './ReportDialog'
 
 const TABS = [
-  { id: 'inbox', label: 'Inbox' }, { id: 'suppliers', label: 'Suppliers' }, { id: 'register', label: 'Register' },
+  { id: 'overview', label: 'Overview' }, { id: 'inbox', label: 'Inbox' }, { id: 'suppliers', label: 'Suppliers' }, { id: 'register', label: 'Register' },
   { id: 'project', label: 'Project' }, { id: 'supplier-view', label: 'Supplier view' },
 ] as const
 export const TAB_LABELS = TABS.map((t) => t.label)
@@ -35,7 +37,7 @@ type Filter = 'pending' | 'all' | 'accepted' | 'returned'
 const FILTERS: [Filter, string][] = [['pending', 'To review'], ['all', 'All'], ['accepted', 'Accepted'], ['returned', 'Returned']]
 export const FILTER_LABELS = FILTERS.map((f) => f[1])
 
-type Open = { kind: 'delivery'; id: string } | { kind: 'supplier'; id: string } | { kind: 'invite' } | { kind: 'new-project' } | null
+type Open = { kind: 'delivery'; id: string } | { kind: 'supplier'; id: string } | { kind: 'invite' } | { kind: 'new-project' } | { kind: 'report' } | null
 
 /** Live API rows in the screen's shape (supplier = its name). */
 function fromApi(d: ApiDelivery): RxDelivery {
@@ -88,7 +90,8 @@ export default function ReceptionWorkspace(_: SectionProps) {
   }
 
   async function decide(d: RxDelivery, dec: Decision) {
-    setOpen(null)
+    const queue = pDeliveries.filter((x) => x.verdict === 'pending' && x.id !== d.id).sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
+    setOpen(queue[0] ? { kind: 'delivery', id: queue[0].id } : null)
     if (live) {
       const r = await paidApi.decide(d.id, dec.verdict === 'returned' ? 'rejected' : 'accepted', [...dec.reasons, dec.note].filter(Boolean).join(' · ') || undefined)
       setError(r.ok ? null : r.error.message ?? r.error.code); api.reload(); return
@@ -129,6 +132,13 @@ export default function ReceptionWorkspace(_: SectionProps) {
 
   const openDelivery = open?.kind === 'delivery' ? deliveries.find((d) => d.id === open.id) : undefined
   const openSupplier = open?.kind === 'supplier' ? suppliers.find((s) => s.id === open.id) : undefined
+  const queueList = pending.slice().sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
+  const qi = openDelivery ? queueList.findIndex((x) => x.id === openDelivery.id) : -1
+  const queue = qi < 0 ? undefined : {
+    pos: qi + 1, total: queueList.length,
+    prev: qi > 0 ? () => setOpen({ kind: 'delivery', id: queueList[qi - 1].id }) : undefined,
+    next: qi < queueList.length - 1 ? () => setOpen({ kind: 'delivery', id: queueList[qi + 1].id }) : undefined,
+  }
   const entriesFor = (d: RxDelivery) => (chain ?? []).filter((e) => e.subject === d.fileName && e.supplierId === d.supplierId)
 
   return (
@@ -146,6 +156,12 @@ export default function ReceptionWorkspace(_: SectionProps) {
       {notice && <Banner tone="ok" title={rx('Done')} action={<Quiet onClick={() => setNotice(null)}>{rx('Dismiss')}</Quiet>}>{notice}</Banner>}
 
       <Tabs label={rx('Reception')} tabs={TABS.map((t) => ({ ...t, label: rx(t.label), count: t.id === 'inbox' ? pending.length : t.id === 'suppliers' ? pSuppliers.length : undefined }))} value={tab} onChange={setTab} />
+
+      {tab === 'overview' && (pSuppliers.length === 0
+        ? <Empty title={rx('No suppliers in this project yet')} body={rx('Invite the first supplier: they get an upload link and your requirements, and their deliveries arrive here already checked.')} action={<Primary onClick={() => setOpen({ kind: 'invite' })}>{rx('Invite a supplier')}</Primary>} />
+        : <OverviewTab project={project} suppliers={pSuppliers} deliveries={pDeliveries} rx={rx} lang={lang}
+            onReview={() => queueList[0] && setOpen({ kind: 'delivery', id: queueList[0].id })} onSupplier={(id) => setOpen({ kind: 'supplier', id })}
+            onReport={() => setOpen({ kind: 'report' })} onTab={setTab} />)}
 
       {tab === 'inbox' && (pSuppliers.length === 0 ? (
         <Empty title={rx('No suppliers in this project yet')} body={rx('Invite the first supplier: they get an upload link and your requirements, and their deliveries arrive here already checked.')}
@@ -218,12 +234,13 @@ export default function ReceptionWorkspace(_: SectionProps) {
       {tab === 'register' && <RegisterTab project={project} chain={chain} supplierName={supplierName} rx={rx} lang={lang} />}
       {tab === 'project' && <ProjectTab key={project.id} project={project} rx={rx} codes={projects.map((p) => p.code)} onSave={(p) => { setProjects((all) => all.map((x) => (x.id === p.id ? p : x))); setNotice(rx('Saved in this preview. Suppliers would see the change on their next check.')) }} />}
       {tab === 'supplier-view' && (pSuppliers[0]
-        ? <SupplierView project={project} supplier={pSuppliers.find((s) => s.id === 'ins') ?? pSuppliers[0]} rx={rx} />
+        ? <SupplierView project={project} supplier={pSuppliers.find((s) => s.id === 'ins') ?? pSuppliers[0]} rx={rx} lang={lang} />
         : <Empty title={rx('No suppliers in this project yet')} body={rx('Invite one to see the page they get.')} />)}
 
-      {openDelivery && <DeliveryReview project={project} delivery={openDelivery} supplier={suppliers.find((s) => s.id === openDelivery.supplierId)} entries={entriesFor(openDelivery)} rx={rx} lang={lang} onDecide={(d, dec) => void decide(d, dec)} onClose={() => setOpen(null)} />}
+      {openDelivery && <DeliveryReview key={openDelivery.id} deliveries={pDeliveries} queue={queue} project={project} delivery={openDelivery} supplier={suppliers.find((s) => s.id === openDelivery.supplierId)} entries={entriesFor(openDelivery)} rx={rx} lang={lang} onDecide={(d, dec) => void decide(d, dec)} onClose={() => setOpen(null)} />}
       {openSupplier && <SupplierCard project={project} supplier={openSupplier} deliveries={pDeliveries} rx={rx} lang={lang} onOpenDelivery={(id) => setOpen({ kind: 'delivery', id })} onClose={() => setOpen(null)} />}
       {open?.kind === 'invite' && <InviteDialog project={project} taken={pSuppliers.map((s) => s.originator)} rx={rx} onInvite={(s) => void invite(s)} onClose={() => setOpen(null)} />}
+      {open?.kind === 'report' && <ReportDialog project={project} suppliers={pSuppliers} deliveries={pDeliveries} rx={rx} lang={lang} onClose={() => setOpen(null)} />}
       {open?.kind === 'new-project' && <NewProjectDialog rx={rx} codes={projects.map((p) => p.code)} onCreate={createProject} onClose={() => setOpen(null)} />}
     </>
   )
