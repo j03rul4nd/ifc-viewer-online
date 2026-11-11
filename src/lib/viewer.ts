@@ -21,7 +21,8 @@ import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './meas
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { ownerModelId } from './element-owner'
 import { pivotForYaw } from './geo/multi-placement'
-import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { resolveThemedBackground, followsTheme, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { getSceneTheme, subscribeSceneTheme } from '../theme/sceneTheme'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
@@ -1306,8 +1307,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     return texture
   }
 
+  // Last settings applied; the default (`studio`) re-resolves on theme change.
+  let currentBackground: BackgroundSettings = DEFAULT_BACKGROUND
+
   function applyBackground(settings: BackgroundSettings): void {
-    const bg = resolveBackground(settings)
+    currentBackground = settings
+    const bg = resolveThemedBackground(settings, getSceneTheme())
     const previous = bgTexture
     bgTexture = null
 
@@ -1335,6 +1340,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   applyBackground(DEFAULT_BACKGROUND)
+
+  // UI theme switch: only the default backdrop follows it, updated in place.
+  const unsubscribeSceneTheme = subscribeSceneTheme(() => {
+    if (followsTheme(currentBackground)) applyBackground(currentBackground)
+  })
 
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
@@ -5428,6 +5438,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      unsubscribeSceneTheme()
       stopTurntable()
       uprightObserver?.disconnect()
       // Hand BCF back to "no datum" unless a newer viewer already took over.
