@@ -39,7 +39,12 @@ export const PAID_FEATURE_DEFS: PaidFeatureDef[] = [
   { id: 'email_tracking', code: 'V5', family: 'sales', plan: 'pro', status: 'live', server: false,
     title: 'Shipment tracking for email campaigns', pitch: 'Personal links for Mailchimp, HubSpot or Salesforce and a branded tracking page with offers, products and reviews.' },
 
+  { id: 'clash_detection', code: 'C1', family: 'quality', plan: 'pro', status: 'live', server: false,
+    title: 'Clash detection', pitch: 'Hard and clearance clashes between disciplines or federated models, saved test matrices, grouping, statuses kept across versions by GlobalId and BCF export. Runs in your browser.' },
+
   // ── Team ──
+  { id: 'clash_coordination', code: 'C2', family: 'quality', plan: 'team', status: 'live', server: false,
+    title: 'Clash coordination', pitch: 'Assign clashes to people with due dates and print a coordination report by test, storey and owner.' },
   { id: 'quality_gate', code: 'T1', family: 'quality', plan: 'team', status: 'soon', server: true, section: 'quality',
     title: 'Quality gate', pitch: 'Every upload is validated with your company profile. Nothing is published below the minimum score without a reviewer\'s approval.' },
   { id: 'house_standard', code: 'T2', family: 'quality', plan: 'team', status: 'soon', server: true, section: 'quality',

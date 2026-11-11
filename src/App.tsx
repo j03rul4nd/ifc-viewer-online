@@ -162,6 +162,7 @@ import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
 import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
+import { useClashStore } from './stores/clashStore'
 import { useDrawingStore } from './stores/drawingStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
@@ -199,6 +200,8 @@ const TimeBar = React.lazy(() => import('./components/TimeBar'))
 const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
 // Drawings pane: pdf.js and the 2D canvas load only when it first opens.
 const DrawingDock = React.lazy(() => import('./components/drawings/DrawingDock'))
+// Clash detection (Pro/Team): engine, worker and texts load on first open.
+const ClashPanel = React.lazy(() => import('./components/clash/ClashPanel'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel, type DemoSet } from './demo-models/models'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -2092,6 +2095,7 @@ export default function App() {
   // viewer's box shrinks, the renderer resizes, no model reloads.
   const drawingsLink = useMemo(() => new URLSearchParams(window.location.search).has('drawings'), [])
   useEffect(() => { if (drawingsLink) useDrawingStore.getState().setPanelOpen(true) }, [drawingsLink])
+  const clashPanelOpen = useClashStore((s) => s.open)
   const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && (!embedChrome.embed || drawingsLink)
   const [drawingsWidth, setDrawingsWidth] = useState(() => Math.round((typeof window === 'undefined' ? 1200 : window.innerWidth) * 0.5))
   const drawingsStacked = !isDesktop
@@ -5335,6 +5339,12 @@ export default function App() {
                   {/* Section (clip plane) panel (client mode: only via the presenter gear) */}
                   {sceneModels.length > 0 && (!clientMode || clientAdvancedTools) && (
                     <SectionPanel viewerApiRef={viewerApiRef} />
+                  )}
+
+                  {clashPanelOpen && sceneModels.length > 0 && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <ClashPanel viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
                   )}
 
                   {/* Floor plan panel (hidden in the client skin) */}

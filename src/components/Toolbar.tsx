@@ -6,6 +6,8 @@ import { CaptureToolbar } from './CaptureToolbar'
 import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
 import { useDrawingStore } from '../stores/drawingStore'
+import { useClashStore } from '../stores/clashStore'
+import { clashText } from '../lib/clash/i18n'
 import { useUIStore } from '../stores/uiStore'
 import { haptic } from '../lib/haptics'
 import { useSceneStore } from '../stores/sceneStore'
@@ -250,7 +252,7 @@ export default function Toolbar({
   viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenAddData, onOpenSceneFile, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
   variant = 'full', tools = ['validate', 'measure'],
 }: ToolbarProps) {
-  const { t } = useTranslation('toolbar')
+  const { t, i18n } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
   const { t: tLayers } = useTranslation('layers')
@@ -286,6 +288,7 @@ export default function Toolbar({
   const qualityScore = result?.qualityScore ?? null
 
   const drawingsOpen = useDrawingStore((s) => s.panelOpen)
+  const clashOpen = useClashStore((s) => s.open)
   const setDrawingsOpen = useDrawingStore((s) => s.setPanelOpen)
   const {
     treeVisible, setTreeVisible, openSidebarLegend, scenePanelOpen, toggleScenePanel,
@@ -848,6 +851,8 @@ export default function Toolbar({
             onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
           <MenuItem icon={PlansSVG} label={t('drawings')} active={drawingsOpen}
             onClick={() => { setDrawingsOpen(!drawingsOpen); setOpenMenu(null) }} />
+          <MenuItem icon={SectionSVG} label={clashText(i18n.language, 'title')} active={clashOpen} disabled={content.models === 0}
+            badge="Pro" onClick={() => { useClashStore.getState().setOpen(!clashOpen); setOpenMenu(null) }} />
           {(isGisEnabled() || isSolarEnabled() || isFloodEnabled()) && (
             <>
               <MenuDivider />
