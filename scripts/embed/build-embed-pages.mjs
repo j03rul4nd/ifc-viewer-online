@@ -125,6 +125,22 @@ const T_SCENE = {
 }
 for (const l of Object.keys(T_SCENE)) Object.assign(T[l], T_SCENE[l])
 
+// What the embed opens with (one deep link, see docs/EMBED_URL_PARAMS.md).
+// Label + option names per language; START_VALUES are the query it adds.
+const START_VALUES = ['', 'drawings=plan', 'map=1', 'map=xray', 'analysis=year:passive', 'flood=storm']
+const START = {
+  en: ['Open with', 'Nothing extra', 'Floor-plan drawing beside the model', 'On the map', 'Underground view (x-ray)', 'Solar analysis (year)', 'Rain-flood (storm)'],
+  es: ['Abrir con', 'Nada más', 'Plano de planta junto al modelo', 'En el mapa', 'Vista subterránea (rayos X)', 'Análisis solar (año)', 'Inundación por lluvia (tormenta)'],
+  de: ['Öffnen mit', 'Nichts weiter', 'Grundriss neben dem Modell', 'Auf der Karte', 'Untergrundansicht (Röntgen)', 'Solaranalyse (Jahr)', 'Starkregenflut (Gewitter)'],
+  fr: ['Ouvrir avec', 'Rien de plus', 'Plan d’étage à côté du modèle', 'Sur la carte', 'Vue souterraine (rayons X)', 'Analyse solaire (année)', 'Inondation pluviale (orage)'],
+  pt: ['Abrir com', 'Nada mais', 'Planta ao lado do modelo', 'No mapa', 'Vista subterrânea (raio X)', 'Análise solar (ano)', 'Inundação por chuva (tempestade)'],
+  it: ['Apri con', 'Nient’altro', 'Pianta accanto al modello', 'Sulla mappa', 'Vista sotterranea (raggi X)', 'Analisi solare (anno)', 'Allagamento da pioggia (temporale)'],
+  ca: ['Obre amb', 'Res més', 'Planta al costat del model', 'Al mapa', 'Vista subterrània (raigs X)', 'Anàlisi solar (any)', 'Inundació per pluja (tempesta)'],
+  zh: ['打开时', '无附加', '模型旁的平面图', '在地图上', '地下视图（透视）', '日照分析（全年）', '降雨内涝（暴雨）'],
+  ja: ['開くときに', '追加なし', 'モデル横に平面図', '地図上に', '地下ビュー（透視）', '日射解析（年間）', '豪雨浸水（嵐）'],
+  th: ['เปิดพร้อม', 'ไม่มีเพิ่มเติม', 'แปลนพื้นข้างโมเดล', 'บนแผนที่', 'มุมมองใต้ดิน (เอ็กซ์เรย์)', 'วิเคราะห์แสงอาทิตย์ (ทั้งปี)', 'น้ำท่วมจากฝน (พายุ)'],
+}
+
 // Scene background (`?bg=`, see docs/EMBED_URL_PARAMS.md). Label + preset
 // names per language; the value is the same preset id the app parses.
 const BG = {
@@ -250,6 +266,11 @@ function page(lang) {
           ${BG_VALUES.map((v, i) => `<option value="${v}">${esc(BG[lang][i + 1])}</option>`).join('')}
         </select>
 
+        <label class="f">${esc(START[lang][0])}</label>
+        <select id="start">
+          ${START_VALUES.map((v, i) => `<option value="${v}">${esc(START[lang][i + 1])}</option>`).join('')}
+        </select>
+
         <label class="f">${esc(t.language)}</label>
         <select id="lang">
           <option value="">${esc(t.auto)}</option>
@@ -298,9 +319,11 @@ function page(lang) {
       if (!$('validate').checked) u.searchParams.set('validate', '0');
       if ($('panel').checked) u.searchParams.set('panel', '1');
       const accent = $('accent').value.replace(/^#/, '');
-      if (accent && accent.toLowerCase() !== '5e6ad2') u.searchParams.set('accent', accent);
+      if (accent && accent.toLowerCase() !== '0a8481') u.searchParams.set('accent', accent);
       if ($('bg').value) u.searchParams.set('bg', $('bg').value);
       if ($('lang').value) u.searchParams.set('lang', $('lang').value);
+      const start = $('start').value.split('=');
+      if (start[0]) u.searchParams.set(start[0], start[1]);
       return u.toString();
     }
 
@@ -351,7 +374,7 @@ function page(lang) {
       document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
       render();
     }));
-    ['model', 'validate', 'panel', 'accent', 'bg', 'lang', 'height'].forEach((id) => {
+    ['model', 'validate', 'panel', 'accent', 'bg', 'start', 'lang', 'height'].forEach((id) => {
       $(id).addEventListener('input', render);
       $(id).addEventListener('change', render);
     });

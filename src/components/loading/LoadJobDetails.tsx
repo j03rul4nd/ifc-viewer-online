@@ -52,7 +52,7 @@ function ErrorBlock({ job, advanced }: { job: LoadJobView; advanced: boolean }) 
   const c = job.capabilities
   const { reason, generic } = errorText(error, job.kind, t, resolveDetail)
   return (
-    <div className="rounded-[6px] border border-[rgba(224,82,63,0.3)] bg-[rgba(224,82,63,0.07)] p-2">
+    <div className="rounded-[6px] border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--danger)_7%,transparent)] p-2">
       <p className="text-[11.5px] leading-snug text-[var(--text)]">{reason}</p>
       {advanced && generic && (
         <p className="mt-1 text-[10.5px] leading-snug text-[var(--text-dim)]">{generic}</p>
@@ -192,7 +192,7 @@ export function LoadJobDetails({ job, detail }: { job: LoadJobView; detail: Load
   const { t } = useLoadingT()
   const advanced = detail === 'advanced'
   return (
-    <div className="mt-2 ml-[22px] flex flex-col gap-2.5 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-2.5">
+    <div className="mt-2 ml-[22px] flex flex-col gap-2.5 rounded-[8px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)] p-2.5">
       {job.status === 'failed' && <ErrorBlock job={job} advanced={advanced} />}
       {job.stalled && job.status === 'running' && (
         <p className="text-[10.5px] leading-snug text-[var(--warn)]">{stalledText(job, t)}</p>

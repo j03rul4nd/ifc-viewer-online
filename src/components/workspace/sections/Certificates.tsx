@@ -1,13 +1,20 @@
 import type { SectionProps } from '../registry'
-import { Head, Quiet, Empty, DataList, scoreColor } from '../ui'import { useTx } from '../i18n'
+import { useState } from 'react'
+import { Head, Quiet, Empty, DataList, Tabs, scoreColor } from '../ui'
+import { useTx } from '../i18n'
+import CertificateBrand from './pro/CertificateBrand'
+import { useP } from './pro/pro-i18n'
 
 
 export default function Certificates({ data }: SectionProps) {
   const tx = useTx()
+  const p = useP()
+  const [tab, setTab] = useState<'issued' | 'brand'>('issued')
   return (
     <>
       <Head title={tx("Certificates")} sub={tx("Anyone with the link can check the file fingerprint and the result. The model itself is never published.")} />
-      {data.certificates.length === 0 ? (
+      <Tabs label={tx("Certificates")} tabs={[{ id: 'issued', label: p('Issued'), count: data.certificates.length }, { id: 'brand', label: p('Brand') }]} value={tab} onChange={setTab} />
+      {tab === 'brand' ? <CertificateBrand /> : data.certificates.length === 0 ? (
         <Empty title={tx("No certificates issued")} body={tx("A certificate proves that a specific file passed specific checks on a specific date. Your client verifies it with one link — no account needed.")} />
       ) : (
         <DataList tour="cert-list"

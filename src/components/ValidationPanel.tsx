@@ -229,7 +229,7 @@ function buildCopyForAIText(result: ValidationResult, fileName: string): string 
 
 function severityBorderColor(sev: ValidationIssue['severity']): string {
   if (sev === 'error')   return 'var(--danger)'
-  if (sev === 'warning') return '#E9A23B'
+  if (sev === 'warning') return 'var(--warning)'
   return '#5E9ED6'
 }
 
@@ -249,14 +249,14 @@ function RuleBadge({ ruleId }: { ruleId: string }) {
   const meta   = RULE_METADATA[ruleId]
   const label  = getRuleLabel(ruleId, i18n.language)
   const sev    = meta?.defaultSeverity ?? 'info'
-  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#E9A23B' : '#5E9ED6'
+  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warning)' : '#5E9ED6'
   const std    = meta?.standard
 
   return (
     <span className="inline-flex items-center gap-1">
       <span
         className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold leading-none shrink-0"
-        style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}
+        style={{ background: `color-mix(in srgb, ${color} 9%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 19%, transparent)` }}
         title={std ? `${label} · ${std}` : label}
       >
         {label}
@@ -438,7 +438,7 @@ function IssueRow({
           <button
             onClick={commitEdit}
             disabled={!editValue.trim()}
-            className="px-2.5 h-7 rounded text-[11px] bg-[var(--accent)] text-white font-medium hover:brightness-110 disabled:opacity-40"
+            className="px-2.5 h-7 rounded text-[11px] bg-[var(--accent)] text-[var(--accent-contrast)] font-medium hover:brightness-110 disabled:opacity-40"
           >
             {t('issue.apply')}
           </button>
@@ -461,7 +461,7 @@ function IssueRow({
 function GroupHeader({ label, count, ruleId }: { label: string; count: number; ruleId?: string }) {
   const meta  = ruleId ? RULE_METADATA[ruleId] : undefined
   const sev   = meta?.defaultSeverity
-  const color = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#E9A23B' : undefined
+  const color = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warning)' : undefined
   const std   = meta?.standard
 
   return (
@@ -514,7 +514,7 @@ function GroupHeaderRow({
   const label  = groupBy === 'rule' ? getRuleLabel(groupKey, language) : groupKey
   const meta   = groupBy === 'rule' ? RULE_METADATA[groupKey] : undefined
   const sev    = meta?.defaultSeverity
-  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#E9A23B' : undefined
+  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? 'var(--warning)' : undefined
   const std    = meta?.standard
 
   // Severity distribution within this group
@@ -555,7 +555,7 @@ function GroupHeaderRow({
       {/* Per-severity counts inside the group */}
       <div className="flex items-center gap-1 shrink-0">
         {eCount > 0 && <span className="text-[9px] font-mono text-[var(--danger)]">{eCount}E</span>}
-        {wCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#E9A23B' }}>{wCount}W</span>}
+        {wCount > 0 && <span className="text-[9px] font-mono" style={{ color: 'var(--warning)' }}>{wCount}W</span>}
         {iCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#5E9ED6' }}>{iCount}I</span>}
       </div>
 
@@ -758,7 +758,7 @@ function MiniBarChart({
   return (
     <div className="flex h-2 w-14 rounded overflow-hidden gap-px shrink-0" style={{ background: 'var(--border)' }}>
       {errors > 0   && <div style={{ width: `${pE * 100}%`, background: 'var(--danger)', transition: 'width 300ms' }} />}
-      {warnings > 0 && <div style={{ width: `${pW * 100}%`, background: '#E9A23B', transition: 'width 300ms' }} />}
+      {warnings > 0 && <div style={{ width: `${pW * 100}%`, background: 'var(--warning)', transition: 'width 300ms' }} />}
       {info > 0     && <div style={{ width: `${pI * 100}%`, background: '#5E9ED6', transition: 'width 300ms' }} />}
     </div>
   )
@@ -946,9 +946,9 @@ function ProfileDropdown({
         <div
           key={profile.id}
           className="flex flex-col justify-center gap-2 p-2.5 rounded-lg"
-          style={{ background: 'rgba(224,82,63,0.08)', border: '1px solid rgba(224,82,63,0.3)' }}
+          style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)' }}
         >
-          <p className="text-[10px] font-medium" style={{ color: '#e0523f' }}>
+          <p className="text-[10px] font-medium" style={{ color: 'var(--danger)' }}>
             {t('customProfile.deleteConfirm', { defaultValue: 'Delete this profile?' })}
           </p>
           <div className="flex gap-1.5">
@@ -966,7 +966,7 @@ function ProfileDropdown({
                 if (activeProfileId === customProfile.id) onSelect(null)
               }}
               className="flex-1 h-6 rounded text-[10px] font-semibold transition-colors"
-              style={{ background: 'rgba(224,82,63,0.15)', color: '#e0523f', border: '1px solid rgba(224,82,63,0.3)' }}
+              style={{ background: 'color-mix(in srgb, var(--danger) 15%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)' }}
             >
               {t('customProfile.deleteYes', { defaultValue: 'Delete' })}
             </button>
@@ -1020,7 +1020,7 @@ function ProfileDropdown({
               onClick={(e) => { e.stopPropagation(); setDeletingId(customProfile.id) }}
               className="w-5 h-5 flex items-center justify-center rounded transition-colors"
               style={{ color: 'var(--text-faint)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(224,82,63,0.12)'; (e.currentTarget as HTMLButtonElement).style.color = '#e0523f' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--danger) 12%, transparent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--danger)' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
               title={t('profile.deleteCustom')}
             >
@@ -1078,9 +1078,9 @@ function ProfileDropdown({
         left:      dropRect.left,
         width:     dropRect.width,
         maxHeight: 'min(64dvh, 520px)',
-        background: 'rgba(16,16,22,0.98)',
+        background: 'color-mix(in srgb, var(--bg-surface) 98%, transparent)',
         border: '1px solid var(--border)',
-        boxShadow: '0 -8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)',
+        boxShadow: '0 -8px 40px color-mix(in srgb, var(--bg-app) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--text-primary) 3%, transparent)',
         backdropFilter: 'blur(16px)',
       }}
     >
@@ -1208,9 +1208,9 @@ const CAT_COLOR: Record<string, string> = {
   schema:         '#5E9ED6',
   spatial:        'var(--accent)',
   quality:        'var(--ok)',
-  lod:            '#E9A23B',
+  lod:            'var(--warning)',
   iso19650:       'var(--accent)',
-  classification: '#E9A23B',
+  classification: 'var(--warning)',
   mep:            'var(--accent)',
   clash:          'var(--danger)',
 }
@@ -1234,14 +1234,14 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
   const score      = Number.isFinite(qualityScore) ? Math.max(0, Math.min(100, Math.round(qualityScore))) : 0
   const scoreColor =
     score >= 80 ? 'var(--ok)' :
-    score >= 50 ? '#E9A23B'   : 'var(--danger)'
+    score >= 50 ? 'var(--warning)'   : 'var(--danger)'
 
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
       {/* Score pill */}
       <span
         className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border shrink-0 leading-none"
-        style={{ color: scoreColor, borderColor: `${scoreColor}44`, background: `${scoreColor}14` }}
+        style={{ color: scoreColor, borderColor: `color-mix(in srgb, ${scoreColor} 27%, transparent)`, background: `color-mix(in srgb, ${scoreColor} 8%, transparent)` }}
         title={t('coverage.qualityTitle')}
       >
         {score}
@@ -1263,7 +1263,7 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
               className="shrink-0 text-[9px] px-1.5 py-0.5 rounded border leading-none font-mono whitespace-nowrap"
               style={
                 isActive
-                  ? { background: `${color}14`, color, borderColor: `${color}33` }
+                  ? { background: `color-mix(in srgb, ${color} 8%, transparent)`, color, borderColor: `color-mix(in srgb, ${color} 20%, transparent)` }
                   : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }
               }
               title={full}
@@ -1407,7 +1407,7 @@ function ExecutiveSummary({
 
   const grade =
     score >= 85 ? 'excellent' : score >= 70 ? 'good' : score >= 50 ? 'fair' : score >= 30 ? 'poor' : 'critical'
-  const gradeColor = score >= 70 ? 'var(--ok)' : score >= 50 ? '#E9A23B' : 'var(--danger)'
+  const gradeColor = score >= 70 ? 'var(--ok)' : score >= 50 ? 'var(--warning)' : 'var(--danger)'
 
   return (
     <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
@@ -1502,7 +1502,7 @@ function ScoreSparkline({ runs }: { runs: ValidationRunRecord[] }) {
     return `${x.toFixed(1)},${y.toFixed(1)}`
   }).join(' ')
   const lastScore = scores[scores.length - 1]
-  const lineColor = lastScore >= 80 ? 'var(--ok)' : lastScore >= 50 ? '#E9A23B' : 'var(--danger)'
+  const lineColor = lastScore >= 80 ? 'var(--ok)' : lastScore >= 50 ? 'var(--warning)' : 'var(--danger)'
   return (
     <svg width={W} height={H} className="shrink-0">
       <polyline
@@ -1525,7 +1525,7 @@ function ScoreSparkline({ runs }: { runs: ValidationRunRecord[] }) {
 }
 
 function scoreColor(s: number): string {
-  return s >= 80 ? 'var(--ok)' : s >= 50 ? '#E9A23B' : 'var(--danger)'
+  return s >= 80 ? 'var(--ok)' : s >= 50 ? 'var(--warning)' : 'var(--danger)'
 }
 
 function ValidationHistoryPanel({ onClose }: { onClose: () => void }) {
@@ -1578,7 +1578,7 @@ function ValidationHistoryPanel({ onClose }: { onClose: () => void }) {
             {avgScore != null && (
               <span
                 className="px-1.5 py-0.5 rounded-full font-mono font-bold text-[10px] border leading-none"
-                style={{ color: scoreColor(avgScore), borderColor: `${scoreColor(avgScore)}44`, background: `${scoreColor(avgScore)}14` }}
+                style={{ color: scoreColor(avgScore), borderColor: `color-mix(in srgb, ${scoreColor(avgScore)} 27%, transparent)`, background: `color-mix(in srgb, ${scoreColor(avgScore)} 8%, transparent)` }}
               >
                 {avgScore}
               </span>
@@ -1628,7 +1628,7 @@ function ValidationHistoryPanel({ onClose }: { onClose: () => void }) {
               {/* Score pill */}
               <span
                 className="w-9 text-center px-1.5 py-0.5 rounded-full font-mono font-bold text-[11px] border leading-none shrink-0"
-                style={{ color: c, borderColor: `${c}44`, background: `${c}14` }}
+                style={{ color: c, borderColor: `color-mix(in srgb, ${c} 27%, transparent)`, background: `color-mix(in srgb, ${c} 8%, transparent)` }}
               >
                 {sc}
               </span>
@@ -2669,7 +2669,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span className="text-[11px] text-[var(--danger)] font-mono">{stats.errors}E</span>
             )}
             {stats.warnings > 0 && (
-              <span className="text-[11px] font-mono" style={{ color: '#E9A23B' }}>{stats.warnings}W</span>
+              <span className="text-[11px] font-mono" style={{ color: 'var(--warning)' }}>{stats.warnings}W</span>
             )}
             {stats.info > 0 && (
               <span className="text-[11px] font-mono" style={{ color: '#5E9ED6' }}>{stats.info}I</span>
@@ -2681,8 +2681,8 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span
                 className="px-1.5 py-0.5 rounded-full font-mono font-bold text-[10px] border leading-none"
                 style={(() => {
-                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#E9A23B' : 'var(--danger)'
-                  return { color: c, borderColor: `${c}44`, background: `${c}14` }
+                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? 'var(--warning)' : 'var(--danger)'
+                  return { color: c, borderColor: `color-mix(in srgb, ${c} 27%, transparent)`, background: `color-mix(in srgb, ${c} 8%, transparent)` }
                 })()}
               >
                 {displayScore}
@@ -2729,7 +2729,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span className="text-[var(--danger)] shrink-0">{stats.errors}E</span>
             )}
             {stats.warnings > 0 && (
-              <span style={{ color: '#E9A23B' }} className="shrink-0">{stats.warnings}W</span>
+              <span style={{ color: 'var(--warning)' }} className="shrink-0">{stats.warnings}W</span>
             )}
             {stats.info > 0 && (
               <span style={{ color: '#5E9ED6' }} className="shrink-0">{stats.info}I</span>
@@ -2741,8 +2741,8 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span
                 className="ml-0.5 px-1.5 py-0.5 rounded-full font-bold text-[9px] border leading-none shrink-0"
                 style={(() => {
-                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#E9A23B' : 'var(--danger)'
-                  return { color: c, borderColor: `${c}44`, background: `${c}14` }
+                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? 'var(--warning)' : 'var(--danger)'
+                  return { color: c, borderColor: `color-mix(in srgb, ${c} 27%, transparent)`, background: `color-mix(in srgb, ${c} 8%, transparent)` }
                 })()}
                 title={[
                   t('coverage.qualityTitle'),
@@ -3022,7 +3022,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
       {/* Prevents false confidence: user sees "Naming Convention: 0 issues" and thinks model is fine. */}
       {result && showPhantomNotice && unconfiguredRules.length > 0 && (
         <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#E9A23B" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--warning)" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
             <circle cx="5" cy="5" r="4.5" />
             <path d="M5 3v2.5M5 7h.01" />
           </svg>
@@ -3032,7 +3032,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
               <span
                 key={ruleId}
                 className="shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border whitespace-nowrap"
-                style={{ color: '#E9A23B', borderColor: '#E9A23B33', background: '#E9A23B14' }}
+                style={{ color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 20%, transparent)', background: 'color-mix(in srgb, var(--warning) 8%, transparent)' }}
                 title={t('phantom.ruleTooltip')}
               >
                 ⚙ {getRuleLabel(ruleId, i18n.language)}
@@ -3054,7 +3054,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
       {/* ── Clash cap notice (Bug 1 fix) ── */}
       {result?.metadata?.clashCapped && (
         <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#E9A23B" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--warning)" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
             <circle cx="5" cy="5" r="4.5" />
             <path d="M5 3v2.5M5 7h.01" />
           </svg>
@@ -3113,7 +3113,7 @@ export default function ValidationPanel({ onJumpToElement, onFrameElements, view
 
                 const tabColor =
                   tab === 'errors'   ? 'var(--danger)' :
-                  tab === 'warnings' ? '#E9A23B' :
+                  tab === 'warnings' ? 'var(--warning)' :
                   tab === 'info'     ? '#5E9ED6' : undefined
 
                 return (

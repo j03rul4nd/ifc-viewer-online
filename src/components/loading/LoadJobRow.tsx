@@ -250,7 +250,7 @@ export const LoadJobRow = React.memo(function LoadJobRow({
     <div
       className={[
         'group/row relative px-3 py-2 transition-colors duration-100',
-        expanded ? 'bg-[rgba(255,255,255,0.03)]' : 'hover:bg-[rgba(255,255,255,0.02)]',
+        expanded ? 'bg-[color-mix(in_srgb,var(--text-primary)_3%,transparent)]' : 'hover:bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)]',
       ].join(' ')}
     >
       <div className="flex items-center gap-2 min-w-0">

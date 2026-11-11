@@ -94,6 +94,8 @@
     "forceLang": "Sprache erzwingen ({{lang}})",
     "heightLabel": "Höhe (px)",
     "accentLabel": "Akzentfarbe",
+    "startLabel": "Öffnen mit",
+    "start": { "none": "Nichts weiter", "drawings": "Grundriss neben dem Modell", "map": "Auf der Karte", "underground": "Untergrundansicht (Röntgen)", "solar": "Solaranalyse (Jahr)", "flood": "Starkregenflut (Gewitter)" },
     "iframeTab": "iframe",
     "urlTab": "Link",
     "copy": "In die Zwischenablage kopieren",

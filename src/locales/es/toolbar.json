@@ -94,6 +94,8 @@
     "forceLang": "Forzar idioma ({{lang}})",
     "heightLabel": "Altura (px)",
     "accentLabel": "Color de acento",
+    "startLabel": "Abrir con",
+    "start": { "none": "Nada más", "drawings": "Plano de planta junto al modelo", "map": "En el mapa", "underground": "Vista subterránea (rayos X)", "solar": "Análisis solar (año)", "flood": "Inundación por lluvia (tormenta)" },
     "iframeTab": "iframe",
     "urlTab": "Enlace",
     "copy": "Copiar al portapapeles",
