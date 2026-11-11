@@ -80,3 +80,6 @@ __pycache__/
 /.tmp/shanghai-bridges/
 /.tmp/shanghai-rail/
 /.tmp/shanghai-city/
+
+# DeltaDTM tile cache of scripts/bake-shanghai-ground.mjs
+.tmp-terrain/

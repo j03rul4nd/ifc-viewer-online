@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  newFootprints, extractCovers, ringAreaM2, clearsModelPlan,
+  newFootprints, extractCovers, ringAreaM2, clearsModelPlan, districtsTouching, mergeExtracts,
   DUPLICATE_RADIUS_M, MIN_AREA_M2,
   type OvertureFootprint, type RingLike,
 } from './overture-footprints'
@@ -192,5 +192,32 @@ describe('clearsModelPlan — the model is the subject, not the context', () => 
   it('refuses against any of several model plans, not just the first', () => {
     const far = [{ x: 970, y: -30 }, { x: 1030, y: -30 }, { x: 1030, y: 30 }, { x: 970, y: 30 }]
     expect(clearsModelPlan(square('inside', 20), [far, plan[0]], project)).toBe(false)
+  })
+})
+
+describe('the districts a site reaches — the Bund seen from Lujiazui', () => {
+  const index = [
+    { slug: 'lujiazui', bbox: [121.492445, 31.233401, 121.507155, 31.245999] as [number, number, number, number] },
+    { slug: 'bund', bbox: [121.478631, 31.233701, 121.493369, 31.246299] as [number, number, number, number] },
+    { slug: 'poblenou', bbox: [2.181616, 41.400101, 2.198384, 41.412699] as [number, number, number, number] },
+  ]
+  // A site round the Oriental Pearl, 700 m each way.
+  const site = { south: 31.2356, north: 31.2482, west: 121.4881, east: 121.5029 }
+
+  it('reads both districts the box reaches, not only the one under the model', () => {
+    expect(districtsTouching(index, site).map((d) => d.slug)).toEqual(['lujiazui', 'bund'])
+  })
+
+  it('merges them, keeping a footprint the two boxes share once', () => {
+    const fp = (id: string) => ({ id, ring: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }, { lat: 1, lon: 1 }] })
+    const base = { release: 'r', attribution: 'a', bbox: [0, 0, 1, 1] as [number, number, number, number] }
+    const m = mergeExtracts([
+      { ...base, footprints: [fp('a'), fp('b')], osm: { w1: { tags: { height: '10' } } } },
+      { ...base, footprints: [fp('b'), fp('c')], osm: { w1: { tags: { height: '99' } }, w2: { tags: {} } } },
+      null,
+    ])!
+    expect(m.footprints.map((f) => f.id)).toEqual(['a', 'b', 'c'])
+    expect(m.osm!.w1.tags.height).toBe('10')
+    expect(Object.keys(m.osm!)).toEqual(['w1', 'w2'])
   })
 })

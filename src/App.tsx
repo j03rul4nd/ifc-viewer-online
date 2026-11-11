@@ -51,7 +51,8 @@ import WelcomeView from './components/WelcomeView'
 import { isPricingPreview } from './lib/pricing/pricing-preview'
 import DashboardView from './components/dashboard/DashboardView'
 import AdminView from './components/dashboard/AdminView'
-import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountStore'
+import { isAccountEnabled, openFeatureRequest, useCloudAccountStore } from './stores/cloudAccountStore'
+import { feedbackAllowed, hasPendingDraft, takePendingDraft } from './lib/feedback-gate'
 
 // Client-side admin gate: a UX fast-path only — the REAL boundary is the
 // Worker (users.global_role = super_admin; non-admins read 404 on /admin/*).
@@ -74,11 +75,17 @@ function georefKeyOf(g: { epsgCode: string | null; eastings: number | null; nort
 /** [x, y, z] (scene documents, `?camera=`) → the viewer's {x, y, z}. */
 const vec3 = (a: [number, number, number]): { x: number; y: number; z: number } => ({ x: a[0], y: a[1], z: a[2] })
 
-const ADMIN_USER_IDS = new Set(['user_3GP6gqE5WAmVzHobM0BosBk9A58'])
+const ADMIN_USER_IDS = new Set(['user_3LmQIZhfjNlCn5seaan6KVrLAnX', 'user_3GP6gqE5WAmVzHobM0BosBk9A58'])
 
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
 // @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
 const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
+// "Request a feature" (signed-in users) and its founder read-back. Clerk-free.
+const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
+const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
+const LazyCallBookingView = React.lazy(() => import('./components/account/CallBookingView'))
+const LazyRequestNudge = React.lazy(() => import('./components/account/RequestNudge'))
+const LazyRequestUpdates = React.lazy(() => import('./components/account/RequestUpdates'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
 const LazyEbookView = React.lazy(() => import('./components/EbookView'))
@@ -108,6 +115,8 @@ import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
+import BatchFolderDoor from './components/pricing/BatchFolderDoor'
+import { batchCountBucket, shouldOfferBatchFolder } from './lib/batch-folder-door'
 import { useCompareStore } from './stores/compareStore'
 import { planCompareOverlay } from './lib/compare/overlay'
 import IdsPanel from './components/IdsPanel'
@@ -287,6 +296,8 @@ import {
   trackFileOpenFailed,
   trackRequirementsLinkOpened,
   trackServerProcessingInterest,
+  trackServerProcessingOffered,
+  trackBatchFolderInterest,
   trackIdsFileLoaded,
 } from './lib/analytics'
 
@@ -640,7 +651,19 @@ export default function App() {
       if (!hash.startsWith('#r=')) return
       void (async () => {
         const { decodeRequirements, requirementsFromHash } = await import('./lib/requirements/requirements-link')
-        const req = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        const linked = await decodeRequirements(requirementsFromHash(hash) ?? '')
+        // B2: a link made from a managed profile is checked against the
+        // version that is current now (public read, no account); the link's
+        // own snapshot is the fallback, so an old link never breaks.
+        let req = linked
+        let checkedVersion: import('./lib/requirements/managed-requirements').CheckedVersion | null = null
+        if (linked?.pr) {
+          const { publicFetcher, resolveManagedRequirements } = await import('./lib/requirements/managed-requirements')
+          const base = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+          const resolved = await resolveManagedRequirements(linked, base ? publicFetcher(base) : null)
+          req = resolved.req
+          checkedVersion = resolved.version
+        }
         trackRequirementsLinkOpened({ has_score: typeof req?.s === 'number', has_ids: typeof req?.x === 'string', valid: req !== null })
         if (!req) {
           toast(tToasts('requirements.invalid'), 'error', { duration: 8000 })
@@ -664,7 +687,7 @@ export default function App() {
             if (!(err instanceof IdsParseError)) throw err
           }
         }
-        useRequirementsStore.getState().setActive(req)
+        useRequirementsStore.getState().setActive(req, checkedVersion)
       })()
     }
     apply()
@@ -736,6 +759,8 @@ export default function App() {
         if (rel === '/sign-up' || rel.startsWith('/sign-up/')) return 'signup'
         if (rel === '/account' || rel.startsWith('/account/')) return 'account'
         if (rel === '/dashboard' || rel.startsWith('/dashboard/')) return 'dashboard'
+        if (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/')) return 'feedbackAdmin'
+        if (rel === '/call' || rel === '/call/') return 'call'
         if (rel === '/admin' || rel.startsWith('/admin/')) return 'admin'
       }
     }
@@ -785,7 +810,12 @@ export default function App() {
   const [accent, setAccent] = useState(() => urlParams.accent ?? '#0A8481')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
-    try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
+    // A saved choice wins; otherwise follow the system (light for most office desktops).
+    try {
+      const saved = localStorage.getItem('lp-theme')
+      if (saved === 'dark' || saved === 'light') return saved
+    } catch { /* ignore */ }
+    try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark' } catch { return 'dark' }
   })
   const handleToggleLandingTheme = useCallback((): void => {
     setLandingTheme((cur) => {
@@ -873,6 +903,10 @@ export default function App() {
         setRoute('account')
       } else if (isAccountEnabled() && (rel === '/dashboard' || rel.startsWith('/dashboard/'))) {
         setRoute('dashboard')
+      } else if (isAccountEnabled() && (rel === '/admin/feedback' || rel.startsWith('/admin/feedback/'))) {
+        setRoute('feedbackAdmin')
+      } else if (isAccountEnabled() && (rel === '/call' || rel === '/call/')) {
+        setRoute('call')
       } else if (isAccountEnabled() && (rel === '/admin' || rel.startsWith('/admin/'))) {
         setRoute('admin')
       } else {
@@ -896,6 +930,7 @@ export default function App() {
   // never bounced later.
   const accountStatus = useCloudAccountStore((s) => s.status)
   const accountUserId = useCloudAccountStore((s) => s.userId)
+  const featureRequestOpen = useCloudAccountStore((s) => s.featureRequestOpen)
   const isSupremeAdmin = accountStatus === 'signed-in' && !!accountUserId && ADMIN_USER_IDS.has(accountUserId)
   useEffect(() => {
     if (accountStatus !== 'signed-in' || !accountUserId) return
@@ -996,6 +1031,8 @@ export default function App() {
   // The "+ Add data" hub (components/data/AddDataHub, docs/ADD_DATA.md).
   const [showAddData, setShowAddData]         = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
+  /** Fake door: files in the multi-IFC drop whose "Validate folder (Pro)" was clicked. */
+  const [batchDoorCount, setBatchDoorCount]   = useState<number | null>(null)
   const [showCompareModal, setShowCompareModal] = useState(false)
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
@@ -1027,6 +1064,30 @@ export default function App() {
       : embedChrome,
     [embedChrome, clientMode],
   )
+
+  // Where the app may talk to the user about feedback: the top-level full
+  // viewer only — never inside an SDK/WordPress/Shopify/blog iframe, never
+  // with ?embed=1 chrome, while presenting to a client, in a tour or a studio.
+  const feedbackSurfaceOk = isAccountEnabled() && feedbackAllowed({
+    route,
+    embedded: isEmbedded(),
+    embedParam: embedChrome.embed,
+    clientMode,
+    tourPlaying: tourMode === 'playing',
+    studioOpen: clipStudioOpen || coverStudioOpen,
+    quiet: Boolean(effectiveChrome.quiet),
+  })
+
+  // An answer chosen before signing in comes back after it, ready to send.
+  // OAuth sign-in reloads the page (often onto the landing), so this listens
+  // on every route, not only the viewer.
+  useEffect(() => {
+    if (accountStatus !== 'signed-in' || isEmbedded() || !hasPendingDraft()) return
+    const draft = takePendingDraft()
+    if (!draft) return
+    const { feature, need, source, ...detail } = draft
+    openFeatureRequest(source, { feature, need, detail, resumed: true })
+  }, [accountStatus])
 
   // Embedded presets are a contract, not a suggestion inherited from the
   // visitor's last full-viewer session. The column layout is intentionally
@@ -1644,10 +1705,16 @@ export default function App() {
             label: tToasts('model.serverProcessingAction'),
             run: () => {
               trackServerProcessingInterest({ file_size_mb: sizeMb })
-              toast(tToasts('model.serverProcessingNoted'), 'info', { duration: 10000 })
+              // Ask the one who just hit the wall what they need it for: the
+              // form starts on "large files" and records the size as context.
+              toast(tToasts('model.serverProcessingNoted'), 'info', isAccountEnabled()
+                ? { duration: 12000, action: { label: i18n.t('pro:requests.tellUs'), run: () => openFeatureRequest(`large_file:${sizeMb}`) } }
+                : { duration: 10000 })
             },
           }
         : undefined
+      // Exposure, so zero clicks can be told apart from zero chances to click.
+      if (serverProcessingDoor) trackServerProcessingOffered({ file_size_mb: sizeMb })
       // The geometry did not fit (a 300–400 MB model, typically) but the file is
       // readable IFC: offer the Health Score without the 3D instead of a dead end.
       const source = getLoadManager().failedSource(job.id)
@@ -1671,6 +1738,9 @@ export default function App() {
             },
           },
         })
+        // The failure toast holds one action (validation only): the door gets
+        // its own, or nobody who skips validation-only ever sees it.
+        if (serverProcessingDoor) toast(tToasts('model.serverProcessingOffer'), 'info', { duration: 0, action: serverProcessingDoor })
         return
       }
       toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error',
@@ -2196,6 +2266,20 @@ export default function App() {
       setUploadInitial(plan.ifc)
       setShowUpload(true)
     }
+    // Fake door: several IFC at once is when a folder check would help.
+    if (shouldOfferBatchFolder(plan.ifc.length, { interactive, embedded: isEmbedded() || embedChrome.embed })) {
+      const count = batchCountBucket(plan.ifc.length)
+      toast(i18n.t('pro:batchFolder.offer', { count: plan.ifc.length }), 'info', {
+        duration: 15000,
+        action: {
+          label: i18n.t('pro:batchFolder.action'),
+          run: () => {
+            trackBatchFolderInterest({ file_count: count, step: 'clicked' })
+            setBatchDoorCount(count)
+          },
+        },
+      })
+    }
     if (plan.ids) {
       // With IFCs in the same drop the IDS checks them by itself once they
       // load; without, the IDS dialog opens as before (the user picks a model).
@@ -2694,6 +2778,8 @@ export default function App() {
   const handleSpaNavigate = useCallback((path: string): void => {
     history.pushState(null, '', path)
     if (path.startsWith('/dashboard')) setRoute('dashboard')
+    else if (path.startsWith('/admin/feedback')) setRoute('feedbackAdmin')
+    else if (path.startsWith('/call')) setRoute('call')
     else if (path.startsWith('/admin')) setRoute('admin')
     else if (path.startsWith('/sign-in')) setRoute('signin')
     else if (path.startsWith('/sign-up')) setRoute('signup')
@@ -4862,6 +4948,38 @@ export default function App() {
           </motion.div>
         )}
 
+        {route === 'call' && (
+          <motion.div
+            key="call"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyCallBookingView
+                onBack={handleNavigateToLanding}
+                onSignIn={() => { window.location.href = '/sign-in?redirect_url=' + encodeURIComponent(window.location.pathname + window.location.search) }}
+                theme={landingTheme}
+              />
+            </React.Suspense>
+          </motion.div>
+        )}
+
+        {route === 'feedbackAdmin' && (
+          <motion.div
+            key="feedback-admin"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyFeedbackAdminView onBack={() => handleSpaNavigate('/dashboard')} onSignIn={() => handleSpaNavigate('/sign-in')} theme={landingTheme} />
+            </React.Suspense>
+          </motion.div>
+        )}
+
         {route === 'landing' && (
           <motion.div
             key="landing"
@@ -5001,6 +5119,7 @@ export default function App() {
                   return (
                     <Toolbar
                       compact={!!dualLayout}
+                      canSuggest={feedbackSurfaceOk}
                       fileName={displayName}
                       elementCount={displayCount}
                       // Models already in the scene stay usable while others load;
@@ -5373,12 +5492,12 @@ export default function App() {
 
                   {/* Requirements link (doc 17, M1): who asks for what, and the verdict.
                       Inside the viewport so the toolbar's menus open over it. */}
-                  <RequirementsBanner onOpenFile={handleOpenUpload} />
+                  <RequirementsBanner onOpenFile={handleOpenUpload} getProjectTexts={(id) => viewerApiRef.current?.getProjectTexts(id) ?? Promise.resolve(undefined)} />
 
                   {effectiveChrome.showHome && (
                     <button
                       onClick={handleNavigateToLanding}
-                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(24,23,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                      className="max-md:hidden absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                     >
                       <Icons.Chevron size={12} className="rotate-180" />
                       <span className="hidden xs:inline">{tCommon('actions.home')}</span>
@@ -5460,6 +5579,7 @@ export default function App() {
                   <div className="sr-only" aria-live="polite" aria-atomic="true">{selectionAnnouncement}</div>
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
+                    canSuggest={feedbackSurfaceOk}
                     // Properties is excluded: the bottom nav already has its
                     // own tab for it, and the rail item toggles the desktop
                     // column's flag, which is not what a phone shows.
@@ -5539,6 +5659,9 @@ export default function App() {
       {/* ── IDS check ── */}
       {showIdsModal && (
         <IdsModal onClose={() => setShowIdsModal(false)} />
+      )}
+      {batchDoorCount !== null && (
+        <BatchFolderDoor fileCount={batchDoorCount} onClose={() => setBatchDoorCount(null)} />
       )}
 
       {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
@@ -5630,7 +5753,7 @@ export default function App() {
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
-          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[rgba(24,23,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          className="max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
           style={{ bottom: `max(calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 8px), 16px)` }}
         >
           {activeFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
@@ -5657,6 +5780,28 @@ export default function App() {
       {/* ── Personalized invite — post-aha Mom-Test nudge (viewer) ── */}
       {route === 'viewer' && invite && feedbackNudgeOpen && (
         <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
+      )}
+
+      {/* "What would help you most?" — anyone (signed in or not) in the
+          full viewer, after real use of a validated model; the card paces
+          itself (lib/feedback-gate). Never next to the invite's own nudge. */}
+      {feedbackSurfaceOk && result && !feedbackNudgeOpen && (
+        <React.Suspense fallback={null}>
+          <LazyRequestNudge />
+        </React.Suspense>
+      )}
+
+      {/* "One of your requests moved" — signed-in users who have asked before. */}
+      {accountStatus === 'signed-in' && feedbackSurfaceOk && (
+        <React.Suspense fallback={null}>
+          <LazyRequestUpdates />
+        </React.Suspense>
+      )}
+
+      {featureRequestOpen && (
+        <React.Suspense fallback={null}>
+          <LazyFeatureRequestModal />
+        </React.Suspense>
       )}
 
       {/* ── Global toast notifications ── */}

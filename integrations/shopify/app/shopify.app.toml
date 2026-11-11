@@ -1,0 +1,20 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "26585d50b4fa74c8e9d5c80614822560"
+name = "IFC Viewer Online"
+application_url = "https://www.ifcvieweronline.eu/"
+embedded = false
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = ""
+
+[auth]
+redirect_urls = [ "https://www.ifcvieweronline.eu/" ]
+
+[webhooks]
+api_version = "2027-01"
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true

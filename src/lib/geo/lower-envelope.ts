@@ -165,3 +165,52 @@ export function lowerEnvelope(
 
   return { radiusPx, meanDropM: sum / grid.length, maxDropM: maxDrop }
 }
+
+// ── Flat river deltas ─────────────────────────────────────────────────────────
+//
+// The opening above removes anything narrower than its window, and in most
+// cities that is every building. Not on the Bund. There the blocks stand wall
+// to wall for a kilometre, the 30 m radar sees no street between them, and the
+// opening reads the whole district as a plateau: measured on the riverfront,
+// ground at +17 m two hundred metres inland falling to +0.4 m at the river
+// wall, in a city whose real relief over the same distance is under two metres.
+// At street level the Bund came out as a ramp, its pavements tilted in slabs.
+//
+// Where the land is KNOWN to be flat — a delta, not a guess from the raster —
+// the honest ground is a floor: no sample may stand more than a step above the
+// low end of the land around it. Water stays where it is, below that floor.
+
+/** Boxes of land that is flat to within a couple of metres: [south, west, north, east]. */
+export const FLAT_GROUND_REGIONS: ReadonlyArray<readonly [number, number, number, number]> = [
+  // Shanghai on the Yangtze delta: 3–5 m above sea level across the city.
+  [30.65, 120.85, 31.9, 122.05],
+]
+
+export function isFlatGround(lat: number, lon: number): boolean {
+  return FLAT_GROUND_REGIONS.some(([s, w, n, e]) => lat >= s && lat <= n && lon >= w && lon <= e)
+}
+
+/** How far above the land's floor a sample may stand on flat ground, metres. */
+export const FLAT_GROUND_STEP_M = 1.5
+/** Samples this close to the grid's lowest value are water, metres. */
+const WATER_BAND_M = 1
+
+/**
+ * Cap a height grid on flat ground: nothing higher than the land's floor plus
+ * {@link FLAT_GROUND_STEP_M}. The floor is the 10th percentile of the samples
+ * that are not water, so a river a quarter of the patch wide cannot drag it.
+ */
+export function capFlatGround(grid: Float32Array): { capM: number; capped: number } {
+  let min = Infinity
+  for (const v of grid) if (v < min) min = v
+  const land: number[] = []
+  for (const v of grid) if (v > min + WATER_BAND_M) land.push(v)
+  if (land.length === 0) return { capM: min, capped: 0 }
+  land.sort((a, b) => a - b)
+  const capM = land[Math.floor(land.length * 0.1)] + FLAT_GROUND_STEP_M
+  let capped = 0
+  for (let i = 0; i < grid.length; i++) {
+    if (grid[i] > capM) { grid[i] = capM; capped++ }
+  }
+  return { capM, capped }
+}

@@ -107,7 +107,7 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
       title={`Copy ${label ?? value}`}
     >
       {copied ? (
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#3FA866" strokeWidth="1.8" strokeLinecap="round">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="var(--success)" strokeWidth="1.8" strokeLinecap="round">
           <path d="M2 6l3 3 5-5" />
         </svg>
       ) : (
@@ -230,8 +230,8 @@ function ReadOnlyField({ label, value, mono = false, copyable = false }: {
 function IssuePill({ issue }: { issue: ValidationIssue }) {
   const [open, setOpen] = useState(false)
   const colors = {
-    error:   { bg: '#E0523F18', border: '#E0523F44', text: '#E0523F', dot: '#E0523F' },
-    warning: { bg: '#E9A23B18', border: '#E9A23B44', text: '#E9A23B', dot: '#E9A23B' },
+    error:   { bg: 'color-mix(in srgb, var(--danger) 9%, transparent)', border: 'color-mix(in srgb, var(--danger) 27%, transparent)', text: 'var(--danger)', dot: 'var(--danger)' },
+    warning: { bg: 'color-mix(in srgb, var(--warning) 9%, transparent)', border: 'color-mix(in srgb, var(--warning) 27%, transparent)', text: 'var(--warning)', dot: 'var(--warning)' },
     info:    { bg: '#5E9ED618', border: '#5E9ED644', text: '#5E9ED6', dot: '#5E9ED6' },
   }[issue.severity]
 
@@ -247,7 +247,7 @@ function IssuePill({ issue }: { issue: ValidationIssue }) {
           {issue.message}
         </span>
         {issue.autoFixable && (
-          <span className="text-[9px] px-1 py-0.5 rounded bg-[#3FA86618] text-[#3FA866] border border-[#3FA86633] shrink-0 font-medium">
+          <span className="text-[9px] px-1 py-0.5 rounded bg-[color-mix(in_srgb,var(--success)_9%,transparent)] text-[var(--success)] border border-[color-mix(in_srgb,var(--success)_20%,transparent)] shrink-0 font-medium">
             AUTO-FIX
           </span>
         )}
@@ -967,17 +967,17 @@ function PropertiesPanel({
             {selected.type}
           </span>
           {hasDirty && (
-            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-white font-medium leading-none">
+            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] font-medium leading-none">
               {dirtyCount} edit{dirtyCount !== 1 ? 's' : ''}
             </span>
           )}
           {errorCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#E0523F22] text-[#E0523F] border border-[#E0523F44] font-medium leading-none">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--danger)_13%,transparent)] text-[var(--danger)] border border-[color-mix(in_srgb,var(--danger)_27%,transparent)] font-medium leading-none">
               {errorCount} err
             </span>
           )}
           {warningCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#E9A23B22] text-[#E9A23B] border border-[#E9A23B44] font-medium leading-none">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--warning)_13%,transparent)] text-[var(--warning)] border border-[color-mix(in_srgb,var(--warning)_27%,transparent)] font-medium leading-none">
               {warningCount} warn
             </span>
           )}
@@ -1004,14 +1004,14 @@ function PropertiesPanel({
                     onClick={handleExportJson}
                     className="w-full text-left px-3 py-2 text-[11.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
                   >
-                    <span className="font-mono text-[9px] text-[#3FA866]">JSON</span>
+                    <span className="font-mono text-[9px] text-[var(--success)]">JSON</span>
                     Export JSON
                   </button>
                   <button
                     onClick={handleExportCsv}
                     className="w-full text-left px-3 py-2 text-[11.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
                   >
-                    <span className="font-mono text-[9px] text-[#E9A23B]">CSV</span>
+                    <span className="font-mono text-[9px] text-[var(--warning)]">CSV</span>
                     Export CSV
                   </button>
                 </div>
@@ -1062,7 +1062,7 @@ function PropertiesPanel({
                 onClick={() => onIsolate?.()}
                 className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg border text-[11px] transition-colors ${
                   isIsolated
-                    ? 'bg-[var(--accent)] border-[var(--accent)] text-white hover:brightness-110'
+                    ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110'
                     : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)]'
                 }`}
                 title={isIsolated ? t('actions.clearIsolation') : t('actions.isolate')}
@@ -1088,7 +1088,7 @@ function PropertiesPanel({
             onClick={() => setElementsVisible(expandWithDecomp(expressId!, decompMap), isHidden, selected?.modelId ?? '')}
             className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg border text-[11px] transition-colors ${
               isHidden
-                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)]'
                 : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)]'
             }`}
           >
@@ -1164,15 +1164,15 @@ function PropertiesPanel({
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
               <div className="px-4 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: isHidden ? '#E0523F' : '#3FA866' }} />
+                  <div className="w-2 h-2 rounded-full" style={{ background: isHidden ? 'var(--danger)' : 'var(--success)' }} />
                   <span className="text-[12px] text-[var(--text)]">{isHidden ? t('properties.hidden') : t('properties.visible')}</span>
                 </div>
                 <button
                   onClick={() => setElementsVisible(expandWithDecomp(expressId!, decompMap), isHidden, selected?.modelId ?? '')}
                   className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition-colors border ${
                     isHidden
-                      ? 'bg-[#3FA86622] border-[#3FA86644] text-[#3FA866] hover:bg-[#3FA86633]'
-                      : 'bg-[#E0523F22] border-[#E0523F44] text-[#E0523F] hover:bg-[#E0523F33]'
+                      ? 'bg-[color-mix(in_srgb,var(--success)_13%,transparent)] border-[color-mix(in_srgb,var(--success)_27%,transparent)] text-[var(--success)] hover:bg-[color-mix(in_srgb,var(--success)_20%,transparent)]'
+                      : 'bg-[color-mix(in_srgb,var(--danger)_13%,transparent)] border-[color-mix(in_srgb,var(--danger)_27%,transparent)] text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_20%,transparent)]'
                   }`}
                 >
                   {isHidden ? t('actions.showElement') : t('actions.hideElement')}
@@ -1268,8 +1268,8 @@ function PropertiesPanel({
 
                 {/* IFC data load error notice */}
                 {ifcState.status === 'error' && (
-                  <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[#E9A23B12] border border-[#E9A23B30] flex items-center gap-2">
-                    <span className="text-[10.5px] text-[#E9A23B]">{t('properties.loadError')}</span>
+                  <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--warning)_7%,transparent)] border border-[color-mix(in_srgb,var(--warning)_19%,transparent)] flex items-center gap-2">
+                    <span className="text-[10.5px] text-[var(--warning)]">{t('properties.loadError')}</span>
                   </div>
                 )}
               </div>
@@ -1543,8 +1543,8 @@ function CategoryRow({
       <div
         className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] group/row hover:bg-[var(--surface-2)] transition-colors rounded-[6px] mx-1"
         style={{
-          background:  isIsolated ? 'rgba(10,132,129,0.1)' : undefined,
-          outline:     isIsolated ? '1px solid rgba(10,132,129,0.3)' : undefined,
+          background:  isIsolated ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : undefined,
+          outline:     isIsolated ? '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' : undefined,
           opacity:     isHidden   ? 0.4 : 1,
         }}
       >
@@ -1587,7 +1587,7 @@ function CategoryRow({
         {hasIssues && (
           <span
             className="inline-flex items-center gap-0.5 text-[10px] font-mono px-1 py-0.5 rounded leading-none shrink-0"
-            style={{ color: '#E9A23B', background: 'rgba(233,162,59,0.15)', border: '1px solid rgba(233,162,59,0.25)' }}
+            style={{ color: 'var(--warning)', background: 'color-mix(in srgb, var(--warning) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)' }}
             title={`${issueCount} validation issue${issueCount !== 1 ? 's' : ''}`}
           >
             <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" style={{ opacity: 0.9 }}>
@@ -1815,7 +1815,7 @@ function CategoryPanel({
           </span>
           {typesWithIssues > 0 && (
             <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none"
-              style={{ color: '#E9A23B', background: 'rgba(233,162,59,0.12)', border: '1px solid rgba(233,162,59,0.2)' }}>
+              style={{ color: 'var(--warning)', background: 'color-mix(in srgb, var(--warning) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--warning) 20%, transparent)' }}>
               <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M6 2L10.5 10H1.5L6 2zm0 2.5v2.5m0 1.5v.01"/>
               </svg>
@@ -2259,13 +2259,13 @@ export default function Sidebar({
           <div className="sheet-handle" />
         </div>
         <div className="flex items-center justify-between w-full px-5 pb-3">
-          <span className="text-[13px] font-semibold tracking-tight" style={{ color: 'rgba(255,255,255,0.72)' }}>
+          <span className="text-[13px] font-semibold tracking-tight" style={{ color: 'color-mix(in srgb, var(--text-primary) 72%, transparent)' }}>
             {t('panel')}
           </span>
           <button
             onClick={onMobileClose}
             className="flex items-center justify-center rounded-full active:scale-90 transition-transform"
-            style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}
+            style={{ width: 28, height: 28, background: 'color-mix(in srgb, var(--text-primary) 08%, transparent)', color: 'color-mix(in srgb, var(--text-primary) 40%, transparent)' }}
             aria-label={t('actions.hidePanel')}
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">

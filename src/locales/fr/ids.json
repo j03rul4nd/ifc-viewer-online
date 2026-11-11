@@ -212,6 +212,76 @@
       "empty": "Ajoutez au moins un score minimum ou un IDS",
       "tooLong": "Cet IDS est trop volumineux pour un lien. Envoyez le fichier .ids.",
       "failed": "Impossible de créer le lien"
+    },
+    "naming": {
+      "include": "Vérifier les noms de fichier (ISO 19650)",
+      "pending": "Nom de fichier : en attente du modèle",
+      "pass": "Le nom de fichier respecte la règle",
+      "fail": "Le nom de fichier ne respecte pas la règle ({{count}})",
+      "more": "+{{count}} de plus",
+      "separator": "Séparateur",
+      "reset": "Revenir à ISO 19650",
+      "fieldName": "Nom du champ",
+      "values": "Valeurs autorisées (séparées par des virgules)",
+      "anyValue": "Toute valeur",
+      "digits": "Chiffres",
+      "removeField": "Retirer le champ",
+      "newField": "Champ",
+      "addField": "+ Ajouter un champ",
+      "status": "Codes de statut",
+      "revision": "Révision (P01, C01)",
+      "project": "Même statut et même révision dans IfcProject",
+      "try": "Tester un nom de fichier",
+      "tryOk": "Ce nom est conforme",
+      "fields": {
+        "project": "Projet",
+        "originator": "Auteur",
+        "volume": "Volume",
+        "level": "Niveau",
+        "type": "Type",
+        "role": "Rôle",
+        "number": "Numéro"
+      },
+      "issue": {
+        "fieldCount": "{{got}} champs au lieu de {{expected}}",
+        "empty": "{{field}} est vide",
+        "chars": "{{field}} « {{value}} » : lettres et chiffres uniquement",
+        "value": "{{field}} « {{value}} » n'est pas autorisé ({{allowed}})",
+        "case": "{{field}} « {{value}} » devrait être « {{expected}} »",
+        "length": "{{field}} « {{value}} » doit faire {{min}}–{{max}} caractères",
+        "digits": "{{field}} « {{value}} » doit être numérique",
+        "statusMissing": "Aucun code de statut (S0–S4) dans le nom",
+        "status": "Le statut {{value}} n'est pas autorisé ({{allowed}})",
+        "revisionMissing": "Aucune révision (P01, C01) dans le nom",
+        "revisionStatus": "Le statut {{status}} va avec une révision P, pas {{revision}}",
+        "projectMissing": "Le modèle n'a pas d'IfcProject",
+        "projectStatus": "Statut dans IfcProject {{project}}, dans le nom {{file}}",
+        "projectRevision": "Révision dans IfcProject {{project}}, dans le nom {{file}}"
+      }
+    },
+    "version": {
+      "checked": "Vérifié avec « {{name}} » v{{version}}",
+      "moved": "Vérifié avec « {{name}} » v{{version}} (lien créé en v{{linked}})"
+    },
+    "managed": {
+      "title": "Exigences dans votre compte",
+      "plan": "Réception",
+      "upsell": "Conserver les exigences avec versions et historique fait partie de l'offre Réception. Les liens restent gratuits pour les fournisseurs.",
+      "seePlans": "Voir les offres",
+      "profile": "Profil",
+      "newProfile": "Nouveau profil…",
+      "name": "Nom du profil",
+      "namePlaceholder": "EIR Hôpital",
+      "note": "Ce qui change dans cette version",
+      "notePlaceholder": "Ce qui change (obligatoire)",
+      "publishFirst": "Enregistrer en v1",
+      "publishNext": "Publier la v{{version}}",
+      "copyCurrent": "Copier le lien (en vigueur : v{{version}})",
+      "history": "Historique",
+      "noVersions": "Aucune version pour le moment",
+      "published": "Version {{version}} publiée. Les liens précédents fonctionnent toujours.",
+      "noteRequired": "Indiquez ce qui change dans cette version",
+      "failed": "Échec de l'enregistrement. Réessayez."
     }
   }
 }

@@ -111,7 +111,7 @@ function Overview() {
               <p className="text-[12.5px] text-[var(--text-dim)]">{p.audience}</p>
               <p className="text-[14px] font-medium mt-3 tabular-nums">{priceLine(p, period)}</p>
               {p.minUnits && p.minUnits > 1 && <p className="text-[11.5px] text-[var(--text-faint)]">Minimum {p.minUnits} editors · reviewers and guests free</p>}
-              {p.key === 'reception' && <p className="text-[11.5px] text-[var(--text-faint)]">Up to 10 suppliers · {EUR(RECEPTION_UNLIMITED_EUR)} unlimited</p>}
+              {p.key === 'reception' && <p className="text-[11.5px] text-[var(--text-faint)]">Up to {planDef('reception').quotas.suppliers} suppliers · portfolio from {EUR(RECEPTION_UNLIMITED_EUR)}</p>}
               <p className="text-[13px] mt-3 italic text-[var(--text-dim)]">“{p.promise}”</p>
               {p.extends && (own.length > 0 || p.key === 'enterprise') && <p className="text-[12px] text-[var(--text-faint)] mt-3">Everything in {planDef(p.extends).name}{p.key === 'enterprise' ? ', across the portfolio, plus SSO, DPA and on-premise' : ', plus:'}</p>}
               <ul className="mt-2 space-y-1.5 text-[12.5px] flex-1">
@@ -131,7 +131,7 @@ function Overview() {
         })}
       </div>
       <p className="text-[12.5px] text-[var(--text-dim)] mt-5">
-        Founder offer: {Math.round(FOUNDER_OFFER.discount * 100)}% off for life on yearly plans, for the first {FOUNDER_OFFER.seats} teams. Building on top of us? <a href={hrefOf('api')} className="underline">Developer API from {EUR(planDef('developer').monthlyEur ?? 0)} a month</a>.
+        Founder offer: {Math.round(FOUNDER_OFFER.discount * 100)}% off Team and Reception for {FOUNDER_OFFER.months} months, for the first {FOUNDER_OFFER.seats} customers who share a case study. Building on top of us? <a href={hrefOf('api')} className="underline">Developer API from {EUR(planDef('developer').monthlyEur ?? 0)} a month</a>.
       </p>
 
       <h2 className="text-[18px] font-semibold mt-14 mb-3">Add-ons</h2>
@@ -226,7 +226,7 @@ function ReceptionPage() {
     <>
       <PlanPage plan="reception" kicker="Reception · for whoever receives models" title="Only what complies reaches you. And you know which supplier delivers well."
         body="Publish your requirements as a link for tenders and contracts. Suppliers check and fix against it for free, in their browser. You receive deliveries re-validated on our servers, accept or reject with a reason, and keep a sealed register."
-        proof={[{ label: 'per active project a month, up to 10 suppliers', value: EUR(149) }, { label: 'unlimited suppliers', value: EUR(RECEPTION_UNLIMITED_EUR) }, { label: 'suppliers never pay to deliver', value: '€0' }]} />
+        proof={[{ label: `from, per active project a month, up to ${planDef('reception').quotas.suppliers} suppliers`, value: EUR(planDef('reception').fromEur ?? 0) }, { label: 'unlimited suppliers', value: EUR(RECEPTION_UNLIMITED_EUR) }, { label: 'suppliers never pay to deliver', value: '€0' }]} />
       <h2 className="text-[18px] font-semibold mt-12 mb-3">How it works</h2>
       <ol className="grid gap-3 md:grid-cols-4 text-[13px]">
         {['You publish requirements: IDS, rules, minimum score, naming — as a link and QR.', 'Each supplier opens the link, checks the model and fixes it in their browser, free.', 'They deliver to your inbox; we re-validate on our servers and seal the delivery.', 'You accept or reject with a reason. Their record updates on its own.'].map((s, i) => (

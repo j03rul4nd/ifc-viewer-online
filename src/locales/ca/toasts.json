@@ -10,6 +10,7 @@
     "scanLoadFailed": "No s'ha pogut carregar l'escaneig de l'enllaç: {{message}}",
     "loadFailedNamed": "No s'ha pogut carregar \"{{fileName}}\" — {{reason}}",
     "serverProcessingAction": "Processar al servidor (properament)",
+    "serverProcessingOffer": "Aquest fitxer és massa gran per al navegador. T'ajudaria processar-lo en un servidor?",
     "serverProcessingNoted": "Anotat: el processament al servidor de fitxers grans arribarà al pla Pro. Mentrestant, prova d'exportar el model per parts o amb menys propietats.",
     "batchLoaded_one": "{{name}} — {{count}} model carregat",
     "batchLoaded_other": "{{name}} — {{count}} models carregats",

@@ -21,7 +21,8 @@ import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './meas
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { ownerModelId } from './element-owner'
 import { pivotForYaw } from './geo/multi-placement'
-import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { resolveThemedBackground, followsTheme, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { getSceneTheme, subscribeSceneTheme } from '../theme/sceneTheme'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
@@ -780,6 +781,8 @@ export interface ViewerAPI {
   setTwinPaint(plan: { paint: Map<string, Map<number, string>>; hidden: Map<string, Set<number>> } | null): Promise<void>
   /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
   getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
+  /** IfcProject's text attributes (naming check, N1); null when the model has no IfcProject. */
+  getProjectTexts(modelId?: string): Promise<{ name: string | null; longName: string | null; description: string | null; phase: string | null } | null>
   /**
    * Swap the scene backdrop (solid colour or vertical gradient) and the derived
    * fog / grid colours. Purely visual: no geometry, camera or material state is
@@ -1304,8 +1307,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     return texture
   }
 
+  // Last settings applied; the default (`studio`) re-resolves on theme change.
+  let currentBackground: BackgroundSettings = DEFAULT_BACKGROUND
+
   function applyBackground(settings: BackgroundSettings): void {
-    const bg = resolveBackground(settings)
+    currentBackground = settings
+    const bg = resolveThemedBackground(settings, getSceneTheme())
     const previous = bgTexture
     bgTexture = null
 
@@ -1333,6 +1340,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   applyBackground(DEFAULT_BACKGROUND)
+
+  // UI theme switch: only the default backdrop follows it, updated in place.
+  const unsubscribeSceneTheme = subscribeSceneTheme(() => {
+    if (followsTheme(currentBackground)) applyBackground(currentBackground)
+  })
 
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
@@ -2632,6 +2644,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
     aim: aimClient,
+    // Grips are caught on the container in the capture phase, before the camera.
+    container,
+    setControlsEnabled: (enabled) => { world.camera.controls.enabled = enabled },
     modelName: (modelId) => fileNameOfModelId(modelId),
     planRoute: async (req) => {
       const svc = await routeService()
@@ -4544,6 +4559,24 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async getProjectTexts(modelId?: string) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model) return null
+      try {
+        const ids = Object.values(await model.getItemsOfCategories([/^IFCPROJECT$/])).flat()
+        if (ids.length === 0) return null
+        const [d] = await model.getItemsData([ids[0]], { attributesDefault: false, attributes: ['Name', 'LongName', 'Description', 'Phase'] })
+        const r = d as Record<string, { value?: unknown } | undefined> | undefined
+        const pick = (k: string): string | null => {
+          const v = r?.[k]?.value
+          return typeof v === 'string' || typeof v === 'number' ? String(v).trim() || null : null
+        }
+        return { name: pick('Name'), longName: pick('LongName'), description: pick('Description'), phase: pick('Phase') }
+      } catch {
+        return null
+      }
+    },
+
     async getProjectNames(modelId?: string) {
       const none = { project: null, building: null }
       const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
@@ -5031,6 +5064,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           getModelFootprints: () => self.getLoadedModelIds()
             .map((id) => self.getModelFootprint(id))
             .filter((f): f is Array<{ x: number; z: number }> => f !== null && f.length >= 3),
+          // The top of each of those models, same order and same filter: map
+          // mode needs it to tell a station under a square from a building.
+          getModelTops: () => self.getLoadedModelIds()
+            .filter((id) => { const f = self.getModelFootprint(id); return f !== null && f.length >= 3 })
+            .map((id) => { const b = self.getModelBounds(id); return b ? b.center.y + b.size.y / 2 : Number.NaN }),
           // Where the model's own y = 0 ended up: its pivot, plus whatever the
           // loader's coordination moved it by. Normally both are zero, and it
           // is the moment they are NOT that this has to be read rather than
@@ -5400,6 +5438,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      unsubscribeSceneTheme()
       stopTurntable()
       uprightObserver?.disconnect()
       // Hand BCF back to "no datum" unless a newer viewer already took over.

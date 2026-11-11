@@ -13,6 +13,8 @@ import { useSceneStore } from '../stores/sceneStore'
 import { useEditorStore } from '../stores/editorStore'
 import { haptic } from '../lib/haptics'
 import { LanguageSelector } from './LanguageSelector'
+import { MessageSquarePlus } from 'lucide-react'
+import { openFeatureRequest } from '../stores/cloudAccountStore'
 import * as Icons from './Icons'
 import { ToolGrid } from './mobile/ToolGrid'
 import type { RailItem } from './PanelRail'
@@ -36,6 +38,8 @@ interface MobileBottomNavProps {
   onOpenCompare?: () => void
   /** Back to the landing — the floating Home button is desktop-only. */
   onGoHome?: () => void
+  /** Show "Suggest" in More: App decides with lib/feedback-gate. */
+  canSuggest?: boolean
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   /**
    * The tool catalogue, the same list the desktop rail draws.
@@ -76,8 +80,8 @@ function NavTab({
           className="absolute inset-x-[6px] rounded-[16px] pointer-events-none"
           style={{
             top: 7, bottom: 7,
-            background: 'rgba(10,132,129,0.15)',
-            boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.08)',
+            background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+            boxShadow: 'inset 0 0.5px 0 color-mix(in srgb, var(--text-primary) 8%, transparent)',
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 360, mass: 0.55 }}
         />
@@ -87,10 +91,10 @@ function NavTab({
       <span className="relative z-10 flex items-center justify-center">
         <motion.span
           animate={{
-            color: active ? '#55CAC3' : '#7F7D78',
+            color: active ? 'var(--accent-strong)' : 'var(--text-tertiary)',
             scale: active ? 1.08 : 1,
             filter: active
-              ? 'drop-shadow(0 0 5px rgba(85,202,195,0.45))'
+              ? 'drop-shadow(0 0 5px color-mix(in srgb, var(--accent-strong) 45%, transparent))'
               : 'drop-shadow(0 0 0px transparent)',
           }}
           transition={{ type: 'spring', damping: 20, stiffness: 280 }}
@@ -101,8 +105,8 @@ function NavTab({
 
         {badge !== undefined && (
           <span
-            className="absolute -top-[6px] -right-[7px] min-w-[15px] h-[15px] px-[3px] rounded-full text-white text-[8px] font-bold leading-none flex items-center justify-center tabular-nums"
-            style={{ background: 'var(--danger)', boxShadow: '0 0 0 1.5px rgba(8,8,12,0.88)' }}
+            className="absolute -top-[6px] -right-[7px] min-w-[15px] h-[15px] px-[3px] rounded-full text-[var(--accent-contrast)] text-[8px] font-bold leading-none flex items-center justify-center tabular-nums"
+            style={{ background: 'var(--danger)', boxShadow: '0 0 0 1.5px color-mix(in srgb, var(--bg-app) 88%, transparent)' }}
           >
             {badge}
           </span>
@@ -110,7 +114,7 @@ function NavTab({
         {dot && !badge && (
           <span
             className="absolute -top-[3px] -right-[3px] w-[7px] h-[7px] rounded-full"
-            style={{ background: 'var(--accent)', boxShadow: '0 0 0 1.5px rgba(8,8,12,0.88)' }}
+            style={{ background: 'var(--accent)', boxShadow: '0 0 0 1.5px color-mix(in srgb, var(--bg-app) 88%, transparent)' }}
           />
         )}
       </span>
@@ -118,7 +122,7 @@ function NavTab({
       {/* Label */}
       <motion.span
         animate={{
-          color: active ? '#55CAC3' : '#7F7D78',
+          color: active ? 'var(--accent-strong)' : 'var(--text-tertiary)',
           fontWeight: active ? 600 : 400,
         }}
         transition={{ duration: 0.15 }}
@@ -153,7 +157,7 @@ function MiniSheet({
             transition={{ duration: 0.18 }}
             className="fixed inset-0 z-[21]"
             style={{
-              background: 'rgba(0,0,0,0.22)',
+              background: 'color-mix(in srgb, var(--scrim, #000) 22%, transparent)',
               backdropFilter: 'blur(3px)',
               WebkitBackdropFilter: 'blur(3px)',
             }}
@@ -176,7 +180,7 @@ function MiniSheet({
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
               {title && (
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.09em]"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  style={{ color: 'color-mix(in srgb, var(--text-primary) 30%, transparent)' }}>
                   {title}
                 </span>
               )}
@@ -185,8 +189,8 @@ function MiniSheet({
                 className="ml-auto flex items-center justify-center rounded-full active:scale-90 transition-transform"
                 style={{
                   width: 26, height: 26,
-                  background: 'rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.45)',
+                  background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)',
+                  color: 'color-mix(in srgb, var(--text-primary) 45%, transparent)',
                 }}
               >
                 <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -221,9 +225,9 @@ function SheetBtn({
       disabled={disabled}
       className="flex flex-col items-center gap-[7px] py-3 px-1 rounded-2xl transition-all duration-150 disabled:opacity-30 active:scale-[0.92]"
       style={{
-        background: active ? 'rgba(10,132,129,0.18)' : 'rgba(255,255,255,0.04)',
-        color: active ? '#55CAC3' : 'rgba(255,255,255,0.5)',
-        border: `0.5px solid ${active ? 'rgba(10,132,129,0.28)' : 'rgba(255,255,255,0.06)'}`,
+        background: active ? 'color-mix(in srgb, var(--accent) 18%, transparent)' : 'color-mix(in srgb, var(--text-primary) 4%, transparent)',
+        color: active ? 'var(--accent-strong)' : 'color-mix(in srgb, var(--text-primary) 50%, transparent)',
+        border: `0.5px solid ${active ? 'color-mix(in srgb, var(--accent) 28%, transparent)' : 'color-mix(in srgb, var(--text-primary) 6%, transparent)'}`,
         WebkitTapHighlightColor: 'transparent',
       }}
     >
@@ -231,7 +235,7 @@ function SheetBtn({
         {icon}
         {badge !== undefined && (
           <span
-            className="absolute -top-[5px] -right-[7px] min-w-[14px] h-[14px] px-[3px] rounded-full text-white text-[8px] font-bold leading-none flex items-center justify-center"
+            className="absolute -top-[5px] -right-[7px] min-w-[14px] h-[14px] px-[3px] rounded-full text-[var(--accent-contrast)] text-[8px] font-bold leading-none flex items-center justify-center"
             style={{ background: 'var(--danger)' }}
           >
             {badge}
@@ -249,7 +253,7 @@ function SheetBtn({
 // ── Divider ───────────────────────────────────────────────────────────────────
 
 function SheetDivider() {
-  return <div className="mx-5 my-0.5" style={{ height: '0.5px', background: 'rgba(255,255,255,0.07)' }} />
+  return <div className="mx-5 my-0.5" style={{ height: '0.5px', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)' }} />
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -258,11 +262,12 @@ export default function MobileBottomNav({
   tools,
   visible, selected, canIsolate,
   onOpenSidebarTab, onReset, onUpload, onIsolate,
-  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare, onGoHome,
+  onOpenDemoGallery, onOpenExportModal, onOpenHelp, onOpenCompare, onGoHome, canSuggest = false,
 }: MobileBottomNavProps) {
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
+  const { t: tPro } = useTranslation('pro')
 
   const {
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -398,17 +403,17 @@ export default function MobileBottomNav({
             onClick={openIds}
             className="w-full mb-3 flex items-center gap-3 h-[52px] px-3 rounded-2xl active:scale-[0.98] transition-transform"
             style={{
-              background: 'rgba(10,132,129,0.16)',
-              border: '0.5px solid rgba(10,132,129,0.32)',
+              background: 'color-mix(in srgb, var(--accent) 16%, transparent)',
+              border: '0.5px solid color-mix(in srgb, var(--accent) 32%, transparent)',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(10,132,129,0.22)', color: '#55CAC3' }}>
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--accent) 22%, transparent)', color: 'var(--accent-strong)' }}>
               <Icons.Shield size={18} />
             </span>
             <span className="flex-1 min-w-0 text-left">
-              <span className="block text-[13.5px] font-semibold text-white leading-tight">{t('ids')}</span>
-              <span className="block text-[11px] leading-snug truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{t('idsTooltip')}</span>
+              <span className="block text-[13.5px] font-semibold text-[var(--text-primary)] leading-tight">{t('ids')}</span>
+              <span className="block text-[11px] leading-snug truncate" style={{ color: 'color-mix(in srgb, var(--text-primary) 45%, transparent)' }}>{t('idsTooltip')}</span>
             </span>
             {idsHasFailures && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--danger)' }} />}
           </button>
@@ -416,14 +421,14 @@ export default function MobileBottomNav({
             <button
               onClick={() => { haptic('tick'); setActiveSheet('none'); onOpenCompare() }}
               className="w-full mb-3 flex items-center gap-3 h-[52px] px-3 rounded-2xl active:scale-[0.98] transition-transform"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.12)', WebkitTapHighlightColor: 'transparent' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', WebkitTapHighlightColor: 'transparent' }}
             >
-              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(233,162,59,0.16)', color: '#E9A23B' }}>
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--warning) 16%, transparent)', color: 'var(--warning)' }}>
                 <Icons.GitCompare size={18} />
               </span>
               <span className="flex-1 min-w-0 text-left">
-                <span className="block text-[13.5px] font-semibold text-white leading-tight">{t('compare')}</span>
-                <span className="block text-[11px] leading-snug truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{t('compareTooltip')}</span>
+                <span className="block text-[13.5px] font-semibold text-[var(--text-primary)] leading-tight">{t('compare')}</span>
+                <span className="block text-[11px] leading-snug truncate" style={{ color: 'color-mix(in srgb, var(--text-primary) 45%, transparent)' }}>{t('compareTooltip')}</span>
               </span>
             </button>
           )}
@@ -460,10 +465,14 @@ export default function MobileBottomNav({
               <SheetBtn icon={<Icons.Chevron size={20} className="rotate-180" />} label={tComm('actions.home')}
                 onClick={() => { closeSheet(); onGoHome() }} />
             )}
+            {canSuggest && (
+              <SheetBtn icon={<MessageSquarePlus size={22} />} label={tPro('requests.entryButton')}
+                onClick={() => { closeSheet(); openFeatureRequest('mobile_more') }} />
+            )}
           </div>
           <SheetDivider />
           <div className="flex items-center gap-3 px-1 pt-3 pb-1">
-            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('language')}</span>
+            <span className="text-[11px] font-medium" style={{ color: 'color-mix(in srgb, var(--text-primary) 35%, transparent)' }}>{t('language')}</span>
             <div className="ml-auto"><LanguageSelector /></div>
           </div>
         </div>

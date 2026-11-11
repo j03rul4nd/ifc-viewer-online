@@ -4,43 +4,39 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ตัวตรวจสอบ IFC บนคลาวด์ — ตรวจออนไลน์ ไม่ต้องอัปโหลด</title>
-  <meta name="description" content="ตัวตรวจสอบ IFC บนคลาวด์โดยไม่ต้องอัปโหลด 44 กฎคุณภาพ IDS 1.0 แบบเต็ม และ Health Score 0–100 ประมวลผลในเบราว์เซอร์ ฟรี ไม่ต้องมีบัญชี" />
-  <meta name="keywords" content="ตัวตรวจสอบ IFC บนคลาวด์, ตรวจสอบ IFC ออนไลน์, ตัวตรวจสอบ IFC ออนไลน์, ตรวจ IFC บนคลาวด์, ตัวตรวจสอบ IFC เว็บ, ตรวจคุณภาพ IFC ออนไลน์, ตรวจ IFC ในเบราว์เซอร์, ตัวตรวจสอบ IFC ฟรี, ตรวจ IFC โดยไม่อัปโหลด" />
-  <meta name="author" content="Joel Benitez" />
-  <meta name="robots" content="index, follow" />
+  <meta name="description" content="ตรวจ IFC จากหน้าเว็บโดยไม่อัปโหลดโมเดล: 44 กฎ, IDS 1.0 และ Health Score ที่คำนวณในเบราว์เซอร์ ฟรี ไม่ต้องมีบัญชี ไฟล์สูงสุด 2 GB" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
-
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
-  <meta property="og:title" content="ตัวตรวจสอบ IFC บนคลาวด์ — ตรวจ IFC ออนไลน์โดยไม่ต้องอัปโหลด" />
-  <meta property="og:description" content="ความสะดวกของตัวตรวจสอบ IFC บนคลาวด์ โดยไม่ต้องอัปโหลดโมเดล 44 กฎ, IDS 1.0 แบบเต็ม, Health Score 0–100 — ทั้งหมดในเบราว์เซอร์ ฟรี ไม่ต้องมีบัญชี" />
+  <meta property="og:title" content="ตัวตรวจสอบ IFC บนคลาวด์ — ตรวจออนไลน์ ไม่ต้องอัปโหลด" />
+  <meta property="og:description" content="ตรวจ IFC จากหน้าเว็บโดยไม่อัปโหลดโมเดล: 44 กฎ, IDS 1.0 และ Health Score ที่คำนวณในเบราว์เซอร์ ฟรี ไม่ต้องมีบัญชี ไฟล์สูงสุด 2 GB" />
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="th_TH" />
-  <meta property="og:locale:alternate" content="en_US" />
-  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image-th.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="ตัวตรวจสอบ IFC บนคลาวด์ — Health Score และ 44 กฎ ไม่อัปโหลด" />
-
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1000" />
+  <meta property="og:image:alt" content="การตรวจ IDS ของโมเดล IFC ในเบราว์เซอร์: specification &quot;Walls declare a FireRating in Pset_WallCommon&quot; ไม่ผ่านสำหรับผนัง 57 ชิ้นของบ้านสองชั้นที่แสดงใน 3D" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="ตัวตรวจสอบ IFC บนคลาวด์ — ไม่ต้องอัปโหลด 44 กฎ ฟรี" />
-  <meta name="twitter:description" content="ตรวจ IFC ออนไลน์โดยไม่อัปโหลด 44 กฎ + IDS 1.0, Health Score 0–100 ผ่าน WebAssembly ในเบราว์เซอร์" />
-  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image-th.png" />
-
-  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
-  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
-  <link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
-  <link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
-  <link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
-  <link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
-  <link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
-  <link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
-  <link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
-  <link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+  <meta name="twitter:title" content="ตัวตรวจสอบ IFC บนคลาวด์ — ตรวจออนไลน์ ไม่ต้องอัปโหลด" />
+  <meta name="twitter:description" content="ตรวจ IFC จากหน้าเว็บโดยไม่อัปโหลดโมเดล: 44 กฎ, IDS 1.0 และ Health Score ที่คำนวณในเบราว์เซอร์ ฟรี ไม่ต้องมีบัญชี ไฟล์สูงสุด 2 GB" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
   <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
-
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/landings/ids-check-ifc-model-in-browser-800.webp 800w, /images/landings/ids-check-ifc-model-in-browser-1600.webp 1600w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="/fonts.css" />
-
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -49,262 +45,461 @@
       "@type": "WebPage",
       "@id": "https://www.ifcvieweronline.eu/th/cloud-ifc-validator/",
       "url": "https://www.ifcvieweronline.eu/th/cloud-ifc-validator/",
-      "name": "ตัวตรวจสอบ IFC บนคลาวด์ — ตรวจ IFC ออนไลน์โดยไม่ต้องอัปโหลด",
-      "description": "ตรวจไฟล์ IFC ออนไลน์ตาม 44 กฎและ IDS 1.0 แบบเต็ม พร้อม Health Score 0–100 ประมวลผลในเบราว์เซอร์ โมเดลไม่เคยออกจากอุปกรณ์",
+      "name": "ตัวตรวจสอบ IFC บนคลาวด์ — ตรวจออนไลน์ ไม่ต้องอัปโหลด",
+      "description": "ตรวจ IFC จากหน้าเว็บโดยไม่อัปโหลดโมเดล: 44 กฎ, IDS 1.0 และ Health Score ที่คำนวณในเบราว์เซอร์ ฟรี ไม่ต้องมีบัญชี ไฟล์สูงสุด 2 GB",
+      "inLanguage": "th",
       "isPartOf": {
         "@id": "https://www.ifcvieweronline.eu/"
       },
-      "inLanguage": "th"
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg#image"
+      },
+      "dateModified": "2026-11-10"
     },
     {
       "@type": "SoftwareApplication",
-      "name": "IFC Viewer Online — ตัวตรวจสอบ IFC บนคลาวด์",
+      "name": "IFC Viewer Online",
       "url": "https://www.ifcvieweronline.eu/",
       "applicationCategory": "AEC / BIM software",
-      "operatingSystem": "Any (browser-based — Mac, Windows, Linux)",
+      "operatingSystem": "Any (web browser)",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "EUR"
       },
-      "featureList": [
-        "ตรวจสอบ IFC ออนไลน์ — ไม่ต้องติดตั้ง",
-        "44 กฎคุณภาพ IFC",
-        "ตรวจสอบ IDS 1.0 แบบเต็ม (buildingSMART)",
-        "Health Score 0–100",
-        "ประมวลผลในเบราว์เซอร์ — ไม่อัปโหลดอะไรเลย",
-        "ตรวจจับและแก้ GUID อัตโนมัติ",
-        "ส่งออก BCF 2.1",
-        "รายงานการตรวจสอบแชร์ได้ผ่าน URL"
+      "screenshot": [
+        "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+        "https://www.ifcvieweronline.eu/images/landings/ifc-validation-export-bcf-csv-cobie-report.jpg"
       ]
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ids-check-ifc-model-in-browser.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "การตรวจ IDS ของโมเดล IFC ในเบราว์เซอร์: specification \"Walls declare a FireRating in Pset_WallCommon\" ไม่ผ่านสำหรับผนัง 57 ชิ้นของบ้านสองชั้นที่แสดงใน 3D",
+      "caption": "IDS 1.0 ตัวอย่างที่ตรวจกับโมเดล: ผนังทั้ง 57 ชิ้นไม่มีชิ้นใดระบุอัตราการทนไฟ ทั้งโมเดลและ IDS ถูกอ่านในแท็บเบราว์เซอร์",
+      "inLanguage": "th",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-export-bcf-csv-cobie-report.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-export-bcf-csv-cobie-report.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/landings/ifc-validation-export-bcf-csv-cobie-report.jpg",
+      "width": 1600,
+      "height": 1000,
+      "name": "หน้าต่าง export ของการตรวจสอบ IFC พร้อมรูปแบบ JSON, CSV, ใบรับรอง, BCF, รายงานส่งมอบ และ COBie",
+      "caption": "ผลการตรวจออกมาเป็นไฟล์ที่คุณดาวน์โหลด: BCF 2.1, CSV, JSON รายงานส่งมอบแบบ HTML หรือสเปรดชีต COBie",
+      "inLanguage": "th",
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
     },
     {
       "@type": "FAQPage",
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "นี่คือตัวตรวจสอบ IFC บนคลาวด์จริงไหม?",
+          "name": "นี่เป็นบริการคลาวด์หรือไม่",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "มันให้ทุกอย่างที่คาดหวังจากตัวตรวจสอบ IFC บนคลาวด์ — URL ที่เปิดในเบราว์เซอร์ใดก็ได้ ไม่ต้องติดตั้ง ผลลัพธ์ทันที รายงานที่แชร์ได้ — แต่ประมวลผลไฟล์บนอุปกรณ์ของคุณเองแทนเซิร์ฟเวอร์ระยะไกล IFC ถูกแยกวิเคราะห์ในเบราว์เซอร์ผ่าน WebAssembly โมเดลจึงไม่เคยถูกอัปโหลด ความสะดวกแบบคลาวด์โดยไม่มีความเสี่ยงด้านข้อมูล"
+            "text": "ส่งมาถึงคุณผ่านเว็บเหมือนบริการคลาวด์ แต่การตรวจทำโดยเบราว์เซอร์ของคุณ ไม่มีการอัปโหลด ไม่มีคิว และไม่มีสำเนาโมเดลเก็บไว้ฝั่งเรา"
           }
         },
         {
           "@type": "Question",
-          "name": "ทำไมจึงตรวจในเบราว์เซอร์แทนคลาวด์ฝั่งเซิร์ฟเวอร์?",
+          "name": "จะยืนยันได้อย่างไรว่าไม่มีการอัปโหลด",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "ตัวตรวจสอบคลาวด์ฝั่งเซิร์ฟเวอร์กำหนดให้อัปโหลดโมเดล ซึ่งมักถูกห้ามด้วย NDA ข้อตกลงกับลูกค้า หรือกฎข้อมูลภาครัฐ การตรวจในเบราว์เซอร์ขจัดอุปสรรคนี้: ไม่ต้องอัปโหลด ไม่ต้องมีบัญชี และไม่มีอะไรให้ตรวจทานกับทีมข้อมูลของลูกค้า — และทันที ไม่มีคิว"
+            "text": "เปิดเครื่องมือสำหรับนักพัฒนาของเบราว์เซอร์ ไปที่แท็บ Network แล้วลากไฟล์ IFC มาวาง คุณจะเห็นไฟล์ของหน้าเว็บเองถูกโหลด และไม่มี request ใดที่ส่งโมเดลออกไป"
           }
         },
         {
           "@type": "Question",
-          "name": "ตรวจอะไรบ้าง?",
+          "name": "รับไฟล์ได้ใหญ่แค่ไหน",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "44 กฎคุณภาพครอบคลุมความถูกต้องของ GUID ลำดับชั้นเชิงพื้นที่ องค์ประกอบกำพร้า การตั้งชื่อ (ISO 19650) ความครบถ้วนของ Pset หน่วย เรขาคณิต พร็อกซีเกินจำเป็น และการเลื่อนพิกัด — พร้อม Health Score 0–100 และ IDS 1.0 แบบเต็มของ buildingSMART"
+            "text": "ไฟล์ขนาด 2 GB ขึ้นไปจะถูกปฏิเสธ และข้อจำกัดในทางปฏิบัติขึ้นกับหน่วยความจำของคอมพิวเตอร์: มีคำเตือนตั้งแต่ 1 GB หรือตั้งแต่ 80 MB บนโทรศัพท์และเครื่องที่มีหน่วยความจำ 4 GB หรือน้อยกว่า Solibri WebChecker รับได้สูงสุด 5 GB ต่อไฟล์ (solibri.com/solutions/webchecker, อ่านเมื่อ 2026-11-10)"
           }
         },
         {
           "@type": "Question",
-          "name": "ฟรีจริงไหม?",
+          "name": "ทำให้เป็นอัตโนมัติได้หรือไม่",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "ใช่ ฟรีสำหรับทุกการใช้งานรวมถึงเชิงพาณิชย์ ไม่ต้องมีบัญชี ไม่มีกำแพงค่าใช้จ่ายตามขนาด ตัวดูและตัวตรวจสอบเป็นโอเพนซอร์สภายใต้สัญญาอนุญาต MIT"
+            "text": "จากหน้านี้ไม่ได้: แต่ละไฟล์ต้องมีคนเปิด มี MCP server (ifc-viewer-mcp) ที่รันการตรวจสอบแบบเดียวกันบนเครื่องของคุณเองจากผู้ช่วย AI หรือสคริปต์ ดูซอร์สโค้ดบน GitHub"
           }
         },
         {
           "@type": "Question",
-          "name": "แชร์ผลลัพธ์ได้ไหม?",
+          "name": "ใช้กับโมเดลที่เป็นความลับได้หรือไม่",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "ได้ หลังตรวจสอบ \"แชร์รายงาน\" จะสร้าง URL ที่เข้ารหัส Health Score และรายการปัญหา ลูกค้าของคุณเปิดในเบราว์เซอร์ใดก็ได้ — ไฟล์ IFC จะไม่เคยรวมอยู่ในลิงก์"
+            "text": "โมเดลอยู่บนคอมพิวเตอร์ของคุณ ซึ่งโดยทั่วไปเป็นสิ่งที่ NDA กำหนด ตรวจสองเรื่องกับนโยบายขององค์กรคุณ: สถิติการใช้งานแบบไม่ระบุตัวตน (ปิดได้) และลิงก์แชร์ (มีชื่อไฟล์และชื่อองค์ประกอบ)"
           }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/th/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "ตัวตรวจสอบ IFC บนคลาวด์",
+          "item": "https://www.ifcvieweronline.eu/th/cloud-ifc-validator/"
         }
       ]
     }
   ]
 }
   </script>
-
   <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: #100F0C; color: #ecebe7; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
-a { color: inherit; text-decoration: none; }
-.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
-.header-inner { display: flex; align-items: center; justify-content: space-between; }
-.logo { font-size: 14px; font-weight: 600; color: #0A8481; }
-.nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
-.nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
-.hero { position: relative; overflow: hidden; padding: 72px 0 52px; text-align: center; }
-.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
-.hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(10,132,129,0.16), transparent 70%); }
-.hero .container { position: relative; z-index: 1; }
-.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(10,132,129,0.1); border: 1px solid rgba(10,132,129,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #55CAC3; margin-bottom: 28px; font-weight: 500; }
-.hero h1 { font-size: clamp(1.8rem, 5vw, 3.0rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-.accent { background: linear-gradient(100deg, #55CAC3 0%, #0A8481 55%, #55CAC3 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #0A8481; }
-.hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
-.cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #0A8481; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
-.cta-primary:hover { background: #0A8481; }
-.cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
-.section { padding: 60px 0; }
-.divider { border-top: 1px solid rgba(255,255,255,0.06); }
-.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #0A8481; text-transform: uppercase; margin-bottom: 12px; }
-.section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-.section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 620px; }
-.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-.feature-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
-.feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-.feature-card p { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
-.rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; gap: 1px; }
-.rule { background: #100F0C; padding: 18px 20px; }
-.rule-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-.rule-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
-.rule-tag { display: inline-block; margin-top: 8px; background: rgba(10,132,129,0.12); color: #55CAC3; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
-.compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
-.compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.4); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
-.compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
-.compare-table tr:last-child td { border-bottom: none; }
-.col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
-.col-a { color: rgba(255,255,255,0.4); }
-.col-b { color: #ecebe7; }
-.badge-ok { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
-.faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
-.faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.faq-item:last-child { border-bottom: none; }
-.faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-.faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
-.cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
-.cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
-.cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
-footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
-.footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
-.footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
-.footer-link:hover { color: rgba(255,255,255,0.65); }
-.footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
-@media (max-width: 600px) { .compare-table { font-size: 12px; } .compare-table td, .compare-table th { padding: 10px 12px; } }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
   </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
 </head>
 <body>
-
-  <header>
-    <div class="container">
-      <div class="header-inner">
-        <a href="../../" class="logo">IFC Viewer Online</a>
-        <a href="../../" class="nav-cta">เปิดตัวตรวจสอบ &rarr;</a>
-      </div>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/th/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="เมนูหลัก">
+        <a href="/th/">ตัวดู</a>
+        <a href="/th/ifc-viewer-examples/">ตัวอย่าง</a>
+        <a href="/th/fix/">คู่มือแก้ไข</a>
+        <a href="/th/blog/">บล็อก</a>
+        <a href="/th/pricing/">ราคา</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="สลับโหมดสว่างหรือมืด" title="สลับโหมดสว่างหรือมืด"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/th/" class="lc-btn">เปิดตัวดู</a>
     </div>
   </header>
-
   <main>
-
     <section class="hero">
-      <canvas class="hero-bg" data-dot-grid data-color="10,132,129" aria-hidden="true"></canvas>
       <div class="container">
-        <div class="hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> สะดวกแบบคลาวด์ · ไม่อัปโหลด · ฟรี</div>
-        <h1>ตัวตรวจสอบ IFC บนคลาวด์<br><span class="accent">โดยไม่ต้องอัปโหลด</span></h1>
-        <p class="hero-desc">ทุกอย่างที่คุณต้องการจากตัวตรวจสอบ IFC บนคลาวด์ — เปิด URL ตรวจทันที แชร์รายงาน — เพียงแต่โมเดลไม่เคยออกจากอุปกรณ์ของคุณ 44 กฎคุณภาพ, IDS 1.0 แบบเต็ม และ Health Score 0–100 ทำงานในเบราว์เซอร์ผ่าน WebAssembly ไม่ต้องติดตั้ง ไม่ต้องมีบัญชี ไม่มีกำแพงค่าใช้จ่ายตามขนาด</p>
-        <a href="../../" class="cta-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> ตรวจสอบไฟล์ IFC — ฟรี</a>
-        <p class="cta-note">ไม่ต้องมีบัญชี · ไม่อัปโหลด · ใช้งานออฟไลน์ได้ · Mac, Windows และ Linux</p>
+        <p class="badge">ออนไลน์ · ไม่อัปโหลด · 44 กฎ · IDS 1.0 · ฟรี</p>
+        <h1>ตัวตรวจสอบ IFC บนคลาวด์ <span>โดยไม่ต้องอัปโหลด</span></h1>
+        <p class="lead">เครื่องมือตรวจ IFC บนคลาวด์โดยปกติหมายถึงการส่งโมเดลไปยังเซิร์ฟเวอร์ของคนอื่น เครื่องมือนี้เป็นหน้าเว็บที่ทำงานในเบราว์เซอร์ของคุณเอง สะดวกเท่ากัน และไฟล์ไม่ออกจากคอมพิวเตอร์ของคุณ</p>
+        <div class="go">
+          <a href="/th/" class="btn">ตรวจสอบไฟล์ IFC</a>
+          <a href="/th/?model=/Ifc2x3_Duplex_Architecture.ifc" class="alt">หรือเปิดโมเดลตัวอย่าง</a>
+        </div>
+        <p class="note">ไม่ต้องมีบัญชี ใช้ได้ใน Chrome, Edge, Firefox และ Safari สูงสุด 2 GB ต่อไฟล์</p>
+        <figure class="shot">
+          <a href="/images/landings/ids-check-ifc-model-in-browser.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ids-check-ifc-model-in-browser-800.webp 800w, /images/landings/ids-check-ifc-model-in-browser-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ids-check-ifc-model-in-browser.jpg" width="1600" height="1000" alt="การตรวจ IDS ของโมเดล IFC ในเบราว์เซอร์: specification &quot;Walls declare a FireRating in Pset_WallCommon&quot; ไม่ผ่านสำหรับผนัง 57 ชิ้นของบ้านสองชั้นที่แสดงใน 3D" fetchpriority="high" />
+          </picture></a>
+          <figcaption>IDS 1.0 ตัวอย่างที่ตรวจกับโมเดล: ผนังทั้ง 57 ชิ้นไม่มีชิ้นใดระบุอัตราการทนไฟ ทั้งโมเดลและ IDS ถูกอ่านในแท็บเบราว์เซอร์</figcaption>
+        </figure>
       </div>
     </section>
 
-    <section class="section divider">
+    <section class="section">
       <div class="container">
-        <p class="section-label">เครื่องมือสด · ในเบราว์เซอร์ของคุณ</p>
-        <h2 class="section-title">ลองตัวตรวจสอบกับโมเดลตัวอย่าง</h2>
-        <p class="section-sub">รันแบบสดกับ IFC ตัวอย่างก่อน แล้วลากของคุณมาวาง มันแยกวิเคราะห์ ให้คะแนน และตรวจไฟล์ทั้งหมดบนอุปกรณ์ของคุณ — ไม่อัปโหลด ไม่มีคิว ไม่ต้องมีบัญชี</p>
-        <div data-live-embed
-             data-app="../../"
-             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
-             data-validate data-panel data-lang="th"
-             data-title="การตรวจสอบ IFC บนคลาวด์สด — ตัวอย่าง"
-             data-cta="รันการตรวจสอบกับโมเดลตัวอย่าง"
-             data-sub="โหลดตัวตรวจสอบจริงในเบราว์เซอร์ของคุณ — ไม่อัปโหลดอะไรเลย"
-             style="--le-h:560px"></div>
-        <p style="text-align:center;margin-top:20px"><a href="../../" class="cta-primary">ตรวจสอบไฟล์ IFC ของคุณเอง — ฟรี &rarr;</a></p>
-      </div>
-    </section>
-    <section class="section divider">
-      <div class="container">
-        <p class="section-label">เปรียบเทียบ</p>
-        <h2 class="section-title">คลาวด์ฝั่งเซิร์ฟเวอร์ เทียบกับ ตรวจในเบราว์เซอร์</h2>
-        <p class="section-sub">"ตัวตรวจสอบ IFC บนคลาวด์" ส่วนใหญ่อัปโหลดโมเดลของคุณไปเซิร์ฟเวอร์ระยะไกล การตรวจในเบราว์เซอร์ให้ความสะดวกเท่ากันโดยไม่เปิดเผยข้อมูล</p>
-        <table class="compare-table">
-          <thead><tr><th>สิ่งที่สำคัญ</th><th>ตัวตรวจสอบคลาวด์ฝั่งเซิร์ฟเวอร์</th><th>IFC Viewer Online (เบราว์เซอร์)</th></tr></thead>
+        <p class="label">อัปโหลดหรือเบราว์เซอร์</p>
+        <h2>บริการตรวจที่ต้องอัปโหลด กับหน้าเว็บที่ไม่ต้อง</h2>
+        <p class="sub">Solibri WebChecker เป็นตัวอย่างบริการตรวจบนคลาวด์ที่เผยแพร่ข้อมูลไว้ชัดเจนที่สุด จึงใช้เปรียบเทียบที่นี่ คอลัมน์ของ Solibri อ้างจากหน้าเว็บของ Solibri เอง</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col"></th><th scope="col">Solibri WebChecker (Beta)</th><th scope="col">IFC Viewer Online</th></tr></thead>
           <tbody>
-            <tr><td class="col-feature">ที่ประมวลผลไฟล์</td><td class="col-a">อัปโหลดไปเซิร์ฟเวอร์ระยะไกล</td><td class="col-b"><span class="badge-ok">เบราว์เซอร์ของคุณ — ไม่อัปโหลด</span></td></tr>
-            <tr><td class="col-feature">ใช้ได้ภายใต้ NDA / กฎ</td><td class="col-a">มักถูกห้าม</td><td class="col-b"><span class="badge-ok">ได้ — ข้อมูลไม่เปลี่ยนมือ</span></td></tr>
-            <tr><td class="col-feature">บัญชี / ลงทะเบียน</td><td class="col-a">มักต้องมี</td><td class="col-b"><span class="badge-ok">ไม่ต้อง</span></td></tr>
-            <tr><td class="col-feature">ความเร็ว</td><td class="col-a">อัปโหลด + คิว + ประมวลผล</td><td class="col-b"><span class="badge-ok">ทันที — ทำงานในเครื่อง</span></td></tr>
-            <tr><td class="col-feature">กฎคุณภาพ</td><td class="col-a">แตกต่างกันไป</td><td class="col-b"><span class="badge-ok">44 กฎ + Health Score 0–100</span></td></tr>
-            <tr><td class="col-feature">IDS 1.0</td><td class="col-a">แตกต่างกันไป</td><td class="col-b"><span class="badge-ok">เต็ม — ทั้ง 6 ด้าน</span></td></tr>
-            <tr><td class="col-feature">ราคา</td><td class="col-a">มักคิดตามปริมาณ / เสียเงิน</td><td class="col-b"><span class="badge-ok">ฟรี — ทุกการใช้งาน</span></td></tr>
+            <tr><th scope="row">โมเดลไปอยู่ที่ไหน</th><td data-h="Solibri WebChecker (Beta)">อัปโหลดไปยังบริการ ข้อมูลถูกเก็บใน EU หรือสหรัฐฯ เลือกตอนตั้งค่าโครงการ</td><td data-h="IFC Viewer Online">ไม่ไปไหน ถูกอ่านในแท็บเบราว์เซอร์ของคุณ</td></tr>
+            <tr><th scope="row">เก็บผลลัพธ์นานเท่าใด</th><td data-h="Solibri WebChecker (Beta)">30 วัน แล้วถูกลบ</td><td data-h="IFC Viewer Online">จนกว่าคุณจะปิดแท็บ คุณเก็บสิ่งที่ export ไว้ได้</td></tr>
+            <tr><th scope="row">ขนาดไฟล์</th><td data-h="Solibri WebChecker (Beta)">สูงสุด 5 GB ต่อไฟล์ IFC</td><td data-h="IFC Viewer Online">ต่ำกว่า 2 GB ต่อไฟล์ และน้อยกว่านั้นบนคอมพิวเตอร์ที่มีหน่วยความจำน้อย</td></tr>
+            <tr><th scope="row">บัญชี</th><td data-h="Solibri WebChecker (Beta)">Solibri ID และแผน Solibri Advanced หรือ Premium</td><td data-h="IFC Viewer Online">ไม่ต้องมี</td></tr>
+            <tr><th scope="row">ค่าใช้จ่ายต่อการตรวจ</th><td data-h="Solibri WebChecker (Beta)">50 โทเคน Advanced รวม 1,750 โทเคนต่อปี Premium 17,500 โทเคน แพ็ก 5,000 โทเคนราคา €250</td><td data-h="IFC Viewer Online">ฟรี</td></tr>
+            <tr><th scope="row">การตรวจ</th><td data-h="Solibri WebChecker (Beta)">Model Health check ของ Solibri หรือ ruleset แบบกำหนดเอง (.cset) ที่เตรียมในแอปเดสก์ท็อปของ Solibri</td><td data-h="IFC Viewer Online">44 กฎตายตัว และไฟล์ IDS 1.0 ของคุณ</td></tr>
+            <tr><th scope="row">ผลลัพธ์</th><td data-h="Solibri WebChecker (Beta)">PDF และ BCF ส่วนไฟล์ SMC ต้องใช้ Premium</td><td data-h="IFC Viewer Online">BCF 2.1, CSV, JSON, รายงาน HTML, สเปรดชีต COBie ไม่มีไฟล์ PDF: รายงาน HTML พิมพ์จากเบราว์เซอร์ได้</td></tr>
           </tbody>
-        </table>
+        </table></div>
+        <p class="after">เซิร์ฟเวอร์คุ้มค่าเมื่อไฟล์ใหญ่เกินกว่าที่เบราว์เซอร์รับได้ เมื่อผลลัพธ์ต้องเปิดให้ทีมโครงการทั้งหมดเข้าถึงได้ต่อเนื่อง หรือเมื่อการตรวจต้องรันเองโดยไม่มีคนเฝ้า ที่นี่ไม่มีสิ่งเหล่านั้น: หน้านี้ตรวจไฟล์ของคนหนึ่งคนบนคอมพิวเตอร์ของคนนั้น</p>
+        <p class="after">เบราว์เซอร์เหมาะกว่าเมื่อโมเดลห้ามออกนอกอาคาร เมื่อไม่มีใครอนุมัติผู้ให้บริการรายใหม่ได้ภายในสัปดาห์นี้ หรือเมื่อคุณแค่ต้องการคำตอบเกี่ยวกับไฟล์เดียว</p>
+        <p class="src" data-vendors="solibri">แหล่งที่มา: <a href="https://www.solibri.com/solutions/webchecker" rel="nofollow noopener">solibri.com/solutions/webchecker</a>, <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> · อ่านเมื่อ <time datetime="2026-11-10">2026-11-10</time></p>
       </div>
     </section>
-    <section class="section divider">
+
+    <section class="section">
       <div class="container">
-        <p class="section-label">44 กฎการตรวจสอบ</p>
-        <h2 class="section-title">ตัวตรวจสอบตรวจอะไร</h2>
-        <p class="section-sub">กฎด้านสคีมา ลำดับชั้น ชื่อ ความครบถ้วนของข้อมูล และการอ้างอิงพิกัด — พร้อม IDS 1.0 แบบเต็ม</p>
-        <div class="feature-grid">
-          <div class="feature-card"><h3>ความถูกต้องของ GUID</h3><p>GlobalId ซ้ำและ base64 ไม่ถูกต้อง — ข้อผิดพลาดส่งออกที่พบบ่อยที่สุด แก้อัตโนมัติ</p></div>
-          <div class="feature-card"><h3>ลำดับชั้นเชิงพื้นที่</h3><p>สาย Site → Building → Storey และองค์ประกอบกำพร้าที่ไม่มีการบรรจุ</p></div>
-          <div class="feature-card"><h3>ชื่อและ ISO 19650</h3><p>ชื่อว่างและตัวยึดทั่วไปที่ทำให้เมทาดาทาเสีย</p></div>
-          <div class="feature-card"><h3>ชุดพร็อพเพอร์ตี้</h3><p>Pset ที่จำเป็นแต่ขาดหรือว่างสำหรับการถอดปริมาณ</p></div>
-          <div class="feature-card"><h3>การอ้างอิงพิกัด</h3><p>การเลื่อนเกิน 10 กม. จากจุดกำเนิด — ข้อผิดพลาดการรวมโมเดลคลาสสิก</p></div>
-          <div class="feature-card"><h3>การปฏิบัติตาม IDS 1.0</h3><p>ตรวจกับไฟล์ .ids ของ buildingSMART ใด ๆ ทั้ง 6 ด้าน</p></div>
-        </div>
-      </div>
-    </section>
-    <section class="section divider">
-      <div class="container">
-        <p class="section-label">คำถามที่พบบ่อย</p>
-        <h2 class="section-title">คำถามที่พบบ่อย</h2><br/>
-        <div class="faq-list">
-          <div class="faq-item"><p class="faq-q">นี่คือตัวตรวจสอบ IFC บนคลาวด์จริงไหม?</p><p class="faq-a">มันให้ทุกอย่างที่คาดหวังจากตัวตรวจสอบ IFC บนคลาวด์ — URL ที่เปิดในเบราว์เซอร์ใดก็ได้ ไม่ต้องติดตั้ง ผลลัพธ์ทันที รายงานที่แชร์ได้ — แต่ประมวลผลไฟล์บนอุปกรณ์ของคุณเองแทนเซิร์ฟเวอร์ระยะไกล IFC ถูกแยกวิเคราะห์ในเบราว์เซอร์ผ่าน WebAssembly โมเดลจึงไม่เคยถูกอัปโหลด ความสะดวกแบบคลาวด์โดยไม่มีความเสี่ยงด้านข้อมูล</p></div>
-          <div class="faq-item"><p class="faq-q">ทำไมจึงตรวจในเบราว์เซอร์แทนคลาวด์ฝั่งเซิร์ฟเวอร์?</p><p class="faq-a">ตัวตรวจสอบคลาวด์ฝั่งเซิร์ฟเวอร์กำหนดให้อัปโหลดโมเดล ซึ่งมักถูกห้ามด้วย NDA ข้อตกลงกับลูกค้า หรือกฎข้อมูลภาครัฐ การตรวจในเบราว์เซอร์ขจัดอุปสรรคนี้: ไม่ต้องอัปโหลด ไม่ต้องมีบัญชี และไม่มีอะไรให้ตรวจทานกับทีมข้อมูลของลูกค้า — และทันที ไม่มีคิว</p></div>
-          <div class="faq-item"><p class="faq-q">ตรวจอะไรบ้าง?</p><p class="faq-a">44 กฎคุณภาพครอบคลุมความถูกต้องของ GUID ลำดับชั้นเชิงพื้นที่ องค์ประกอบกำพร้า การตั้งชื่อ (ISO 19650) ความครบถ้วนของ Pset หน่วย เรขาคณิต พร็อกซีเกินจำเป็น และการเลื่อนพิกัด — พร้อม Health Score 0–100 และ IDS 1.0 แบบเต็มของ buildingSMART</p></div>
-          <div class="faq-item"><p class="faq-q">ฟรีจริงไหม?</p><p class="faq-a">ใช่ ฟรีสำหรับทุกการใช้งานรวมถึงเชิงพาณิชย์ ไม่ต้องมีบัญชี ไม่มีกำแพงค่าใช้จ่ายตามขนาด ตัวดูและตัวตรวจสอบเป็นโอเพนซอร์สภายใต้สัญญาอนุญาต MIT</p></div>
-          <div class="faq-item"><p class="faq-q">แชร์ผลลัพธ์ได้ไหม?</p><p class="faq-a">ได้ หลังตรวจสอบ "แชร์รายงาน" จะสร้าง URL ที่เข้ารหัส Health Score และรายการปัญหา ลูกค้าของคุณเปิดในเบราว์เซอร์ใดก็ได้ — ไฟล์ IFC จะไม่เคยรวมอยู่ในลิงก์</p></div>
+        <p class="label">ขอบเขต</p>
+        <h2>ตรวจอะไร และไม่ตรวจอะไร</h2>
+        <div class="cols">
+          <div class="col"><h3>สิ่งที่ตรวจ</h3><ul>
+            <li>44 กฎในแปดกลุ่ม: ตัวระบุ โครงสร้างเชิงพื้นที่ ชั้น ชื่อ ค่า property type วัสดุ คุณภาพการ export 25 กฎทำงานเป็นค่าเริ่มต้น</li>
+            <li>ไฟล์ IDS 1.0 พร้อม facet ทั้งหก: entity, attribute, property, classification, material และ part-of</li>
+            <li>โปรไฟล์การตรวจสอบในตัวห้าแบบ (การส่งมอบพื้นฐาน การทบทวนคุณภาพ การประสานงาน BIM, ISO 19650, LOD 300) หรือโปรไฟล์ของคุณเอง</li>
+          </ul></div>
+          <div class="col"><h3>สิ่งที่ไม่ตรวจ</h3><ul>
+            <li>Clash ระหว่างโมเดล มีเฉพาะ bounding box ภายในโมเดลเดียว และปิดอยู่เป็นค่าเริ่มต้น</li>
+            <li>กฎหมายอาคารหรือกฎการออกแบบที่เขียนขึ้นสำหรับโครงการของคุณ ไม่มีตัวแก้ไขกฎ ข้อกำหนดต้องใส่เข้ามาเป็น IDS</li>
+            <li>การตรวจเป็นชุด (batch) แต่ละไฟล์ต้องมีคนเปิด ไม่มีอะไรรันตามกำหนดเวลา</li>
+          </ul></div>
         </div>
       </div>
     </section>
 
-    <section class="cta-bottom">
+    <section class="section">
       <div class="container">
-        <h2>ตรวจ IFC ของคุณออนไลน์ — โดยไม่ต้องอัปโหลด</h2>
-        <p>44 กฎ · IDS 1.0 · Health Score 0–100 · ไม่ต้องติดตั้ง · ไม่ต้องอัปโหลด · ฟรี</p>
-        <a href="../../" class="cta-primary">เปิด IFC Viewer Online &rarr;</a>
+        <p class="label">ข้อจำกัด</p>
+        <h2>ข้อจำกัด พร้อมตัวเลข</h2>
+        <div class="table-wrap"><table class="facts">
+          <thead><tr><th scope="col"></th><th scope="col">ข้อจำกัด</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">ขนาดไฟล์</th><td data-h="ข้อจำกัด">ไฟล์ขนาด 2 GB จะถูกปฏิเสธ มีข้อความแจ้งตั้งแต่ 200 MB และคำเตือนเรื่องหน่วยความจำตั้งแต่ 1 GB บนโทรศัพท์ แท็บเล็ต และคอมพิวเตอร์ที่มีหน่วยความจำ 4 GB หรือน้อยกว่าจะเริ่มที่ 80 MB</td></tr>
+            <tr><th scope="row">รูปแบบ</th><td data-h="ข้อจำกัด">IFC2x3, IFC4, IFC4x1 และ IFC4x3 เป็นไฟล์ .ifc หรืออยู่ใน .ifczip และ .zip</td></tr>
+            <tr><th scope="row">IDS</th><td data-h="ข้อจำกัด">IDS 1.0 ไม่อ่าน restriction แบบ totalDigits, fractionDigits และ whiteSpace แสดงองค์ประกอบที่ไม่ผ่านได้สูงสุด 200 รายการต่อ specification</td></tr>
+            <tr><th scope="row">การแชร์</th><td data-h="ข้อจำกัด">ลิงก์แชร์บรรจุคะแนนและปัญหา 50 รายการแรกไว้ใน URL สูงสุด 8,000 อักขระ ไม่มีโมเดลอยู่ในลิงก์</td></tr>
+            <tr><th scope="row">การเชื่อมต่อ</th><td data-h="ข้อจำกัด">หน้าเว็บต้องโหลดจากอินเทอร์เน็ต ใช้งานแบบออฟไลน์ไม่ได้</td></tr>
+          </tbody>
+        </table></div>
       </div>
     </section>
 
+    <section class="section">
+      <div class="container">
+        <p class="label">ไฟล์ของคุณ</p>
+        <h2>เกิดอะไรขึ้นกับไฟล์</h2>
+        <p class="prose">IFC ถูกเปิดโดยโค้ดที่ทำงานในแท็บเบราว์เซอร์ของคุณ และไม่ถูกส่งไปที่ใด คุณตรวจเองได้: เปิดเครื่องมือสำหรับนักพัฒนาของเบราว์เซอร์ ดูแท็บ Network แล้วลากไฟล์มาวาง</p>
+        <p class="prose">เบราว์เซอร์เก็บสำเนาเรขาคณิตที่แปลงแล้วไว้ในพื้นที่จัดเก็บส่วนตัวบนคอมพิวเตอร์ของคุณ (สูงสุด 4 GB) เพื่อเปิดโมเดลซ้ำได้เร็วขึ้น การล้างข้อมูลไซต์จะลบสำเนานี้</p>
+        <p class="prose">สถิติการใช้งานแบบไม่ใช้คุกกี้บันทึกขนาดไฟล์และจำนวนองค์ประกอบ ไม่บันทึกเนื้อหา และปิดได้ ลิงก์แชร์ (ถ้าคุณสร้าง) มีคะแนน ชื่อไฟล์ และปัญหาสูงสุด 50 รายการพร้อมชื่อองค์ประกอบ</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">ผลลัพธ์</p>
+        <h2>ลองกับโมเดลตัวอย่าง</h2>
+        <p class="sub">เดโมด้านล่างทำงานในหน้านี้ จากนั้นค่อยเปิดไฟล์ของคุณเอง</p>
+        <figure class="shot">
+          <a href="/images/landings/ifc-validation-export-bcf-csv-cobie-report.jpg"><picture>
+            <source type="image/webp" srcset="/images/landings/ifc-validation-export-bcf-csv-cobie-report-800.webp 800w, /images/landings/ifc-validation-export-bcf-csv-cobie-report-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/landings/ifc-validation-export-bcf-csv-cobie-report.jpg" width="1600" height="1000" alt="หน้าต่าง export ของการตรวจสอบ IFC พร้อมรูปแบบ JSON, CSV, ใบรับรอง, BCF, รายงานส่งมอบ และ COBie" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>ผลการตรวจออกมาเป็นไฟล์ที่คุณดาวน์โหลด: BCF 2.1, CSV, JSON รายงานส่งมอบแบบ HTML หรือสเปรดชีต COBie</figcaption>
+        </figure>
+        <div data-live-embed data-app="/th/" data-model="/Ifc2x3_Duplex_Architecture.ifc" data-validate data-panel data-lang="th"
+             data-title="ตัวตรวจสอบ IFC บนคลาวด์" data-cta="รันการตรวจสอบกับ IFC ตัวอย่าง" data-sub="โหลดตัวตรวจสอบในหน้านี้ ไม่มีการอัปโหลดอะไร" style="--le-h:560px;margin-top:32px"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">ราคา</p>
+        <h2>ค่าใช้จ่าย</h2>
+        <p class="prose">ไม่มีค่าใช้จ่าย: วิวเวอร์ กฎ IDS และการ export ใช้ฟรีและไม่ต้องมีบัญชี โค้ดเปิดเผยภายใต้สัญญาอนุญาต MIT บน <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener">GitHub</a></p>
+        <p class="prose">แผนแบบชำระเงินที่เพิ่มเซิร์ฟเวอร์ (การจัดเก็บโมเดล ชุดกฎที่บันทึกไว้ การทำงานเป็นทีม) อธิบายไว้ใน<a href="/th/pricing/">หน้าราคา</a> และยังไม่เปิดขาย</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">FAQ</p>
+        <h2>คำถามที่พบบ่อย</h2>
+        <div class="faq">
+          <div><h3>นี่เป็นบริการคลาวด์หรือไม่</h3><p>ส่งมาถึงคุณผ่านเว็บเหมือนบริการคลาวด์ แต่การตรวจทำโดยเบราว์เซอร์ของคุณ ไม่มีการอัปโหลด ไม่มีคิว และไม่มีสำเนาโมเดลเก็บไว้ฝั่งเรา</p></div>
+          <div><h3>จะยืนยันได้อย่างไรว่าไม่มีการอัปโหลด</h3><p>เปิดเครื่องมือสำหรับนักพัฒนาของเบราว์เซอร์ ไปที่แท็บ Network แล้วลากไฟล์ IFC มาวาง คุณจะเห็นไฟล์ของหน้าเว็บเองถูกโหลด และไม่มี request ใดที่ส่งโมเดลออกไป</p></div>
+          <div><h3>รับไฟล์ได้ใหญ่แค่ไหน</h3><p>ไฟล์ขนาด 2 GB ขึ้นไปจะถูกปฏิเสธ และข้อจำกัดในทางปฏิบัติขึ้นกับหน่วยความจำของคอมพิวเตอร์: มีคำเตือนตั้งแต่ 1 GB หรือตั้งแต่ 80 MB บนโทรศัพท์และเครื่องที่มีหน่วยความจำ 4 GB หรือน้อยกว่า Solibri WebChecker รับได้สูงสุด 5 GB ต่อไฟล์ (solibri.com/solutions/webchecker, อ่านเมื่อ 2026-11-10)</p></div>
+          <div><h3>ทำให้เป็นอัตโนมัติได้หรือไม่</h3><p>จากหน้านี้ไม่ได้: แต่ละไฟล์ต้องมีคนเปิด มี MCP server (ifc-viewer-mcp) ที่รันการตรวจสอบแบบเดียวกันบนเครื่องของคุณเองจากผู้ช่วย AI หรือสคริปต์ ดู<a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener">ซอร์สโค้ดบน GitHub</a></p></div>
+          <div><h3>ใช้กับโมเดลที่เป็นความลับได้หรือไม่</h3><p>โมเดลอยู่บนคอมพิวเตอร์ของคุณ ซึ่งโดยทั่วไปเป็นสิ่งที่ NDA กำหนด ตรวจสองเรื่องกับนโยบายขององค์กรคุณ: สถิติการใช้งานแบบไม่ระบุตัวตน (ปิดได้) และลิงก์แชร์ (มีชื่อไฟล์และชื่อองค์ประกอบ)</p></div>
+        </div>
+        <p class="src" data-vendors="solibri">แหล่งที่มา: <a href="https://www.solibri.com/solutions/webchecker" rel="nofollow noopener">solibri.com/solutions/webchecker</a> · อ่านเมื่อ <time datetime="2026-11-10">2026-11-10</time></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">หน้าที่เกี่ยวข้อง</p>
+        <ul class="related">
+          <li><a href="/th/ifc-validator-online/">ตัวตรวจสอบ IFC</a></li>
+          <li><a href="/th/on-premise-ifc-validator/">ตรวจสอบ IFC แบบ on-premise</a></li>
+          <li><a href="/th/solibri-alternative/">ทางเลือกแทน Solibri</a></li>
+          <li><a href="/th/solibri-webchecker-alternative/">ทางเลือกแทน Solibri WebChecker</a></li>
+          <li><a href="/th/ifc-viewer-mac/">IFC Viewer สำหรับ Mac</a></li>
+          <li><a href="/th/blog/solibri-alternative/">Solibri หรือตัวตรวจสอบในเบราว์เซอร์: บทเปรียบเทียบฉบับเต็ม</a></li>
+          <li><a href="/th/fix/">แก้ข้อผิดพลาด IFC</a></li>
+          <li><a href="/th/pricing/">ราคา</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>ตรวจไฟล์โดยไม่ต้องอัปโหลด</h2>
+        <p>ฟรี ไม่ต้องมีบัญชี โมเดลอยู่บนคอมพิวเตอร์ของคุณ</p>
+        <a href="/th/" class="btn">ตรวจสอบไฟล์ IFC</a>
+      </div>
+    </section>
   </main>
-
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">ขั้นตอนถัดไป</h2>
+      <p class="lc-lead">ฟรี ทำงานในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์</p>
+      <ol>
+        <li><a href="/th/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>เปิดโมเดลตัวอย่าง</strong><span>ดู Health Score และกฎที่ไม่ผ่านบน IFC จริงได้ภายในหนึ่งนาที</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>สร้างบัญชีฟรี</strong><span>เก็บผลการตรวจและแชร์รายงานกับทีมหรือเจ้าของโครงการ</span></a></li>
+        <li><a href="/th/pricing/"><span class="lc-n">3</span><strong>เปรียบเทียบแพ็กเกจ</strong><span>Pro, Team และการรับมอบโมเดลสำหรับฝ่ายที่รับงานส่งมอบ</span></a></li>
+      </ol>
+    </div>
+  </section>
   <footer>
     <div class="container">
-      <div class="footer-links">
-        <a href="../../" class="footer-link">IFC Viewer Online</a>
-        <a href="../../th/ifc-validator-online/" class="footer-link">ตัวตรวจสอบ IFC</a>
-        <a href="../../th/solibri-alternative/" class="footer-link">ทางเลือกแทน Solibri</a>
-        <a href="../../th/cloud-ifc-validator/" class="footer-link">ตัวตรวจสอบ IFC บนคลาวด์</a>
-        <a href="../../th/solibri-webchecker-alternative/" class="footer-link">ทางเลือกแทน Solibri WebChecker</a>
-        <!-- tool-links -->
-        <a href="../../th/ifc-editor-online/" class="footer-link">โปรแกรมแก้ไข IFC ฟรี</a>
-        <a href="../../th/ifc-classification-checker/" class="footer-link">ตรวจสอบการจัดหมวดหมู่ IFC</a>
-        <a href="../../th/ifc-health-check/" class="footer-link">ตรวจสุขภาพโมเดล IFC</a>
-        <!-- /tool-links -->
-        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      <div class="links">
+        <a href="/th/">IFC Viewer Online</a>
+        <a href="/th/ifc-validator-online/">ตัวตรวจสอบ IFC</a>
+        <a href="/th/on-premise-ifc-validator/">ตรวจสอบ IFC แบบ on-premise</a>
+        <a href="/th/solibri-alternative/">ทางเลือกแทน Solibri</a>
+        <a href="/th/solibri-webchecker-alternative/">ทางเลือกแทน Solibri WebChecker</a>
+        <a href="/th/ifc-viewer-mac/">IFC Viewer สำหรับ Mac</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" rel="noopener noreferrer">GitHub</a>
       </div>
-      <p class="footer-copy">IFC Viewer Online © 2026 · ฟรี · โอเพนซอร์ส · สัญญาอนุญาต MIT</p>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
     </div>
   </footer>
-
-  <script defer src="../../seo/dot-grid.js"></script>
-  <script defer src="../../seo/live-embed.js"></script>
-
+  <script defer src="/seo/live-embed.js"></script>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
 </body>
 </html>

@@ -61,11 +61,22 @@ export default function CountUp({
   const motionVal = useMotionValue(from)
   const springVal = useSpring(motionVal, { stiffness, damping, restDelta: 0.001 })
 
-  const [display, setDisplay] = useState(from)
+  // Show the real number from the first paint (no "0 rules" before JS runs or
+  // while off screen); count up from `from` only once it is seen, and never
+  // when the reader asked for reduced motion.
+  const [display, setDisplay] = useState(to)
+  const played = useRef(false)
 
   useEffect(() => {
-    if (isInView) motionVal.set(to)
-  }, [isInView, motionVal, to])
+    if (!isInView || played.current) return
+    played.current = true
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce || from === to) { setDisplay(to); return }
+    motionVal.jump(from)
+    springVal.jump(from)
+    setDisplay(from)
+    motionVal.set(to)
+  }, [isInView, motionVal, springVal, from, to])
 
   useEffect(() => {
     return springVal.on('change', (v) => setDisplay(v))
@@ -83,10 +94,15 @@ export default function CountUp({
     return decPart ? `${withSep}.${decPart}` : withSep
   })()
 
+  // Screen readers, text extraction and crawlers get the final number; the
+  // animated one (which starts at `from`, usually 0) is only for the eye.
+  const final = `${prefix}${decimals > 0 ? to.toFixed(decimals) : String(to)}${suffix}`
+
   return (
     <div ref={ref} className={`text-center ${className}`}>
       <div className={numberClassName}>
-        {prefix}{formatted}{suffix}
+        <span aria-hidden="true">{prefix}{formatted}{suffix}</span>
+        <span className="sr-only">{final}</span>
       </div>
       {label && (
         <div className={labelClassName}>

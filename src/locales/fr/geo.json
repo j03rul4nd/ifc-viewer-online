@@ -229,7 +229,11 @@
     "switch": "Switch provider"
   },
   "attribution": {
-    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres.",
+    "show": "Afficher les crédits de la carte",
+    "hide": "Masquer les crédits de la carte",
+    "title": "Crédits de la carte",
+    "licence": "Données cartographiques OpenStreetMap, disponibles sous licence ODbL."
   },
   "quick": {
     "view": "View",
@@ -308,6 +312,11 @@
     },
     "adaptive": "Adaptive quality",
     "adaptiveHint": "Steps the detail level down on its own when the view stays slow. You can always put it back.",
+    "autoDetail": "Detail by distance",
+    "autoDetailHint": "Beyond the detailed district, the city loads in pieces as the camera moves: simple buildings nearby, plain volumes far away, and what leaves the view is unloaded.",
+    "autoDetailOffHint": "Advanced: only the district around the model is drawn, all of it at full detail.",
+    "city": "City beyond the district",
+    "cityValue": "{{cells}} cells · {{triangles}}",
     "lift": "Lift the geometry limit",
     "liftHint": "The limit keeps the tab from freezing — or losing the graphics context — on dense districts. Lift it only on a capable machine.",
     "rebuild": "Rebuild scene",

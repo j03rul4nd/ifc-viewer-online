@@ -86,6 +86,8 @@ export interface EditorialCopy {
     /** Static HTML fallback (generate-blog-pages.ts). */
     backToBlog: string
     openInteractiveViewer: string
+    /** Labels of the title block under the article heading. */
+    sheet: { topic: string; published: string; updated: string; reading: string }
   }
 }
 
@@ -166,6 +168,7 @@ const en: EditorialCopy = {
     retry: 'Try again',
     backToBlog: 'Back to the BIM & IFC blog',
     openInteractiveViewer: 'Open the interactive IFC viewer',
+    sheet: { topic: 'Topic', published: 'Published', updated: 'Updated', reading: 'Reading time' },
   },
 }
 
@@ -246,6 +249,7 @@ const es: EditorialCopy = {
     retry: 'Reintentar',
     backToBlog: 'Volver al blog BIM e IFC',
     openInteractiveViewer: 'Abrir el visor IFC interactivo',
+    sheet: { topic: 'Tema', published: 'Publicado', updated: 'Actualizado', reading: 'Lectura' },
   },
 }
 
@@ -326,6 +330,7 @@ const de: EditorialCopy = {
     retry: 'Erneut versuchen',
     backToBlog: 'Zurück zum BIM- & IFC-Blog',
     openInteractiveViewer: 'Interaktiven IFC-Viewer öffnen',
+    sheet: { topic: 'Thema', published: 'Veröffentlicht', updated: 'Aktualisiert', reading: 'Lesezeit' },
   },
 }
 
@@ -406,6 +411,7 @@ const fr: EditorialCopy = {
     retry: 'Réessayer',
     backToBlog: 'Retour au blog BIM & IFC',
     openInteractiveViewer: 'Ouvrir la visionneuse IFC interactive',
+    sheet: { topic: 'Sujet', published: 'Publié', updated: 'Mis à jour', reading: 'Lecture' },
   },
 }
 
@@ -486,6 +492,7 @@ const zh: EditorialCopy = {
     retry: '重试',
     backToBlog: '返回 BIM 与 IFC 博客',
     openInteractiveViewer: '打开交互式 IFC 查看器',
+    sheet: { topic: '主题', published: '发布', updated: '更新', reading: '阅读时间' },
   },
 }
 
@@ -566,6 +573,7 @@ const ja: EditorialCopy = {
     retry: '再試行',
     backToBlog: 'BIM・IFCブログに戻る',
     openInteractiveViewer: 'インタラクティブなIFCビューアーを開く',
+    sheet: { topic: 'トピック', published: '公開', updated: '更新', reading: '読了時間' },
   },
 }
 
@@ -646,6 +654,7 @@ const th: EditorialCopy = {
     retry: 'ลองอีกครั้ง',
     backToBlog: 'กลับไปยังบล็อก BIM และ IFC',
     openInteractiveViewer: 'เปิดโปรแกรมดู IFC แบบอินเทอร์แอกทีฟ',
+    sheet: { topic: 'หัวข้อ', published: 'เผยแพร่', updated: 'อัปเดต', reading: 'เวลาอ่าน' },
   },
 }
 
@@ -726,6 +735,7 @@ const pt: EditorialCopy = {
     retry: 'Tentar de novo',
     backToBlog: 'Voltar ao blog de BIM e IFC',
     openInteractiveViewer: 'Abrir o visualizador IFC interativo',
+    sheet: { topic: 'Tema', published: 'Publicado', updated: 'Atualizado', reading: 'Leitura' },
   },
 }
 
@@ -806,6 +816,7 @@ const it: EditorialCopy = {
     retry: 'Riprova',
     backToBlog: 'Torna al blog BIM e IFC',
     openInteractiveViewer: 'Apri il visualizzatore IFC interattivo',
+    sheet: { topic: 'Tema', published: 'Pubblicato', updated: 'Aggiornato', reading: 'Lettura' },
   },
 }
 
@@ -886,6 +897,7 @@ const ca: EditorialCopy = {
     retry: 'Torna-ho a provar',
     backToBlog: 'Torna al blog BIM i IFC',
     openInteractiveViewer: 'Obre el visor IFC interactiu',
+    sheet: { topic: 'Tema', published: 'Publicat', updated: 'Actualitzat', reading: 'Lectura' },
   },
 }
 

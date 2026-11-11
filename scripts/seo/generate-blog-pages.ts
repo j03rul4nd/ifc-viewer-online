@@ -186,6 +186,8 @@ interface PageMeta {
   imageHeight?: number
   /** The hero's responsive set, so the preload fetches the file the page draws. */
   imageSrcSet?: string
+  /** False when the page draws no hero (an article without a real heroImage). */
+  preloadImage?: boolean
   alternates?: Array<{ lang: string; href: string }>
   ogType?: 'website' | 'article'
   bodyFallback?: string
@@ -284,7 +286,7 @@ function tweakHtml(template: string, meta: PageMeta): string {
         meta.modifiedTime ? `<meta property="article:modified_time" content="${esc(meta.modifiedTime)}" />` : '',
       ].filter(Boolean).join('\n  ')
     : ''
-  const imagePreload = preferredImage !== OG_IMAGE
+  const imagePreload = preferredImage !== OG_IMAGE && meta.preloadImage !== false
     ? `<link rel="preload" as="image" href="${esc(preferredImage)}"${meta.imageSrcSet ? ` imagesrcset="${esc(meta.imageSrcSet)}" imagesizes="${HERO_SIZES}"` : ''} fetchpriority="high" />`
     : ''
 
@@ -578,7 +580,7 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchIm
   return `<noscript>
       <main id="blog-static-fallback">
         <article lang="${esc(post.lang ?? 'en')}">
-          <p><a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
+          <p><a href="${SITE}/${prefix}">IFC Viewer Online</a> · <a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
           <header>
             <p>${esc(post.category)} · ${esc(post.date)} · ${esc(ui.post.minutes(post.readTimeMin))}</p>
             <h1>${esc(post.title)}</h1>
@@ -931,6 +933,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             imageWidth: primaryImage.width,
             imageHeight: primaryImage.height,
             imageSrcSet: heroSrcSet(post, distDir),
+            preloadImage: Boolean(post.heroImage),
             ogType: 'article',
             bodyFallback: postBodyFallback(post, cfg.prefix, primaryImage),
             publishedTime: isoDateTime(post.date),

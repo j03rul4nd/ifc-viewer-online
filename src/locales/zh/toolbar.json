@@ -289,5 +289,11 @@
     "idsChecked": "{{file}}：模型已检查 — 结果见 IDS 面板",
     "documentsKept": "已随场景保存 {{count}} 个项目文档",
     "documentsKept_other": "已随场景保存 {{count}} 个项目文档"
+  },
+  "theme": {
+    "toggle": "主题：{{mode}}",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
   }
 }

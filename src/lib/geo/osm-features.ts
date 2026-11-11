@@ -45,6 +45,7 @@ import { outsetRing } from './plaza-paving'
 /** How far a partly-described outline is set back inside itself, metres. */
 const OUTLINE_INSET_M = 0.25
 import { shanghaiBridgeWidth } from './shanghai-bridges'
+import { riverfrontPromenades, waterfrontEdge } from './riverfront-promenade'
 import { sidewalkWidthM, SIDEWALK_TONE } from './sidewalks'
 import { isBarcelona } from './barcelona-barris'
 import { hydrologyQueryParts } from './osm-hydro'
@@ -862,6 +863,13 @@ const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
  *
  * `area=no` is a statement and is honoured: somebody looked and said ribbon.
  */
+/** Relation types that describe an area. One without a type is read as the old multipolygon. */
+const AREA_RELATION_TYPES = new Set(['multipolygon', 'boundary', 'building'])
+export function isAreaRelation(tags: Record<string, string> | undefined): boolean {
+  const type = tags?.['type']
+  return type === undefined || AREA_RELATION_TYPES.has(type)
+}
+
 export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
   if (isPavedArtwork(t)) return true
@@ -2037,6 +2045,13 @@ export function parseOsmFeatures(
       continue
     }
 
+    // Only relations that ARE areas become areas. A `type=waterway` relation
+    // groups a river's centreline ways; closed into a ring it made the Huangpu
+    // a polygon over the Bund, with its buildings and streets standing in it.
+    if (el.type === 'relation' && !isAreaRelation(el.tags)) {
+      drop(el, 'geometry', 'relation-not-an-area')
+      continue
+    }
     if (el.type === 'relation' && Array.isArray(el.members)) {
       // ASSEMBLE FIRST, then close. A relation does not store rings, it stores
       // member ways; the ring is what they make joined end to end, in whatever
@@ -2096,6 +2111,12 @@ export function parseOsmFeatures(
   }
 
   out.push(...stitchWaterNetwork(out, structures))
+  // The floor of a waterfront promenade, from its footways (riverfront-promenade).
+  out.push(...riverfrontPromenades(out, bufferWaterway))
+  out.push(...waterfrontEdge(out, {
+    railing: resolveFeatureStyle('barrier', { barrier: 'handrail', height: '1.1' }),
+    lamp: resolveFeatureStyle('furniture', { highway: 'street_lamp' }),
+  }))
 
   return supersedeOutlinesWithParts(out)
 }

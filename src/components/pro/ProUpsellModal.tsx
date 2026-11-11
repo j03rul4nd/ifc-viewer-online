@@ -7,6 +7,7 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../Modal'
 import { trackProUpsellShown } from '../../lib/analytics'
+import { isAccountEnabled, openFeatureRequest } from '../../stores/cloudAccountStore'
 import BimoMascot from '../mascot/BimoMascot'
 
 interface ProUpsellModalProps {
@@ -29,6 +30,14 @@ export default function ProUpsellModal({ trigger, onOpenAccount, onClose }: ProU
       size="sm"
       footer={(
         <>
+          {isAccountEnabled() && (
+            <button
+              onClick={() => { onClose(); openFeatureRequest(`upsell_${trigger}`) }}
+              className="mr-auto h-8 px-1 text-[12px] text-[var(--text-dim)] underline underline-offset-2 hover:text-[var(--text)] transition-colors"
+            >
+              {t('requests.somethingElse')}
+            </button>
+          )}
           <button onClick={onClose} className="h-8 px-3 rounded-lg text-[12px] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
             {t('upsell.later')}
           </button>

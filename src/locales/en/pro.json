@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} IFC files at once. Need the whole folder checked in one report?",
+    "action": "Validate folder (Pro)",
+    "title": "Validate a whole folder",
+    "soon": "Coming soon.",
+    "body": "Checking a whole folder of IFC files in one go, with one report, is not available yet. Your files open one by one as usual.",
+    "notifyLabel": "Leave your email and I will tell you once, when it is ready.",
+    "submit": "Notify me",
+    "thanks": "Thanks. I will email you once, when it is ready.",
+    "error": "Could not save it. Try again."
+  },
   "title": "Account",
   "close": "Close",
   "signInIntro": "Sign in to keep a history of your certificates, sync rule profiles across devices and manage API keys. The free validator stays free — no account needed to use it.",
@@ -230,5 +241,228 @@
   "authTitle": "Your account keeps projects, certificates and billing together",
   "authPoint1": "The viewer and validator stay free, with no account",
   "authPoint2": "Files you open in the browser stay in the browser",
-  "authPoint3": "Your files reach our servers only when you run a cloud feature"
+  "authPoint3": "Your files reach our servers only when you run a cloud feature",
+  "legacy": {
+    "title": "We have upgraded your account",
+    "body1": "We are making changes to the product and improving the plans for registered users. Our roadmap is to give you a better service, and to do that we have moved accounts to a new production system.",
+    "body2": "Your account and email have been kept. If you used to sign in with a password, sign in with Google or with the code we email you; you can set a new password from your profile if you like.",
+    "body3": "Sorry for the trouble of signing in again even though you already had an account. Thank you for staying with us.",
+    "ok": "Got it",
+    "signInHint": "Already had an account? We have moved to a new system and your account is kept: sign in with Google or with the code we email you. Your old password no longer works."
+  },
+  "requests": {
+    "entryTitle": "Request a feature",
+    "entryHint": "Tell me what is missing. I read it myself and reply.",
+    "entryCta": "Request",
+    "title": "What would help you most?",
+    "intro": "Pick what holds you back most today. I read every answer myself and reply here.",
+    "feature": {
+      "big_files": {
+        "title": "Open very large files",
+        "hint": "Models over 400 MB that do not fit in the browser today"
+      },
+      "versions": {
+        "title": "Cloud projects with versions",
+        "hint": "See what changed when a new version is uploaded"
+      },
+      "client_link": {
+        "title": "Share with my client",
+        "hint": "A link to the model and the report, nothing to install"
+      },
+      "bcf_team": {
+        "title": "BCF issues with my team",
+        "hint": "Assign, statuses, due dates and saved views"
+      },
+      "auto_check": {
+        "title": "Check every delivery automatically",
+        "hint": "Against my company standard (IDS, EIR, naming)"
+      },
+      "cloud_drives": {
+        "title": "Open from Google Drive, OneDrive or Dropbox",
+        "hint": "And save there without downloading"
+      },
+      "batch_tools": {
+        "title": "Batch tools",
+        "hint": "Edit, rename or split many IFC files at once"
+      },
+      "reception_inbox": {
+        "title": "Receive deliveries from my suppliers",
+        "hint": "One inbox where suppliers drop their IFC and it is checked against my requirements"
+      },
+      "managed_requirements": {
+        "title": "Requirements managed for my company",
+        "hint": "My IDS, EIR and minimum score kept in one place and sent with every request"
+      },
+      "iso_naming": {
+        "title": "Check file names (ISO 19650)",
+        "hint": "Flag files and containers that break our naming convention"
+      },
+      "other": {
+        "title": "Something else",
+        "hint": "Write it below"
+      }
+    },
+    "needLabel": "The last time you needed it: what did you have to deliver, and to whom? (optional)",
+    "needLabelOther": "What do you need? Tell me about the last time it happened",
+    "needPlaceholder": "E.g. on Friday I had to send the model to the client and ended up exporting a PDF per storey",
+    "needPlaceholderOther": "What you were trying to do, with which file, and where you got stuck",
+    "moreToggle": "More context (optional)",
+    "frequencyLabel": "How often does it come up?",
+    "frequency": {
+      "daily": "Every day",
+      "weekly": "Every week",
+      "sometimes": "Now and then"
+    },
+    "todayLabel": "How do you handle it today?",
+    "today": {
+      "nothing": "I don’t",
+      "manual": "By hand or in Excel",
+      "paid_tool": "I pay for another tool",
+      "free_tool": "With another free tool"
+    },
+    "todayToolPlaceholder": "Which one? (e.g. Solibri, BIMcollab)",
+    "payerLabel": "If it existed, who would pay for it?",
+    "payer": {
+      "me": "Me",
+      "company": "My company",
+      "nobody": "Nobody: there is no budget"
+    },
+    "roleLabel": "Your role",
+    "role": {
+      "bim": "BIM manager or coordinator",
+      "architect": "Architecture",
+      "engineer": "Engineering",
+      "contractor": "Contractor",
+      "owner": "Owner or facilities",
+      "developer": "Software development",
+      "student": "Student",
+      "other": "Other"
+    },
+    "teamLabel": "Team size",
+    "team": {
+      "solo": "Just me",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Over 50"
+    },
+    "beta": "I want to try it on a real project as soon as it is ready",
+    "call": "I can do a 15-minute video call",
+    "contactOk": "You can email me about this",
+    "privacy": "I keep your answer with your account and email only to understand it and, if you let me, write to you. I never publish or share it.",
+    "send": "Send",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "done": "Close",
+    "thanksTitle": "Noted",
+    "thanksContact": "I will write to your account email.",
+    "thanksNoContact": "If it moves forward, you will see it here.",
+    "thanksStatus": "Status and my replies are in “Your requests”",
+    "mineLink": "Your requests · {{count}}",
+    "mineTitle": "Your requests",
+    "newRequest": "New request",
+    "replyFrom": "Joel:",
+    "status": {
+      "new": "Received",
+      "reviewing": "Looking into it",
+      "planned": "Planned",
+      "building": "In progress",
+      "shipped": "Available now",
+      "declined": "Not now"
+    },
+    "directMail": "Rather write directly?",
+    "error": {
+      "missing": "Pick an option (for “Something else”, say what you need).",
+      "unauthorized": "Your session has expired. Sign in again and resend it.",
+      "need_too_short": "Tell us in a few words what you need.",
+      "daily_limit": "You have sent 5 requests today. You can send more tomorrow, or email me at hola@ifcvieweronline.eu.",
+      "rate_limited": "Too many attempts in a row. Please wait a minute.",
+      "unavailable": "That did not work right now. Please try again in a moment.",
+      "network": "You are offline. Check your connection and try again.",
+      "invalid": "Check the form and try again."
+    },
+    "tellUs": "Tell me your case",
+    "somethingElse": "Missing something else? Tell me",
+    "nudgeTitle": "What would help you most?",
+    "nudgeBody": "One tap is enough. I read it myself.",
+    "nudgeCta": "Answer",
+    "nudgeDismiss": "Close",
+    "entryButton": "Suggest",
+    "signinTitle": "To send it, sign in",
+    "signinBody": "Your answer stays saved in this tab and comes back as it is when you sign in. That way I can reply and tell you when it ships.",
+    "signinFree": "The account is free and the viewer stays free.",
+    "signinLater": "Not now",
+    "signinCta": "Sign in and send",
+    "resumed": "You are signed in. Here is your answer: check it and send.",
+    "nudgeOther": "Something else…",
+    "updateOne": "“{{feature}}”: {{status}}.",
+    "updateMany": "Updates on {{count}} of your requests.",
+    "updateCta": "View",
+    "callBook": "I can do a 15-minute video call (you pick a time after sending)",
+    "updateReply": "Joel replied to your request “{{feature}}”.",
+    "mineLinkReply": "Your requests · {{count}} · you have a reply",
+    "mineEmpty": "You have not sent any yet.",
+    "loading": "Loading your requests",
+    "you": "You",
+    "answerLabel": "Reply to Joel",
+    "answerPlaceholder": "Reply to Joel…",
+    "answerSend": "Reply",
+    "showAll": "Show {{count}} more",
+    "receiptTool": "today with {{tool}}",
+    "bookCta": "Pick a time for the call",
+    "bookByMail": "I will email you to find a time that suits you.",
+    "nudgeContext": {
+      "large_file": "This file did not fit in the browser.",
+      "exported": "You just exported the report.",
+      "shared": "You just shared the model.",
+      "ids": "You just checked an IDS.",
+      "bcf": "You just worked with BCF issues.",
+      "multi_model": "You have several models open.",
+      "map": "You placed the model on the map.",
+      "measured": "You have been measuring.",
+      "validated": "Your model is validated."
+    }
+  },
+  "call": {
+    "back": "Back to the viewer",
+    "title": "{{minutes}} minutes to talk about your case",
+    "intro": "I'm Joel and I build IFC Viewer Online. This isn't a demo or a sales call: I want to see how you work so I build what you asked for properly.",
+    "point1": "Tell me about the last time you needed it and what you did.",
+    "point2": "If you like, share your screen with the model or the deliverable.",
+    "point3": "I'll tell you what I can do and when. No strings.",
+    "signin": "Sign in to pick a time, so I know which request we are talking about.",
+    "signinCta": "Sign in",
+    "loadError": "I couldn't load the times. Try again in a moment.",
+    "retry": "Try again",
+    "noSlots": "I'm out of slots for the next two weeks. Write to me and we'll find another time:",
+    "pickDay": "Day",
+    "pickTime": "Time",
+    "zone": "Times in your zone ({{zone}}).",
+    "email": "Send the invite to",
+    "note": "Anything I should know first?",
+    "optional": "(optional)",
+    "notePlaceholder": "For example: I send models to an engineering firm every week and the client doesn't have Revit.",
+    "error": {
+      "unauthorized": "Your session expired. Sign in again.",
+      "slot_gone": "Someone just took that time. Pick another.",
+      "already_booked": "You already have a call booked.",
+      "email": "Check the email address.",
+      "rate_limited": "Too many tries. Wait a minute.",
+      "unavailable": "Couldn't save it. Try again.",
+      "network": "No connection. Try again."
+    },
+    "booking": "Booking…",
+    "confirm": "Pick a time",
+    "confirmAt": "Book {{when}}",
+    "bookedLabel": "Call booked",
+    "bookedMeta": "{{minutes}} min · video call · {{zone}} time",
+    "join": "Join from your browser, nothing to install:",
+    "mailed": "I've sent the invite to {{email}}.",
+    "notMailed": "Save it to your calendar with one of these buttons; the link above is the call.",
+    "mailedEarlier": "The invite goes to {{email}}. If you can't find it, save it here:",
+    "addIcs": "Download .ics",
+    "changeHint": "Doesn't suit you anymore? Cancel it and pick another time.",
+    "cancel": "Cancel the call",
+    "footer": "Rather write to me?",
+    "eventTitle": "Call with Joel (IFC Viewer Online)"
+  }
 }

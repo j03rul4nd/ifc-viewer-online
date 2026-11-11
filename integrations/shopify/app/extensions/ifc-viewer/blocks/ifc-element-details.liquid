@@ -1,0 +1,79 @@
+{% comment %}
+  Element details: the IFC data of the element selected in the 3D view or the
+  explorer (class, type, storey, property and quantity sets).
+  Attaches to the first "Product IFC model" block on the page; works in any
+  section or column, so it can sit beside the product form or below the fold.
+{% endcomment %}
+{%- capture ifcvo_style -%}
+  {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
+  --ifcvo-radius:{{ block.settings.radius }}px;
+{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="details" style="{{ ifcvo_style }}" data-open-label="{{ block.settings.open_label | escape }}" data-empty="{{ block.settings.empty_label | escape }}" {{ block.shopify_attributes }}>
+  {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body" style="--ifcvo-max-height:{{ block.settings.max_height }}px"></div>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC element details",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Element data"
+    },
+    {
+      "type": "text",
+      "id": "open_label",
+      "label": "Button before the 3D view opens",
+      "default": "Open the 3D model"
+    },
+    {
+      "type": "text",
+      "id": "empty_label",
+      "label": "Text before a selection",
+      "default": "Select an element in the 3D view or the explorer."
+    },
+    {
+      "type": "range",
+      "id": "max_height",
+      "label": "Panel height",
+      "min": 200,
+      "max": 900,
+      "step": 20,
+      "unit": "px",
+      "default": 420
+    },
+    {
+      "type": "header",
+      "content": "Brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "Accent colour",
+      "info": "Empty uses the theme's button colour."
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "Show a frame around the block",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

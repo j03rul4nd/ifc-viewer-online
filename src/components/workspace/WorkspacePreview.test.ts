@@ -5,7 +5,6 @@ import WorkspacePreview from './WorkspacePreview'
 import CloudJobDialog from './CloudJobDialog'
 import CheckoutDialog from './CheckoutDialog'
 import { estimateCredits, SAMPLE_ACCOUNT, scenarioData, creditsLeftRatio } from './sample-data'
-import PricingSection from '../pricing/PricingSection'
 import { SECTIONS, canUse, sectionFromPath } from './registry'
 import LockedSection from './LockedSection'
 import Billing from './sections/Billing'
@@ -61,18 +60,11 @@ describe('workspace preview (design on sample data)', () => {
     expect(scenarioData('out_of_credits').account.credits.balance).toBe(0)
   })
 
-  it('pricing recommends instead of listing four identical cards', () => {
-    const html = renderToStaticMarkup(createElement(PricingSection))
-    expect(html).toContain('credits a month')
-    expect(html).toContain('<table')
-    expect(html).not.toContain('Get Free')
-  })
-
   it('checkout shows the VAT breakdown before payment', () => {
     const html = renderToStaticMarkup(createElement(CheckoutDialog, { item: { kind: 'plan', plan: 'pro', period: 'monthly' }, onClose: () => {} }))
     expect(html).toContain('VAT 21% (ES)')
     expect(html).toContain('Buying for a company')
-    expect(html).toMatch(/Pay .*19/)
+    expect(html).toMatch(/Pay .*47/)
   })
 
   it('every section is reachable by URL and Team is locked for Pro', () => {

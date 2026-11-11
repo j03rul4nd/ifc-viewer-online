@@ -4,8 +4,10 @@ import {
   normalizeHex, hexToRgb, relativeLuminance, isLightBackground, gridColorFor,
   presetById, settingsFromPreset, resolveBackground,
   parseStoredBackground, serializeBackground, parseBackgroundSpec,
+  resolveThemedBackground, followsTheme,
   type BackgroundSettings,
 } from './background'
+import { SCENE_THEMES } from '../../theme/sceneTheme'
 
 describe('normalizeHex', () => {
   it('expands the 3-digit form and lowercases', () => {
@@ -168,5 +170,34 @@ describe('parseBackgroundSpec', () => {
     for (const bad of ['', 'custom', 'rainbow', '#12', '#fff,#000,#111', { top: 'red' }, 42, null]) {
       expect(parseBackgroundSpec(bad)).toBeNull()
     }
+  })
+})
+
+describe('resolveThemedBackground', () => {
+  it('dark theme default is identical to the shipped studio backdrop', () => {
+    expect(resolveThemedBackground(DEFAULT_BACKGROUND, SCENE_THEMES.dark)).toEqual(resolveBackground(DEFAULT_BACKGROUND))
+  })
+
+  it('light theme turns the default into a light backdrop with matching fog and dark grid ink', () => {
+    const l = SCENE_THEMES.light
+    const bg = resolveThemedBackground(DEFAULT_BACKGROUND, l)
+    expect(bg).toMatchObject({ preset: 'studio', mode: 'gradient', top: l.backgroundTop, bottom: l.backgroundBottom, fog: l.fog, grid: l.grid, light: true })
+  })
+
+  it('an explicit pick ignores the theme', () => {
+    for (const id of ['white', 'paper', 'blueprint', 'sky'] as const) {
+      const s = settingsFromPreset(id)
+      expect(followsTheme(s)).toBe(false)
+      expect(resolveThemedBackground(s, SCENE_THEMES.light)).toEqual(resolveBackground(s))
+      expect(resolveThemedBackground(s, SCENE_THEMES.dark)).toEqual(resolveBackground(s))
+    }
+    const custom: BackgroundSettings = { preset: 'custom', mode: 'solid', top: '#100f0c', bottom: '#100f0c' }
+    expect(followsTheme(custom)).toBe(false)
+    expect(resolveThemedBackground(custom, SCENE_THEMES.light).top).toBe('#100f0c')
+  })
+
+  it('the default and reset follow the theme', () => {
+    expect(followsTheme(DEFAULT_BACKGROUND)).toBe(true)
+    expect(followsTheme(settingsFromPreset('studio'))).toBe(true)
   })
 })

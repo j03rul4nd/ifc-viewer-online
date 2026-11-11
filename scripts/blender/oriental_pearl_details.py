@@ -42,7 +42,11 @@ def build(g):
     p=list(reversed(p))
     for z in [0,9]:
         add('IfcSlab',f'Mapped trilobular museum floor {z} m',z,'Concrete',[loft([(x,y,z) for x,y in p],[(x,y,z+.4) for x,y in p])])
-    add('IfcRoof','Mapped trilobular museum roof — height indicative',9,'Silver',[loft([(x,y,11) for x,y in p],[(x,y,11.4) for x,y in p])])
+    # A flat roof SLAB, which is what it is. As an IfcRoof the viewer paints it
+    # in its roof category colour, brown, and from above the tower stood on a
+    # brown three-lobed lid the photographs do not show.
+    roof=add('IfcSlab','Mapped trilobular museum roof — height indicative',9,'Silver',[loft([(x,y,11) for x,y in p],[(x,y,11.4) for x,y in p])])
+    roof.PredefinedType='ROOF'
     walls=[];mullions=[]
     for (x,y),(xx,yy) in zip(p,p[1:]+p[:1]):
         dx,dy=xx-x,yy-y; length=math.hypot(dx,dy)
@@ -53,7 +57,7 @@ def build(g):
         for j in range(max(1,math.ceil(length/2.5))):
             t=j/max(1,math.ceil(length/2.5));u=x+t*dx;v=y+t*dy
             mullions.append(tube((u,v,.4),(u,v,11),.06,N=6))
-    add('IfcCurtainWall','Mapped museum perimeter glazing',0,'DarkGlass',walls)
+    add('IfcWall','Mapped museum perimeter wall — light stone, as photographed',0,'Stone',walls)
     add('IfcMember','Museum facade mullions',0,'Silver',mullions)
     for k in range(3):
         a=math.radians(90+120*k);x,y=49*math.cos(a),49*math.sin(a)

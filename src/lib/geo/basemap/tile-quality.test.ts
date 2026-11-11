@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { errorTargetFor, lodResolution, lowerQuality, MAX_LOD_PIXELS, stylePixelScale } from './tile-quality'
+import { errorTargetFor, lodResolution, lowerQuality, MAX_LOD_PIXELS, stylePixelScale, createQualityGovernor } from './tile-quality'
 
 describe('lodResolution', () => {
   it('plans LOD in device pixels, not CSS pixels', () => {
@@ -43,5 +43,53 @@ describe('stylePixelScale', () => {
   it('maps authored CSS px to canvas texels so they read at about 1 CSS px', () => {
     expect(stylePixelScale(2, 2)).toBeCloseTo(Math.SQRT2, 5)
     expect(stylePixelScale(1, 2)).toBeCloseTo(Math.SQRT1_2, 5)
+  })
+})
+
+describe('createQualityGovernor', () => {
+  const slow = { fps: 12, slow: true }
+  const fast = { fps: 58, slow: false }
+  const middling = { fps: 31, slow: false }
+
+  it('lowers the level in a slow view, one step per report', () => {
+    const g = createQualityGovernor()
+    expect(g.step('balanced', slow)).toBe('economy')
+    expect(g.step('economy', slow)).toBeNull()
+  })
+
+  it('gives the sharpness back once the view has been fast for a while', () => {
+    const g = createQualityGovernor()
+    g.step('balanced', slow)
+    expect(g.step('economy', fast)).toBeNull()
+    expect(g.step('economy', fast)).toBeNull()
+    expect(g.step('economy', fast)).toBe('balanced')
+    // Nothing above what the map asks for by default.
+    expect([1, 2, 3, 4].map(() => g.step('balanced', fast))).toEqual([null, null, null, null])
+  })
+
+  it('does not come back on a view that is merely not slow', () => {
+    const g = createQualityGovernor()
+    for (let i = 0; i < 20; i++) expect(g.step('economy', middling)).toBeNull()
+  })
+
+  it('needs the fast reports in a row', () => {
+    const g = createQualityGovernor()
+    expect([fast, fast, middling, fast, fast].map((v) => g.step('economy', v))).toEqual([null, null, null, null, null])
+    expect(g.step('economy', fast)).toBe('balanced')
+  })
+
+  it('waits twice as long each time the sharper level turns out to be too much', () => {
+    const g = createQualityGovernor()
+    const fastUntilRaised = (): number => {
+      for (let n = 1; n < 200; n++) if (g.step('economy', fast)) return n
+      return -1
+    }
+    expect(fastUntilRaised()).toBe(3)
+    expect(g.step('balanced', slow)).toBe('economy')
+    expect(fastUntilRaised()).toBe(6)
+    expect(g.step('balanced', slow)).toBe('economy')
+    expect(fastUntilRaised()).toBe(12)
+    g.reset()
+    expect(fastUntilRaised()).toBe(3)
   })
 })

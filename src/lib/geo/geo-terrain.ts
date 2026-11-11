@@ -20,7 +20,7 @@
 
 import { demSourceFor, markDemSourceFailed } from './dem-sources'
 import * as THREE from 'three'
-import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
+import { WEB_MERCATOR_WORLD_M, cosLatScale, latLonToNormalized } from './geo-math'
 import {
   terrainZoomFor, imageryZoomFor, hillshader, hypsometricColor,
   slopeColor, slopeFraction, occlusionFactor, contourFactor,
@@ -33,6 +33,8 @@ import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 import type { TerrainWorkerIn, TerrainWorkerOut, VectorDrape } from '../../workers/geo-terrain.worker'
+import { createTerrainDetailLayer, type TerrainDetailView } from './terrain-detail-layer'
+import { isMemoryConstrained } from '../loading/device-profile'
 import { loadTileJson } from './basemap/tilejson'
 
 const log = createLogger('GeoTerrain')
@@ -48,6 +50,40 @@ const GRID_SEGMENTS = 384
  * so the faded terrain rim overlaps the flat tiles instead of a void.
  */
 export const TERRAIN_EDGE_FADE = 0.12
+/**
+ * THE RIM: where measured relief hands over to the flat map.
+ *
+ * The patch is a square of real ground set into a map that has none. Left
+ * alone, its edge is wherever the land happens to be — tens of metres above or
+ * below the plane around it — and the hole cut in the flat tiles shows the gap:
+ * from a hillside site, a band of sky between the last hill and a map floating
+ * above it.
+ *
+ * So the outer part of the patch eases onto the plane. From `RIM_START` (as a
+ * fraction of the half-width, measured in from the edge) the relief is blended
+ * toward the level of the flat map, reaching it exactly at `RIM_CONTACT`, just
+ * inside the hole; beyond that the mesh dips under the tiles, so the seam is a
+ * line where one surface passes below another rather than two edges that have
+ * to meet. The band is drawn for continuity, not measured, and it never
+ * reaches into the district the scene builds around the anchor (`keepHalfM`):
+ * where the site sits near one side of the patch, the easing on that side
+ * starts at the district's edge and is correspondingly steeper.
+ *
+ * The level it eases TO is the patch's own — `rimDatumM`, the median of the
+ * ground around its edge — and geo-system moves the flat map to it. Easing to
+ * the anchor's elevation instead would ring a hilltop site with a rim as high
+ * as the hill: a crater, drawn around the one place being shown.
+ */
+const RIM_START = 0.42
+const RIM_CONTACT = TERRAIN_EDGE_FADE * 1.1
+/** How far under the flat tiles the outermost vertices sit, metres. */
+const RIM_DIP_M = 4
+/** Fraction of the contact band over which that dip is reached. */
+const RIM_DIP_RAMP = 0.3
+/** The easing always has at least this much run, metres, however tight the patch. */
+const RIM_MIN_EASE_M = 150
+/** Half-side of the square around the anchor whose relief is never eased, metres. */
+const DEFAULT_KEEP_HALF_M = 750
 const UNTEXTURED_COLOR = 0x3a414d
 /** Neutral base for the imagery-less "shaded relief" style. */
 const SHADED_BASE_COLOR = 0xb8bec6
@@ -59,6 +95,11 @@ export interface TerrainBuildOptions {
   modelSpanM?: number | null
   /** renderer.capabilities.getMaxAnisotropy() — clamped to 8. */
   maxAnisotropy?: number
+  /**
+   * Half-side, metres, of the square around the anchor that the scene builds
+   * on. The relief inside it is left exactly as measured (see the rim).
+   */
+  keepHalfM?: number
 }
 
 export interface TerrainPatch {
@@ -109,6 +150,35 @@ export interface TerrainPatch {
    * the corrected one.
    */
   setGroundOverride(fn: ((nx: number, ny: number, measuredM: number) => number) | null): void
+  /**
+   * The MEASURED ground at a normalized position, metres: what `sampleGroundM`
+   * would answer with no override and no rim. A correction is always worked
+   * out from this, so applying one twice cannot carve twice.
+   */
+  sampleMeasuredM(nx: number, ny: number): number
+  /**
+   * Elevation, metres, of the level the patch's rim eases onto — the median of
+   * the measured ground around its edge. The flat map belongs at this height
+   * while the patch is up (see RIM_START).
+   */
+  rimDatumM: number
+  /** Distance between neighbouring vertices of the patch mesh, metres. */
+  spacingM: number
+  /**
+   * The part of the patch whose relief is MEASURED, in normalized planar
+   * units: the square around the anchor that the rim never eases. Outside it
+   * the surface is drawn for continuity with the flat map and is not ground a
+   * road can be laid on (way-clip).
+   */
+  measuredBox: { minNx: number; maxNx: number; minNy: number; maxNy: number }
+  /**
+   * Per frame: where the camera is looking and how much ground one device
+   * pixel covers there. The relief repaints the map sharper around that point
+   * (terrain-detail). null = the view is not on the relief.
+   */
+  setDetailView(view: TerrainDetailView | null): void
+  /** Dev diagnosis of the sharp close-up squares. */
+  detailDebug(): unknown
   dispose(): void
 }
 
@@ -175,6 +245,7 @@ async function buildTerrainPatchFrom(
 ): Promise<TerrainPatch> {
   const zoom = Math.min(terrainZoomFor(placement.lat, opts.modelSpanM ?? null), dem.maxZoom)
   const imageryZoom = provider ? imageryZoomFor(zoom, provider.id, provider.maxZoom) : null
+  const vector = await vectorDrapeFor(provider)
 
   const result = await runTerrainWorker({
     type: 'build-terrain',
@@ -186,11 +257,15 @@ async function buildTerrainPatchFrom(
     grid: GRID_SEGMENTS,
     imageryTemplate: provider?.urlTemplate ?? null,
     imageryZoom,
-    vector: await vectorDrapeFor(provider),
+    vector,
   }, BUILD_TIMEOUT_MS)
   if (result.type !== 'done') throw new Error('unexpected terrain worker reply')
 
-  return assemblePatch(result, placement.lat, Math.min(MAX_ANISOTROPY, opts.maxAnisotropy ?? 1))
+  return assemblePatch(
+    result, placement.lat, Math.min(MAX_ANISOTROPY, opts.maxAnisotropy ?? 1),
+    latLonToNormalized(placement.lat, placement.lon), opts.keepHalfM ?? DEFAULT_KEEP_HALF_M,
+    vector,
+  )
 }
 
 /** Steepness ramp needs a fixed reference; 45° reads as "cliff" on any site. */
@@ -202,6 +277,9 @@ function assemblePatch(
   data: Extract<TerrainWorkerOut, { type: 'done' }>,
   anchorLat: number,
   anisotropy: number,
+  anchorN: { nx: number; ny: number } | null = null,
+  keepHalfM: number = DEFAULT_KEEP_HALF_M,
+  vector: VectorDrape | null = null,
 ): TerrainPatch {
   const { zoom, grid, centerTx, centerTy, anchorElevation, heights, normals, detail, sky } = data
   const verts = grid + 1
@@ -230,6 +308,20 @@ function assemblePatch(
   geometry.setAttribute('color', colorAttr)
 
   const material = new THREE.MeshBasicMaterial({ transparent: true, vertexColors: true })
+  // The sharp close-up: squares of the same map repainted around the view and
+  // mixed over the big texture by this material (terrain-detail).
+  let baseTexelN = patchSize / 3072
+  const detailLayer = createTerrainDetailLayer({
+    patch: {
+      minNx: centre.nx - patchSize / 2, maxNx: centre.nx + patchSize / 2,
+      minNy: centre.ny - patchSize / 2, maxNy: centre.ny + patchSize / 2,
+    },
+    baseTexelN: () => baseTexelN,
+    anisotropy,
+    constrained: isMemoryConstrained(),
+  })
+  detailLayer.attach(material)
+  detailLayer.setSource(vector)
   /**
    * Built on first use: allocating its attribute costs ~2.4 MB on a 385² patch,
    * which is not worth paying for every user who never turns detail up.
@@ -271,6 +363,55 @@ function assemblePatch(
   let look: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
   let groundOverride: ((nx: number, ny: number, measuredM: number) => number) | null = null
 
+  // The two things the rim needs per vertex: how much of the relief survives,
+  // and how far the mesh sits under the flat tiles. Fixed for the life of the
+  // patch. Worked in metres from the patch centre (x east, y north).
+  const rimKeep = new Float32Array(verts * verts)
+  const rimDipN = new Float32Array(verts * verts)
+  const rimSamples: number[] = []
+  const halfM = patchSize / metresToNormalized / 2
+  /** Half-extent of the line where the relief has reached the flat map. */
+  const contactM = halfM * (1 - RIM_CONTACT)
+  const bandM = halfM * (RIM_START - RIM_CONTACT)
+  // THE DISTRICT IS NOT IN THE MIDDLE. The patch is centred on a tile and the
+  // anchor is wherever in that tile the site happens to be — up to half a tile
+  // off, so the scene built around it can reach most of the way to one edge.
+  // The ground under it is measured and stays measured: the easing starts at
+  // the district's own edge on that side, and takes whatever room is left.
+  const anchorX = anchorN ? (anchorN.nx - centre.nx) / metresToNormalized : 0
+  const anchorY = anchorN ? (anchorN.ny - centre.ny) / metresToNormalized : 0
+  const keepSpan = (a: number): [number, number] => {
+    const lo = Math.max(a - keepHalfM, -contactM + RIM_MIN_EASE_M)
+    const hi = Math.min(a + keepHalfM, contactM - RIM_MIN_EASE_M)
+    if (lo <= hi) return [lo, hi]
+    const mid = Math.min(contactM, Math.max(-contactM, a))
+    return [mid, mid]
+  }
+  const [keepX0, keepX1] = keepSpan(anchorX)
+  const [keepY0, keepY1] = keepSpan(anchorY)
+  for (let j = 0; j < verts; j++) {
+    for (let i = 0; i < verts; i++) {
+      const idx = j * verts + i
+      const t = Math.min(1 - Math.abs((2 * i) / grid - 1), 1 - Math.abs((2 * j) / grid - 1))
+      const x = (i / grid - 0.5) * 2 * halfM
+      const y = (0.5 - j / grid) * 2 * halfM
+      const toContact = contactM - Math.max(Math.abs(x), Math.abs(y))
+      const outside = Math.max(keepX0 - x, x - keepX1, keepY0 - y, y - keepY1, 0)
+      const k = toContact <= 0 ? 0
+        : outside <= 0 ? 1
+        : Math.min(1, toContact / Math.min(toContact + outside, bandM))
+      rimKeep[idx] = k * k * (3 - 2 * k)
+      rimDipN[idx] = t < RIM_CONTACT
+        ? RIM_DIP_M * Math.min(1, (RIM_CONTACT - t) / (RIM_CONTACT * RIM_DIP_RAMP)) * metresToNormalized
+        : 0
+      // The datum is read off the band the easing ends in: the ground that is
+      // actually about to meet the map.
+      if (t <= RIM_CONTACT * 2 && (i + j) % 3 === 0) rimSamples.push(heights[idx])
+    }
+  }
+  rimSamples.sort((a, b) => a - b)
+  const rimDatumM = rimSamples.length > 0 ? rimSamples[rimSamples.length >> 1] : anchorElevation
+
   /**
    * Re-displace the mesh from measured heights + the synthetic detail blend,
    * then recompute normals. Called on build and whenever `look.detail` moves —
@@ -284,20 +425,25 @@ function assemblePatch(
     for (let idx = 0; idx < verts * verts; idx++) {
       const measured = heights[idx] + detail[idx] * look.detail
       // Row 0 is the north edge (see sampleGroundM).
-      const h = groundOverride
+      const corrected = groundOverride
         ? groundOverride(x0 + (idx % verts) * step, y0 - Math.floor(idx / verts) * step, measured)
         : measured
+      // The rim eases onto the flat map's level — see RIM_START.
+      const keep = rimKeep[idx]
+      const h = keep >= 1 ? corrected : rimDatumM + (corrected - rimDatumM) * keep
       effective[idx] = h
       if (h < minH) minH = h
       if (h > maxH) maxH = h
-      pos.setZ(idx, (h - anchorElevation) * metresToNormalized)
+      // The dip is the mesh's alone: `effective` (and so sampleGroundM) stays
+      // at the datum, which is where anything standing out there belongs.
+      pos.setZ(idx, (h - anchorElevation) * metresToNormalized - rimDipN[idx])
     }
     pos.needsUpdate = true
     heightRange = Math.max(1, maxH - minH) // guard: dead-flat patches
 
-    // Skip the recompute when nothing synthetic is blended in — the worker's
-    // normals already describe the measured surface exactly.
-    effectiveNormals = look.detail > 0 || groundOverride ? computeNormals(effective, verts, spacingM) : normals
+    // Always recomputed: the rim moves the surface even when nothing else
+    // does, and the worker's normals describe the ground before it.
+    effectiveNormals = computeNormals(effective, verts, spacingM)
     beltTintValid = false
     beltGroundValid = false
     for (let idx = 0; idx < verts * verts; idx++) {
@@ -483,6 +629,7 @@ function assemblePatch(
     texture?.dispose()
     texture = null
     if (next) {
+      baseTexelN = patchSize / next.width
       const canvas = document.createElement('canvas')
       canvas.width = next.width
       canvas.height = next.height
@@ -513,45 +660,63 @@ function assemblePatch(
   recolor()
   log.debug(`patch: z${zoom}, ${verts}×${verts} verts, anchor elev ${anchorElevation.toFixed(1)} m`)
 
+  /** Bilinear read of a per-vertex field at a normalized position (edge-clamped). */
+  function sampleField(at: (idx: number) => number, nx: number, ny: number): number {
+    // Normalized position → fractional vertex index. The patch spans
+    // `patchSize` centred on `centre`; row 0 is the NORTH edge, so the Y
+    // axis is inverted relative to the grid index.
+    const u = (nx - (centre.nx - patchSize / 2)) / patchSize
+    const v = ((centre.ny + patchSize / 2) - ny) / patchSize
+    const fx = Math.min(Math.max(u, 0), 1) * grid
+    const fy = Math.min(Math.max(v, 0), 1) * grid
+    const x0 = Math.floor(fx)
+    const y0 = Math.floor(fy)
+    const x1 = Math.min(x0 + 1, grid)
+    const y1 = Math.min(y0 + 1, grid)
+    const tx = fx - x0
+    const ty = fy - y0
+    const top = at(y0 * verts + x0) * (1 - tx) + at(y0 * verts + x1) * tx
+    const bot = at(y1 * verts + x0) * (1 - tx) + at(y1 * verts + x1) * tx
+    return top * (1 - ty) + bot * ty
+  }
+
   return {
     group,
     anchorElevation,
+    rimDatumM,
+    spacingM,
+    measuredBox: {
+      minNx: centre.nx + keepX0 * metresToNormalized,
+      maxNx: centre.nx + keepX1 * metresToNormalized,
+      minNy: centre.ny + keepY0 * metresToNormalized,
+      maxNy: centre.ny + keepY1 * metresToNormalized,
+    },
     zoom,
     centerTx,
     centerTy,
 
     sampleGroundM(nx, ny) {
-      // Normalized position → fractional vertex index. The patch spans
-      // `patchSize` centred on `centre`; row 0 is the NORTH edge, so the Y
-      // axis is inverted relative to the grid index.
-      const u = (nx - (centre.nx - patchSize / 2)) / patchSize
-      const v = ((centre.ny + patchSize / 2) - ny) / patchSize
-      const fx = Math.min(Math.max(u, 0), 1) * grid
-      const fy = Math.min(Math.max(v, 0), 1) * grid
-      const x0 = Math.floor(fx)
-      const y0 = Math.floor(fy)
-      const x1 = Math.min(x0 + 1, grid)
-      const y1 = Math.min(y0 + 1, grid)
-      const tx = fx - x0
-      const ty = fy - y0
       // Sample the EFFECTIVE surface (measured + any synthetic blend) so a
       // building sits on the ground the user is actually looking at.
-      const top = effective[y0 * verts + x0] * (1 - tx) + effective[y0 * verts + x1] * tx
-      const bot = effective[y1 * verts + x0] * (1 - tx) + effective[y1 * verts + x1] * tx
-      return top * (1 - ty) + bot * ty
+      return sampleField((idx) => effective[idx], nx, ny)
+    },
+
+    sampleMeasuredM(nx, ny) {
+      return sampleField((idx) => heights[idx] + detail[idx] * look.detail, nx, ny)
     },
 
     async redrape(provider) {
       if (disposed) return
       const token = ++drapeToken
       const imageryZoom = provider ? imageryZoomFor(zoom, provider.id, provider.maxZoom) : null
+      const nextVector = await vectorDrapeFor(provider)
       const result = await runTerrainWorker({
         type: 'drape-terrain',
         id: crypto.randomUUID(),
         centerTx, centerTy, zoom,
         imageryTemplate: provider?.urlTemplate ?? null,
         imageryZoom,
-        vector: await vectorDrapeFor(provider),
+        vector: nextVector,
       }, DRAPE_TIMEOUT_MS)
       if (result.type !== 'drape-done') throw new Error('unexpected drape worker reply')
       if (disposed || token !== drapeToken) {
@@ -559,6 +724,8 @@ function assemblePatch(
         return
       }
       applyDrape(result.imagery)
+      // The squares are the old map until this moment; from here, the new one.
+      detailLayer.setSource(nextVector)
       log.debug(`redraped with "${provider?.id ?? 'none'}"`)
     },
 
@@ -606,6 +773,16 @@ function assemblePatch(
       recolor()
     },
 
+    setDetailView(view) {
+      if (disposed) return
+      // Only where the relief shows the map: a hypsometric or procedural
+      // ground has no map to sharpen.
+      const shown = style === 'imagery' && texture !== null && !isProcedural()
+      detailLayer.update(shown ? view : null, performance.now())
+    },
+
+    detailDebug() { return detailLayer.debug() },
+
     dispose() {
       disposed = true
       drapeToken++
@@ -613,6 +790,7 @@ function assemblePatch(
       group.clear()
       geometry.dispose()
       material.dispose()
+      detailLayer.dispose()
       terrainMaterial?.dispose()
       terrainMaterial = null
       beltTint = null

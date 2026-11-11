@@ -29,7 +29,7 @@ export default function ClientHealthBadge() {
       transition={{ type: 'spring', stiffness: 320, damping: 28, delay: 0.1 }}
       className="absolute top-3 left-3 z-[20] pointer-events-auto select-none"
     >
-      <div className="flex items-center gap-3 pl-2.5 pr-4 py-2 rounded-2xl bg-[rgba(12,12,16,0.88)] backdrop-blur-[18px] border border-[var(--border-strong)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center gap-3 pl-2.5 pr-4 py-2 rounded-2xl bg-[color-mix(in_srgb,var(--bg-surface)_88%,transparent)] backdrop-blur-[18px] border border-[var(--border-strong)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
 
         {score !== null || isRunning ? (
           <>

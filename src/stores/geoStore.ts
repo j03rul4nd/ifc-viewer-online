@@ -73,6 +73,7 @@ const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 const LS_HIDDEN        = 'ifc-geo-hidden-features:v1'
 const LS_PANEL_MODE    = 'ifc-geo-panel-mode:v1'
 const LS_ADAPTIVE      = 'ifc-geo-adaptive-quality:v1'
+const LS_AUTO_DETAIL   = 'ifc-geo-auto-detail:v1'
 
 /**
  * How many hand-hidden features are remembered.
@@ -174,6 +175,12 @@ function readTerrainLook(): TerrainLook {
 function readTerrainExaggeration(): number {
   const v = parseFloat(lsGet(LS_TERRAIN_EXAGG) ?? '1')
   return Number.isFinite(v) ? Math.min(3, Math.max(1, v)) : 1
+}
+
+/** Forget the value older builds saved, and start on. */
+function clearStoredSuppress(): true {
+  try { localStorage.removeItem(LS_SUPPRESS) } catch { /* storage blocked */ }
+  return true
 }
 
 function lsGet(key: string): string | null {
@@ -302,7 +309,10 @@ interface GeoStore {
   /** Decorative cars and trains (persisted). Invented placement — off by default. */
   vehicles: boolean
   /**
-   * Whether the OSM context gives way where the model stands (persisted).
+   * Whether the OSM context gives way where the model stands. NOT persisted:
+   * every session starts with it on. Remembered, a comparison left switched
+   * off in one session drew OSM's own Oriental Pearl round the IFC in every
+   * later one, and nothing on screen said why.
    *
    * ON by default: a mapped building standing inside the surveyed one is never
    * what anyone wants to look at. Off is for checking the two against each
@@ -363,6 +373,12 @@ interface GeoStore {
    * they restored is never auto-lowered again in the same session.
    */
   adaptiveQuality: boolean
+  /**
+   * Detail by distance (persisted, ON by default): past the full-detail
+   * district the city is drawn in cells that follow the camera. Off = the
+   * district alone, everything at full detail.
+   */
+  autoDetail: boolean
   /** Set when adaptive quality stepped the detail down, so the panel can offer it back. */
   autoDowngrade: { from: BuildingDetail; to: BuildingDetail } | null
   /** Levels the user restored after an automatic step-down (session only). */
@@ -445,6 +461,7 @@ interface GeoStore {
   setSceneReport: (r: SceneReport | null) => void
   setPerf: (v: FrameVerdict | null) => void
   setAdaptiveQuality: (v: boolean) => void
+  setAutoDetail: (v: boolean) => void
   setAutoDowngrade: (d: { from: BuildingDetail; to: BuildingDetail } | null) => void
   blockAutoDowngrade: (level: BuildingDetail) => void
   setBudgetLifted: (v: boolean) => void
@@ -483,7 +500,7 @@ export const useGeoStore = create<GeoStore>()(
       mapLook:            lsGet(LS_LOOK) ?? 'daylight',
       lookTuning:         readLookTuning(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
-      suppressContext:    lsGet(LS_SUPPRESS) !== '0',
+      suppressContext:    clearStoredSuppress(),
       hiddenFeatures:     readHiddenFeatures(),
       sceneHidden:        [],
       buildingsTruncated: false,
@@ -500,6 +517,7 @@ export const useGeoStore = create<GeoStore>()(
       sceneReport:    null,
       perf:           null,
       adaptiveQuality: lsGet(LS_ADAPTIVE) !== '0',
+      autoDetail: lsGet(LS_AUTO_DETAIL) !== '0',
       autoDowngrade:  null,
       autoDowngradeBlocked: [],
       budgetLifted:   false,
@@ -644,7 +662,6 @@ export const useGeoStore = create<GeoStore>()(
       },
 
       setSuppressContext: (v) => {
-        lsSet(LS_SUPPRESS, v ? '1' : '0')
         set({ suppressContext: v }, false, 'setSuppressContext')
       },
 
@@ -815,6 +832,11 @@ export const useGeoStore = create<GeoStore>()(
       setAdaptiveQuality: (v) => {
         lsSet(LS_ADAPTIVE, v ? '1' : '0')
         set({ adaptiveQuality: v }, false, 'setAdaptiveQuality')
+      },
+
+      setAutoDetail: (v) => {
+        lsSet(LS_AUTO_DETAIL, v ? '1' : '0')
+        set({ autoDetail: v }, false, 'setAutoDetail')
       },
 
       setAutoDowngrade: (d) =>

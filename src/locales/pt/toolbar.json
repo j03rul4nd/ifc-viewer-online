@@ -289,5 +289,11 @@
     "idsChecked": "{{file}}: modelos verificados — resultados no painel IDS",
     "documentsKept": "{{count}} documento do projeto guardado com a cena",
     "documentsKept_other": "{{count}} documentos do projeto guardados com a cena"
+  },
+  "theme": {
+    "toggle": "Tema: {{mode}}",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
   }
 }

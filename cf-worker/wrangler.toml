@@ -19,6 +19,17 @@ OG_IMAGE_URL = "https://www.ifcvieweronline.eu/og-image.png"
 # Shared links expire after this many days (advisory, see worker.js). Default 90.
 REPORT_MAX_AGE_DAYS = "90"
 
+# Feature requests (POST/GET /requests): Clerk production instance whose session
+# tokens are accepted, and the Clerk user ids allowed to read them back (comma-
+# separated; ids are pseudonymous, not emails).
+CLERK_ISSUER       = "https://clerk.ifcvieweronline.eu"
+FEEDBACK_ADMIN_IDS = "user_3LmQIZhfjNlCn5seaan6KVrLAnX"
+
+# Calls booked on /call: confirmation mail through Resend (domain verified in
+# Resend, EU region) and a copy to Joel. Remove BOOKING_FROM to stop sending.
+BOOKING_FROM   = "Joel · IFC Viewer Online <hola@ifcvieweronline.eu>"
+BOOKING_NOTIFY = "privacy@ifcvieweronline.eu"
+
 # ── Rate limiting (Workers Rate Limiting API) ───────────────────────────────────
 # Per-IP token buckets. `period` must be 10 or 60 (seconds). `namespace_id` is any
 # integer unique to this Worker. Requires a recent Wrangler. If these bindings are

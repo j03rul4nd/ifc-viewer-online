@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} ficheiros IFC de uma vez. Precisa de verificar a pasta inteira num só relatório?",
+    "action": "Validar pasta (Pro)",
+    "title": "Validar uma pasta inteira",
+    "soon": "Em breve.",
+    "body": "Verificar uma pasta inteira de IFC de uma vez, com um só relatório, ainda não está disponível. Os seus ficheiros abrem um a um como sempre.",
+    "notifyLabel": "Deixe o seu email e aviso uma vez, quando estiver pronto.",
+    "submit": "Avisar-me",
+    "thanks": "Obrigado. Escrevo uma vez, quando estiver pronto.",
+    "error": "Não foi possível guardar. Tente novamente."
+  },
   "title": "Conta",
   "close": "Fechar",
   "signInIntro": "Inicie sessão para guardar o histórico dos seus certificados, sincronizar perfis de regras entre dispositivos e gerir chaves de API. O validador gratuito continua gratuito — não é preciso conta para o usar.",
@@ -102,5 +113,228 @@
   "authTitle": "Sua conta reúne projetos, certificados e faturamento",
   "authPoint1": "O visualizador e o validador continuam grátis e sem conta",
   "authPoint2": "O que você abre no navegador fica no navegador",
-  "authPoint3": "Seus arquivos só chegam aos nossos servidores se você usar um recurso na nuvem"
+  "authPoint3": "Seus arquivos só chegam aos nossos servidores se você usar um recurso na nuvem",
+  "legacy": {
+    "title": "Melhorámos a sua conta",
+    "body1": "Estamos a introduzir mudanças no produto e a melhorar os planos para os utilizadores registados. O nosso roteiro é oferecer-lhe um serviço melhor e, para isso, passámos as contas para um novo sistema de produção.",
+    "body2": "A sua conta e o seu email foram mantidos. Se antes entrava com palavra-passe, agora entre com o Google ou com o código que lhe enviamos por email; se quiser, pode criar uma nova palavra-passe no seu perfil.",
+    "body3": "Lamentamos o incómodo de ter de iniciar sessão de novo, mesmo já tendo conta. Obrigado por continuar connosco.",
+    "ok": "Entendido",
+    "signInHint": "Já tinha conta? Mudámos de sistema e a sua conta mantém-se: entre com o Google ou com o código que lhe enviamos por email. A sua palavra-passe anterior já não funciona."
+  },
+  "requests": {
+    "entryTitle": "Pedir uma funcionalidade",
+    "entryHint": "Diga-me o que falta. Leio eu mesmo e respondo.",
+    "entryCta": "Pedir",
+    "title": "O que mais o ajudaria?",
+    "intro": "Escolha o que mais o atrasa hoje. Leio cada resposta eu mesmo e respondo aqui.",
+    "feature": {
+      "big_files": {
+        "title": "Abrir ficheiros muito grandes",
+        "hint": "Modelos com mais de 400 MB que hoje não cabem no navegador"
+      },
+      "versions": {
+        "title": "Projetos na nuvem com versões",
+        "hint": "Ver o que mudou ao carregar uma nova versão"
+      },
+      "client_link": {
+        "title": "Partilhar com o meu cliente",
+        "hint": "Uma ligação para o modelo e o relatório, sem instalar nada"
+      },
+      "bcf_team": {
+        "title": "Incidências BCF com a minha equipa",
+        "hint": "Atribuir, estados, prazos e vistas guardadas"
+      },
+      "auto_check": {
+        "title": "Validar cada entrega automaticamente",
+        "hint": "Com o padrão da minha empresa (IDS, EIR, nomes)"
+      },
+      "cloud_drives": {
+        "title": "Abrir a partir do Google Drive, OneDrive ou Dropbox",
+        "hint": "E guardar lá sem descarregar"
+      },
+      "batch_tools": {
+        "title": "Ferramentas em lote",
+        "hint": "Editar, renomear ou dividir muitos IFC de uma vez"
+      },
+      "reception_inbox": {
+        "title": "Receber entregas dos meus fornecedores",
+        "hint": "Uma caixa onde os fornecedores deixam o IFC e é verificado contra os meus requisitos"
+      },
+      "managed_requirements": {
+        "title": "Requisitos geridos para a minha empresa",
+        "hint": "Os meus IDS, EIR e nota mínima num só lugar, enviados com cada pedido"
+      },
+      "iso_naming": {
+        "title": "Verificar nomes de ficheiros (ISO 19650)",
+        "hint": "Assinalar ficheiros e contentores que não seguem a nossa convenção de nomes"
+      },
+      "other": {
+        "title": "Outra coisa",
+        "hint": "Escreva abaixo"
+      }
+    },
+    "needLabel": "A última vez que precisou: o que tinha de entregar, e a quem? (opcional)",
+    "needLabelOther": "Do que precisa? Conte-me a última vez que aconteceu",
+    "needPlaceholder": "Ex.: na sexta tinha de enviar o modelo ao dono de obra e acabei a exportar um PDF por piso",
+    "needPlaceholderOther": "O que tentava fazer, com que ficheiro e onde ficou bloqueado",
+    "moreToggle": "Mais contexto (opcional)",
+    "frequencyLabel": "Com que frequência acontece?",
+    "frequency": {
+      "daily": "Todos os dias",
+      "weekly": "Todas as semanas",
+      "sometimes": "De vez em quando"
+    },
+    "todayLabel": "Como o resolve hoje?",
+    "today": {
+      "nothing": "Não resolvo",
+      "manual": "À mão ou com Excel",
+      "paid_tool": "Pago outra ferramenta",
+      "free_tool": "Com outra ferramenta gratuita"
+    },
+    "todayToolPlaceholder": "Qual? (ex. Solibri, BIMcollab)",
+    "payerLabel": "Se existisse, quem pagaria?",
+    "payer": {
+      "me": "Eu",
+      "company": "A minha empresa",
+      "nobody": "Ninguém: não há orçamento"
+    },
+    "roleLabel": "O seu perfil",
+    "role": {
+      "bim": "BIM manager ou coordenador",
+      "architect": "Arquitetura",
+      "engineer": "Engenharia",
+      "contractor": "Construtora",
+      "owner": "Dono de obra ou manutenção",
+      "developer": "Desenvolvimento de software",
+      "student": "Estudante",
+      "other": "Outro"
+    },
+    "teamLabel": "Tamanho da equipa",
+    "team": {
+      "solo": "Só eu",
+      "2-10": "2–10",
+      "11-50": "11–50",
+      "51+": "Mais de 50"
+    },
+    "beta": "Quero testar num projeto real assim que estiver pronto",
+    "call": "Posso fazer uma videochamada de 15 minutos",
+    "contactOk": "Pode escrever-me por email sobre isto",
+    "privacy": "Guardo a sua resposta com a sua conta e o seu email só para a entender e, se permitir, escrever-lhe. Não a publico nem partilho.",
+    "send": "Enviar",
+    "sending": "A enviar…",
+    "cancel": "Cancelar",
+    "done": "Fechar",
+    "thanksTitle": "Anotado",
+    "thanksContact": "Escrevo-lhe para o email da sua conta.",
+    "thanksNoContact": "Se avançar, verá aqui.",
+    "thanksStatus": "O estado e as minhas respostas estão em «Os seus pedidos»",
+    "mineLink": "Os seus pedidos · {{count}}",
+    "mineTitle": "Os seus pedidos",
+    "newRequest": "Novo pedido",
+    "replyFrom": "Joel:",
+    "status": {
+      "new": "Recebido",
+      "reviewing": "Em análise",
+      "planned": "Planeado",
+      "building": "Em desenvolvimento",
+      "shipped": "Já disponível",
+      "declined": "Agora não"
+    },
+    "directMail": "Prefere escrever diretamente?",
+    "error": {
+      "missing": "Escolha uma opção (em «Outra coisa», diga o que precisa).",
+      "unauthorized": "A sua sessão expirou. Inicie sessão novamente e volte a enviar.",
+      "need_too_short": "Diga-nos em poucas palavras o que precisa.",
+      "daily_limit": "Enviou 5 pedidos hoje. Amanhã pode enviar mais, ou escrever-me para hola@ifcvieweronline.eu.",
+      "rate_limited": "Demasiadas tentativas seguidas. Aguarde um minuto.",
+      "unavailable": "Não funcionou agora. Tente novamente daqui a pouco.",
+      "network": "Sem ligação. Verifique a rede e tente novamente.",
+      "invalid": "Reveja o formulário e tente novamente."
+    },
+    "tellUs": "Conte-me o seu caso",
+    "somethingElse": "Falta-lhe outra coisa? Diga-me",
+    "nudgeTitle": "O que mais o ajudaria?",
+    "nudgeBody": "Basta um toque. Leio eu mesmo.",
+    "nudgeCta": "Responder",
+    "nudgeDismiss": "Fechar",
+    "entryButton": "Sugerir",
+    "signinTitle": "Para enviar, entre na sua conta",
+    "signinBody": "A sua resposta fica guardada neste separador e volta tal como está quando entrar. Assim posso responder-lhe e avisar quando sair.",
+    "signinFree": "A conta é gratuita e o visualizador continua gratuito.",
+    "signinLater": "Agora não",
+    "signinCta": "Entrar e enviar",
+    "resumed": "Já entrou. Aqui está a sua resposta: reveja e envie.",
+    "nudgeOther": "Outra coisa…",
+    "updateOne": "«{{feature}}»: {{status}}.",
+    "updateMany": "Novidades em {{count}} dos seus pedidos.",
+    "updateCta": "Ver",
+    "callBook": "Posso fazer uma videochamada de 15 minutos (escolhe a hora depois de enviar)",
+    "updateReply": "O Joel respondeu ao seu pedido «{{feature}}».",
+    "mineLinkReply": "Os seus pedidos · {{count}} · tem resposta",
+    "mineEmpty": "Ainda não enviou nenhum.",
+    "loading": "A carregar os seus pedidos",
+    "you": "Você",
+    "answerLabel": "Responder ao Joel",
+    "answerPlaceholder": "Responder ao Joel…",
+    "answerSend": "Responder",
+    "showAll": "Ver mais {{count}}",
+    "receiptTool": "hoje com {{tool}}",
+    "bookCta": "Escolher hora para a chamada",
+    "bookByMail": "Escrevo-lhe para combinarmos uma hora que lhe dê jeito.",
+    "nudgeContext": {
+      "large_file": "Este ficheiro não cabia no navegador.",
+      "exported": "Acabou de exportar o relatório.",
+      "shared": "Acabou de partilhar o modelo.",
+      "ids": "Acabou de verificar um IDS.",
+      "bcf": "Acabou de trabalhar com issues BCF.",
+      "multi_model": "Tem vários modelos abertos.",
+      "map": "Colocou o modelo no mapa.",
+      "measured": "Esteve a medir.",
+      "validated": "O seu modelo está validado."
+    }
+  },
+  "call": {
+    "back": "Voltar ao visualizador",
+    "title": "{{minutes}} minutos para falar do seu caso",
+    "intro": "Sou o Joel e faço o IFC Viewer Online. Não é uma demo nem uma chamada comercial: quero ver como trabalha para construir bem o que me pediu.",
+    "point1": "Conta-me a última vez que precisou e o que fez.",
+    "point2": "Se quiser, partilha o ecrã com o modelo ou a entrega.",
+    "point3": "Digo-lhe o que posso fazer e quando, sem compromisso.",
+    "signin": "Entre com a sua conta para escolher a hora. Assim sei de que pedido falamos.",
+    "signinCta": "Iniciar sessão",
+    "loadError": "Não consegui carregar as horas. Tente de novo daqui a pouco.",
+    "retry": "Tentar de novo",
+    "noSlots": "Não tenho horários livres nas próximas duas semanas. Escreva-me e encontramos outro momento:",
+    "pickDay": "Dia",
+    "pickTime": "Hora",
+    "zone": "Horas no seu fuso ({{zone}}).",
+    "email": "Envio o convite para",
+    "note": "Algo que eu deva saber antes?",
+    "optional": "(opcional)",
+    "notePlaceholder": "Por exemplo: entrego modelos a uma empresa de engenharia todas as semanas e o cliente não tem Revit.",
+    "error": {
+      "unauthorized": "A sessão expirou. Volte a iniciar sessão.",
+      "slot_gone": "Alguém acabou de ficar com essa hora. Escolha outra.",
+      "already_booked": "Já tem uma chamada marcada.",
+      "email": "Verifique o email.",
+      "rate_limited": "Demasiadas tentativas. Aguarde um minuto.",
+      "unavailable": "Não foi possível guardar. Tente de novo.",
+      "network": "Sem ligação. Tente de novo."
+    },
+    "booking": "A marcar…",
+    "confirm": "Escolha uma hora",
+    "confirmAt": "Marcar às {{when}}",
+    "bookedLabel": "Chamada marcada",
+    "bookedMeta": "{{minutes}} min · videochamada · hora de {{zone}}",
+    "join": "Entre pelo navegador, sem instalar nada:",
+    "mailed": "Enviei o convite para {{email}}.",
+    "notMailed": "Guarde-a no calendário com um destes botões; o link acima é o da chamada.",
+    "mailedEarlier": "O convite vai para {{email}}. Se não o encontrar, guarde-o aqui:",
+    "addIcs": "Descarregar .ics",
+    "changeHint": "Já não dá jeito? Cancele e escolha outra hora.",
+    "cancel": "Cancelar a chamada",
+    "footer": "Prefere escrever-me?",
+    "eventTitle": "Chamada com o Joel (IFC Viewer Online)"
+  }
 }

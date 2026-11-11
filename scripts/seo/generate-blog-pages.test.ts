@@ -516,7 +516,7 @@ describe('generateBlogPages — topic hubs', () => {
 })
 
 describe('generateBlogPages — article structured data', () => {
-  const post = BLOG_POSTS.find((p) => p.slug === 'how-to-validate-ifc-file')!
+  const post = BLOG_POSTS.find((p) => p.slug === 'ifc-model-checker')!
   const html = () => readFileSync(path.join(OUT, 'blog', post.slug, 'index.html'), 'utf-8')
 
   it('names the organisation as publisher, with its logo', () => {
@@ -629,7 +629,7 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
   })
 
   it('links every translation to its English original and back, with x-default on English', () => {
-    const slug = 'how-to-validate-ifc-file'
+    const slug = 'ifc-model-checker'
     const clusterOf = (html: string) => [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`)
     const expected = [
       `en ${SITE}/blog/${slug}/`,
@@ -643,7 +643,7 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
   })
 
   it('keeps the page chrome of the static fallback in the article language', () => {
-    const html = page('ja', 'blog', 'how-to-validate-ifc-file')
+    const html = page('ja', 'blog', 'ifc-model-checker')
     expect(html).toContain('BIM・IFCブログに戻る')
     expect(html).not.toContain('Back to the BIM &amp; IFC blog')
   })
@@ -654,5 +654,18 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
         expect(page(lang, 'blog', 'topic', topic.slug)).toContain(`<title>${topic.copy.title} | IFC Viewer Blog</title>`)
       }
     }
+  })
+})
+
+describe('generateBlogPages — hero preload', () => {
+  // The article draws a hero only for a real heroImage; the generated cover is
+  // just the social card, so preloading it would fetch an image nobody sees.
+  const html = (slug: string) => readFileSync(path.join(OUT, 'blog', slug, 'index.html'), 'utf-8')
+  it('preloads the hero only when the article draws one', () => {
+    const withHero = BLOG_POSTS.find((p) => p.heroImage)!
+    const without = BLOG_POSTS.find((p) => !p.heroImage)!
+    expect(html(withHero.slug)).toContain('rel="preload" as="image"')
+    expect(html(without.slug)).not.toContain('rel="preload" as="image"')
+    expect(html(without.slug)).toMatch(/<meta property="og:image"\s+content="[^"]+"/)
   })
 })

@@ -212,6 +212,76 @@
       "empty": "最低スコアか IDS を少なくとも一つ追加してください",
       "tooLong": "この IDS はリンクには大きすぎます。.ids ファイルを送ってください。",
       "failed": "リンクを作成できませんでした"
+    },
+    "naming": {
+      "include": "ファイル名をチェック（ISO 19650）",
+      "pending": "ファイル名：モデル待ち",
+      "pass": "ファイル名は命名規則に適合しています",
+      "fail": "ファイル名が命名規則に適合していません（{{count}}）",
+      "more": "ほか {{count}} 件",
+      "separator": "区切り文字",
+      "reset": "ISO 19650 に戻す",
+      "fieldName": "フィールド名",
+      "values": "許可する値（カンマ区切り）",
+      "anyValue": "任意の値",
+      "digits": "数字",
+      "removeField": "フィールドを削除",
+      "newField": "フィールド",
+      "addField": "+ フィールドを追加",
+      "status": "ステータスコード",
+      "revision": "リビジョン（P01、C01）",
+      "project": "IfcProject にも同じステータスとリビジョン",
+      "try": "ファイル名を試す",
+      "tryOk": "この名前は適合しています",
+      "fields": {
+        "project": "プロジェクト",
+        "originator": "作成者",
+        "volume": "ボリューム",
+        "level": "レベル",
+        "type": "種別",
+        "role": "役割",
+        "number": "番号"
+      },
+      "issue": {
+        "fieldCount": "フィールドが {{expected}} 個ではなく {{got}} 個です",
+        "empty": "{{field}} が空です",
+        "chars": "{{field}}「{{value}}」：英数字のみ",
+        "value": "{{field}}「{{value}}」は許可されていません（{{allowed}}）",
+        "case": "{{field}}「{{value}}」は「{{expected}}」であるべきです",
+        "length": "{{field}}「{{value}}」は {{min}}〜{{max}} 文字にしてください",
+        "digits": "{{field}}「{{value}}」は数字にしてください",
+        "statusMissing": "名前にステータスコード（S0〜S4）がありません",
+        "status": "ステータス {{value}} は許可されていません（{{allowed}}）",
+        "revisionMissing": "名前にリビジョン（P01、C01）がありません",
+        "revisionStatus": "ステータス {{status}} には P リビジョンが対応します（{{revision}} ではありません）",
+        "projectMissing": "モデルに IfcProject がありません",
+        "projectStatus": "IfcProject のステータス {{project}}、ファイル名 {{file}}",
+        "projectRevision": "IfcProject のリビジョン {{project}}、ファイル名 {{file}}"
+      }
+    },
+    "version": {
+      "checked": "「{{name}}」v{{version}} でチェック",
+      "moved": "「{{name}}」v{{version}} でチェック（リンク作成時は v{{linked}}）"
+    },
+    "managed": {
+      "title": "アカウント内の要件",
+      "plan": "Reception",
+      "upsell": "要件をバージョンと履歴付きで保存するのは Reception プランの機能です。リンクは協力会社には引き続き無料です。",
+      "seePlans": "プランを見る",
+      "profile": "プロファイル",
+      "newProfile": "新しいプロファイル…",
+      "name": "プロファイル名",
+      "namePlaceholder": "病院 EIR",
+      "note": "このバージョンの変更点",
+      "notePlaceholder": "変更点（必須）",
+      "publishFirst": "v1 として保存",
+      "publishNext": "v{{version}} を公開",
+      "copyCurrent": "リンクをコピー（現行：v{{version}}）",
+      "history": "履歴",
+      "noVersions": "まだバージョンがありません",
+      "published": "バージョン {{version}} を公開しました。以前のリンクも引き続き使えます。",
+      "noteRequired": "このバージョンの変更点を入力してください",
+      "failed": "保存できませんでした。もう一度お試しください。"
     }
   }
 }

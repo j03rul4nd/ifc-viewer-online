@@ -89,6 +89,23 @@ export function dataSourceOf(t: Record<string, string>): HeightSource {
 export const ROOF_LEVEL_M = 2.6
 
 /**
+ * The tallest a building with no height and no storey count may be assumed.
+ *
+ * The district prior answers with the median of the buildings whose height IS
+ * tagged, and those are not a fair sample: mappers tag the towers. Measured
+ * around the Oriental Pearl, every untagged footprint over 1000 m² — the
+ * convention centre, the aquarium, the mall podiums and 24 Overture-only
+ * outlines — was handed 196 m, the median of Lujiazui's surveyed towers, and
+ * the low riverfront the tower really stands behind became a wall of slabs in
+ * front of it.
+ *
+ * 35 m is where a building starts to count as a high-rise. Below it the prior
+ * still adapts the guess to the district; above it a tower has to be tagged
+ * (height or storeys) to be drawn as one. A guess never invents a skyline.
+ */
+export const MAX_ASSUMED_HEIGHT_M = 35
+
+/**
  * Resolve a building's height from OSM tags, most trustworthy source first:
  * `height` (surveyed) → `building:levels` (counted) → a type-aware default.
  *
@@ -158,9 +175,12 @@ export function resolveBuildingHeight(
   // Lujiazui is the 15th percentile of the district's own surveyed buildings.
   // The prior declines wherever the evidence is thin or the type is one whose
   // height does not depend on where it stands; see `height-prior`.
-  const local = prior && areaM2 !== undefined
+  const fromDistrict = prior && areaM2 !== undefined
     ? prior.heightFor(t['building'] ?? t['building:part'], areaM2)
     : null
+  // The district's surveyed buildings are not a fair sample of the untagged
+  // ones: see MAX_ASSUMED_HEIGHT_M.
+  const local = fromDistrict != null ? Math.min(fromDistrict, MAX_ASSUMED_HEIGHT_M) : null
 
   return {
     heightM: Math.min(local ?? defaultHeightForType(t['building']), MAX_BUILDING_HEIGHT_M),

@@ -1,7 +1,6 @@
 // ─── MapOverlays ──────────────────────────────────────────────────────────────
 // What map mode draws over the canvas itself, independent of the panel: the
-// attribution pill (a licence obligation — it must stay up whenever the map
-// is, whatever the panel is doing), the hover tooltip over the surroundings,
+// attribution (a licence obligation; MapAttribution says how it may collapse), the hover tooltip over the surroundings,
 // and the status bar: graphic scale + cursor coordinates, the two readouts
 // every GIS tool keeps on screen.
 
@@ -11,6 +10,7 @@ import { formatLatLon, scaleBar, type ScaleBar } from '../../lib/geo/basemap/map
 import { useGeoStore } from '../../stores/geoStore'
 import type { ContextHover, GeoSystemAPI } from '../../lib/geo/geo-system'
 import { useGeoCtl } from './useGeoController'
+import { MapAttribution } from './MapAttribution'
 
 export function MapOverlays() {
   const mapMode = useGeoStore((s) => s.mapMode)
@@ -21,14 +21,7 @@ export function MapOverlays() {
   return (
     <>
       <MapStatusBar />
-      {attributions.length > 0 && (
-        <div
-          className="absolute bottom-2 right-2 z-20 pointer-events-auto max-w-[60%] px-2 py-1 rounded-[6px] text-[9.5px] leading-tight text-[var(--text-dim)] bg-[rgba(10,10,14,0.72)] border border-[var(--border)]"
-          data-testid="geo-attribution"
-        >
-          {attributions.join(' · ')}
-        </div>
-      )}
+      <MapAttribution attributions={attributions} />
 
       {/* What am I looking at? Follows the pointer, says only what OSM knows. */}
       {hover && (

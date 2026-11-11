@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BUILDING_FINISHES, clampLookTuning, easeInOut, hexToRgb, lerpLightPreset, LIGHT_PRESETS, MAP_LOOKS, resolveLook,
-  skyBackdropStops, srgbToLinear, tunedLight,
+  srgbToLinear, tunedLight,
 } from './map-look'
 import { isMapStyleId } from './basemap/map-styles'
 
@@ -89,17 +89,6 @@ describe('time-of-day transition', () => {
     expect(easeInOut(1)).toBe(1)
     expect(easeInOut(0.5)).toBe(0.5)
     expect(easeInOut(0.1)).toBeLessThan(0.1)
-  })
-})
-
-describe('sky backdrop', () => {
-  it('runs zenith → horizon → fog, ending in the fog so the horizon has no edge', () => {
-    for (const light of Object.values(LIGHT_PRESETS)) {
-      const stops = skyBackdropStops(light)
-      expect(stops[0]).toEqual([0, light.sky.zenith])
-      expect(stops[stops.length - 1]).toEqual([1, light.fog])
-      for (let i = 1; i < stops.length; i++) expect(stops[i][0]).toBeGreaterThan(stops[i - 1][0])
-    }
   })
 })
 

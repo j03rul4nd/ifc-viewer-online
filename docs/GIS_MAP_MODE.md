@@ -245,6 +245,118 @@ pickable — means a tile still in flight shows *map colour*, never the black
 sky. Priority (in-frustum, nearest, shallowest first), request abort on
 unload, LRU + byte-target unloading are the library's and were already on.
 
+### Sharp up close: the relief, and sharpness that comes back (2026-11)
+
+Measured at Plaça de Catalunya, camera pitched 45°, device pixels covered by
+one texel where the camera looks:
+
+| Distance | Relief before | Relief after | Flat map, `economy` | Flat map, `balanced` |
+|---|---|---|---|---|
+| 800 m | 0.55 | 0.55 (nothing to add) | 2.2–2.9 | 1–2 |
+| 400 m | 1.1 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+| 100 m | 4.4 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+| 50 m | 8.8 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+| 25 m | 17.6 | 0.8–1.0 | 2.2–2.9 | 1–2 |
+
+Two separate faults.
+
+**The relief is one texture.** 3 072 px over the 3×3 patch is 0.9 m per texel,
+painted once; nothing refined it as the camera came closer. A bigger texture is
+not the answer (one level sharper is 200 MB and still 4 px per texel at 50 m).
+`terrain-detail.ts` plans a small stack of **squares that follow the view**:
+same pixel count each (2 048 on a desktop, 1 024 on a constrained device), each
+twice the side and half the sharpness of the one inside it, the innermost at
+about one texel per device pixel where the camera looks, snapped to a grid a
+quarter of its side so a small move repaints nothing. `terrain-detail-layer.ts`
+paints them in the basemap's paint worker from the **z14 vector tiles the
+basemap already fetched** (OpenFreeMap serves them `max-age` ten years, so the
+second read is the browser cache) and the relief's material mixes them over
+the big texture. 22–46 ms per square off the main thread; three squares ≈ 67 MB
+of GPU memory, given back 8 s after the view leaves. Street names are painted
+into the innermost square only — a name in a coarser square would be twice the
+size and cut by the square inside it. Vector providers only: for a raster
+provider sharper squares would mean more image tiles from someone else's
+server, so those keep the single texture.
+
+**The flat map never got its sharpness back.** The frame watch reports "slow"
+once a second for as long as it lasts, each report took one quality level off,
+and nothing but changing the provider put it back. Building the 3D surroundings
+is a slow stretch on any machine, so the map sat at `economy` for the rest of
+the session. `createQualityGovernor` (tile-quality) raises it again after three
+fast reports in a row (≥ 40 fps), and doubles that wait each time the sharper
+level turns out to be what made the view slow.
+
+### Names that keep out of the way (2026-11)
+
+`screen-labels.ts`:
+
+- **While the camera moves** nothing is placed or rasterised: POIs and house
+  numbers leave, place names stay at a third of their opacity, and the full set
+  returns 220 ms after the view holds still. "Moving" is a speed (12 % of the
+  height above the map per second, or 0.1 rad/s), not a per-frame step, so a
+  slow presentation orbit keeps its names.
+- **Never over the model.** The engine is given the loaded models' world boxes
+  (`setLabelKeepOut`); their screen rectangles count as already-placed labels.
+- **Room to breathe.** 9 px of clear space around a name (was 4), and the same
+  words are not written twice within 260 px.
+- Known gap: "street level" (no names below 40 m) is measured from the flat
+  map plane, so on a hill well above it names still show from close to the
+  ground.
+
+### The city beyond the district: cells by distance (2026-11)
+
+The full-detail surroundings are still ONE box, 700 m around the site, from one
+Overpass query. Past its edge the city used to be a flat map. Now it is drawn
+in **cells that follow the camera** (`city-cells.ts` rules, `city-lod.ts`
+manager, `city-cells.worker.ts` builder).
+
+- **Data: the z14 OpenMapTiles vector tiles** (OpenFreeMap — no key, no cap,
+  `max-age` ten years). Their `building` layer has every footprint with a
+  height, grouped one multipolygon per height; outlines are separated from
+  courtyards by winding (`groupRings`) and cut to the tile's own square so the
+  halves of a building on a seam abut. Overpass is not asked for anything new:
+  its rule — one query per toggle, never per tile, never on camera movement —
+  stands. The Overture extracts cover six districts and stay what they are, a
+  gap filler for the district.
+- **Grid: z15 cells** (≈ 920 m in Barcelona, four to a data tile), one mesh
+  each, built in a worker with the district's own `buildBuildingsGeometry` at
+  Simple, so a cell looks like the district at Simple.
+  - `mid` (within 0.5–1.6 km of the view's focus, 1.2 × the camera distance):
+    every building, real outline and courtyards. No trees, no furniture —
+    the streets are the basemap under it.
+  - `far` (out to 2.5–8 km, 10 × the camera distance): outlines simplified to
+    3 m, footprints under 80 m² dropped, courtyards filled.
+  - A cell at `mid` keeps it to 1.25 × the radius (no flicker on the line); a
+    cell out of the plan for 2.5 s is unloaded.
+- **Budget.** Cells are admitted nearest first until the device's triangle
+  budget is spent (3 M / 1.5 M / 0.6 M for high / mid / low-or-constrained;
+  ×3 with "Lift the geometry limit"): a cell that does not fit at `mid` is
+  taken at `far`, and the first that does not fit at all ends the list — no
+  holes nearer than what is drawn. Colours and normals travel as bytes:
+  22 bytes a vertex instead of 40.
+- **No building twice.** A cell leaves out every building whose box touches
+  the district's box, once a district is loaded for the current anchor.
+- **Ground.** Each building is seated on the ground under its own centre, read
+  from the same ground frame as everything else: on the relief inside the
+  3×3 patch, on the flat map's level outside it (the rim already eases one
+  into the other). The relief itself is unchanged, so hills outside the patch
+  are flat.
+- **Switch.** Map panel → Performance → "Detail by distance" (on by default,
+  persisted). Off is the previous behaviour: the district alone.
+
+Measured, desktop tier, Plaça de Catalunya seen from 1.7 km: 277 cells,
+137 102 buildings, 2.22 M triangles in 146 MB of buffers; the frame draws
+3.11 M triangles in 198 calls against 1.77 M in 113 with the switch off.
+El Carmel from 620 m: 254 cells, 1.93 M triangles, 127 MB, buildings seated on
+the hillside inside the patch.
+
+Not done: the full-detail district does not follow the camera. Its roads are
+cut to the relief's measured box and the model's height is tied to the patch,
+so moving the district means moving the relief with it — a change to the
+vertical frame, not to this layer. Cells are not pick targets, pop in without
+a fade, and the CPU copy of each cell's buffers is kept (re-seating needs the
+positions).
+
 ### OSM as data: the vector basemap (default for new users)
 
 `vt-<style>` providers read OpenMapTiles vector tiles from **OpenFreeMap**
@@ -649,6 +761,62 @@ reason the vector basemap is the default.
 - **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
   calls. Low-poly on purpose; at map scale a tree is a silhouette.
 
+### The ground the map corrects, the rim, and the air (2026-11)
+
+Four things changed together, because each one alone leaves a visible fault.
+
+- **Streets cut their own bench** (`terrain-grading.ts`). A carriageway is level
+  from kerb to kerb; the relief is a 10–30 m raster on a ~7–10 m mesh that
+  carries on sloping straight through it. Measured on El Carmel (Barcelona,
+  429 ground-level roads, 2 050 samples 4 m either side of the centreline):
+  the hillside stood more than the road's 25 cm lift above one kerb at **62 %**
+  of them, and more than 50 cm at 37 %. Under each ground-level way, and for a
+  shoulder either side, the ground now takes the way's own level, then returns
+  to the measured hillside over a 1 : 1.5 bank. Same samples afterwards:
+  **11 %** and 3 %, median 36 cm → 3 cm. Where ways compete, the wider one and
+  the nearer one win, so a pavement follows its carriageway and two streets
+  16 m apart each keep their own. Bridges, tunnels, covered ways and anything
+  with an OSM `layer` are never graded. It runs in the prelude with the beach
+  and pond carves (`applyGroundCorrections`), from the MEASURED ground, so a
+  rebuild does not grade twice. What is left (the 11 %) is junctions and
+  bundles of ways closer together than the mesh can separate.
+- **The rim** (`geo-terrain.ts`, `RIM_*`). The patch is real ground set into a
+  map with none, so its edge used to stand tens of metres above or below the
+  flat tiles, with a band of sky between. The outer band now eases onto the
+  flat map and dips under it, and the flat map itself moves to the level of the
+  patch's own edge (`rimDatumM`, `applyMapLevel`) instead of the anchor's — or
+  a hilltop site would sit in a crater. The square around the anchor that the
+  scene is built on (`measuredBox`) is never eased; when the site is near one
+  side of the patch the easing on that side is short and steep.
+- **Ways end where measured ground ends** (`way-clip.ts`). The eased band is not
+  ground a road can follow: the solver holds the legal grade, the way leaves
+  the surface, and the builder walls it down — slabs of ramp wall round the
+  district. Roads and railways are cut to `measuredBox`.
+- **Atmosphere** (`atmosphere.ts`). The sky was a gradient in screen space, so
+  the horizon met a saturated blue wherever the camera tilted; it is now an
+  equirectangular dome whose lowest band is exactly the fog colour. The fog ran
+  30–55 km, beyond anything in a district; its range now follows the camera's
+  distance to its target (`hazeRangeFor`), re-tuned per frame like the depth
+  range. A look can thin it (`MapLook.haze`; Blueprint does).
+
+Two things to know before touching any of it:
+
+- The **environment map was upside down** and a quarter turn round until this
+  change: `buildSkyTexture` wrote its rows from the zenith, and a DataTexture's
+  first row is the nadir. Every PBR surface was lit by the ground colour from
+  above. `equirectDirection` is now the one texel → direction mapping, shared
+  by the dome and the environment, and tested against three's own formula.
+  With the sky the right way up, lighting with the palette's saturated zenith
+  turned roofs lilac, hence `SKY_LIGHT_CHROMA` / `SKY_LIGHT_GAIN`.
+- `terrain-truth` reads a slope steeper than about 25 % as an obstruction and
+  takes the neighbourhood floor instead, metres lower. That is older than this
+  change and still true on real cliffs; it is why a road cannot be left on the
+  eased band.
+
+Not verified: the looks other than Daylight were checked only for the sky and
+haze colours meeting, not re-tuned by eye under the corrected environment; and
+nothing here has been looked at on a phone.
+
 ### How high a georeferenced IFC stands (2026-10)
 
 `vertical-frame.ts`, `dem-sources.ts`, `multi-placement.ts`, applied in
@@ -871,6 +1039,20 @@ and the carriageway it carries. All three questions run inside that policy.
 
 The arithmetic is done about the model's own centre, for the reason the next
 section gives.
+
+### A plan is not a volume (2026-11)
+
+Suppression compares outlines, and an outline says nothing about what is inside
+it. The mobility hub modelled under Plaça de Catalunya has a 49 × 64 m plan and
+rises under 3 m above the pavement; the corner block of Passeig de Gràcia 1 (the
+Apple Store, two parts of 19 and 22 m) stands inside that plan, scored full
+coverage and was deleted. A model that rises less than a third of a mapped
+building's **measured** height (`osm`, `overture`) no longer replaces it
+(`DWARFED_SHARE` in `context-suppression.ts`; the viewer supplies each model's
+top through `getModelTops`). An estimated height does not count, and a small
+model INSIDE a mapped outline — a fit-out of one storey — still replaces it.
+The cost: a low pavilion that really did replace a surveyed tall building now
+needs that building hidden by hand.
 
 ### Traps that cost real debugging time
 

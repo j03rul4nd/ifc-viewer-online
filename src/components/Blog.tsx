@@ -2086,8 +2086,11 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
         </div>
       </nav>
 
-      {/* ── Hero cover strip — always attempt; hidden via state if image 404s ── */}
-      <HeroCoverStrip slug={post.slug} heroImage={post.heroImage} alt={post.heroAlt} />
+      {/* Only a real picture of the work. The generated covers (purple glow,
+          category icon, the title again as an image) stay as og:image for
+          social cards; on the page they repeated the heading, sometimes an
+          older version of it. */}
+      {post.heroImage && <HeroCoverStrip slug={post.slug} heroImage={post.heroImage} alt={post.heroAlt} />}
 
       {/* ── Article — single col on mobile / 2-col on xl+ ── */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-8 pt-7 sm:pt-10 pb-16">
@@ -2136,7 +2139,6 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
                     </li>
                   </ol>
                 </nav>
-                <span className="shrink-0 text-[11.5px] text-[var(--text-faint)]">{chrome.minutes(post.readTimeMin)}</span>
               </div>
 
               <h1
@@ -2152,16 +2154,22 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
                 {post.excerpt}
               </p>
 
-              {/* Meta row: author + date | CopyForAI on its own line on mobile */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2 text-[12px] text-[var(--text-faint)]">
-                  <div className="w-[18px] h-[18px] rounded-full bg-[rgba(10,132,129,0.18)] flex items-center justify-center text-[9px] font-bold text-[var(--accent-2)] shrink-0">
-                    {post.author.charAt(0)}
+              {/* Title block, laid out like the one on a drawing sheet: the facts a
+                  reader checks before trusting a technical guide, in fixed cells. */}
+              <dl className="post-sheet grid grid-cols-2 sm:grid-cols-4 mb-4 rounded-[8px] overflow-hidden border border-[var(--border)]">
+                {([
+                  [chrome.sheet.topic, post.category],
+                  [chrome.sheet.published, <time key="p" dateTime={post.date}>{formatDate(post.date, post.lang ?? 'en')}</time>],
+                  [chrome.sheet.updated, <time key="u" dateTime={post.dateModified ?? post.date}>{formatDate(post.dateModified ?? post.date, post.lang ?? 'en')}</time>],
+                  [chrome.sheet.reading, chrome.minutes(post.readTimeMin)],
+                ] as const).map(([label, value], i) => (
+                  <div key={i} className="px-3 py-2.5 border-[var(--border)] [&:nth-child(odd)]:border-r sm:border-r sm:last:border-r-0 [&:nth-child(-n+2)]:border-b sm:[&:nth-child(-n+2)]:border-b-0">
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-faint)] mb-1">{label}</dt>
+                    <dd className="text-[13px] text-[var(--text)]">{value}</dd>
                   </div>
-                  <span>{post.author}</span>
-                  <span>·</span>
-                  <time dateTime={post.date}>{formatDate(post.date, post.lang ?? 'en')}</time>
-                </div>
+                ))}
+              </dl>
+              <div className="flex justify-end">
                 <CopyForAI post={post} />
               </div>
             </header>

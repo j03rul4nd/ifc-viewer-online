@@ -53,6 +53,15 @@ describe('landmarks', () => {
     for (const l of LANDMARKS) expect(shipped).toContain(l.asset)
   })
 
+  it('replaces the Jin Mao, found by any of the parts OSM draws it with', () => {
+    // Shaft, pyramidal crown and spire: three prisms in OSM, one model here.
+    for (const id of ['w188377486', 'w376016310', 'w376016312']) {
+      expect(landmarksIn([{ id }]).map((l) => l.asset)).toEqual(['jin-mao'])
+    }
+    const jm = LANDMARKS.find((l) => l.asset === 'jin-mao')!
+    expect(replacedFeatureIds([jm])).toContain('w167061956') // an entrance canopy
+  })
+
   it('finds a building by its parts, when the parser stood its outline down', () => {
     // The Casa del Guarda's outline w672895475 never reaches the scene.
     expect(landmarksIn([{ id: 'w672896035' }]).map((l) => l.asset)).toEqual(['casa-del-guarda'])

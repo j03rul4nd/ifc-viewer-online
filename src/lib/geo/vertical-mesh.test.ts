@@ -460,13 +460,17 @@ describe('geometry density stays proportional to the shape', () => {
 
   it('adds almost nothing on terrain, where the DEM already pays for stations', () => {
     const features = gridCity()
-    const hill = (nx: number, ny: number): number => nx * 3e6 + ny * 2e6
+    // Curved: on a planar slope the terrain asks for no cuts at all, and the
+    // ratio would only measure the profile's stations against a bare chord.
+    const hill = (nx: number, ny: number): number => 30 * Math.sin(nx * 4e4) + 20 * Math.cos(ny * 4e4)
     const base = { ...FLAT, sampleGroundM: hill }
     const plain = buildLinearLayer(features, 'road', base)!
     const carried = build(features, base).layer
-    // Measured at 1.01x: on terrain the DEM has already paid for the stations,
-    // and the profile asks for almost nothing on top.
-    expect(vertexCount(carried.object) / vertexCount(plain.object)).toBeLessThan(1.15)
+    // Measured at 1.33x. It was 1.01x while every terrain cell was cut whether
+    // the ground bent or not; the terrain now cuts only where it bends, so the
+    // profile's stations are a larger share of a smaller mesh. Still nowhere
+    // near uniform subdivision, which is what this guards against.
+    expect(vertexCount(carried.object) / vertexCount(plain.object)).toBeLessThan(1.5)
   })
 })
 

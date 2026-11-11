@@ -3,10 +3,16 @@
   "Tracking globe" in the theme editor and paste the configuration value from
   https://www.ifcvieweronline.eu/tracking-globe/
 {% endcomment %}
+{%- liquid
+  assign s = section.settings
+  if block
+    assign s = block.settings
+  endif
+-%}
 <div class="page-width">
-  <tracking-globe config="{{ section.settings.config | escape }}" style="display:block;height:{{ section.settings.height }}px"></tracking-globe>
+  <tracking-globe config="{{ s.config | escape }}" style="display:block;height:{{ s.height }}px"></tracking-globe>
 </div>
-<script src="{{ section.settings.base | escape }}tracker.js" async></script>
+<script src="{{ s.base | escape }}tracker.js" async></script>
 
 {% schema %}
 {

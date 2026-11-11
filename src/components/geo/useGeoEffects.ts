@@ -204,6 +204,13 @@ export function useGeoEffects(
     withGeo((geo) => geo.setHiddenFeatures(ids))
   }, [mapMode, hiddenFeatures, sceneHidden, withGeo])
 
+  // Detail by distance: the store is the truth, the scene follows.
+  const autoDetail = useGeoStore((s) => s.autoDetail)
+  useEffect(() => {
+    if (mapMode !== 'on') return
+    withGeo((geo) => geo.setAutoDetail(autoDetail))
+  }, [mapMode, autoDetail, withGeo])
+
   // Hide mode is only meaningful while there are surroundings to click, and a
   // mode nobody can leave is a bug. Dropping it here covers every exit —
   // turning the map off, turning the buildings off, or a failed refetch.

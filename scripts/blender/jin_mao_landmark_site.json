@@ -1,0 +1,474 @@
+{
+ "_about": "OpenStreetMap geometry for the Jin Mao Tower landmark (build-jin-mao-landmark.py). centroid [lat, lon] is the model origin (vertex mean of the outline, closing vertex dropped). ringEN_m are metres, +X east, +Y north. Data (c) OpenStreetMap contributors, ODbL. Fetched 2026-11-10.",
+ "jin-mao": {
+  "asset": "jin-mao",
+  "featureId": "w376075961",
+  "centroid": [
+   31.2372613,
+   121.501405
+  ],
+  "members": {
+   "w167061956": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:part": "yes",
+     "height": "10",
+     "min_height": "8",
+     "note:height": "estimated",
+     "roof:colour": "#CC6600",
+     "roof:height": "2",
+     "roof:orientation": "across",
+     "roof:shape": "round"
+    },
+    "ringEN_m": [
+     [
+      45.86,
+      7.99
+     ],
+     [
+      45.91,
+      -10.21
+     ],
+     [
+      29.26,
+      -10.26
+     ],
+     [
+      29.21,
+      7.94
+     ]
+    ]
+   },
+   "w167061957": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:part": "yes",
+     "height": "10",
+     "min_height": "8",
+     "note:height": "estimated",
+     "roof:colour": "#CC6600",
+     "roof:height": "2",
+     "roof:orientation": "across",
+     "roof:shape": "round"
+    },
+    "ringEN_m": [
+     [
+      8.78,
+      -32.07
+     ],
+     [
+      8.83,
+      -48.65
+     ],
+     [
+      -9.39,
+      -48.7
+     ],
+     [
+      -9.43,
+      -32.13
+     ]
+    ]
+   },
+   "w167061959": {
+    "tags": {
+     "building": "yes",
+     "building:levels": "5"
+    },
+    "ringEN_m": [
+     [
+      -86.02,
+      -59.25
+     ],
+     [
+      -89.59,
+      70.41
+     ],
+     [
+      -86.53,
+      80.12
+     ],
+     [
+      -73.94,
+      80.75
+     ],
+     [
+      -59.47,
+      73.98
+     ],
+     [
+      -45.68,
+      65.3
+     ],
+     [
+      -43.11,
+      7.78
+     ],
+     [
+      -43.06,
+      -10.5
+     ],
+     [
+      -40.58,
+      -64.86
+     ]
+    ]
+   },
+   "w167061961": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:part": "yes",
+     "height": "10",
+     "min_height": "8",
+     "note:height": "estimated",
+     "roof:colour": "#CC6600",
+     "roof:height": "2",
+     "roof:orientation": "across",
+     "roof:shape": "round"
+    },
+    "ringEN_m": [
+     [
+      8.63,
+      46.24
+     ],
+     [
+      8.69,
+      30.06
+     ],
+     [
+      -9.33,
+      30.01
+     ],
+     [
+      -9.39,
+      46.2
+     ]
+    ]
+   },
+   "w188377486": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:levels": "88",
+     "building:part": "yes",
+     "check_date": "2021-04-22",
+     "height": "348",
+     "roof:colour": "#CC6600",
+     "source": "estimation"
+    },
+    "ringEN_m": [
+     [
+      -9.33,
+      30.01
+     ],
+     [
+      -9.32,
+      26.09
+     ],
+     [
+      -27.88,
+      26.04
+     ],
+     [
+      -27.83,
+      7.83
+     ],
+     [
+      -31.65,
+      7.82
+     ],
+     [
+      -31.6,
+      -10.46
+     ],
+     [
+      -27.83,
+      -10.45
+     ],
+     [
+      -27.78,
+      -28.21
+     ],
+     [
+      -9.44,
+      -28.15
+     ],
+     [
+      -9.43,
+      -32.13
+     ],
+     [
+      8.78,
+      -32.07
+     ],
+     [
+      8.77,
+      -28.15
+     ],
+     [
+      26.3,
+      -28.1
+     ],
+     [
+      26.25,
+      -10.27
+     ],
+     [
+      29.26,
+      -10.26
+     ],
+     [
+      29.21,
+      7.94
+     ],
+     [
+      26.24,
+      7.93
+     ],
+     [
+      26.19,
+      26.15
+     ],
+     [
+      8.7,
+      26.09
+     ],
+     [
+      8.69,
+      30.06
+     ]
+    ]
+   },
+   "w376016310": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:levels": "88",
+     "building:part": "yes",
+     "check_date": "2021-04-22",
+     "height": "382",
+     "roof:colour": "#CC6600",
+     "roof:height": "34",
+     "roof:shape": "pyramidal"
+    },
+    "ringEN_m": [
+     [
+      -31.01,
+      -1.26
+     ],
+     [
+      -0.9,
+      28.9
+     ],
+     [
+      29.18,
+      -1.13
+     ],
+     [
+      -0.93,
+      -31.29
+     ]
+    ]
+   },
+   "w376016312": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:part": "yes",
+     "check_date": "2021-04-22",
+     "height": "420",
+     "roof:colour": "#CC6600"
+    },
+    "ringEN_m": [
+     [
+      -1.89,
+      -0.01
+     ],
+     [
+      0.24,
+      0.03
+     ],
+     [
+      0.28,
+      -2.18
+     ],
+     [
+      -1.85,
+      -2.21
+     ]
+    ]
+   },
+   "w376075961": {
+    "tags": {
+     "addr:city": "上海市",
+     "addr:country": "CN",
+     "addr:district": "浦东新区",
+     "addr:housenumber": "88",
+     "addr:street": "世纪大道",
+     "building": "skyscraper",
+     "building:material": "mirror",
+     "check_date": "2021-04-22",
+     "height": "420.5",
+     "layer": "1",
+     "name": "金茂大厦",
+     "name:ar": "برج جن ماو",
+     "name:bn": "জিন মাও টাওয়ার",
+     "name:en": "Jin Mao Tower",
+     "name:fr": "Tour Jin Mao",
+     "name:hi": "जिन माओ टावर",
+     "name:ja": "ジンマオタワー",
+     "name:ko": "진마오 타워",
+     "name:ru": "Цзинь Мао",
+     "name:th": "จินเหมาทาวเวอร์",
+     "name:uk": "Джин Мао",
+     "name:vi": "Tháp Kim Mậu",
+     "name:yue": "金茂大廈",
+     "name:zh": "金茂大厦",
+     "name:zh-Latn-pinyin": "Jīnmào Dàshà",
+     "start_date": "1999",
+     "wikidata": "Q80813",
+     "wikipedia": "zh:金茂大厦",
+     "wikipedia:en": "Jin Mao Tower"
+    },
+    "ringEN_m": [
+     [
+      -31.65,
+      7.82
+     ],
+     [
+      -27.83,
+      7.83
+     ],
+     [
+      -27.88,
+      26.04
+     ],
+     [
+      -9.32,
+      26.09
+     ],
+     [
+      -9.33,
+      30.01
+     ],
+     [
+      -9.39,
+      46.2
+     ],
+     [
+      8.63,
+      46.24
+     ],
+     [
+      8.69,
+      30.06
+     ],
+     [
+      8.7,
+      26.09
+     ],
+     [
+      26.19,
+      26.15
+     ],
+     [
+      26.24,
+      7.93
+     ],
+     [
+      29.21,
+      7.94
+     ],
+     [
+      45.86,
+      7.99
+     ],
+     [
+      45.91,
+      -10.21
+     ],
+     [
+      29.26,
+      -10.26
+     ],
+     [
+      26.25,
+      -10.27
+     ],
+     [
+      26.3,
+      -28.1
+     ],
+     [
+      8.77,
+      -28.15
+     ],
+     [
+      8.78,
+      -32.07
+     ],
+     [
+      8.83,
+      -48.65
+     ],
+     [
+      -9.39,
+      -48.7
+     ],
+     [
+      -9.44,
+      -28.15
+     ],
+     [
+      -27.78,
+      -28.21
+     ],
+     [
+      -27.83,
+      -10.45
+     ],
+     [
+      -31.6,
+      -10.46
+     ],
+     [
+      -43.06,
+      -10.5
+     ],
+     [
+      -43.11,
+      7.78
+     ]
+    ]
+   },
+   "w524263611": {
+    "tags": {
+     "building:colour": "#CC6600",
+     "building:part": "yes",
+     "height": "10",
+     "min_height": "8",
+     "note:height": "estimated",
+     "roof:colour": "#CC6600",
+     "roof:height": "2",
+     "roof:orientation": "across",
+     "roof:shape": "round"
+    },
+    "ringEN_m": [
+     [
+      -43.11,
+      7.78
+     ],
+     [
+      -31.65,
+      7.82
+     ],
+     [
+      -31.6,
+      -10.46
+     ],
+     [
+      -43.06,
+      -10.5
+     ]
+    ]
+   }
+  }
+ }
+}

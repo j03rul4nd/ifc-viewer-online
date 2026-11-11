@@ -50,7 +50,7 @@ import {
   type SeedRegion, type SeededTree,
 } from './tree-seeding'
 import {
-  subdivideMesh, distanceToRing, longestEdge, type Vec2, type Face,
+  subdivideMesh, distanceToRing, longestEdge, groundCuts, type Vec2, type Face,
 } from './surface-tessellation'
 import { applyGroundDepthNudge } from './ground-depth-nudge'
 import { compassRose, inlayCircle, splitTriangle, islandsInFloor, outsetRing, pavedAreaOrder, routingOverPaving } from './plaza-paving'
@@ -198,16 +198,17 @@ const SURFACE_RENDER_ORDER: Record<SurfaceLayerKind, number> =
  * detail comes from the shader, not from geometry.
  */
 const DETAIL_EDGE_M: Record<SurfaceLayerKind, number> =
-  { water: 8, green: 16, sand: 12, rock: 22 }
+  { water: 8, green: 9, sand: 9, rock: 9 }
 
 /**
  * Edge target for a paved AREA — a square, an esplanade, a pedestrianised street.
  *
- * Between sand and greenery, and for the same reason those two differ: paving
- * is laid flat, so it needs fewer vertices than a hillside to look like it is
- * following the ground.
+ * Under the terrain mesh's own grain (GRID_SEGMENTS: ~9.5 m), for paving and
+ * ground cover alike. Coarser than that, the terrain vertices between two of the
+ * floor's stood above it and showed through as long pale shards at eye level —
+ * walking the Lujiazui riverside, where the DEM is anything but flat.
  */
-const PAVED_AREA_EDGE_M = 14
+const PAVED_AREA_EDGE_M = 8
 
 /**
  * Refinement vertices ONE paved area may spend, over and above its own outline.
@@ -220,6 +221,13 @@ const PAVED_AREA_EDGE_M = 14
  * in the scene already does.
  */
 const PAVED_AREA_SPARE_POINTS = 600
+
+/**
+ * How far a road may leave the ground between two cuts, metres, before a cut
+ * is spent there. Under the ribbon's own lift above the terrain, so the ground
+ * never shows through it.
+ */
+export const ROAD_GROUND_TOL_M = 0.03
 
 /**
  * Vertex ceiling per layer. Reached only by something like a forest covering
@@ -265,6 +273,18 @@ function projectRing(ring: ReadonlyArray<LatLonPoint>): THREE.Vector2[] {
  * polygons collapse to nothing (this cost us ~89 % of buildings once — see
  * building-mesh). Indices are topological, so they apply to the normalized ring.
  */
+/** Triangulate an outer ring with holes; indices run over [outer, ...holes] flattened. */
+function triangulateWithHoles(outer: THREE.Vector2[], holes: THREE.Vector2[][], mToN: number): number[][] | null {
+  const o = outer[0]
+  const metric = (r: THREE.Vector2[]) => r.map((p) => new THREE.Vector2((p.x - o.x) / mToN, (p.y - o.y) / mToN))
+  try {
+    const faces = THREE.ShapeUtils.triangulateShape(metric(outer), holes.map(metric))
+    return faces.length > 0 ? faces : null
+  } catch {
+    return null
+  }
+}
+
 function triangulate(
   ring: THREE.Vector2[], mToN: number, holes: ReadonlyArray<THREE.Vector2[]> = [],
 ): number[][] | null {
@@ -893,10 +913,11 @@ function* buildDetailedSurface(
       : 0
     // The shore distance drives the foam and the shallows, which are metres
     // wide. Interpolated over a starved mesh's long triangles it draws them as
-    // fans across the open water; such a surface is better left uniform.
+    // fans across the open water; such a surface is better left uniform — as
+    // OPEN water. Zero meant "on the shore": the whole basin foamed white.
     const starved = isWater && longestEdge(mesh.points, mesh.faces) > DETAIL_EDGE_M[layer] * 3
     const shoreDist = isWater
-      ? (starved ? new Array<number>(mesh.points.length).fill(0) : distanceToRings(mesh.points, boundaries))
+      ? (starved ? new Array<number>(mesh.points.length).fill(OPEN_WATER_SHORE_M) : distanceToRings(mesh.points, boundaries))
       : null
     const shoreOfSand = layer === 'sand' ? seaDistanceFor(features, frame) : null
     const course = isWater ? waterSurfacesFor(features, frame).get(f.id) : undefined
@@ -1094,11 +1115,14 @@ export function buildBridgeLayer(
   const positions: number[] = []
   let count = 0
 
-  const pushDeck = (poly: THREE.Vector2[], topZ: number, bottomZ: number): void => {
-    const faces = triangulate(poly, mToN)
+  const pushDeck = (poly: THREE.Vector2[], topZ: number, bottomZ: number, holes: THREE.Vector2[][] = []): void => {
+    // An outline with holes is a ring of deck — the Lujiazui circular footbridge
+    // — and triangulating its outer ring alone lidded the whole roundabout.
+    const ring = holes.length > 0 ? [...poly, ...holes.flat()] : poly
+    const faces = holes.length > 0 ? triangulateWithHoles(poly, holes, mToN) : triangulate(poly, mToN)
     if (!faces) return
     for (const [a, b, c] of faces) {
-      for (const idx of [a, b, c]) positions.push(poly[idx].x, poly[idx].y, topZ)
+      for (const idx of [a, b, c]) positions.push(ring[idx].x, ring[idx].y, topZ)
     }
     // Soffit. `triangulate` leaves the ring CCW, so the top faces +z and the
     // same winding reversed faces −z. Without it the simple path — whose
@@ -1106,14 +1130,16 @@ export function buildBridgeLayer(
     // and looking up at a bridge from the quay under it is exactly the view
     // that makes a bridge read as a bridge.
     for (const [a, b, c] of faces) {
-      for (const idx of [c, b, a]) positions.push(poly[idx].x, poly[idx].y, bottomZ)
+      for (const idx of [c, b, a]) positions.push(ring[idx].x, ring[idx].y, bottomZ)
     }
     // Sides, so the deck has visible thickness rather than being a decal.
-    for (let i = 0; i < poly.length; i++) {
-      const p0 = poly[i]
-      const p1 = poly[(i + 1) % poly.length]
-      positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, bottomZ, p1.x, p1.y, topZ)
-      positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, topZ, p0.x, p0.y, topZ)
+    for (const edge of [poly, ...holes]) {
+      for (let i = 0; i < edge.length; i++) {
+        const p0 = edge[i]
+        const p1 = edge[(i + 1) % edge.length]
+        positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, bottomZ, p1.x, p1.y, topZ)
+        positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, topZ, p0.x, p0.y, topZ)
+      }
     }
   }
 
@@ -1160,7 +1186,7 @@ export function buildBridgeLayer(
       for (const quad of bufferCentreline(line, half)) pushDeck(quad, topZ, bottomZ)
       count++
     } else {
-      pushDeck(line, topZ, bottomZ)
+      pushDeck(line, topZ, bottomZ, (f.holes ?? []).filter((h) => h.length >= 3).map(projectRing))
       count++
     }
   }
@@ -1364,6 +1390,9 @@ export const MAX_LINEAR = 3000
  * coplanar by nature, so the order here IS the draw order: greenery, then
  * asphalt over it, then ballast over that, then the rails on top.
  */
+/** Shore distance given to a starved water mesh, metres: past every foam and shallows band. */
+export const OPEN_WATER_SHORE_M = 1000
+
 const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 }
 
 /**
@@ -1789,8 +1818,12 @@ function* linearLayerSteps(
    */
   const cutsFor = (a: THREE.Vector2, b: THREE.Vector2): number[] => {
     const terrainSteps = stepsFor(a.distanceTo(b))
-    const uniform: number[] = []
-    for (let s = 1; s < terrainSteps; s++) uniform.push(s / terrainSteps)
+    const every: number[] = []
+    for (let s = 1; s < terrainSteps; s++) every.push(s / terrainSteps)
+    // Only the cuts where the ground bends (surface-tessellation, groundCuts).
+    const uniform = frame.hasTerrain
+      ? groundCuts(every, (t) => frame.groundM(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t), ROAD_GROUND_TOL_M)
+      : every
     if (!activeProfile) return uniform
 
     const s0 = activeProfile.stationAt(a.x, a.y)

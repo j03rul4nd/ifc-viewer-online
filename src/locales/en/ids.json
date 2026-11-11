@@ -212,6 +212,76 @@
       "empty": "Add at least a minimum score or an IDS",
       "tooLong": "This IDS is too large for a link. Send the .ids file instead.",
       "failed": "Could not create the link"
+    },
+    "naming": {
+      "include": "Check file names (ISO 19650)",
+      "pending": "File name: waiting for the model",
+      "pass": "File name follows the naming rule",
+      "fail": "File name does not follow the naming rule ({{count}})",
+      "more": "+{{count}} more",
+      "separator": "Separator",
+      "reset": "Reset to ISO 19650",
+      "fieldName": "Field name",
+      "values": "Allowed values (comma-separated)",
+      "anyValue": "Any value",
+      "digits": "Digits",
+      "removeField": "Remove field",
+      "newField": "Field",
+      "addField": "+ Add field",
+      "status": "Status codes",
+      "revision": "Revision (P01, C01)",
+      "project": "Same status and revision in IfcProject",
+      "try": "Try a file name",
+      "tryOk": "This name passes",
+      "fields": {
+        "project": "Project",
+        "originator": "Originator",
+        "volume": "Volume",
+        "level": "Level",
+        "type": "Type",
+        "role": "Role",
+        "number": "Number"
+      },
+      "issue": {
+        "fieldCount": "{{got}} fields instead of {{expected}}",
+        "empty": "{{field}} is empty",
+        "chars": "{{field}} \"{{value}}\": letters and digits only",
+        "value": "{{field}} \"{{value}}\" is not allowed ({{allowed}})",
+        "case": "{{field}} \"{{value}}\" should be \"{{expected}}\"",
+        "length": "{{field}} \"{{value}}\" must be {{min}}–{{max}} characters",
+        "digits": "{{field}} \"{{value}}\" must be digits",
+        "statusMissing": "No status code (S0–S4) in the name",
+        "status": "Status {{value}} is not allowed ({{allowed}})",
+        "revisionMissing": "No revision (P01, C01) in the name",
+        "revisionStatus": "Status {{status}} goes with a P revision, not {{revision}}",
+        "projectMissing": "The model has no IfcProject",
+        "projectStatus": "IfcProject status {{project}}, file name {{file}}",
+        "projectRevision": "IfcProject revision {{project}}, file name {{file}}"
+      }
+    },
+    "version": {
+      "checked": "Checked against \"{{name}}\" v{{version}}",
+      "moved": "Checked against \"{{name}}\" v{{version}} (link made at v{{linked}})"
+    },
+    "managed": {
+      "title": "Requirements in your account",
+      "plan": "Reception",
+      "upsell": "Keeping requirements with versions and history is part of the Reception plan. Links stay free for suppliers.",
+      "seePlans": "See plans",
+      "profile": "Profile",
+      "newProfile": "New profile…",
+      "name": "Profile name",
+      "namePlaceholder": "Hospital EIR",
+      "note": "What changes in this version",
+      "notePlaceholder": "What changes (required)",
+      "publishFirst": "Save as v1",
+      "publishNext": "Publish v{{version}}",
+      "copyCurrent": "Copy link (current: v{{version}})",
+      "history": "History",
+      "noVersions": "No versions yet",
+      "published": "Version {{version}} published. Older links keep working.",
+      "noteRequired": "Write what changes in this version",
+      "failed": "Could not save. Try again."
     }
   }
 }

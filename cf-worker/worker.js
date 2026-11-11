@@ -108,8 +108,8 @@ function corsHeaders(origin) {
   if (!ALLOWED_ORIGINS.includes(origin)) return null
   return {
     'Access-Control-Allow-Origin':  origin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age':       '86400',
   }
 }
@@ -957,6 +957,511 @@ async function handleLeadsExport(request, url, env) {
   })
 }
 
+// ── Feature requests from registered users ──────────────────────────────────
+//
+// Signed-in users tell us what would help them most and how they cope today.
+// Only a valid Clerk session token from the production instance is accepted:
+// the user id comes from the token, never from the body, so nobody can post
+// as someone else and there are no anonymous requests to wade through. The
+// email comes from the token's `email` claim (instance config: session.claims).
+//
+// Stored in the LEADS KV namespace:
+//   request:<created_at>:<rand>              the request (status + reply live here)
+//   request-by:<user_id>:<created_at>:<rand> index, so a user can list their own
+//   request-count:<user_id>:<day>            daily counter (expires)
+//
+//   POST  /requests            a signed-in user files one
+//   GET   /requests?mine=1     a signed-in user's own, with status and our reply
+//   GET   /requests            all of them, admins only (FEEDBACK_ADMIN_IDS)
+//   PATCH /requests?id=<id>    admin sets status and the reply the user sees
+//   PATCH /requests?id=<id>&mine=1 {message}  the owner answers that reply
+//
+// Each request keeps a short `thread` ({from: 'joel'|'user', text, at}); `reply`
+// stays as Joel's latest message so older clients keep working.
+
+const REQUEST_PREFIX = 'request:'
+const REQUEST_BY_PREFIX = 'request-by:'
+const REQUEST_COUNT_PREFIX = 'request-count:'
+const REQUESTS_PER_DAY = 5
+const DEFAULT_CLERK_ISSUER = 'https://clerk.ifcvieweronline.eu'
+// What would help most: the paid features on the roadmap (docs-planning 19/20),
+// in the user's words, plus a free answer. One tap is a complete request.
+const REQUEST_FEATURES = ['big_files', 'versions', 'client_link', 'bcf_team', 'auto_check', 'cloud_drives', 'batch_tools', 'reception_inbox', 'managed_requirements', 'iso_naming', 'other']
+const REQUEST_FREQUENCIES = ['daily', 'weekly', 'sometimes']
+// Behaviour, not stated price: how they cope today and who holds the budget.
+const REQUEST_TODAY = ['nothing', 'manual', 'paid_tool', 'free_tool']
+const REQUEST_PAYERS = ['me', 'company', 'nobody']
+const REQUEST_ROLES = ['bim', 'architect', 'engineer', 'contractor', 'owner', 'developer', 'student', 'other']
+const REQUEST_TEAMS = ['solo', '2-10', '11-50', '51+']
+const REQUEST_STATUSES = ['new', 'reviewing', 'planned', 'building', 'shipped', 'declined']
+const REQUEST_ID_RE = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z:[0-9a-f]{8}$/
+const CLOCK_SKEW_S = 60
+const THREAD_MAX = 20
+
+/** Thread as stored, or rebuilt from the single reply older requests have. */
+function threadOf(r) {
+  if (Array.isArray(r.thread)) return r.thread
+  return r.reply ? [{ from: 'joel', text: r.reply, at: r.updated_at || r.created_at }] : []
+}
+
+const b64urlBytes = (s) => {
+  const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4))
+  return Uint8Array.from(b, (c) => c.charCodeAt(0))
+}
+const b64urlJson = (s) => JSON.parse(new TextDecoder().decode(b64urlBytes(s)))
+
+let jwksCache = { issuer: '', at: 0, keys: [] }
+async function clerkKeys(issuer) {
+  if (jwksCache.issuer === issuer && Date.now() - jwksCache.at < 3_600_000) return jwksCache.keys
+  const res = await fetch(`${issuer}/.well-known/jwks.json`)
+  if (!res.ok) throw new Error(`jwks ${res.status}`)
+  const { keys } = await res.json()
+  jwksCache = { issuer, at: Date.now(), keys: Array.isArray(keys) ? keys : [] }
+  return jwksCache.keys
+}
+
+/** Verifies a Clerk session JWT (RS256). Returns its claims, or null. */
+async function verifyClerkToken(token, env) {
+  if (typeof token !== 'string') return null
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  try {
+    const header = b64urlJson(parts[0])
+    const claims = b64urlJson(parts[1])
+    if (header.alg !== 'RS256') return null
+    const issuer = env.CLERK_ISSUER || DEFAULT_CLERK_ISSUER
+    if (claims.iss !== issuer) return null
+    const now = Math.floor(Date.now() / 1000)
+    if (typeof claims.exp !== 'number' || claims.exp < now - CLOCK_SKEW_S) return null
+    if (typeof claims.nbf === 'number' && claims.nbf > now + CLOCK_SKEW_S) return null
+    if (claims.azp && !ALLOWED_ORIGINS.includes(claims.azp)) return null
+    if (typeof claims.sub !== 'string' || !claims.sub.startsWith('user_')) return null
+    const jwk = (await clerkKeys(issuer)).find((k) => k.kid === header.kid)
+    if (!jwk) return null
+    const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])
+    const ok = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5', key, b64urlBytes(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+    )
+    return ok ? claims : null
+  } catch {
+    return null
+  }
+}
+
+function bearer(request) {
+  const auth = request.headers.get('Authorization') ?? ''
+  return auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+}
+
+function isRequestAdmin(env, claims) {
+  const admins = String(env.FEEDBACK_ADMIN_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+  return !!claims && admins.includes(claims.sub)
+}
+
+async function handleRequestPost(request, env, cors) {
+  if (!cors) return jsonResponse({ ok: false, error: 'Forbidden' }, 403)
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, cors)
+  if (!(await underLimit(env.SUBSCRIBE_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'rate_limited' }, 429, { ...cors, 'Retry-After': '60' })
+  }
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, cors)
+  }
+  const pick = (v, allowed) => (allowed.includes(v) ? v : '')
+  const req = {
+    created_at: new Date().toISOString(),
+    user_id: claims.sub,
+    email: isValidEmail(String(claims.email ?? '').toLowerCase()) ? String(claims.email).toLowerCase() : '',
+    feature: pick(body?.feature, REQUEST_FEATURES),
+    need: cleanText(body?.need, 2000),
+    // Optional detail. Empty string = not answered.
+    frequency: pick(body?.frequency, REQUEST_FREQUENCIES),
+    today: pick(body?.today, REQUEST_TODAY),
+    today_tool: cleanText(body?.today_tool, 120),
+    payer: pick(body?.payer, REQUEST_PAYERS),
+    // Commitments: the honest buying signals.
+    beta: body?.beta === true,
+    call: body?.call === true,
+    contact_ok: body?.contact_ok === true || body?.beta === true || body?.call === true,
+    role: pick(body?.role, REQUEST_ROLES),
+    team: pick(body?.team, REQUEST_TEAMS),
+    source: cleanText(body?.source, 40).replace(/[^\w:.-]/g, ''),
+    lang: cleanText(body?.lang, 8),
+    plan: cleanText(body?.plan, 20),
+    status: 'new',
+    reply: '',
+    updated_at: '',
+  }
+  if (!req.feature) return jsonResponse({ ok: false, error: 'invalid' }, 400, cors)
+  if (req.feature === 'other' && req.need.length < 5) return jsonResponse({ ok: false, error: 'need_too_short' }, 400, cors)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, cors)
+
+  const day = req.created_at.slice(0, 10)
+  const countKey = `${REQUEST_COUNT_PREFIX}${req.user_id}:${day}`
+  const count = Number(await env.LEADS.get(countKey)) || 0
+  if (count >= REQUESTS_PER_DAY) return jsonResponse({ ok: false, error: 'daily_limit' }, 429, cors)
+  await env.LEADS.put(countKey, String(count + 1), { expirationTtl: 2 * 86_400 })
+
+  const id = `${req.created_at}:${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`
+  await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(req))
+  await env.LEADS.put(`${REQUEST_BY_PREFIX}${req.user_id}:${id}`, id)
+  return jsonResponse({ ok: true, id }, 200, cors)
+}
+
+async function listByPrefix(env, prefix) {
+  const keys = []
+  let cursor
+  do {
+    const page = await env.LEADS.list({ prefix, cursor })
+    for (const k of page.keys) keys.push(k.name)
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+  return keys
+}
+
+async function readRequest(env, id) {
+  const raw = await env.LEADS.get(`${REQUEST_PREFIX}${id}`)
+  if (!raw) return null
+  try { return { id, ...JSON.parse(raw) } } catch { return null }
+}
+
+const newestFirst = (a, b) => (a.created_at < b.created_at ? 1 : -1)
+
+/** GET /requests[?mine=1] — Authorization: Bearer <Clerk session token>. */
+async function handleRequestsList(request, url, env, cors) {
+  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+
+  if (url.searchParams.get('mine') === '1') {
+    if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, noStore)
+    const ids = (await listByPrefix(env, `${REQUEST_BY_PREFIX}${claims.sub}:`))
+      .map((k) => k.slice(REQUEST_BY_PREFIX.length + claims.sub.length + 1))
+    const requests = []
+    for (const id of ids) {
+      const r = await readRequest(env, id)
+      // What the user may see of their own request: no email, no internal fields.
+      if (r && r.user_id === claims.sub) {
+        requests.push({ id, created_at: r.created_at, feature: r.feature, need: r.need, status: r.status || 'new', reply: r.reply || '', updated_at: r.updated_at || '', thread: threadOf(r) })
+      }
+    }
+    return jsonResponse({ ok: true, requests: requests.sort(newestFirst) }, 200, noStore)
+  }
+
+  // 404, not 403: the full list does not exist for anyone else.
+  if (!isRequestAdmin(env, claims)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  const requests = []
+  for (const key of await listByPrefix(env, REQUEST_PREFIX)) {
+    const r = await readRequest(env, key.slice(REQUEST_PREFIX.length))
+    if (r) requests.push({ status: 'new', reply: '', ...r, thread: threadOf(r) })
+  }
+  return jsonResponse({ ok: true, requests: requests.sort(newestFirst) }, 200, noStore)
+}
+
+/** PATCH /requests?id=<id> {status?, reply?} — admins only. */
+async function handleRequestPatch(request, url, env, cors) {
+  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (url.searchParams.get('mine') === '1') return handleRequestAnswer(request, url, env, claims, noStore)
+  if (!isRequestAdmin(env, claims)) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+  const id = url.searchParams.get('id') ?? ''
+  if (!REQUEST_ID_RE.test(id)) return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  const raw = await env.LEADS.get(`${REQUEST_PREFIX}${id}`)
+  if (!raw) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  }
+  const current = JSON.parse(raw)
+  if (body?.status !== undefined && !REQUEST_STATUSES.includes(body.status)) {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  }
+  const at = new Date().toISOString()
+  const reply = body?.reply !== undefined ? cleanText(body.reply, 1000) : (current.reply ?? '')
+  let thread = threadOf(current)
+  // A new reply is a new message in the thread; editing it to '' clears nothing said before.
+  if (reply && reply !== current.reply) thread = [...thread, { from: 'joel', text: reply, at }].slice(-THREAD_MAX)
+  const next = {
+    ...current,
+    status: body?.status ?? current.status ?? 'new',
+    reply,
+    thread,
+    updated_at: at,
+  }
+  await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(next))
+  return jsonResponse({ ok: true, request: { id, ...next } }, 200, noStore)
+}
+
+/** PATCH /requests?id=<id>&mine=1 {message} — the owner answers Joel's reply. */
+async function handleRequestAnswer(request, url, env, claims, noStore) {
+  if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, noStore)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+  if (!(await underLimit(env.SUBSCRIBE_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'rate_limited' }, 429, { ...noStore, 'Retry-After': '60' })
+  }
+  const id = url.searchParams.get('id') ?? ''
+  if (!REQUEST_ID_RE.test(id)) return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  const current = await readRequest(env, id)
+  // Someone else's request does not exist for you.
+  if (!current || current.user_id !== claims.sub) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+  let body
+  try { body = await request.json() } catch {
+    return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  }
+  const text = cleanText(body?.message, 1000)
+  if (text.length < 2) return jsonResponse({ ok: false, error: 'need_too_short' }, 400, noStore)
+  const thread = threadOf(current)
+  // Only an answer to something Joel said, and not a wall of messages in a row.
+  if (!thread.some((m) => m.from === 'joel')) return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore)
+  let trailing = 0
+  for (let i = thread.length - 1; i >= 0 && thread[i].from === 'user'; i--) trailing++
+  if (trailing >= 3) return jsonResponse({ ok: false, error: 'daily_limit' }, 429, noStore)
+  const at = new Date().toISOString()
+  const { id: _id, ...stored } = current
+  const next = { ...stored, thread: [...thread, { from: 'user', text, at }].slice(-THREAD_MAX), user_replied_at: at }
+  await env.LEADS.put(`${REQUEST_PREFIX}${id}`, JSON.stringify(next))
+  return jsonResponse({ ok: true, thread: next.thread }, 200, noStore)
+}
+
+// ── Calls with Joel (/booking) ──────────────────────────────────────────────
+// Our own booking page instead of a paid scheduler. Everything lives in the
+// LEADS namespace; nothing here costs money.
+//   GET    /booking              signed-in: free slots + your booking
+//   POST   /booking {slot, email, note, request_id, tz, lang}   book one slot
+//   DELETE /booking              cancel your booking
+//   GET    /booking?all=1        admin: upcoming calls + the hours config
+//   PUT    /booking {days, times, duration, tz, blocked}   admin: set hours
+// Mail goes out through Resend only when RESEND_API_KEY and BOOKING_FROM are
+// set (a sender on a domain verified in Resend). Without them the page still
+// hands the user an .ics and calendar links, and Joel sees the call in
+// /admin/feedback.
+
+const BOOKING_CONFIG_KEY = 'booking:config'
+const BOOKING_SLOT_PREFIX = 'booking-slot:'
+const BOOKING_BY_PREFIX = 'booking-by:'
+const BOOKING_DEFAULT = { tz: 'Europe/Madrid', days: [2, 3, 4], times: ['16:00', '16:30', '17:00', '17:30'], duration: 15, blocked: [] }
+const BOOKING_HORIZON_DAYS = 14
+const BOOKING_MIN_LEAD_MS = 12 * 3_600_000
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+async function readBookingConfig(env) {
+  try {
+    const raw = await env.LEADS.get(BOOKING_CONFIG_KEY)
+    return raw ? { ...BOOKING_DEFAULT, ...JSON.parse(raw) } : BOOKING_DEFAULT
+  } catch { return BOOKING_DEFAULT }
+}
+
+/** Minutes the zone is ahead of UTC at that instant. */
+function tzOffsetMin(tz, ms) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(new Date(ms)).map((x) => [x.type, x.value]))
+  return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - Math.floor(ms / 60_000) * 60_000) / 60_000
+}
+
+/** Wall-clock date + time in a zone → UTC ms (DST-safe for daytime hours). */
+function zonedToUtc(tz, date, time) {
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = time.split(':').map(Number)
+  const guess = Date.UTC(y, m - 1, d, hh, mm)
+  const first = guess - tzOffsetMin(tz, guess) * 60_000
+  return guess - tzOffsetMin(tz, first) * 60_000
+}
+
+/** Every slot on offer in the next two weeks, as ISO strings (UTC). */
+function bookingSlots(cfg, now = Date.now()) {
+  const out = []
+  for (let i = 0; i <= BOOKING_HORIZON_DAYS; i++) {
+    const local = new Intl.DateTimeFormat('en-CA', { timeZone: cfg.tz, year: 'numeric', month: '2-digit', day: '2-digit' })
+      .format(new Date(now + i * 86_400_000))
+    if (cfg.blocked.includes(local)) continue
+    const weekday = new Date(`${local}T12:00:00Z`).getUTCDay()
+    if (!cfg.days.includes(weekday)) continue
+    for (const time of cfg.times) {
+      const at = zonedToUtc(cfg.tz, local, time)
+      if (at - now >= BOOKING_MIN_LEAD_MS) out.push(new Date(at).toISOString())
+    }
+  }
+  return [...new Set(out)].sort()
+}
+
+async function readBooking(env, slot) {
+  const raw = await env.LEADS.get(`${BOOKING_SLOT_PREFIX}${slot}`)
+  try { return raw ? JSON.parse(raw) : null } catch { return null }
+}
+
+/** What the user sees of their call. */
+const ownBooking = (b) => b && { slot: b.slot, duration: b.duration, meet_url: b.meet_url, email: b.email, note: b.note, request_id: b.request_id }
+
+// [subject title, booked, join, change it, cancelled]
+const BOOKING_MAIL = {
+  en: ['Call with Joel (IFC Viewer Online)', 'Your call is booked', 'Join here', 'Need another time? Cancel on the same page and pick again', 'Call cancelled'],
+  es: ['Llamada con Joel (IFC Viewer Online)', 'Tienes la llamada reservada', 'Entra aquí', '¿Te va mal? Anúlala en la misma página y elige otra hora', 'Llamada anulada'],
+  ca: ['Trucada amb en Joel (IFC Viewer Online)', 'Tens la trucada reservada', 'Entra aquí', 'No et va bé? Anul·la-la a la mateixa pàgina i tria una altra hora', 'Trucada anul·lada'],
+  fr: ['Appel avec Joel (IFC Viewer Online)', 'Votre appel est réservé', 'Rejoindre ici', 'Un empêchement ? Annulez sur la même page et choisissez un autre créneau', 'Appel annulé'],
+  de: ['Gespräch mit Joel (IFC Viewer Online)', 'Ihr Gespräch ist gebucht', 'Hier teilnehmen', 'Passt es nicht? Auf derselben Seite absagen und neu wählen', 'Gespräch abgesagt'],
+  it: ['Chiamata con Joel (IFC Viewer Online)', 'La chiamata è prenotata', 'Entra qui', 'Non ti va bene? Annullala dalla stessa pagina e scegli un altro orario', 'Chiamata annullata'],
+  pt: ['Chamada com o Joel (IFC Viewer Online)', 'A sua chamada está marcada', 'Entre aqui', 'Não dá jeito? Cancele na mesma página e escolha outra hora', 'Chamada cancelada'],
+  ja: ['Joel との通話（IFC Viewer Online）', '通話の予約が完了しました', '参加リンク', '都合が悪くなったら、同じページで取り消して別の時間を選んでください', '通話を取り消しました'],
+  zh: ['与 Joel 通话（IFC Viewer Online）', '通话已预约', '加入链接', '时间不合适？在同一页面取消后重新选择', '通话已取消'],
+  th: ['คุยกับ Joel (IFC Viewer Online)', 'จองเวลาคุยเรียบร้อยแล้ว', 'เข้าร่วมที่นี่', 'ไม่สะดวก? ยกเลิกในหน้าเดิมแล้วเลือกเวลาใหม่', 'ยกเลิกการคุยแล้ว'],
+}
+
+const icsStamp = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+
+function bookingIcs(b, title, cancel) {
+  const start = Date.parse(b.slot)
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//IFC Viewer Online//Calls//EN', `METHOD:${cancel ? 'CANCEL' : 'PUBLISH'}`,
+    'BEGIN:VEVENT', `UID:${b.uid}@ifcvieweronline.eu`, `DTSTAMP:${icsStamp(Date.now())}`,
+    `DTSTART:${icsStamp(start)}`, `DTEND:${icsStamp(start + b.duration * 60_000)}`,
+    `SUMMARY:${title}`, `LOCATION:${b.meet_url}`, `URL:${b.meet_url}`, `DESCRIPTION:${b.meet_url}`,
+    cancel ? 'STATUS:CANCELLED' : 'STATUS:CONFIRMED', 'END:VEVENT', 'END:VCALENDAR', '',
+  ].join('\r\n')
+}
+
+const b64utf8 = (s) => {
+  const bytes = new TextEncoder().encode(s)
+  let bin = ''
+  for (const x of bytes) bin += String.fromCharCode(x)
+  return btoa(bin)
+}
+
+/** Best effort: a failed mail never fails the booking. */
+async function sendBookingMail(env, b, cancel) {
+  if (!env.RESEND_API_KEY || !env.BOOKING_FROM) return false
+  const L = BOOKING_MAIL[b.lang] ?? BOOKING_MAIL.en
+  let when
+  try {
+    when = new Intl.DateTimeFormat(b.lang || 'en', { dateStyle: 'full', timeStyle: 'short', timeZone: b.user_tz || 'UTC' }).format(new Date(b.slot))
+  } catch { when = b.slot }
+  const page = `${(env.APP_URL || 'https://www.ifcvieweronline.eu/').replace(/\/$/, '')}/call`
+  const ics = b64utf8(bookingIcs(b, L[0], cancel))
+  const mails = [{
+    to: b.email,
+    subject: `${cancel ? L[4] : L[1]} · ${when}`,
+    text: cancel
+      ? `${L[4]}: ${when}\n\nJoel`
+      : `${L[1]}: ${when} (${b.duration} min)\n\n${L[2]}: ${b.meet_url}\n\n${L[3]}: ${page}\n\nJoel`,
+  }]
+  if (env.BOOKING_NOTIFY) {
+    const madrid = new Date(b.slot).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', dateStyle: 'full', timeStyle: 'short' })
+    mails.push({
+      to: env.BOOKING_NOTIFY,
+      subject: `${cancel ? 'Anulada' : 'Llamada'}: ${b.email} · ${madrid}`,
+      text: `${b.email}\n${b.note || '(sin nota)'}\nPetición: ${b.request_id || '-'}\n${b.meet_url}\n\nTodas: ${(env.APP_URL || 'https://www.ifcvieweronline.eu/').replace(/\/$/, '')}/admin/feedback`,
+    })
+  }
+  let ok = true
+  for (const m of mails) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: env.BOOKING_FROM, reply_to: env.BOOKING_REPLY_TO || 'hola@ifcvieweronline.eu', ...m, attachments: [{ filename: 'call.ics', content: ics }] }),
+      })
+      if (!res.ok) { ok = false; console.error('[worker] booking mail', res.status) }
+    } catch { ok = false }
+  }
+  return ok
+}
+
+async function handleBooking(request, url, env, cors) {
+  const noStore = { 'Cache-Control': 'no-store', ...(cors ?? {}) }
+  const claims = await verifyClerkToken(bearer(request), env)
+  if (!env.LEADS) return jsonResponse({ ok: false, error: 'unavailable' }, 503, noStore)
+  const admin = isRequestAdmin(env, claims)
+  const cfg = await readBookingConfig(env)
+
+  if (request.method === 'GET' && url.searchParams.get('all') === '1') {
+    if (!admin) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+    const calls = []
+    for (const key of await listByPrefix(env, BOOKING_SLOT_PREFIX)) {
+      const b = await readBooking(env, key.slice(BOOKING_SLOT_PREFIX.length))
+      if (b && Date.parse(b.slot) > Date.now() - 86_400_000) calls.push(b)
+    }
+    return jsonResponse({ ok: true, config: cfg, mail: !!(env.RESEND_API_KEY && env.BOOKING_FROM), calls: calls.sort((a, b) => (a.slot < b.slot ? -1 : 1)) }, 200, noStore)
+  }
+
+  if (request.method === 'PUT') {
+    if (!admin) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+    let body
+    try { body = await request.json() } catch { return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore) }
+    const days = Array.isArray(body?.days) ? [...new Set(body.days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : cfg.days
+    const times = Array.isArray(body?.times) ? [...new Set(body.times.filter((x) => TIME_RE.test(x)))].sort().slice(0, 24) : cfg.times
+    const blocked = Array.isArray(body?.blocked) ? [...new Set(body.blocked.filter((x) => DATE_RE.test(x)))].sort().slice(-60) : cfg.blocked
+    const duration = [15, 20, 30, 45].includes(body?.duration) ? body.duration : cfg.duration
+    let tz = cfg.tz
+    if (typeof body?.tz === 'string') {
+      try { new Intl.DateTimeFormat('en', { timeZone: body.tz }); tz = body.tz } catch { return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore) }
+    }
+    const next = { tz, days, times, duration, blocked }
+    await env.LEADS.put(BOOKING_CONFIG_KEY, JSON.stringify(next))
+    return jsonResponse({ ok: true, config: next }, 200, noStore)
+  }
+
+  if (!claims) return jsonResponse({ ok: false, error: 'unauthorized' }, 401, noStore)
+  const byKey = `${BOOKING_BY_PREFIX}${claims.sub}`
+  const mineSlot = await env.LEADS.get(byKey)
+  const mine = mineSlot ? await readBooking(env, mineSlot) : null
+  const current = mine && mine.user_id === claims.sub && Date.parse(mine.slot) > Date.now() - 3_600_000 ? mine : null
+
+  if (request.method === 'GET') {
+    const taken = new Set((await listByPrefix(env, BOOKING_SLOT_PREFIX)).map((k) => k.slice(BOOKING_SLOT_PREFIX.length)))
+    const slots = bookingSlots(cfg).filter((s) => !taken.has(s))
+    return jsonResponse({ ok: true, slots, duration: cfg.duration, booking: ownBooking(current) }, 200, noStore)
+  }
+
+  if (!(await underLimit(env.SUBSCRIBE_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'rate_limited' }, 429, { ...noStore, 'Retry-After': '60' })
+  }
+
+  if (request.method === 'DELETE') {
+    if (!current) return jsonResponse({ ok: false, error: 'Not found' }, 404, noStore)
+    await env.LEADS.delete(`${BOOKING_SLOT_PREFIX}${current.slot}`)
+    await env.LEADS.delete(byKey)
+    await sendBookingMail(env, current, true)
+    return jsonResponse({ ok: true }, 200, noStore)
+  }
+
+  // POST: one upcoming call per person.
+  if (current) return jsonResponse({ ok: false, error: 'already_booked', booking: ownBooking(current) }, 409, noStore)
+  let body
+  try { body = await request.json() } catch { return jsonResponse({ ok: false, error: 'invalid' }, 400, noStore) }
+  const slot = String(body?.slot ?? '')
+  if (!bookingSlots(cfg).includes(slot) || (await env.LEADS.get(`${BOOKING_SLOT_PREFIX}${slot}`))) {
+    return jsonResponse({ ok: false, error: 'slot_gone' }, 409, noStore)
+  }
+  const email = String(body?.email ?? '').trim().toLowerCase() || String(claims.email ?? '').toLowerCase()
+  if (!isValidEmail(email)) return jsonResponse({ ok: false, error: 'email' }, 400, noStore)
+  const requestId = String(body?.request_id ?? '')
+  let userTz = 'UTC'
+  if (typeof body?.tz === 'string') {
+    try { new Intl.DateTimeFormat('en', { timeZone: body.tz }); userTz = body.tz } catch { /* keep UTC */ }
+  }
+  const uid = crypto.randomUUID().replace(/-/g, '')
+  const b = {
+    slot, duration: cfg.duration, uid,
+    // A room nobody can guess; Jitsi needs no account on either side.
+    meet_url: `https://meet.jit.si/ifcviewer-${uid.slice(0, 12)}`,
+    user_id: claims.sub, email,
+    note: cleanText(body?.note, 500),
+    request_id: REQUEST_ID_RE.test(requestId) ? requestId : '',
+    lang: cleanText(body?.lang, 8).slice(0, 2),
+    user_tz: userTz,
+    created_at: new Date().toISOString(),
+  }
+  const ttl = Math.max(60, Math.floor((Date.parse(slot) - Date.now()) / 1000) + 30 * 86_400)
+  await env.LEADS.put(`${BOOKING_SLOT_PREFIX}${slot}`, JSON.stringify(b), { expirationTtl: ttl })
+  await env.LEADS.put(byKey, slot, { expirationTtl: ttl })
+  const mailed = await sendBookingMail(env, b, false)
+  return jsonResponse({ ok: true, booking: ownBooking(b), mailed }, 200, noStore)
+}
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -1022,6 +1527,20 @@ export default {
       }
       if (url.pathname === '/leads' && request.method === 'GET') {
         return await handleLeadsExport(request, url, env)
+      }
+
+      // Feature requests from signed-in users, and the admin's read-back
+      if (url.pathname === '/requests' && ['POST', 'GET', 'PATCH'].includes(request.method)) {
+        const reqCors = corsHeaders(origin) ?? (/^http:\/\/localhost:\d+$/.test(origin) ? { 'Access-Control-Allow-Origin': origin } : null)
+        if (request.method === 'POST') return await handleRequestPost(request, env, reqCors)
+        if (request.method === 'PATCH') return await handleRequestPatch(request, url, env, reqCors)
+        return await handleRequestsList(request, url, env, reqCors)
+      }
+
+      // Calls with Joel: our own booking page (/call)
+      if (url.pathname === '/booking' && ['GET', 'POST', 'PUT', 'DELETE'].includes(request.method)) {
+        const bCors = corsHeaders(origin) ?? (/^http:\/\/localhost:\d+$/.test(origin) ? { 'Access-Control-Allow-Origin': origin } : null)
+        return await handleBooking(request, url, env, bCors)
       }
 
       // Email capture

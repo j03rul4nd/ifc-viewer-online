@@ -2,20 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --accent: #0A8481;
-  --accent-2: #55CAC3;
-  --bg: #100F0C;
-  --surface: #181714;
-  --surface-2: #21201D;
-  --border: #2B2A26;
+/* ── Theme tokens (docs/theming.md) ─────────────────────────────────────────
+   Semantic names are the source of truth; the short legacy names below are
+   aliases so the ~4,000 existing inline uses keep working. Dark values are
+   the pre-theme palette, unchanged. Theme is set by data-theme on <html>
+   (src/theme/ + the inline script in index.html). */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-app: #100F0C;
+  --bg-surface: #181714;
+  --bg-surface-raised: #21201D;
+  --bg-hover: #21201D;
+  --border-subtle: #2B2A26;
   --border-strong: #3A3933;
-  --text: #ECEBE7;
-  --text-dim: #A09E98;
-  --text-faint: #7F7D78;
+  --text-primary: #ECEBE7;
+  --text-secondary: #A09E98;
+  --text-tertiary: #85837E; /* 4.7:1 on --surface (was #7F7D78, 4.4:1) */
+  --accent: #0A8481;
+  --accent-strong: #55CAC3;
+  --accent-contrast: #FFFFFF;
+  --success: #3FA866;
+  --warning: #E9A23B;
   --danger: #E0523F;
-  --warn: #E9A23B;
-  --ok: #3FA866;
+  --focus-ring: #55CAC3;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-app: #F6F6F4;
+  --bg-surface: #FFFFFF;
+  --bg-surface-raised: #F0EFEC;
+  --bg-hover: #E9E8E4;
+  --border-subtle: #DEDDD8;
+  --border-strong: #8A8984;  /* 3:1 UI contrast on white */
+  --text-primary: #1C1B16;
+  --text-secondary: #4E4D48;
+  --text-tertiary: #65635E;
+  --text-muted: #4E4D48;
+  --accent: #00696A;
+  --accent-strong: #005556;
+  --accent-contrast: #FFFFFF;
+  --success: #206B38;
+  --warning: #915C08;
+  --danger: #AF2B25;
+  --focus-ring: #00696A;
+  --shadow: 0 1px 2px rgba(28, 27, 22, 0.08), 0 4px 12px rgba(28, 27, 22, 0.06);
+  --overlay: rgba(28, 27, 22, 0.35);
+}
+
+:root {
+  /* Legacy aliases — keep, so nothing else has to change. */
+  --bg: var(--bg-app);
+  --surface: var(--bg-surface);
+  --surface-2: var(--bg-surface-raised);
+  --border: var(--border-subtle);
+  --text: var(--text-primary);
+  --text-dim: var(--text-secondary);
+  --text-faint: var(--text-tertiary);
+  --accent-2: var(--accent-strong);
+  --warn: var(--warning);
+  --ok: var(--success);
   /* Mobile floating nav (single source of truth for the pill height) */
   --mobile-nav-h: 56px;
   /* Height of the floating top capsules on phones (0 elsewhere): overlays
@@ -277,6 +326,41 @@ body {
   .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
 }
 
+/* Light theme: same frosted glass, light surface (dark values above unchanged). */
+[data-theme="light"] .glass {
+  background: color-mix(in srgb, var(--bg-surface) 85%, transparent);
+}
+[data-theme="light"] .glass-md {
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+}
+[data-theme="light"] .glass-xl {
+  background: color-mix(in srgb, var(--text-primary) 35%, transparent);
+}
+[data-theme="light"] .mobile-pill-glass,
+[data-theme="light"] .mobile-sheet-glass {
+  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  -webkit-backdrop-filter: blur(36px) saturate(1.6);
+  backdrop-filter: blur(36px) saturate(1.6);
+  border: 0.5px solid var(--border-subtle);
+  box-shadow: var(--shadow);
+}
+@media (max-width: 767px) {
+  [data-theme="light"] .mobile-sidebar-sheet {
+    background: color-mix(in srgb, var(--bg-surface) 95%, transparent) !important;
+    border-top: 0.5px solid var(--border-subtle) !important;
+    box-shadow: var(--shadow);
+  }
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-theme="light"] .glass, [data-theme="light"] .glass-md { background: var(--bg-surface) !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="light"] .glass, [data-theme="light"] .glass-md, [data-theme="light"] .mobile-pill-glass,
+  [data-theme="light"] .mobile-sheet-glass, [data-theme="light"] .mobile-sidebar-sheet {
+    background: var(--bg-surface) !important;
+  }
+}
+
 /* ── GeoPanel inputs (GIS map mode) ─────────────────────────────────────────── */
 
 .geo-input {
@@ -499,7 +583,7 @@ kbd {
      surfaces (blurred, translucent) become solid, which is also cheaper for
      the GPU. */
 @media (prefers-contrast: more) {
-  :root:not(.lp-light) {
+  :root:not(.lp-light):not([data-theme="light"]) {
     --text-dim: #C4C2BC;
     --text-faint: #A8A6A0;
     --border: #45433D;

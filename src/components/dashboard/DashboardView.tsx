@@ -14,7 +14,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useCloudAccountStore } from '../../stores/cloudAccountStore'
+import { useCloudAccountStore, openFeatureRequest } from '../../stores/cloudAccountStore'
 import { useEntitlement } from '../../hooks/useEntitlement'
 import { isCloudEnabled } from '../../lib/cloud/api-client'
 import {
@@ -170,6 +170,11 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
                 {t('dashboard.admin')}
               </button>
             )}
+            {isAdmin && (
+              <button onClick={() => onNavigate('/admin/feedback')} className={ghostBtn} style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
+                Peticiones
+              </button>
+            )}
             <button onClick={onOpenViewer} className={ghostBtn} style={ghostStyle}>{t('dashboard.openViewer')}</button>
             {status === 'signed-in'
               ? <button onClick={() => void signOut?.()} className={ghostBtn} style={ghostStyle}>{t('signOut')}</button>
@@ -249,6 +254,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
                   <h2 className="text-[14px] font-semibold mb-1">{t('dashboard.quickActions')}</h2>
                   <button onClick={() => onNavigate('/account')} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('manageProfile')}</button>
                   <button onClick={onOpenViewer} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('dashboard.openViewer')}</button>
+                  <button onClick={() => openFeatureRequest('dashboard')} className={`${ghostBtn} justify-start text-left`} style={ghostStyle}>{t('requests.entryTitle')}</button>
                 </section>
               </div>
             </div>

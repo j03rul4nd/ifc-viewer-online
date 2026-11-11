@@ -8,11 +8,11 @@ import { quoteApi, validationCredits } from './api-cost'
 
 describe('plan catalogue', () => {
   it('matches the prices decided in doc 12/17', () => {
-    expect(planDef('pro')).toMatchObject({ monthlyEur: 19, yearlyEur: 190 })
-    expect(planDef('team')).toMatchObject({ monthlyEur: 35, yearlyEur: 348, unit: 'seat', minUnits: 3 })
-    expect(planDef('reception')).toMatchObject({ monthlyEur: 149, unit: 'project' })
-    expect(planDef('developer').monthlyEur).toBe(49)
-    expect(planDef('enterprise').fromEur).toBe(6000)
+    expect(planDef('pro')).toMatchObject({ monthlyEur: 47, yearlyEur: 468 })
+    expect(planDef('team')).toMatchObject({ monthlyEur: 71, yearlyEur: 708, unit: 'seat', minUnits: 3 })
+    expect(planDef('reception')).toMatchObject({ monthlyEur: 348, yearlyEur: 3480, fromEur: 290, unit: 'project' })
+    expect(planDef('developer').monthlyEur).toBe(179)
+    expect(planDef('enterprise').fromEur).toBe(15000)
   })
 
   it('every included feature exists, and every feature belongs to its plan list', () => {
@@ -31,9 +31,9 @@ describe('plan catalogue', () => {
   })
 
   it('applies the Team seat minimum and spreads yearly prices', () => {
-    expect(planMonthlyCost('team', 1)).toBe(105)
-    expect(planMonthlyCost('team', 5)).toBe(175)
-    expect(planMonthlyCost('pro', 1, 'yearly')).toBeCloseTo(15.83, 2)
+    expect(planMonthlyCost('team', 1)).toBe(213)
+    expect(planMonthlyCost('team', 5)).toBe(355)
+    expect(planMonthlyCost('pro', 1, 'yearly')).toBeCloseTo(39, 2)
     expect(planMonthlyCost('enterprise')).toBeNull()
   })
 
@@ -91,7 +91,7 @@ describe('API cost', () => {
     const q = quoteApi({ files: 3000, avgMb: 80, storedGb: 100 })
     expect(q.credits).toBe(3000 * 2 + 200)
     expect(q.overage).toBe(6200 - 5000)
-    expect(q.totalEur).toBe(49 + 12)
+    expect(q.totalEur).toBe(179 + 12)
     expect(quoteApi({ files: 100, avgMb: 20, storedGb: 0 }).overageEur).toBe(0)
   })
 })

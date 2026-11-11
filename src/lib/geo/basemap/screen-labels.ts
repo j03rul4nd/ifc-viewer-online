@@ -51,6 +51,8 @@ export interface ScreenLabelLayer {
   update(
     camera: THREE.Camera, viewport: { width: number; height: number },
     visibleRegions: ReadonlySet<string>, dpr: number, tileFrame: THREE.Matrix4,
+    /** World boxes no name may be drawn over: the models the map is there for. */
+    keepOut?: readonly THREE.Box3[],
   ): void
   dispose(): void
   /** Dev diagnosis: what the layer holds right now. */
@@ -69,9 +71,35 @@ const SCREEN_QUOTA: Readonly<Record<string, number>> = {
 }
 /** Priority added to a POI at the bottom of the screen (nearest the viewer). */
 const NEAR_BONUS = 40
-/** Fade speed (opacity per second). */
-const FADE_PER_S = 5
-const PAD_PX = 4
+/** Fade speed (opacity per second): in gently, out of the way fast. */
+const FADE_IN_PER_S = 5
+const FADE_OUT_PER_S = 9
+/**
+ * Clear space around a name, CSS px. It was 4: two names 8 px apart read as
+ * one line of text, and in a pitched view the far half of the screen filled
+ * edge to edge.
+ */
+const PAD_PX = 9
+/** The same words are not written twice closer than this on screen, CSS px. */
+const SAME_TEXT_PX = 260
+
+// -- While the camera moves ---------------------------------------------------
+// A name is pinned to a place and drawn at a fixed size, so in a moving view
+// every one of them slides across the picture at its own speed, and the
+// placement (who wins each collision) changes under them frame by frame:
+// names blink in and out along the way. Nobody reads a map while flying over
+// it. So while the camera moves the minor names leave, the places stay as a
+// faint hint of where things are, nothing is re-placed, and the full set
+// returns once the view has been still for a moment.
+
+/** Faster than this the view counts as moving: share of the height above the map per second. */
+const MOVE_PAN_PER_S = 0.12
+/** Or this many radians per second of turning. A slow presentation orbit stays under both. */
+const MOVE_TURN_PER_S = 0.1
+/** The view must hold still this long before names are placed again. */
+const SETTLE_MS = 220
+/** What stays of a name while the camera moves, by layer; the rest go. */
+const MOVING_OPACITY: Readonly<Record<string, number>> = { place: 0.32, 'water-name': 0.2 }
 
 interface Entry {
   cand: ScreenLabelCandidate
@@ -135,6 +163,16 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   let lastT = performance.now()
   let builtDpr = 0
   const v = new THREE.Vector3()
+  const eye = new THREE.Vector3()
+  const lastEye = new THREE.Vector3()
+  const dir = new THREE.Vector3()
+  const lastDir = new THREE.Vector3()
+  let lastZoom = 1
+  let seen = false
+  let movedAt = -Infinity
+  /** Keys placed the last time the view was still. */
+  let placedKeys: string[] = []
+  const corner = new THREE.Vector3()
 
   function ensureSprite(e: Entry, dpr: number): void {
     if (e.sprite) return
@@ -172,10 +210,29 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
     setRegion(key, cands) { regions.set(key, cands) },
     removeRegion(key) { regions.delete(key) },
 
-    update(camera, viewport, visibleRegions, dpr, tileFrame) {
+    update(camera, viewport, visibleRegions, dpr, tileFrame, keepOut) {
       const now = performance.now()
-      const dt = Math.min(0.1, (now - lastT) / 1000)
+      const rawDt = (now - lastT) / 1000
+      const dt = Math.min(0.1, rawDt)
       lastT = now
+
+      // Is the camera moving? Speeds, not per-frame steps, so the answer does
+      // not depend on the frame rate.
+      camera.getWorldPosition(eye)
+      camera.getWorldDirection(dir)
+      const zoom = (camera as THREE.OrthographicCamera).zoom || 1
+      v.set(0, 0, 0).applyMatrix4(tileFrame)
+      const heightM = eye.y - v.y
+      if (seen && rawDt > 0) {
+        const span = Math.max(10, Math.abs(heightM))
+        const pan = eye.distanceTo(lastEye) / span / rawDt
+        const turn = dir.angleTo(lastDir) / rawDt
+        const zoomed = Math.abs(Math.log(zoom / lastZoom)) / rawDt
+        if (pan > MOVE_PAN_PER_S || turn > MOVE_TURN_PER_S || zoomed > MOVE_PAN_PER_S) movedAt = now
+      }
+      seen = true
+      lastEye.copy(eye); lastDir.copy(dir); lastZoom = zoom
+      const moving = now - movedAt < SETTLE_MS
       if (dpr !== builtDpr) {
         // Re-rasterise at the new DPR (a window moved to another monitor).
         for (const e of entries.values()) dropSprite(e)
@@ -205,9 +262,19 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
         ? (2 * Math.tan((cam.fov * Math.PI) / 360)) / viewport.height
         : ((cam.top - cam.bottom) / (cam.zoom || 1)) / viewport.height
       const onScreen: ScreenItem[] = []
-      for (const e of entries.values()) {
+      // At eye level the names stand in the street (see labelsWanted).
+      const wanted = labelsWanted(heightM)
+      if (moving) {
+        // Nothing is placed or rasterised: what was there dims or leaves.
+        const kept = new Set(placedKeys)
+        for (const e of entries.values()) {
+          e.target = wanted && kept.has(e.cand.key) && live.has(e.cand.key)
+            ? MOVING_OPACITY[e.cand.layer.id] ?? 0 : 0
+        }
+      }
+      for (const e of moving ? [] : entries.values()) {
         e.target = 0
-        if (!live.has(e.cand.key)) continue
+        if (!wanted || !live.has(e.cand.key)) continue
         // Normalized planar (centred) → world, through the tiles' own matrix.
         v.set(e.cand.nx - 0.5, e.cand.ny - 0.5, 0).applyMatrix4(tileFrame)
         const world = v.clone()
@@ -224,20 +291,30 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
         const near = e.cand.layer.id === 'poi' || e.cand.layer.id === 'housenumber'
           ? NEAR_BONUS * (sy / Math.max(1, viewport.height)) : 0
         onScreen.push({
-          key: e.cand.key, layerId: e.cand.layer.id, priority: e.cand.priority + near, w: e.w, h: e.h,
+          key: e.cand.key, layerId: e.cand.layer.id, text: e.cand.text, priority: e.cand.priority + near, w: e.w, h: e.h,
           sx: ((v.x + 1) / 2) * viewport.width, sy,
         })
       }
-      for (const key of placeScreenLabels(onScreen, MAX_VISIBLE, SCREEN_QUOTA)) {
-        const e = entries.get(key)!
-        e.target = 1
-        e.sprite!.scale.set(e.w * perPx, e.h * perPx, 1)
+      if (!moving) {
+        // The models are what the map is there for: no name over them.
+        const blocked: ScreenBox[] = []
+        for (const box of keepOut ?? []) {
+          const r = screenBoxOf(box, camera, viewport, corner)
+          if (r) blocked.push(r)
+        }
+        placedKeys = placeScreenLabels(onScreen, MAX_VISIBLE, SCREEN_QUOTA, blocked)
+        for (const key of placedKeys) {
+          const e = entries.get(key)!
+          e.target = 1
+          e.sprite!.scale.set(e.w * perPx, e.h * perPx, 1)
+        }
       }
 
       // 3. Fade, and free what is fully gone and no longer a candidate.
       for (const [k, e] of entries) {
-        const step = FADE_PER_S * dt
-        e.opacity = e.target > e.opacity ? Math.min(e.target, e.opacity + step) : Math.max(e.target, e.opacity - step)
+        e.opacity = e.target > e.opacity
+          ? Math.min(e.target, e.opacity + FADE_IN_PER_S * dt)
+          : Math.max(e.target, e.opacity - FADE_OUT_PER_S * dt)
         if (e.sprite) {
           e.sprite.material.opacity = e.opacity
           e.sprite.visible = e.opacity > 0.01
@@ -262,8 +339,54 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   }
 }
 
+/**
+ * Below this height above the map plane, metres, no place names are shown.
+ *
+ * A name is a sprite at its place on the ground, drawn at a constant size on
+ * screen. From above that is a map; at a walker's eye it is a sign floating in
+ * the street — "Barcelona" and the corner shop hanging across the view of the
+ * Sagrada Família, in every screenshot taken there.
+ */
+export const STREET_LEVEL_M = 40
+
+/** Whether place names belong on screen with the camera this high, metres. */
+export function labelsWanted(heightM: number): boolean {
+  return !(heightM < STREET_LEVEL_M)
+}
+
+/** A rectangle on screen, CSS px: [left, top, right, bottom]. */
+export type ScreenBox = [number, number, number, number]
+
+/**
+ * The rectangle a world box covers on screen, or null when it is off screen or
+ * the camera is inside or beside it (a corner behind the eye has no place on
+ * screen, and a view from within a model has no map names to keep off it).
+ */
+export function screenBoxOf(
+  box: THREE.Box3, camera: THREE.Camera, viewport: { width: number; height: number },
+  scratch = new THREE.Vector3(),
+): ScreenBox | null {
+  if (box.isEmpty()) return null
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (let i = 0; i < 8; i++) {
+    scratch.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z)
+    scratch.project(camera)
+    if (!(scratch.z > -1 && scratch.z < 1)) return null
+    const sx = ((scratch.x + 1) / 2) * viewport.width
+    const sy = ((1 - scratch.y) / 2) * viewport.height
+    if (sx < x0) x0 = sx
+    if (sx > x1) x1 = sx
+    if (sy < y0) y0 = sy
+    if (sy > y1) y1 = sy
+  }
+  if (x1 < 0 || y1 < 0 || x0 > viewport.width || y0 > viewport.height) return null
+  return [x0, y0, x1, y1]
+}
+
 export interface ScreenItem {
   key: string
+  /** The words, when known: the same words are not placed twice close by. */
+  text?: string
   /** Style layer — quotas are per layer (POIs must not crowd out places). */
   layerId?: string
   priority: number
@@ -278,9 +401,12 @@ export interface ScreenItem {
  */
 export function placeScreenLabels(
   items: readonly ScreenItem[], max: number, quota: Readonly<Record<string, number>> = {},
+  blocked: readonly ScreenBox[] = [],
 ): string[] {
   const ordered = [...items].sort((a, b) => b.priority - a.priority)
-  const placed: Array<[number, number, number, number]> = []
+  // Blocked rectangles count as already placed: nothing may touch them.
+  const placed: ScreenBox[] = [...blocked]
+  const texts: Array<{ text: string; sx: number; sy: number }> = []
   const keys: string[] = []
   const used = new Map<string, number>()
   for (const it of ordered) {
@@ -292,6 +418,9 @@ export function placeScreenLabels(
       it.sx - it.w / 2 - PAD_PX, it.sy - it.h / 2 - PAD_PX, it.sx + it.w / 2 + PAD_PX, it.sy + it.h / 2 + PAD_PX,
     ]
     if (placed.some((p) => box[0] < p[2] && box[2] > p[0] && box[1] < p[3] && box[3] > p[1])) continue
+    const text = it.text
+    if (text && texts.some((t) => t.text === text && Math.hypot(t.sx - it.sx, t.sy - it.sy) < SAME_TEXT_PX)) continue
+    if (text) texts.push({ text, sx: it.sx, sy: it.sy })
     placed.push(box)
     keys.push(it.key)
     if (it.layerId) used.set(it.layerId, n + 1)

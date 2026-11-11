@@ -59,8 +59,8 @@ export interface Plan {
   highlighted?: boolean
 }
 
-// Prices from docs-planning/12 §2 (2026-10-28). Team is €35 per editor with a
-// 3-editor minimum, sold here as its minimum bundle; reviewers and guests are
+// Prices from docs-planning/12 §2 (2026-11-11). Team is €71 per editor month to
+// month (€59 billed yearly) with a 3-editor minimum, sold here as its minimum bundle; reviewers and guests are
 // free. The full catalogue, with Reception and Developer, is lib/plans/plans.ts.
 export const PLANS: Plan[] = [
   {
@@ -68,16 +68,16 @@ export const PLANS: Plan[] = [
     features: ['Viewer, measure, section, multi-model', 'Health Score, rule checks and IDS', 'Requirements links, delivery report, BCF', 'Runs 100% in your browser — files never leave it'],
   },
   {
-    id: 'pro', name: 'Pro', audience: 'Freelancers, 1 person', monthlyEur: 19, yearlyEur: 190, highlighted: true,
+    id: 'pro', name: 'Pro', audience: 'Freelancers, 1 person', monthlyEur: 47, yearlyEur: 468, highlighted: true,
     features: ['Large files on EU servers (up to 1 GB)', 'Projects with versions, 20 GB', 'A link for your client, with password and expiry', 'Verifiable certificates with your logo', 'Score history and what got worse'],
   },
   {
-    id: 'team', name: 'Team', audience: 'Studios — €35 per editor, 3 minimum', monthlyEur: 105, yearlyEur: 1044,
+    id: 'team', name: 'Team', audience: 'Studios — €59 per editor billed yearly, 3 minimum', monthlyEur: 213, yearlyEur: 2124,
     features: ['Quality gate on every upload', 'House standard shared across projects', 'Team BCF issues — reviewers and guests free', 'Client portal with your logo', 'ISO 19650 states and audit log'],
   },
   {
     id: 'business', name: 'Enterprise', audience: 'Reception across a portfolio, on-premise', monthlyEur: null, yearlyEur: null,
-    features: ['Reception plan on every project', 'SSO, SLA and DPA', 'Air-gapped on-premise appliance', 'From €6,000 a year'],
+    features: ['Reception plan on every project', 'SSO, SLA and DPA', 'Air-gapped on-premise appliance', 'From €15,000 a year'],
   },
 ]
 

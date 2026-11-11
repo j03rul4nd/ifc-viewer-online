@@ -1,0 +1,14 @@
+{
+  "name": "ifc-viewer-online-shopify",
+  "private": true,
+  "scripts": {
+    "build:blocks": "node ../build-extension.mjs",
+    "config:link": "shopify app config link",
+    "dev": "npm run build:blocks && shopify app dev",
+    "deploy": "npm run build:blocks && shopify app deploy",
+    "check": "npm run build:blocks && shopify theme check --path extensions/ifc-viewer"
+  },
+  "devDependencies": {
+    "@shopify/cli": "^5.0.0"
+  }
+}

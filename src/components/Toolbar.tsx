@@ -26,7 +26,9 @@ import { isHazardEnabled } from '../features/hazard/flag'
 import { useFloodStore } from '../features/flood/store'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
-import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
+import { useCloudAccountStore, isAccountEnabled, openFeatureRequest } from '../stores/cloudAccountStore'
+import { MessageSquarePlus, Moon, Sun, Monitor } from 'lucide-react'
+import { useTheme } from '../theme'
 import { trackProEntryClick, trackExportClicked } from '../lib/analytics'
 import { useSceneContent } from '../hooks/useSceneContent'
 
@@ -51,6 +53,8 @@ interface ToolbarProps {
    * icon-only (docs/DUAL_SCREEN.md) so every menu stays reachable.
    */
   compact?: boolean
+  /** Show "Suggest": App decides with lib/feedback-gate (never in embeds, client mode, tours…). */
+  canSuggest?: boolean
   fileName: string | null
   elementCount: number
   loadingState: 'idle' | 'loading' | 'loaded' | 'error'
@@ -98,7 +102,7 @@ const Btn = ({
   const variants = {
     ghost:     'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:opacity-80 disabled:opacity-35 disabled:cursor-not-allowed',
     secondary: 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 disabled:opacity-35 disabled:cursor-not-allowed',
-    primary:   'bg-[var(--accent)] text-white hover:brightness-110 active:brightness-95 disabled:opacity-35 disabled:cursor-not-allowed',
+    primary:   'bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110 active:brightness-95 disabled:opacity-35 disabled:cursor-not-allowed',
   }
   return (
     <button onClick={onClick} disabled={disabled} title={title} className={`${base} ${variants[variant]}`}>
@@ -242,7 +246,7 @@ function scoreColor(score: number): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Toolbar({
-  compact = false, fileName, elementCount, loadingState, canIsolate,
+  compact = false, canSuggest = false, fileName, elementCount, loadingState, canIsolate,
   viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenAddData, onOpenSceneFile, onOpenExportModal, onOpenEmbed, onOpenScene, onOpenIds, onOpenCompare, onOpenHelp,
   variant = 'full', tools = ['validate', 'measure'],
 }: ToolbarProps) {
@@ -253,6 +257,10 @@ export default function Toolbar({
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
   const { t: tViewer } = useTranslation('viewer')
+  const { mode: themeMode, setMode: setThemeMode } = useTheme()
+  const themeLabel = t('theme.toggle', {
+    mode: themeMode === 'light' ? t('theme.light') : themeMode === 'system' ? t('theme.system') : t('theme.dark'),
+  })
   const dualStatus = useDualScreenStore((s) => s.status)
   const setDualPref = useDualScreenStore((s) => s.setPref)
 
@@ -533,9 +541,9 @@ export default function Toolbar({
     <span
       className="px-1.5 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums shrink-0"
       style={{
-        background: errorCount > 0 ? 'var(--danger)22' : '#E9A23B22',
-        color:      errorCount > 0 ? 'var(--danger)'   : '#E9A23B',
-        border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#E9A23B33'}`,
+        background: errorCount > 0 ? 'color-mix(in srgb, var(--danger) 13%, transparent)' : 'color-mix(in srgb, var(--warning) 13%, transparent)',
+        color:      errorCount > 0 ? 'var(--danger)'   : 'var(--warning)',
+        border:     `1px solid ${errorCount > 0 ? 'color-mix(in srgb, var(--danger) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)'}`,
       }}
     >
       {errorCount > 0 ? `${errorCount}E` : issueCount}
@@ -885,7 +893,7 @@ export default function Toolbar({
             <span className="relative inline-flex">
               {DownloadSVG}
               {diffs.length > 0 && (
-                <span className="absolute -top-[5px] -right-[7px] min-w-[13px] h-[13px] px-[3px] text-[8px] font-mono rounded-full bg-[var(--accent)] text-white leading-[13px] text-center tabular-nums">
+                <span className="absolute -top-[5px] -right-[7px] min-w-[13px] h-[13px] px-[3px] text-[8px] font-mono rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] leading-[13px] text-center tabular-nums">
                   {diffs.length}
                 </span>
               )}
@@ -930,8 +938,29 @@ export default function Toolbar({
         </ToolMenu>
       </div>
 
-      {/* ── Utilities: help · account · language ───────────────────────────── */}
+      {/* ── Utilities: suggest · help · account · language ─────────────────── */}
       <div className={`${compact ? 'tb-icons ' : ''}hidden md:flex items-center gap-0.5 shrink-0 ml-0.5 lg:ml-1`}>
+        {/* Suggest: the always-visible way to tell us what is missing. Not in a
+            host's page (compact/embed preset or any iframe): that is not ours. */}
+        {canSuggest && !compact && (
+          <button
+            onClick={() => openFeatureRequest('toolbar')}
+            title={tPro('requests.entryTitle')}
+            aria-label={tPro('requests.entryButton')}
+            className="flex items-center gap-1.5 h-[28px] px-2 rounded-[5px] text-[12px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
+          >
+            <MessageSquarePlus aria-hidden size={14} />
+            <span className="hidden lg:inline">{tPro('requests.entryButton')}</span>
+          </button>
+        )}
+        <button
+          onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : themeMode === 'light' ? 'system' : 'dark')}
+          title={themeLabel}
+          aria-label={themeLabel}
+          className="flex items-center justify-center h-[28px] w-[28px] rounded-[5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
+        >
+          {themeMode === 'light' ? <Sun aria-hidden size={14} /> : themeMode === 'system' ? <Monitor aria-hidden size={14} /> : <Moon aria-hidden size={14} />}
+        </button>
         <button
           onClick={onOpenHelp}
           title={tCommon('shortcuts.title')}
@@ -986,10 +1015,10 @@ export default function Toolbar({
         className="md:hidden order-first pointer-events-auto mobile-pill-glass flex items-center gap-2.5 h-12 pl-1.5 pr-3 rounded-full min-w-0 max-w-[calc(100%-164px)] active:scale-[0.98] transition-transform"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
-        <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.07] shrink-0">
+        <span className="relative w-9 h-9 rounded-full flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primary)_7%,transparent)] shrink-0">
           <Icons.Logo size={18} />
           {loadingState !== 'idle' && (
-            <span aria-hidden="true" className="absolute bottom-[3px] right-[3px] w-[9px] h-[9px] rounded-full ring-2 ring-[#0d0d12]" style={{ background: statusColor }} />
+            <span aria-hidden="true" className="absolute bottom-[3px] right-[3px] w-[9px] h-[9px] rounded-full ring-2 ring-[var(--bg-surface)]" style={{ background: statusColor }} />
           )}
         </span>
         <span className="min-w-0 text-left leading-tight">

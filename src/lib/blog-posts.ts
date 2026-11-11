@@ -11,6 +11,7 @@ import { TRACKING_POSTS_EN } from './blog-tracking-en.ts'
 import { SKETCH_POSTS_EN } from './blog-sketch-en.ts'
 import { DRAWINGS_POSTS_EN } from './blog-drawings-en.ts'
 import { MCP_POSTS_EN } from './blog-mcp-en.ts'
+import { COMPARISON_POSTS_EN } from './blog-comparisons-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -373,6 +374,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...COMPARISON_POSTS_EN,
   ...MCP_POSTS_EN,
   ...TWIN_CLUSTER2_POSTS_EN,
   ...HAZARD_POSTS_EN,
@@ -6301,771 +6303,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
     ],
   },
 
-  // ── Article #5 — BEST FREE IFC VIEWER COMPARISON ─────────────────────────
-
-  {
-    slug: 'best-free-ifc-viewer',
-    title: 'Best Free IFC Viewer in 2026: Honest Comparison of 10 Tools',
-    excerpt: "There is no single best IFC viewer — the right choice depends on your workflow. Independent comparison of 10 tools across browser vs desktop, validation depth, BCF, IDS, privacy, and large-file handling. Honest strengths and limitations for each.",
-    seoDescription: 'There is no single best IFC viewer — the right choice depends on your workflow. Ten tools compared on validation depth, BCF, IDS, privacy and file size.',
-    date: '2026-06-30',
-    readTimeMin: 24,
-    category: 'Tools & comparisons',
-    categorySlug: 'tools',
-    author: 'IFC Viewer Team',
-    featured: false,
-    keywords: [
-      'best free IFC viewer', 'IFC viewer comparison', 'IFC file viewer', 'online IFC viewer',
-      'free IFC viewer', 'IFC model viewer', 'browser IFC viewer', 'desktop IFC viewer',
-      'OpenBIM viewer', 'open IFC files', 'IFC viewer 2026', 'IFC validation tool',
-    ],
-    faqs: [
-      {
-        q: 'What is the best free IFC viewer in 2026?',
-        a: "There is no single best — it depends on your workflow. For browser-based viewing with validation and zero installation, IFC Viewer Online. For enterprise model checking, Solibri (free for non-commercial use via Solibri Anywhere). For basic desktop viewing on Windows, BIMVision. For team coordination with BCF, BIMcollab Zoom or Trimble Connect. For on-site field use, Dalux.",
-      },
-      {
-        q: 'Can I open IFC files without installing software?',
-        a: "Yes. IFC Viewer Online, That Open Viewer, Autodesk Viewer, Trimble Connect, and Dalux all run in a web browser with no installation. IFC Viewer Online processes files locally via WebAssembly — nothing is uploaded to any server. The others require cloud upload.",
-      },
-      {
-        q: 'Which IFC viewer supports IDS 1.0 validation?',
-        a: "IFC Viewer Online supports full IDS 1.0 validation with all six facets (Entity, Attribute, Property, Classification, Material, PartOf), validated against 100 official bSI testcases. Solibri has added IDS support in recent versions — verify the current release. The buildingSMART Validation Service validates IDS schema files but does not run them against models.",
-      },
-      {
-        q: 'Does Solibri have a free version?',
-        a: "Yes — Solibri Anywhere is free for non-commercial use (students, academics, individual learning). For commercial project work, Solibri requires a paid licence. Pricing is not publicly listed; contact Solibri for current rates.",
-      },
-      {
-        q: 'Can I view IFC files on mobile?',
-        a: "Dalux has the strongest mobile IFC viewing experience — purpose-built iOS and Android apps for on-site field use, including BCF issue management. Trimble Connect also has a mobile app. Most desktop viewers (BIMVision, Solibri, BIMcollab Zoom) do not support mobile. IFC Viewer Online runs on mobile browsers but is optimised for desktop.",
-      },
-      {
-        q: 'What is the difference between an IFC viewer and an IFC validator?',
-        a: "An IFC viewer renders 3D geometry and lets you browse properties. An IFC validator checks the file against quality rules and reports errors. Some tools combine both: IFC Viewer Online provides 3D viewing alongside 44-rule quality validation, IDS checking, and Health Score. Solibri is primarily a validator with strong visualisation. The buildingSMART Validation Service validates only — it has no geometry renderer.",
-      },
-    ],
-    content: [
-      {
-        // The short answer is "it depends" — so let the reader say on what.
-        type: 'decision',
-        question: 'No single tool wins. What do you need a viewer for?',
-        options: [
-          { label: 'Check a received file before it goes further', verdict: 'IFC Viewer Online', body: 'Browser-based QA with 44 quality rules, a Health Score and full IDS 1.0 — and the file never leaves your machine.' },
-          { label: 'Author custom rules for an organisation', verdict: 'Solibri', body: 'The industry-standard rule engine for bespoke BEP/EIR checks. Free only for non-commercial use.' },
-          { label: 'Just open models on a Windows PC, for free', verdict: 'BIMVision', body: 'A free desktop viewer that is allowed for commercial work. No validation or editing.' },
-          { label: 'Coordinate issues across disciplines', verdict: 'BIMcollab Zoom', body: 'BCF is its core: topics, viewpoints and cloud sync across federated models.' },
-          { label: 'Collaborate in the cloud or open very large files', verdict: 'Trimble Connect', body: 'Cloud-side processing removes the local RAM limit; 5 GB free storage.' },
-          { label: 'Inspect models on site, on a phone', verdict: 'Dalux', body: 'Purpose-built iOS and Android apps with BCF issue capture in the field.' },
-        ],
-      },
-      {
-        type: 'stat-row',
-        stats: [
-          { value: 10, label: 'tools compared' },
-          { value: 6,  label: 'run in a browser' },
-          { value: 4,  label: 'desktop-first' },
-          { value: 0,  label: 'one-size-fits-all' },
-        ],
-      },
-      {
-        type: 'p',
-        text: "Every BIM forum has a thread asking what is the best free IFC viewer. The answer is always the same: it depends. Depends on whether you need to validate, edit, coordinate, or just view. Depends on whether your data can leave your device. Depends on your team's ecosystem, operating system, and project size. This guide does not pick a winner. Instead it gives you an honest assessment of each tool so you can match the right one to your actual workflow.",
-      },
-      {
-        type: 'p',
-        text: "Ten tools are evaluated across the categories that matter most: platform availability, validation depth, property editing, BCF support, IDS 1.0 compliance, large-file handling, installation requirements, and data-privacy posture. Where we have direct experience building and testing IFC tools we say so. Where we are reporting documented capabilities of third-party tools, we recommend verifying current features before committing to an organisation-wide decision.",
-      },
-      {
-        type: 'h2',
-        text: 'At a Glance: IFC Viewer Comparison Table',
-      },
-      {
-        type: 'table',
-        headers: ['Viewer', 'Platform', 'Free tier', 'Validation', 'Editing', 'BCF', 'IDS 1.0', 'Large files', 'Install', 'Best for'],
-        rows: [
-          ['IFC Viewer Online', 'Browser', '✅ Full', '✅ 44 rules + score', '✅ Non-destructive', '✅ Export', '✅ Full (6 facets)', '✅ Good (WASM)', 'None', 'QA + privacy'],
-          ['Solibri', 'Desktop (Win/Mac)', '⚠️ Non-commercial', '✅ Advanced engine', '⚠️ Limited', '✅ Full', '⚠️ Recent versions', '⚠️ Heavy on RAM', 'Required', 'Enterprise QA'],
-          ['BIMVision', 'Desktop (Win)', '✅ Commercial OK', '❌ None', '❌ None', '⚠️ Plugin', '❌ No', '✅ Good', 'Required', 'Basic viewing'],
-          ['Trimble Connect', 'Browser + App', '✅ 5 GB free', '❌ None', '❌ None', '✅ Native', '❌ No', '✅ Cloud', 'Optional', 'Team collab'],
-          ['Dalux', 'Browser + Mobile', '✅ Contractors', '❌ None', '❌ None', '✅ Native', '❌ No', '✅ Cloud', 'Optional', 'On-site field'],
-          ['Autodesk Viewer', 'Browser', '✅ Account required', '❌ None', '❌ None', '⚠️ Via ACC', '❌ No', '✅ Cloud', 'None', 'Quick sharing'],
-          ['usBIM.viewer+', 'Desktop (Win)', '✅ Full', '⚠️ Basic checks', '❌ No', '✅ BCF 2.1', '❌ Unconfirmed', '⚠️ Moderate', 'Required', 'ACCA ecosystem'],
-          ['That Open Viewer', 'Browser (OSS)', '✅ Open source', '❌ None', '❌ None', '⚠️ Varies', '❌ No', '✅ Varies', 'Optional', 'Developers / OSS'],
-          ['BIMcollab Zoom', 'Desktop (Win/Mac)', '✅ Limited (1 model)', '❌ None', '❌ None', '✅ Native (core)', '❌ No', '✅ Good', 'Required', 'BCF coordination'],
-          ['bSmart Validator', 'Browser (upload)', '✅ Full', '✅ Schema L1 only', '❌ None', '❌ None', '✅ IDS schema', '✅ Any', 'None', 'IFC certification'],
-        ],
-        caption: 'IDS 1.0 = six facets (Entity, Attribute, Property, Classification, Material, PartOf). bSmart Validator validates IDS schema files — it does not run IDS checks against model content. Features verified mid-2026; confirm current releases before adoption.',
-        rowHeaders: true,
-      },
-      {
-        type: 'h2',
-        text: 'Browser-Based IFC Viewers',
-      },
-      {
-        type: 'p',
-        text: "Browser-based tools are the fastest path to opening an IFC file — no installation, no IT ticket, no version management. The trade-off is the memory ceiling of the browser's JavaScript heap, which becomes relevant above 300–500 MB on most machines. Cloud-uploaded tools move processing server-side and remove this constraint; locally-processed tools (WebAssembly) preserve data privacy at the cost of that ceiling.",
-      },
-      {
-        type: 'h3',
-        text: '1. IFC Viewer Online',
-      },
-      {
-        type: 'p',
-        text: "IFC Viewer Online is a browser-based tool that processes IFC files entirely on-device using WebAssembly. No file is uploaded to any server. It combines 3D geometry rendering with a 44-rule quality validation engine that produces a Health Score (0–100) and a rule-level breakdown, full IDS 1.0 checking across all six facets, non-destructive property editing and GUID repair, BCF 2.1 export, and multi-model federation. An SDK allows third parties to embed the viewer in their own sites or integrate it into CI/CD pipelines.",
-      },
-      {
-        type: 'p',
-        text: "Because this is the tool we built, we can speak to its internals with more confidence than the other entries in this guide. All 44 validation rules are open for inspection. The IDS engine has been validated against the complete official bSI testcase suite. The Health Score uses a severity-weighted logarithmic penalty model so that a single critical error has more impact than dozens of minor warnings — which matches how a BIM coordinator actually interprets quality results.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Zero upload — WASM processes files on-device; nothing leaves your browser',
-            '44-rule quality validation with Health Score and per-rule remediation guidance',
-            'Full IDS 1.0 support: all six facets, validated against 100 official bSI testcases',
-            'Non-destructive property editing, GUID repair, and Pset correction with full undo',
-            'BCF 2.1 export for distributing issues to Solibri, BIMcollab, and other tools',
-            'Multi-model federation and side-by-side comparison',
-            'No account, no installation, no data residency risk',
-            'OPFS caching — repeat loads of large files are ~10x faster after first parse',
-            'SDK available for embedding the viewer or automating checks via CI/CD',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Very large files (above ~500 MB) hit browser memory limits on most devices',
-            'No persistent project workspace or CDE folder integration',
-            'No native BCF inbox — exports BCF; does not receive and track incoming issues',
-            'No clash detection between federated models',
-            'Mobile experience works but is not optimised for on-site field use',
-            'No enterprise pricing tier for volume licensing yet',
-            'Batch processing across many files requires the SDK rather than the UI',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: BIM coordinators who need fast, private pre-delivery QA; consultants who receive IFC files from multiple sources and cannot upload to third-party servers; teams implementing IDS-based delivery requirements. Free, no account required.",
-      },
-      {
-        type: 'h3',
-        text: '2. That Open Viewer (ThatOpen Engine / IFC.js)',
-      },
-      {
-        type: 'p',
-        text: "ThatOpen Company — formerly the IFC.js team — built and maintains the web-ifc library that underpins several browser-based IFC tools, including parts of IFC Viewer Online. Their own viewer platform, That Open Viewer, is open-source and browser-based. It is the most accessible entry point for developers who want to understand or modify the IFC rendering engine, and it is self-hostable for teams that want full control over deployment.",
-      },
-      {
-        type: 'p',
-        text: "As an end-user tool for daily BIM coordination work, That Open Viewer is less feature-complete than purpose-built viewers. There is no built-in validation engine, no BCF export, and no property editing beyond read-only inspection. Its value is as a reference implementation of the ThatOpen engine and as a foundation for custom development. If you are a developer building IFC viewing into your own application, the ThatOpen engine and components library are the most practical open-source starting point available today.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Open-source, MIT-licensed — fully auditable and modifiable',
-            'Built on web-ifc, one of the most actively maintained IFC parsing libraries',
-            'Self-hostable with complete control over deployment and data flow',
-            'Strong developer community and comprehensive engine documentation',
-            'Solid foundation for embedding IFC viewing in custom applications',
-            'Browser-based, zero installation',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'No built-in validation, Health Score, or rule-based quality checking',
-            'No BCF export or import',
-            'No property editing beyond read-only inspection',
-            'UI designed for developers, not optimised for BIM coordinator daily use',
-            'Feature set depends on which version and which engine components are deployed',
-            'No enterprise support tier',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: Developers building custom IFC viewers or embedding IFC rendering in web applications. Not the right choice for BIM coordinators who need validation, BCF coordination, or IDS checking out of the box. Free, open source.",
-      },
-      {
-        type: 'h3',
-        text: '3. Autodesk Viewer (viewer.autodesk.com)',
-      },
-      {
-        type: 'p',
-        text: "Autodesk Viewer is a free cloud-based viewer that supports over 60 file formats including IFC, RVT, DWG, NWD, and PDF. It requires an Autodesk account and uploads files to Autodesk cloud infrastructure for conversion and rendering. The tool is primarily designed for quick model sharing and stakeholder review — not for BIM quality control or IDS compliance checking.",
-      },
-      {
-        type: 'p',
-        text: "One important technical note: when you upload an IFC file to Autodesk Viewer, it is translated from IFC into Autodesk's SVF2 internal format. This translation can lose semantic IFC data — property set structures, classification references, and some geometric relationships — in ways that are not visible in the rendered output. Autodesk Viewer should not be used to verify that IFC data is structurally correct; it should be used for visual review only.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Free with an Autodesk account — no paid subscription required for basic use',
-            'Supports 60+ formats including IFC, RVT, DWG, NWD, PDF, and more',
-            'Large files handled via cloud processing — no local RAM constraint',
-            'Reliable for quick model sharing with non-BIM stakeholders',
-            'Familiar brand in large AEC organisations — low friction for adoption',
-            'No local installation required',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Files are uploaded to Autodesk cloud — not suitable for sensitive or data-sovereign projects',
-            'IFC-to-SVF2 translation may lose semantic data; visual review only',
-            'No IFC validation, no quality rules, no Health Score',
-            'No BCF in the free viewer — requires Autodesk Construction Cloud (paid)',
-            'No property editing',
-            'IFC-specific features significantly weaker than IFC-native tools',
-          ],
-        },
-      },
-      {
-        type: 'callout',
-        variant: 'warning',
-        text: "Privacy note: uploading a file to Autodesk Viewer stores it on Autodesk servers. For government projects, healthcare facilities, defence assets, or any model subject to data-sovereignty requirements, review Autodesk's DPA and data-residency options before using the free viewer.",
-      },
-      {
-        type: 'p',
-        text: "Best for: Quick visual sharing of models with non-BIM stakeholders where format compatibility matters and data privacy is not a constraint. Free with Autodesk account.",
-      },
-      {
-        type: 'h3',
-        text: '4. Trimble Connect',
-      },
-      {
-        type: 'p',
-        text: "Trimble Connect is a cloud-based BIM collaboration platform rather than a pure IFC viewer. It includes a web viewer, a desktop client, and a mobile app. Teams upload models to Trimble's cloud infrastructure, where they can be viewed, federated with other models, and linked to BCF issues for multi-discipline coordination. The free tier includes 5 GB of project storage — sufficient for small projects or individual model review.",
-      },
-      {
-        type: 'p',
-        text: "Trimble Connect is strongest in team collaboration scenarios, particularly for teams already using other Trimble tools such as SketchUp, Tekla Structures, or Trimble Field Points. For standalone IFC quality checking, it is the wrong tool — there is no validation engine. Its value is as a coordination layer that sits on top of the IFC files produced by authoring tools.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Strong multi-model federation — overlay multiple IFC models from different disciplines',
-            'Native BCF 2.1 support — create, assign, and track issues with full audit trail',
-            'Cross-platform: web viewer, desktop app, and mobile app in one ecosystem',
-            'Free tier with 5 GB storage — accessible without budget approval',
-            'Good integration with Trimble authoring tools (SketchUp, Tekla, Trimble RealWorks)',
-            'Clash detection available in paid tiers',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Files are uploaded to Trimble cloud — data leaves your organisation',
-            'No IFC validation, no quality rules, no Health Score',
-            'No property editing',
-            'Full project capabilities require a paid subscription',
-            'GDPR data residency: verify DPA terms before use on EU public-sector projects',
-            'Performance for very large federated models depends on server load',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: Multi-disciplinary teams that need a shared coordination space with BCF issue management and do not require on-device data processing. Free tier available; paid plans for larger project volumes.",
-      },
-      {
-        type: 'h3',
-        text: '5. Dalux',
-      },
-      {
-        type: 'p',
-        text: "Dalux is a Danish BIM and document-management platform used widely in Scandinavia and Northern Europe. Its strongest differentiator is mobile-first IFC viewing — the iOS and Android apps are purpose-built for on-site field inspection, with BCF issue creation directly from a phone or tablet. For main contractors and subcontractors coordinating on-site, Dalux is the most capable free IFC tool available.",
-      },
-      {
-        type: 'p',
-        text: "Dalux is free for contractors, which has driven significant supply-chain adoption. The main contractor platform (Dalux Box) is an enterprise subscription, but subcontractors accessing models shared through it receive free access. This asymmetric pricing model means many field teams use Dalux without a dedicated budget line. Outside Scandinavia, Dalux is less commonly encountered — but it is expanding across Europe.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Best-in-class mobile IFC viewing — iOS and Android apps purpose-built for on-site work',
-            'BCF issue creation directly from mobile, linked to specific model elements',
-            'Free for contractors — broad supply-chain adoption without per-user cost',
-            'Good document management integration alongside model viewing',
-            'Web viewer also available for desktop access',
-            'Cross-platform coverage: browser, iOS, Android',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Not designed for power-user desktop QA workflows',
-            'No IFC validation or Health Score',
-            'No property editing',
-            'Files are uploaded to Dalux cloud',
-            'Main contractor platform requires an enterprise subscription',
-            'Less common outside Scandinavia and Northern Europe',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: On-site field teams, foremen, and subcontractors who need mobile IFC access with BCF issue creation. Free for contractors when a main contractor uses Dalux Box.",
-      },
-      {
-        type: 'h3',
-        text: '6. buildingSMART Validation Service — Not a Viewer',
-      },
-      {
-        type: 'p',
-        text: "The buildingSMART Validation Service is not an IFC viewer — it has no geometry renderer. It is the official reference tool for IFC schema compliance checking, developed and maintained by buildingSMART International. It validates uploaded IFC files against the EXPRESS schema rules, informal propositions, and normative implementation agreements for IFC 2x3 and IFC 4. It also validates IDS schema files — meaning the .ids XML structure itself, not running an IDS specification against a model's content.",
-      },
-      {
-        type: 'p',
-        text: "Its primary audience is IFC authoring-tool developers who need to certify that their software exports valid IFC. For BIM coordinators checking model quality, it is the wrong tool — it will tell you whether the IFC file is syntactically correct, but it will not tell you whether the data is meaningful, complete, or compliant with project requirements. Use it to certify that a tool export meets buildingSMART schema standards. Do not use it as a substitute for model quality checking.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Official buildingSMART reference tool — authoritative for schema compliance',
-            'Free, no account required for basic use',
-            'Validates IFC 2x3 and IFC 4 against the full EXPRESS schema',
-            'Required for buildingSMART software certification programmes',
-            'IDS schema file validation (validates the .ids XML structure)',
-            'Handles very large files via server-side processing',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'No geometry renderer — you cannot view the model',
-            'Schema (L1) validation only — no data quality, no property completeness checking',
-            'File must be uploaded — data leaves your organisation',
-            'Results are verbose and require IFC schema expertise to interpret',
-            'Does not run IDS checks against model content — only validates the .ids file itself',
-            'Not a replacement for model quality checking or IDS run-checks',
-          ],
-        },
-      },
-      {
-        type: 'callout',
-        variant: 'warning',
-        text: "Do not confuse the buildingSMART Validation Service with a model quality checker. It validates schema structure, not whether your model is fit for purpose. A file can pass schema validation and still have duplicate GUIDs, missing property sets, and a Health Score of 12.",
-      },
-      {
-        type: 'p',
-        text: "Best for: IFC authoring-tool developers certifying export compliance with buildingSMART schema standards. Not appropriate for BIM coordinators doing project QA. Free.",
-      },
-      { type: 'tool', id: 'viewer' },
-      {
-        type: 'h2',
-        text: 'Desktop IFC Viewers',
-      },
-      {
-        type: 'p',
-        text: "Desktop tools remove the browser memory ceiling and give access to the full compute resources of the workstation. For models above 500 MB, complex rule sets, or workflows that require persistent project workspaces, desktop tools remain the practical choice. The trade-off is installation overhead, version management, and — for cloud-connected desktop tools — data upload to vendor infrastructure.",
-      },
-      {
-        type: 'h3',
-        text: '7. Solibri',
-      },
-      {
-        type: 'p',
-        text: "Solibri is the industry benchmark for serious BIM model quality control. It is a desktop application for Windows and Mac. The commercial version is used by large engineering and construction firms for rule-based model checking, compliance auditing, and coordination. Solibri Anywhere is a free, full-featured version available for non-commercial use — students, academics, and individuals learning the tool can use it at no cost.",
-      },
-      {
-        type: 'p',
-        text: "Where IFC Viewer Online's 44 rules cover the most common IFC quality issues out of the box, Solibri's rule engine is designed for authoring custom rules: checking structural clearances, COBie property completeness, organisation-specific naming conventions, and spatial hierarchy requirements that go beyond any fixed rule set. If your organisation has bespoke BIM requirements codified in a BEP or EIR, Solibri's rule-authoring capability is unmatched in the free-and-near-free tier.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Industry benchmark for rule-based model quality control',
-            'Advanced rule authoring — create custom checks for organisation-specific requirements',
-            'Comprehensive BCF support with full issue management and audit trail',
-            'Solibri Anywhere is free for non-commercial use with full feature access',
-            'IDS support added in recent versions — verify current release for coverage',
-            'COBie and facility management data checking workflows',
-            'Windows and Mac support',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Commercial licensing is expensive — pricing not publicly listed; contact sales',
-            'Desktop only — no browser version for remote or client-facing access',
-            'Steep learning curve for rule authoring; shallow use does not leverage the tool',
-            'Heavy on RAM for very large or federated models above 500 MB',
-            'Processing speed degrades with complex rule sets on large models',
-            'Non-commercial restriction applies to Solibri Anywhere — commercial work needs a paid licence',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: Enterprise BIM quality control, compliance auditing, COBie checking, and organisations with bespoke model requirements that require rule authoring. Free for non-commercial use via Solibri Anywhere; commercial pricing on request.",
-      },
-      {
-        type: 'h3',
-        text: '8. BIMVision',
-      },
-      {
-        type: 'p',
-        text: "BIMVision is a free Windows desktop IFC viewer developed by Datacomp. It is widely used in Central and Eastern Europe as the default free IFC viewer for teams that need basic model inspection without budget. The tool has no commercial restrictions on free use — an entire organisation can install it without a licence. It is designed for inspection and presentation, not for validation or coordination.",
-      },
-      {
-        type: 'p',
-        text: "BIMVision has a plugin architecture that extends its base capabilities. A BCF plugin adds issue creation and export. The tool handles reasonably large IFC files on desktop hardware and has a low learning curve — someone unfamiliar with BIM software can navigate properties and filter elements within minutes. For teams that simply need to open, browse, and visually inspect IFC files on Windows without any cost or cloud dependency, it remains a solid choice.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Genuinely free for commercial use — no licence restrictions',
-            'Clean, fast interface — low learning curve for basic IFC inspection',
-            'Plugin architecture adds BCF and other functionality',
-            'Good performance on mid-large files on desktop hardware',
-            'Handles IFC 2x3 and IFC 4',
-            'No cloud upload — model stays on your machine',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Windows only — no Mac, Linux, or browser version',
-            'No built-in validation or quality checking',
-            'No property editing — read-only inspection only',
-            'BCF requires a separate plugin download rather than native support',
-            'No IDS support',
-            'Less actively developed than major commercial alternatives',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: Windows users who need a free, reliable tool for basic IFC inspection with no validation or coordination requirements. Free with no commercial restrictions.",
-      },
-      {
-        type: 'h3',
-        text: '9. BIMcollab Zoom',
-      },
-      {
-        type: 'p',
-        text: "BIMcollab Zoom is a desktop IFC viewer from BIMcollab, the company behind the BIMcollab Cloud BCF management platform. The tool's primary purpose is BCF-led model coordination — it is designed to work alongside BIMcollab Cloud for real-time issue synchronisation across disciplines. It renders IFC geometry and allows teams to create, comment on, and resolve BCF issues directly from the model view.",
-      },
-      {
-        type: 'p',
-        text: "The free version of BIMcollab Zoom is limited to a single model and a limited number of BCF issues. Full functionality — multi-model federation, unlimited issues, real-time cloud sync — requires a BIMcollab Cloud subscription. For teams already using BIMcollab Cloud for issue management, Zoom is the natural companion. For teams outside the BIMcollab ecosystem, Trimble Connect or IFC Viewer Online (with BCF export) are likely better free alternatives.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Native BCF focus — strongest free BCF viewing and coordination experience on desktop',
-            'Real-time BCF Cloud sync when paired with BIMcollab Cloud subscription',
-            'Multi-model federation available in paid tier',
-            'Windows and Mac — cross-platform for desktop users',
-            'Integrates with Solibri, Navisworks, Revit, and other authoring tools',
-            'Good performance on mid-to-large models',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Free version limited to single model and a capped number of BCF issues',
-            'No IFC validation, no quality rules, no Health Score',
-            'No property editing',
-            'No browser version — desktop installation required',
-            'Full value only within the BIMcollab Cloud subscription ecosystem',
-            'No IDS support',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: Teams using BIMcollab Cloud for multi-discipline issue management who need a companion model viewer. Free version for single-model inspection; full features require BIMcollab Cloud subscription.",
-      },
-      {
-        type: 'h3',
-        text: '10. usBIM.viewer+',
-      },
-      {
-        type: 'p',
-        text: "usBIM.viewer+ is a free Windows desktop IFC viewer developed by ACCA Software, an Italian company focused on BIM for the construction sector. It supports IFC 2x3 and IFC 4, includes BCF 2.1 support, and provides some basic model checking capabilities. It is part of ACCA's wider usBIM ecosystem, which includes cloud-based BIM management tools primarily used in Italy and parts of the EU market.",
-      },
-      {
-        type: 'p',
-        text: "usBIM.viewer+ is less commonly used outside Italy and Southern Europe, and the ecosystem is primarily documented and supported in Italian. IDS 1.0 support has not been independently confirmed as of mid-2026 — verify the current release documentation before committing to it for IDS workflows. For teams already working within the ACCA or usBIM ecosystem, it is a natural companion. For teams outside that ecosystem, BIMVision or BIMcollab Zoom involve less friction.",
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Free for commercial use — no licence cost',
-            'BCF 2.1 support included natively (not a plugin)',
-            'IFC 2x3 and IFC 4 support',
-            'Some basic model checking features (verify current release capabilities)',
-            'Natural companion for teams already using ACCA tools',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'muted',
-          items: [
-            'Windows only — no Mac, Linux, or browser version',
-            'Less common outside Italy and Southern Europe',
-            'Community resources and documentation primarily in Italian',
-            'IDS 1.0 support not independently confirmed — check current release',
-            'Basic checks are limited compared to dedicated validators',
-            'UI and feature polish below leading alternatives',
-          ],
-        },
-      },
-      {
-        type: 'p',
-        text: "Best for: Teams within the ACCA/usBIM ecosystem, particularly in Italy and Southern Europe, who need a free Windows desktop viewer with BCF support. Free.",
-      },
-      {
-        type: 'h2',
-        text: 'Online vs Desktop: When to Use Each',
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Choose browser-based when…',
-          color: 'accent',
-          items: [
-            'You need zero installation — remote access, shared workstations, or client-facing review',
-            'Data privacy matters — WASM tools process files on-device with no upload',
-            'You need IDS 1.0 validation without a heavyweight desktop install',
-            'You need fast pre-delivery checks as part of a daily coordination workflow',
-            'The file is below ~300–500 MB and fits within browser memory on the device',
-            'You need an SDK to embed the viewer or automate checks in a CI/CD pipeline',
-          ],
-        },
-        right: {
-          label: 'Choose desktop when…',
-          color: 'muted',
-          items: [
-            'Models regularly exceed 500 MB and require full workstation RAM',
-            'You need advanced rule authoring for organisation-specific quality checks (Solibri)',
-            'Your team runs persistent project workspaces across months of coordination',
-            'You need multi-model federation with real-time BCF cloud sync (BIMcollab Zoom)',
-            'The workflow is on-site mobile field inspection (Dalux mobile)',
-            'You need deep integration with a desktop authoring tool ecosystem',
-          ],
-        },
-      },
-      { type: 'related', to: 'ifc-model-checker-vs-ifc-viewer', section: 'When You Need a Checker', why: 'When a viewer isn\'t enough and the job is really a quality check.' },
-      {
-        type: 'h2',
-        text: 'Decision Matrix: Matching the Tool to Your Workflow',
-      },
-      {
-        type: 'table',
-        headers: ['If you need…', 'Recommended tool', 'Why'],
-        rows: [
-          ['Instant inspection of a received IFC file (no install)', 'IFC Viewer Online or Autodesk Viewer', 'Open a URL, drag and drop — results in seconds. IFC Viewer Online preserves data privacy; Autodesk Viewer supports 60+ formats.'],
-          ['Privacy-sensitive projects (government, defence, healthcare)', 'IFC Viewer Online', 'WASM processes on-device. No file ever reaches a server. Verifiable in browser DevTools.'],
-          ['44-rule quality validation with Health Score', 'IFC Viewer Online', 'The only browser-based tool with a built-in quality engine, severity-weighted scoring, and per-rule remediation guidance.'],
-          ['Full IDS 1.0 validation (all six facets)', 'IFC Viewer Online', 'Complete IDS 1.0 engine validated against the full official bSI testcase suite.'],
-          ['Enterprise rule authoring and custom model checks', 'Solibri', 'Industry-standard rule engine. Unmatched for bespoke organisation-specific BEP/EIR requirements.'],
-          ['Non-destructive property editing on a received file', 'IFC Viewer Online', 'Edit Psets, GlobalIds, and element names without returning to the authoring tool.'],
-          ['BCF-led coordination across multiple disciplines', 'BIMcollab Zoom or Trimble Connect', 'Native BCF with cloud sync and multi-model federation.'],
-          ['Very large infrastructure files (above 500 MB)', 'Trimble Connect or Dalux', 'Cloud-side processing removes the local RAM constraint entirely.'],
-          ['On-site field inspection with BCF on mobile', 'Dalux', 'Purpose-built iOS/Android apps with offline-capable BCF creation and document management.'],
-          ['Open-source / embed IFC viewing in your own application', 'ThatOpen Engine or IFC Viewer Online SDK', 'MIT-licensed web-ifc engine. IFC Viewer Online SDK for embedding in third-party sites.'],
-          ['IFC schema certification (for tool developers)', 'buildingSMART Validation Service', 'The official reference tool for buildingSMART schema compliance certification.'],
-        ],
-        caption: 'Recommendations reflect the most common use-case alignment. Complex projects often require two or more tools in combination.',
-        rowHeaders: true,
-      },
-      {
-        type: 'h2',
-        text: 'Workflow Scenarios: Complete Recommendations',
-      },
-      {
-        type: 'feature-grid',
-        items: [
-          {
-            icon: '🏢',
-            title: 'Small architectural studio (2–10 people)',
-            body: "Primary: IFC Viewer Online — zero cost, zero install, fast per-file QA on every deliverable. Supplement with BIMVision on Windows for client-facing visual review sessions. If BCF coordination with a structural engineer is needed, a free Trimble Connect account covers model sharing and issue tracking.",
-          },
-          {
-            icon: '🏗️',
-            title: 'Large infrastructure project (500 MB+ models)',
-            body: "Primary: Solibri for project-wide QA with rule sets authored to the BEP requirements. Supplement with Trimble Connect or Dalux for contractor field access. Use IFC Viewer Online for rapid IDS spot-checks on specific discipline models before they enter the federated set.",
-          },
-          {
-            icon: '🏛️',
-            title: 'Government BIM mandate (ISO 19650, public procurement)',
-            body: "Primary: IFC Viewer Online for pre-submission validation — WASM guarantees no data leaves the device, satisfying data-sovereignty requirements. IDS specification checks can be run against every model before submission. Supplement with Solibri Anywhere for training and rule development against EIR/OIR requirements.",
-          },
-          {
-            icon: '💼',
-            title: 'Freelance BIM consultant (multiple clients, mixed ecosystems)',
-            body: "Primary: IFC Viewer Online — works on any browser, any OS, any client machine with no installation requests. Handles property editing and GUID repair when clients send corrupted models. Use Autodesk Viewer only for sharing visual snapshots with non-BIM stakeholders. Avoid BCF tools unless a specific client requires a specific platform.",
-          },
-        ],
-      },
-      {
-        type: 'h2',
-        text: 'A Note on Privacy and Model Data',
-      },
-      {
-        type: 'p',
-        text: "Every tool in this guide that requires cloud upload — Autodesk Viewer, Trimble Connect, Dalux, buildingSMART Validation Service — stores your IFC file on a third-party server. For most commercial construction projects this is an acceptable trade-off. For government infrastructure, defence facilities, healthcare buildings, or any project under data-sovereignty or GDPR constraints, it may not be. Before selecting a cloud-based tool for sensitive projects, review the vendor's Data Processing Agreement, data-residency options, and retention policies. GDPR Article 28 requires a signed DPA for any processor handling personal data — which can include building-owner names and coordinates embedded in IFC property sets.",
-      },
-      {
-        type: 'callout',
-        variant: 'tip',
-        text: "To verify that a tool genuinely processes locally: open browser DevTools, go to the Network tab, load an IFC file, and watch for outbound requests. In IFC Viewer Online you will see zero file-content requests — all processing happens in WASM workers. In cloud tools you will see the file bytes transmitted to the vendor's servers.",
-      },
-      {
-        type: 'h2',
-        text: 'Where IFC Viewer Online Fits in This Ecosystem',
-      },
-      {
-        type: 'p',
-        text: ["IFC Viewer Online occupies a specific and honest position: it is the most capable free browser-based tool for IFC quality validation and IDS compliance checking. It is not a Solibri replacement — it does not have Solibri's rule-authoring depth. It is not a BIMcollab replacement — it exports BCF but does not manage an issue inbox. It is not a Dalux replacement — it is not optimised for mobile field use. What it does, it does thoroughly: parse IFC on-device, score model quality against 44 rules, run full IDS 1.0 checks, let you edit and repair properties, and export to BCF — with zero upload and zero installation. Load the model below and run the validation to see how a real production IFC performs. See the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, " for a detailed explanation of how the score is calculated and what each band means."],
-      },
-      {
-        type: 'ifc-demo',
-        modelId: 'office-architecture',
-        title: 'Office Building — IFC4 Revit Export',
-        description: 'A production IFC4 file exported from Revit. Run the full validation to see the 44-rule quality check and Health Score on a real-world model.',
-        schema: 'IFC4',
-        size: '14 MB',
-        showProperties: true,
-        allowFullscreen: true,
-        height: 460,
-      },
-      {
-        type: 'h2',
-        text: 'Frequently Asked Questions',
-      },
-      {
-        type: 'h3',
-        text: 'What is the best free IFC viewer in 2026?',
-      },
-      {
-        type: 'p',
-        text: "There is no single best — the right tool depends on what you need to do with the IFC file. IFC Viewer Online for browser-based QA with zero upload; Solibri for enterprise rule-based checking (free for non-commercial use); BIMVision for free Windows desktop viewing; Trimble Connect or Dalux for cloud collaboration and field access; BIMcollab Zoom for BCF-led coordination. Most teams end up using two or three tools that cover different parts of their workflow.",
-      },
-      {
-        type: 'h3',
-        text: 'Can I open IFC files without installing software?',
-      },
-      {
-        type: 'p',
-        text: ["Yes. IFC Viewer Online, That Open Viewer, Autodesk Viewer, Trimble Connect, and Dalux all run in a web browser without installation. IFC Viewer Online processes the file locally via WebAssembly — nothing is uploaded. The others require cloud upload. For a detailed comparison of browser vs cloud processing architectures and when each is appropriate, see the full guide on ", { text: 'browser vs cloud IFC validation', to: 'browser-vs-cloud-ifc-validation' }, "."],
-      },
-      {
-        type: 'h3',
-        text: 'Which IFC viewer supports full IDS 1.0 validation?',
-      },
-      {
-        type: 'p',
-        text: "IFC Viewer Online supports full IDS 1.0 validation with all six facets — Entity, Attribute, Property, Classification, Material, and PartOf — validated against the complete official bSI testcase suite. Solibri has added IDS support in recent versions; verify the current release for coverage details. The buildingSMART Validation Service validates IDS schema files (whether the .ids XML is well-formed) but does not run IDS specifications against model content.",
-      },
-      {
-        type: 'h3',
-        text: 'Does Solibri have a free version?',
-      },
-      {
-        type: 'p',
-        text: "Yes. Solibri Anywhere is free for non-commercial use — students, academics, and individuals learning the tool get full feature access at no cost. For commercial project work, a paid licence is required. Pricing is not publicly listed on the Solibri website; contact their sales team for current rates. Tools that are free for commercial use: IFC Viewer Online, BIMVision, usBIM.viewer+, That Open Viewer, Trimble Connect (free tier), Dalux (contractor accounts).",
-      },
-      {
-        type: 'h3',
-        text: 'Can I view IFC files on mobile?',
-      },
-      {
-        type: 'p',
-        text: "Dalux has the strongest mobile IFC viewing experience — purpose-built iOS and Android apps designed for on-site field inspection, with BCF issue creation and document management built in. Trimble Connect also has a mobile app with IFC viewing. BIMVision, Solibri, and BIMcollab Zoom do not support mobile. IFC Viewer Online works in a mobile browser but the interface is optimised for desktop.",
-      },
-      {
-        type: 'h3',
-        text: 'What is the difference between an IFC viewer and an IFC validator?',
-      },
-      {
-        type: 'p',
-        text: ["An IFC viewer renders geometry and allows property inspection — the equivalent of opening a PDF to read it. An IFC validator checks the data against quality rules and produces a report — the equivalent of a grammar checker. Some tools combine both: IFC Viewer Online provides 3D viewing alongside the 44-rule quality check, IDS validation, and Health Score. Solibri is primarily a validator with strong visualisation. The buildingSMART Validation Service validates only — no geometry rendering. For a detailed breakdown of the three validation levels (schema L1, quality L2, IDS L3), see the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, "."],
-      },
-      {
-        type: 'h2',
-        text: 'Summary',
-      },
-      {
-        type: 'pull-quote',
-        text: "No IFC viewer is best for every workflow. Match the tool to the job: IFC Viewer Online for private browser-based QA, Solibri for enterprise rule authoring, BIMVision for simple Windows viewing, Trimble Connect or Dalux for cloud coordination, BIMcollab Zoom for BCF-led teamwork.",
-      },
-      {
-        type: 'feature-grid',
-        items: [
-          {
-            icon: '🔍',
-            title: 'For pre-delivery quality checks',
-            body: "IFC Viewer Online — 44 rules, Health Score, IDS 1.0, property editing. Zero upload. Works in any browser with no account required.",
-          },
-          {
-            icon: '🏆',
-            title: 'For enterprise model QA',
-            body: "Solibri — industry-standard rule engine with advanced custom rule authoring. Free for non-commercial use via Solibri Anywhere.",
-          },
-          {
-            icon: '👁️',
-            title: 'For basic desktop viewing (Windows)',
-            body: "BIMVision — free for commercial use, low learning curve, BCF via plugin. Clean and reliable for inspection and presentation.",
-          },
-          {
-            icon: '📱',
-            title: 'For on-site and mobile use',
-            body: "Dalux — purpose-built iOS and Android apps with BCF creation. Free for contractors. Best-in-class for field workflows.",
-          },
-        ],
-      },
-      {
-        type: 'p',
-        text: ["For deeper coverage: how the 44-rule quality check works and what each rule flags — see the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, ". How the Health Score is calculated and how to use it as a project quality gate — see the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, ". The case for browser-local validation vs cloud pipelines — see the guide on ", { text: 'browser vs cloud IFC validation', to: 'browser-vs-cloud-ifc-validation' }, ". To fix and export a corrected IFC without returning to the authoring tool — see the ", { text: 'free online IFC editor guide', to: 'ifc-editor-online' }, "."],
-      },
-    ],
-  },
+  // Article #5, the free IFC viewer comparison, lives in blog-comparisons-en.ts.
 
   // ── Article #6 — SOLIBRI ALTERNATIVE ─────────────────────────────────────
 
@@ -7090,7 +6328,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
     faqs: [
       {
         q: 'Is IFC Viewer Online a replacement for Solibri?',
-        a: "Not in all workflows. IFC Viewer Online is a fast, free browser-based tool for quality checking, IDS validation, and property editing — strong for pre-delivery QA and zero-upload scenarios. Solibri excels at enterprise rule authoring, COBie checking, full BCF management, and company-wide governance. Many teams use both tools at different stages of the same workflow.",
+        a: "Not in all workflows. IFC Viewer Online is a free browser-based tool for quality checking, IDS validation, and property editing — strong for pre-delivery QA and zero-upload scenarios. Solibri is the tool for custom rule authoring, clash detection between disciplines, BCF issue management, and company-wide governance. Many teams use both tools at different stages of the same workflow.",
       },
       {
         q: 'Can I use IFC Viewer Online and Solibri in the same project workflow?',
@@ -7098,39 +6336,40 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
       },
       {
         q: 'Does IFC Viewer Online support IDS validation like Solibri?',
-        a: "IFC Viewer Online supports full IDS 1.0 validation with all six facets — Entity, Attribute, Property, Classification, Material, and PartOf — validated against the complete official bSI testcase suite. Solibri has added IDS support in recent versions; verify the current release for coverage details.",
+        a: "IFC Viewer Online supports IDS 1.0 validation with all six facets — Entity, Attribute, Property, Classification, Material, and PartOf — validated against the official bSI testcase suite. Solibri lists checks of required properties against IDS definitions in its Essential plan, and IDS workflows, an IDS editor and an IDS validator in Advanced (solibri.com/pricing, read on 2026-11-10).",
       },
       {
         q: 'What can Solibri do that IFC Viewer Online cannot?',
-        a: "Solibri's main advantages are custom rule authoring for organisation-specific BIM requirements, full BCF lifecycle management (not just export), COBie and facility management data checking, enterprise deployment with centralised rule sets, geometric clash detection, and handling very large federated models where desktop RAM is not a constraint.",
+        a: "Custom rule authoring for organisation-specific BIM requirements, clash detection between disciplines with a clash matrix, BCF issue management with CDE integrations, quantity and information takeoff, native Revit model federation, and a fully offline plan for restricted networks (solibri.com/pricing, read on 2026-11-10).",
       },
       {
         q: 'Is there a free version of Solibri?',
-        a: "Yes — Solibri Anywhere is free for non-commercial use, including students, academics, and individual learning. Commercial project work requires a paid licence; pricing is not publicly listed. IFC Viewer Online is free for all use cases including commercial work, with no account required.",
+        a: "Not for new customers. Solibri Anywhere, which had a free version, is now a legacy product: existing free users can keep versions before 26.4.0 (solibri.com/products/legacy-products, read on 2026-11-10). The cheapest current plan is Starter at €99 per licence per year, and model checking starts at Essential, from €1,428 (solibri.com/pricing, read on 2026-11-10). IFC Viewer Online is free for all use cases including commercial work, with no account required.",
       },
       {
         q: 'Which tool is better for privacy-sensitive IFC models?',
-        a: "Both Solibri and IFC Viewer Online process files locally — Solibri on the desktop, IFC Viewer Online in the browser via WebAssembly. Neither uploads files to a cloud server by default. IFC Viewer Online has an accessibility advantage: it works from any browser without installation, which matters when models cannot be copied to a workstation with a Solibri licence installed.",
+        a: "IFC Viewer Online reads the file in the browser via WebAssembly and does not upload it, and it works from any browser without installation. With Solibri it depends on the product: Solibri WebChecker is a service where users upload IFC models, with data stored in the EU or the US, while the Security+ plan is described as air-gapped and fully offline (solibri.com/solutions/webchecker and solibri.com/pricing, read on 2026-11-10). For a network with no internet access at all, the options are Solibri Security+ or a self-hosted copy of IFC Viewer Online.",
       },
     ],
     content: [
       {
         type: 'callout',
         variant: 'info',
-        text: "TL;DR — Solibri is the right tool for enterprise rule authoring, COBie checking, and multi-discipline BCF coordination. IFC Viewer Online is the right tool for fast pre-delivery QA, IDS compliance, privacy-sensitive models, and property editing — with zero install and zero upload. The most effective large-project workflows use both.",
+        text: "TL;DR — Solibri is the right tool for custom rule authoring, clash detection between disciplines, and BCF coordination with CDE integrations. IFC Viewer Online is the right tool for fast pre-delivery QA, IDS compliance, privacy-sensitive models, and property editing — with zero install and zero upload. The most effective large-project workflows use both.",
       },
+      {"type":"p","text":["Short on time? The ",{"text":"Solibri alternative","href":"https://www.ifcvieweronline.eu/solibri-alternative/"}," page has the comparison in one table, with Solibri's current plans and prices and the source of each figure. This article is the long version."]},
       {
         type: 'stat-row',
         stats: [
           { value: 44,  label: 'quality rules (browser)' },
           { value: 6,   label: 'IDS 1.0 facets (browser)' },
-          { value: 0,   suffix: ' upload needed', label: 'by either tool' },
+          { value: 0,   suffix: ' upload needed', label: "in the browser tool" },
           { value: 0,   label: 'one-size-fits-all answer' },
         ],
       },
       {
         type: 'p',
-        text: "Solibri has been the BIM quality control reference tool for over a decade. It is expensive, requires installation, and takes time to configure — but when a large multi-disciplinary project needs enterprise-grade model checking with custom rules and a full BCF lifecycle, it is hard to beat. This article does not argue otherwise.",
+        text: "Solibri has been the BIM quality control reference tool for over a decade. Its plans run from €99 to €2,772 per licence per year, and model checking starts at the €1,428 Essential plan (solibri.com/pricing, read on 2026-11-10). When a large multi-disciplinary project needs model checking with custom rules, clash detection and BCF issue management, it is hard to beat. This article does not argue otherwise.",
       },
       {
         type: 'p',
@@ -7138,7 +6377,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
       },
       {
         type: 'p',
-        text: "This comparison is written as an independent assessment. We built IFC Viewer Online, so we have direct knowledge of its internals. For Solibri, we rely on published documentation and the experience of BIM professionals who use both tools. Where we are uncertain about a current Solibri feature, we say so explicitly rather than asserting something we cannot verify.",
+        text: "We built IFC Viewer Online, so we have direct knowledge of its internals. Everything this article says about Solibri's plans, prices and features was read on Solibri's own website on 2026-11-10: solibri.com/pricing, its product pages, solibri.com/products/legacy-products and solibri.com/solutions/webchecker. Where those pages do not state something, the table says so instead of guessing. Vendors change their plans: check the current pages before you buy.",
       },
       {
         type: 'h2',
@@ -7148,26 +6387,26 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         type: 'table',
         headers: ['Feature', 'Solibri', 'IFC Viewer Online'],
         rows: [
-          ['Installation', 'Required — Windows and Mac installer', 'None — runs in any browser, any OS'],
-          ['Platform', 'Desktop only', 'Browser (Chrome, Firefox, Safari, Edge)'],
-          ['Price', 'Commercial licence required (contact sales); Solibri Anywhere free for non-commercial use', 'Free for all use cases — no account, no licence'],
-          ['Validation rules', 'Custom rule engine — author rules for any requirement', '44 built-in IFC quality rules + Health Score (0–100)'],
-          ['IDS 1.0 support', '⚠️ Added in recent versions — verify current release', '✅ Full: all 6 facets, 100 official bSI testcases'],
-          ['Property editing', '⚠️ Primarily a read tool — not designed for editing exported IFC', '✅ Non-destructive: Psets, GUIDs, names, full undo'],
-          ['BCF support', '✅ Full lifecycle: create, assign, track, resolve, audit', '✅ Export BCF 2.1 — no native issue inbox'],
-          ['Health Score', '❌ No single numeric quality metric', '✅ 0–100 severity-weighted logarithmic score'],
-          ['Large models', '⚠️ Possible; RAM-intensive above 500 MB', '⚠️ Browser memory ceiling ~300–500 MB per device'],
-          ['Multi-model', '✅ Full federation with clash detection', '✅ Federation and side-by-side comparison'],
-          ['IFC export', '⚠️ Primarily an import tool; limited IFC re-export', '✅ Export corrected IFC with all applied edits'],
-          ['GLB export', '❌ Not supported', '✅ Export to GLB for web and visualisation workflows'],
-          ['No upload required', '✅ Desktop — model stays on local machine', '✅ WASM — model processed entirely on-device'],
-          ['Offline capability', '✅ Fully offline after installation', '✅ Offline after first load; OPFS caches models'],
-          ['Learning curve', 'High — rule authoring is a specialist skill', 'Low — drag-drop, instant results, no configuration'],
-          ['Collaboration', '✅ Full enterprise BCF management', '⚠️ BCF export only; no incoming issue management'],
-          ['SDK / embed', '❌ No public embedding SDK', '✅ SDK for CI/CD and site embedding'],
-          ['Privacy posture', '✅ On-premise desktop; model stays on workstation', '✅ On-device WASM; verifiable in browser DevTools'],
+          ['Installation', "Not stated on solibri.com; WebChecker runs in the browser", 'None — runs in any browser, any OS'],
+          ['Platform', "Not stated on solibri.com", 'Browser (Chrome, Firefox, Safari, Edge)'],
+          ['Price', "Starter €99, Essential €1,428, Advanced €2,109, Premium €2,772 per licence per year (starting prices); Security+ on request", 'Free for all use cases — no account, no licence'],
+          ['Validation rules', "Predefined rule-based checking from Essential; custom rule creation in Advanced and Premium", '44 built-in IFC quality rules + Health Score (0–100)'],
+          ['IDS 1.0 support', "✅ Required-property checks against IDS in Essential; IDS workflows, editor and validator in Advanced", '✅ Full: all 6 facets, 100 official bSI testcases'],
+          ['Property editing', "Not stated on solibri.com", '✅ Non-destructive: Psets, GUIDs, names, full undo'],
+          ['BCF support', "✅ BCF issue management and CDE integrations, from Essential", "✅ Reads and writes BCF 2.1 and 3.0 files — no BCF server, no issue inbox"],
+          ['Health Score', "Not stated on solibri.com", '✅ 0–100 severity-weighted logarithmic score'],
+          ['Large models', "Not stated for the desktop plans; WebChecker accepts up to 5 GB per IFC file", "⚠️ 2 GB limit per file; in practice, the memory of the device"],
+          ['Multi-model', "✅ IFC and native Revit federation, with clash detection, from Essential", '✅ Federation and side-by-side comparison'],
+          ['IFC export', "Not stated on solibri.com", '✅ Export corrected IFC with all applied edits'],
+          ['GLB export', "Not stated on solibri.com", '✅ Export to GLB for web and visualisation workflows'],
+          ['No upload required', "WebChecker uploads the IFC (EU or US data residency); not stated for the other plans", '✅ WASM — model processed entirely on-device'],
+          ['Offline capability', "✅ Security+ plan: fully offline operation", "❌ No: the page has to load from the internet"],
+          ['Learning curve', "Rule authoring is in the Advanced and Premium plans", 'Low — drag-drop, instant results, no configuration'],
+          ['Collaboration', "✅ BCF issue management and CDE integrations", "⚠️ BCF files only; no incoming issue management"],
+          ['SDK / embed', "Not stated on solibri.com", '✅ SDK for CI/CD and site embedding'],
+          ['Privacy posture', "Security+: air-gapped, no telemetry. WebChecker: the model is uploaded and results are kept 30 days", '✅ On-device WASM; verifiable in browser DevTools'],
         ],
-        caption: 'IDS 1.0 facets: Entity, Attribute, Property, Classification, Material, PartOf. Solibri IDS coverage: verify the current release. Solibri commercial pricing: contact sales; varies by region and volume.',
+        caption: "IDS 1.0 facets: Entity, Attribute, Property, Classification, Material, PartOf. Solibri column: solibri.com/pricing, solibri.com/products/essential, solibri.com/products/advanced and solibri.com/solutions/webchecker, read on 2026-11-10. \"Not stated\" means those pages do not say.",
         rowHeaders: true,
       },
       {
@@ -7188,23 +6427,23 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           },
           {
             icon: '📋',
-            title: 'COBie and facility management data checking',
-            body: "Public sector handover and FM workflows require COBie property completeness as a contractual obligation. Solibri has built-in COBie templates and verifies that hundreds of required FM properties are present, correctly typed, and populated across the model — a capability not available in lightweight validators.",
+            title: "Quantity and information takeoff",
+            body: "Solibri Advanced includes Quantity / Information Takeoff (QTO / ITO): quantities and information taken from the model under rules you define (solibri.com/pricing, read on 2026-11-10). IFC Viewer Online only adds up the quantities already written in the IFC and exports a COBie spreadsheet; it has no takeoff rules.",
           },
           {
             icon: '🏢',
             title: 'Enterprise governance across many projects',
-            body: "A firm running 20+ active projects needs consistent QA standards enforced centrally. Solibri's enterprise deployment lets one BIM manager define rule sets and push them across the organisation. Every project team runs the same checks. Every result is auditable.",
+            body: "A firm running 20+ active projects needs consistent QA standards enforced centrally. Solibri sells its Advanced and Premium plans for exactly this: repeatable validation standards across teams and centralised validation frameworks. Every project team runs the same checks.",
           },
           {
             icon: '🔄',
-            title: 'Full BCF lifecycle management',
-            body: "Solibri's BCF support goes beyond export: issues are created, assigned to specific discipline leads, tracked through resolution, and audited with full history. For multi-discipline coordination where an issue raised in week 2 must be resolved and verified by week 6, this lifecycle management is essential.",
+            title: "BCF issue management",
+            body: "Solibri Essential and the plans above it include BCF issue management and CDE integrations, so the issues found in a check travel to the platforms where they are assigned and tracked. IFC Viewer Online reads and writes BCF files, and that is all: there is no server behind it to follow an issue raised in week 2 until it is verified in week 6.",
           },
           {
             icon: '💥',
             title: 'Geometric clash detection in federated models',
-            body: "For complex buildings or infrastructure where structural, MEP, and architectural models must be coordinated spatially, Solibri's clash detection and space analysis identifies conflicts that rule-based validation misses. No browser tool handles geometric clash at this scale.",
+            body: "For complex buildings or infrastructure where structural, MEP, and architectural models must be coordinated spatially, Solibri's clash detection (hard and soft clashes in Essential, a clash matrix with tolerances in Advanced) finds conflicts this tool does not look for. IFC Viewer Online only compares bounding boxes inside a single model.",
           },
           {
             icon: '✅',
@@ -7256,7 +6495,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           },
         ],
       },
-      { type: 'related', to: 'best-ifc-model-checkers-2026', section: 'The Eight Tools: Checking Depth Overview', why: 'How checking depth compares across eight tools, Solibri included.' },
+      { type: 'related', to: 'best-ifc-model-checkers-2026', section: 'IFC model checkers compared', why: 'Ten checkers side by side, Solibri included, with their published prices.' },
       {
         type: 'h2',
         text: 'Typical Workflows: Where Each Tool Belongs',
@@ -7380,25 +6619,25 @@ Project acceptance or rejection`,
           color: 'accent',
           items: [
             'Custom rule authoring — encode any BIM requirement; checks that no fixed rule set can run',
-            'Full BCF lifecycle: create, assign, track, resolve, and audit issues across disciplines',
-            'COBie and FM data checking — contractual property completeness requirements covered',
-            'Enterprise governance — centralised rule sets deployed and updated across all projects',
-            'Geometric clash detection and space analysis in federated models',
+            "BCF issue management and CDE integrations, from the Essential plan",
+            "Quantity and information takeoff (QTO / ITO) in the Advanced plan",
+            "Governance — repeatable validation standards and centralised frameworks in Advanced and Premium",
+            "Clash detection: hard and soft clashes, and a clash matrix between disciplines",
             'Industry-recognised output — accepted by verifiers and clients as the QA artefact',
-            'Solibri Anywhere free for non-commercial use with full feature access',
+            "Security+ plan for networks without internet: air-gapped, no telemetry",
           ],
         },
         right: {
           label: 'Limitations',
           color: 'muted',
           items: [
-            'Commercial licensing is expensive — pricing not publicly listed; varies by region and volume',
-            'Desktop only — no browser access for remote teams, client review, or unlicensed workstations',
-            'Steep learning curve — rule authoring is a specialist BIM skill requiring dedicated training',
-            'Installation and IT deployment required before any team member can use it',
-            'Heavy on RAM for large models; processing degrades above 500 MB with complex rule sets',
-            'No public SDK for embedding or CI/CD automation',
-            'No built-in single numeric Health Score — pass/fail per rule, not a unified quality index',
+            "Model checking starts at Essential, €1,428 per licence per year; the €99 Starter plan is for viewing models and reviewing results",
+            "The free Solibri Anywhere is a legacy product, not available to new customers",
+            "Custom rules need the Advanced plan (€2,109) or Premium (€2,772)",
+            "WebChecker, the browser service, comes only with Advanced and Premium and uses 50 tokens per check",
+            "WebChecker uploads the model and keeps the results for 30 days",
+            "The prices are starting prices; Security+ is quoted on request",
+            "Operating systems and file-size limits are not stated on the pricing and product pages",
           ],
         },
       },
@@ -7429,9 +6668,9 @@ Project acceptance or rejection`,
             'No BCF inbox — exports BCF but does not manage an incoming issue lifecycle',
             'No COBie checking or FM property completeness validation',
             'No geometric clash detection between federated model disciplines',
-            'Browser memory ceiling (~300–500 MB) limits very large infrastructure models',
+            "2 GB limit per file, and in practice the memory of the device",
             'No enterprise governance layer — no centralised rule deployment across an organisation',
-            'Requires initial internet load; first session cannot be fully air-gapped',
+            "No offline mode: the page has to load from the internet each time",
           ],
         },
       },
@@ -7441,16 +6680,16 @@ Project acceptance or rejection`,
       },
       {
         type: 'p',
-        text: "Solibri's commercial pricing is not publicly listed. Licence costs vary by region, volume, and agreement type. The total cost of enterprise adoption is consistently higher than the licence alone: factor in training (rule authoring is not intuitive), IT deployment and maintenance, and the ongoing time cost of developing and updating rule sets as project requirements evolve. For a BIM manager evaluating enterprise adoption, budget for at least one dedicated training engagement in addition to the licence.",
+        text: "Solibri publishes starting prices per licence per year: Starter €99, Essential €1,428, Advanced €2,109 and Premium €2,772; Security+ is quoted on request (solibri.com/pricing, read on 2026-11-10). Starter is for viewing models and reviewing results; model checking is performed in Essential, Advanced or Premium. The total cost of adoption is higher than the licence alone: factor in training, deployment, and the ongoing time cost of developing and updating rule sets as project requirements evolve.",
       },
       {
         type: 'p',
-        text: "Solibri Anywhere removes the licence cost for non-commercial use, making it accessible for students, academics, and those learning the platform. The non-commercial restriction is strict — professional project work requires a paid licence.",
+        text: "Solibri Anywhere, the viewer that used to have a free version, is now listed as a legacy product together with Solibri Office, Site and CheckPoint: none of them is available to new customers. People who already use the free version can stay on versions before 26.4.0 (solibri.com/products/legacy-products, read on 2026-11-10).",
       },
       {
         type: 'callout',
         variant: 'warning',
-        text: "We do not publish Solibri pricing because it changes and varies by region, volume, and negotiated terms. Contact Solibri directly for a current quote. Third-party price comparisons found online are frequently outdated or based on older licensing structures.",
+        text: "Prices and plans change. The figures above are the ones on Solibri's site on 2026-11-10; check solibri.com/pricing before you budget. Third-party price comparisons found online are frequently outdated or based on older licensing structures.",
       },
       {
         type: 'p',
@@ -7463,7 +6702,7 @@ Project acceptance or rejection`,
       },
       {
         type: 'p',
-        text: "Both Solibri and IFC Viewer Online share one important property that distinguishes them from cloud-based tools: neither uploads your IFC file to a remote server by default. Solibri processes models on the local workstation. IFC Viewer Online processes models in the browser via WebAssembly — also locally, with no server receiving file content. This matters for government infrastructure, hospitals, industrial facilities, defence assets, or any project where the model is commercially or legally sensitive.",
+        text: "IFC Viewer Online processes models in the browser via WebAssembly, with no server receiving file content. This matters for government infrastructure, hospitals, industrial facilities, defence assets, or any project where the model is commercially or legally sensitive. Solibri gives two very different answers: WebChecker, where the IFC is uploaded to Solibri's service and the data is stored in the EU or the US, and the Security+ plan, described as air-gapped by design (solibri.com/solutions/webchecker and solibri.com/pricing, read on 2026-11-10).",
       },
       {
         type: 'comparison',
@@ -7479,14 +6718,14 @@ Project acceptance or rejection`,
           ],
         },
         right: {
-          label: 'Solibri — desktop application',
+          label: "Solibri — Security+ plan",
           color: 'muted',
           items: [
-            'Model stays on local machine — fully air-gapped operation possible',
-            'No browser runtime dependency — works on locked-down IT environments',
-            'Installation controlled by IT policy and internal network restrictions',
-            'Appropriate for classified networks where internet access is prohibited or monitored',
-            'No initial internet load required after installation',
+            "\"Fully offline operation (no telemetry)\"",
+            "\"Air-gapped by design\"",
+            "\"Controlled update cycles\"",
+            "\"Local data sovereignty\"",
+            "Price on request (solibri.com/pricing, read on 2026-11-10)",
           ],
         },
       },
@@ -7497,7 +6736,7 @@ Project acceptance or rejection`,
       },
       {
         type: 'p',
-        text: "For truly air-gapped environments or classified networks where internet access is prohibited, Solibri's desktop model is the more controllable option. IFC Viewer Online requires an initial internet load (the application download), after which OPFS-cached models allow offline use — but the first session requires internet access. If the operating environment prohibits all internet connectivity, Solibri is the appropriate choice.",
+        text: "For truly air-gapped environments or classified networks where internet access is prohibited, Solibri's Security+ plan is built for the job. IFC Viewer Online has no offline mode: the page has to load from the internet each time, although the model itself is never sent. The alternative is to host it yourself — the code is MIT-licensed — or to ask for the on-premise installation.",
       },
       {
         type: 'h2',
@@ -7509,18 +6748,18 @@ Project acceptance or rejection`,
         rows: [
           ["Custom rules from your organisation's BEP or EIR", 'Solibri', 'Rule authoring engine is purpose-built for this — no equivalent in any fixed-rule-set tool'],
           ['Quick pre-delivery check of a discipline model', 'IFC Viewer Online', 'No install, results in seconds, Health Score at a glance — fastest path to pass/fail'],
-          ['COBie data completeness for FM handover', 'Solibri', 'COBie checking is a Solibri speciality with built-in templates and property coverage verification'],
+          ["Quantity and information takeoff under your own rules", 'Solibri', "QTO / ITO is part of Solibri Advanced; IFC Viewer Online only adds up the quantities already in the file"],
           ['IDS 1.0 compliance check (all six facets)', 'IFC Viewer Online', 'Full IDS 1.0 engine, validated against official bSI testcases — no per-seat licence required'],
-          ['Multi-discipline BCF coordination with full issue lifecycle', 'Solibri', 'Issue creation, assignment, tracking, and resolution in one managed environment'],
+          ['Multi-discipline BCF coordination with full issue lifecycle', 'Solibri', "BCF issue management with CDE integrations, from the Essential plan"],
           ['Privacy-sensitive model (no upload permitted)', 'IFC Viewer Online', 'WASM on-device processing — verifiable zero upload from any browser'],
-          ['Air-gapped or classified network (no internet access)', 'Solibri', 'Desktop app operates fully offline after installation; no browser runtime needed'],
+          ['Air-gapped or classified network (no internet access)', 'Solibri', "Security+ plan: fully offline operation, air-gapped by design"],
           ['Fixing broken GUIDs or incorrect property values', 'IFC Viewer Online', 'Non-destructive editing without returning to the authoring tool — export corrected IFC'],
           ['External consultant reviewing a client model remotely', 'IFC Viewer Online', 'No software install, no file upload — load from any browser in seconds'],
-          ['Company-wide BIM governance across 10+ simultaneous projects', 'Solibri', 'Centralised rule sets, audit trail, enterprise deployment — no lightweight tool matches this'],
-          ['Embedding IFC validation in a custom portal or CI/CD pipeline', 'IFC Viewer Online SDK', 'Public SDK with JavaScript API — no Solibri public SDK available'],
+          ['Company-wide BIM governance across 10+ simultaneous projects', 'Solibri', "Repeatable validation standards and centralised frameworks in Advanced and Premium"],
+          ['Embedding IFC validation in a custom portal or CI/CD pipeline', 'IFC Viewer Online SDK', "Public SDK with a JavaScript API, free to embed"],
           ['Teaching IFC validation to students or new coordinators', 'IFC Viewer Online', 'Free, zero install, immediate feedback — lowest barrier to the broadest audience'],
         ],
-        caption: 'Many projects combine both tools. These recommendations reflect the most efficient fit for each individual task, not an either/or choice.',
+        caption: "Many projects combine both tools. These recommendations reflect the most efficient fit for each individual task, not an either/or choice. Solibri features as listed on solibri.com/pricing on 2026-11-10.",
         rowHeaders: true,
       },
       {
@@ -7577,7 +6816,7 @@ Project acceptance or rejection`,
       },
       {
         type: 'p',
-        text: "No — not for all workflows. IFC Viewer Online is a better fit for the subset of tasks it covers: fast pre-delivery QA, IDS compliance, privacy-sensitive models, property editing, and zero-install accessibility. It does not replace Solibri for custom rule authoring, full BCF management, COBie checking, or enterprise governance. Many teams will use both, each for what it does best.",
+        text: "No — not for all workflows. IFC Viewer Online is a better fit for the subset of tasks it covers: fast pre-delivery QA, IDS compliance, privacy-sensitive models, property editing, and zero-install accessibility. It does not replace Solibri for custom rule authoring, clash detection between disciplines, BCF issue management, or enterprise governance. Many teams will use both, each for what it does best.",
       },
       {
         type: 'h3',
@@ -7593,7 +6832,7 @@ Project acceptance or rejection`,
       },
       {
         type: 'p',
-        text: ["IFC Viewer Online supports full IDS 1.0 validation: all six facets (Entity, Attribute, Property, Classification, Material, PartOf), validated against the complete official bSI testcase suite. Solibri has added IDS support in recent versions — verify the current release documentation for specific facets and testcase coverage. For teams that need IDS compliance without a Solibri licence on every seat, IFC Viewer Online covers the complete IDS 1.0 specification at zero cost. See the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, " for a breakdown of all three validation levels — schema, quality, and IDS."],
+        text: ["IFC Viewer Online supports IDS 1.0 validation: all six facets (Entity, Attribute, Property, Classification, Material, PartOf), validated against the official bSI testcase suite. Solibri lists IDS workflows, an IDS editor and an IDS validator in its Advanced plan (solibri.com/pricing, read on 2026-11-10). For teams that need IDS compliance without a Solibri licence on every seat, IFC Viewer Online checks IDS 1.0 files at zero cost. See the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, " for a breakdown of all three validation levels — schema, quality, and IDS."],
       },
       {
         type: 'h3',
@@ -7609,7 +6848,7 @@ Project acceptance or rejection`,
       },
       {
         type: 'p',
-        text: ["IFC Viewer Online's Health Score is a 0–100 numeric quality metric calculated using a severity-weighted logarithmic penalty model. Errors carry a 3× weight over warnings; a single critical error has more impact than many minor issues — which reflects how a BIM coordinator actually prioritises fixes. Solibri does not produce an equivalent single numeric score: it produces per-rule pass/fail results across the issue set. Both approaches are valid. The Health Score is optimised for fast communication of overall model quality across stakeholders with varying BIM literacy. For the full calculation methodology, see the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, "."],
+        text: ["IFC Viewer Online's Health Score is a 0–100 numeric quality metric calculated using a severity-weighted logarithmic penalty model. Errors carry a 3× weight over warnings; a single critical error has more impact than many minor issues — which reflects how a BIM coordinator actually prioritises fixes. Solibri's plan pages do not describe a single numeric score; they describe rule-by-rule results. Both approaches are valid. The Health Score is optimised for fast communication of overall model quality across stakeholders with varying BIM literacy. For the full calculation methodology, see the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, "."],
       },
       {
         type: 'h3',
@@ -7659,271 +6898,7 @@ Project acceptance or rejection`,
     ],
   },
 
-  // ── Article #7: IFC Model Checker — Pillar ────────────────────────────────
-  {
-    slug: 'ifc-model-checker',
-    title: 'IFC Model Checker: Free Online Validation Guide (2026)',
-    seoDescription: 'Free IFC model checker in your browser: validate IFC files against 44 rules and IDS, get a 0–100 health check score and a PDF report. No install, no upload.',
-    excerpt: 'What IFC model checking actually means, how the three validation layers work, and how to use a checker to enforce quality gates before every model delivery.',
-    date: '2026-06-30',
-    author: 'IFC Viewer Online',
-    category: 'Validation',
-    categorySlug: 'validation',
-    readTimeMin: 26,
-    keywords: ['IFC model checker', 'IFC model validation', 'model health check IFC', 'no-install IFC model checker', 'IFC validation', 'IFC quality check', 'BIM model checking', 'IFC Health Score', 'IDS validation', 'ISO 19650', 'BIM coordinator'],
-    faqs: [
-      { q: 'What is an IFC model checker?', a: 'An IFC model checker is a tool that automatically validates IFC files against structural rules (schema compliance), quality rules (naming, geometry, property completeness), and project-specific requirements (IDS 1.0). It produces a pass/fail report and a numerical quality score so BIM coordinators can enforce delivery standards without opening each model manually.' },
-      { q: 'What is the difference between an IFC viewer and an IFC model checker?', a: 'A viewer lets you see geometry and browse properties. A checker validates the data structure — it finds missing property sets, duplicate GUIDs, broken spatial hierarchy, geometry errors, and IDS non-conformances that are invisible to the eye. Many tools combine both, but the checking engine is a separate function from the renderer.' },
-      { q: 'What are the three levels of IFC validation?', a: 'Level 1 checks schema and EXPRESS rules — is the file structurally valid? Level 2 checks 44 quality rules — naming, GUIDs, hierarchy, property completeness, geometry integrity. Level 3 checks IDS 1.0 requirements — does the model contain the specific data the project requires? Each level builds on the previous.' },
-      { q: 'What is a good IFC Health Score?', a: 'Scores of 90–100 indicate a delivery-ready model. 75–89 is acceptable for most coordination stages with minor fixes needed. 50–74 requires remediation before delivery. Below 50 means significant data quality issues that will cause downstream problems in quantity takeoff, cost estimation, and FM handover.' },
-      { q: 'Can I check IFC models without uploading them to a server?', a: 'Yes. IFC Viewer Online processes files entirely in the browser using WebAssembly. The IFC file never leaves your machine — you can verify this by opening browser DevTools and watching the Network tab during loading. This is critical for projects with NDA or data sovereignty requirements.' },
-      { q: 'At what project stages should IFC models be checked?', a: 'At minimum: before CDE upload (prevent junk in), at coordination stage gates (before clash detection), before client submission (formal delivery), and at FM handover (LOI completeness). On large projects, automated checking at every model revision is achievable with CLI tools or API-driven workflows.' },
-    ],
-    content: [
-      {"type":"p","text":["Want to check a model right now? The free ",{"text":"IFC model health check","href":"https://www.ifcvieweronline.eu/ifc-health-check/"}," gives it a score from 0 to 100 and a printable report, and ",{"text":"IFC model validation online","href":"https://www.ifcvieweronline.eu/ifc-validator/"}," runs all 44 rules in your browser — nothing is uploaded."]},
-      {
-        type: 'callout',
-        variant: 'info',
-        text: 'TL;DR — An IFC model checker validates your file at three levels: schema (is it valid IFC?), quality (does it follow BIM standards?), and requirements (does it contain the data your project needs?). This guide covers all three levels, explains the Health Score, walks through an ISO 19650 checking workflow, and helps you choose the right tool.',
-      },
-      {
-        type: 'stat-row',
-        stats: [
-          { value: 44, label: 'quality rules checked automatically' },
-          { value: 3, label: 'validation levels: schema → quality → IDS' },
-          { value: 6, label: 'IDS 1.0 facets validated' },
-          { value: 0, label: 'file uploads needed for browser-local checking' },
-        ],
-      },
-      { type: 'h2', text: 'What Is an IFC Model Checker?' },
-      {
-        type: 'p',
-        text: 'An IFC model checker is software that automatically validates the content and structure of an IFC file against a defined set of rules. It goes beyond what the eye can see in a 3D viewer: it interrogates the data layer — GUIDs, spatial hierarchy, property sets, geometry, classifications, and project-specific requirements.',
-      },
-      {
-        type: 'p',
-        text: 'The output is a structured report: which rules passed, which failed, how many issues of each severity exist, and a numerical quality score that can be used as a project delivery gate. BIM coordinators use this to catch problems before they reach the CDE, the coordination model, or the client.',
-      },
-      {
-        type: 'p',
-        text: 'The term is sometimes used loosely to mean any tool that opens an IFC file. This guide uses the precise definition: a checker validates data against rules and produces a pass/fail verdict. A viewer shows geometry. Most professional workflows need both, but they are distinct functions.',
-      },
-      {
-        type: 'callout',
-        variant: 'tip',
-        text: 'Expert tip: set up a checking policy document that defines the minimum Health Score and maximum tolerated errors for each delivery milestone. Share it with authoring teams at project start — not after the first failed submission.',
-      },
-      { type: 'h2', text: 'Why IFC Checking Matters Now' },
-      {
-        type: 'p',
-        text: 'Three forces are making systematic IFC checking unavoidable in 2026:',
-      },
-      {
-        type: 'ul',
-        items: [
-          'ISO 19650 adoption — information requirements now must be verified, not assumed. Many contracts include data delivery obligations with measurable acceptance criteria.',
-          'Open BIM workflows — as projects exchange IFC between authoring tools and disciplines, accumulated quality debt compounds. A wall assembled from four different authoring tools has four different naming conventions unless checked at each handoff.',
-          'FM handover pressure — building owners receiving digital twins expect property data that actually matches the installed asset. Systematic checking at design and construction stages is the only way to guarantee this.',
-        ],
-      },
-      { type: 'h2', text: 'Three Levels of IFC Model Checking' },
-      {
-        type: 'p',
-        text: 'IFC validation is not a single pass/fail test. It operates at three distinct levels, each catching a different class of problem:',
-      },
-      {
-        type: 'table',
-        headers: ['Level', 'What it checks', 'What it catches', 'Tools that support it'],
-        rows: [
-          ['L1 — Schema', 'EXPRESS schema, entity/attribute types, required fields', 'Corrupted files, wrong IFC version, invalid entity references', 'Any serious IFC tool'],
-          ['L2 — Quality', '44 quality rules: GUIDs, hierarchy, names, geometry, properties', 'Duplicate GUIDs, missing storeys, empty names, broken geometry', 'IFC Viewer Online, Solibri, BIMcollab Zoom'],
-          ['L3 — Requirements (IDS)', 'Project-specific property, classification, material rules', 'Missing fire ratings, wrong classification codes, absent EIR metadata', 'IFC Viewer Online, buildingSMART Validator'],
-        ],
-        caption: 'The three levels build on each other: a file must pass L1 before L2 makes sense, and L2 before L3.',
-      },
-      {
-        type: 'callout',
-        variant: 'warning',
-        text: 'Warning: many tools label L1 schema validation as "IFC checking." That is necessary but not sufficient. A file can be schema-valid and still have hundreds of quality problems that will derail coordination and FM handover.',
-      },
-      { type: 'h3', text: 'Level 1: Schema and EXPRESS Validation' },
-      {
-        type: 'p',
-        text: 'The IFC standard is defined in EXPRESS, a formal data modelling language. An L1 checker verifies that every entity in the file matches its EXPRESS definition: required attributes are present, values are the right type, enumeration values are valid, and referential integrity is maintained. This is the minimum bar — a file that fails L1 cannot be processed reliably by any downstream tool.',
-      },
-      { type: 'h3', text: 'Level 2: Quality Rule Validation' },
-      {
-        type: 'p',
-        text: 'L2 checking applies 44 rules derived from industry best practice, buildingSMART guidance, and common failure modes observed in real project delivery. These rules cover six domains:',
-      },
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '🔑', title: 'Identity', body: 'Every element has a unique, spec-compliant GUID. Duplicate GUIDs break CDE version tracking, clash detection, and BCF coordination.' },
-          { icon: '🏗️', title: 'Spatial Hierarchy', body: 'All building elements are assigned to a storey; all storeys are in a building; the building is in a site. Broken hierarchy causes elements to disappear in coordination tools.' },
-          { icon: '📋', title: 'Property Sets', body: 'Standard Psets (Pset_WallCommon, Pset_BeamCommon, etc.) are present and populated. Missing Psets break quantity takeoff and FM handover.' },
-          { icon: '📐', title: 'Geometry', body: 'Solid geometry closes, Boolean operations resolve, and elements have non-zero volume. Broken geometry causes errors in model review and 4D/5D simulation.' },
-          { icon: '🏷️', title: 'Classification', body: 'Elements carry classification codes (Uniclass, OmniClass, NBS) where required by the EIR. Missing classifications break procurement and FM asset registers.' },
-          { icon: '🔗', title: 'Relationships', body: 'IfcRelContainedInSpatialStructure, IfcRelAggregates, and type-instance relationships are correctly formed. Broken relationships corrupt the spatial tree.' },
-        ],
-      },
-      { type: 'h3', text: 'Level 3: IDS Validation' },
-      {
-        type: 'p',
-        text: ['IDS (Information Delivery Specification) is the buildingSMART standard for defining exactly what data a model must contain at a given project stage. An IDS file specifies required entities, attributes, property sets, property values, classifications, and materials — and the checker verifies whether each element in the model satisfies those specifications. IDS 1.0 was ratified in 2024 and is increasingly referenced in contracts and EIRs. See the ', { text: 'full IDS implementation guide', to: 'ifc-model-checker-guide' }, ' for details on the six facets.'],
-      },
-      { type: 'h2', text: 'The Health Score: A Single Number for Model Quality' },
-      {
-        type: 'p',
-        text: 'A rule-by-rule report is essential for fixing issues, but it is impractical as a delivery gate. The Health Score condenses 44 rules into a single 0–100 number using severity-weighted logarithmic penalties: errors (blocking issues) carry 3× the weight of warnings. This means a model with two severe errors scores significantly lower than one with dozens of minor warnings.',
-      },
-      {
-        type: 'table',
-        headers: ['Score Range', 'Grade', 'Meaning', 'Action'],
-        rows: [
-          ['90–100', 'Excellent', 'Delivery-ready model with minimal or no issues', 'Approve for CDE upload'],
-          ['75–89', 'Good', 'Minor issues present; acceptable for most coordination stages', 'Fix before formal delivery'],
-          ['50–74', 'Fair', 'Multiple issues requiring remediation before delivery', 'Return to authoring team'],
-          ['25–49', 'Poor', 'Significant data quality problems across multiple rule categories', 'Mandatory remediation'],
-          ['0–24', 'Critical', 'Fundamental structural or data problems; model unusable for coordination', 'Do not accept'],
-        ],
-        caption: 'Health Score bands and recommended BIM coordinator actions at each gate.',
-      },
-      {
-        type: 'callout',
-        variant: 'tip',
-        text: 'Expert tip: use 75 as the minimum Health Score for informal coordination and 90 as the bar for formal delivery to the client. Codify these thresholds in your BEP (BIM Execution Plan) so authoring teams know the target before they start modelling.',
-      },
-      { type: 'tool', id: 'validator' },
-      { type: 'h2', text: 'The Business Case for Systematic Checking' },
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '⚡', title: 'Faster coordination', body: 'Pre-screening models for L2 errors before clash detection eliminates false clashes caused by broken geometry and hierarchy. Coordination meetings become productive rather than remedial.' },
-          { icon: '💰', title: 'Accurate quantity takeoff', body: 'QS tools depend on correct Psets and classifications. A model that passes L2 checking produces reliable material quantities; one that does not requires manual correction before every BOQ update.' },
-          { icon: '🔒', title: 'Contract compliance', body: 'ISO 19650 information requirements carry contractual weight in an increasing number of projects. A checking audit trail demonstrates compliance and protects against disputes about data quality at handover.' },
-          { icon: '🏢', title: 'FM handover confidence', body: 'Asset management systems ingest property data from IFC. A model with complete Psets, correct classifications, and valid GUIDs populates the CAFM automatically. One without requires expensive manual data entry.' },
-        ],
-      },
-      { type: 'h2', text: 'IFC Checking in an ISO 19650 Workflow' },
-      {
-        type: 'p',
-        text: 'ISO 19650 defines information delivery milestones (IDMs) and information requirements (EIRs, AIRs). IFC model checking maps onto this framework at three points:',
-      },
-      {
-        type: 'code',
-        lang: 'text',
-        text: `Authoring tool (Revit / ArchiCAD / Tekla)
-        │
-        ▼ IFC export
-[L1 Schema check] ──fail──▶ Return to author
-        │ pass
-        ▼
-[L2 Quality check (44 rules)] ──fail──▶ Return to author with error report
-        │ pass (Health Score ≥ threshold)
-        ▼
-[L3 IDS check] ──fail──▶ Return to author with IDS non-conformances
-        │ pass
-        ▼
-CDE upload (approved for coordination)
-        │
-        ▼
-Clash detection / coordination
-        │
-        ▼
-[Pre-submission L2+L3 recheck] ──fail──▶ Fix before submission
-        │ pass
-        ▼
-Client / FM handover`,
-      },
-      {
-        type: 'callout',
-        variant: 'info',
-        text: 'ISO 19650-2 clause 5.6 requires information to be reviewed and approved before publication to the CDE. Systematic L1+L2+L3 checking satisfies this requirement with an auditable, repeatable process rather than a manual review that depends on individual attention.',
-      },
-      { type: 'related', to: 'how-to-check-ifc-model-before-delivery', section: 'The Four-Step Checking Workflow', why: 'The same levels as a step-by-step routine before each delivery.' },
-      { type: 'h2', text: 'When to Check: Six Project Checkpoints' },
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '1️⃣', title: 'Before CDE upload', body: 'Prevent non-conforming models from entering the shared environment. L1+L2 at minimum; L3 if an IDS has been issued.' },
-          { icon: '2️⃣', title: 'At each design stage gate', body: 'Check all discipline models before combining into the coordination model. Structural, architectural, and MEP each checked independently.' },
-          { icon: '3️⃣', title: 'Before clash detection', body: 'Broken geometry and hierarchy cause false clashes. A clean L2 report before the clash session saves hours of investigation.' },
-          { icon: '4️⃣', title: 'Before client submission', body: 'Formal IDS validation with a recorded Health Score. Archive the checking report with the model as evidence of conformance.' },
-          { icon: '5️⃣', title: 'After significant revisions', body: 'Any revision that touches spatial structure, naming, or property data should trigger a recheck. Automated checking on every export is achievable with CLI or API workflows.' },
-          { icon: '6️⃣', title: 'At FM handover', body: 'Final LOI check: are all required properties populated? Are classification codes correct? Is the GUID set stable?' },
-        ],
-      },
-      { type: 'h2', text: 'Technical Brief: How Checking Works Under the Hood' },
-      {
-        type: 'p',
-        text: 'Modern browser-based IFC checkers use WebAssembly to run the IFC parsing engine and rule evaluation logic directly in the browser, with no server round-trip. The IFC file is parsed into an in-memory schema graph; each rule is evaluated as a query against that graph. The process for a typical architectural model (50–200 MB) takes 15–60 seconds and produces a structured results object that drives the report UI.',
-      },
-      {
-        type: 'p',
-        text: 'For IDS validation, the checker loads the IDS XML file, compiles each specification into a set of element filter criteria and property assertions, then evaluates every applicable element in the model against those assertions. The result is a per-element, per-specification conformance record with pass/fail/not-applicable status.',
-      },
-      { type: 'h2', text: 'Choosing the Right Checker for Your Workflow' },
-      {
-        type: 'p',
-        text: ['The right tool depends on your coordination role, project scale, and budget. For a detailed head-to-head, see the ', { text: 'best IFC model checkers comparison', to: 'best-ifc-model-checkers-2026' }, '. For the conceptual distinction between checking and viewing, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. The short version:'],
-      },
-      {
-        type: 'table',
-        headers: ['Scenario', 'Recommended approach', 'Why'],
-        rows: [
-          ['Individual BIM author checking own export', 'Browser-based checker (IFC Viewer Online)', 'Instant, free, no upload, immediate feedback'],
-          ['BIM coordinator reviewing incoming models', 'Browser-based L2 + IDS check against project IDS', 'Full three-level validation, no toolchain dependency'],
-          ['Large multi-discipline project with Solibri rule sets', 'Solibri + browser-based pre-screening', 'Pre-screening reduces Solibri queue; Solibri adds project-specific rules'],
-          ['Automated CI/CD quality gate on model revisions', 'API-driven checker or CLI wrapper', 'Triggerable without human interaction; integrates with CDE workflows'],
-          ['Client requiring certified report', 'Tool with exportable HTML/PDF report and JSON audit trail', 'Defensible evidence of conformance at handover'],
-        ],
-        caption: 'Scenario-based tool selection guide for IFC checking.',
-      },
-      { type: 'h2', text: 'Running Your First IFC Check: Step by Step' },
-      {
-        type: 'ol',
-        items: [
-          'Export IFC from your authoring tool. Use IFC4 (IFC2x3 if required by the project). Keep the export settings consistent with your project BEP.',
-          'Open the IFC file in IFC Viewer Online. No account, no upload — drag the file into the browser.',
-          'Navigate to the Validation panel. The L1 schema check runs automatically; the L2 quality check starts immediately. Review the Health Score and the issue breakdown by severity and category.',
-          'Export the report as JSON or HTML for the project record. If an IDS file has been issued for your project, upload it in the IDS panel to run the L3 check.',
-        ],
-      },
-      {
-        type: 'ifc-demo',
-        modelId: 'duplex-architecture',
-        title: 'Try IFC Checking Now',
-        description: 'This IFC2x3 architectural model demonstrates the three-level checking process. Navigate to the Validation panel to see the Health Score and full rule breakdown.',
-        schema: 'IFC2x3',
-        size: '2.4 MB',
-        showProperties: true,
-        allowFullscreen: true,
-        height: 400,
-        variant: 'inline',
-      },
-      {
-        type: 'pull-quote',
-        text: 'Catching a duplicate GUID during design costs minutes. Catching it at FM handover costs days. Systematic checking is not overhead — it is the cheapest quality control available.',
-        cite: 'BIM coordination principle',
-      },
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '✅', title: 'Three-level validation', body: 'Schema → Quality (44 rules) → IDS requirements. Each level builds on the previous.' },
-          { icon: '📊', title: 'Health Score as a gate', body: '0–100 severity-weighted score. Set 75 for coordination, 90 for formal delivery in your BEP.' },
-          { icon: '🔒', title: 'Check before upload', body: 'Browser-local checking means no NDA risk, instant feedback, and zero toolchain dependency.' },
-          { icon: '📋', title: 'ISO 19650 alignment', body: 'Checking at each IDM satisfies the review-and-approve obligation in clause 5.6 with an auditable trail.' },
-        ],
-      },
-      {
-        type: 'p',
-        text: [
-          'Continue reading: what makes a checker different from a viewer — tool categories explained in ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. How eight leading tools compare on checking depth and workflow fit — ', { text: 'best IFC model checkers in 2026', to: 'best-ifc-model-checkers-2026' }, '. A practical step-by-step checking workflow for BIM coordinators — ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. The ten most common IFC errors and how to detect each one — ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '. Health Score calculation and use as a quality gate — ', { text: 'IFC Health Score guide', to: 'ifc-health-score' }, '.',
-        ],
-      },
-    ],
-  },
+  // Article #7, the IFC model checker pillar, lives in blog-comparisons-en.ts.
 
   // ── Article #8: IFC Model Checker vs IFC Viewer ───────────────────────────
   {
@@ -8109,271 +7084,7 @@ Client / FM handover`,
     ],
   },
 
-  // ── Article #9: Best IFC Model Checkers in 2026 ───────────────────────────
-  {
-    slug: 'best-ifc-model-checkers-2026',
-    title: 'Best IFC Model Checkers in 2026: Honest Comparison',
-    seoTitle: 'Best IFC Model Checkers 2026: 8 Tools Compared',
-    excerpt: 'An independent comparison of eight tools on actual checking depth — not just what their marketing says. Includes checking capability table, workflow fit guide, and honest assessments of what each tool does and does not do.',
-    seoDescription: 'An independent comparison of eight tools on actual checking depth, not marketing claims — with a capability table and an honest workflow fit guide.',
-    date: '2026-06-30',
-    author: 'IFC Viewer Online',
-    category: 'Tools & comparisons',
-    categorySlug: 'tools',
-    readTimeMin: 22,
-    keywords: ['best IFC model checker', 'IFC checker comparison', 'IFC validation tools', 'Solibri alternative', 'BIM quality check software', 'IDS validation tool', 'IFC Health Score tool'],
-    faqs: [
-      { q: 'What is the best free IFC model checker?', a: 'IFC Viewer Online is the most complete free IFC model checker available: it runs all three validation levels (L1 schema, L2 quality rules with 44 checks and Health Score, L3 IDS 1.0) entirely in the browser with no file upload. The buildingSMART Validation Service is free and strong on IDS but lacks L2 quality rules and has no viewer.' },
-      { q: 'Is Solibri worth the cost for IFC model checking?', a: 'Solibri is worth the cost on large, complex multi-discipline projects where you need deep custom rule sets, proprietary clash management, and a mature coordination workflow. For pre-screening, ad-hoc checking, and IDS validation, a free browser-based tool is more practical for most BIM coordinators.' },
-      { q: 'Which IFC checkers support IDS 1.0 validation?', a: 'As of 2026, IFC Viewer Online and the buildingSMART Validation Service are the primary tools supporting the full IDS 1.0 specification. Solibri has partial support via MVD checking but does not use the IDS 1.0 XML format directly.' },
-      { q: 'Do Autodesk Viewer and Trimble Connect check IFC models?', a: 'No. Autodesk Viewer and Trimble Connect are viewers — they render geometry and allow property browsing but do not validate quality rules, check Pset completeness, detect duplicate GUIDs, or produce a Health Score. They perform L1 schema validation implicitly (they reject files they cannot parse) but nothing beyond that.' },
-    ],
-    content: [
-      {"type":"p","text":["Want to check a model right now? The free ",{"text":"IFC model health check","href":"https://www.ifcvieweronline.eu/ifc-health-check/"}," gives it a score from 0 to 100 and a printable report, and ",{"text":"IFC model validation online","href":"https://www.ifcvieweronline.eu/ifc-validator/"}," runs all 44 rules in your browser — nothing is uploaded."]},
-      {
-        type: 'callout',
-        variant: 'info',
-        text: 'TL;DR — Only three of the eight tools reviewed here perform meaningful IFC model checking beyond schema validation: IFC Viewer Online (L1+L2+L3, free), Solibri (L1+L2 deep proprietary rules, subscription), and buildingSMART Validation Service (L1+L3 IDS, free). The others are viewers that happen to open IFC files. This matters when choosing a tool for delivery quality gates.',
-      },
-      {
-        type: 'callout',
-        variant: 'warning',
-        text: 'Honest disclosure: this comparison is published by IFC Viewer Online. We have tried to be accurate about our own limitations and fair about competitor strengths. Where a competing tool genuinely does something better, we say so. Verify claims that matter to your workflow by testing with your own IFC files.',
-      },
-      { type: 'h2', text: 'What Makes an IFC Checker a Real Checker?' },
-      {
-        type: 'p',
-        text: 'Before comparing tools, it is worth being precise about what "checking" means. The three validation levels determine whether a tool is a checker or a viewer with checking marketing:',
-      },
-      {
-        type: 'ul',
-        items: [
-          'L1 (schema) — every tool that successfully opens an IFC file implicitly performs L1 validation. This is not a differentiator.',
-          'L2 (quality rules) — 44 rules covering GUIDs, spatial hierarchy, Pset completeness, geometry, naming, and relationships. This is the real checker function.',
-          'L3 (IDS) — validates the model against a project-specific IDS 1.0 specification. This is the requirements compliance function.',
-        ],
-      },
-      {
-        type: 'p',
-        text: 'A tool that does L1 only and calls itself a checker is misleading you. The rest of this article uses L1/L2/L3 clearly for each tool.',
-      },
-      { type: 'related', to: 'ifc-model-checker-guide', section: 'Three Completely Different Validation Problems', why: 'The three validation problems a checker may or may not cover.' },
-      { type: 'h2', text: 'The Eight Tools: Checking Depth Overview' },
-      {
-        type: 'table',
-        headers: ['Tool', 'L1 Schema', 'L2 Quality Rules', 'L3 IDS 1.0', 'Health Score', 'Viewer', 'File stays local', 'Cost'],
-        rows: [
-          ['IFC Viewer Online', '✓', '✓ 44 rules', '✓ Full IDS 1.0', '✓ 0–100', '✓', '✓ Browser-local', 'Free'],
-          ['Solibri', '✓', '✓ Deep proprietary', 'Partial (MVD)', '✗', '✓', '✓ Desktop', '€99–€2,700/yr'],
-          ['BIMVision', '✓', '✗ Basic only', '✗', '✗', '✓', '✓ Desktop', 'Free / €30/mo'],
-          ['Trimble Connect', '✓ implicit', '✗', '✗', '✗', '✓', '✗ Cloud upload', 'Free tier / subscription'],
-          ['Dalux', '✓ implicit', '✗', '✗', '✗', '✓', '✗ Cloud upload', 'Custom pricing'],
-          ['Autodesk Viewer', '✓ implicit', '✗', '✗', '✗', '✓', '✗ Cloud upload', 'Free (Autodesk account)'],
-          ['That Open Viewer', '✓', '✗ (roadmap)', '✗', '✗', '✓', '✓ Browser-local', 'Free / OSS'],
-          ['buildingSMART Validator', '✓', 'Limited', '✓ IDS focus', '✗', '✗', '✗ Upload', 'Free'],
-        ],
-        caption: 'Checking depth comparison across eight tools. L2 quality rules and L3 IDS are the meaningful differentiators.',
-      },
-      { type: 'tool', id: 'validator' },
-      { type: 'h2', text: '1. IFC Viewer Online' },
-      {
-        type: 'p',
-        text: 'IFC Viewer Online is a browser-based tool that combines a full 3D viewer with all three validation levels. Files are processed locally using WebAssembly — nothing is uploaded to a server. The L2 engine applies 44 quality rules and produces a Health Score (0–100) that can be used directly as a delivery gate. IDS 1.0 is fully supported across all six facets.',
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Full L1 + L2 (44 rules) + L3 (IDS 1.0) in one tool',
-            'Health Score (0–100) for delivery gating',
-            'Browser-local: zero upload, GDPR-compliant, works offline',
-            'Free with no account required',
-            'Export report as JSON, CSV, or HTML',
-            'IDS 1.0 validated against 100 official bSI testcases',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'neutral',
-          items: [
-            'No proprietary rule customisation (unlike Solibri)',
-            'No native BCF coordination workflow (BCF export only)',
-            'No federated multi-model clash detection',
-            'Browser memory limits large files (>500 MB may struggle)',
-          ],
-        },
-      },
-      {
-        type: 'callout',
-        variant: 'tip',
-        text: 'Best for: BIM coordinators who need immediate, free, privacy-safe checking without a subscription. Also ideal as a pre-screening step before Solibri on large projects — only models with Health Score ≥ 75 enter the Solibri queue.',
-      },
-      { type: 'h2', text: '2. Solibri' },
-      {
-        type: 'p',
-        text: 'Solibri is the market leader in deep IFC rule checking. Its rule engine allows BIM managers to define project-specific checks beyond the standard quality rules — covering coordination, regulatory compliance, and spatial validation at a level no free tool currently matches. The learning curve is steep and the cost significant, but for large infrastructure or commercial projects, the depth is genuine.',
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Deepest proprietary rule engine available',
-            'Customisable rule sets for project-specific compliance',
-            'Mature coordination workflow with BCF and clash management',
-            'Strong BIM manager tooling for enterprise projects',
-            'Extensive rule library built over 20+ years',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'neutral',
-          items: [
-            'No IDS 1.0 XML support (uses MVD, not the IDS standard)',
-            'No Health Score — results require manual interpretation',
-            'Expensive: €99/mo Solibri Anywhere, €2,700+/yr full licence',
-            'Desktop-only; no browser-based option',
-            'Steep learning curve; effective use requires training',
-          ],
-        },
-      },
-      {
-        type: 'callout',
-        variant: 'tip',
-        text: 'Best for: BIM managers on large multi-discipline projects where custom rule sets and coordination workflow integration justify the cost. Not the right choice for individual BIM authors or occasional checking.',
-      },
-      { type: 'h2', text: '3. BIMVision' },
-      {
-        type: 'p',
-        text: 'BIMVision is a capable free IFC viewer from Datacomp that has been widely used in the Central and Eastern European market. It includes basic property browsing and some Pset inspection capability, but it is not a model checker in the L2/L3 sense. There is no quality rule engine, no Health Score, and no IDS validation. The paid version adds features like BCF and IFC federation.',
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Good free desktop IFC viewer',
-            'Property inspection and Pset browsing',
-            'Federation of multiple IFC files',
-            'BCF support in paid version',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'neutral',
-          items: [
-            'No L2 quality rules — not a model checker',
-            'No Health Score or delivery gating',
-            'No IDS 1.0 validation',
-            'Windows desktop only — no browser version',
-          ],
-        },
-      },
-      { type: 'h2', text: '4. Trimble Connect' },
-      {
-        type: 'p',
-        text: 'Trimble Connect is a CDE platform and model viewer, not a model checker. It accepts IFC uploads, renders them in 3D, and supports clash detection as part of the coordination workflow. It does not apply quality rules to the IFC data layer and produces no quality report. It is excellent for what it is: a cloud-hosted coordination and document management platform.',
-      },
-      {
-        type: 'callout',
-        variant: 'warning',
-        text: 'Trimble Connect is a CDE viewer, not a checker. If your workflow involves Trimble Connect, you still need a dedicated checker before the CDE upload step to validate model quality.',
-      },
-      { type: 'h2', text: '5. Dalux' },
-      {
-        type: 'p',
-        text: 'Dalux is a strong construction platform for on-site use with good IFC viewing capabilities on mobile and desktop. Like Trimble Connect, it is not a model checker — there is no L2 quality rule engine. Its strength is in construction phase workflows: site checklists, RFIs, and document management. The IFC viewing component is excellent for site personnel who need to access the model without a BIM specialist present.',
-      },
-      { type: 'h2', text: '6. Autodesk Viewer (Autodesk Docs)' },
-      {
-        type: 'p',
-        text: 'Autodesk Viewer (embedded in Autodesk Docs / BIM 360) renders IFC files uploaded to the Autodesk cloud. It provides good property browsing and supports most IFC4 entities. There is no quality rule checking, no Health Score, and no IDS support. Files must be uploaded to Autodesk servers — a consideration for confidential projects. As a viewer it is polished; as a checker it does not exist.',
-      },
-      { type: 'h2', text: '7. That Open Viewer (ThatOpenCompany)' },
-      {
-        type: 'p',
-        text: 'That Open Viewer is an open-source browser-based IFC viewer built on the ThatOpen engine (formerly IFC.js). It is actively developed and has growing community adoption. As of mid-2026, checking features are in the roadmap but not implemented — it is a viewer with good developer extensibility. Worth watching for teams with development resources who want to build custom checking on top of the OSS engine.',
-      },
-      { type: 'h2', text: '8. buildingSMART Validation Service' },
-      {
-        type: 'p',
-        text: 'The buildingSMART Validation Service is the official online validator maintained by the IFC standard body. It has authoritative L1 schema validation and solid IDS 1.0 support. What it lacks is L2 quality rules, a Health Score, and a 3D viewer. It is the right tool for formally certifying IDS conformance (particularly useful when submitting to public sector clients who require bSI-certified validation), but not for day-to-day quality checking.',
-      },
-      {
-        type: 'comparison',
-        left: {
-          label: 'Strengths',
-          color: 'accent',
-          items: [
-            'Authoritative L1 schema validation from the standard body',
-            'Full IDS 1.0 validation support',
-            'Free, no account required',
-            'Output accepted as formal conformance evidence in some contracts',
-          ],
-        },
-        right: {
-          label: 'Limitations',
-          color: 'neutral',
-          items: [
-            'No L2 quality rules — no Health Score',
-            'No 3D viewer — data-only output',
-            'Requires file upload — not suitable for confidential data',
-            'Processing time for large files can be slow',
-          ],
-        },
-      },
-      { type: 'h2', text: 'Workflow Fit: Which Tool for Which Scenario?' },
-      {
-        type: 'table',
-        headers: ['Scenario', 'Best tool', 'Why'],
-        rows: [
-          ['Author checking own export before CDE upload', 'IFC Viewer Online', 'Instant, free, browser-local, full L2 + Health Score'],
-          ['BIM coordinator pre-screening incoming models', 'IFC Viewer Online', 'Same reasons; plus IDS validation if project IDS exists'],
-          ['Large project with complex custom rule sets', 'Solibri', 'Proprietary rule engine depth not matched by free tools'],
-          ['Pre-screening before Solibri queue', 'IFC Viewer Online', 'Only models with Health Score ≥ 75 enter Solibri — reduces review time'],
-          ['Public sector IDS conformance certification', 'buildingSMART Validator + IFC Viewer Online', 'bSI validator for formal certificate; IFC Viewer Online for L2 quality'],
-          ['Construction site model access', 'Dalux or Trimble Connect', 'Mobile-optimised viewers for on-site teams'],
-          ['Autodesk-platform project coordination', 'Autodesk Docs + IFC Viewer Online', 'Autodesk Docs for coordination; IFC Viewer Online for checking before upload'],
-          ['OSS project with development resources', 'That Open Viewer (customised)', 'Extensible engine for custom checking integration'],
-        ],
-        caption: 'Workflow-based tool selection guide.',
-      },
-      {
-        type: 'callout',
-        variant: 'tip',
-        text: 'Expert tip: the most efficient enterprise workflow is not a single tool — it is IFC Viewer Online for author-side pre-screening (free, instant, zero friction), plus Solibri for coordinator-side deep checking on models that have already passed the Health Score threshold. The combination reduces Solibri licence costs by limiting deep-check time to quality-ready models only.',
-      },
-      { type: 'h2', text: 'Pricing Comparison' },
-      {
-        type: 'table',
-        headers: ['Tool', 'Free tier', 'Paid tier', 'What paid adds'],
-        rows: [
-          ['IFC Viewer Online', 'Full features', '—', 'All features free'],
-          ['Solibri', 'Solibri Anywhere (limited)', '€99/mo – €2,700+/yr', 'Full rule engine, custom rules, enterprise coordination'],
-          ['BIMVision', 'Free viewer', '€30/mo', 'BCF, federation, advanced views'],
-          ['Trimble Connect', 'Free (limited storage)', 'Custom', 'CDE storage, clash detection, project management'],
-          ['Dalux', 'Contact sales', 'Custom', 'Construction platform, site checklist, RFI'],
-          ['Autodesk Viewer', 'Free (Autodesk account)', 'BIM 360 / ACC subscription', 'Full CDE, clash, document management'],
-          ['That Open Viewer', 'Free / OSS', 'Paid support', 'Community support, custom development'],
-          ['buildingSMART Validator', 'Free', '—', 'Free for all'],
-        ],
-        caption: 'Pricing overview as of 2026. Verify current pricing directly with vendors.',
-      },
-      {
-        type: 'pull-quote',
-        text: 'Three of the eight tools reviewed here perform L2 quality checking. The other five are viewers. That distinction is what matters when you are setting a delivery quality gate.',
-        cite: 'IFC Viewer Online editorial',
-      },
-      {
-        type: 'p',
-        text: ['For the conceptual framework behind checking levels, see the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. For the distinction between checkers and viewers, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. For a step-by-step checking workflow, see ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. For the specific errors that L2 checking catches, see ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '.'],
-      },
-    ],
-  },
+  // Article #9, the checker comparison, lives in blog-comparisons-en.ts.
 
   // ── Article #10: How to Check an IFC Model Before Delivery ───────────────
   {
@@ -10683,6 +9394,12 @@ export const RETIRED_POSTS: Readonly<Record<string, string>> = {
   'ifc-model-checker-guide': 'ifc-model-checker',
   // Same FAQ and the same query as the pillar: 93 impressions in 3 months, page 5.
   'ifc-model-checker-vs-ifc-viewer': 'ifc-model-checker',
+  // 2026-11-10 export: 1,409 impressions at position 51 for "ifc model
+  // validation", the pillar's own query. Its checklist is the pillar's FAQ now.
+  'how-to-validate-ifc-file': 'ifc-model-checker',
+  // 843 impressions at position 35, the same "free IFC viewer" queries as
+  // best-free-ifc-viewer (position 18), which is the one Google already prefers.
+  'free-online-ifc-viewers-compared': 'best-free-ifc-viewer',
 }
 
 function relinkRetired(value: unknown): unknown {

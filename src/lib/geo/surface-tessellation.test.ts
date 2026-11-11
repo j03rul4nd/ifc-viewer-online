@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  subdivideMesh, longestEdge, distanceToRing, pointSegmentDistance,
+  subdivideMesh, longestEdge, distanceToRing, pointSegmentDistance, groundCuts,
   type Vec2, type Face,
 } from './surface-tessellation'
 
@@ -95,5 +95,18 @@ describe('distanceToRing', () => {
 
   it('returns zeros for a degenerate ring instead of throwing', () => {
     expect(Array.from(distanceToRing([{ x: 0, y: 0 }], [{ x: 1, y: 1 }]))).toEqual([0])
+  })
+})
+
+describe('groundCuts — a cut only where the ground bends', () => {
+  const ts = Array.from({ length: 19 }, (_, i) => (i + 1) / 20)
+  it('keeps none on flat ground or a planar slope', () => {
+    expect(groundCuts(ts, () => 4, 0.03)).toEqual([])
+    expect(groundCuts(ts, (t) => 10 * t, 0.03)).toEqual([])
+  })
+  it('keeps the crest of a hump, and enough to follow it', () => {
+    const cuts = groundCuts(ts, (t) => 5 * Math.sin(t * Math.PI), 0.03)
+    expect(cuts).toContain(0.5)
+    expect(cuts.length).toBeGreaterThan(5)
   })
 })

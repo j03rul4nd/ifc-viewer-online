@@ -289,5 +289,11 @@
     "idsChecked": "{{file}}: Modelle geprüft — Ergebnisse im IDS-Bereich",
     "documentsKept": "{{count}} Projektdokument bei der Szene abgelegt",
     "documentsKept_other": "{{count}} Projektdokumente bei der Szene abgelegt"
+  },
+  "theme": {
+    "toggle": "Design: {{mode}}",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
   }
 }

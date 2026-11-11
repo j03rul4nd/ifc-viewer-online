@@ -99,6 +99,12 @@ export interface MapLook {
   finish: BuildingFinishId
   /** The basemap that belongs to this look (null keeps the user's own). */
   mapStyle: MapStyleId | null
+  /**
+   * How much air is in the view, 0–1 (atmosphere.ts `hazeRangeFor`). Omitted =
+   * 1. A look that is a DRAWING rather than a view thins it: pale haze over a
+   * navy sheet washes out the linework the look exists for.
+   */
+  haze?: number
 }
 
 // ── Light presets ──────────────────────────────────────────────────────────────
@@ -154,7 +160,7 @@ export const MAP_LOOKS: readonly MapLook[] = [
   { id: 'maquette', light: 'day', finish: 'clay', mapStyle: 'standard' },
   { id: 'golden', light: 'dusk', finish: 'natural', mapStyle: 'standard' },
   { id: 'night', light: 'night', finish: 'natural', mapStyle: 'dark' },
-  { id: 'blueprint', light: 'day', finish: 'blueprint', mapStyle: 'bim' },
+  { id: 'blueprint', light: 'day', finish: 'blueprint', mapStyle: 'bim', haze: 0.4 },
   { id: 'dawn', light: 'dawn', finish: 'monochrome', mapStyle: 'light' },
 ]
 
@@ -254,25 +260,6 @@ export function lerpLightPreset(a: LightPreset, b: LightPreset, t: number): Ligh
 export function easeInOut(t: number): number {
   const k = Math.min(1, Math.max(0, t))
   return k * k * (3 - 2 * k)
-}
-
-// ── Sky backdrop ──────────────────────────────────────────────────────────────
-
-/**
- * Colour stops (top → bottom of the screen) for the backdrop behind the map.
- * It ENDS in the fog colour on purpose: the far city fades into fog, and the
- * fog meets the sky at the horizon in the same colour — so there is no line
- * where the world stops. A flat fog-coloured background (what the first
- * version used) gave the haze but lost the sky; a sky without the fog stop
- * draws a hard edge along the horizon.
- */
-export function skyBackdropStops(light: LightPreset): Array<[offset: number, color: string]> {
-  return [
-    [0, light.sky.zenith],
-    [0.55, light.sky.horizon],
-    [0.82, light.fog],
-    [1, light.fog],
-  ]
 }
 
 // ── Colour helpers (pure, linear-light aware) ─────────────────────────────────

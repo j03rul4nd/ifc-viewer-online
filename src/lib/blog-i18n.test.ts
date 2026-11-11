@@ -186,8 +186,8 @@ describe('lazy language packs', () => {
     await loadBlogLanguage('ja')
     expect(isBlogLanguageReady('ja')).toBe(true)
     expect(getBlogPostsByLang('ja')).toHaveLength(TRANSLATED_POSTS.ja.length)
-    expect(getBlogPost('how-to-validate-ifc-file', 'ja')?.lang).toBe('ja')
-    expect(getBlogPost('how-to-validate-ifc-file', 'en')?.lang ?? 'en').toBe('en')
+    expect(getBlogPost('ifc-model-checker', 'ja')?.lang).toBe('ja')
+    expect(getBlogPost('ifc-model-checker', 'en')?.lang ?? 'en').toBe('en')
   })
 
   it('are never imported statically by app code', () => {
