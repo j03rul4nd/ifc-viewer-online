@@ -28,6 +28,8 @@ Plan and progress: `docs/theme-migration.md`.
 | `--accent` / `--accent-strong` | brand actions, links, selected state |
 | `--accent-contrast` | text/icons on an `--accent` fill |
 | `--success` / `--warning` / `--danger` | status |
+| `--info` | informational severity, info chips/counters (dark #5E9ED6, light #2F6FB0); tints via `color-mix` |
+| `--scrim` | base colour of mobile sheet / bottom-nav backdrops; consumers dim it with `opacity` or `color-mix` (dark #000, light rgba(28,27,22,.45)) |
 | `--focus-ring` | `:focus-visible` outlines |
 | `--shadow`, `--overlay` | `--shadow` only for popovers/menus; `--overlay` is the modal scrim (flat, no blur in light) |
 
@@ -44,9 +46,9 @@ Legacy names (`--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-
 7. Overlay (light): modals use `--overlay` (rgba(28,27,22,.20)) with no backdrop blur. Hover (`--bg-hover`) is a neutral step, never accent-tinted, so it never reads as selected.
 8. Test both modes: in DevTools run `document.documentElement.dataset.theme = 'light'` (or `'dark'`), or open the page with `?theme=light`. Check text, borders, focus rings and hover states.
 
-## Known quirk (clean up in phase 4)
+## Known quirk (still open after phase 4a)
 
-`--text-muted` is **undefined in dark** on purpose: 162 uses without a fallback inherit the normal text colour and 21 uses with `var(--text-muted, #a09e98)` show that grey; defining it would change dark. In light it is its own step (#5A5853, between secondary and tertiary, AA on every surface). Phase 4: replace every use with `--text-primary` or `--text-secondary` explicitly and drop the token.
+`--text-muted` is **undefined in dark** on purpose: 162 uses without a fallback inherit the normal text colour and 21 uses with `var(--text-muted, #a09e98)` show that grey; defining it would change dark. In light it is its own step (#5A5853, between secondary and tertiary, AA on every surface). Status (phase 4a): not migrated yet. Next: replace every use with `--text-primary` or `--text-secondary` explicitly and drop the token.
 
 ## Contrast (WCAG 2.x, script in PR description)
 
@@ -62,8 +64,11 @@ Light (app #F1F0ED, surface #FFFFFF, raised #F7F6F3) — against app bg / surfac
 | success | #206B38 | 5.72 | 6.52 | 6.03 |
 | warning | #915C08 | 4.93 | 5.62 | 5.20 |
 | danger | #AF2B25 | 5.77 | 6.57 | 6.08 |
+| info | #2F6FB0 | 4.58 | 5.22 | 4.83 |
 | border-control (UI, 3:1) | #8A8984 | 3.08 | 3.50 | 3.24 |
 | border-strong (decorative) | #C9C8C2 | 1.47 | 1.68 | 1.55 |
 | white on accent | | 6.50 | | |
 
-All light pairs pass AA (4.5:1 text, 3:1 UI). Dark is today's palette, unchanged; known pre-existing gaps there: `--accent` as text 3.95:1 on surface, `--text-faint` 4.30:1 on raised, `--danger` 4.23:1 on raised, `--border-strong` 1.55:1 (decorative).
+All light pairs pass AA (4.5:1 text, 3:1 UI). Dark is today's palette, unchanged; known pre-existing gaps there: `--accent` as text 3.95:1 on surface, `--text-faint` 4.30:1 on raised, `--danger` 4.23:1 on raised, `--border-strong` 1.55:1 (decorative). Dark `--info` #5E9ED6: 6.70 on app, 6.26 on surface.
+
+Not added (no current usage needs them): `--bg-floating`, `--selection`. Exported report HTML (`SharedReportView`, export strings) keeps literal colours on purpose.
