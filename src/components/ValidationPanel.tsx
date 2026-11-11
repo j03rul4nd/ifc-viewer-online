@@ -1687,7 +1687,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t('filters.search')}
-        className="h-6 pl-6 pr-6 text-[11px] bg-[var(--surface-2)] border border-[var(--border)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] w-28 transition-colors"
+        className="h-6 pl-6 pr-6 text-[11px] bg-[var(--surface-2)] border border-[var(--border-control)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] w-28 transition-colors"
       />
       {value && (
         <button

@@ -4,7 +4,7 @@
 import { useId, useRef, type ReactNode } from 'react'
 import { parseCsv } from './csv'
 
-export const input = 'w-full rounded-lg border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-[14px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none'
+export const input = 'w-full rounded-lg border border-[var(--border-control)] bg-[var(--bg)] px-3 py-2 text-[14px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] focus:outline-none'
 export const btn = 'inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-strong)] px-3 py-1.5 text-[13px] font-medium text-[var(--text)] hover:bg-[var(--surface)] disabled:opacity-40'
 export const btnPrimary = 'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-40'
 

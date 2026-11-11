@@ -122,7 +122,7 @@ export default function SceneStory({ viewerApiRef, story, cardOpen, cta }: Props
           {fillStoryText(pickText(step.text, lang), item?.value ?? null)}
         </p>
         {item && (
-          <div className="mt-2 inline-flex items-center gap-2 h-7 px-2.5 rounded-full bg-white/[0.05] border border-white/10 text-[11.5px]" data-testid="scene-story-live">
+          <div className="mt-2 inline-flex items-center gap-2 h-7 px-2.5 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] border border-[var(--border)] text-[11.5px]" data-testid="scene-story-live">
             <span className={`w-2 h-2 rounded-full ${item.state === 'live' ? 'animate-pulse' : ''}`} style={{ background: item.state === 'live' ? (item.color ?? '#3fa866') : '#a09e98' }} aria-hidden />
             <span className="text-[var(--text-faint)]">{item.state === 'live' ? t('explorer.story.now') : t(`explorer.state.${item.state}`)}</span>
             {item.value !== null && <span className="font-mono tabular-nums text-[var(--text)]">{item.value}</span>}
@@ -132,7 +132,7 @@ export default function SceneStory({ viewerApiRef, story, cardOpen, cta }: Props
       </div>
       <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3">
         <div className="flex items-center gap-1 mr-auto" aria-hidden>
-          {steps.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === index ? 'w-4 bg-[var(--accent)]' : 'w-1.5 bg-white/20'}`} />)}
+          {steps.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === index ? 'w-4 bg-[var(--accent)]' : 'w-1.5 bg-[color-mix(in_srgb,var(--text-primary)_20%,transparent)]'}`} />)}
         </div>
         {index > 0 && (
           <button type="button" onClick={() => void goTo(index - 1)} data-testid="scene-story-back"

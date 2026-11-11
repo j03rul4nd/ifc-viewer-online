@@ -132,7 +132,7 @@ export default function ItOpsImpact({ viewerApiRef }: { viewerApiRef: React.Muta
         <p className="mt-0.5 text-[38px] leading-none font-semibold tracking-tight tabular-nums text-[#4ade80]" data-testid="itops-year">{eur(yearlySavingEur(sites))}</p>
         <div className="mt-2 flex items-center gap-2 text-[12.5px] text-[var(--text-dim)]">
           <span>{t(`${k}.heroPer`)}</span>
-          <div className="flex items-center rounded-[8px] border border-white/10" role="group" aria-label={t(`${k}.sites`)}>
+          <div className="flex items-center rounded-[8px] border border-[var(--border)]" role="group" aria-label={t(`${k}.sites`)}>
             <button type="button" onClick={() => setSites((s) => Math.max(1, s - (s > 10 ? 10 : 1)))} aria-label="−" className="w-7 h-7 text-[var(--text-dim)] hover:text-[var(--text)]">−</button>
             <span className="min-w-[2.2rem] text-center font-semibold tabular-nums text-[var(--text)]" data-testid="itops-sites">{sites}</span>
             <button type="button" onClick={() => setSites((s) => Math.min(500, s + (s >= 10 ? 10 : 1)))} aria-label="+" className="w-7 h-7 text-[var(--text-dim)] hover:text-[var(--text)]">+</button>

@@ -17,7 +17,7 @@ const STATUS: Record<string, string> = { new: 'Nueva', pilot: 'Piloto', won: 'Ga
 const CHARGE: Record<string, string> = { pending: 'Por facturar', invoiced: 'Facturado', paid: 'Pagado', void: 'Anulado' }
 const LOST: [string, string][] = [['price', 'Precio'], ['etl_only', 'Solo quería un ETL'], ['no_twin', 'Sin gemelo'], ['timing', 'No es el momento'], ['competitor', 'Otro proveedor'], ['other', 'Otro']]
 
-const input = 'h-8 w-full rounded-lg border px-2 text-[12px] bg-transparent'
+const input = 'h-8 w-full rounded-lg border border-[var(--border-control)] px-2 text-[12px] bg-transparent'
 const button = 'h-8 px-3 rounded-lg border text-[12px] disabled:opacity-50'
 const border = { borderColor: 'var(--border)' }
 const muted = { color: 'var(--text-muted)' }

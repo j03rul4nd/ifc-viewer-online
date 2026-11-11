@@ -14,7 +14,7 @@ import {
 
 type T = (k: string, o?: Record<string, unknown>) => string
 
-const input = 'min-w-0 flex-1 px-1.5 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)]'
+const input = 'min-w-0 flex-1 px-1.5 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-mono bg-[var(--surface-2)] border border-[var(--border-control)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)]'
 const btn = 'shrink-0 px-2 py-1 max-md:py-2 rounded-[6px] text-[10px] max-md:text-[12px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)] transition-colors disabled:opacity-40'
 
 export function useTmbKeys() {

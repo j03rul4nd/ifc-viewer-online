@@ -272,7 +272,7 @@ function ExploreMenu({ viewerApiRef }: { viewerApiRef: React.MutableRefObject<Vi
               {live.map((r) => (
                 <button key={r.id} type="button" onClick={() => void goToBinding(r.id)}
                   className="w-full flex items-center gap-2 px-2 py-1.5 max-md:py-2.5 rounded-[8px] text-left hover:bg-white/[0.06]">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style={{ background: r.color ?? 'transparent' }} aria-hidden />
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-[var(--border-strong)]" style={{ background: r.color ?? 'transparent' }} aria-hidden />
                   <span className="flex-1 min-w-0">
                     <span className="block text-[12px] truncate">{r.name}</span>
                     <span className="block text-[10.5px] text-[var(--text-faint)] truncate">

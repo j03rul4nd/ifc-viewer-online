@@ -108,7 +108,7 @@ function ToastItem({ t, closeLabel, onClose }: { t: Toast; closeLabel: string; o
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); runToastAction(t.id) }}
-              className="block mt-1 -ml-1.5 min-h-[28px] px-1.5 rounded-md text-left text-[11.5px] font-semibold underline underline-offset-2 hover:bg-white/10 [[data-theme=light]_&]:hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-current"
+              className="block mt-1 -ml-1.5 min-h-[28px] px-1.5 rounded-md text-left text-[11.5px] font-semibold underline underline-offset-2 hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-current"
             >
               {t.actionLabel}
             </button>
@@ -121,7 +121,7 @@ function ToastItem({ t, closeLabel, onClose }: { t: Toast; closeLabel: string; o
           aria-label={closeLabel}
           title={closeLabel}
           onClick={(e) => { e.stopPropagation(); onClose() }}
-          className={`-mr-2 -mt-1.5 flex-none w-7 h-7 grid place-items-center rounded-md text-[11px] opacity-75 hover:opacity-100 hover:bg-white/10 [[data-theme=light]_&]:hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-current ${s.text}`}
+          className={`-mr-2 -mt-1.5 flex-none w-7 h-7 grid place-items-center rounded-md text-[11px] opacity-75 hover:opacity-100 hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-current ${s.text}`}
         >
           <span aria-hidden="true">✕</span>
         </button>

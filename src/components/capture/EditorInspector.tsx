@@ -29,8 +29,8 @@ const row = 'flex flex-col gap-1.5'
 const chipBase = 'px-2 h-[24px] rounded-[5px] text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
 const chipOff = 'bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)]'
 const chipOn = 'bg-[var(--accent)] text-white'
-const inputCls = 'w-full bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-[5px] px-2 py-1.5 text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const selectCls = 'bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-[5px] px-2 h-[26px] text-[11px] text-[var(--text)] outline-none'
+const inputCls = 'w-full bg-[var(--surface-2)] border border-[var(--border-control)] rounded-[5px] px-2 py-1.5 text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
+const selectCls = 'bg-[var(--surface-2)] border border-[var(--border-control)] rounded-[5px] px-2 h-[26px] text-[11px] text-[var(--text)] outline-none'
 
 // ── Tab bar ────────────────────────────────────────────────────────────────────
 

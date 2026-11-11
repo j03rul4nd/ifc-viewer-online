@@ -34,7 +34,7 @@ interface Props {
   onClose: () => void
 }
 
-const field = 'w-full px-3 h-9 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors'
+const field = 'w-full px-3 h-9 rounded-lg bg-[var(--surface-2)] border border-[var(--border-control)] text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors'
 const label = 'text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider'
 const btn = 'flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg border border-[var(--border)] text-[12px] font-medium text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-40'
 

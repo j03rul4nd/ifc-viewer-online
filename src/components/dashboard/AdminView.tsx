@@ -217,7 +217,7 @@ const statusColor = (s: string): React.CSSProperties =>
   s === 'active' ? { color: 'var(--success)' }
   : s === 'past_due' || s === 'suspended' ? { color: "var(--warning)" }
   : { color: 'var(--danger)' }
-const selectCls = 'h-7 px-1.5 rounded-md text-[11px] border bg-transparent'
+const selectCls = 'h-7 px-1.5 rounded-md text-[11px] border border-[var(--border-control)] bg-transparent'
 const btnCls = 'h-7 px-2 rounded-md text-[10px] border disabled:opacity-40'
 const dangerStyle: React.CSSProperties = { borderColor: 'color-mix(in srgb, var(--danger) 45%, var(--bg-surface))', color: 'var(--danger)' }
 

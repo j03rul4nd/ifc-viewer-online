@@ -229,7 +229,7 @@ export function Dialog({ title, onClose, children, footer, size = 'md', dismissa
 
   return (
     <div role="dialog" aria-modal="true" aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[var(--overlay)] sm:p-4"
       onClick={dismissable ? onClose : undefined}>
       <div ref={ref} onClick={(e) => e.stopPropagation()}
         className={`w-full ${size === 'lg' ? 'sm:max-w-[640px]' : 'sm:max-w-[500px]'} max-h-[92dvh] flex flex-col rounded-t-[16px] sm:rounded-[14px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-2xl`}>
@@ -253,7 +253,7 @@ export function Dialog({ title, onClose, children, footer, size = 'md', dismissa
 
 // ── Forms and settings ────────────────────────────────────────────────────────
 
-export const inputClass = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-[13px] text-[var(--text)] focus:outline focus:outline-2 focus:outline-[var(--accent)]'
+export const inputClass = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border border-[var(--border-control)] bg-[var(--surface-2)] px-2.5 text-[13px] text-[var(--text)] focus:outline focus:outline-2 focus:outline-[var(--accent)]'
 
 export function Field({ label, hint, children, className = '' }: { label: string; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (

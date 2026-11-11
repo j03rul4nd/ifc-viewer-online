@@ -42,7 +42,7 @@ const STATUS_COLOR: Record<ClashStatus, string> = {
 }
 const btn = 'h-7 max-md:h-9 px-2.5 rounded-[6px] border border-[var(--border)] text-[11px] max-md:text-[12.5px] font-medium text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 transition-colors whitespace-nowrap'
 const btnPrimary = 'h-7 max-md:h-9 px-3 rounded-[6px] text-[11px] max-md:text-[12.5px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast,#fff)] disabled:opacity-40 whitespace-nowrap'
-const input = 'h-7 max-md:h-9 px-2 rounded-[6px] border border-[var(--border)] bg-[var(--surface-2)] text-[11px] max-md:text-[12.5px] text-[var(--text)] min-w-0'
+const input = 'h-7 max-md:h-9 px-2 rounded-[6px] border border-[var(--border-control)] bg-[var(--surface-2)] text-[11px] max-md:text-[12.5px] text-[var(--text)] min-w-0'
 const chip = (on: boolean) => `h-6 max-md:h-8 px-2 rounded-full border text-[10.5px] max-md:text-[12px] transition-colors ${on ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]' : 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)]'}`
 const ROW_H = 40
 const HEAD_H = 30

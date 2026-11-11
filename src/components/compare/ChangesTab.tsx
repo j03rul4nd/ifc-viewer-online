@@ -85,7 +85,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
 
   const view3d = (): void => { setHighlight(true); setCursor(-1); setDocked(true) }
   const activeFilters = [category, cls, storey].filter(Boolean).length
-  const selectCls = 'h-10 sm:h-8 px-2 rounded-lg border border-[var(--border)] bg-[rgba(14,14,18,0.98)] text-[12px] sm:text-[11.5px] text-[var(--text-dim)] w-full'
+  const selectCls = 'h-10 sm:h-8 px-2 rounded-lg border border-[var(--border-control)] bg-[rgba(14,14,18,0.98)] text-[12px] sm:text-[11.5px] text-[var(--text-dim)] w-full'
   const exports: Array<[string, () => void]> = [
     [t('export.html'), () => downloadBlob(new Blob([diffToHtml(diff, reportText, ids?.diff, i18n.language)], { type: 'text/html' }), `${fileBase}.html`)],
     [t('export.csv'), () => downloadBlob(new Blob([diffToCsv(diff)], { type: 'text/csv' }), `${fileBase}.csv`)],
@@ -135,7 +135,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
               <button
                 key={label} type="button"
                 onClick={(ev) => { run(); const d = ev.currentTarget.closest('details'); if (d) d.open = false }}
-                className="h-9 px-2.5 text-left rounded-md text-[12px] text-[var(--text-dim)] hover:bg-white/10 hover:text-[var(--text)]"
+                className="h-9 px-2.5 text-left rounded-md text-[12px] text-[var(--text-dim)] hover:bg-[var(--bg-hover)] hover:text-[var(--text)]"
               >
                 {label}
               </button>
