@@ -868,6 +868,19 @@ export function trackServerProcessingInterest(props: { file_size_mb: number }): 
   track('server_processing_interest', props)
 }
 
+/** The server-processing door was shown (exposure; no file name). */
+export function trackServerProcessingOffered(props: { file_size_mb: number }): void {
+  track('server_processing_offered', props)
+}
+
+/**
+ * Fake door: more than one IFC dropped at once, the "Validate folder (Pro)"
+ * button clicked. The feature does not exist; counts only, never file names.
+ */
+export function trackBatchFolderInterest(props: { file_count: number; step: 'clicked' | 'email_left' }): void {
+  track('batch_folder_interest', props)
+}
+
 /** The "what would help you most" form opened. `source` = entry point, never PII. */
 export function trackFeatureRequestOpened(props: { source: string; signed_in: boolean }): void {
   track('feature_request_opened', props)

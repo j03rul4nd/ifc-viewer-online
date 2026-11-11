@@ -4,13 +4,15 @@ import { subscribeEmail } from '../../lib/subscribe'
 import { trackEmailCaptured } from '../../lib/analytics'
 
 /** "Not available yet — tell me when it is" capture behind every fake door. */
-export default function NotifyMeForm({ source, label, compact = false, text }: {
+export default function NotifyMeForm({ source, label, compact = false, text, onDone }: {
   /** Subscriber source tag, e.g. `pricing:pro` — lets us segment the list later. */
   source: string
   label: string
   compact?: boolean
   /** Translated strings; the team-only pricing preview keeps the English defaults. */
   text?: { submit: string; thanks: string; error: string }
+  /** Called once the email is stored. */
+  onDone?: () => void
 }) {
   const copy = text ?? { submit: 'Notify me', thanks: "Thanks — we'll email you once, when it launches.", error: 'Could not save it. Try again.' }
   const { i18n } = useTranslation()
@@ -26,6 +28,7 @@ export default function NotifyMeForm({ source, label, compact = false, text }: {
     if (r.ok || r.already || (r.disabled && import.meta.env.DEV)) {
       setStatus('done')
       trackEmailCaptured({ source, already_subscribed: !!r.already, locale: i18n.language })
+      onDone?.()
     } else {
       setStatus('error')
     }

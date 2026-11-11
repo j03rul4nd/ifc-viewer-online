@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} IFC-Dateien auf einmal. Soll der ganze Ordner in einem Bericht geprüft werden?",
+    "action": "Ordner prüfen (Pro)",
+    "title": "Einen ganzen Ordner prüfen",
+    "soon": "Demnächst.",
+    "body": "Einen ganzen Ordner mit IFC-Dateien auf einmal zu prüfen, mit einem Bericht, ist noch nicht verfügbar. Ihre Dateien öffnen sich wie gewohnt einzeln.",
+    "notifyLabel": "Hinterlassen Sie Ihre E-Mail, ich melde mich einmal, wenn es fertig ist.",
+    "submit": "Benachrichtigen",
+    "thanks": "Danke. Ich schreibe Ihnen einmal, wenn es fertig ist.",
+    "error": "Konnte nicht gespeichert werden. Bitte erneut versuchen."
+  },
   "title": "Konto",
   "close": "Schließen",
   "signInIntro": "Melden Sie sich an, um den Verlauf Ihrer Zertifikate zu behalten, Regelprofile geräteübergreifend zu synchronisieren und API-Schlüssel zu verwalten. Der kostenlose Validator bleibt kostenlos — zur Nutzung ist kein Konto nötig.",
@@ -145,6 +156,18 @@
       "batch_tools": {
         "title": "Stapelwerkzeuge",
         "hint": "Viele IFC-Dateien auf einmal bearbeiten, umbenennen oder teilen"
+      },
+      "reception_inbox": {
+        "title": "Lieferungen meiner Zulieferer empfangen",
+        "hint": "Ein Eingang, in dem Zulieferer ihr IFC ablegen und es gegen meine Anforderungen geprüft wird"
+      },
+      "managed_requirements": {
+        "title": "Verwaltete Anforderungen für mein Unternehmen",
+        "hint": "Meine IDS, AIA und Mindestnote an einem Ort, mit jeder Anfrage verschickt"
+      },
+      "iso_naming": {
+        "title": "Dateinamen prüfen (ISO 19650)",
+        "hint": "Dateien und Container markieren, die unsere Namenskonvention verletzen"
       },
       "other": {
         "title": "Etwas anderes",

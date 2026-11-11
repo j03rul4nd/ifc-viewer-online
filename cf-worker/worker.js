@@ -986,7 +986,7 @@ const REQUESTS_PER_DAY = 5
 const DEFAULT_CLERK_ISSUER = 'https://clerk.ifcvieweronline.eu'
 // What would help most: the paid features on the roadmap (docs-planning 19/20),
 // in the user's words, plus a free answer. One tap is a complete request.
-const REQUEST_FEATURES = ['big_files', 'versions', 'client_link', 'bcf_team', 'auto_check', 'cloud_drives', 'batch_tools', 'other']
+const REQUEST_FEATURES = ['big_files', 'versions', 'client_link', 'bcf_team', 'auto_check', 'cloud_drives', 'batch_tools', 'reception_inbox', 'managed_requirements', 'iso_naming', 'other']
 const REQUEST_FREQUENCIES = ['daily', 'weekly', 'sometimes']
 // Behaviour, not stated price: how they cope today and who holds the budget.
 const REQUEST_TODAY = ['nothing', 'manual', 'paid_tool', 'free_tool']

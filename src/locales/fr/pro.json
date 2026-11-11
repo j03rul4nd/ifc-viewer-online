@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} fichiers IFC d'un coup. Besoin de vérifier tout le dossier en un seul rapport ?",
+    "action": "Valider le dossier (Pro)",
+    "title": "Valider un dossier entier",
+    "soon": "Bientôt disponible.",
+    "body": "Vérifier tout un dossier d'IFC en une fois, avec un seul rapport, n'est pas encore disponible. Vos fichiers s'ouvrent un par un comme d'habitude.",
+    "notifyLabel": "Laissez votre e-mail, je vous préviens une fois, quand ce sera prêt.",
+    "submit": "Me prévenir",
+    "thanks": "Merci. Je vous écrirai une fois, quand ce sera prêt.",
+    "error": "Enregistrement impossible. Réessayez."
+  },
   "title": "Compte",
   "close": "Fermer",
   "signInIntro": "Connectez-vous pour conserver l'historique de vos certificats, synchroniser vos profils de règles entre appareils et gérer vos clés API. Le validateur gratuit reste gratuit — aucun compte n'est requis pour l'utiliser.",
@@ -145,6 +156,18 @@
       "batch_tools": {
         "title": "Outils par lot",
         "hint": "Modifier, renommer ou découper de nombreux IFC d’un coup"
+      },
+      "reception_inbox": {
+        "title": "Recevoir les livrables de mes fournisseurs",
+        "hint": "Une boîte où les fournisseurs déposent leur IFC, vérifié selon mes exigences"
+      },
+      "managed_requirements": {
+        "title": "Exigences gérées pour mon entreprise",
+        "hint": "Mes IDS, EIR et note minimale au même endroit, envoyés avec chaque demande"
+      },
+      "iso_naming": {
+        "title": "Vérifier les noms de fichiers (ISO 19650)",
+        "hint": "Signaler les fichiers et conteneurs qui ne suivent pas notre convention de nommage"
       },
       "other": {
         "title": "Autre chose",
