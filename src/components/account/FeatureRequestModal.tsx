@@ -107,7 +107,7 @@ function Check({ checked, onChange, children }: { checked: boolean; onChange: (v
 }
 
 const inputCls =
-  'w-full rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[13px] leading-relaxed text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
+  'w-full rounded-[8px] border border-[var(--border-control)] bg-[var(--surface-2)] px-3 py-2 text-[13px] leading-relaxed text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
 
 const STATUS_TONE: Record<string, string> = {
   new: 'var(--text-faint)', reviewing: 'var(--text-dim)', planned: 'var(--accent-2)',

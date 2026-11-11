@@ -253,7 +253,7 @@ export function Dialog({ title, onClose, children, footer, size = 'md', dismissa
 
 // ── Forms and settings ────────────────────────────────────────────────────────
 
-export const inputClass = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-[13px] text-[var(--text)] focus:outline focus:outline-2 focus:outline-[var(--accent)]'
+export const inputClass = 'w-full h-[38px] sm:h-[34px] rounded-[8px] border border-[var(--border-control)] bg-[var(--surface-2)] px-2.5 text-[13px] text-[var(--text)] focus:outline focus:outline-2 focus:outline-[var(--accent)]'
 
 export function Field({ label, hint, children, className = '' }: { label: string; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (

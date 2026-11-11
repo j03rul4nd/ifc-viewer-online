@@ -11,7 +11,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 export const MARGIN = 'px-4'
 // 16 px on touch: iOS zooms the page into any smaller field.
 export const inputCls =
-  'w-full min-w-0 h-8 max-md:h-11 px-2.5 rounded-[8px] text-[12.5px] max-md:text-[16px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
+  'w-full min-w-0 h-8 max-md:h-11 px-2.5 rounded-[8px] text-[12.5px] max-md:text-[16px] bg-[var(--surface-2)] border border-[var(--border-control)] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]'
 
 export function Field({ label, hint, className = '', children }: { label: string; hint?: string; className?: string; children: React.ReactNode }) {
   return (

@@ -90,7 +90,7 @@ function NumberInput({ value, onCommit, label, suffix }: { value: number | null;
   )
 }
 
-const selectCls = 'bg-[var(--surface)] border border-[var(--border)] rounded-[5px] px-1 py-0.5 text-[11px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
+const selectCls = 'bg-[var(--surface)] border border-[var(--border-control)] rounded-[5px] px-1 py-0.5 text-[11px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
 
 export function MeasureRules({ item, settings: s, onAnnotate }: { item: MeasureItem; settings: MeasureSettings; onAnnotate(patch: Patch): void }) {
   const { t } = useTranslation('measurement')

@@ -1,4 +1,4 @@
-// ─── Cover Studio UI primitives ────────────────────────────────────────────────
+﻿// â”€â”€â”€ Cover Studio UI primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // The handful of controls every panel uses, styled once with the app's tokens.
 
 import type { ReactNode } from 'react'
@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 export const cls = {
   section: 'text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-dim)] mb-2',
   sub: 'text-[11px] text-[var(--text-dim)] mb-1',
-  input: 'w-full h-[30px] px-2 rounded-[6px] bg-[var(--surface-2)] border border-[var(--border)] text-[12.5px] text-[var(--text)] outline-none focus:border-[var(--accent)]',
+  input: 'w-full h-[30px] px-2 rounded-[6px] bg-[var(--surface-2)] border border-[var(--border-control)] text-[12.5px] text-[var(--text)] outline-none focus:border-[var(--accent)]',
   btn: 'inline-flex items-center justify-center gap-1.5 h-[32px] px-3 rounded-[7px] text-[12.5px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:cursor-not-allowed',
   btnSm: 'inline-flex items-center justify-center gap-1 h-[26px] px-2 rounded-[6px] text-[11.5px] font-medium border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:cursor-not-allowed',
   primary: 'inline-flex items-center justify-center gap-1.5 h-[32px] px-3 rounded-[7px] text-[12.5px] font-semibold bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed',
