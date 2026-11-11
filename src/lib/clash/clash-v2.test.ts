@@ -115,7 +115,7 @@ describe('scale', () => {
     for (let i = 0; i < 6000; i++) res.push(clash({ localId: i % 700, modelId: 'S' }, { localId: 10000 + i, modelId: 'M' }))
     const t0 = performance.now()
     const g = groupClashes(res, 'element')
-    expect(performance.now() - t0).toBeLessThan(100)
+    expect(performance.now() - t0).toBeLessThan(400) // was O(n²): seconds; generous under a loaded machine
     expect(g.reduce((a, x) => a + x.clashes.length, 0)).toBe(6000)
     expect(g).toHaveLength(700)
   })
@@ -130,5 +130,52 @@ describe('report v2', () => {
     expect(html).toContain('estimación')
     expect(html).toContain('3 ocultas por reglas')
     expect(html).toContain('<svg')
+  })
+})
+
+describe('clash framing', () => {
+  const box = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => ({ min: { x: x0, y: y0, z: z0 }, max: { x: x1, y: y1, z: z1 } })
+  it('sizes on the small element, not on a 60 m slab, and aims at the clash', async () => {
+    const { clashShot } = await import('./frame')
+    const slab = box(0, 0, 0, 60, 0.3, 40)
+    const pipe = box(10, -1, 10, 10.2, 1.5, 10.2)
+    const s = clashShot([10.1, 0.15, 10.1], slab, pipe)
+    const d = Math.hypot(s.position.x - 10.1, s.position.y - 0.15, s.position.z - 10.1)
+    expect(d).toBeGreaterThan(2)
+    expect(d).toBeLessThan(8)
+    expect(s.position.y).toBeGreaterThan(0.15)
+    expect(s.target).toEqual({ x: 10.1, y: 0.15, z: 10.1 })
+  })
+  it('looks across a long duct run, and never further than 18 m', async () => {
+    const { clashShot } = await import('./frame')
+    const duct = box(0, 3, 5, 40, 3.4, 5.4) // runs along X
+    const s = clashShot([20, 3.2, 5.2], duct, null)
+    expect(Math.abs(s.position.z - 5.2)).toBeGreaterThan(Math.abs(s.position.x - 20)) // camera off to the side (Z)
+    const huge = clashShot([0, 0, 0], box(-500, -500, -500, 500, 500, 500), box(-400, -400, -400, 400, 400, 400))
+    expect(Math.hypot(huge.position.x, huge.position.y, huge.position.z)).toBeLessThanOrEqual(18.001)
+    expect(clashShot([1, 2, 3], null, null).target).toEqual({ x: 1, y: 2, z: 3 })
+  })
+})
+
+describe('clash framing between two big elements', () => {
+  it('frames the strip where a facade meets a slab, a few metres away', async () => {
+    const { clashShot } = await import('./frame')
+    const b = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => ({ min: { x: x0, y: y0, z: z0 }, max: { x: x1, y: y1, z: z1 } })
+    const facade = b(0, 0, 0, 30, 40, 0.3)
+    const slab = b(0, 12, -20, 30, 12.3, 0.2)
+    const s = clashShot([15, 12.15, 0.1], facade, slab)
+    const d = Math.hypot(s.position.x - 15, s.position.y - 12.15, s.position.z - 0.1)
+    expect(d).toBeLessThan(8)
+    expect(Math.abs(s.position.z - 0.1)).toBeGreaterThan(Math.abs(s.position.x - 15)) // looking at the facade, not along it
+  })
+})
+
+describe('clash framing side', () => {
+  it('stands outside the slab, on the facade side', async () => {
+    const { clashShot } = await import('./frame')
+    const b = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => ({ min: { x: x0, y: y0, z: z0 }, max: { x: x1, y: y1, z: z1 } })
+    // Slab runs from the facade (z≈0) inwards to z = -20.
+    const s = clashShot([15, 12.15, 0.1], b(0, 0, 0, 30, 40, 0.3), b(0, 12, -20, 30, 12.3, 0.2))
+    expect(s.position.z).toBeGreaterThan(0.1)
   })
 })

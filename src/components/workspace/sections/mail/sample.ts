@@ -2,6 +2,8 @@
 // One contractor with two departments writing to the clients of two projects.
 // Sample only: addresses use example.com and nothing is sent anywhere.
 
+import type { TrendPoint } from '../../../../lib/clash/trend'
+import { clashRuns, ruleSummary, type Segment, type ThreadPost } from './v2'
 import type { Automation, Brand, Contact, Department, Outgoing, ProjectSnapshot, Reply, Template } from './model'
 
 export const BRAND: Brand = { company: 'Constructora Levante', color: '#2f6f62', initials: 'CL', address: 'Av. del Puerto 12, 46021 València' }
@@ -10,6 +12,11 @@ export const DEPARTMENTS: Department[] = [
   { id: 'obras', name: 'Site works', senderName: 'Obras · Constructora Levante', from: 'obras@levante.example.com', replyTo: 'obras@levante.example.com', signature: 'Marta Ferrer — Project manager, Constructora Levante' },
   { id: 'bim', name: 'BIM office', senderName: 'Oficina BIM · Constructora Levante', from: 'bim@levante.example.com', replyTo: 'bim@levante.example.com', signature: 'Pau Soler — BIM coordinator, Constructora Levante' },
 ]
+
+/** Weekly clash runs of the coordinated MDT model, as lib/clash/trend stores them. */
+export const CLASH_TREND: TrendPoint[] = [
+  ['2026-10-16', 61, 8], ['2026-10-23', 52, 19], ['2026-10-30', 44, 31], ['2026-11-06', 39, 38], ['2026-11-13', 27, 50],
+].map(([at, open, resolved]) => ({ at: `${at}T08:00:00Z`, files: ['MDT-RIB-ZZ-M3-A-0007.ifc', 'MDT-TUR-ZZ-M3-M-0012.ifc'], open: open as number, new: 2, resolved: resolved as number, approved: 4, suppressed: 6 }))
 
 export const PROJECTS: ProjectSnapshot[] = [
   {
@@ -27,6 +34,7 @@ export const PROJECTS: ProjectSnapshot[] = [
       { name: 'Handover to client', date: '2027-05-28', done: false },
     ],
     viewerUrl: 'https://ifcvieweronline.eu/p/mdt-demo', captureAlt: 'Level 2, east wing', certificate: { id: 'CERT-MDT-0042', score: 82, date: '2026-11-09' },
+    clashes: clashRuns(CLASH_TREND), rules: ruleSummary('S4', 3), phase: 'construction', portalUrl: 'https://ifcvieweronline.eu/c/mdt-demo',
   },
   {
     id: 'HSP', name: 'Health centre Benimaclet', client: 'Ajuntament (sample)', health: [70, 71, 69, 68, 72, 73, 73, 74],
@@ -49,8 +57,8 @@ export const TEMPLATES: Template[] = [
   { id: 't-weekly', name: 'Weekly progress', departmentId: 'obras', subject: '{project}: this week on site', blocks: [
     { id: 'w1', kind: 'heading', text: 'Hello {client}, here is this week' },
     { id: 'w2', kind: 'text', text: 'A short summary of how {project} moved this week, straight from the coordinated model.' },
-    { id: 'w3', kind: 'health' }, { id: 'w4', kind: 'milestones' }, { id: 'w5', kind: 'issues' }, { id: 'w6', kind: 'capture' },
-    { id: 'w7', kind: 'button', text: 'See the project' },
+    { id: 'w2b', kind: 'summary' }, { id: 'w3', kind: 'health' }, { id: 'w4', kind: 'milestones' }, { id: 'w5', kind: 'issues' }, { id: 'w5b', kind: 'clashes' }, { id: 'w5c', kind: 'rules' }, { id: 'w6', kind: 'capture' },
+    { id: 'w7', kind: 'button', text: 'See the project' }, { id: 'w8', kind: 'portal' },
   ] },
   { id: 't-delivery', name: 'Delivery accepted', departmentId: 'bim', subject: '{project}: new model accepted', blocks: [
     { id: 'd1', kind: 'heading', text: 'A new model passed our checks' },
@@ -88,3 +96,17 @@ export const CLICKS: { messageId: string }[] = [
 ]
 
 export const SENT_THIS_MONTH = 186
+
+export const SEGMENTS: Segment[] = [
+  { id: 's-dev', name: 'Developer team', companies: ['Promociones Marina'] },
+  { id: 's-inv', name: 'Investors', roles: ['Investor'] },
+  { id: 's-tech', name: 'Technical contacts', roles: ['Technical architect', 'Municipal architect', 'Project monitor'] },
+]
+
+/** Clicks per subject variant of the last weekly report (per variant, never per person). */
+export const AB_RESULT = { subjectA: '{project}: this week on site', subjectB: '{project}: 12 clashes fixed, façade on track', A: { sent: 24, clicks: 5 }, B: { sent: 23, clicks: 11 } }
+
+export const ANSWERS: (ThreadPost & { replyId: string })[] = [
+  { id: 'a1', replyId: 'r1', at: '2026-11-07T16:20:00Z', author: 'Marta Ferrer', fromClient: false, text: 'The samples arrive on Tuesday; we will send you photos and the updated model.' },
+  { id: 'a2', replyId: 'r1', at: '2026-11-07T17:05:00Z', author: 'Lucía Navarro', fromClient: true, text: 'Perfect, thank you.' },
+]
