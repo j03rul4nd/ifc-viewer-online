@@ -17,6 +17,22 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://www.ifcvieweronline.eu/" />
     <script>
+      // Theme before first paint (mirrors src/theme/themeCore.ts). Default dark.
+      (function () {
+        var t = 'dark'
+        try {
+          var m = localStorage.getItem('ifc-theme')
+          if (m === 'light' || m === 'dark') t = m
+          else if (m === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        } catch (e) {}
+        try {
+          var q = new URLSearchParams(location.search).get('theme')
+          if (q === 'light' || q === 'dark') t = q
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t)
+      })()
+    </script>
+    <script>
       // Soft-404 guard. vercel.json rewrites every unknown path to this shell,
       // so a mistyped or broken link answers 200 with the home page and Google
       // files it as a duplicate of "/". Paths the SPA does not own get
