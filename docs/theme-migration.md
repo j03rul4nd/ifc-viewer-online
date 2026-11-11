@@ -45,20 +45,20 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 | 5 | arranque | `WelcomeView.tsx`, `UploadOverlay.tsx`, `components/loading/*`, `KeyboardHelpModal.tsx` | mergeada | [#528](https://github.com/j03rul4nd/ifc-viewer-online/pull/528) | |
 | 6 | árbol-info | `ModelTree.tsx`, `ModelInfoPanel.tsx`, `ScenePanel.tsx`, `SceneContextMenu.tsx` | mergeada | [#529](https://github.com/j03rul4nd/ifc-viewer-online/pull/529) | |
 | 7 | validación | `ValidationPanel.tsx`, `ValidationCoverageSummary.tsx`, `ValidationExportModal.tsx`, `components/ids/score.ts` | mergeada | [#530](https://github.com/j03rul4nd/ifc-viewer-online/pull/530) | ⚠ colores de nota y score con significado |
-| 8 | validación-móvil-bcf | `mobile/ValidationPanelMobile.tsx`, `mobile/IdsPanelMobile.tsx`, `mobile/IdsFailurePager.tsx`, `BcfPanel.tsx`, `eir/EirProfileEditor.tsx` | pendiente | | Depende de 3 y 7 |
+| 8 | validación-móvil-bcf | `mobile/ValidationPanelMobile.tsx`, `mobile/IdsPanelMobile.tsx`, `mobile/IdsFailurePager.tsx`, `BcfPanel.tsx`, `eir/EirProfileEditor.tsx` | mergeada | [#548](https://github.com/j03rul4nd/ifc-viewer-online/pull/548) | Asa de la hoja móvil invisible en claro (pendiente) |
 | 9 | medir-sección UI | `MeasurementPanel.tsx`, `SectionPanel.tsx`, `measure/MeasureHud.tsx`, `lib/measure/measure.css` | mergeada | [#531](https://github.com/j03rul4nd/ifc-viewer-online/pull/531) | Incluye la pista de MeasureHud |
 | 10 | paneles-escena | `PointCloudPanel.tsx`, `SolarPanel.tsx`, `VideoPanel.tsx`, `MeshPanel.tsx`, `ViewportPanel.tsx` | mergeada | [#525](https://github.com/j03rul4nd/ifc-viewer-online/pull/525) | MeshPanel sin revisar (feature off) |
 | 11 | datos-capas | `DataLegend.tsx`, `LayerStyleEditor.tsx`, `geo/ui.tsx`, `geo/chrome.tsx`, `GeoPanel.tsx` | mergeada | [#527](https://github.com/j03rul4nd/ifc-viewer-online/pull/527) | DataLegend/LayerStyleEditor sin revisar a ojo |
-| 12 | captura-tour | `CaptureToolbar.tsx`, `CapturePreviewModal.tsx`, `capture/EditorTimeline.tsx`, `TourRecorder.tsx`, `SceneBackgroundMenu.tsx` | pendiente | | |
-| 13 | huds-tiempo | `WalkHud.tsx`, `TimeBar.tsx`, `PlacementMiniMap.tsx`, `DemoGallery.tsx` | pendiente | | |
-| 14 | cuenta | `account/AccountModal.tsx`, `account/authAppearance.ts`, `CustomProfileModal.tsx`, `pro/SavedRulesetPicker.tsx` | pendiente | | Clerk necesita una variante clara |
+| 12 | captura-tour | `CaptureToolbar.tsx`, `CapturePreviewModal.tsx`, `capture/EditorTimeline.tsx`, `TourRecorder.tsx`, `SceneBackgroundMenu.tsx` | mergeada | [#554](https://github.com/j03rul4nd/ifc-viewer-online/pull/554) | Verde de clips #2E9E7A se mantiene |
+| 13 | huds-tiempo | `WalkHud.tsx`, `TimeBar.tsx`, `PlacementMiniMap.tsx`, `DemoGallery.tsx` | mergeada | [#547](https://github.com/j03rul4nd/ifc-viewer-online/pull/547) | WalkHud y minimapa sin cambios (sobre contenido) |
+| 14 | cuenta | `account/AccountModal.tsx`, `account/authAppearance.ts`, `CustomProfileModal.tsx`, `pro/SavedRulesetPicker.tsx` | mergeada | [#549](https://github.com/j03rul4nd/ifc-viewer-online/pull/549) | Clerk sigue el tema; sin revisar a ojo (requiere sesión) |
 | 15 | dashboard-admin | `dashboard/AdminView.tsx`, `dashboard/DashboardView.tsx` | pendiente | | /admin interno, prioridad baja |
-| 16 | gemelo | `components/twin/*` (por trocear al llegar) | pendiente | | ⚠ comprobar los colores de estado de sensores |
+| 16 | gemelo | `components/twin/*` (por trocear al llegar) | mergeada | [#555](https://github.com/j03rul4nd/ifc-viewer-online/pull/555), [#546](https://github.com/j03rul4nd/ifc-viewer-online/pull/546) | Colores guardados en reglas (#e0523f, #7b8494, #cccccc) se mantienen; sin revisar a ojo |
 | 17 | tailwind-alfa | Los ~65 usos de `bg-white/NN` y `border-white/NN` restantes | pendiente | | Al final, por grep |
 | 3a | 3D fondo+grid+ejes | `lib/viewer.ts` (~1130–1206), `lib/scene/background.ts` | mergeada | [#518](https://github.com/j03rul4nd/ifc-viewer-online/pull/518) | Preset `studio` = fondo del tema |
-| 3b | 3D selección/hover | `lib/viewer.ts` (~781–837, ~1817) | pendiente | | En serie con 3a (mismo fichero) |
+| 3b | 3D selección/hover | `lib/viewer.ts` (~781–837, ~1817) | mergeada | [#550](https://github.com/j03rul4nd/ifc-viewer-online/pull/550) | Selección en claro teal; oscuro sin tinte como antes |
 | 3c | 3D gizmos/overlays/etiquetas | `lib/measure/section-system.ts`, `lib/measure/overlay.ts` | mergeada | [#519](https://github.com/j03rul4nd/ifc-viewer-online/pull/519) | Resaltado claro #0077a8 pendiente de validar |
-| 3d | 3D luces/tone mapping | `lib/viewer.ts` (luces) | pendiente | | En serie después de 3b |
+| 3d | 3D luces/tone mapping | `lib/viewer.ts` (luces) | mergeada | [#550](https://github.com/j03rul4nd/ifc-viewer-online/pull/550) | Luz en claro 1.15/1.2 |
 | G1 | glass (index.css) | `.glass`, `.glass-md`, `.glass-xl`, `.mobile-pill-glass`, `.mobile-sheet-glass` | mergeada | [#520](https://github.com/j03rul4nd/ifc-viewer-online/pull/520) | Añadido tras QA |
 | G2 | app-chips + tool grid | `App.tsx` (chips Inicio y caché), `mobile/ToolGrid.tsx` | mergeada | [#521](https://github.com/j03rul4nd/ifc-viewer-online/pull/521) | |
 | G3 | hud-pills | `ModelInfoPanel.tsx`, `WalkHud.tsx`, `ClientHealthBadge.tsx`, `ClientPresentationLayout.tsx` | mergeada | [#522](https://github.com/j03rul4nd/ifc-viewer-online/pull/522) | WalkHud y modo cliente sin revisar a ojo |
