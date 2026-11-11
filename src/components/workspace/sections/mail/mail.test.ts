@@ -11,17 +11,19 @@ import { AUTOMATIONS, BRAND, CONTACTS, DEPARTMENTS, OUTGOING, PROJECTS, REPLIES,
 import { MX_LOCALES, mxFor } from './strings'
 import ClientMail, { BLOCK_LABELS, CONSENT_LABELS, KIND_LABELS, SAMPLE_KEYS, SOURCE_LABELS, STATUS_LABELS, TAB_LABELS, TRIGGER_LABELS, WEEKDAYS } from './ClientMail'
 import type { SectionProps } from '../../registry'
+import { GATE_TEXTS, HINT_LABELS, PHASE_LABELS, PHASE_STATE_LABELS, PLAN_LABELS } from './ClientMailV2'
 
 const DIR = __dirname
 const params = (s: string) => [...s.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort().join()
 
 function englishKeys(): string[] {
   const keys = new Set<string>()
-  for (const f of readdirSync(DIR).filter((f) => /\.tsx?$/.test(f) && !f.includes('.test.'))) {
+  for (const f of readdirSync(DIR).filter((f) => /\.tsx?$/.test(f) && !f.includes('.test.') && !f.startsWith('dump'))) {
     for (const m of readFileSync(resolve(DIR, f), 'utf8').matchAll(/\bmx\(\s*'([^']*)'/g)) keys.add(m[1])
   }
   for (const k of [...TAB_LABELS, ...Object.values(BLOCK_LABELS), ...Object.values(CONSENT_LABELS), ...Object.values(SOURCE_LABELS), ...Object.values(STATUS_LABELS),
-    ...WEEKDAYS, ...Object.values(TRIGGER_LABELS), ...Object.values(KIND_LABELS), ...SAMPLE_KEYS]) keys.add(k)
+    ...WEEKDAYS, ...Object.values(TRIGGER_LABELS), ...Object.values(KIND_LABELS), ...SAMPLE_KEYS,
+    ...Object.values(GATE_TEXTS), ...Object.values(HINT_LABELS), ...Object.values(PHASE_LABELS), ...Object.values(PHASE_STATE_LABELS), ...Object.values(PLAN_LABELS)]) keys.add(k)
   return [...keys].sort()
 }
 
@@ -136,7 +138,12 @@ describe('metrics, replies, history', () => {
   it('history per client, newest first', () => {
     expect(historyOf(CONTACTS[0], OUTGOING, REPLIES, (m) => m.id).map((x) => x.kind)).toEqual(['reply', 'sent', 'sent', 'consent'])
   })
-  it('quota', () => expect(quotaUse(1200, 'team')).toMatchObject({ left: 0, over: true }))
+  it('quota by plan, warning at 80 %, overage per started 1,000', () => {
+    expect(quotaUse(186, 'pro')).toMatchObject({ limit: 200, level: 'warn', left: 14 })
+    expect(quotaUse(500, 'team').level).toBe('ok')
+    expect(quotaUse(1200, 'team')).toMatchObject({ left: 0, over: true, level: 'over', extra: 200, overageEur: 1 })
+    expect(quotaUse(4500, 'reception').overageEur).toBe(2)
+  })
 })
 
 describe('screen', () => {
