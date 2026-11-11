@@ -26,6 +26,7 @@ import { isCloudEnabled } from '../../lib/cloud/api-client'
 import { trackCheckoutStarted } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
 import { authAppearance } from './authAppearance'
+import { useTheme } from '../../theme'
 import { SheetGrip } from '../mobile/SheetGrip'
 
 interface AccountModalProps {
@@ -52,6 +53,8 @@ const LOGO_MIME = /^image\/(png|jpeg|webp)$/
 
 export default function AccountModal({ onClose }: AccountModalProps) {
   const { t } = useTranslation('pro')
+  // Clerk widgets need concrete colours: follow the resolved theme.
+  const light = useTheme().resolvedTheme === 'light'
   const status = useCloudAccountStore((s) => s.status)
   const email = useCloudAccountStore((s) => s.email)
   const getToken = useCloudAccountStore((s) => s.getToken)
@@ -231,16 +234,16 @@ export default function AccountModal({ onClose }: AccountModalProps) {
 
   return createPortal(
     <div className="m-sheet-host fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-[var(--overlay)] [[data-theme=dark]_&]:backdrop-blur-sm" onClick={onClose} />
       <div
         role="dialog" aria-modal="true" aria-label={t('title')}
-        className="m-sheet relative z-[81] w-[460px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,15,20,0.92)] backdrop-blur-[24px] border border-[var(--border-strong)] shadow-[0_30px_80px_-24px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
+        className="m-sheet relative z-[81] w-[460px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] [[data-theme=dark]_&]:border-[var(--border-strong)] [[data-theme=dark]_&]:shadow-[var(--shadow)] overflow-hidden flex flex-col"
       >
         {/* Decorative accent glow (Apple-style soft light behind the header) */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-40"
           aria-hidden
-          style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(10,132,129,0.18), transparent 72%)' }}
+          style={{ background: 'radial-gradient(90% 100% at 50% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 72%)' }}
         />
 
         <SheetGrip onClose={onClose} />
@@ -268,7 +271,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 withSignUp
                 oauthFlow="redirect"
                 fallbackRedirectUrl={returnUrl}
-                appearance={authAppearance(false)}
+                appearance={authAppearance(light)}
               />
             </div>
           ) : (
@@ -302,7 +305,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
               </section>
 
               {/* ── Request a feature ────────────────────────────────────────── */}
-              <section className="rounded-xl border border-[rgba(10,132,129,0.4)] bg-[rgba(10,132,129,0.08)] p-3 flex items-center justify-between gap-3">
+              <section className="rounded-xl border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[12px] font-medium text-[var(--text)]">{t('requests.entryTitle')}</p>
                   <p className="text-[11px] leading-snug text-[var(--text-faint)]">{t('requests.entryHint')}</p>
@@ -320,14 +323,14 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                     className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
                     style={entitlement.plan === 'free'
                       ? { background: 'var(--surface-2)', color: 'var(--text-muted)' }
-                      : { background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }}
+                      : { background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}
                   >
                     {entitlement.plan}
                   </span>
                 </div>
 
                 {entitlement.status === 'past_due' && (
-                  <p className="text-[11px] leading-snug rounded-lg px-2 py-1.5" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>
+                  <p className="text-[11px] leading-snug rounded-lg px-2 py-1.5" style={{ background: 'color-mix(in srgb, var(--warning) 10%, transparent)', color: 'var(--warning)' }}>
                     ! {t('plan.pastDue')}
                   </p>
                 )}
@@ -343,7 +346,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                       onClick={() => void handleCheckout()}
                       disabled={busy === 'checkout'}
                       className="self-start h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
-                      style={{ background: 'var(--accent)', color: 'white' }}
+                      style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
                     >
                       {busy === 'checkout' ? t('plan.redirecting') : t('plan.upgrade')}
                     </button>
@@ -366,8 +369,8 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 <p className="text-[10px] text-[var(--text-muted)] leading-snug">{t('keys.hint')}</p>
 
                 {newKey && (
-                  <div className="rounded-lg border p-2 flex flex-col gap-1.5" style={{ borderColor: 'rgba(76,175,130,0.4)', background: 'rgba(76,175,130,0.06)' }}>
-                    <p className="text-[10px] font-medium" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('keys.createdOnce')}</p>
+                  <div className="rounded-lg border p-2 flex flex-col gap-1.5" style={{ borderColor: 'color-mix(in srgb, var(--success) 40%, transparent)', background: 'color-mix(in srgb, var(--success) 6%, transparent)' }}>
+                    <p className="text-[10px] font-medium" style={{ color: 'var(--success)' }}>✓ {t('keys.createdOnce')}</p>
                     <div className="flex items-center gap-1.5">
                       <code className="flex-1 truncate font-mono text-[10px] text-[var(--text)] px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">
                         {newKey.key}
@@ -396,7 +399,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                       {k.last_used_at ? ` · ${t('keys.lastUsed')} ${new Date(k.last_used_at).toLocaleDateString()}` : ''}
                     </span>
                     <button onClick={() => void handleRevoke(k.id)} disabled={busy === k.id}
-                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger)] hover:border-[var(--danger)] transition-colors disabled:opacity-40">
                       {t('keys.revoke')}
                     </button>
                   </div>
@@ -429,7 +432,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   <div className="flex items-center gap-3">
                     <img src={branding.logo} alt="" className="max-h-10 max-w-[160px] object-contain rounded bg-white p-1" />
                     <button onClick={() => void handleRemoveLogo()} disabled={busy === 'logo'}
-                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger)] hover:border-[var(--danger)] transition-colors disabled:opacity-40">
                       {t('branding.remove')}
                     </button>
                   </div>
@@ -450,7 +453,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 )}
                 {history.phase === 'ready' && history.items.map((c) => (
                   <div key={c.cert_hash} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border)]">
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#E9A23B' }}>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--success)' : 'var(--warning)' }}>
                       {c.payload.health_score}
                     </span>
                     <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">
