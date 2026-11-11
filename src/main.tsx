@@ -2,6 +2,7 @@ import './i18n/config'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { ThemeProvider } from './theme'
 import { MotionConfig } from 'framer-motion'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { initAnalytics } from './lib/analytics'
@@ -101,7 +102,9 @@ const LazyClerkProvider = clerkPubKey
 const app = (
   <MotionConfig reducedMotion="user">
     <ErrorBoundary>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </ErrorBoundary>
   </MotionConfig>
 )
