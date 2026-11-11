@@ -13,6 +13,9 @@ import { writeIds } from '../../lib/ids/ids-writer'
 import { buildRequirementsUrl, REQUIREMENTS_LINK_VERSION, type RequirementsPayload } from '../../lib/requirements/requirements-link'
 import { trackRequirementsLinkCreated } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
+import type { NamingRule } from '../../lib/requirements/iso-naming'
+import NamingRuleEditor, { useIsoPreset } from './NamingRuleEditor'
+import ManagedRequirementsPanel from './ManagedRequirementsPanel'
 
 const BUILTIN_IDS = new Set(VALIDATION_PROFILES.map((p) => p.id))
 
@@ -27,39 +30,57 @@ export default function RequirementsLinkCreator() {
   const [useScore, setUseScore] = useState(true)
   const [minScore, setMinScore] = useState(80)
   const [useIds, setUseIds] = useState(true)
+  const [useNaming, setUseNaming] = useState(false)
+  const preset = useIsoPreset()
+  const [naming, setNaming] = useState<NamingRule | null>(null)
   const [busy, setBusy] = useState(false)
 
   const builtinProfile = profileId && BUILTIN_IDS.has(profileId) ? profileId : undefined
   const withIds = useIds && !!doc
-  const canCreate = title.trim() !== '' && (useScore || withIds) && !busy
+  const withNaming = useNaming && !!naming
+  const canCreate = title.trim() !== '' && (useScore || withIds || withNaming) && !busy
 
-  const create = async (): Promise<void> => {
-    if (!canCreate) return
+  const buildPayload = (): RequirementsPayload | null => {
+    if (title.trim() === '' || !(useScore || withIds || withNaming)) return null
+    const payload: RequirementsPayload = { v: REQUIREMENTS_LINK_VERSION, t: title.trim() }
+    if (issuer.trim()) payload.i = issuer.trim()
+    if (useScore) {
+      payload.s = minScore
+      if (builtinProfile) payload.p = builtinProfile
+    }
+    if (withIds && doc) {
+      payload.x = writeIds(doc)
+      if (idsName) payload.xn = idsName
+    }
+    if (withNaming && naming) payload.n = naming
+    return payload
+  }
+
+  const copyLink = async (payload: RequirementsPayload): Promise<void> => {
     setBusy(true)
     try {
-      const payload: RequirementsPayload = { v: REQUIREMENTS_LINK_VERSION, t: title.trim() }
-      if (issuer.trim()) payload.i = issuer.trim()
-      if (useScore) {
-        payload.s = minScore
-        if (builtinProfile) payload.p = builtinProfile
-      }
-      if (withIds && doc) {
-        payload.x = writeIds(doc)
-        if (idsName) payload.xn = idsName
-      }
       const r = await buildRequirementsUrl(`${window.location.origin}${window.location.pathname}`, payload)
       if (!r.ok) {
         toast(t(r.reason === 'too-long' ? 'requirements.create.tooLong' : 'requirements.create.empty'), 'error', { duration: 8000 })
         return
       }
       await navigator.clipboard.writeText(r.url)
-      trackRequirementsLinkCreated({ has_score: useScore, has_ids: withIds, has_profile: !!payload.p })
+      trackRequirementsLinkCreated({
+        has_score: typeof payload.s === 'number', has_ids: typeof payload.x === 'string', has_profile: !!payload.p,
+        has_naming: !!payload.n, managed: !!payload.pr,
+      })
       toast(t('requirements.create.copied'), 'success')
     } catch {
       toast(t('requirements.create.failed'), 'error')
     } finally {
       setBusy(false)
     }
+  }
+
+  const create = async (): Promise<void> => {
+    if (!canCreate) return
+    const payload = buildPayload()
+    if (payload) await copyLink(payload)
   }
 
   if (!open) {
@@ -107,6 +128,11 @@ export default function RequirementsLinkCreator() {
         <input type="checkbox" checked={withIds} disabled={!doc} onChange={(e) => setUseIds(e.target.checked)} />
         {doc ? t('requirements.create.includeIds', { name: idsName ?? 'IDS' }) : t('requirements.create.noIds')}
       </label>
+      <label className="flex items-center gap-2 text-[12px] text-[var(--text-dim)]">
+        <input type="checkbox" checked={useNaming} onChange={(e) => { setUseNaming(e.target.checked); if (e.target.checked && !naming) setNaming(preset()) }} />
+        {t('requirements.naming.include')}
+      </label>
+      {useNaming && naming && <NamingRuleEditor rule={naming} onChange={setNaming} />}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -118,6 +144,7 @@ export default function RequirementsLinkCreator() {
         </button>
         <span className="text-[11px] text-[var(--text-faint)]">{t('requirements.create.private')}</span>
       </div>
+      <ManagedRequirementsPanel current={buildPayload} copyLink={copyLink} />
     </section>
   )
 }

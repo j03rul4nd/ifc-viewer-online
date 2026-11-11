@@ -212,6 +212,76 @@
       "empty": "Añade al menos una nota mínima o un IDS",
       "tooLong": "Este IDS es demasiado grande para un enlace. Envía el archivo .ids.",
       "failed": "No se pudo crear el enlace"
+    },
+    "naming": {
+      "include": "Comprobar nombres de archivo (ISO 19650)",
+      "pending": "Nombre de archivo: esperando el modelo",
+      "pass": "El nombre de archivo cumple la regla",
+      "fail": "El nombre de archivo no cumple la regla ({{count}})",
+      "more": "+{{count}} más",
+      "separator": "Separador",
+      "reset": "Volver a ISO 19650",
+      "fieldName": "Nombre del campo",
+      "values": "Valores permitidos (separados por comas)",
+      "anyValue": "Cualquier valor",
+      "digits": "Dígitos",
+      "removeField": "Quitar campo",
+      "newField": "Campo",
+      "addField": "+ Añadir campo",
+      "status": "Códigos de estado",
+      "revision": "Revisión (P01, C01)",
+      "project": "Mismo estado y revisión en IfcProject",
+      "try": "Prueba un nombre de archivo",
+      "tryOk": "Este nombre cumple",
+      "fields": {
+        "project": "Proyecto",
+        "originator": "Autor",
+        "volume": "Volumen",
+        "level": "Nivel",
+        "type": "Tipo",
+        "role": "Disciplina",
+        "number": "Número"
+      },
+      "issue": {
+        "fieldCount": "{{got}} campos en lugar de {{expected}}",
+        "empty": "{{field}} está vacío",
+        "chars": "{{field}} «{{value}}»: solo letras y dígitos",
+        "value": "{{field}} «{{value}}» no está permitido ({{allowed}})",
+        "case": "{{field}} «{{value}}» debería ser «{{expected}}»",
+        "length": "{{field}} «{{value}}» debe tener {{min}}–{{max}} caracteres",
+        "digits": "{{field}} «{{value}}» debe ser numérico",
+        "statusMissing": "Falta el código de estado (S0–S4) en el nombre",
+        "status": "El estado {{value}} no está permitido ({{allowed}})",
+        "revisionMissing": "Falta la revisión (P01, C01) en el nombre",
+        "revisionStatus": "El estado {{status}} va con una revisión P, no {{revision}}",
+        "projectMissing": "El modelo no tiene IfcProject",
+        "projectStatus": "Estado en IfcProject {{project}}, en el nombre {{file}}",
+        "projectRevision": "Revisión en IfcProject {{project}}, en el nombre {{file}}"
+      }
+    },
+    "version": {
+      "checked": "Comprobado con «{{name}}» v{{version}}",
+      "moved": "Comprobado con «{{name}}» v{{version}} (enlace creado en la v{{linked}})"
+    },
+    "managed": {
+      "title": "Requisitos en tu cuenta",
+      "plan": "Recepción",
+      "upsell": "Guardar requisitos con versiones e historial es parte del plan Recepción. Los enlaces siguen gratis para los proveedores.",
+      "seePlans": "Ver planes",
+      "profile": "Perfil",
+      "newProfile": "Perfil nuevo…",
+      "name": "Nombre del perfil",
+      "namePlaceholder": "EIR Hospital",
+      "note": "Qué cambia en esta versión",
+      "notePlaceholder": "Qué cambia (obligatorio)",
+      "publishFirst": "Guardar como v1",
+      "publishNext": "Publicar v{{version}}",
+      "copyCurrent": "Copiar enlace (vigente: v{{version}})",
+      "history": "Historial",
+      "noVersions": "Aún no hay versiones",
+      "published": "Versión {{version}} publicada. Los enlaces anteriores siguen funcionando.",
+      "noteRequired": "Escribe qué cambia en esta versión",
+      "failed": "No se pudo guardar. Inténtalo de nuevo."
     }
   }
 }

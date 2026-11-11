@@ -76,6 +76,7 @@ export interface ApiAuditEvent { type: string; actor_id: string | null; from: st
 export interface ApiDelivery { id: string; file_name: string; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
 export interface ApiSupplier { id: string; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
 export interface ApiCredits { plan: string; balances: { cloud: number; ai: number; api: number }; monthly: { cloud: number; ai: number; api: number } }
+export interface ApiRequirementVersion { version: number; note: string; created_by: string; created_at: string }
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
@@ -131,6 +132,12 @@ export const paidApi = {
   mwTicket: (b: { subject: string; message: string; accept_overage?: boolean }) => send<unknown>('POST', '/middleware/support', b),
   mwPack: () => send<unknown>('POST', '/middleware/packs'),
   mwRequest: (b: { company: string; use_case: string; needs_twin: boolean; accepts_annual: boolean; budget_band: string; sources: number }) => send<{ fit: 'meeting' | 'not_fit' }>('POST', '/middleware/request', b),
+
+  // B2 — managed requirements (Reception): saved profiles with numbered versions.
+  requirementProfiles: () => get<{ rulesets: Array<{ id: string; name: string; kind: string; updated_at: string }> }>('/rulesets?kind=requirements'),
+  createRequirementProfile: (name: string, content: string) => send<{ id: string; name: string }>('POST', '/rulesets', { name, kind: 'requirements', content }),
+  requirementVersions: (id: string) => get<{ versions: ApiRequirementVersion[] }>(`/rulesets/${encodeURIComponent(id)}/versions`),
+  publishRequirementVersion: (id: string, content: string, note: string) => send<{ version: number; created_at: string }>('POST', `/rulesets/${encodeURIComponent(id)}/versions`, { content, note }),
 
   credits: () => get<ApiCredits>('/credits'),
   endpoints: () => get<{ endpoints: ApiEndpoint[] }>('/webhooks/endpoints'),

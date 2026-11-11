@@ -11,6 +11,7 @@
 // CompressionStream.
 
 import { VALIDATION_PROFILES } from '../../types'
+import { sanitizeNamingRule, type NamingResult, type NamingRule } from './iso-naming'
 
 export const REQUIREMENTS_LINK_VERSION = 1
 
@@ -36,13 +37,43 @@ export interface RequirementsPayload {
   x?: string
   /** File name of that IDS, for display. */
   xn?: string
+  /** ISO 19650 naming rule the file name (and IfcProject) must follow (N1). */
+  n?: NamingRule
+  /**
+   * Managed profile this link was made from (B2): id and the version that was
+   * current when the link was created. The rest of the payload is a snapshot of
+   * that version, so the link works on its own; when the account service is on,
+   * the opener fetches the version that is current now.
+   */
+  pr?: ManagedRef
+}
+
+export interface ManagedRef {
+  /** Profile id (uuid). */
+  id: string
+  /** Version number, ≥ 1. */
+  v: number
+  /** Profile name, for display. */
+  nm?: string
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+export function sanitizeManagedRef(raw: unknown): ManagedRef | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  if (typeof r.id !== 'string' || !UUID_RE.test(r.id)) return null
+  if (typeof r.v !== 'number' || !Number.isInteger(r.v) || r.v < 1 || r.v > 100_000) return null
+  const out: ManagedRef = { id: r.id, v: r.v }
+  if (typeof r.nm === 'string' && r.nm.trim()) out.nm = r.nm.trim().slice(0, MAX_REQ_TITLE)
+  return out
 }
 
 const BUILTIN_PROFILE_IDS = new Set(VALIDATION_PROFILES.map((p) => p.id))
 
 /** At least one requirement; title always present. */
-export function hasRequirement(p: Pick<RequirementsPayload, 's' | 'x'>): boolean {
-  return typeof p.s === 'number' || typeof p.x === 'string'
+export function hasRequirement(p: Pick<RequirementsPayload, 's' | 'x' | 'n'>): boolean {
+  return typeof p.s === 'number' || typeof p.x === 'string' || !!p.n
 }
 
 // ── base64url ─────────────────────────────────────────────────────────────────
@@ -134,6 +165,10 @@ export function sanitizeRequirements(raw: unknown): RequirementsPayload | null {
     out.x = r.x
     if (typeof r.xn === 'string' && r.xn.trim()) out.xn = r.xn.trim().slice(0, MAX_REQ_TITLE)
   }
+  const naming = sanitizeNamingRule(r.n)
+  if (naming) out.n = naming
+  const ref = sanitizeManagedRef(r.pr)
+  if (ref) out.pr = ref
   return hasRequirement(out) ? out : null
 }
 
@@ -169,6 +204,7 @@ export interface RequirementsVerdict {
   state: CheckState
   score?: { state: CheckState; value: number | null; min: number }
   ids?: { state: CheckState; passed: number; total: number }
+  naming?: { state: CheckState; result: NamingResult | null }
 }
 
 /**
@@ -176,8 +212,13 @@ export interface RequirementsVerdict {
  * result is still missing; fail as soon as one known result fails.
  */
 export function evaluateRequirements(
-  req: Pick<RequirementsPayload, 's' | 'x'>,
-  results: { score: number | null; ids: { passedSpecs: number; failedSpecs: number; totalSpecs: number } | null },
+  req: Pick<RequirementsPayload, 's' | 'x' | 'n'>,
+  results: {
+    score: number | null
+    ids: { passedSpecs: number; failedSpecs: number; totalSpecs: number } | null
+    /** Naming check of the open file (null while no model is open). */
+    naming?: NamingResult | null
+  },
 ): RequirementsVerdict {
   const verdict: RequirementsVerdict = { state: 'pending' }
   const states: CheckState[] = []
@@ -191,6 +232,12 @@ export function evaluateRequirements(
     // Specs that apply to nothing in the model ("not applicable") do not fail it.
     const state: CheckState = r === null ? 'pending' : r.failedSpecs === 0 ? 'pass' : 'fail'
     verdict.ids = { state, passed: r?.passedSpecs ?? 0, total: r?.totalSpecs ?? 0 }
+    states.push(state)
+  }
+  if (req.n) {
+    const r = results.naming ?? null
+    const state: CheckState = r === null ? 'pending' : r.ok ? 'pass' : 'fail'
+    verdict.naming = { state, result: r }
     states.push(state)
   }
   verdict.state = states.includes('fail') ? 'fail' : states.includes('pending') ? 'pending' : 'pass'

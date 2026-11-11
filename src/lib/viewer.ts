@@ -780,6 +780,8 @@ export interface ViewerAPI {
   setTwinPaint(plan: { paint: Map<string, Map<number, string>>; hidden: Map<string, Set<number>> } | null): Promise<void>
   /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
   getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
+  /** IfcProject's text attributes (naming check, N1); null when the model has no IfcProject. */
+  getProjectTexts(modelId?: string): Promise<{ name: string | null; longName: string | null; description: string | null; phase: string | null } | null>
   /**
    * Swap the scene backdrop (solid colour or vertical gradient) and the derived
    * fog / grid colours. Purely visual: no geometry, camera or material state is
@@ -4544,6 +4546,24 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         return await model.getLocalIdsByGuids(guids)
       } catch {
         return guids.map(() => null)
+      }
+    },
+
+    async getProjectTexts(modelId?: string) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model) return null
+      try {
+        const ids = Object.values(await model.getItemsOfCategories([/^IFCPROJECT$/])).flat()
+        if (ids.length === 0) return null
+        const [d] = await model.getItemsData([ids[0]], { attributesDefault: false, attributes: ['Name', 'LongName', 'Description', 'Phase'] })
+        const r = d as Record<string, { value?: unknown } | undefined> | undefined
+        const pick = (k: string): string | null => {
+          const v = r?.[k]?.value
+          return typeof v === 'string' || typeof v === 'number' ? String(v).trim() || null : null
+        }
+        return { name: pick('Name'), longName: pick('LongName'), description: pick('Description'), phase: pick('Phase') }
+      } catch {
+        return null
       }
     },
 
