@@ -159,7 +159,7 @@ function EntityRow({ entity, detail, active, onClick }: {
     <li>
       <button type="button" onClick={onClick}
         className={`w-full text-left px-2 py-1.5 max-md:py-2.5 flex items-start gap-1.5 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--surface-2)] ${active ? 'bg-[var(--surface-2)]' : ''}`}>
-        <span className="shrink-0 mt-px px-1 rounded text-[8px] font-mono font-semibold bg-white/[0.06] text-[var(--text-dim)]">
+        <span className="shrink-0 mt-px px-1 rounded text-[8px] font-mono font-semibold bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] text-[var(--text-dim)]">
           {SOURCE_BADGE[entity.ref.source]}
         </span>
         <span className="flex-1 min-w-0">

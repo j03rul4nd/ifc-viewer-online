@@ -45,7 +45,7 @@ export function TwinLiveSection({ globalId: given, modelId, expressId }: {
   return (
     <div className="border-b border-[var(--border)] px-3 py-2 flex flex-col gap-2" data-testid="twin-live-section">
       <div className="flex items-center gap-1.5 text-[11px] max-md:text-[13px] font-medium">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#3fa866] animate-pulse" aria-hidden />
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" aria-hidden />
         {t('inspectorTitle')}
         {timeAt !== null && <span className="text-[10px] font-normal text-[var(--text-dim)]">· {new Date(timeAt).toLocaleString()}</span>}
       </div>
@@ -172,5 +172,5 @@ function Sparkline({ points, label }: { points: SeriesPoint[]; label: string }) 
 /** A camera snapshot (http(s) or data:image URL). Anything else is not shown. */
 function TwinMedia({ value }: { value: unknown }) {
   if (typeof value !== 'string' || !/^(https?:\/\/|data:image\/)/i.test(value)) return null
-  return <img src={value} alt="" className="w-full rounded-[6px] border border-[var(--border)] bg-black" data-testid="twin-media" />
+  return <img src={value} alt="" className="w-full rounded-[6px] border border-[var(--border)] bg-[var(--bg-surface-raised)]" data-testid="twin-media" />
 }
