@@ -11,6 +11,8 @@ import {
   buildEmbedUrl,
   buildIframeSnippet,
   isLoadableUrl,
+  EMBED_START_LINKS,
+  type EmbedStart,
   type EmbedUiPreset,
 } from '../lib/url-params'
 
@@ -23,6 +25,7 @@ interface EmbedModalProps {
 }
 
 const PRESETS: EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client', 'article', 'embed']
+const STARTS = Object.keys(EMBED_START_LINKS) as EmbedStart[]
 
 export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: EmbedModalProps) {
   const { t } = useTranslation('toolbar')
@@ -34,6 +37,7 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
   const [forceLang, setForceLang]       = useState(false)
   const [accent, setAccent]             = useState('#0A8481')
   const [height, setHeight]             = useState(600)
+  const [start, setStart]               = useState<EmbedStart | ''>('')
   const [tab, setTab]                   = useState<'iframe' | 'url'>('iframe')
   const [copied, setCopied]             = useState<'iframe' | 'url' | null>(null)
 
@@ -56,8 +60,9 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
       openPanel,
       lang: forceLang ? defaultLang : undefined,
       accent: accent.toLowerCase() !== '#0a8481' ? accent : undefined,
+      start: start || undefined,
     })
-  }, [validUrl, baseUrl, trimmedUrl, preset, autoValidate, openPanel, forceLang, defaultLang, accent])
+  }, [validUrl, baseUrl, trimmedUrl, preset, autoValidate, openPanel, forceLang, defaultLang, accent, start])
 
   const snippet = useMemo(
     () => (embedUrl ? buildIframeSnippet(embedUrl, { height }) : ''),
@@ -144,6 +149,17 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
                 label={t('embedModal.forceLang', { lang: defaultLang.toUpperCase() })}
               />
             )}
+            <label className="flex items-center justify-between gap-3 mt-0.5">
+              <span className="text-[12px] text-[var(--text-dim)]">{t('embedModal.startLabel')}</span>
+              <select
+                value={start}
+                onChange={(e) => setStart(e.target.value as EmbedStart | '')}
+                className="max-w-[60%] px-2 h-8 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">{t('embedModal.start.none')}</option>
+                {STARTS.map((s) => <option key={s} value={s}>{t(`embedModal.start.${s}`)}</option>)}
+              </select>
+            </label>
             <label className="flex items-center justify-between gap-3 mt-0.5">
               <span className="text-[12px] text-[var(--text-dim)]">{t('embedModal.heightLabel')}</span>
               <input

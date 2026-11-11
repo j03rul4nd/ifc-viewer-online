@@ -94,6 +94,8 @@
     "forceLang": "Forcer la langue ({{lang}})",
     "heightLabel": "Hauteur (px)",
     "accentLabel": "Couleur d'accent",
+    "startLabel": "Ouvrir avec",
+    "start": { "none": "Rien de plus", "drawings": "Plan d’étage à côté du modèle", "map": "Sur la carte", "underground": "Vue souterraine (rayons X)", "solar": "Analyse solaire (année)", "flood": "Inondation pluviale (orage)" },
     "iframeTab": "iframe",
     "urlTab": "Lien",
     "copy": "Copier dans le presse-papiers",

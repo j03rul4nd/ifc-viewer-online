@@ -119,9 +119,10 @@ export interface IfcViewerOptions {
      * Put the model on the map once it loads, from its own georeference. `true`
      * for the map alone, or the layers to add. Map tiles and OpenStreetMap come
      * from third parties — see {@link IfcViewer.setSiteContext} on consent.
-     * Since v1.11.0.
+     * Since v1.11.0. `'xray'` / `'cut'` open the underground view (tunnels,
+     * metro stations) since v1.19.0.
      */
-    map?: boolean | Array<'terrain' | 'buildings' | 'showcase'>;
+    map?: boolean | Array<'terrain' | 'buildings' | 'showcase' | 'xray' | 'cut'>;
     /**
      * Open the sun study at this SITE-LOCAL time once the model loads:
      * `'06-21T18:00'` (every year) or `'2026-12-21T09:30'`. Only honoured when
@@ -159,6 +160,36 @@ export interface IfcViewerOptions {
      * `ui: 'article'` implies it. Since v1.14.0.
      */
     wheel?: 'always' | 'ctrl';
+    /**
+     * Once the model is validated, open this rule's group and show its elements
+     * in 3D — `'RULE_MISSING_TYPE'`. Mirrors `?rule=`.
+     */
+    rule?: string;
+    /**
+     * Run a rain-flood once the models are in: a storm (`'shower'`, `'storm'`,
+     * `'intense'`, `'extreme'`), optionally with a cell size, edges and soil —
+     * `'storm,1m,closed,loam'`. Mirrors `?flood=`.
+     */
+    flood?: string;
+    /**
+     * Run the solar analysis once every model is in — `'year:passive'`,
+     * `'hot:base21'`, `'summer:sun:fine'`. The climate is never fetched without
+     * a click unless it is cached. Mirrors `?analysis=`.
+     */
+    analysis?: string;
+    /** Study the sun and climate at this place instead of the model's own: `{ lat, lon }`. Mirrors `?site=`. */
+    site?: {
+        lat: number;
+        lon: number;
+    };
+    /** Show (`true`) or hide (`false`) the scene explorer over the canvas. Omit for the preset's default. Mirrors `?explore=`. */
+    explore?: boolean;
+    /**
+     * Open the technical-drawings pane beside the model. `'plan'` also cuts the
+     * first floor plan. Nothing is read from or saved to the reader's own
+     * sheets. Mirrors `?drawings=`.
+     */
+    drawings?: boolean | 'plan';
     /**
      * Load nothing until it is wanted. `true`: a poster with a play button —
      * the viewer boots on click. `'visible'`: it boots on its own when the
@@ -1371,7 +1402,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.18.0";
+    readonly version = "1.19.0";
     readonly iframe: HTMLIFrameElement;
     /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
     readonly box: HTMLDivElement | null;

@@ -4,7 +4,7 @@
 // The same built file is served at two paths (scripts/sdk/version-sdk.mjs):
 //
 //   <app>/sdk/ifc-viewer.es.js          — the latest, which moves with releases
-//   <app>/sdk/1.18.0/ifc-viewer.es.js   — pinned, never changes once published
+//   <app>/sdk/1.19.0/ifc-viewer.es.js   — pinned, never changes once published
 //
 // Both must open the same app in their iframe: `../` from the pinned path is
 // <app>/sdk/, which would serve the SDK docs page inside the viewer frame.

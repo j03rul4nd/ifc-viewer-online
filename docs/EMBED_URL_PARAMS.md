@@ -61,6 +61,21 @@ URL, or a `#scene=` link from *Share → Digital-twin scene*). This doc is the r
 | `turntable` | `1` or degrees/second          | off       | A slow idle orbit once the model is in, stopped for good by the visitor's first touch; never under `prefers-reduced-motion`. *(1.15)* |
 | `wheel`    | `always` · `ctrl`                | `always` (`ctrl` with `ui=article`) | `ctrl`: the wheel scrolls the host page and zooms only with Ctrl/⌘ held (a trackpad pinch sends Ctrl), with a short hint over the canvas — like an embedded map. *(1.14)* Once the reader clicks or drags inside the view, the wheel zooms without Ctrl until the pointer leaves it: scrolling past the figure still scrolls the page, exploring inside it no longer needs a held key. |
 | `explore`  | `1` · `0`                        | on with `ui=article`/`kiosk` when a scene is open | The scene explorer over the canvas. A card shows what a click picked: an IFC element (live twin values, key data, quantities, every property set, the asset-management one first), a data-layer feature (its attributes, *Follow* for live points) or a map building. An **Explore** list holds the twin's live points with their values, plus the scene's models; one click goes there and opens the card. Buttons on the left handle overview, zoom, turning, view from above and a help note. Moves keep context: going to a 30 cm dock post shows its station and street, not the post alone. `explore=1` turns it on for any embed, `explore=0` turns it off. |
+| `drawings` | `1` · `plan`                     | —         | Open the technical-drawings pane beside the model (DXF/PDF sheets, plan cuts, dimensions). `plan` also cuts the first floor plan once the model is in. A link never reads or overwrites the reader's own saved sheets. Works in any embed preset except `client`. |
+
+### From the SDK (v1.19)
+
+Every deep link above has an `IfcViewer` option of the same name since SDK
+1.19.0 — `rule`, `flood`, `analysis`, `site` (`{ lat, lon }`), `explore`,
+`drawings` (`true` or `'plan'`) and `map: ['xray' | 'cut']` — and an
+`<ifc-viewer>` attribute. The [Embed builder](/embed/) and the in-app *Embed*
+dialog offer the common ones under **Open with**.
+
+Not reachable from an embed, on purpose: `/sketch`, `/twin-builder` and
+`/tracking-globe` are pages of their own (the globe has its own embed, see
+its page); measure pro tools, federation controls and FIWARE sources are
+in-app UI with no link of their own, so an embed gets them only through
+`ui=full`.
 
 ### Rain flood (`flood`)
 
