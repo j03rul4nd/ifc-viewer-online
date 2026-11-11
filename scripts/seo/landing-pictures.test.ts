@@ -192,3 +192,15 @@ describe('pictures of the generated landings', () => {
     }
   })
 })
+
+describe('picture delivery', () => {
+  it('pictures under /images/ are cached by the browser instead of revalidated on every view', () => {
+    const vercel = JSON.parse(readFileSync(path.join(process.cwd(), 'vercel.json'), 'utf8')) as {
+      headers: { source: string; headers: { key: string; value: string }[] }[]
+    }
+    const rule = vercel.headers.find((h) => h.source === '/images/(.*)')
+    const cache = rule?.headers.find((h) => h.key === 'Cache-Control')?.value ?? ''
+    expect(cache).toMatch(/max-age=[1-9]\d{4,}/)
+    expect(cache).toContain('stale-while-revalidate')
+  })
+})
