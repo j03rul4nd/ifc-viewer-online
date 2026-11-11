@@ -23,8 +23,8 @@ export const TWIN_BUILDER_SEO = {
     'Build your own digital twin in the browser: an AGV warehouse from your layout and products, or an import tracker from your orders spreadsheet. Free, no install.',
   keywords:
     'digital twin builder, build a digital twin, digital twin online free, AGV simulation, warehouse simulator online, AMR fleet simulation, warehouse digital twin software, import tracker, shipment tracking spreadsheet, purchase order tracking map, landed cost calculator, supply chain digital twin',
-  image: '/demos/agv-warehouse-digital-twin.jpg',
-  imageAlt: 'A warehouse digital twin built in the browser: AGVs, racks and docks from the user’s own layout',
+  image: '/images/landings/digital-twin-builder-agv-warehouse.jpg',
+  imageAlt: 'Digital twin builder: warehouse form with aisles, bays, pallet levels and carts beside the live 3D preview of the AGV warehouse',
 }
 
 const STEPS: { kind: string; name: string; steps: [string, string][] }[] = [
