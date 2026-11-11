@@ -2,14 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 import { PAGES, IMAGES, LANGS, PAGE_PATHS } from './build-demo-landings'
+import { SHARED, filesOf, jpgPath } from './landing-pictures.mjs'
 
 const pub = (p: string) => path.resolve(__dirname, '../../public', p.replace(/^\//, ''))
 
 describe('demo landings', () => {
-  it('every image exists at both sizes', () => {
+  it('every picture has a size and exists as .jpg and .webp', () => {
     for (const s of Object.keys(IMAGES)) {
-      expect(existsSync(pub(`demos/${s}.jpg`)), s).toBe(true)
-      expect(existsSync(pub(`demos/${s}-800.jpg`)), s).toBe(true)
+      const size = (SHARED as Record<string, { width: number }>)[s]
+      expect(size, s).toBeTruthy()
+      for (const rel of filesOf(s, size.width)) expect(existsSync(pub(rel)), rel).toBe(true)
     }
   })
 
@@ -29,7 +31,7 @@ describe('demo landings', () => {
     for (const { path: p, page, base } of PAGE_PATHS) {
       const html = readFileSync(pub(`${p}index.html`), 'utf-8')
       expect(html).toContain(`<link rel="canonical" href="https://www.ifcvieweronline.eu${p}" />`)
-      for (const s of page.images) expect(html).toContain(`/demos/${s}.jpg`)
+      for (const s of page.images) expect(html).toContain(`src="${jpgPath(s)}"`)
       expect(html.match(/<link rel="alternate" hreflang=/g)).toHaveLength(11)
       // Reciprocal: every sibling points back at this page.
       for (const other of PAGE_PATHS.filter((o) => o.base === base)) expect(html).toContain(`href="https://www.ifcvieweronline.eu${other.path}"`)

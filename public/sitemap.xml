@@ -1374,21 +1374,11 @@
     <lastmod>2026-11-01</lastmod>
     <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://www.ifcvieweronline.eu/twin-builder/</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-  </url>
 
   <!-- demo-landings:start (scripts/seo/build-demo-landings.ts) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/agv-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1402,12 +1392,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/china-import-tracker/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1421,14 +1411,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/office-it-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1442,12 +1432,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1461,16 +1451,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/digital-twin-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1484,17 +1474,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/gemelo-digital-agv/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1508,12 +1498,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/seguimiento-importaciones-china/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1527,14 +1517,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/gemelo-digital-it-oficina/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1548,12 +1538,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/ejemplos-visor-ifc/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1567,16 +1557,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/ejemplos-gemelo-digital/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1590,17 +1580,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/agv-digitaler-zwilling/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1614,12 +1604,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/china-import-tracking/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1633,14 +1623,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/it-digitaler-zwilling-buero/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1654,12 +1644,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/ifc-viewer-beispiele/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1673,16 +1663,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/digitaler-zwilling-beispiele/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1696,17 +1686,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/jumeau-numerique-agv/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1720,12 +1710,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/suivi-importations-chine/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1739,14 +1729,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/jumeau-numerique-it-bureau/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1760,12 +1750,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/exemples-visionneuse-ifc/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1779,16 +1769,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/exemples-jumeau-numerique/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1802,17 +1792,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/gemeo-digital-agv/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1826,12 +1816,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/rastreio-importacoes-china/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1845,14 +1835,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/gemeo-digital-ti-escritorio/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1866,12 +1856,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/exemplos-visualizador-ifc/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1885,16 +1875,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/exemplos-gemeo-digital/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -1908,17 +1898,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/gemello-digitale-agv/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -1932,12 +1922,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/tracciamento-importazioni-cina/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -1951,14 +1941,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/gemello-digitale-it-ufficio/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -1972,12 +1962,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/esempi-visualizzatore-ifc/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -1991,16 +1981,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/esempi-gemello-digitale/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2014,17 +2004,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/besso-digital-agv/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -2038,12 +2028,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/seguiment-importacions-xina/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -2057,14 +2047,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/besso-digital-it-oficina/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2078,12 +2068,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/exemples-visor-ifc/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2097,16 +2087,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/exemples-besso-digital/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2120,17 +2110,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/agv-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -2144,12 +2134,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/china-import-tracker/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -2163,14 +2153,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/office-it-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2184,12 +2174,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2203,16 +2193,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/digital-twin-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2226,17 +2216,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/agv-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -2250,12 +2240,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/china-import-tracker/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -2269,14 +2259,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/office-it-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2290,12 +2280,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2309,16 +2299,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/digital-twin-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2332,17 +2322,17 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/agv-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
@@ -2356,12 +2346,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/agv-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/agv-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/china-import-tracker/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
@@ -2375,14 +2365,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/china-import-tracker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/china-import-tracker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-timeline.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-order-landed-cost.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-timeline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-order-landed-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/office-it-digital-twin/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
@@ -2396,12 +2386,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/office-it-digital-twin/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/office-it-digital-twin/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-phone.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-phone.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/ifc-viewer-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
@@ -2415,16 +2405,16 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-viewer-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-viewer-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-model.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-duplex-house.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-model.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-duplex-house.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-japanese-temple.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/digital-twin-examples/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
@@ -2438,20 +2428,20 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/digital-twin-examples/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/digital-twin-examples/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/office-it-digital-twin-ifc.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-barcelona.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/ifc-solar-facade-analysis.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/agv-warehouse-digital-twin.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/office-it-digital-twin-ifc.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-barcelona.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/city-digital-twin-helsinki-transit.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-viewer-hotel-in-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-solar-facade-analysis.jpg</image:loc></image:image>
   </url>
   <!-- demo-landings:end -->
 
   <!-- tool-landings:start (scripts/seo/generate-tool-landings.mjs) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-editor/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2465,12 +2455,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-edit-element-properties.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-door-attributes.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-edit-element-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-door-attributes.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/editor-ifc-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2484,12 +2474,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-editar-propiedades.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-atributos-puerta.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-online-editar-propiedades.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-online-atributos-puerta.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/ifc-editor-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2503,12 +2493,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-eigenschaften-bearbeiten.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-tuer-attribute.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-eigenschaften-bearbeiten.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-tuer-attribute.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/editeur-ifc-en-ligne/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2522,12 +2512,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editeur-ifc-en-ligne-modifier-proprietes.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editeur-ifc-en-ligne-attributs-porte.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editeur-ifc-en-ligne-modifier-proprietes.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editeur-ifc-en-ligne-attributs-porte.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/editor-ifc-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2541,12 +2531,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-editar-propriedades.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-atributos-porta.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-online-editar-propriedades.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-online-atributos-porta.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/editor-ifc-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2560,12 +2550,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-modificare-proprieta.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-online-attributi-porta.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-online-modificare-proprieta.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-online-attributi-porta.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/editor-ifc-en-linia/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2579,12 +2569,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-en-linia-editar-propietats.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/editor-ifc-en-linia-atributs-porta.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-en-linia-editar-propietats.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/editor-ifc-en-linia-atributs-porta.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/ifc-editor-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2598,12 +2588,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-zh-edit-properties.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-zh-door.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-zh-edit-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-zh-door.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/ifc-editor-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2617,12 +2607,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-ja-edit-properties.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-ja-door.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-ja-edit-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-ja-door.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/ifc-editor-online/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-editor/" />
@@ -2636,12 +2626,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-editor-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-editor/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-th-edit-properties.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-editor-online-th-door.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-th-edit-properties.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-editor-online-th-door.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-classification-checker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2655,12 +2645,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-elements-without-classification.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-missing-psets.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-classification-checker-elements-without-classification.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/bim-property-set-validation-missing-psets.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/comprobar-clasificacion-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2674,12 +2664,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/comprobar-clasificacion-ifc-elementos-sin-clasificar.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validacion-conjuntos-propiedades-bim.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/comprobar-clasificacion-ifc-elementos-sin-clasificar.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/validacion-conjuntos-propiedades-bim.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/ifc-klassifikation-pruefen/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2693,12 +2683,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-klassifikation-pruefen-elemente-ohne-klassifikation.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-eigenschaftssaetze-pruefen.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-klassifikation-pruefen-elemente-ohne-klassifikation.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/bim-eigenschaftssaetze-pruefen.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/verifier-classification-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2712,12 +2702,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verifier-classification-ifc-elements-non-classes.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validation-jeux-de-proprietes-bim.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/verifier-classification-ifc-elements-non-classes.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/validation-jeux-de-proprietes-bim.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/verificar-classificacao-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2731,12 +2721,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verificar-classificacao-ifc-elementos-sem-classificacao.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validacao-conjuntos-propriedades-bim.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/verificar-classificacao-ifc-elementos-sem-classificacao.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/validacao-conjuntos-propriedades-bim.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/verifica-classificazione-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2750,12 +2740,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verifica-classificazione-ifc-elementi-non-classificati.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validazione-set-di-proprieta-bim.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/verifica-classificazione-ifc-elementi-non-classificati.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/validazione-set-di-proprieta-bim.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/comprovar-classificacio-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2769,12 +2759,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/comprovar-classificacio-ifc-elements-sense-classificar.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/validacio-conjunts-propietats-bim.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/comprovar-classificacio-ifc-elements-sense-classificar.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/validacio-conjunts-propietats-bim.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/ifc-classification-checker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2788,12 +2778,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-zh-unclassified.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-zh.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-classification-checker-zh-unclassified.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/bim-property-set-validation-zh.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/ifc-classification-checker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2807,12 +2797,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-ja-unclassified.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-ja.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-classification-checker-ja-unclassified.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/bim-property-set-validation-ja.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/ifc-classification-checker/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
@@ -2826,12 +2816,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-classification-checker/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-classification-checker/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-classification-checker-th-unclassified.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/bim-property-set-validation-th.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-classification-checker-th-unclassified.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/bim-property-set-validation-th.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-health-check/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2845,12 +2835,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-model-health-check-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-checking-report-export-formats.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-model-health-check-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-checking-report-export-formats.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/informe-calidad-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2864,12 +2854,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/informe-calidad-ifc-health-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/informe-ifc-exportar-pdf-bcf-cobie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/informe-calidad-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/informe-ifc-exportar-pdf-bcf-cobie.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/ifc-modellpruefung/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2883,12 +2873,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-modellpruefung-health-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-pruefbericht-export-bcf-cobie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-modellpruefung-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-pruefbericht-export-bcf-cobie.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/controle-qualite-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2902,12 +2892,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/controle-qualite-ifc-health-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/rapport-ifc-export-pdf-bcf-cobie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/controle-qualite-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/rapport-ifc-export-pdf-bcf-cobie.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/verificacao-qualidade-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2921,12 +2911,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/verificacao-qualidade-ifc-health-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/relatorio-ifc-exportar-pdf-bcf-cobie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/verificacao-qualidade-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/relatorio-ifc-exportar-pdf-bcf-cobie.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/controllo-qualita-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2940,12 +2930,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/controllo-qualita-ifc-health-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/report-ifc-esporta-pdf-bcf-cobie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/controllo-qualita-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/report-ifc-esporta-pdf-bcf-cobie.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/control-qualitat-ifc/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2959,12 +2949,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/control-qualitat-ifc-health-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/informe-ifc-exportar-pdf-bcf-cobie-ca.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/control-qualitat-ifc-health-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/informe-ifc-exportar-pdf-bcf-cobie-ca.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/ifc-health-check/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2978,12 +2968,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-health-check-zh-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-zh-export.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-health-check-zh-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-check-report-zh-export.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/ifc-health-check/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -2997,12 +2987,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-health-check-ja-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-ja-export.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-health-check-ja-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-check-report-ja-export.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/ifc-health-check/</loc>
-    <lastmod>2026-10-26</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
@@ -3016,14 +3006,14 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/ifc-health-check/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-health-check/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-health-check-th-score.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/img/ifc-check-report-th-export.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-health-check-th-score.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/ifc-check-report-th-export.jpg</image:loc></image:image>
   </url>
   <!-- tool-landings:end -->
   <!-- twin-builder-i18n:start (scripts/seo/build-twin-builder-landings.ts) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/twin-builder/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3037,12 +3027,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/crear-gemelo-digital/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3056,12 +3046,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/digitalen-zwilling-erstellen/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3075,12 +3065,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/creer-jumeau-numerique/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3094,12 +3084,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/criar-gemeo-digital/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3113,12 +3103,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/creare-gemello-digitale/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3132,12 +3122,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/crear-besso-digital/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3151,12 +3141,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/twin-builder/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3170,12 +3160,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/twin-builder/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3189,12 +3179,12 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/twin-builder/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/twin-builder/" />
@@ -3208,8 +3198,8 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/twin-builder/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/twin-builder/" />
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>https://www.ifcvieweronline.eu/demos/china-import-tracker-map.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-agv-warehouse.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/landings/digital-twin-builder-import-tracker.jpg</image:loc></image:image>
   </url>
   <!-- twin-builder-i18n:end -->
 

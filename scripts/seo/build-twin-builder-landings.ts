@@ -7,22 +7,37 @@
 // that explain the same tool in that language and open it: public/<lang>/<slug>/
 // index.html. Together with the English page they form one hreflang cluster,
 // written here and in the sitemap (between twin-builder-i18n markers).
+//
+// The two pictures are captures of the builder itself (the form beside its
+// live preview), shared by every language with the alt text translated:
+// landing-pictures.mjs, scripts/seo/landing-captures/capture.cjs.
+// Run `npm run seo:chrome` afterwards.
 
 import { writeFileSync, mkdirSync, readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { LANGS, STYLE, pathOf, IMAGES } from './build-demo-landings'
+import { LANGS, STYLE, pathOf } from './build-demo-landings'
+import { SHARED, filesOf, imageObject, jpgUrl, pictureHtml, rightsOf, sitemapImage } from './landing-pictures.mjs'
+import { withRights } from './image-metadata'
+import { TWIN_BUILDER_SEO } from './generate-twin-builder-page'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SITE = 'https://www.ifcvieweronline.eu'
 const APP = '/twin-builder/'
 
+/** The builder's two pictures, one per kind of twin. */
+export const BUILDER_PICTURES = { agv: 'digital-twin-builder-agv-warehouse', imports: 'digital-twin-builder-import-tracker' } as const
+const size = (stem: string) => (SHARED as Record<string, { width: number; height: number; map?: boolean }>)[stem]
+/** The column is 900 px wide with 16 px gutters. */
+const SIZES = '(max-width: 900px) 100vw, 868px'
+
 type Pair = [string, string]
 export interface BuilderCopy {
   slug: string; title: string; description: string; keywords: string; badge: string
   h1: Pair; lead: string
-  agv: { name: string; cta: string; steps: Pair[] }
-  imports: { name: string; cta: string; steps: Pair[] }
+  /** `alt` describes the capture of that builder: the form and its live preview. */
+  agv: { alt: string; name: string; cta: string; steps: Pair[] }
+  imports: { alt: string; name: string; cta: string; steps: Pair[] }
   howTitle: string
   faq: Pair[]
 }
@@ -35,14 +50,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'crear gemelo digital, gemelo digital gratis, simulador de almacén, simulación AGV, gemelo digital almacén, seguimiento de importaciones, seguimiento de pedidos de compra, coste de importación, gemelo digital cadena de suministro',
     badge: 'Gratis · En el navegador · Sin instalar',
     h1: ['Crea tu propio', 'gemelo digital'], lead: 'Un almacén con AGV a partir de tu distribución y tus productos, o un mapa de tus importaciones a partir de tus pedidos. Todo funciona en tu navegador: no se sube nada.',
-    agv: { name: 'Almacén con AGV', cta: 'Crear mi almacén', steps: [
+    agv: { alt: 'Constructor de gemelos digitales: formulario del almacén con pasillos, bahías, niveles y carros junto a la vista 3D en vivo del almacén con AGV', name: 'Almacén con AGV', cta: 'Crear mi almacén', steps: [
       ['Dibuja la nave', 'Pasillos, bahías, niveles, muelles de entrada y salida y número de carros.'],
       ['Carga tus productos', 'Pega tus referencias desde Excel o sube un CSV: código, nombre, cajas y kg.'],
       ['Indica a quién sirves', 'Clientes, ciudades, transportistas (uno exprés) y proveedores.'],
       ['Conecta tu ERP', 'Odoo, Salesforce o cualquier webhook recibe cada orden confirmada.'],
       ['Muestra tu flota real', 'Lee las posiciones de tu gestor de flota y sustituye a los carros simulados.'],
     ] },
-    imports: { name: 'Seguimiento de importaciones', cta: 'Crear mi seguimiento', steps: [
+    imports: { alt: 'Constructor de gemelos digitales: formulario del seguimiento de importaciones con empresa, ruta y pedidos junto al mapa en vivo de los envíos desde China', name: 'Seguimiento de importaciones', cta: 'Crear mi seguimiento', steps: [
       ['Di adónde va la mercancía', 'Tu empresa, tu agente, tu almacén y el centro del agente.'],
       ['Elige la ruta', 'Puertos, aeropuertos y terminales de tren entre China y Europa.'],
       ['Carga proveedores y pedidos', 'Desde una hoja de cálculo: pedido, proveedor, unidades, precio, HS, modo y fechas.'],
@@ -64,14 +79,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'digitalen Zwilling erstellen, digitaler Zwilling kostenlos, Lagersimulation online, AGV Simulation, FTS Simulation, digitaler Zwilling Lager, Import Tracking, Bestellverfolgung Karte, Einstandskosten',
     badge: 'Kostenlos · Im Browser · Keine Installation',
     h1: ['Ihren eigenen', 'digitalen Zwilling erstellen'], lead: 'Ein AGV-Lager aus Ihrem Layout und Ihren Artikeln oder eine Karte Ihrer Importe aus Ihren Bestellungen. Alles läuft im Browser: nichts wird hochgeladen.',
-    agv: { name: 'AGV-Lager', cta: 'Mein Lager erstellen', steps: [
+    agv: { alt: 'Digital-Twin-Builder: Lagerformular mit Gassen, Fächern, Ebenen und Fahrzeugen neben der Live-3D-Vorschau des AGV-Lagers', name: 'AGV-Lager', cta: 'Mein Lager erstellen', steps: [
       ['Halle anlegen', 'Gassen, Fächer, Ebenen, Ein- und Ausgangstore und Anzahl der Fahrzeuge.'],
       ['Artikel laden', 'Aus Excel einfügen oder CSV laden: Code, Name, Kartons und kg.'],
       ['Kunden festlegen', 'Kunden, Städte, Spediteure (einer als Express) und Lieferanten.'],
       ['ERP verbinden', 'Odoo, Salesforce oder ein Webhook erhält jeden bestätigten Transportauftrag.'],
       ['Echte Flotte zeigen', 'Positionen aus Ihrem Flottenmanager ersetzen die simulierten Fahrzeuge.'],
     ] },
-    imports: { name: 'Import-Tracker', cta: 'Meinen Tracker erstellen', steps: [
+    imports: { alt: 'Digital-Twin-Builder: Formular des Import-Trackers mit Firma, Route und Bestellungen neben der Live-Karte der Sendungen aus China', name: 'Import-Tracker', cta: 'Meinen Tracker erstellen', steps: [
       ['Ziel festlegen', 'Firma, Einkaufsagent, Lager und Agenten-Hub.'],
       ['Route wählen', 'Häfen, Flughäfen und Bahnterminals zwischen China und Europa.'],
       ['Lieferanten und Bestellungen laden', 'Aus einer Tabelle: Bestellung, Lieferant, Menge, Preis, HS, Transportart, Daten.'],
@@ -93,14 +108,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'créer un jumeau numérique, jumeau numérique gratuit, simulateur d’entrepôt, simulation AGV, jumeau numérique entrepôt, suivi des importations, suivi des commandes, coût de revient import',
     badge: 'Gratuit · Dans le navigateur · Sans installation',
     h1: ['Créez votre propre', 'jumeau numérique'], lead: 'Un entrepôt AGV à partir de votre plan et de vos produits, ou une carte de vos imports à partir de vos commandes. Tout tourne dans votre navigateur : rien n’est envoyé.',
-    agv: { name: 'Entrepôt AGV', cta: 'Créer mon entrepôt', steps: [
+    agv: { alt: 'Créateur de jumeau numérique : formulaire de l’entrepôt avec allées, travées, niveaux et chariots à côté de l’aperçu 3D en direct de l’entrepôt AGV', name: 'Entrepôt AGV', cta: 'Créer mon entrepôt', steps: [
       ['Dessinez le bâtiment', 'Allées, travées, niveaux, quais d’entrée et de sortie, nombre de chariots.'],
       ['Chargez vos produits', 'Collez depuis Excel ou chargez un CSV : code, nom, cartons, kg.'],
       ['Indiquez vos clients', 'Clients, villes, transporteurs (un express) et fournisseurs.'],
       ['Connectez votre ERP', 'Odoo, Salesforce ou un webhook reçoit chaque ordre confirmé.'],
       ['Montrez votre flotte réelle', 'Les positions de votre gestionnaire de flotte remplacent les chariots simulés.'],
     ] },
-    imports: { name: 'Suivi des imports', cta: 'Créer mon suivi', steps: [
+    imports: { alt: 'Créateur de jumeau numérique : formulaire du suivi des imports avec société, route et commandes à côté de la carte en direct des envois depuis la Chine', name: 'Suivi des imports', cta: 'Créer mon suivi', steps: [
       ['Dites où va la marchandise', 'Votre société, votre agent, votre entrepôt et le hub de l’agent.'],
       ['Choisissez la route', 'Ports, aéroports et terminaux ferroviaires entre la Chine et l’Europe.'],
       ['Chargez fournisseurs et commandes', 'Depuis un tableur : commande, fournisseur, unités, prix, SH, mode, dates.'],
@@ -122,14 +137,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'criar gémeo digital, criar gêmeo digital, gémeo digital grátis, simulador de armazém, simulação AGV, rastreio de importações, rastreio de encomendas, custo de importação',
     badge: 'Grátis · No navegador · Sem instalar',
     h1: ['Crie o seu próprio', 'gémeo digital'], lead: 'Um armazém com AGV a partir da sua planta e dos seus produtos, ou um mapa das suas importações a partir das suas encomendas. Tudo corre no navegador: nada é enviado.',
-    agv: { name: 'Armazém com AGV', cta: 'Criar o meu armazém', steps: [
+    agv: { alt: 'Construtor de gémeos digitais: formulário do armazém com corredores, vãos, níveis e veículos ao lado da pré-visualização 3D em direto do armazém com AGV', name: 'Armazém com AGV', cta: 'Criar o meu armazém', steps: [
       ['Desenhe o armazém', 'Corredores, vãos, níveis, cais de entrada e saída e número de veículos.'],
       ['Carregue os produtos', 'Cole do Excel ou carregue um CSV: código, nome, caixas e kg.'],
       ['Diga a quem serve', 'Clientes, cidades, transportadoras (uma expresso) e fornecedores.'],
       ['Ligue o seu ERP', 'Odoo, Salesforce ou um webhook recebe cada ordem confirmada.'],
       ['Mostre a sua frota real', 'As posições do seu gestor de frota substituem os veículos simulados.'],
     ] },
-    imports: { name: 'Rastreio de importações', cta: 'Criar o meu rastreio', steps: [
+    imports: { alt: 'Construtor de gémeos digitais: formulário do rastreio de importações com empresa, rota e encomendas ao lado do mapa em direto dos envios da China', name: 'Rastreio de importações', cta: 'Criar o meu rastreio', steps: [
       ['Diga para onde vai a mercadoria', 'A sua empresa, o seu agente, o seu armazém e o hub do agente.'],
       ['Escolha a rota', 'Portos, aeroportos e terminais ferroviários entre a China e a Europa.'],
       ['Carregue fornecedores e encomendas', 'De uma folha de cálculo: encomenda, fornecedor, unidades, preço, SH, modo e datas.'],
@@ -151,14 +166,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'creare gemello digitale, gemello digitale gratis, simulatore di magazzino, simulazione AGV, gemello digitale magazzino, tracciamento importazioni, tracciamento ordini, costo sbarcato',
     badge: 'Gratis · Nel browser · Niente da installare',
     h1: ['Crea il tuo', 'gemello digitale'], lead: 'Un magazzino con AGV dal tuo layout e dai tuoi prodotti, o una mappa delle tue importazioni dai tuoi ordini. Tutto gira nel browser: non si carica nulla.',
-    agv: { name: 'Magazzino con AGV', cta: 'Crea il mio magazzino', steps: [
+    agv: { alt: 'Costruttore di gemelli digitali: modulo del magazzino con corsie, campate, livelli e veicoli accanto all’anteprima 3D dal vivo del magazzino AGV', name: 'Magazzino con AGV', cta: 'Crea il mio magazzino', steps: [
       ['Disegna il capannone', 'Corsie, campate, livelli, baie di carico e scarico e numero di veicoli.'],
       ['Carica i prodotti', 'Incolla da Excel o carica un CSV: codice, nome, colli e kg.'],
       ['Indica chi servi', 'Clienti, città, vettori (uno espresso) e fornitori.'],
       ['Collega il tuo ERP', 'Odoo, Salesforce o un webhook riceve ogni ordine confermato.'],
       ['Mostra la tua flotta reale', 'Le posizioni del tuo gestore di flotta sostituiscono i veicoli simulati.'],
     ] },
-    imports: { name: 'Tracciamento importazioni', cta: 'Crea il mio tracciamento', steps: [
+    imports: { alt: 'Costruttore di gemelli digitali: modulo del tracciamento importazioni con azienda, rotta e ordini accanto alla mappa dal vivo delle spedizioni dalla Cina', name: 'Tracciamento importazioni', cta: 'Crea il mio tracciamento', steps: [
       ['Di’ dove va la merce', 'La tua azienda, il tuo agente, il tuo magazzino e l’hub dell’agente.'],
       ['Scegli la rotta', 'Porti, aeroporti e terminal ferroviari tra Cina ed Europa.'],
       ['Carica fornitori e ordini', 'Da un foglio: ordine, fornitore, unità, prezzo, HS, modalità e date.'],
@@ -180,14 +195,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'crear bessó digital, bessó digital gratis, simulador de magatzem, simulació AGV, bessó digital magatzem, seguiment d’importacions, seguiment de comandes, cost d’importació',
     badge: 'Gratis · Al navegador · Sense instal·lar',
     h1: ['Crea el teu propi', 'bessó digital'], lead: 'Un magatzem amb AGV a partir de la teva distribució i els teus productes, o un mapa de les teves importacions a partir de les teves comandes. Tot funciona al navegador: no es puja res.',
-    agv: { name: 'Magatzem amb AGV', cta: 'Crear el meu magatzem', steps: [
+    agv: { alt: 'Constructor de bessons digitals: formulari del magatzem amb passadissos, badies, nivells i vehicles al costat de la vista 3D en viu del magatzem amb AGV', name: 'Magatzem amb AGV', cta: 'Crear el meu magatzem', steps: [
       ['Dibuixa la nau', 'Passadissos, badies, nivells, molls d’entrada i sortida i nombre de vehicles.'],
       ['Carrega els productes', 'Enganxa des d’Excel o puja un CSV: codi, nom, caixes i kg.'],
       ['Indica a qui serveixes', 'Clients, ciutats, transportistes (un exprés) i proveïdors.'],
       ['Connecta el teu ERP', 'Odoo, Salesforce o un webhook rep cada ordre confirmada.'],
       ['Mostra la teva flota real', 'Les posicions del teu gestor de flota substitueixen els vehicles simulats.'],
     ] },
-    imports: { name: 'Seguiment d’importacions', cta: 'Crear el meu seguiment', steps: [
+    imports: { alt: 'Constructor de bessons digitals: formulari del seguiment d’importacions amb empresa, ruta i comandes al costat del mapa en viu dels enviaments des de la Xina', name: 'Seguiment d’importacions', cta: 'Crear el meu seguiment', steps: [
       ['Digues on va la mercaderia', 'La teva empresa, el teu agent, el teu magatzem i el centre de l’agent.'],
       ['Tria la ruta', 'Ports, aeroports i terminals de tren entre la Xina i Europa.'],
       ['Carrega proveïdors i comandes', 'Des d’un full: comanda, proveïdor, unitats, preu, HS, mode i dates.'],
@@ -209,14 +224,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: '创建数字孪生, 数字孪生构建器, 免费数字孪生, 仓库仿真, AGV 仿真, 仓库数字孪生, 进口追踪, 采购订单追踪, 到岸成本',
     badge: '免费 · 浏览器内运行 · 无需安装',
     h1: ['创建你自己的', '数字孪生'], lead: '根据你的布局和产品生成 AGV 仓库，或根据你的订单生成进口地图。全部在浏览器中运行，不上传任何内容。',
-    agv: { name: 'AGV 仓库', cta: '创建我的仓库', steps: [
+    agv: { alt: '数字孪生构建器：左侧是设置巷道、货位、层数和车辆的仓库表单，右侧是 AGV 仓库的实时 3D 预览', name: 'AGV 仓库', cta: '创建我的仓库', steps: [
       ['设置厂房', '巷道、货位、层数、出入库月台和车辆数量。'],
       ['导入产品', '从 Excel 粘贴或上传 CSV：编码、名称、箱数和重量。'],
       ['填写客户', '客户、城市、承运商（可设一家加急）和供应商。'],
       ['连接 ERP', 'Odoo、Salesforce 或任意 webhook 接收每条已确认的任务。'],
       ['显示真实车队', '车队管理系统的位置会替换模拟车辆。'],
     ] },
-    imports: { name: '进口追踪', cta: '创建我的追踪', steps: [
+    imports: { alt: '数字孪生构建器：左侧是填写公司、路线和订单的进口追踪表单，右侧是来自中国货物的实时地图', name: '进口追踪', cta: '创建我的追踪', steps: [
       ['设置目的地', '你的公司、采购代理、仓库和代理中心。'],
       ['选择路线', '中国与欧洲之间的港口、机场和铁路站。'],
       ['导入供应商和订单', '从表格导入：订单号、供应商、数量、价格、HS、运输方式和日期。'],
@@ -238,14 +253,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'デジタルツイン 作成, デジタルツイン 無料, 倉庫 シミュレーション, AGV シミュレーション, 倉庫 デジタルツイン, 輸入 追跡, 発注 追跡, 輸入原価',
     badge: '無料 · ブラウザで動作 · インストール不要',
     h1: ['自分だけの', 'デジタルツインを作る'], lead: '自社のレイアウトと商品から AGV 倉庫を、発注データから輸入マップを作成。すべてブラウザ内で動作し、何もアップロードしません。',
-    agv: { name: 'AGV 倉庫', cta: '倉庫を作る', steps: [
+    agv: { alt: 'デジタルツイン作成ツール：通路・ベイ・段数・車両を設定する倉庫フォームと、AGV 倉庫のライブ 3D プレビュー', name: 'AGV 倉庫', cta: '倉庫を作る', steps: [
       ['建物を設定', '通路、ベイ、段数、入出荷ドック、車両台数。'],
       ['商品を読み込む', 'Excel から貼り付けるか CSV を読み込み：コード、名称、ケース数、重量。'],
       ['取引先を設定', '顧客、都市、運送会社（1 社を特急に）、仕入先。'],
       ['ERP と連携', 'Odoo、Salesforce、または任意の Webhook に確定作業を送信。'],
       ['実際の車両を表示', '車両管理システムの位置がシミュレーション車両に置き換わります。'],
     ] },
-    imports: { name: '輸入トラッカー', cta: 'トラッカーを作る', steps: [
+    imports: { alt: 'デジタルツイン作成ツール：会社・ルート・発注を入力する輸入トラッカーのフォームと、中国からの貨物のライブマップ', name: '輸入トラッカー', cta: 'トラッカーを作る', steps: [
       ['届け先を設定', '会社、買付代行、倉庫、代行業者の拠点。'],
       ['ルートを選ぶ', '中国と欧州の間の港、空港、鉄道ターミナル。'],
       ['仕入先と発注を読み込む', '表から：発注番号、仕入先、数量、単価、HS、輸送手段、日付。'],
@@ -267,14 +282,14 @@ export const COPY: Record<string, BuilderCopy> = {
     keywords: 'สร้างดิจิทัลทวิน, ดิจิทัลทวินฟรี, จำลองคลังสินค้า, จำลอง AGV, ดิจิทัลทวินคลังสินค้า, ติดตามสินค้านำเข้า, ติดตามใบสั่งซื้อ, ต้นทุนนำเข้า',
     badge: 'ฟรี · ในเบราว์เซอร์ · ไม่ต้องติดตั้ง',
     h1: ['สร้างดิจิทัลทวิน', 'ของคุณเอง'], lead: 'คลังสินค้า AGV จากผังและสินค้าของคุณ หรือแผนที่สินค้านำเข้าจากคำสั่งซื้อของคุณ ทุกอย่างทำงานในเบราว์เซอร์ ไม่มีการอัปโหลด',
-    agv: { name: 'คลังสินค้า AGV', cta: 'สร้างคลังสินค้าของฉัน', steps: [
+    agv: { alt: 'เครื่องมือสร้างดิจิทัลทวิน: แบบฟอร์มคลังสินค้าที่กำหนดทางเดิน ช่องวาง ชั้น และรถ ข้างภาพ 3 มิติสดของคลังสินค้า AGV', name: 'คลังสินค้า AGV', cta: 'สร้างคลังสินค้าของฉัน', steps: [
       ['กำหนดอาคาร', 'ทางเดิน ช่องวาง ชั้น ท่าโหลดเข้าและออก และจำนวนรถ'],
       ['นำเข้าสินค้า', 'วางจาก Excel หรืออัปโหลด CSV: รหัส ชื่อ จำนวนกล่อง และน้ำหนัก'],
       ['ระบุลูกค้า', 'ลูกค้า เมือง ผู้ขนส่ง (กำหนดด่วนได้หนึ่งราย) และซัพพลายเออร์'],
       ['เชื่อม ERP', 'Odoo, Salesforce หรือ webhook รับทุกงานที่ยืนยันแล้ว'],
       ['แสดงฝูงรถจริง', 'ตำแหน่งจากระบบจัดการฝูงรถแทนรถที่จำลอง'],
     ] },
-    imports: { name: 'ติดตามสินค้านำเข้า', cta: 'สร้างระบบติดตามของฉัน', steps: [
+    imports: { alt: 'เครื่องมือสร้างดิจิทัลทวิน: แบบฟอร์มติดตามสินค้านำเข้าที่ระบุบริษัท เส้นทาง และคำสั่งซื้อ ข้างแผนที่สดของสินค้าจากจีน', name: 'ติดตามสินค้านำเข้า', cta: 'สร้างระบบติดตามของฉัน', steps: [
       ['ระบุปลายทาง', 'บริษัท ตัวแทนจัดซื้อ คลังสินค้า และศูนย์ของตัวแทน'],
       ['เลือกเส้นทาง', 'ท่าเรือ สนามบิน และสถานีรถไฟระหว่างจีนกับยุโรป'],
       ['นำเข้าซัพพลายเออร์และคำสั่งซื้อ', 'จากสเปรดชีต: เลขที่ ซัพพลายเออร์ จำนวน ราคา HS วิธีขนส่ง และวันที่'],
@@ -309,13 +324,13 @@ function render(lang: string, c: BuilderCopy): string {
   const L = LANGS.find((x) => x.lang === lang)!
   const u = L.ui
   const url = `${SITE}/${lang}/${c.slug}/`
-  const hero = `${SITE}/demos/agv-warehouse-digital-twin.jpg`
-  const shot = (stem: string, alt: string) => `<img src="/demos/${stem}.jpg" srcset="/demos/${stem}-800.jpg 800w, /demos/${stem}.jpg 1600w" sizes="(max-width: 900px) 100vw, 420px" width="1600" height="900" alt="${esc(alt)}" loading="lazy" decoding="async" />`
-  const group = (kind: 'agv' | 'imports', g: BuilderCopy['agv'], stem: string) => `
+  const hero = jpgUrl(BUILDER_PICTURES.agv)
+  const shot = (stem: string, alt: string) => pictureHtml({ file: stem, width: size(stem).width, height: size(stem).height, alt, sizes: SIZES })
+  const group = (kind: 'agv' | 'imports', g: BuilderCopy['agv']) => `
     <section class="section">
       <div class="container">
         <h2>${esc(g.name)}</h2>
-        <figure class="shot">${shot(stem, L.images[stem].alt)}</figure>
+        <figure class="shot">${shot(BUILDER_PICTURES[kind], g.alt)}</figure>
         <ol class="steps">${g.steps.map(([h, t]) => `<li><h3>${esc(h)}</h3><p>${esc(t)}</p></li>`).join('')}</ol>
         <p style="margin-top:18px"><a class="cta" href="${APP}?kind=${kind}">${esc(g.cta)} →</a></p>
       </div>
@@ -326,6 +341,8 @@ function render(lang: string, c: BuilderCopy): string {
       author: { '@type': 'Person', name: 'Joel Benítez', url: 'https://github.com/j03rul4nd' }, publisher: { '@type': 'Organization', name: 'IFC Viewer Online', url: SITE } },
     ...(['agv', 'imports'] as const).map((k) => ({ '@context': 'https://schema.org', '@type': 'HowTo', name: c[k].name, inLanguage: lang, url: `${SITE}${APP}?kind=${k}`,
       step: c[k].steps.map(([h, t], i) => ({ '@type': 'HowToStep', position: i + 1, name: h, text: t })) })),
+    ...(['agv', 'imports'] as const).map((k, i) => ({ '@context': 'https://schema.org',
+      ...imageObject({ file: BUILDER_PICTURES[k], width: size(BUILDER_PICTURES[k]).width, height: size(BUILDER_PICTURES[k]).height, alt: c[k].alt, caption: c[k].name, lang, map: !!size(BUILDER_PICTURES[k]).map, primary: i === 0 }) })),
     { '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: lang, mainEntity: c.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
   ]
   return `<!doctype html>
@@ -349,6 +366,7 @@ ${builderHreflangs('  ')}
   <meta property="og:image" content="${hero}" />
   <meta property="og:image:width" content="1600" />
   <meta property="og:image:height" content="900" />
+  <meta property="og:image:alt" content="${esc(c.agv.alt)}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(c.title)}" />
   <meta name="twitter:description" content="${esc(c.description)}" />
@@ -380,8 +398,8 @@ ${STYLE}
         <a href="${APP}?kind=imports" class="cta2">${esc(c.imports.cta)} →</a>
       </div>
     </section>
-    ${group('agv', c.agv, 'agv-warehouse-digital-twin')}
-    ${group('imports', c.imports, 'china-import-tracker-map')}
+    ${group('agv', c.agv)}
+    ${group('imports', c.imports)}
     <section class="section">
       <div class="container">
         <h2>${esc(u.questions)}</h2>
@@ -423,13 +441,18 @@ export function sitemapBlock(lastmod: string): string {
     <changefreq>monthly</changefreq>
     <priority>${p.lang === 'en' ? '0.8' : '0.7'}</priority>
 ${builderHreflangs('    ', 'xhtml:link')}
-    <image:image><image:loc>${SITE}/demos/agv-warehouse-digital-twin.jpg</image:loc></image:image>
-    <image:image><image:loc>${SITE}/demos/china-import-tracker-map.jpg</image:loc></image:image>
+${sitemapImage(BUILDER_PICTURES.agv)}
+${sitemapImage(BUILDER_PICTURES.imports)}
   </url>`).join('\n')
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  void IMAGES
+  // Credit, copyright and licence inside the two .jpg files, as the ImageObject says.
+  const english = { agv: TWIN_BUILDER_SEO.imageAlt, imports: 'Digital twin builder: import tracker form with company, route and orders beside the live map of shipments from China' }
+  for (const k of ['agv', 'imports'] as const) {
+    const jpg = path.join(ROOT, 'public', filesOf(BUILDER_PICTURES[k], size(BUILDER_PICTURES[k]).width)[0])
+    writeFileSync(jpg, withRights(readFileSync(jpg), rightsOf({ alt: english[k], map: !!size(BUILDER_PICTURES[k]).map })))
+  }
   for (const [lang, c] of Object.entries(COPY)) {
     const dir = path.join(ROOT, 'public', lang, c.slug)
     mkdirSync(dir, { recursive: true })
@@ -437,9 +460,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log(`  ✓ /${lang}/${c.slug}/`)
   }
   const sm = path.join(ROOT, 'public/sitemap.xml')
-  let xml = readFileSync(sm, 'utf-8')
+  // A CRLF checkout would hide the markers' line ends from the patterns below.
+  let xml = readFileSync(sm, 'utf-8').split('\r\n').join('\n')
   // the hand-written English entry is replaced by the generated cluster
-  xml = xml.replace(/  <!-- Digital twin builder \(AGV warehouse, import tracker\) -->\n  <url>[\s\S]*?<\/url>\n\n/, '')
+  // (only its own <url>: other entries have been added next to it since)
+  xml = xml.replace(/  <url>\n    <loc>https:\/\/www\.ifcvieweronline\.eu\/twin-builder\/<\/loc>\n(?:(?!<\/url>)[\s\S])*<\/url>\n/, '')
   const block = `  <!-- twin-builder-i18n:start (scripts/seo/build-twin-builder-landings.ts) -->\n${sitemapBlock(new Date().toISOString().slice(0, 10))}\n  <!-- twin-builder-i18n:end -->\n`
   const re = /  <!-- twin-builder-i18n:start[\s\S]*?<!-- twin-builder-i18n:end -->\n/
   xml = re.test(xml) ? xml.replace(re, block) : xml.replace('</urlset>', `${block}\n</urlset>`)
