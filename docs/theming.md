@@ -19,16 +19,17 @@ Plan and progress: `docs/theme-migration.md`.
 | `--bg-surface-raised` | inputs, nested cards, chips on a surface |
 | `--bg-hover` | hover / pressed rows and buttons |
 | `--border-subtle` | dividers, card outlines |
-| `--border-strong` | input borders, controls that must be seen (3:1 in light) |
+| `--border-strong` | emphasis dividers, selected-card outlines (decorative, not 3:1) |
+| `--border-control` | **for inputs/form controls only** (text fields, selects, checkboxes): 3:1 on surface in light |
 | `--text-primary` | body text, headings |
 | `--text-secondary` | labels, secondary copy |
 | `--text-tertiary` | captions, hints (smallest readable) |
-| `--text-muted` | legacy only: undefined in dark (see quirk below); = text-secondary in light |
+| `--text-muted` | legacy only: undefined in dark (see quirk below); own step between secondary and tertiary in light (#5A5853) |
 | `--accent` / `--accent-strong` | brand actions, links, selected state |
 | `--accent-contrast` | text/icons on an `--accent` fill |
 | `--success` / `--warning` / `--danger` | status |
 | `--focus-ring` | `:focus-visible` outlines |
-| `--shadow`, `--overlay` | elevation and modal scrims (light prefers borders over shadows) |
+| `--shadow`, `--overlay` | `--shadow` only for popovers/menus; `--overlay` is the modal scrim (flat, no blur in light) |
 
 Legacy names (`--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-dim`, `--text-faint`, `--accent-2`, `--warn`, `--ok`) are aliases of the above and keep working. New code uses the semantic names. Tailwind exposes both (`bg-bg-surface`, `text-text-secondary`…).
 
@@ -38,26 +39,31 @@ Legacy names (`--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-
 2. Colours with business meaning stay as they are: IFC class colours, Health Score bands, discipline colours, map/data ramps, brand logos. Only check they stay readable on a light surface.
 3. Text on an accent/status fill uses `--accent-contrast`, not `#fff`.
 4. Do not touch the dark values: dark must stay pixel-identical.
-5. Test both modes: in DevTools run `document.documentElement.dataset.theme = 'light'` (or `'dark'`), or open the page with `?theme=light`. Check text, borders, focus rings and hover states.
+5. Borders: dividers and card outlines use `--border-subtle`; only inputs/form controls use `--border-control`; `--border-strong` is for the rare emphasised divider.
+6. Shadows (light): floating panels (`.glass`, `.glass-md`, mobile pill/sheet) are solid `--bg-surface` + 1px `--border-subtle`, no shadow. `--shadow` is reserved for popovers and menus.
+7. Overlay (light): modals use `--overlay` (rgba(28,27,22,.20)) with no backdrop blur. Hover (`--bg-hover`) is a neutral step, never accent-tinted, so it never reads as selected.
+8. Test both modes: in DevTools run `document.documentElement.dataset.theme = 'light'` (or `'dark'`), or open the page with `?theme=light`. Check text, borders, focus rings and hover states.
 
 ## Known quirk (clean up in phase 4)
 
-`--text-muted` is **undefined in dark** on purpose: 162 uses without a fallback inherit the normal text colour and 21 uses with `var(--text-muted, #a09e98)` show that grey; defining it would change dark. In light it equals `--text-secondary` (#4E4D48), so no-fallback uses render slightly dimmer than in dark. Phase 4: replace every use with `--text-primary` or `--text-secondary` explicitly and drop the token.
+`--text-muted` is **undefined in dark** on purpose: 162 uses without a fallback inherit the normal text colour and 21 uses with `var(--text-muted, #a09e98)` show that grey; defining it would change dark. In light it is its own step (#5A5853, between secondary and tertiary, AA on every surface). Phase 4: replace every use with `--text-primary` or `--text-secondary` explicitly and drop the token.
 
 ## Contrast (WCAG 2.x, script in PR description)
 
-Light — against app bg / surface / raised:
+Light (app #F1F0ED, surface #FFFFFF, raised #F7F6F3) — against app bg / surface / raised:
 
 | Token | Value | bg | surface | raised |
 |---|---|---|---|---|
-| text-primary | #1C1B16 | 15.94 | 17.25 | 15.00 |
-| text-secondary / muted | #4E4D48 | 7.83 | 8.47 | 7.37 |
-| text-tertiary | #65635E | 5.55 | 6.00 | 5.22 |
-| accent | #00696A | 6.01 | 6.50 | 5.66 |
-| success | #206B38 | 6.02 | 6.52 | 5.67 |
-| warning | #915C08 | 5.19 | 5.62 | 4.89 |
-| danger | #AF2B25 | 6.07 | 6.57 | 5.72 |
-| border-strong (UI, 3:1) | #8A8984 | 3.24 | 3.50 | 3.05 |
+| text-primary | #1C1B16 | 15.13 | 17.25 | 15.96 |
+| text-secondary | #4E4D48 | 7.43 | 8.47 | 7.84 |
+| text-muted | #5A5853 | 6.23 | 7.11 | 6.57 |
+| text-tertiary | #65635E | 5.27 | 6.00 | 5.55 |
+| accent | #00696A | 5.71 | 6.50 | 6.02 |
+| success | #206B38 | 5.72 | 6.52 | 6.03 |
+| warning | #915C08 | 4.93 | 5.62 | 5.20 |
+| danger | #AF2B25 | 5.77 | 6.57 | 6.08 |
+| border-control (UI, 3:1) | #8A8984 | 3.08 | 3.50 | 3.24 |
+| border-strong (decorative) | #C9C8C2 | 1.47 | 1.68 | 1.55 |
 | white on accent | | 6.50 | | |
 
 All light pairs pass AA (4.5:1 text, 3:1 UI). Dark is today's palette, unchanged; known pre-existing gaps there: `--accent` as text 3.95:1 on surface, `--text-faint` 4.30:1 on raised, `--danger` 4.23:1 on raised, `--border-strong` 1.55:1 (decorative).
