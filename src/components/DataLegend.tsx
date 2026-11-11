@@ -154,7 +154,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   if (!open) {
     return (
       <button type="button" className={`${pos} flex items-center gap-1.5 px-2.5 py-1.5 max-md:py-2 rounded-full text-[11px] font-medium
-        bg-[rgba(16,18,24,0.72)] text-[var(--text-dim)] hover:text-[var(--text)] border border-white/10 backdrop-blur-md shadow-lg`}
+        bg-[color-mix(in_srgb,var(--bg-surface)_72%,transparent)] text-[var(--text-dim)] hover:text-[var(--text)] border border-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] backdrop-blur-md shadow-lg`}
         style={posStyle}
         onClick={() => useVectorLayerStore.getState().setLegendOpen(true)}
         title={t('legend.openHint')} data-testid="legend-chip">
@@ -170,12 +170,12 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
   const anyClickable = model.some((l) => !l.folded && !l.scale && l.rows.length > 0)
   return (
     <div className={`${pos} w-[224px] max-w-[calc(100%-32px)] max-h-[min(46vh,calc(100%-120px))] flex flex-col rounded-[10px]
-      bg-[rgba(16,18,24,0.82)] border border-white/10 backdrop-blur-md shadow-xl text-[var(--text)]`}
+      bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] border border-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] backdrop-blur-md shadow-xl text-[var(--text)]`}
       style={posStyle} role="region" aria-label={t('legend.title')} data-testid="data-legend">
       <div className="shrink-0 flex items-center gap-1.5 pl-2.5 pr-1 pt-1.5 pb-1">
         <span className="flex-1 text-[11px] font-semibold">{t('legend.title')}</span>
         <span className="text-[9px] text-[var(--text-faint)]" title={t('legend.inCapturesHint')}>{t('legend.inCaptures')}</span>
-        <button type="button" className="w-6 h-6 rounded-[6px] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/5"
+        <button type="button" className="w-6 h-6 rounded-[6px] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)]"
           onClick={() => useVectorLayerStore.getState().setLegendExtras({ corner: NEXT[extras.corner] })}
           aria-label={t('legend.move')} title={t('legend.move')} data-testid="legend-move">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" className="mx-auto">
@@ -183,7 +183,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
             <rect x={extras.corner.endsWith('r') ? 6.5 : 2} y={extras.corner.startsWith('t') ? 2 : 6.5} width="3.5" height="3.5" rx="0.8" fill="currentColor" />
           </svg>
         </button>
-        <button type="button" className="w-6 h-6 rounded-[6px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/5"
+        <button type="button" className="w-6 h-6 rounded-[6px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)]"
           onClick={() => useVectorLayerStore.getState().setLegendOpen(false)} aria-label={t('legend.close')} title={t('legend.close')}>—</button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 pb-2 flex flex-col gap-2">
@@ -202,7 +202,7 @@ export default function DataLegend({ viewerApiRef }: { viewerApiRef: React.RefOb
           </button>
         )}
         {onScreen && (onScreen.northRad !== null || onScreen.scale) && (
-          <div className="flex items-center gap-3 pt-1 border-t border-white/10" data-testid="legend-furniture">
+          <div className="flex items-center gap-3 pt-1 border-t border-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]" data-testid="legend-furniture">
             {onScreen.northRad !== null && <NorthArrow rad={onScreen.northRad} />}
             {onScreen.scale && <ScaleBarView bar={onScreen.scale} />}
           </div>
@@ -281,7 +281,7 @@ function LayerBlock({ m, layer, t }: { m: LegendLayer; layer: VectorLayer; t: T 
               <li key={r.groupIndex}>
                 <button type="button" onClick={(e) => onGroup(r.groupIndex, e)}
                   title={r.visible ? t('legend.hideGroup') : t('legend.showGroup')}
-                  className={`w-full flex items-center gap-1.5 px-1 py-[3px] max-md:py-1.5 rounded-[5px] hover:bg-white/5 text-left ${r.visible ? '' : 'opacity-40'}`}>
+                  className={`w-full flex items-center gap-1.5 px-1 py-[3px] max-md:py-1.5 rounded-[5px] hover:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] text-left ${r.visible ? '' : 'opacity-40'}`}>
                   <Swatch sw={r.swatch} />
                   <span className={`flex-1 min-w-0 truncate text-[11px] ${r.visible ? '' : 'line-through'}`}>{r.name}</span>
                   <span className="font-mono text-[10px] text-[var(--text-faint)]">{r.count}</span>
@@ -359,8 +359,8 @@ function ExtraToggle({ on, disabled, title, onClick, children }: {
   return (
     <button type="button" onClick={onClick} disabled={disabled} title={title} aria-pressed={on}
       className={`px-1.5 py-0.5 rounded-[5px] text-[9px] font-semibold border transition-colors disabled:opacity-30 ${on
-        ? 'border-[var(--accent)] text-[var(--text)] bg-white/5'
-        : 'border-white/10 text-[var(--text-faint)] hover:text-[var(--text)]'}`}>
+        ? 'border-[var(--accent)] text-[var(--text)] bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)]'
+        : 'border-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] text-[var(--text-faint)] hover:text-[var(--text)]'}`}>
       {children}
     </button>
   )
@@ -369,10 +369,10 @@ function ExtraToggle({ on, disabled, title, onClick, children }: {
 function NorthArrow({ rad }: { rad: number }) {
   return (
     <svg width="26" height="30" viewBox="-13 -17 26 30" aria-label="N" className="shrink-0">
-      <circle r="11" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" />
+      <circle r="11" fill="color-mix(in srgb, var(--text-primary) 6%, transparent)" stroke="color-mix(in srgb, var(--text-primary) 25%, transparent)" />
       <g transform={`rotate(${(rad * 180) / Math.PI})`}>
         <path d="M0 -9 L4.5 4 L0 1 L-4.5 4 Z" fill="#e0523f" />
-        <text y="-13" textAnchor="middle" fontSize="7" fontWeight="700" fill="#f2f4f8">N</text>
+        <text y="-13" textAnchor="middle" fontSize="7" fontWeight="700" fill="var(--text-primary)">N</text>
       </g>
     </svg>
   )
@@ -381,7 +381,7 @@ function NorthArrow({ rad }: { rad: number }) {
 function ScaleBarView({ bar }: { bar: ScaleBar }) {
   return (
     <div className="flex items-end gap-1.5" title={bar.label}>
-      <div className="h-[6px] border-x-2 border-b-2 border-[#f2f4f8]" style={{ width: `${bar.px}px` }} />
+      <div className="h-[6px] border-x-2 border-b-2 border-[var(--text-primary)]" style={{ width: `${bar.px}px` }} />
       <span className="text-[10px] text-[var(--text-dim)] leading-none">{bar.label}</span>
     </div>
   )

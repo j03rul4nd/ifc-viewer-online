@@ -44,7 +44,7 @@ export function PanelHeader({ onClose }: { onClose: () => void }) {
         />
         <button
           onClick={onClose}
-          className="-mr-1 p-1 max-md:p-3 max-md:bg-white/[0.05] rounded-[6px] max-md:rounded-[11px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+          className="-mr-1 p-1 max-md:p-3 max-md:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] rounded-[6px] max-md:rounded-[11px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
           title={t('panel.close')}
           aria-label={t('panel.close')}
         >
