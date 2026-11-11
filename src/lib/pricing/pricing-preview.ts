@@ -14,7 +14,9 @@ export function isPricingPreview(
   const v = import.meta.env.VITE_FEATURE_PRICING as string | undefined
   if (v === 'true' || v === '1') return true
 
-  const param = new URLSearchParams(search).get('preview')
+  const q = new URLSearchParams(search)
+  // The sales demo link (`?demo=reception-flow`) opens the same preview.
+  const param = q.get('demo') === 'reception-flow' ? 'pricing' : q.get('preview')
   try {
     if (param === 'pricing') sessionStorage.setItem(STORAGE_KEY, '1')
     else if (param === 'off') sessionStorage.removeItem(STORAGE_KEY)

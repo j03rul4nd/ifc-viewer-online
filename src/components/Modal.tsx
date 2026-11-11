@@ -91,7 +91,7 @@ export function Modal({
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose() }}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 bg-black/55 [[data-theme=light]_&]:bg-[var(--overlay)] backdrop-blur-sm data-[state=open]:animate-[fadeIn_140ms_ease]"
+          className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-sm data-[state=open]:animate-[fadeIn_140ms_ease]"
           style={{ zIndex: z }}
         />
         <Dialog.Content

@@ -42,7 +42,7 @@ export default function CompareDock({ viewerApiRef, onClose }: {
   }, [go, cursor])
 
   const c = diff?.counts
-  const iconBtn = 'h-10 w-10 sm:h-8 sm:w-8 shrink-0 inline-flex items-center justify-center rounded-full text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/10 disabled:opacity-30 transition-colors'
+  const iconBtn = 'h-10 w-10 sm:h-8 sm:w-8 shrink-0 inline-flex items-center justify-center rounded-full text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors'
 
   return (
     <div

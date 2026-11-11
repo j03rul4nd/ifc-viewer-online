@@ -22,7 +22,7 @@ export type InspectorTab = 'scene' | 'create' | 'layers' | 'sheet' | 'output'
 export const INSPECTOR_TABS: InspectorTab[] = ['scene', 'create', 'layers', 'sheet', 'output']
 
 export const btn = 'h-7 px-2 rounded-md text-[11px] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-40 whitespace-nowrap'
-export const field = 'h-7 px-1.5 rounded-md text-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] min-w-0'
+export const field = 'h-7 px-1.5 rounded-md text-[11px] border border-[var(--border-control)] bg-[var(--surface)] text-[var(--text)] min-w-0'
 const stop = (e: React.KeyboardEvent) => e.stopPropagation()
 
 export function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {

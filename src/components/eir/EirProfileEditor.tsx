@@ -82,7 +82,7 @@ function defaultsForType(type: EirRuleType, base: Pick<EirRule, 'id' | 'entity' 
   }
 }
 
-const inputCls = 'h-7 px-2 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)]'
+const inputCls = 'h-7 px-2 rounded-md bg-[var(--surface-2)] border border-[var(--border-control)] text-[11px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)]'
 
 export default function EirProfileEditor({ onClose }: Props) {
   const { t } = useTranslation('eir')

@@ -20,6 +20,8 @@ import { MoreHorizontal, Lock, LifeBuoy } from 'lucide-react'
 import { SCENARIOS, scenarioData, type Scenario, type TicketKind } from './sample-data'
 import { SoonChip } from './Soon'
 import { ChevronRight } from 'lucide-react'
+import DemoGuide from './demo/DemoGuide'
+import { readDemo } from './demo/flow'
 import { SECTIONS, canUse, sectionFromPath, type PaidPlan, type SectionActions, type SectionId, type SectionDef } from './registry'
 import { usePaidLive, usePaidQuery } from '../../hooks/usePaidQuery'
 import { paidApi, type ApiMe } from '../../lib/cloud/paid-client'
@@ -68,7 +70,8 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const tx = useTx()
   const [section, setSection] = useState<SectionId>(() => (typeof location !== 'undefined' ? sectionFromPath(location.pathname) : 'overview'))
   const [scenario, setScenario] = useState<Scenario>('active')
-  const [previewPlan, setPreviewPlan] = useState<PaidPlan>('pro')
+  // The sales demo walks Team and Reception screens, so it opens on Team.
+  const [previewPlan, setPreviewPlan] = useState<PaidPlan>(() => (typeof location !== 'undefined' && readDemo(location.search, typeof sessionStorage !== 'undefined' ? sessionStorage : null) !== null ? 'team' : 'pro'))
   const [persona, setPersona] = useState<PersonaId>('owner')
   const [policies, setPolicies] = useState(SAMPLE_POLICIES)
   const [checkoutOutcome, setCheckoutOutcome] = useState<CheckoutOutcome['status']>('paid')
@@ -298,7 +301,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
         </div>
       </nav>
       {moreOpen && (
-        <div className="md:hidden fixed inset-0 z-10 bg-black/40" onClick={() => setMoreOpen(false)}>
+        <div className="md:hidden fixed inset-0 z-10 bg-[var(--overlay)]" onClick={() => setMoreOpen(false)}>
           <div role="menu" onClick={(e) => e.stopPropagation()}
             className="absolute inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] rounded-t-[14px] border-t border-[var(--border)] bg-[var(--surface)] py-2">
             {more.map((s, i) => (
@@ -314,6 +317,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
       )}
 
       {jobOpen && <CloudJobDialog balance={data.account.credits.balance} onClose={() => setJobOpen(false)} onTopUp={() => { setJobOpen(false); setCheckout(TOP_UP) }} />}
+      <DemoGuide />
       {tour && <GuidedTour key={tour.id} title={tour.title} steps={tour.steps} onClose={() => { markSeen(tour.id); setSeen(seenTours()); setTour(null) }} />}
       {contact && <ContactDialog kind={contact.kind} refId={contact.ref} section={section} onClose={() => setContact(null)} />}
       {checkout && <CheckoutDialog item={checkout} provider={provider} onClose={() => setCheckout(null)} />}

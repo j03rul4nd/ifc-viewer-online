@@ -52,9 +52,9 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 | 12 | captura-tour | `CaptureToolbar.tsx`, `CapturePreviewModal.tsx`, `capture/EditorTimeline.tsx`, `TourRecorder.tsx`, `SceneBackgroundMenu.tsx` | mergeada | [#554](https://github.com/j03rul4nd/ifc-viewer-online/pull/554) | Verde de clips #2E9E7A se mantiene |
 | 13 | huds-tiempo | `WalkHud.tsx`, `TimeBar.tsx`, `PlacementMiniMap.tsx`, `DemoGallery.tsx` | mergeada | [#547](https://github.com/j03rul4nd/ifc-viewer-online/pull/547) | WalkHud y minimapa sin cambios (sobre contenido) |
 | 14 | cuenta | `account/AccountModal.tsx`, `account/authAppearance.ts`, `CustomProfileModal.tsx`, `pro/SavedRulesetPicker.tsx` | mergeada | [#549](https://github.com/j03rul4nd/ifc-viewer-online/pull/549) | Clerk sigue el tema; sin revisar a ojo (requiere sesión) |
-| 15 | dashboard-admin | `dashboard/AdminView.tsx`, `dashboard/DashboardView.tsx` | pendiente | | /admin interno, prioridad baja |
+| 15 | dashboard-admin | `dashboard/AdminView.tsx`, `dashboard/DashboardView.tsx` | mergeada | [#560](https://github.com/j03rul4nd/ifc-viewer-online/pull/560) | Brillo dorado de admin pasa a tinte del acento |
 | 16 | gemelo | `components/twin/*` (por trocear al llegar) | mergeada | [#555](https://github.com/j03rul4nd/ifc-viewer-online/pull/555), [#546](https://github.com/j03rul4nd/ifc-viewer-online/pull/546) | Colores guardados en reglas (#e0523f, #7b8494, #cccccc) se mantienen; sin revisar a ojo |
-| 17 | tailwind-alfa | Los ~65 usos de `bg-white/NN` y `border-white/NN` restantes | pendiente | | Al final, por grep |
+| 17 | tailwind-alfa | Los ~65 usos de `bg-white/NN` y `border-white/NN` restantes | mergeada | [#564](https://github.com/j03rul4nd/ifc-viewer-online/pull/564) | Quedan alfas en demos MSP (AgvTwin, ImportTracker), LanguageSelector y ~25 velos sobre vídeo/imagen/3D |
 | 3a | 3D fondo+grid+ejes | `lib/viewer.ts` (~1130–1206), `lib/scene/background.ts` | mergeada | [#518](https://github.com/j03rul4nd/ifc-viewer-online/pull/518) | Preset `studio` = fondo del tema |
 | 3b | 3D selección/hover | `lib/viewer.ts` (~781–837, ~1817) | mergeada | [#550](https://github.com/j03rul4nd/ifc-viewer-online/pull/550) | Selección en claro teal; oscuro sin tinte como antes |
 | 3c | 3D gizmos/overlays/etiquetas | `lib/measure/section-system.ts`, `lib/measure/overlay.ts` | mergeada | [#519](https://github.com/j03rul4nd/ifc-viewer-online/pull/519) | Resaltado claro #0077a8 pendiente de validar |
@@ -66,9 +66,9 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 | P2 | pulido: barra, lateral, árbol | `Toolbar.tsx`, `Sidebar.tsx`, `ModelTree.tsx`, `PanelRail.tsx`, `DrawerResizeGrip.tsx`, `App.tsx` (separador) | mergeada | [#540](https://github.com/j03rul4nd/ifc-viewer-online/pull/540) | |
 | P3 | pulido: cajón de validación | `ValidationPanel.tsx`, `pricing/ScoreUpsell.tsx` | mergeada | [#541](https://github.com/j03rul4nd/ifc-viewer-online/pull/541) | |
 | P4 | pulido: modal de atajos | `KeyboardHelpModal.tsx` | mergeada | [#543](https://github.com/j03rul4nd/ifc-viewer-online/pull/543) | |
-| P5 | pulido: campos a `--border-control` | inputs y selects | pendiente | | Token ya creado, sin uso |
-| 4a | cierre: lint anti-hex | script de CI + allowlist (tokens, `lib/geo`, `lib/cover`, informes) | pendiente | | |
-| 4b | tokens propuestos | `src/index.css` | pendiente | | Consolidar lo que propongan los subagentes |
+| P5 | pulido: campos a `--border-control` | inputs y selects | mergeada | [#564](https://github.com/j03rul4nd/ifc-viewer-online/pull/564) | Clases compartidas de inputs + búsquedas de árbol e incidencias |
+| 4a | cierre: lint anti-hex | script de CI + allowlist (tokens, `lib/geo`, `lib/cover`, informes) | mergeada | [#559](https://github.com/j03rul4nd/ifc-viewer-online/pull/559) (+ ajuste en [#561](https://github.com/j03rul4nd/ifc-viewer-online/pull/561)) | Ratchet en scripts/colour-guard; bajar recuentos solo avisa |
+| 4b | tokens propuestos | `src/index.css` | mergeada | [#561](https://github.com/j03rul4nd/ifc-viewer-online/pull/561) | --info y --scrim; --bg-floating y --selection no hacen falta |
 
 ## Orden y paralelismo
 
@@ -85,6 +85,14 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 - Tokens propuestos hasta ahora: `--scrim`, `--info`, `--selection`, `--bg-floating`, sombras y velo de modal/aviso.
 
 - 2026-11-11, revisión estética (crítica en `.claude/theme-qa/review.md`, local): superficies en escalones cálidos, velo de modal oscuro suave sin blur, paneles flotantes sólidos con borde en claro, hover y medida 3D en verde azulado (Joel).
+
+## Pendiente tras el cierre (2026-11-12)
+
+- Selección 3D en oscuro: hoy sin tinte (aclarado); decidir si pasa a verde azulado.
+- `--text-muted` sigue sin definir en oscuro (rareza documentada en theming.md).
+- Colores de interfaz nuevos de `ClashPanel` y `ClientMailV2` (llegados de otras PR) quedan en la línea base, sin migrar.
+- Velos sobre vídeo/imagen/3D sin marcar `theme-allow-color`.
+- Sin revisar a ojo: gemelo, modal de cuenta, barra de tiempo, comparación, editor de capas.
 
 ## Dudas para Joel (colores con significado)
 

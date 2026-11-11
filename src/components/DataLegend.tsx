@@ -339,7 +339,7 @@ function Swatch({ sw }: { sw: LegendSwatch }) {
     if (url) return <img src={url} alt="" className="w-4 h-4 shrink-0" />
   }
   if (sw.kind === 'icon' || sw.kind === 'dot') {
-    return <span className="w-3 h-3 m-0.5 shrink-0 rounded-full border border-black/40" style={{ background: sw.color }} />
+    return <span className="w-3 h-3 m-0.5 shrink-0 rounded-full border border-[var(--border-strong)]" style={{ background: sw.color }} />
   }
   if (sw.kind === 'line') return <span className="w-4 h-[3px] shrink-0 rounded-full" style={{ background: sw.color, opacity: sw.opacity }} />
   return (

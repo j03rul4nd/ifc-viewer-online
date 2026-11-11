@@ -96,7 +96,7 @@ export default function RequirementsLinkCreator() {
     )
   }
 
-  const field = 'h-8 px-2.5 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
+  const field = 'h-8 px-2.5 rounded-md bg-[var(--surface-2)] border border-[var(--border-control)] text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
 
   return (
     <section className="flex flex-col gap-2.5 px-3 py-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">

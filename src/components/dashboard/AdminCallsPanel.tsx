@@ -54,7 +54,7 @@ export default function AdminCallsPanel({ getToken, card }: Props) {
   }
 
   const madrid = (iso: string) => new Date(iso).toLocaleString('es-ES', { timeZone: cfg?.tz || 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-  const input = 'h-9 px-2 rounded-lg border bg-transparent text-[12px]'
+  const input = 'h-9 px-2 rounded-lg border border-[var(--border-control)] bg-transparent text-[12px]'
   const border = { borderColor: 'var(--border)', color: 'var(--text)' }
 
   return (

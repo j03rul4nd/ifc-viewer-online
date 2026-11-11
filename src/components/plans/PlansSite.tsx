@@ -248,7 +248,7 @@ function ApiPage() {
   const [avgMb, setAvgMb] = useState(60)
   const [storedGb, setStoredGb] = useState(50)
   const q = quoteApi({ files, avgMb, storedGb })
-  const field = 'w-full h-[36px] rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-[13px]'
+  const field = 'w-full h-[36px] rounded-[8px] border border-[var(--border-control)] bg-[var(--surface-2)] px-2.5 text-[13px]'
   return (
     <>
       <Hero kicker="Developer API" title="Validate IFC from your platform. Pay only for what runs on our servers."

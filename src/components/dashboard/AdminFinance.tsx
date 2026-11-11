@@ -23,7 +23,7 @@ const SIGNAL: Record<string, (r: FinanceReport) => string> = {
 }
 const LEVEL = { ok: { label: 'Vamos bien', color: 'var(--ok, #30a46c)' }, warn: { label: 'Atención', color: 'var(--warn, #f5a524)' }, bad: { label: 'Mal', color: 'var(--danger, #e5484d)' } }
 
-const input = 'h-8 w-full rounded-lg border px-2 text-[12px] bg-transparent'
+const input = 'h-8 w-full rounded-lg border border-[var(--border-control)] px-2 text-[12px] bg-transparent'
 const button = 'h-8 px-3 rounded-lg border text-[12px] disabled:opacity-50'
 const border = { borderColor: 'var(--border)' }
 const muted = { color: 'var(--text-muted)' }

@@ -23,7 +23,7 @@ export default function NamingRuleEditor({ rule, onChange }: { rule: NamingRule;
   const { t } = useTranslation('ids')
   const preset = useIsoPreset()
   const [sample, setSample] = useState('')
-  const field = 'h-7 px-2 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[11.5px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
+  const field = 'h-7 px-2 rounded-md bg-[var(--surface-2)] border border-[var(--border-control)] text-[11.5px] text-[var(--text)] outline-none focus:border-[var(--accent)]'
 
   const setField = (i: number, patch: Partial<NamingRule['f'][number]>): void => {
     const f = rule.f.map((x, k) => (k === i ? { ...x, ...patch } : x))
