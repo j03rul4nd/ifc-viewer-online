@@ -1,0 +1,350 @@
+// ─── Client mail: model and pure logic ────────────────────────────────────────
+// Project-progress mail to a team's clients (doc 28 «Correo a clientes»). Every
+// rule that decides who gets what lives here, apart from the screens, so it is
+// tested on its own: consent, triggers, the approval queue, rendering, replies,
+// aggregate clicks and the send adapter. Built dark: MAIL_LIVE is false and
+// every real adapter refuses to send while it is.
+
+export const MAIL_LIVE = false
+
+export type Mx = (text: string, vars?: Record<string, unknown>) => string
+
+// ── People ────────────────────────────────────────────────────────────────────
+
+export type Consent = 'granted' | 'pending' | 'withdrawn'
+export type ConsentSource = 'double-opt-in' | 'contract' | 'form'
+
+export interface Department {
+  id: string
+  name: string
+  /** Shown as the sender name: "Obras · Constructora Levante". */
+  senderName: string
+  /** Address on the company's verified domain, or ours until it has one. */
+  from: string
+  replyTo: string
+  signature: string
+}
+
+export interface Contact {
+  id: string
+  name: string
+  email: string
+  company: string
+  role: string
+  projectId: string
+  departmentId: string
+  lang: string
+  consent: Consent
+  consentSource: ConsentSource
+  consentAt?: string
+  withdrawnAt?: string
+}
+
+/** Only a contact who said yes, and has not taken it back, can be written to. */
+export const canReceive = (c: Contact) => c.consent === 'granted' && !c.withdrawnAt
+
+export function withdraw(c: Contact, at: string): Contact {
+  return { ...c, consent: 'withdrawn', withdrawnAt: at }
+}
+
+export function confirmConsent(c: Contact, at: string, source: ConsentSource = 'double-opt-in'): Contact {
+  return { ...c, consent: 'granted', consentSource: source, consentAt: at, withdrawnAt: undefined }
+}
+
+export function recipientsFor(contacts: Contact[], projectId: string, ids?: string[]): { to: Contact[]; skipped: Contact[] } {
+  const pool = contacts.filter((c) => c.projectId === projectId && (!ids || ids.includes(c.id)))
+  return { to: pool.filter(canReceive), skipped: pool.filter((c) => !canReceive(c)) }
+}
+
+// ── Project data the blocks read ──────────────────────────────────────────────
+
+export interface ProjectSnapshot {
+  id: string
+  name: string
+  client: string
+  /** Weekly Health Score, oldest first. */
+  health: number[]
+  deliveries: { supplier: string; file: string; date: string; verdict: 'accepted' | 'returned' }[]
+  issues: { opened: number; closed: number; open: number; closedTitles: string[] }
+  milestones: { name: string; date: string; done: boolean }[]
+  viewerUrl: string
+  captureAlt: string
+  certificate: { id: string; score: number; date: string }
+}
+
+export const trend = (w: number[]) => (w.length > 1 ? w[w.length - 1] - w[w.length - 2] : 0)
+
+// ── Templates and blocks ──────────────────────────────────────────────────────
+
+export const BLOCK_KINDS = ['heading', 'text', 'health', 'deliveries', 'issues', 'milestones', 'capture', 'certificate', 'button', 'divider'] as const
+export type BlockKind = typeof BLOCK_KINDS[number]
+/** Blocks filled from the project at send time: the part nobody else has. */
+export const LIVE_BLOCKS: BlockKind[] = ['health', 'deliveries', 'issues', 'milestones', 'capture', 'certificate']
+
+export interface Block { id: string; kind: BlockKind; text?: string }
+
+export interface Brand { company: string; color: string; initials: string; address: string }
+
+export interface Template { id: string; name: string; departmentId: string; subject: string; blocks: Block[] }
+
+let seq = 0
+export const newBlock = (kind: BlockKind, text?: string): Block => ({ id: `b${Date.now().toString(36)}${seq++}`, kind, text })
+
+export function moveBlock(blocks: Block[], id: string, dir: -1 | 1): Block[] {
+  const i = blocks.findIndex((b) => b.id === id), j = i + dir
+  if (i < 0 || j < 0 || j >= blocks.length) return blocks
+  const out = [...blocks];
+  [out[i], out[j]] = [out[j], out[i]]
+  return out
+}
+
+export const removeBlock = (blocks: Block[], id: string) => blocks.filter((b) => b.id !== id)
+
+// ── Triggers, automations, schedule ───────────────────────────────────────────
+
+export type Trigger =
+  | { kind: 'delivery-accepted' }
+  | { kind: 'milestone' }
+  | { kind: 'weekly'; weekday: number; hour: number }
+  | { kind: 'monthly'; day: number; hour: number }
+  | { kind: 'once'; at: string }
+
+export interface ProjectEvent { kind: 'delivery-accepted' | 'milestone'; projectId: string; ref: string; at: string }
+
+export interface Automation {
+  id: string
+  name: string
+  projectId: string
+  templateId: string
+  trigger: Trigger
+  /** Contact ids; empty means every contact of the project who agreed. */
+  audience: string[]
+  /** Off only by an admin's choice; on by default. */
+  approval: boolean
+  active: boolean
+}
+
+/** The next time a time-based trigger fires after `from` (UTC hours). */
+export function nextRun(t: Trigger, from: Date): Date | null {
+  if (t.kind === 'once') { const d = new Date(t.at); return d > from ? d : null }
+  if (t.kind === 'weekly') {
+    const d = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate(), t.hour))
+    let add = (t.weekday - d.getUTCDay() + 7) % 7
+    if (add === 0 && d <= from) add = 7
+    d.setUTCDate(d.getUTCDate() + add)
+    return d
+  }
+  if (t.kind === 'monthly') {
+    for (let m = 0; m < 3; m++) {
+      const last = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + m + 1, 0)).getUTCDate()
+      const d = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + m, Math.min(t.day, last), t.hour))
+      if (d > from) return d
+    }
+  }
+  return null
+}
+
+export const matches = (t: Trigger, e: ProjectEvent) => t.kind === e.kind
+
+// ── Outgoing messages and the approval queue ──────────────────────────────────
+
+export type Status = 'awaiting' | 'approved' | 'scheduled' | 'rejected' | 'sent'
+
+export interface Outgoing {
+  id: string
+  projectId: string
+  templateId: string
+  departmentId: string
+  automationId?: string
+  /** Why it exists: "Delivery accepted: ARQ-M3D-0007", "Weekly report". */
+  cause: string
+  to: string[]
+  createdAt: string
+  scheduledFor?: string
+  status: Status
+  decidedBy?: string
+  note?: string
+  sentAt?: string
+}
+
+export function queueFromEvent(e: ProjectEvent, autos: Automation[], templates: Template[], contacts: Contact[], cause: string): Outgoing[] {
+  return autos.filter((a) => a.active && matches(a.trigger, e) && a.projectId === e.projectId).flatMap((a) => {
+    const tpl = templates.find((t) => t.id === a.templateId)
+    const { to } = recipientsFor(contacts, a.projectId, a.audience.length ? a.audience : undefined)
+    if (!tpl || to.length === 0) return []
+    return [{
+      id: `m-${a.id}-${e.ref}`, projectId: a.projectId, templateId: tpl.id, departmentId: tpl.departmentId, automationId: a.id,
+      cause, to: to.map((c) => c.id), createdAt: e.at, status: a.approval ? 'awaiting' : 'approved',
+    } satisfies Outgoing]
+  })
+}
+
+export class QueueError extends Error {}
+
+export function decide(m: Outgoing, verdict: 'approve' | 'reject', by: string, note?: string, scheduledFor?: string): Outgoing {
+  if (m.status !== 'awaiting') throw new QueueError(`Already ${m.status}`)
+  if (verdict === 'reject' && !note?.trim()) throw new QueueError('A reason is needed to reject')
+  if (verdict === 'reject') return { ...m, status: 'rejected', decidedBy: by, note }
+  return { ...m, status: scheduledFor ? 'scheduled' : 'approved', decidedBy: by, note, scheduledFor }
+}
+
+// ── Sending: one adapter, nothing real while dark ────────────────────────────
+
+export interface Envelope { from: string; replyTo: string; to: string; subject: string; html: string; text: string; headers: Record<string, string> }
+
+export interface MailAdapter { id: 'dry-run' | 'resend' | 'smtp'; send(e: Envelope): Promise<{ id: string }> }
+
+export class MailDisabledError extends Error { constructor() { super('Sending is off: this module is not live') } }
+
+export function dryRunAdapter(log: Envelope[] = []): MailAdapter & { log: Envelope[] } {
+  return { id: 'dry-run', log, async send(e) { log.push(e); return { id: `dry-${log.length}` } } }
+}
+
+/** Resend (EU region) — the provider /call already uses. Refuses while dark. */
+export function resendAdapter(_cfg: { apiKey: string; region: 'eu-west-1' }, live = MAIL_LIVE): MailAdapter {
+  return { id: 'resend', async send() { if (!live) throw new MailDisabledError(); throw new Error('Server-side only: sent by the Worker') } }
+}
+
+/** The company's own SMTP server: mail leaves from their domain. Refuses while dark. */
+export function smtpAdapter(_cfg: { host: string; port: number; user: string }, live = MAIL_LIVE): MailAdapter {
+  return { id: 'smtp', async send() { if (!live) throw new MailDisabledError(); throw new Error('Server-side only: sent by the Worker') } }
+}
+
+/** Sends an approved message. Consent is checked again at send time. */
+export async function sendMessage(m: Outgoing, contacts: Contact[], build: (c: Contact) => Envelope, adapter: MailAdapter, at: string): Promise<{ message: Outgoing; sent: number; skipped: number }> {
+  if (m.status !== 'approved') throw new QueueError('Only approved messages are sent')
+  const people = m.to.map((id) => contacts.find((c) => c.id === id)).filter((c): c is Contact => !!c)
+  const ok = people.filter(canReceive)
+  for (const c of ok) await adapter.send(build(c))
+  return { message: { ...m, status: 'sent', sentAt: at }, sent: ok.length, skipped: people.length - ok.length }
+}
+
+// ── Plans, quota and cost ─────────────────────────────────────────────────────
+
+/** Sends per month by plan. Proposed, pending Joel (doc 28). */
+export const QUOTA = { pro: 0, team: 1000, reception: 3000 } as const
+/** Resend Pro: 20 $/month for 50,000 sends (resend.com/pricing, seen 2026-11-11). */
+export const COST_PER_1000_EUR = 0.4
+
+export function quotaUse(sent: number, plan: keyof typeof QUOTA) {
+  const limit = QUOTA[plan]
+  return { limit, left: Math.max(0, limit - sent), over: sent > limit, cost: (sent / 1000) * COST_PER_1000_EUR }
+}
+
+// ── Links, clicks, replies ────────────────────────────────────────────────────
+
+/** Link to the portal: names the message, never the person. */
+export const portalLink = (base: string, messageId: string) => `${base}${base.includes('?') ? '&' : '?'}u=${encodeURIComponent(messageId)}`
+
+export const MIN_GROUP = 3
+
+/** Clicks counted per message; small counts shown as "fewer than 3" so a click can't point at one person. */
+export function aggregateClicks(clicks: { messageId: string }[]): Record<string, { count: number; shown: string }> {
+  const out: Record<string, { count: number; shown: string }> = {}
+  for (const c of clicks) out[c.messageId] = { count: (out[c.messageId]?.count ?? 0) + 1, shown: '' }
+  for (const k of Object.keys(out)) out[k].shown = out[k].count < MIN_GROUP ? `<${MIN_GROUP}` : String(out[k].count)
+  return out
+}
+
+export interface Reply { id: string; messageId: string; contactId: string; at: string; text: string; routed?: 'comment' | 'issue'; ref?: string }
+
+/** A question or a problem becomes an issue; thanks and acknowledgements become a comment. */
+export function suggestRoute(text: string): 'comment' | 'issue' {
+  return /\?|¿|problem|error|wrong|fallo|mal|no funciona|revis|missing|falta|cuando|when|retras|delay/i.test(text) ? 'issue' : 'comment'
+}
+
+export function routeReply(r: Reply, to: 'comment' | 'issue', ref: string): Reply { return { ...r, routed: to, ref } }
+
+export type HistoryItem = { at: string; kind: 'sent' | 'reply' | 'consent' | 'withdrawn'; text: string; ref?: string }
+
+export function historyOf(c: Contact, messages: Outgoing[], replies: Reply[], subjectOf: (m: Outgoing) => string): HistoryItem[] {
+  const items: HistoryItem[] = []
+  if (c.consentAt) items.push({ at: c.consentAt, kind: 'consent', text: c.consentSource })
+  if (c.withdrawnAt) items.push({ at: c.withdrawnAt, kind: 'withdrawn', text: '' })
+  for (const m of messages) if (m.status === 'sent' && m.sentAt && m.to.includes(c.id)) items.push({ at: m.sentAt, kind: 'sent', text: subjectOf(m), ref: m.id })
+  for (const r of replies) if (r.contactId === c.id) items.push({ at: r.at, kind: 'reply', text: r.text, ref: r.routed })
+  return items.sort((a, b) => b.at.localeCompare(a.at))
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!))
+
+export function fillVars(s: string, v: Record<string, string>) { return s.replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m) }
+
+export interface RenderInput {
+  template: Template
+  project: ProjectSnapshot
+  brand: Brand
+  dept: Department
+  contact: Pick<Contact, 'name' | 'lang'>
+  messageId: string
+  theme: 'light' | 'dark'
+  mx: Mx
+  unsubscribeUrl: string
+}
+
+/** Email-safe HTML (tables, inline styles, 600 px), its plain text, and the subject. No tracking pixel, ever. */
+export function renderEmail(i: RenderInput): { subject: string; html: string; text: string } {
+  const { project: p, mx, brand } = i
+  const dark = i.theme === 'dark'
+  const c = { bg: dark ? '#111315' : '#f4f5f7', card: dark ? '#1b1e21' : '#ffffff', text: dark ? '#e8eaed' : '#1d2125', dim: dark ? '#a0a6ad' : '#5c6670', line: dark ? '#2c3136' : '#e3e6ea' }
+  const vars = { client: i.contact.name.split(' ')[0], project: p.name, company: brand.company }
+  const subject = fillVars(i.template.subject, vars)
+  const link = portalLink(p.viewerUrl, i.messageId)
+  const score = p.health[p.health.length - 1], d = trend(p.health)
+  const html: string[] = [], text: string[] = []
+  const row = (inner: string) => html.push(`<tr><td style="padding:12px 28px;color:${c.text};font:15px/1.5 Arial,sans-serif">${inner}</td></tr>`)
+  for (const b of i.template.blocks) {
+    switch (b.kind) {
+      case 'heading': row(`<h1 style="margin:0;font-size:22px">${esc(fillVars(b.text ?? '', vars))}</h1>`); text.push(fillVars(b.text ?? '', vars).toUpperCase()); break
+      case 'text': row(esc(fillVars(b.text ?? '', vars)).replace(/\n/g, '<br>')); text.push(fillVars(b.text ?? '', vars)); break
+      case 'health': {
+        const t = d > 0 ? mx('up {{n}} since last week', { n: d }) : d < 0 ? mx('down {{n}} since last week', { n: -d }) : mx('same as last week')
+        const color = score >= 80 ? '#1f9d61' : score >= 60 ? '#c98a12' : '#d0453a'
+        const bars = p.health.slice(-8).map((v) => `<td valign="bottom" style="padding:0 2px"><div style="width:10px;height:${Math.max(4, Math.round(v / 3))}px;background:${color};opacity:.75"></div></td>`).join('')
+        row(`<div style="color:${c.dim};font-size:13px">${esc(mx('Model Health Score'))}</div><table role="presentation"><tr><td style="font-size:36px;font-weight:bold;color:${color};padding-right:16px">${score}</td>${bars}</tr></table><div style="color:${c.dim};font-size:13px">${esc(t)}</div>`)
+        text.push(`${mx('Model Health Score')}: ${score} (${t})`); break
+      }
+      case 'deliveries': {
+        const acc = p.deliveries.filter((x) => x.verdict === 'accepted')
+        row(`<strong>${esc(mx('{{n}} deliveries accepted', { n: acc.length }))}</strong>${acc.slice(0, 4).map((x) => `<div style="color:${c.dim};font-size:13px">✓ ${esc(x.supplier)} · ${esc(x.file)}</div>`).join('')}`)
+        text.push(mx('{{n}} deliveries accepted', { n: acc.length })); break
+      }
+      case 'issues':
+        row(`<strong>${esc(mx('{{n}} issues closed, {{o}} still open', { n: p.issues.closed, o: p.issues.open }))}</strong>${p.issues.closedTitles.slice(0, 3).map((x) => `<div style="color:${c.dim};font-size:13px">✓ ${esc(x)}</div>`).join('')}`)
+        text.push(mx('{{n}} issues closed, {{o}} still open', { n: p.issues.closed, o: p.issues.open })); break
+      case 'milestones':
+        row(`<strong>${esc(mx('Milestones'))}</strong>${p.milestones.map((m) => `<div style="color:${m.done ? c.text : c.dim};font-size:13px">${m.done ? '●' : '○'} ${esc(m.name)} · ${esc(m.date)}</div>`).join('')}`)
+        text.push(`${mx('Milestones')}: ${p.milestones.map((m) => `${m.done ? '[x]' : '[ ]'} ${m.name} ${m.date}`).join('; ')}`); break
+      case 'capture':
+        row(`<a href="${esc(link)}" style="display:block;border:1px solid ${c.line};border-radius:8px;padding:48px 12px;text-align:center;color:${c.dim};text-decoration:none;background:${dark ? '#22262a' : '#eef1f4'}">▣ ${esc(p.captureAlt)}<br><span style="font-size:13px">${esc(mx('Open the model in 3D'))}</span></a>`)
+        text.push(`${mx('Open the model in 3D')}: ${link}`); break
+      case 'certificate':
+        row(`<div style="border:1px solid ${c.line};border-radius:8px;padding:12px">${esc(mx('Delivery certificate {{id}} · score {{s}} · {{d}}', { id: p.certificate.id, s: p.certificate.score, d: p.certificate.date }))}</div>`)
+        text.push(mx('Delivery certificate {{id}} · score {{s}} · {{d}}', { id: p.certificate.id, s: p.certificate.score, d: p.certificate.date })); break
+      case 'button':
+        row(`<a href="${esc(link)}" style="display:inline-block;background:${esc(brand.color)};color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold">${esc(b.text || mx('See the project'))}</a>`)
+        text.push(`${b.text || mx('See the project')}: ${link}`); break
+      case 'divider': html.push(`<tr><td style="padding:4px 28px"><hr style="border:0;border-top:1px solid ${c.line}"></td></tr>`); break
+    }
+  }
+  const footer = `${esc(i.dept.signature)}<br>${esc(brand.address)}<br><a href="${esc(i.unsubscribeUrl)}" style="color:${c.dim}">${esc(mx('Stop these updates'))}</a> · ${esc(mx('Reply to this email to answer the team.'))}`
+  const doc = `<!doctype html><html lang="${esc(i.contact.lang)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light dark"><title>${esc(subject)}</title></head>`
+    + `<body style="margin:0;background:${c.bg}"><table role="presentation" width="100%" style="background:${c.bg}"><tr><td align="center" style="padding:16px 8px">`
+    + `<table role="presentation" width="100%" style="max-width:600px;background:${c.card};border-radius:10px;overflow:hidden">`
+    + `<tr><td style="padding:18px 28px;border-top:4px solid ${esc(brand.color)}"><table role="presentation"><tr><td style="width:34px;height:34px;border-radius:6px;background:${esc(brand.color)};color:#fff;font:bold 13px Arial;text-align:center">${esc(brand.initials)}</td><td style="padding-left:10px;color:${c.text};font:bold 14px Arial">${esc(brand.company)}<div style="font-weight:normal;color:${c.dim};font-size:12px">${esc(i.dept.name)} · ${esc(p.name)}</div></td></tr></table></td></tr>`
+    + html.join('')
+    + `<tr><td style="padding:18px 28px;color:${c.dim};font:12px/1.5 Arial,sans-serif;border-top:1px solid ${c.line}">${footer}</td></tr>`
+    + `</table></td></tr></table></body></html>`
+  text.push('', i.dept.signature, `${mx('Stop these updates')}: ${i.unsubscribeUrl}`)
+  return { subject, html: doc, text: text.join('\n\n') }
+}
+
+export function envelopeFor(i: RenderInput, to: string): Envelope {
+  const r = renderEmail(i)
+  return {
+    from: `${i.dept.senderName} <${i.dept.from}>`, replyTo: i.dept.replyTo, to, subject: r.subject, html: r.html, text: r.text,
+    headers: { 'List-Unsubscribe': `<${i.unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+  }
+}

@@ -1515,5 +1515,8 @@
   "Your webhook URL": "あなたの Webhook URL",
   "Your webhooks": "あなたの Webhook",
   "Your workspace": "あなたのワークスペース",
-  "Your workspace plan does not include this yet.": "ワークスペースのプランにはまだ含まれていません。"
+  "Your workspace plan does not include this yet.": "ワークスペースのプランにはまだ含まれていません。",
+  "Client updates": "クライアントへの報告",
+  "Updates": "進捗",
+  "Keep clients up to date with real project data: Health Score, accepted models, closed issues and milestones.": "プロジェクトの実データで顧客に最新状況を届けます：Health Score、承認済みモデル、解決済みの課題、マイルストーン。"
 }

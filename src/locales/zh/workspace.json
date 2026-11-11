@@ -1515,5 +1515,8 @@
   "Your webhook URL": "您的 Webhook URL",
   "Your webhooks": "您的 Webhook",
   "Your workspace": "您的工作区",
-  "Your workspace plan does not include this yet.": "您的工作区套餐尚未包含此功能。"
+  "Your workspace plan does not include this yet.": "您的工作区套餐尚未包含此功能。",
+  "Client updates": "客户更新",
+  "Updates": "进展",
+  "Keep clients up to date with real project data: Health Score, accepted models, closed issues and milestones.": "用真实项目数据让客户了解进展：Health Score、已验收模型、已关闭问题和里程碑。"
 }

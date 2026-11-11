@@ -59,7 +59,7 @@ export const SECTION_NEEDS: Partial<Record<SectionId, Action>> = {
   jobs: 'version.upload', scenes: 'version.upload', data: 'version.upload', ai: 'version.upload',
   certificates: 'version.publish', team: 'members.manage', billing: 'billing',
   quality: 'audit.read', reception: 'reception.manage', integrations: 'webhooks.manage', api: 'webhooks.manage',
-  middleware: 'middleware.manage', automations: 'automations.manage', value: 'value.read',
+  middleware: 'middleware.manage', automations: 'automations.manage', value: 'value.read', mail: 'automations.manage',
 }
 
 export interface Access {
