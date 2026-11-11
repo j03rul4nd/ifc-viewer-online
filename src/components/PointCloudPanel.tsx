@@ -1416,7 +1416,7 @@ export default function PointCloudPanel({
                         aria-pressed={transportMode === mode}
                         className={`rounded-[8px] px-2 py-1.5 text-[11.5px] transition-colors ${
                           transportMode === mode
-                            ? 'bg-[var(--accent)] text-white'
+                            ? 'bg-[var(--accent)] text-[var(--accent-contrast)]'
                             : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-2)]'
                         }`}
                       >
@@ -1859,7 +1859,7 @@ export default function PointCloudPanel({
                             className={[
                               'px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors',
                               !modeMix.mixed && modeMix.value === mode
-                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)]'
                                 : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
                               available ? '' : 'opacity-35 cursor-not-allowed',
                             ].join(' ')}
@@ -2205,8 +2205,8 @@ export default function PointCloudPanel({
                 <>
                   {isMulti && <Hint>{t('scope.analyzeCaption')}</Hint>}
                   {filtersActive && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-[#E9A23B55] bg-[#E9A23B14] px-3 py-2">
-                      <span className="w-2 h-2 rounded-full bg-[#E9A23B] shrink-0" />
+                    <div className="flex items-center gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--warning)_33%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-3 py-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--warning)] shrink-0" />
                       <span className="flex-1 text-[12px] text-[var(--text-dim)]">{t('analyze.activeBanner')}</span>
                       <button type="button" onClick={clearAnalysis}
                         className="text-[12px] font-medium text-[var(--accent)] hover:underline underline-offset-2 whitespace-nowrap">
@@ -2235,7 +2235,7 @@ export default function PointCloudPanel({
                             aria-pressed={demoViewMode === mode}
                             className={`px-2 py-2 rounded-[9px] text-[11.5px] font-medium border transition-colors ${
                               demoViewMode === mode
-                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)]'
                                 : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
                             }`}
                           >
@@ -2562,7 +2562,7 @@ function CheckUp({ issues, onFix, t, describeError, cloud, title, children }: {
                       className={[
                         'px-2.5 py-1 rounded-[8px] text-[11.5px] font-medium transition-colors',
                         i === 0
-                          ? 'bg-[var(--accent)] text-white hover:brightness-110'
+                          ? 'bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110'
                           : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]',
                       ].join(' ')}
                     >

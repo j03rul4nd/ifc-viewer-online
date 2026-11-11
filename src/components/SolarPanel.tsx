@@ -458,14 +458,14 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
       {active && (
         <button
           onClick={() => store.setPanelOpen(true)}
-          className="absolute top-14 max-md:top-[calc(var(--mobile-top-ui)+4px)] left-1/2 -translate-x-1/2 z-20 pointer-events-auto px-2.5 py-1 rounded-full text-[10.5px] font-mono tabular-nums bg-[rgba(10,10,14,0.78)] border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+          className="absolute top-14 max-md:top-[calc(var(--mobile-top-ui)+4px)] left-1/2 -translate-x-1/2 z-20 pointer-events-auto px-2.5 py-1 rounded-full text-[10.5px] font-mono tabular-nums bg-[color-mix(in_srgb,var(--bg-surface)_78%,transparent)] border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
           data-testid="solar-chip"
         >
           ☀ {String(wall.day).padStart(2, '0')}/{String(wall.month).padStart(2, '0')} · {String(wall.hour).padStart(2, '0')}:{String(wall.minute).padStart(2, '0')} ({tzLabel})
           {sunInfo && (sunInfo.altitudeDeg > 0
             ? ` · ${Math.round(sunInfo.altitudeDeg)}°`
             : ` · ${t('chip.belowHorizon')}`)}
-          {location && location.source !== 'ifc' && <span className="ml-1 text-[#E9A23B]">⚠</span>}
+          {location && location.source !== 'ifc' && <span className="ml-1 text-[var(--warning)]">⚠</span>}
         </button>
       )}
 
@@ -510,7 +510,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                       type="button"
                       onClick={() => store.setPanelOpen(false)}
                       aria-label={t('panel.close')}
-                      className="w-10 h-10 shrink-0 rounded-[11px] bg-white/[0.05] text-[var(--text-dim)] flex items-center justify-center"
+                      className="w-10 h-10 shrink-0 rounded-[11px] bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] text-[var(--text-dim)] flex items-center justify-center"
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12" /></svg>
                     </button>
@@ -522,7 +522,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                         type="button"
                         onClick={() => { void handleStart() }}
                         disabled={!activeModelId}
-                        className="w-full h-12 rounded-[12px] text-[14px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40 active:scale-[0.98] transition-transform"
+                        className="w-full h-12 rounded-[12px] text-[14px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)] disabled:opacity-40 active:scale-[0.98] transition-transform"
                       >
                         {t('enable.start')}
                       </button>
@@ -538,7 +538,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                           aria-pressed={playing}
                           className={[
                             'w-11 h-11 shrink-0 rounded-full flex items-center justify-center active:scale-[0.93] transition-transform',
-                            playing ? 'bg-[var(--accent)] text-white' : 'bg-white/[0.08] text-[var(--text)]',
+                            playing ? 'bg-[var(--accent)] text-[var(--accent-contrast)]' : 'bg-[color-mix(in_srgb,var(--text-primary)_8%,transparent)] text-[var(--text)]',
                           ].join(' ')}
                         >
                           {playing
@@ -585,7 +585,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                           <button key={label} type="button" onClick={() => jumpToSeason(m, d)}
                             className={[
                               'shrink-0 h-10 px-3 rounded-full text-[12px] font-medium whitespace-nowrap border',
-                              wall.month === m && wall.day === d ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+                              wall.month === m && wall.day === d ? 'border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
                             ].join(' ')}>
                             {label}
                           </button>
@@ -618,7 +618,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                   <button
                     onClick={() => { void handleStart() }}
                     disabled={!activeModelId}
-                    className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40"
+                    className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)] disabled:opacity-40"
                   >
                     {t('enable.start')}
                   </button>
@@ -805,7 +805,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                     <button
                       onClick={handleSavePreset}
                       disabled={!active}
-                      className="px-2 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40 whitespace-nowrap"
+                      className="px-2 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)] disabled:opacity-40 whitespace-nowrap"
                     >
                       {t('presets.save')}
                     </button>
@@ -860,7 +860,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                       </div>
                       <button
                         onClick={() => { void handleManualLocation() }}
-                        className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white"
+                        className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)]"
                       >
                         {t('location.apply')}
                       </button>
@@ -887,7 +887,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                     >
                       {timelapse !== null && timelapse < 1 ? t('timelapse.rendering', { pct: Math.round(timelapse * 100) }) : t('timelapse.export')}
                     </button>
-                    {timelapseError && <div className="text-[10px] text-[#E9A23B]">{timelapseError}</div>}
+                    {timelapseError && <div className="text-[10px] text-[var(--warning)]">{timelapseError}</div>}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-[var(--text-faint)]">{t('quality.label')}</span>
@@ -897,7 +897,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                         onClick={() => store.setQuality(q)}
                         className={[
                           'px-2 py-1 rounded-[7px] text-[10.5px] font-medium transition-colors',
-                          quality === q ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
+                          quality === q ? 'bg-[var(--accent)] text-[var(--accent-contrast)]' : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
                         ].join(' ')}
                       >
                         {t(`quality.${q}`)}
@@ -917,10 +917,10 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
         {showDefaultNotice && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(0,0,0,0.5)] pointer-events-auto"
+            className="absolute inset-0 z-30 flex items-center justify-center bg-[var(--overlay)] pointer-events-auto"
           >
             <div className="glass-md border border-[var(--border-strong)] rounded-[12px] p-4 max-w-[360px] mx-3">
-              <div className="text-[13px] font-semibold mb-1.5 text-[#E9A23B]">⚠ {t('defaultNotice.title')}</div>
+              <div className="text-[13px] font-semibold mb-1.5 text-[var(--warning)]">⚠ {t('defaultNotice.title')}</div>
               <div className="text-[11.5px] text-[var(--text-dim)] leading-relaxed mb-3">{t('defaultNotice.body')}</div>
               <div className="flex gap-2">
                 <button
@@ -929,7 +929,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                     useSolarStore.getState().setPanelOpen(true)
                     setLocationFormOpen(true)
                   }}
-                  className="flex-1 px-3 py-2 rounded-[8px] text-[12px] font-semibold bg-[var(--accent)] text-white"
+                  className="flex-1 px-3 py-2 rounded-[8px] text-[12px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast)]"
                 >
                   {t('defaultNotice.setLocation')}
                 </button>
@@ -962,7 +962,7 @@ function Badge({ label, warn }: { label: string; warn?: boolean }) {
     <span
       className="px-1.5 py-0.5 rounded-[5px] text-[9.5px] font-medium border"
       style={warn
-        ? { color: '#E9A23B', borderColor: 'rgba(233,162,59,0.4)', background: 'rgba(233,162,59,0.08)' }
+        ? { color: 'var(--warning)', borderColor: 'color-mix(in srgb, var(--warning) 40%, transparent)', background: 'color-mix(in srgb, var(--warning) 8%, transparent)' }
         : { color: 'var(--text-faint)', borderColor: 'var(--border)' }}
     >
       {label}
