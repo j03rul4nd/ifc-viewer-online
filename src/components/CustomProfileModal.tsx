@@ -33,8 +33,8 @@ interface SyncedValidatorProfile {
 
 function severityColor(sev: 'error' | 'warning' | 'info'): string {
   if (sev === 'error')   return 'var(--danger)'
-  if (sev === 'warning') return '#E9A23B'
-  return '#5E9ED6'
+  if (sev === 'warning') return 'var(--warning)'
+  return '#5E9ED6' // severity 'info': proposed token --info
 }
 
 const ICON_OPTIONS = ['⚙️', '🏗️', '🏢', '📐', '🔧', '🔍', '📋', '✅', '🌍', '🏛️']
@@ -107,7 +107,7 @@ function RuleRow({
         style={{ background: checked ? 'var(--accent)' : 'var(--border)' }}
       >
         <Switch.Thumb
-          className="block w-3 h-3 bg-white rounded-full shadow-sm"
+          className="block w-3 h-3 bg-[var(--accent-contrast)] rounded-full shadow-sm"
           style={{
             transform: checked ? 'translateX(17px)' : 'translateX(2px)',
             transition: 'transform 150ms ease',
@@ -373,15 +373,14 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] bg-[var(--overlay)] [[data-theme=dark]_&]:backdrop-blur-sm"
           style={{ animation: 'fadeIn 150ms ease' }}
         />
         <Dialog.Content
-          className="m-sheet fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[540px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl outline-none"
+          className="m-sheet fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[540px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl outline-none [[data-theme=dark]_&]:shadow-[var(--shadow)]"
           style={{
             background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)',
+            border: '1px solid var(--border)',
           }}
         >
           <SheetGrip onClose={() => handleOpenChange(false)} />
@@ -607,7 +606,7 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
               <button
                 onClick={handleSave}
                 disabled={!name.trim() || atLimit}
-                className="px-5 h-8 rounded-lg text-[11px] font-semibold text-white transition-all disabled:opacity-40"
+                className="px-5 h-8 rounded-lg text-[11px] font-semibold text-[var(--accent-contrast)] transition-all disabled:opacity-40"
                 style={{ background: 'var(--accent)' }}
                 onMouseEnter={(e) => { if (!e.currentTarget.disabled) (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.12)' }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = 'none' }}
