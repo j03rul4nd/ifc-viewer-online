@@ -227,16 +227,16 @@ function IssueBadge({
       onClick={onClick}
       className="inline-flex items-center gap-0.5 px-1 rounded text-[10px] font-mono font-semibold leading-none shrink-0 hover:brightness-125 transition-all"
       style={{
-        background: errors > 0 ? '#E0523F22' : '#E9A23B22',
-        color:      errors > 0 ? '#E0523F'   : '#E9A23B',
-        border: `1px solid ${errors > 0 ? '#E0523F44' : '#E9A23B44'}`,
+        background: errors > 0 ? 'color-mix(in srgb, var(--danger) 13%, transparent)' : 'color-mix(in srgb, var(--warn) 13%, transparent)',
+        color:      errors > 0 ? 'var(--danger)' : 'var(--warn)',
+        border: `1px solid ${errors > 0 ? 'color-mix(in srgb, var(--danger) 27%, transparent)' : 'color-mix(in srgb, var(--warn) 27%, transparent)'}`,
         height: 16,
       }}
       title={t('issueBadge', { errors, warnings })}
     >
       {errors > 0 && <span className="text-[var(--danger)]">{errors}</span>}
       {errors > 0 && warnings > 0 && <span className="opacity-40">·</span>}
-      {warnings > 0 && <span style={{ color: '#E9A23B' }}>{warnings}</span>}
+      {warnings > 0 && <span style={{ color: 'var(--warn)' }}>{warnings}</span>}
     </button>
   )
 }
@@ -284,7 +284,7 @@ function GuidEditWarning({
   const { t } = useTranslation(['tree', 'common'])
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--overlay)]"
       onClick={onCancel}
     >
       <div
@@ -307,7 +307,7 @@ function GuidEditWarning({
           </button>
           <button
             onClick={() => onGenerate(generateIfcGuid())}
-            className="px-3 h-8 rounded-lg text-[12px] bg-[var(--accent)] text-white hover:brightness-110"
+            className="px-3 h-8 rounded-lg text-[12px] bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110"
           >
             {t('context.generateNew')}
           </button>
@@ -1094,7 +1094,7 @@ function SpatialRow({
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: allHidden ? 0.45 : 1,
-        backgroundColor: isSelected ? 'rgba(10,132,129,0.12)' : undefined,
+        backgroundColor: isSelected ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : undefined,
       }}
       onClick={() => onSelect(node.expressId, modelId)}
       onDoubleClick={(e) => {
@@ -1276,7 +1276,7 @@ function ElementRow({
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: isHidden ? 0.4 : 1,
-        backgroundColor: isSelected ? 'rgba(10,132,129,0.12)' : undefined,
+        backgroundColor: isSelected ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : undefined,
       }}
       onClick={() => !editing && onSelect(element.expressId, modelId)}
       onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId], modelId) }}
