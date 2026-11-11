@@ -98,7 +98,7 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
         <button
           onClick={() => { trackProUpsellShown({ trigger: 'rulesets' }); openAccountModal() }}
           className="self-start h-7 px-2.5 rounded-lg text-[11px] font-semibold"
-          style={{ background: 'var(--accent)', color: 'white' }}
+          style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
         >
           {t('sync.seePlans')}
         </button>
@@ -149,7 +149,7 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
         </button>
       )}
       {entitlement.status === 'canceled' && (
-        <p className="text-[10px] leading-snug rounded px-2 py-1" style={{ background: 'rgba(233,162,59,0.10)', color: '#E9A23B' }}>
+        <p className="text-[10px] leading-snug rounded px-2 py-1" style={{ background: 'color-mix(in srgb, var(--warning) 10%, transparent)', color: 'var(--warning)' }}>
           {t('sync.readOnlyNote')}
         </p>
       )}
@@ -166,7 +166,7 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
           </button>
           {canWrite && (
             <button onClick={() => void handleDelete(r.id)} disabled={busy === r.id}
-              className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e0523f)] hover:border-[var(--danger,#e0523f)] transition-colors disabled:opacity-40">
+              className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger)] hover:border-[var(--danger)] transition-colors disabled:opacity-40">
               {t('sync.delete')}
             </button>
           )}
