@@ -84,3 +84,37 @@ describe('automatic validation', () => {
     for (const k of ['folder', 'ci', 'api'] as const) expect(snippet(k, 'house-v3')).toContain('house-v3')
   })
 })
+
+import { FIX_RULE, GATE, PROJECT_HEALTH, PROFILE_PREVIEW, PROFILES, atRisk, costCompare, gateDecision, trend, workload } from './sample'
+import { getRuleRemediation } from '../../../../i18n/rule-remediation'
+
+describe('team v2', () => {
+  it('workload counts only active, assigned issues, busiest first', () => {
+    const w = workload(ISSUES)
+    expect(w[0].open).toBeGreaterThanOrEqual(w[w.length - 1].open)
+    expect(w.reduce((a, r) => a + r.open, 0)).toBe(ISSUES.filter((i) => i.assignee && (i.status === 'open' || i.status === 'in_progress')).length)
+  })
+  it('at-risk lists overdue first, then due soon', () => {
+    const r = atRisk(ISSUES)
+    expect(r[0].inDays).toBeLessThan(0)
+    expect(r.every((i, k) => k === 0 || r[k - 1].inDays <= i.inDays)).toBe(true)
+    expect(r.every((i) => i.inDays <= 3)).toBe(true)
+  })
+  it('gate stops below the minimum and on any required rule', () => {
+    expect(gateDecision(88, [])).toBe('pass')
+    expect(gateDecision(79, [])).toBe('below')
+    expect(gateDecision(95, [GATE.mustPass[0]])).toBe('must')
+  })
+  it('every suggested fix exists in the remediation corpus', () => {
+    for (const rule of Object.values(FIX_RULE)) expect(getRuleRemediation(rule, 'es')?.summary).toBeTruthy()
+  })
+  it('every profile has a preview that adds up', () => {
+    for (const p of PROFILES) { const v = PROFILE_PREVIEW[p.id]; expect(v.fail).toBeLessThanOrEqual(v.checked); expect(v.issues).toBeLessThanOrEqual(v.fail) }
+  })
+  it('cost comparison uses the 59 € seat and dated ranges', () => {
+    const c = costCompare(6)
+    expect(c.ours).toBe(354)
+    expect(c.theirs[0]).toBeLessThan(c.theirs[1])
+    expect(trend(PROJECT_HEALTH[0].weeks)).toBe(2)
+  })
+})

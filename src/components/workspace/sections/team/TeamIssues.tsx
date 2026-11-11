@@ -1,14 +1,16 @@
 // N2 · Team BCF issues (doc 25b F6, "Iteración UI Team"). Built dark on sample
 // data: create from the viewer or a report, assign, status, due date, saved
 // camera, free guests, BCF import/export. Nothing is saved or sent.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Camera as CameraIcon, Eye, FileText, Workflow, Download, Upload, UserPlus, MessageSquare } from 'lucide-react'
 import type { SectionProps } from '../../registry'
-import { DataList, Dialog, Dot, Empty, Field, Head, Panel, Primary, Quiet, SectionLabel, Tabs, inputClass } from '../../ui'
+import { CopyField, DataList, Dialog, Dot, Empty, Field, Head, Panel, Primary, Quiet, SectionLabel, Tabs, inputClass } from '../../ui'
 import { SoonBanner } from '../../Soon'
 import { useTeamTx, type TeamTx } from './i18n'
+import { useTranslation } from 'react-i18next'
+import { TeamPanel } from './TeamPanel'
 import {
-  ISSUES, MEMBERS, ME, NEXT_STATUS, TODAY, canMove, filterIssues, isOverdue, member,
+  FIX_RULE, ISSUES, MEMBERS, ME, NEXT_STATUS, TODAY, canMove, filterIssues, isOverdue, member,
   type Camera, type Discipline, type IssuePriority, type IssueSource, type IssueStatus, type IssueTab, type Member, type TeamIssue,
 } from './sample'
 
@@ -77,6 +79,7 @@ export default function TeamIssues({ data }: SectionProps) {
   const tt = useTeamTx()
   const empty = data.projects.length === 0
   const [issues, setIssues] = useState<TeamIssue[]>(empty ? [] : ISSUES)
+  const [view, setView] = useState<'panel' | 'list'>('panel')
   const [tab, setTab] = useState<IssueTab>('open')
   const [q, setQ] = useState('')
   const [disc, setDisc] = useState<Discipline | 'all'>('all')
@@ -123,6 +126,8 @@ export default function TeamIssues({ data }: SectionProps) {
           action={<><Primary onClick={() => setDraft(VIEWER_DRAFT)}>{tt('New issue')}</Primary><Quiet onClick={() => setDialog('import')}>{tt('Import BCF')}</Quiet></>} />
       ) : (
         <>
+          <div className="mb-5"><Tabs tabs={[{ id: 'panel' as const, label: tt('Team panel') }, { id: 'list' as const, label: tt('All issues'), count: count('open') }]} value={view} onChange={setView} label={tt('Issues')} /></div>
+          {view === 'panel' ? <TeamPanel issues={issues} tt={tt} onOpen={setOpen} /> : <>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
             {[
               [tt('Open'), count('open')],
@@ -162,6 +167,7 @@ export default function TeamIssues({ data }: SectionProps) {
                 ]} />}
           <p className="mt-3 text-[12px] text-[var(--text-faint)]">{tt('Another BCF tool? <0>Import BCF</0> — duplicates are matched by GUID.').split(/<0>|<\/0>/).map((part, k) => k === 1
             ? <button key={k} type="button" className="underline hover:text-[var(--text)]" onClick={() => setDialog('import')}>{part}</button> : part)}</p>
+          </>}
         </>
       )}
 
@@ -225,6 +231,7 @@ function IssueDetail({ i, me, tt, patch }: { i: TeamIssue; me: Member | null; tt
     <div className="flex flex-col gap-4">
       <p className="text-[13px] leading-[1.55]">{i.description}</p>
       <CameraCard c={i.camera} tt={tt} />
+      {FIX_RULE[i.n] && <FixSuggestion rule={FIX_RULE[i.n]} tt={tt} />}
       <p className="text-[12px] text-[var(--text-faint)]">{sourceLabel(tt, i.source)} · {i.model}{i.rule ? ` · ${i.rule}` : ''} · {tt('by {{name}} on {{date}}', { name: whoName(i.author), date: i.created })}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={tt('Status')}>
@@ -322,7 +329,7 @@ function GuestsDialog({ tt, onClose }: { tt: TeamTx; onClose: () => void }) {
   const [email, setEmail] = useState('')
   const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)
   return (
-    <Dialog title={tt('Guests')} onClose={onClose} footer={<Quiet onClick={onClose}>{tt('Done')}</Quiet>}>
+    <Dialog title={tt('Invite your client, free')} onClose={onClose} footer={<Quiet onClick={onClose}>{tt('Done')}</Quiet>}>
       <div className="flex flex-col gap-4">
         <p className="text-[12.5px] text-[var(--text-dim)]">{tt('Clients and contractors are free: they see the issues you share, comment, and move the ones assigned to them. They do not take a seat.')}</p>
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (!valid) return; setGuests((g) => [...g, { id: `g${g.length + 3}`, name: email, initials: email.slice(0, 2).toUpperCase(), role: 'guest', title: '', company: email.split('@')[1], email }]); setEmail('') }}>
@@ -337,8 +344,53 @@ function GuestsDialog({ tt, onClose }: { tt: TeamTx; onClose: () => void }) {
             </li>
           ))}
         </ul>
+        <div>
+          <p className="text-[12px] text-[var(--text-dim)] mb-1.5">{tt('What your client sees')}</p>
+          <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] p-3">
+            <p className="text-[11px] text-[var(--text-faint)]">Ribera Ingeniería · Hospital Comarcal Alzira</p>
+            <p className="mt-1 text-[13px] font-medium">{tt('3 issues assigned to you')}</p>
+            <ul className="mt-2 flex flex-col gap-1.5 text-[12px]">
+              <li className="flex items-center gap-2"><Dot color="var(--warn)" /><span className="truncate">#212 · Slab opening missing for riser R3</span></li>
+              <li className="flex items-center gap-2"><Dot color="var(--text)" /><span className="truncate">#208 · Ramp slope above 8 % at the main entrance</span></li>
+            </ul>
+            <p className="mt-2 text-[11px] text-[var(--text-faint)]">{tt('Model in the browser, no install, no account fee.')}</p>
+          </div>
+        </div>
+        <CopyField label={tt('Or share a sign-in link')} value="https://ifcvieweronline.eu/join/ribera-hca-7Kq2" mono />
         <p className="text-[12px] text-[var(--text-faint)]">{tt('{{n}} editors · {{g}} guests at no cost', { n: MEMBERS.filter((m) => m.role !== 'guest').length, g: guests.length })}</p>
       </div>
     </Dialog>
+  )
+}
+
+type Remediation = { summary: string; tools: Partial<Record<'revit' | 'archicad' | 'tekla' | 'allplan', string>> }
+const TOOL_NAME = { revit: 'Revit', archicad: 'ArchiCAD', tekla: 'Tekla', allplan: 'Allplan' } as const
+
+/** How to fix it in the authoring tool, from the hand-written remediation corpus (no AI). Loaded on demand. */
+export function FixSuggestion({ rule, tt }: { rule: string; tt: TeamTx }) {
+  const { i18n } = useTranslation()
+  const [fix, setFix] = useState<Remediation | null>(null)
+  const [tool, setTool] = useState<keyof typeof TOOL_NAME>('revit')
+  useEffect(() => {
+    let on = true
+    void import('../../../../i18n/rule-remediation').then((m) => { if (on) setFix(m.getRuleRemediation(rule, i18n?.language || 'en') ?? null) })
+    return () => { on = false }
+  }, [rule, i18n?.language])
+  if (!fix) return null
+  const tools = (Object.keys(TOOL_NAME) as (keyof typeof TOOL_NAME)[]).filter((t) => fix.tools[t])
+  const pick = tools.includes(tool) ? tool : tools[0]
+  return (
+    <Panel className="p-3 min-w-0">
+      <p className="text-[12.5px] font-medium">{tt('Suggested fix')}</p>
+      <p className="mt-1 text-[12.5px] text-[var(--text-dim)] leading-[1.5]">{fix.summary}</p>
+      {pick && <>
+        <div className="mt-2.5 flex flex-wrap gap-1.5" role="tablist" aria-label={tt('Authoring tool')}>
+          {tools.map((t) => <button key={t} type="button" role="tab" aria-selected={t === pick} onClick={() => setTool(t)}
+            className={`h-[26px] px-2.5 rounded-full text-[11.5px] border ${t === pick ? 'border-[var(--accent)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]'}`}>{TOOL_NAME[t]}</button>)}
+        </div>
+        <p className="mt-2 text-[12.5px] leading-[1.55] whitespace-pre-line [overflow-wrap:anywhere]">{fix.tools[pick]}</p>
+      </>}
+      <p className="mt-2 text-[11px] text-[var(--text-faint)]">{tt('Written by our team for each rule, not generated.')}</p>
+    </Panel>
   )
 }

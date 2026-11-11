@@ -200,3 +200,76 @@ export function snippet(kind: SourceKind, profile: string): string {
   if (kind === 'ci') return `# .github/workflows/ifc-check.yml\non: [push]\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npx ifc-check "models/**/*.ifc" --profile ${profile}\n        env: { IFC_KEY: \${{ secrets.IFC_KEY }} }`
   return `curl -X POST https://api.ifcvieweronline.eu/v1/validations \\\n  -H "Authorization: Bearer $IFC_KEY" \\\n  -F profile=${profile} -F file=@model.ifc`
 }
+
+// ── v2 · team panel, publication gate, preview, cost ─────────────────────────
+
+/** Validator rule each sample issue maps to, so the fix comes from the remediation corpus. */
+export const FIX_RULE: Record<number, string> = {
+  214: 'RULE_ELEMENT_CLASH', 213: 'RULE_MISSING_PROPERTY_SET', 212: 'RULE_CLASH_MEP_STRUCTURAL', 211: 'RULE_NAMING_CONVENTION',
+  210: 'RULE_ELEMENT_CLASH', 209: 'RULE_MISSING_CLASSIFICATION', 206: 'RULE_MISSING_MATERIAL', 205: 'RULE_STOREY_ELEVATION_ORDER', 203: 'RULE_DUPLICATE_GUID',
+}
+
+export interface ProjectHealth { id: string; name: string; weeks: number[]; published: number; blocked: number; lead: string }
+/** Health Score per project, last 8 weeks (oldest first). */
+export const PROJECT_HEALTH: ProjectHealth[] = [
+  { id: 'HCA', name: 'Hospital Comarcal Alzira', weeks: [68, 70, 71, 74, 73, 77, 79, 81], published: 9, blocked: 3, lead: 'm1' },
+  { id: 'CEIP', name: 'CEIP Les Moreres', weeks: [84, 85, 85, 86, 87, 86, 86, 86], published: 5, blocked: 1, lead: 'm4' },
+  { id: 'NAVE', name: 'Nave logística Riba-roja', weeks: [83, 82, 82, 80, 81, 79, 78, 77], published: 6, blocked: 2, lead: 'm2' },
+]
+export const trend = (w: number[]) => w[w.length - 1] - w[w.length - 2]
+
+/** Open issues per person, with how many are overdue. Busiest first. */
+export function workload(all: TeamIssue[], today = TODAY): { id: string; open: number; overdue: number }[] {
+  const m = new Map<string, { open: number; overdue: number }>()
+  for (const i of all) {
+    if (!i.assignee || (i.status !== 'open' && i.status !== 'in_progress')) continue
+    const r = m.get(i.assignee) ?? { open: 0, overdue: 0 }
+    r.open++; if (isOverdue(i, today)) r.overdue++
+    m.set(i.assignee, r)
+  }
+  return [...m.entries()].map(([id, r]) => ({ id, ...r })).sort((a, b) => b.open - a.open || b.overdue - a.overdue)
+}
+
+const dayDiff = (a: string, b: string) => Math.round((Date.parse(a) - Date.parse(b)) / 86400000)
+/** Active issues overdue or due within `days`, most urgent first. */
+export function atRisk(all: TeamIssue[], days = 3, today = TODAY): (TeamIssue & { inDays: number })[] {
+  return all.filter((i) => i.due && (i.status === 'open' || i.status === 'in_progress') && dayDiff(i.due, today) <= days)
+    .map((i) => ({ ...i, inDays: dayDiff(i.due!, today) })).sort((a, b) => a.inDays - b.inDays)
+}
+
+export interface Gate { minScore: number; mustPass: string[]; reviewer: boolean }
+export const GATE: Gate = { minScore: 80, mustPass: ['GUID-UNIQUE', 'EIR-HCA-07', 'FED-LEVELS'], reviewer: true }
+export interface GateEvent { at: string; file: string; score: number; failedMust: string[]; outcome: 'published' | 'blocked' | 'override'; who: string; note?: string }
+export const GATE_HISTORY: GateEvent[] = [
+  { at: '2026-11-11 09:44', file: 'HCA_ARQ_v6.ifc', score: 88, failedMust: [], outcome: 'published', who: 'm1' },
+  { at: '2026-11-11 08:16', file: 'NAVE_MEP_v4.ifc', score: 76, failedMust: [], outcome: 'blocked', who: 'auto' },
+  { at: '2026-11-10 18:21', file: 'HCA_ARQ_v6.ifc', score: 72, failedMust: ['EIR-HCA-07'], outcome: 'blocked', who: 'auto' },
+  { at: '2026-11-10 12:50', file: 'NAVE_EST_v8.ifc', score: 90, failedMust: [], outcome: 'published', who: 'm3' },
+  { at: '2026-11-09 17:30', file: 'CEIP_ARQ_v3.ifc', score: 78, failedMust: [], outcome: 'override', who: 'm6', note: 'Tender issue for the client meeting; ramp fix follows in v4.' },
+  { at: '2026-11-09 16:14', file: 'NAVE_ARQ_v5.ifc', score: 86, failedMust: [], outcome: 'published', who: 'm4' },
+]
+/** What the gate does with a version. */
+export function gateDecision(score: number, failed: string[], g: Gate = GATE): 'pass' | 'below' | 'must' {
+  if (failed.some((f) => g.mustPass.includes(f))) return 'must'
+  return score >= g.minScore ? 'pass' : 'below'
+}
+
+/** Profile preview over last week's 31 deliveries (sample of what the API backtest returns). */
+export const PROFILE_PREVIEW: Record<string, { checked: number; fail: number; issues: number; top: string }> = {
+  'house-v3': { checked: 31, fail: 5, issues: 4, top: 'Missing classification (Uniclass)' },
+  'iso-naming': { checked: 31, fail: 9, issues: 7, top: 'File name not in ISO 19650 fields' },
+  'eir-hca': { checked: 31, fail: 6, issues: 5, top: 'Doors without FireRating' },
+}
+
+/**
+ * Monthly cost for a team, from public list prices consulted 2026-05-25
+ * (BIMcollab and Solibri pricing pages; see memory competitive intelligence).
+ * Ranges, VAT excluded; check before quoting.
+ */
+export const COST_SOURCE_DATE = '2026-05-25'
+export function costCompare(editors: number, checkers = 2) {
+  const ours = 59 * editors
+  const bimcollab = [12.5 * editors, 25 * editors] as const
+  const solibri = [(1428 / 12) * checkers, (2772 / 12) * checkers] as const
+  return { ours, bimcollab, solibri, theirs: [bimcollab[0] + solibri[0], bimcollab[1] + solibri[1]] as const }
+}
