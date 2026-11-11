@@ -326,6 +326,41 @@ body {
   .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
 }
 
+/* Light theme: same frosted glass, light surface (dark values above unchanged). */
+[data-theme="light"] .glass {
+  background: color-mix(in srgb, var(--bg-surface) 85%, transparent);
+}
+[data-theme="light"] .glass-md {
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+}
+[data-theme="light"] .glass-xl {
+  background: color-mix(in srgb, var(--text-primary) 35%, transparent);
+}
+[data-theme="light"] .mobile-pill-glass,
+[data-theme="light"] .mobile-sheet-glass {
+  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  -webkit-backdrop-filter: blur(36px) saturate(1.6);
+  backdrop-filter: blur(36px) saturate(1.6);
+  border: 0.5px solid var(--border-subtle);
+  box-shadow: var(--shadow);
+}
+@media (max-width: 767px) {
+  [data-theme="light"] .mobile-sidebar-sheet {
+    background: color-mix(in srgb, var(--bg-surface) 95%, transparent) !important;
+    border-top: 0.5px solid var(--border-subtle) !important;
+    box-shadow: var(--shadow);
+  }
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-theme="light"] .glass, [data-theme="light"] .glass-md { background: var(--bg-surface) !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="light"] .glass, [data-theme="light"] .glass-md, [data-theme="light"] .mobile-pill-glass,
+  [data-theme="light"] .mobile-sheet-glass, [data-theme="light"] .mobile-sidebar-sheet {
+    background: var(--bg-surface) !important;
+  }
+}
+
 /* ── GeoPanel inputs (GIS map mode) ─────────────────────────────────────────── */
 
 .geo-input {
