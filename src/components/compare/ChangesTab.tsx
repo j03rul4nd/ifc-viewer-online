@@ -135,7 +135,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
               <button
                 key={label} type="button"
                 onClick={(ev) => { run(); const d = ev.currentTarget.closest('details'); if (d) d.open = false }}
-                className="h-9 px-2.5 text-left rounded-md text-[12px] text-[var(--text-dim)] hover:bg-white/10 hover:text-[var(--text)]"
+                className="h-9 px-2.5 text-left rounded-md text-[12px] text-[var(--text-dim)] hover:bg-[var(--bg-hover)] hover:text-[var(--text)]"
               >
                 {label}
               </button>

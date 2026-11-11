@@ -42,7 +42,7 @@ export default function SidePicker({ side, state, baselines, busy, onLoad }: Pro
         <span className="text-[10.5px] text-[var(--text-faint)]">{t(`side.${side}Hint`)}</span>
       </div>
 
-      <div role="tablist" className="grid grid-cols-3 gap-0.5 p-0.5 rounded-lg bg-black/30 border border-[var(--border)]">
+      <div role="tablist" className="grid grid-cols-3 gap-0.5 p-0.5 rounded-lg bg-[color-mix(in_srgb,var(--scrim)_30%,transparent)] border border-[var(--border)]">
         {tabs.map((k) => (
           <button
             key={k} role="tab" aria-selected={kind === k} title={t(`source.${k}`)} type="button" onClick={() => setKind(k)}

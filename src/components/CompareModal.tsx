@@ -178,9 +178,9 @@ export default function CompareModal({ onClose, viewerApiRef }: {
               className={`shrink-0 h-10 sm:h-8 px-3 text-[12.5px] sm:text-[12px] -mb-px border-b-2 whitespace-nowrap transition-colors ${tab === k ? 'border-[var(--accent)] text-[var(--text)]' : 'border-transparent text-[var(--text-faint)] hover:text-[var(--text)]'}`}
             >
               {t(`tabs.${k}`)}
-              {k === 'changes' && diff && <span className="ml-1.5 px-1.5 rounded-full bg-white/10 text-[10.5px] tabular-nums">{diff.elements.length}</span>}
-              {k === 'ids' && ids && <span className="ml-1.5 px-1.5 rounded-full bg-white/10 text-[10.5px] tabular-nums">{ids.diff.headScore}</span>}
-              {k === 'history' && baselines.length > 0 && <span className="ml-1.5 px-1.5 rounded-full bg-white/10 text-[10.5px] tabular-nums">{baselines.length}</span>}
+              {k === 'changes' && diff && <span className="ml-1.5 px-1.5 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] text-[10.5px] tabular-nums">{diff.elements.length}</span>}
+              {k === 'ids' && ids && <span className="ml-1.5 px-1.5 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] text-[10.5px] tabular-nums">{ids.diff.headScore}</span>}
+              {k === 'history' && baselines.length > 0 && <span className="ml-1.5 px-1.5 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] text-[10.5px] tabular-nums">{baselines.length}</span>}
             </button>
           ))}
         </div>

@@ -298,7 +298,7 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
         </div>
       </nav>
       {moreOpen && (
-        <div className="md:hidden fixed inset-0 z-10 bg-black/40" onClick={() => setMoreOpen(false)}>
+        <div className="md:hidden fixed inset-0 z-10 bg-[var(--overlay)]" onClick={() => setMoreOpen(false)}>
           <div role="menu" onClick={(e) => e.stopPropagation()}
             className="absolute inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] rounded-t-[14px] border-t border-[var(--border)] bg-[var(--surface)] py-2">
             {more.map((s, i) => (

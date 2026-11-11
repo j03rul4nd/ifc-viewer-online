@@ -252,7 +252,7 @@ function Swatch({ style }: { style: GroupStyle }) {
   const url = s.kind === 'icon' ? iconDataUrl(s.icon, style.point.color) : null
   return url
     ? <img src={url} alt="" className="w-5 h-5 shrink-0" />
-    : <span className="w-4 h-4 shrink-0 rounded-full border border-black/40" style={{ background: style.point.color }} />
+    : <span className="w-4 h-4 shrink-0 rounded-full border border-[var(--border-strong)]" style={{ background: style.point.color }} />
 }
 
 function GroupCard({ g, count, kinds, schema, rows, open, onToggle, onChange, onUp, onDown, onDelete, t }: {
