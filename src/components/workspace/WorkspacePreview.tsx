@@ -156,7 +156,8 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     </Banner>
   )
   else if (!canSee(section, access.can)) body = <Banner tone="info" title={tx('Your role does not include this')} action={<Quiet onClick={() => go('overview')}>{tx('Go to overview')}</Quiet>}>{tx('Ask an admin of your company if you need it: they decide what each role can do.')}</Banner>
-  else if (!canUse(plan, current)) body = <LockedSection section={current} current={plan} period={data.account.billing} onUpgrade={setCheckout} />
+  else if (!canUse(plan, current)) body = <LockedSection section={current} current={plan} period={data.account.billing} onUpgrade={setCheckout}
+    preview={<current.Component key={section} data={{ ...data, account: { ...data.account, plan: current.requires } }} actions={actions} />} />
   else body = <current.Component key={section} data={data} actions={actions} />
 
   const sub = path.split('/workspace/')[1]?.split('/')[1]

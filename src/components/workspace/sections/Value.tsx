@@ -6,6 +6,7 @@ import { useAccess, valueOf } from '../roles'
 import { paidApi, type ApiValue } from '../../../lib/cloud/paid-client'
 import { usePaidQuery } from '../../../hooks/usePaidQuery'
 import { useTx } from '../i18n'
+import { planMonthlyEur } from '../gain'
 
 const MONTHS = 3
 const MEASURED = { runs: 96, runMinutes: 1860, rejected: 22, delivered: 61, blocked: 7, closed: 148, medianDays: 4.2 }
@@ -20,7 +21,8 @@ export default function Value(_: SectionProps) {
   const real = q.source === 'live' ? q.data : null
   const M = real ? { runs: real.measured.automation_runs, runMinutes: 0, rejected: real.measured.deliveries_stopped, delivered: real.deliveries, blocked: real.measured.publishes_blocked, closed: real.issues_closed, medianDays: real.median_days_to_close ?? 0 } : MEASURED
   const [hourly, setHourly] = useState(45)
-  const [cost, setCost] = useState(175)
+  // Our list price, never a figure the buyer is asked to type in.
+  const [cost, setCost] = useState(() => planMonthlyEur('team'))
   const [perRejected, setPerRejected] = useState(45)
   useEffect(() => { if (real) { setHourly(real.assumptions.hourly_eur); setCost(real.assumptions.monthly_cost_eur); setPerRejected(real.assumptions.rejected_minutes) } }, [real])
   // The server sums automation minutes; take them back out of its hours so the assumptions can move live.
@@ -73,7 +75,7 @@ export default function Value(_: SectionProps) {
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label={tx('Cost of an hour (€)')}><input disabled={!edit} className={`${inputClass} tabular-nums`} inputMode="numeric" value={hourly} onChange={num(setHourly)} /></Field>
           <Field label={tx('Minutes lost on a bad delivery')}><input disabled={!edit} className={`${inputClass} tabular-nums`} inputMode="numeric" value={perRejected} onChange={num(setPerRejected)} /></Field>
-          <Field label={tx('What you pay a month (€)')}><input disabled={!edit} className={`${inputClass} tabular-nums`} inputMode="numeric" value={cost} onChange={num(setCost)} /></Field>
+          <Field label={tx('What it costs a month (€)')} hint={tx('List price of your plan, billed yearly.')}><input readOnly disabled className={`${inputClass} tabular-nums`} value={cost} /></Field>
         </div>
         {real && edit && <div className="mt-3"><Quiet onClick={save}>{tx('Save')}</Quiet></div>}
         <p className="mt-3 text-[12px] leading-[1.5] text-[var(--text-faint)]">{tx('Set them with your own figures: the result is only as good as they are. The minutes per automation are set on each one.')}</p>
