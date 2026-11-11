@@ -90,3 +90,43 @@ describe('pro translations', () => {
     expect(proT('en', '{{done}} of {{total}} checked', { done: 1, total: 2 })).toBe('1 of 2 checked')
   })
 })
+
+describe('pro v2', async () => {
+  const { bySeverity, autoFixable, batchReportHtml, certificateHtml, invoiceLine, savings, verifyUrl } = await import('./pro-reports')
+  const { byType } = await import('./VersionCompare')
+  const { SAMPLE_MONTH, SAMPLE_CERT_DOC } = await import('./pro-sample')
+  const t = (s: string, v?: Record<string, unknown>) => proT('en', s, v)
+
+  it('orders the folder worst first, unreadable on top', () => {
+    const o = bySeverity(rows)
+    expect(o[0].status).toBe('unreadable')
+    expect(o[1].file.score).toBe(57)
+    const scores = o.slice(1).map((r) => r.file.score!)
+    expect(scores).toEqual([...scores].sort((a, b) => a - b))
+  })
+  it('estimates the free automatic fixes from the main rule', () => {
+    expect(autoFixable({ name: 'x', sizeMb: 1, issues: 22, worstRule: 'Duplicate names' })).toBe(22)
+    expect(autoFixable({ name: 'x', sizeMb: 1, unreadable: true })).toBe(0)
+  })
+  it('prints a branded folder report and escapes names', () => {
+    const html = batchReportHtml([{ file: { name: '<b>.ifc', sizeMb: 1, score: 50, issues: 3, worstRule: 'Duplicate names' }, status: 'fail' }], 'ISO 19650 basics', { studio: 'Vidal', logo: 'data:image/png;base64,AA' }, t, '2026-11-11')
+    expect(html).toContain('&lt;b&gt;.ifc')
+    expect(html).toContain('<img class="logo"')
+    expect(html).toContain('Issued by Vidal')
+  })
+  it('makes an invoice-ready certificate with a verify link', () => {
+    expect(certificateHtml(SAMPLE_CERT_DOC, { studio: 'Vidal' }, t)).toContain(verifyUrl(SAMPLE_CERT_DOC.id))
+    expect(invoiceLine(SAMPLE_CERT_DOC, t)).toContain(SAMPLE_CERT_DOC.id)
+    expect(proT('es', 'BIM model verification {{file}}, certificate {{id}}, check it at {{url}}', { file: 'a', id: 'b', url: 'c' })).toContain('certificado b')
+  })
+  it('sums hours saved with the visible formula', () => {
+    const s = savings(SAMPLE_MONTH)
+    expect(s.minutes).toBe(36 * 6 + 7 * 45 + 3 * 20 + 42 * 3)
+    expect(s.ratio).toBeGreaterThan(1)
+    expect(savings({ deliveries: 0, batchFiles: 0, linkViews: 0, certificates: 0, diffs: 0 }).empty).toBe(true)
+  })
+  it('groups changed elements by IFC type', () => {
+    const b = byType(SAMPLE_DIFF)
+    expect(b[0]).toMatchObject({ type: 'IfcWall', added: 9, modified: 112, total: 121 })
+  })
+})

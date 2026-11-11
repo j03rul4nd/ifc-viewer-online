@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Primary, Quiet, Danger, Dialog, DataList, Empty, Field, Toggle, inputClass, Dot } from '../../ui'
 import { SAMPLE_LINKS, TODAY, linkState, type ClientLink } from './pro-sample'
 import { useP } from './pro-i18n'
+import ClientView from './ClientView'
 
 const addDays = (iso: string, days: number) => new Date(Date.parse(iso) + days * 864e5).toISOString().slice(0, 10)
 
@@ -66,6 +67,7 @@ export default function ClientLinks({ versions, initial = SAMPLE_LINKS, newOpen,
   const [links, setLinks] = useState<ClientLink[]>(initial)
   const [revoke, setRevoke] = useState<ClientLink | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const [viewing, setViewing] = useState<ClientLink | null>(null)
   const update = (id: string, patch: Partial<ClientLink>) => setLinks((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)))
   const STATE: Record<ReturnType<typeof linkState>, [string, string]> = { active: ['Active', 'var(--ok)'], expired: ['Expired', 'var(--warn)'], revoked: ['Revoked', 'var(--text-faint)'] }
 
@@ -90,11 +92,12 @@ export default function ClientLinks({ versions, initial = SAMPLE_LINKS, newOpen,
           actions={(l) => {
             const st = linkState(l)
             if (st === 'revoked') return null
-            if (st === 'expired') return <Quiet onClick={() => update(l.id, { expires: addDays(TODAY, 30) })}>{p('Extend 30 days')}</Quiet>
-            return <><Quiet onClick={() => { void navigator.clipboard?.writeText(`https://www.ifcvieweronline.eu/s/${l.id}`).catch(() => {}); setCopied(l.id) }}>{copied === l.id ? p('Copied') : p('Copy link')}</Quiet><Quiet onClick={() => setRevoke(l)}>{p('Revoke')}</Quiet></>
+            if (st === 'expired') return <><Quiet onClick={() => setViewing(l)}>{p('See as client')}</Quiet><Quiet onClick={() => update(l.id, { expires: addDays(TODAY, 30) })}>{p('Extend 30 days')}</Quiet></>
+            return <><Quiet onClick={() => setViewing(l)}>{p('See as client')}</Quiet><Quiet onClick={() => { void navigator.clipboard?.writeText(`https://www.ifcvieweronline.eu/s/${l.id}`).catch(() => {}); setCopied(l.id) }}>{copied === l.id ? p('Copied') : p('Copy link')}</Quiet><Quiet onClick={() => setRevoke(l)}>{p('Revoke')}</Quiet></>
           }} />
       )}
       {newOpen && <NewLinkDialog versions={versions} preset={preset} onClose={() => setNewOpen(false)} onCreate={(l) => { setLinks((ls) => [l, ...ls]); setNewOpen(false) }} />}
+      {viewing && <ClientView link={viewing} onClose={() => setViewing(null)} />}
       {revoke && (
         <Dialog title={p('Revoke “{{name}}”?', { name: revoke.label })} onClose={() => setRevoke(null)}
           footer={<><Quiet onClick={() => setRevoke(null)}>{p('Cancel')}</Quiet><Danger onClick={() => { update(revoke.id, { revoked: true }); setRevoke(null) }}>{p('Revoke link')}</Danger></>}>

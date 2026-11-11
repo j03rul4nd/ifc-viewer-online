@@ -1,9 +1,12 @@
 // Certificate branding (Pro, dark): logo + studio name on new certificates,
-// previewed live. Issued certificates keep their fingerprint and don't change.
+// previewed live, and the certificate as a document to attach to an invoice
+// with a line ready to paste. Issued certificates keep their fingerprint.
 
-import { useEffect, useRef, useState } from 'react'
-import { Panel, Primary, Quiet, Field, inputClass, scoreColor } from '../../ui'
-import { LOGO_MAX_KB, LOGO_TYPES, SAMPLE_BRAND } from './pro-sample'
+import { useRef, useState } from 'react'
+import { Panel, Primary, Quiet, Field, inputClass, scoreColor, CopyField } from '../../ui'
+import { LOGO_MAX_KB, LOGO_TYPES, SAMPLE_BRAND, SAMPLE_CERT_DOC } from './pro-sample'
+import { certificateHtml, invoiceLine, openPrintable, verifyUrl } from './pro-reports'
+import { readAsDataUrl, setBrand, useBrand } from './brand-store'
 import { useP } from './pro-i18n'
 
 export function logoError(f: { type: string; size: number }): string | null {
@@ -14,54 +17,67 @@ export function logoError(f: { type: string; size: number }): string | null {
 
 export default function CertificateBrand() {
   const p = useP()
-  const [logo, setLogo] = useState<string | null>(null)
-  const [studio, setStudio] = useState(SAMPLE_BRAND.studio)
+  const brand = useBrand()
+  const [studio, setStudio] = useState(brand.studio)
   const [err, setErr] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const input = useRef<HTMLInputElement>(null)
-  useEffect(() => () => { if (logo) URL.revokeObjectURL(logo) }, [logo])
+  const cert = SAMPLE_CERT_DOC
 
-  const pick = (f?: File) => {
+  const pick = async (f?: File) => {
     if (!f) return
     const e = logoError(f)
     setErr(e)
     if (e) return
-    setLogo(URL.createObjectURL(f)); setSaved(false)
+    setBrand({ logo: await readAsDataUrl(f) }); setSaved(false)
   }
 
   return (
     <div data-pro="certificate-brand" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <Panel className="p-4 sm:p-5">
-        <p className="text-[13.5px] font-medium">{p('Your brand on certificates')}</p>
-        <p className="text-[12.5px] text-[var(--text-dim)] mt-1">{p('New certificates carry your logo and name. Issued ones do not change: their fingerprint is fixed.')}</p>
-        <div className="mt-4 grid gap-3">
-          <Field label={p('Logo')} hint={err ? <span className="text-[var(--danger)]" role="alert">{p(err)}</span> : p('PNG, SVG or JPG, up to 512 KB.')}>
-            <div className="flex flex-wrap gap-2">
-              <Quiet onClick={() => input.current?.click()}>{logo ? p('Replace logo') : p('Upload logo')}</Quiet>
-              {logo && <Quiet onClick={() => { setLogo(null); setSaved(false) }}>{p('Remove')}</Quiet>}
-            </div>
-          </Field>
-          <input ref={input} type="file" accept={LOGO_TYPES.join(',')} className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
-          <Field label={p('Studio name')}><input className={inputClass} value={studio} onChange={(e) => { setStudio(e.target.value); setSaved(false) }} /></Field>
-          <div className="flex items-center gap-3"><Primary onClick={() => setSaved(true)}>{p('Save')}</Primary>{saved && <span className="text-[12px] text-[var(--text-dim)]" role="status">{p('Saved. The next certificate will use it.')}</span>}</div>
-        </div>
-      </Panel>
+      <div className="grid gap-4 content-start">
+        <Panel className="p-4 sm:p-5">
+          <p className="text-[13.5px] font-medium">{p('Your brand on certificates')}</p>
+          <p className="text-[12.5px] text-[var(--text-dim)] mt-1">{p('New certificates carry your logo and name. Issued ones do not change: their fingerprint is fixed.')}</p>
+          <div className="mt-4 grid gap-3">
+            <Field label={p('Logo')} hint={err ? <span className="text-[var(--danger)]" role="alert">{p(err)}</span> : p('PNG, SVG or JPG, up to 512 KB.')}>
+              <div className="flex flex-wrap gap-2">
+                <Quiet onClick={() => input.current?.click()}>{brand.logo ? p('Replace logo') : p('Upload logo')}</Quiet>
+                {brand.logo && <Quiet onClick={() => { setBrand({ logo: null }); setSaved(false) }}>{p('Remove')}</Quiet>}
+              </div>
+            </Field>
+            <input ref={input} type="file" accept={LOGO_TYPES.join(',')} className="hidden" onChange={(e) => void pick(e.target.files?.[0])} />
+            <Field label={p('Studio name')}><input className={inputClass} value={studio} onChange={(e) => { setStudio(e.target.value); setSaved(false) }} /></Field>
+            <div className="flex items-center gap-3"><Primary onClick={() => { setBrand({ studio: studio || SAMPLE_BRAND.studio }); setSaved(true) }}>{p('Save')}</Primary>{saved && <span className="text-[12px] text-[var(--text-dim)]" role="status">{p('Saved. The next certificate will use it.')}</span>}</div>
+          </div>
+        </Panel>
+
+        <Panel className="p-4 sm:p-5">
+          <p className="text-[13.5px] font-medium">{p('Attach it to your invoice')}</p>
+          <p className="text-[12.5px] text-[var(--text-dim)] mt-1">{p('Your client pays sooner when the invoice proves what was delivered. Print the certificate to PDF and paste this line in the invoice.')}</p>
+          <div className="mt-3"><CopyField label={p('Line for the invoice')} value={invoiceLine(cert, p)} mono={false} /></div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Primary onClick={() => openPrintable(certificateHtml(cert, brand, p), `${cert.id}.html`)}>{p('Download to attach')}</Primary>
+          </div>
+        </Panel>
+      </div>
 
       <Panel className="p-4 sm:p-5">
         <p className="text-[12px] text-[var(--text-dim)] mb-3">{p('Preview')}</p>
         <div className="rounded-[8px] border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
-            {logo
-              ? <img src={logo} alt={p('Your logo')} className="h-10 max-w-[160px] object-contain" />
+            {brand.logo
+              ? <img src={brand.logo} alt={p('Your logo')} className="h-10 max-w-[160px] object-contain" />
               : <span className="h-10 px-3 inline-flex items-center rounded-[6px] border border-dashed border-[var(--border)] text-[11.5px] text-[var(--text-faint)]">{p('Your logo here')}</span>}
-            <span className="text-[11px] text-[var(--text-faint)] font-mono">CERT-9A41</span>
+            <span className="text-[11px] text-[var(--text-faint)] font-mono">{cert.id}</span>
           </div>
           <p className="mt-4 text-[11.5px] uppercase tracking-[0.06em] text-[var(--text-faint)]">{p('Verified delivery')}</p>
-          <p className="mt-1 text-[15px] font-semibold [overflow-wrap:anywhere]">HCA_ARQ_v4.ifc</p>
-          <p className="text-[12.5px] text-[var(--text-dim)]">{p('Checked against {{profile}} on {{date}}', { profile: 'EIR Ajuntament de Sabadell 2026', date: '2026-11-11' })}</p>
-          <p className="mt-3 text-[28px] font-semibold tabular-nums" style={{ color: scoreColor(84) }}>84</p>
-          <p className="mt-3 font-mono text-[11px] text-[var(--text-faint)] break-all">SHA-256 7c1e…b902</p>
-          <p className="mt-3 pt-3 border-t border-[var(--border)] text-[12px] text-[var(--text-dim)]">{p('Issued by {{studio}}', { studio: studio || SAMPLE_BRAND.studio })}</p>
+          <p className="mt-1 text-[15px] font-semibold [overflow-wrap:anywhere]">{cert.file}</p>
+          <p className="text-[12.5px] text-[var(--text-dim)]">{p('Checked against {{profile}} on {{date}}', { profile: cert.profile, date: cert.date })}</p>
+          <p className="mt-3 text-[28px] font-semibold tabular-nums" style={{ color: scoreColor(cert.score) }}>{cert.score}</p>
+          <p className="text-[12.5px]">{p('For {{client}}', { client: cert.client })}</p>
+          <p className="mt-3 font-mono text-[11px] text-[var(--text-faint)] break-all">SHA-256 {cert.hash}</p>
+          <p className="mt-1 text-[11.5px] text-[var(--text-dim)] break-all">{verifyUrl(cert.id)}</p>
+          <p className="mt-3 pt-3 border-t border-[var(--border)] text-[12px] text-[var(--text-dim)]">{p('Issued by {{studio}}', { studio: brand.studio })}</p>
         </div>
       </Panel>
     </div>
