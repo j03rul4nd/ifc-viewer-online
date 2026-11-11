@@ -19,7 +19,6 @@
   --text-primary: #ECEBE7;
   --text-secondary: #A09E98;
   --text-tertiary: #85837E; /* 4.7:1 on --surface (was #7F7D78, 4.4:1) */
-  --text-muted: #A09E98;    /* was undefined; = the fallback its callers used */
   --accent: #0A8481;
   --accent-strong: #55CAC3;
   --accent-contrast: #FFFFFF;

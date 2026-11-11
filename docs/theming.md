@@ -23,7 +23,7 @@ Plan and progress: `docs/theme-migration.md`.
 | `--text-primary` | body text, headings |
 | `--text-secondary` | labels, secondary copy |
 | `--text-tertiary` | captions, hints (smallest readable) |
-| `--text-muted` | same role as secondary (was undefined; legacy uses) |
+| `--text-muted` | legacy only: undefined in dark (see quirk below); = text-secondary in light |
 | `--accent` / `--accent-strong` | brand actions, links, selected state |
 | `--accent-contrast` | text/icons on an `--accent` fill |
 | `--success` / `--warning` / `--danger` | status |
@@ -39,6 +39,10 @@ Legacy names (`--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-
 3. Text on an accent/status fill uses `--accent-contrast`, not `#fff`.
 4. Do not touch the dark values: dark must stay pixel-identical.
 5. Test both modes: in DevTools run `document.documentElement.dataset.theme = 'light'` (or `'dark'`), or open the page with `?theme=light`. Check text, borders, focus rings and hover states.
+
+## Known quirk (clean up in phase 4)
+
+`--text-muted` is **undefined in dark** on purpose: 162 uses without a fallback inherit the normal text colour and 21 uses with `var(--text-muted, #a09e98)` show that grey; defining it would change dark. In light it equals `--text-secondary` (#4E4D48), so no-fallback uses render slightly dimmer than in dark. Phase 4: replace every use with `--text-primary` or `--text-secondary` explicitly and drop the token.
 
 ## Contrast (WCAG 2.x, script in PR description)
 
