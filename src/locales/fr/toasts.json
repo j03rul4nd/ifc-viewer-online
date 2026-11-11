@@ -10,6 +10,7 @@
     "scanLoadFailed": "Impossible de charger le scan du lien : {{message}}",
     "loadFailedNamed": "Impossible de charger \"{{fileName}}\" — {{reason}}",
     "serverProcessingAction": "Traiter sur le serveur (bientôt)",
+    "serverProcessingOffer": "Ce fichier est trop volumineux pour le navigateur. Un traitement sur serveur vous aiderait-il ?",
     "serverProcessingNoted": "Noté — le traitement serveur des gros fichiers arrive avec Pro. En attendant, exportez le modèle en plusieurs parties ou avec moins de propriétés.",
     "batchLoaded_one": "{{name}} — {{count}} modèle chargé",
     "batchLoaded_other": "{{name}} — {{count}} modèles chargés",

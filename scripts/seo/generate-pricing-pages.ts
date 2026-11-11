@@ -439,15 +439,19 @@ var T=JSON.parse(document.getElementById('pricing-i18n').textContent);
 var TABLE={free:1,pro:1,team:1};
 var cmp=document.getElementById('cmp');
 var PH_KEY='phc_mAs9WpD6z8RTQbqR8ZVvqbxhF8QUz59Yz4ZmDRjByXwr',PH_HOST='https://eu.i.posthog.com';
-var visit='pricing-'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+// One id per page view, in memory only (no cookie, no storage): the distinct id
+// and PostHog's session id, a UUIDv7 so the events group into one session.
+function uuid7(){var h=Date.now().toString(16);while(h.length<12)h='0'+h;var r='';for(var i=0;i<20;i++)r+=Math.floor(Math.random()*16).toString(16);
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-7'+r.slice(0,3)+'-'+'89ab'[Math.floor(Math.random()*4)]+r.slice(3,6)+'-'+r.slice(6,18)}
+var visit=uuid7();
 var LOCAL=/^(localhost|127\\.0\\.0\\.1|\\[::1\\]|0\\.0\\.0\\.0|.*\\.localhost|.*\\.local)$/i;
 function optedOut(){try{var s=localStorage.getItem('ifc-analytics-optout:v1');if(s==='1')return true;if(s==='0')return false}catch(e){}
   if(navigator.globalPrivacyControl===true)return true;var d=navigator.doNotTrack||window.doNotTrack;return d==='1'||d==='yes'}
 function local(){if(LOCAL.test(location.hostname))return true;try{return!!document.referrer&&LOCAL.test(new URL(document.referrer).hostname)}catch(e){return false}}
 function ref(){try{return document.referrer?new URL(document.referrer).origin:'$direct'}catch(e){return'$direct'}}
-function track(n,p){if(optedOut()||local())return;var q={$current_url:location.origin+location.pathname,$pathname:location.pathname,$referrer:ref(),$process_person_profile:false,surface:'pricing_page',lang:LANG};
+function track(n,p){if(optedOut()||local())return;var q={$current_url:location.origin+location.pathname,$pathname:location.pathname,$referrer:ref(),$process_person_profile:false,$session_id:visit,visit_id:visit,surface:'pricing_page',lang:LANG};
   for(var k in p||{})q[k]=p[k];try{fetch(PH_HOST+'/i/v0/e/',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:PH_KEY,event:n,distinct_id:visit,properties:q})}).catch(function(){})}catch(e){}}
-track('$pageview');
+track('$pageview');track('pricing_viewed',{role:new URLSearchParams(location.search).get('role')||null});
 
 // Phone: one plan at a time.
 function show(plan){cmp.dataset.show=plan;var r=document.querySelector('.show input[value="'+plan+'"]');if(r)r.checked=true}

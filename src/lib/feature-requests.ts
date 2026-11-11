@@ -9,7 +9,7 @@
 // The Worker (cf-worker/worker.js, /requests) takes the user id and email from
 // the Clerk session token, never from this body. Same-origin via /api/requests.
 
-export const REQUEST_FEATURES = ['big_files', 'versions', 'client_link', 'bcf_team', 'auto_check', 'cloud_drives', 'batch_tools', 'other'] as const
+export const REQUEST_FEATURES = ['big_files', 'versions', 'client_link', 'bcf_team', 'auto_check', 'cloud_drives', 'batch_tools', 'reception_inbox', 'managed_requirements', 'iso_naming', 'other'] as const
 export const REQUEST_FREQUENCIES = ['daily', 'weekly', 'sometimes'] as const
 export const REQUEST_TODAY = ['nothing', 'manual', 'paid_tool', 'free_tool'] as const
 export const REQUEST_PAYERS = ['me', 'company', 'nobody'] as const

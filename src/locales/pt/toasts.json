@@ -10,6 +10,7 @@
     "scanLoadFailed": "Não foi possível carregar o scan do link: {{message}}",
     "loadFailedNamed": "Não foi possível carregar \"{{fileName}}\" — {{reason}}",
     "serverProcessingAction": "Processar no servidor (em breve)",
+    "serverProcessingOffer": "Este ficheiro é demasiado grande para o navegador. Ajudaria processá-lo num servidor?",
     "serverProcessingNoted": "Anotado: o processamento em servidor de ficheiros grandes chegará ao Pro. Entretanto, experimente exportar o modelo por partes ou com menos propriedades.",
     "batchLoaded_one": "{{name}} — {{count}} modelo carregado",
     "batchLoaded_other": "{{name}} — {{count}} modelos carregados",

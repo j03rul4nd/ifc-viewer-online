@@ -68,7 +68,7 @@ export function isEngaged(signals: readonly UsageSignal[]): boolean {
 const SIGNAL_FEATURES: Record<UsageSignal, RequestFeature[]> = {
   large_file: ['big_files'],
   multi_model: ['versions', 'bcf_team'],
-  ids: ['auto_check'],
+  ids: ['auto_check', 'managed_requirements'],
   exported: ['client_link', 'bcf_team'],
   shared: ['client_link'],
   bcf: ['bcf_team'],
@@ -76,7 +76,7 @@ const SIGNAL_FEATURES: Record<UsageSignal, RequestFeature[]> = {
   measured: ['batch_tools'],
   validated: ['auto_check'],
 }
-const DEFAULT_ORDER: RequestFeature[] = ['client_link', 'versions', 'bcf_team', 'auto_check', 'big_files', 'cloud_drives', 'batch_tools']
+const DEFAULT_ORDER: RequestFeature[] = ['client_link', 'versions', 'bcf_team', 'auto_check', 'big_files', 'cloud_drives', 'batch_tools', 'reception_inbox', 'managed_requirements', 'iso_naming']
 
 export function suggestedFeatures(signals: readonly UsageSignal[], count = 3): RequestFeature[] {
   const score = new Map<RequestFeature, number>()

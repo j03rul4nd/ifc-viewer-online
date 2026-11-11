@@ -1,4 +1,15 @@
 {
+  "batchFolder": {
+    "offer": "{{count}} IFC alhora. Necessites revisar la carpeta sencera en un sol informe?",
+    "action": "Validar carpeta (Pro)",
+    "title": "Validar una carpeta sencera",
+    "soon": "Properament.",
+    "body": "Revisar una carpeta sencera d'IFC d'una vegada, amb un sol informe, encara no està disponible. Els teus fitxers s'obren un a un com sempre.",
+    "notifyLabel": "Deixa'm el teu correu i t'aviso una vegada, quan estigui llest.",
+    "submit": "Avisa'm",
+    "thanks": "Gràcies. T'escriuré una vegada, quan estigui llest.",
+    "error": "No s'ha pogut desar. Torna-ho a provar."
+  },
   "title": "Compte",
   "close": "Tanca",
   "signInIntro": "Inicia sessió per guardar l'històric dels teus certificats, sincronitzar perfils de regles entre dispositius i gestionar claus d'API. El validador gratuït continua sent gratuït — no cal cap compte per fer-lo servir.",
@@ -145,6 +156,18 @@
       "batch_tools": {
         "title": "Eines per lots",
         "hint": "Editar, reanomenar o dividir molts IFC alhora"
+      },
+      "reception_inbox": {
+        "title": "Rebre lliuraments dels meus proveïdors",
+        "hint": "Una bústia on els proveïdors deixen el seu IFC i es revisa amb els meus requisits"
+      },
+      "managed_requirements": {
+        "title": "Requisits gestionats per a la meva empresa",
+        "hint": "Els meus IDS, EIR i nota mínima en un sol lloc, enviats amb cada petició"
+      },
+      "iso_naming": {
+        "title": "Revisar noms de fitxer (ISO 19650)",
+        "hint": "Marcar fitxers i contenidors que no segueixen la nostra convenció de noms"
       },
       "other": {
         "title": "Una altra cosa",

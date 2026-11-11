@@ -52,8 +52,9 @@ export default function RequirementsLinkCreator() {
         toast(t(r.reason === 'too-long' ? 'requirements.create.tooLong' : 'requirements.create.empty'), 'error', { duration: 8000 })
         return
       }
-      await navigator.clipboard.writeText(r.url)
+      // Counted once the link exists: a clipboard refusal must not hide it.
       trackRequirementsLinkCreated({ has_score: useScore, has_ids: withIds, has_profile: !!payload.p })
+      await navigator.clipboard.writeText(r.url)
       toast(t('requirements.create.copied'), 'success')
     } catch {
       toast(t('requirements.create.failed'), 'error')
