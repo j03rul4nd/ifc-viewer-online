@@ -32,6 +32,14 @@ export interface SceneTheme {
 export interface HighlightPalette {
   hover: string
   select: string
+  /** Opacity of the selection tint over the element. */
+  selectOpacity: number
+  /**
+   * Paint hover/selection colour over the element. Fragments ignores the colour of a
+   * preserveOriginalMaterial highlight unless it is listed as explicit; dark keeps its
+   * historic look (untinted), light needs the teal to read on grey walls.
+   */
+  tint: boolean
   /** Selection bounding box. */
   selectBox: string
   error: string
@@ -61,7 +69,7 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
     directional: '#fff5e8',
     directionalIntensity: 1.1,
     // Dark keeps the viewer's historic colours exactly (selection is still the old indigo).
-    highlight: { hover: '#0a8481', select: '#6c7cec', selectBox: '#6c7cec', error: '#e5484d', warn: '#f5a623', info: '#5e9ed6', ghost: '#9aa0ae' },
+    highlight: { hover: '#0a8481', select: '#6c7cec', selectOpacity: 0.75, tint: false, selectBox: '#6c7cec', error: '#e5484d', warn: '#f5a623', info: '#5e9ed6', ghost: '#9aa0ae' },
   },
   light: {
     backgroundTop: '#faf9f7',
@@ -78,11 +86,11 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
     measureHighlight: '#00696a',
     hemiSky: '#dfe6f2',
     hemiGround: '#8a8984',
-    ambientIntensity: 0.8,
+    ambientIntensity: 1.15,
     directional: '#fffaf2',
-    directionalIntensity: 0.95,
+    directionalIntensity: 1.2,
     // Same hues, darker so they hold contrast on the warm-grey backdrop.
-    highlight: { hover: '#0a8481', select: '#00696a', selectBox: '#00504f', error: '#c62f35', warn: '#c77a0a', info: '#2f6fb0', ghost: '#5e5d57' },
+    highlight: { hover: '#0a8481', select: '#0a8481', selectOpacity: 0.92, tint: true, selectBox: '#00504f', error: '#c62f35', warn: '#c77a0a', info: '#2f6fb0', ghost: '#5e5d57' },
   },
 }
 

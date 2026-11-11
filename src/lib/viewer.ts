@@ -1049,6 +1049,11 @@ function applyHighlightTheme(t: SceneTheme): void {
   const h = t.highlight
   HOVER_MAT.color.set(h.hover)
   SELECT_MAT.color.set(h.select)
+  SELECT_MAT.opacity = h.selectOpacity
+  for (const m of [HOVER_MAT, SELECT_MAT] as Array<FRAGS.MaterialDefinition & { _explicitProps?: string[] }>) {
+    if (h.tint) m._explicitProps = ['color', 'opacity', 'transparent']
+    else delete m._explicitProps
+  }
   VALIDATION_ERROR_MAT.color.set(h.error)
   VALIDATION_WARN_MAT.color.set(h.warn)
   VALIDATION_INFO_MAT.color.set(h.info)
