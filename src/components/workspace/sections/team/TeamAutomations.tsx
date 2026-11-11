@@ -10,11 +10,11 @@ import { SoonBanner } from '../../Soon'
 import Automations from '../Automations'
 import { useTeamTx, type TeamTx } from './i18n'
 import {
-  MAX_UPLOAD_MB, MEMBERS, PROFILES, RUNS, SOURCES, WEBHOOKS, WEEK, issueForRun, member, snippet,
+  GATE, GATE_HISTORY, MAX_UPLOAD_MB, MEMBERS, PROFILES, PROFILE_PREVIEW, gateDecision, RUNS, SOURCES, WEBHOOKS, WEEK, issueForRun, member, snippet,
   type RunResult, type SourceKind, type ValidationSource, type Webhook, type WebhookEvent,
 } from './sample'
 
-type View = 'runs' | 'sources' | 'webhooks' | 'rules'
+type View = 'runs' | 'gate' | 'sources' | 'webhooks' | 'rules'
 const KIND_ICON = { folder: FolderSync, ci: GitBranch, api: Code2 }
 const kindLabel = (tt: TeamTx, k: SourceKind) => ({ folder: tt('Watched folder'), ci: tt('CI pipeline'), api: tt('Direct API') })[k]
 const kindBody = (tt: TeamTx, k: SourceKind) => ({
@@ -41,6 +41,7 @@ export default function TeamAutomations(props: SectionProps) {
 
   const TABS = [
     { id: 'runs' as const, label: tt('Runs'), count: empty ? 0 : RUNS.length },
+    { id: 'gate' as const, label: tt('Publication gate') },
     { id: 'sources' as const, label: tt('Sources'), count: sources.length },
     { id: 'webhooks' as const, label: tt('Webhooks'), count: hooks.length },
     { id: 'rules' as const, label: tt('Routine rules') },
@@ -137,6 +138,7 @@ export default function TeamAutomations(props: SectionProps) {
             ))}
           </div>)}
 
+      {view === 'gate' && <GateView tt={tt} />}
       {view === 'rules' && <Automations {...props} embedded />}
 
       {wizard && <ConnectWizard tt={tt} onClose={() => setWizard(false)} onDone={(s) => { setSources((all) => [...all, s]); setWizard(false); setView('sources') }} />}
@@ -206,6 +208,7 @@ function ConnectWizard({ tt, onClose, onDone }: { tt: TeamTx; onClose: () => voi
             <button key={p.id} type="button" role="radio" aria-checked={profile === p.id} onClick={() => setProfile(p.id)}
               className={`text-left rounded-[10px] border px-3 py-2.5 text-[13px] ${profile === p.id ? 'border-[var(--accent)] bg-[var(--surface-2)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'}`}>{p.name}</button>
           ))}
+          <ProfilePreview tt={tt} profile={profile} />
           <p className="text-[12px] text-[var(--text-faint)]">{tt('Profiles are versioned: a change applies from the next delivery and old reports keep the version they used.')}</p>
         </div>
       )}
@@ -261,5 +264,58 @@ function WebhookDialog({ tt, hook, onClose, onSave }: { tt: TeamTx; hook: Webhoo
         {tested === 'bad' && <p role="alert" className="text-[12.5px] text-[var(--danger)]">{tt('Use an https:// address.')}</p>}
       </div>
     </Dialog>
+  )
+}
+
+function ProfilePreview({ tt, profile }: { tt: TeamTx; profile: string }) {
+  const p = PROFILE_PREVIEW[profile]
+  if (!p) return null
+  const pass = p.checked - p.fail
+  return (
+    <Panel className="p-3 mt-1 min-w-0">
+      <p className="text-[12.5px] font-medium">{tt('Preview on your last week')}</p>
+      <div className="mt-2 h-[8px] rounded-full overflow-hidden flex bg-[var(--surface-2)]" aria-hidden>
+        <span className="h-full bg-[var(--ok)]" style={{ width: `${(pass / p.checked) * 100}%` }} />
+        <span className="h-full bg-[var(--danger)]" style={{ width: `${(p.fail / p.checked) * 100}%` }} />
+      </div>
+      <p className="mt-2 text-[12.5px] text-[var(--text-dim)]">{tt('Of {{n}} deliveries, {{pass}} would pass and {{fail}} would fail, opening {{issues}} issues.', { n: p.checked, pass, fail: p.fail, issues: p.issues })}</p>
+      <p className="mt-1 text-[12px] text-[var(--text-faint)] [overflow-wrap:anywhere]">{tt('Most common failure: {{what}}', { what: p.top })}</p>
+    </Panel>
+  )
+}
+
+function GateView({ tt }: { tt: TeamTx }) {
+  const [min, setMin] = useState(GATE.minScore)
+  const [reviewer, setReviewer] = useState(GATE.reviewer)
+  const OUT = { published: [tt('Published'), 'var(--ok)'], blocked: [tt('Stopped'), 'var(--danger)'], override: [tt('Exception approved'), 'var(--warn)'] } as const
+  const wouldStop = GATE_HISTORY.filter((e) => gateDecision(e.score, e.failedMust, { ...GATE, minScore: min }) !== 'pass').length
+  return (
+    <div className="flex flex-col gap-5">
+      <Panel className="p-4">
+        <p className="text-[14px] font-medium">{tt('Nothing reaches Published below {{min}}', { min })}</p>
+        <p className="mt-1 text-[12.5px] text-[var(--text-dim)]">{tt('Applies to every version, uploaded by hand or by an automation. The model stays in Shared with its report until it passes.')}</p>
+        <label className="mt-4 flex items-center gap-3 text-[12.5px] text-[var(--text-dim)]">
+          {tt('Minimum score')}
+          <input type="range" min={50} max={95} step={5} value={min} onChange={(e) => setMin(Number(e.target.value))} className="flex-1 max-w-[260px] accent-[var(--accent)]" aria-label={tt('Minimum score')} />
+          <span className="tabular-nums text-[var(--text)] w-[28px] font-medium">{min}</span>
+        </label>
+        <p className="mt-1 text-[12px] text-[var(--text-faint)]">{tt('With {{min}}, {{n}} of the last {{t}} versions would have been stopped.', { min, n: wouldStop, t: GATE_HISTORY.length })}</p>
+        <div className="mt-4">
+          <p className="text-[12px] text-[var(--text-dim)] mb-1.5">{tt('Rules that must pass whatever the score')}</p>
+          <div className="flex flex-wrap gap-1.5">{GATE.mustPass.map((r) => <span key={r} className="px-2 py-0.5 rounded-full border border-[var(--border)] text-[11.5px] font-mono">{r}</span>)}</div>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3"><span className="text-[13px]">{tt('A reviewer approves before publishing')}</span><Toggle checked={reviewer} onChange={setReviewer} label={tt('A reviewer approves before publishing')} /></div>
+      </Panel>
+      <div>
+        <SectionLabel>{tt('Gate history')}</SectionLabel>
+        <DataList rows={GATE_HISTORY} rowKey={(e) => e.at + e.file} primaryHeader={tt('File')}
+          primary={(e) => <><p className="font-medium [overflow-wrap:anywhere]">{e.file}</p><p className="text-[11.5px] text-[var(--text-faint)]">{e.at}</p></>}
+          columns={[
+            { key: 'out', header: tt('Result'), cell: (e) => <span className="inline-flex items-center gap-1.5 text-[12px] whitespace-nowrap"><Dot color={OUT[e.outcome][1]} />{OUT[e.outcome][0]}</span> },
+            { key: 'score', header: tt('Score'), cell: (e) => <span className="text-[12.5px] tabular-nums font-medium" style={{ color: scoreColor(e.score) }}>{e.score}</span> },
+            { key: 'why', header: tt('Why'), wide: true, cell: (e) => <span className="text-[12px] text-[var(--text-dim)] [overflow-wrap:anywhere]">{e.outcome === 'override' ? `${member(e.who)?.name}: ${e.note}` : e.failedMust.length ? tt('Required rule fails: {{r}}', { r: e.failedMust.join(', ') }) : e.outcome === 'blocked' ? tt('Below {{min}}', { min: GATE.minScore }) : tt('Passed, published by {{name}}', { name: member(e.who)?.name ?? '—' })}</span> },
+          ]} />
+      </div>
+    </div>
   )
 }
