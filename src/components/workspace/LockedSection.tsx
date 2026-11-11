@@ -55,7 +55,7 @@ export default function LockedSection({ section, current, period, onUpgrade, pre
       <p className="mb-3 text-[12px] text-[var(--text-dim)]">{tx('Preview on sample data — this is the real screen you get with {{plan}}.', { plan: target.name })}</p>
       <div className="relative">
         {/* The real screen, inert: it can't be clicked, tabbed into or read twice by a screen reader. */}
-        <div aria-hidden inert className="pointer-events-none select-none max-h-[620px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_55%,transparent)] opacity-90">
+        <div aria-hidden ref={(el) => el?.setAttribute('inert', '')} className="pointer-events-none select-none max-h-[620px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_55%,transparent)] opacity-90">
           {preview}
         </div>
         <div className="absolute inset-x-0 bottom-0 sm:bottom-6 flex justify-center px-0 sm:px-4">
