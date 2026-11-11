@@ -42,7 +42,7 @@ export const TOOL_ICON = {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-[4px] border border-white/15 bg-white/[0.07] text-[10px] font-mono font-semibold text-white/85 leading-none">
+    <kbd className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-[4px] border border-[color-mix(in_srgb,var(--text-primary)_15%,transparent)] bg-[color-mix(in_srgb,var(--text-primary)_7%,transparent)] text-[10px] font-mono font-semibold text-[color-mix(in_srgb,var(--text-primary)_85%,transparent)] leading-none">
       {children}
     </kbd>
   )
@@ -126,16 +126,16 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-2.5 pl-2.5 pr-3 py-1.5 rounded-full bg-[rgba(10,10,14,0.88)] border border-white/10 shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-md text-white">
+      <div className="flex items-center gap-2.5 pl-2.5 pr-3 py-1.5 rounded-full bg-[color-mix(in_srgb,var(--bg-surface)_88%,transparent)] border border-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-md text-[var(--text-primary)]">
         <span className="flex items-center gap-1.5 text-[11.5px] font-semibold whitespace-nowrap">
           <span className="text-[var(--accent-2)]"><Icon size={15} /></span>
           {t(`tools.${tool}`)}
         </span>
-        <span className="w-px h-3.5 bg-white/15" />
-        <span className={['text-[11.5px] whitespace-nowrap truncate', snapshot.notice ? 'text-[#E9A23B]' : 'text-white/90'].join(' ')}>
+        <span className="w-px h-3.5 bg-[color-mix(in_srgb,var(--text-primary)_15%,transparent)]" />
+        <span className={['text-[11.5px] whitespace-nowrap truncate', snapshot.notice ? 'text-[#E9A23B]' : 'text-[color-mix(in_srgb,var(--text-primary)_90%,transparent)]'].join(' ')}>
           {snapshot.busy ? t('steps.computing') : snapshot.notice ? t(`notice.${snapshot.notice}`) : t(`steps.${step}`)}
         </span>
-        <span className="hidden sm:flex items-center gap-2 text-[10.5px] text-white/55 whitespace-nowrap">
+        <span className="hidden sm:flex items-center gap-2 text-[10.5px] text-[color-mix(in_srgb,var(--text-primary)_55%,transparent)] whitespace-nowrap">
           {lockable && <span className="flex items-center gap-1"><Kbd>Shift</Kbd>{t('keys.axisLock')}</span>}
           {snapshot.canFinish && <span className="flex items-center gap-1"><Kbd>↵</Kbd>{t('keys.finish')}</span>}
           {snapshot.draftPoints > 0 && <span className="flex items-center gap-1"><Kbd>⌫</Kbd>{t('keys.undo')}</span>}
@@ -150,12 +150,12 @@ export function MeasureHud({ snapshot, hover, canvas, showMarker = true }: Measu
       <div className="absolute -translate-x-1/2 -translate-y-1/2"><SnapGlyph kind={hover.kind} color={color} closing={hover.closing} /></div>
       <div className="absolute left-[16px] top-[10px] max-md:top-[calc(var(--mobile-top-ui)+4px)] flex flex-col items-start gap-1">
         {snapLabel && (
-          <span className="px-1.5 py-[1px] rounded-[5px] text-[10px] font-semibold whitespace-nowrap bg-[rgba(10,10,14,0.82)] border border-white/10" style={{ color }}>
+          <span className="px-1.5 py-[1px] rounded-[5px] text-[10px] font-semibold whitespace-nowrap bg-[color-mix(in_srgb,var(--bg-surface)_82%,transparent)] border border-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]" style={{ color }}>
             {snapLabel}
           </span>
         )}
         {liveText && (
-          <span className="px-2 py-[2px] rounded-[6px] text-[12px] font-semibold tabular-nums whitespace-nowrap text-white bg-[rgba(10,10,14,0.9)] border border-white/15 shadow-[0_4px_14px_rgba(0,0,0,0.45)]">
+          <span className="px-2 py-[2px] rounded-[6px] text-[12px] font-semibold tabular-nums whitespace-nowrap text-[var(--text-primary)] bg-[color-mix(in_srgb,var(--bg-surface)_90%,transparent)] border border-[color-mix(in_srgb,var(--text-primary)_15%,transparent)] shadow-[0_4px_14px_rgba(0,0,0,0.45)]">
             {liveText}
           </span>
         )}

@@ -116,7 +116,7 @@ function DualRange({ limits, value, step, color, onChange, label, touch = false 
           aria-valuemax={limits.max}
           aria-valuenow={value[side]}
           onKeyDown={onKey(side)}
-          className={[touch ? 'w-6 h-6' : 'w-3.5 h-3.5', 'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#100F0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-white/60'].join(' ')}
+          className={[touch ? 'w-6 h-6' : 'w-3.5 h-3.5', 'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#100F0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--text-primary)_60%,transparent)]'].join(' ')}
           style={{ left: `${pct(value[side])}%`, background: color }}
         />
       ))}
@@ -138,7 +138,7 @@ function ValueField({ value, units, locale, prefix, onCommit, title }: {
         type="button"
         title={title}
         onClick={() => { setText(lengthInUnits(value, units).toFixed(units === 'mm' ? 0 : 3)); setEditing(true) }}
-        className="text-[11px] font-mono tabular-nums text-[var(--text)] hover:text-white px-1 rounded hover:bg-white/[0.06]"
+        className="text-[11px] font-mono tabular-nums text-[var(--text)] hover:text-[var(--text-primary)] px-1 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
       >
         {prefix}{shown}
       </button>
@@ -181,9 +181,9 @@ function IconButton({ title, onClick, children, danger, active }: {
       onClick={(e) => { e.stopPropagation(); onClick() }}
       className={[
         'flex-none w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors',
-        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(224,82,63,0.1)]'
-          : active ? 'text-[var(--accent-2)] hover:bg-white/[0.06]'
-            : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/[0.06]',
+        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)]'
+          : active ? 'text-[var(--accent-2)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]'
+            : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]',
       ].join(' ')}
     >
       {children}
@@ -370,7 +370,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
             onClick={q.onClick}
             className={[
               'flex flex-col items-center justify-center gap-1 h-[52px] rounded-[9px] transition-all',
-              q.active ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(10,132,129,0.35)]'
+              q.active ? 'bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_4px_14px_color-mix(in_srgb,var(--accent)_35%,transparent)]'
                 : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
             ].join(' ')}
           >
@@ -381,7 +381,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       </div>
 
       {snap.placing && (
-        <div className="shrink-0 mx-2 mb-2 rounded-[9px] border border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.08)] px-2.5 py-2">
+        <div className="shrink-0 mx-2 mb-2 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] px-2.5 py-2">
           <div className="text-[11.5px] text-[var(--text)]">{t('section.placing')}</div>
           <div className="mt-0.5 text-[10px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
         </div>
@@ -392,7 +392,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       <div className="min-h-[96px] flex-1 overflow-y-auto border-t border-[var(--border)] px-2 py-2 flex flex-col gap-1.5">
         {snap.box && (
           <div
-            className={['rounded-[9px] border p-2', snap.selectedId === 'box' ? 'border-[rgba(10,132,129,0.55)] bg-[rgba(10,132,129,0.06)]' : 'border-[var(--border)]'].join(' ')}
+            className={['rounded-[9px] border p-2', snap.selectedId === 'box' ? 'border-[color-mix(in_srgb,var(--accent)_55%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]' : 'border-[var(--border)]'].join(' ')}
             onClick={() => system.select('box')}
           >
             <div className="flex items-center gap-1.5">
@@ -442,7 +442,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
             <div
               key={p.id}
               onClick={() => system.select(p.id)}
-              className={['rounded-[9px] border px-2 py-1.5 cursor-pointer', selected ? 'border-[rgba(10,132,129,0.55)] bg-[rgba(10,132,129,0.06)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'].join(' ')}
+              className={['rounded-[9px] border px-2 py-1.5 cursor-pointer', selected ? 'border-[color-mix(in_srgb,var(--accent)_55%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'].join(' ')}
             >
               <div className="flex items-center gap-1.5">
                 <span className="flex-none w-4 h-4 rounded-[4px] text-[9.5px] font-bold flex items-center justify-center text-[#100F0C]" style={{ background: color, opacity: p.enabled ? 1 : 0.4 }}>
@@ -533,7 +533,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                 title={t('section.fillColor')}
                 disabled={!snap.poche}
                 onClick={() => system.setPocheColor(c)}
-                className={['w-3.5 h-3.5 rounded-full border transition disabled:opacity-30', snap.pocheColor === c ? 'border-white ring-1 ring-white/60' : 'border-white/20'].join(' ')}
+                className={['w-3.5 h-3.5 rounded-full border transition disabled:opacity-30', snap.pocheColor === c ? 'border-[var(--text-primary)] ring-1 ring-[color-mix(in_srgb,var(--text-primary)_60%,transparent)]' : 'border-[color-mix(in_srgb,var(--text-primary)_20%,transparent)]'].join(' ')}
                 style={{ background: c }}
               />
             ))}
@@ -577,9 +577,9 @@ function MBtn({ title, onClick, children, danger, active }: {
       onClick={(e) => { e.stopPropagation(); haptic('tick'); onClick() }}
       className={[
         'flex-none w-10 h-10 flex items-center justify-center rounded-[11px] active:scale-[0.93] transition-transform',
-        danger ? 'text-[var(--danger)] bg-[rgba(224,82,63,0.1)]'
-          : active ? 'text-[var(--accent-2)] bg-[rgba(10,132,129,0.16)]'
-            : 'text-[var(--text-dim)] bg-white/[0.05]',
+        danger ? 'text-[var(--danger)] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)]'
+          : active ? 'text-[var(--accent-2)] bg-[color-mix(in_srgb,var(--accent)_16%,transparent)]'
+            : 'text-[var(--text-dim)] bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)]',
       ].join(' ')}
     >
       {children}
@@ -599,7 +599,7 @@ function Chip({ on, onClick, children, disabled, dataLevel }: {
       onClick={() => { haptic('tick'); onClick() }}
       className={[
         'shrink-0 h-9 px-3 rounded-full text-[12px] font-medium flex items-center gap-1.5 border whitespace-nowrap max-w-[220px] disabled:opacity-40',
-        on ? 'border-[var(--accent)] bg-[rgba(10,132,129,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+        on ? 'border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
       ].join(' ')}
     >
       {children}
@@ -680,7 +680,7 @@ function SectionMobileBody({
             onClick={() => { haptic('tick'); q.onClick() }}
             className={[
               'flex flex-col items-center justify-center gap-1 h-[56px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0',
-              q.active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] bg-white/[0.04]',
+              q.active ? 'bg-[var(--accent)] text-[var(--accent-contrast)]' : 'text-[var(--text-dim)] bg-[color-mix(in_srgb,var(--text-primary)_4%,transparent)]',
             ].join(' ')}
           >
             {q.icon}
@@ -691,7 +691,7 @@ function SectionMobileBody({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {snap.placing && (
-          <div className="mx-2 mb-2 rounded-[12px] border border-[rgba(10,132,129,0.35)] bg-[rgba(10,132,129,0.1)] px-3 py-2.5">
+          <div className="mx-2 mb-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-3 py-2.5">
             <div className="text-[13px] text-[var(--text)]">{t('section.placing')}</div>
             <div className="mt-0.5 text-[11.5px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
           </div>
@@ -725,7 +725,7 @@ function SectionMobileBody({
           const pctPos = Math.min(100, Math.max(0, ((plane.offset - plane.range.min) / span) * 100))
           const rangeStyle = { '--m-range-c': color, '--m-range-p': `${pctPos}%` } as React.CSSProperties
           return (
-            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
+            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)] px-3 pt-2.5 pb-2">
               <div className="flex items-center gap-2">
                 <span className="flex-none w-5 h-5 rounded-[5px] text-[10.5px] font-bold flex items-center justify-center text-[#100F0C]" style={{ background: color }}>
                   {plane.axis ? plane.axis.toUpperCase() : '◇'}
@@ -785,14 +785,14 @@ function SectionMobileBody({
           const box = snap.box
           const r = box.ranges[boxAxis]
           return (
-            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
+            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)] px-3 pt-2.5 pb-2">
               <div className="flex items-center gap-2">
                 <span className="text-[var(--accent-2)]"><BoxIcon size={17} /></span>
                 <span className={['flex-1 text-[13px] font-medium', box.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>{t('section.box')}</span>
                 <div className="flex p-0.5 gap-0.5 rounded-[10px] bg-[var(--surface-2)]" role="radiogroup">
                   {(['x', 'y', 'z'] as const).map((a) => (
                     <button key={a} type="button" role="radio" aria-checked={boxAxis === a} onClick={() => setBoxAxis(a)}
-                      className={['w-9 h-8 rounded-[8px] text-[12px] font-bold', boxAxis === a ? 'bg-white/[0.12]' : 'opacity-60'].join(' ')}
+                      className={['w-9 h-8 rounded-[8px] text-[12px] font-bold', boxAxis === a ? 'bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)]' : 'opacity-60'].join(' ')}
                       style={{ color: AXIS_COLOR[a] }}>
                       {a.toUpperCase()}
                     </button>
@@ -831,7 +831,7 @@ function SectionMobileBody({
               {POCHE_COLORS.map((c) => (
                 <button key={c} type="button" role="radio" aria-checked={snap.pocheColor === c} title={t('section.fillColor')}
                   disabled={!snap.poche} onClick={() => system.setPocheColor(c)}
-                  className={['w-8 h-8 rounded-full border-2 transition disabled:opacity-30', snap.pocheColor === c ? 'border-white' : 'border-white/20'].join(' ')}
+                  className={['w-8 h-8 rounded-full border-2 transition disabled:opacity-30', snap.pocheColor === c ? 'border-[var(--text-primary)]' : 'border-[color-mix(in_srgb,var(--text-primary)_20%,transparent)]'].join(' ')}
                   style={{ background: c }} />
               ))}
             </div>
@@ -840,7 +840,7 @@ function SectionMobileBody({
               <input type="checkbox" checked={snap.gizmos} onChange={(e) => system.setGizmosVisible(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
             </label>
             <button type="button" onClick={() => { haptic('select'); system.clear() }}
-              className="h-11 rounded-[11px] text-[13px] font-medium text-[var(--danger)] bg-[rgba(224,82,63,0.1)] flex items-center justify-center gap-2">
+              className="h-11 rounded-[11px] text-[13px] font-medium text-[var(--danger)] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] flex items-center justify-center gap-2">
               <TrashIcon size={15} />{t('section.clearAll')}
             </button>
           </div>
