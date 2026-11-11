@@ -254,7 +254,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
       {visible ? (
         <div className="flex flex-col items-end gap-1">
           {/* Header */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)]">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_88%,transparent)] backdrop-blur-[14px] border border-[var(--border)]">
             <Icon.Camera />
             <span className="text-[11px] text-[var(--text-dim)] font-medium tracking-wide uppercase">
               {t('cameraControls.title')}
@@ -278,7 +278,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
             className={`flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${
               walking
                 ? 'bg-[rgba(90,140,255,0.18)] border-[rgba(120,160,255,0.45)] text-[var(--text)]'
-                : 'bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]'
+                : 'bg-[color-mix(in_srgb,var(--bg-app)_88%,transparent)] backdrop-blur-[14px] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]'
             }`}
           >
             <span className="opacity-80"><Icon.Walk /></span>
@@ -288,7 +288,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
 
           {/* Scope — only worth showing when there is more than one thing to frame */}
           {multi && (
-            <div className="flex flex-col gap-1 w-full p-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)]">
+            <div className="flex flex-col gap-1 w-full p-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_88%,transparent)] backdrop-blur-[14px] border border-[var(--border)]">
               <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] px-1">{t('cameraControls.scope.label')}</span>
               <div role="radiogroup" aria-label={t('cameraControls.scope.label')} className="grid grid-cols-4 gap-0.5">
                 {SCOPES.map((s) => (
@@ -302,7 +302,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
                     className={`px-1.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-35 disabled:cursor-not-allowed ${
                       scope === s
                         ? 'bg-[rgba(90,140,255,0.22)] text-[var(--text)]'
-                        : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)]'
+                        : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]'
                     }`}
                   >
                     {t(`cameraControls.scope.${s}`)}
@@ -321,14 +321,14 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
           )}
 
           {empty && (
-            <div className="px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] border border-[var(--border)] text-[10px] text-[var(--text-dim)] max-w-[220px]">
+            <div className="px-2.5 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_88%,transparent)] border border-[var(--border)] text-[10px] text-[var(--text-dim)] max-w-[220px]">
               {t('cameraControls.empty')}
             </div>
           )}
 
           {/* Preset grid — 2 columns */}
           <div
-            className="grid gap-1 p-1.5 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)]"
+            className="grid gap-1 p-1.5 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_88%,transparent)] backdrop-blur-[14px] border border-[var(--border)]"
             style={{ gridTemplateColumns: 'repeat(2, auto)' }}
           >
             {PRESETS.map(({ label, key, shortcut, Icon: Ic }) => (
@@ -337,7 +337,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
                 onClick={() => choose(key)}
                 disabled={empty}
                 title={shortcut ? `${label} (${shortcut})` : label}
-                className="disabled:opacity-35 disabled:pointer-events-none flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)] active:bg-[rgba(255,255,255,0.10)] transition-colors text-[11px] font-medium"
+                className="disabled:opacity-35 disabled:pointer-events-none flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] active:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] transition-colors text-[11px] font-medium"
               >
                 <span className="opacity-75"><Ic /></span>
                 <span>{label}</span>
@@ -356,7 +356,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
           aria-label={t('cameraControls.show')}
           aria-expanded={false}
           aria-haspopup="true"
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[rgba(12,12,16,0.82)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+          className="flex items-center justify-center w-8 h-8 rounded-lg bg-[color-mix(in_srgb,var(--bg-app)_82%,transparent)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
         >
           <Icon.Camera />
         </button>
