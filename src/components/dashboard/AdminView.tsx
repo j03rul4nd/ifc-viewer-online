@@ -113,8 +113,8 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
 
   // ── Shared styles (same idiom as DashboardView) ────────────────────────────
   const card: React.CSSProperties = light
-    ? { background: 'rgba(255,255,255,0.72)', borderColor: 'rgba(15,17,35,0.08)', boxShadow: '0 20px 50px -24px rgba(40,48,120,0.22)' }
-    : { background: 'rgba(18,19,26,0.6)', borderColor: 'rgba(255,255,255,0.08)', boxShadow: '0 24px 70px -30px rgba(0,0,0,0.7)' }
+    ? { background: "var(--bg-surface)", borderColor: "var(--border-subtle)", boxShadow: "none" }
+    : { background: "var(--bg-surface)", borderColor: "var(--border-subtle)", boxShadow: "none" }
   const ghost: React.CSSProperties = { borderColor: 'var(--border)', color: 'var(--text)' }
   const chrome = `min-h-full w-full ${light ? 'lp-light' : ''}`
 
@@ -149,13 +149,13 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
 
   return (
     <div className={chrome} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <div className="pointer-events-none fixed inset-0" aria-hidden style={{ background: light ? 'radial-gradient(90% 60% at 50% -10%, rgba(176,141,95,0.12), transparent 60%)' : 'radial-gradient(90% 60% at 50% -10%, rgba(176,141,95,0.20), transparent 60%)' }} />
+      <div className="pointer-events-none fixed inset-0" aria-hidden style={{ background: light ? 'radial-gradient(90% 60% at 50% -10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%)' : 'radial-gradient(90% 60% at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%)' }} />
 
       <div className="relative z-10 mx-auto w-full max-w-[1100px] px-5 py-8 md:py-12">
         <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-[clamp(22px,3vw,30px)] font-semibold tracking-[-0.02em] leading-tight">{t('admin.title')}</h1>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider" style={{ background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }}>{t('admin.liveBadge')}</span>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider" style={{ background: 'color-mix(in srgb, var(--accent) 12%, var(--bg-surface))', color: 'var(--accent)' }}>{t('admin.liveBadge')}</span>
           </div>
           <button onClick={onBack} className="h-9 px-4 rounded-lg text-[12px] font-medium border" style={ghost}>{t('admin.back')}</button>
         </header>
@@ -168,14 +168,14 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
               onClick={() => setTab(x.id)}
               className="h-8 px-3.5 rounded-lg text-[12px] font-medium border transition-colors"
               style={tab === x.id
-                ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
+                ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: "var(--accent-contrast)" }
                 : ghost}
             >{x.label}</button>
           ))}
         </nav>
 
         {notice && (
-          <div className="flex items-center justify-between gap-3 text-[12px] rounded-xl px-4 py-2.5 mb-4 border" style={{ borderColor: 'rgba(233,162,59,0.3)', background: 'rgba(233,162,59,0.06)', color: light ? '#8a5a00' : '#f5c76a' }}>
+          <div className="flex items-center justify-between gap-3 text-[12px] rounded-xl px-4 py-2.5 mb-4 border" style={{ borderColor: "color-mix(in srgb, var(--warning) 40%, var(--bg-surface))", background: "color-mix(in srgb, var(--warning) 12%, var(--bg-surface))", color: "var(--text-primary)" }}>
             <span>{notice}</span>
             <button onClick={() => setNotice(null)} className="text-[11px] underline opacity-80">{t('admin.dismiss')}</button>
           </div>
@@ -212,14 +212,14 @@ interface TabProps {
 const thCls = 'py-1.5 px-2 font-medium'
 const planBadge = (plan: string): React.CSSProperties => plan === 'free'
   ? { background: 'var(--surface-2)', color: 'var(--text-muted)' }
-  : { background: 'rgba(10,132,129,0.15)', color: 'var(--accent)' }
+  : { background: 'color-mix(in srgb, var(--accent) 12%, var(--bg-surface))', color: 'var(--accent)' }
 const statusColor = (s: string): React.CSSProperties =>
-  s === 'active' ? { color: 'var(--ok, #4caf82)' }
-  : s === 'past_due' || s === 'suspended' ? { color: '#E9A23B' }
-  : { color: 'var(--danger, #e0523f)' }
+  s === 'active' ? { color: 'var(--success)' }
+  : s === 'past_due' || s === 'suspended' ? { color: "var(--warning)" }
+  : { color: 'var(--danger)' }
 const selectCls = 'h-7 px-1.5 rounded-md text-[11px] border bg-transparent'
 const btnCls = 'h-7 px-2 rounded-md text-[10px] border disabled:opacity-40'
-const dangerStyle: React.CSSProperties = { borderColor: 'rgba(224,82,63,0.4)', color: 'var(--danger, #e0523f)' }
+const dangerStyle: React.CSSProperties = { borderColor: 'color-mix(in srgb, var(--danger) 45%, var(--bg-surface))', color: 'var(--danger)' }
 
 function SectionCard({ card, title, children }: { card: React.CSSProperties; title?: string; children: React.ReactNode }) {
   return (
@@ -393,7 +393,7 @@ function UsersTab({ call, card, ghost, busy, setBusy, setNotice, plans, openAudi
                 <td className="py-2 pr-2 text-[11px] font-mono" title={u.id}>{short(u.id)}</td>
                 <td className="py-2 px-2 text-[11px]">
                   {u.global_role === 'super_admin'
-                    ? <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase" style={{ background: 'rgba(233,162,59,0.14)', color: '#E9A23B' }}>{t('admin.roleSuperAdmin')}</span>
+                    ? <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase" style={{ background: 'color-mix(in srgb, var(--warning) 12%, var(--bg-surface))', color: "var(--warning)" }}>{t('admin.roleSuperAdmin')}</span>
                     : <span style={{ color: 'var(--text-muted)' }}>{t('admin.roleUser')}</span>}
                 </td>
                 <td className="py-2 px-2">
@@ -413,7 +413,7 @@ function UsersTab({ call, card, ghost, busy, setBusy, setNotice, plans, openAudi
                 <td className="py-2 pl-2 text-right whitespace-nowrap">
                   <button
                     onClick={() => setExpanded(expanded === u.id ? null : u.id)}
-                    className={`${btnCls} mr-1.5`} style={expanded === u.id ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' } : ghost}
+                    className={`${btnCls} mr-1.5`} style={expanded === u.id ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: "var(--accent-contrast)" } : ghost}
                   >{t('admin.detail')}</button>
                   <button
                     disabled={busy || u.global_role === 'super_admin'}
@@ -605,7 +605,7 @@ function OrgsTab({ call, card, ghost, busy, setBusy, setNotice, plans, openAudit
                 <td className="py-2 pl-2 text-right whitespace-nowrap">
                   <button
                     onClick={() => setExpanded(expanded === o.id ? null : o.id)}
-                    className={`${btnCls} mr-1.5`} style={expanded === o.id ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' } : ghost}
+                    className={`${btnCls} mr-1.5`} style={expanded === o.id ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: "var(--accent-contrast)" } : ghost}
                   >{t('admin.detail')}</button>
                   <button
                     disabled={busy}
@@ -872,7 +872,7 @@ function WorkspacesTab({ call, card, ghost, busy, setBusy, setNotice, plans }: T
                 <td className="py-2 pl-2 text-right whitespace-nowrap">
                   <button disabled={busy} onClick={() => void toggleUsage(w.id)} className={`${btnCls} mr-1.5`} style={ghost}>{t('admin.usage')}</button>
                   <button disabled={busy} onClick={() => editLimits(w)} className={`${btnCls} mr-1.5`} style={ghost}>{t('admin.limits')}</button>
-                  <button disabled={busy} onClick={() => void resetUsage(w.id)} className={btnCls} style={{ borderColor: 'rgba(233,162,59,0.4)', color: '#E9A23B' }}>{t('admin.reset')}</button>
+                  <button disabled={busy} onClick={() => void resetUsage(w.id)} className={btnCls} style={{ borderColor: 'color-mix(in srgb, var(--warning) 45%, var(--bg-surface))', color: "var(--warning)" }}>{t('admin.reset')}</button>
                 </td>
               </tr>
               {expanded === w.id && (
@@ -992,9 +992,9 @@ function PlansTab({ call, card, ghost, busy, setBusy, setNotice, reloadPlans }: 
             {t('admin.planPrice')}
             <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="49" inputMode="decimal" className="h-8 px-2.5 rounded-lg border text-[12px] w-[90px]" style={inputStyle} />
           </label>
-          <button disabled={busy} onClick={() => void create()} className="h-8 px-4 rounded-lg text-[12px] font-medium" style={{ background: 'var(--accent)', color: '#fff' }}>{t('admin.createPlan')}</button>
+          <button disabled={busy} onClick={() => void create()} className="h-8 px-4 rounded-lg text-[12px] font-medium" style={{ background: 'var(--accent)', color: "var(--accent-contrast)" }}>{t('admin.createPlan')}</button>
         </div>
-        {formError && <p className="mt-2 text-[11px]" style={{ color: 'var(--danger, #e0523f)' }}>{formError}</p>}
+        {formError && <p className="mt-2 text-[11px]" style={{ color: 'var(--danger)' }}>{formError}</p>}
       </SectionCard>
 
       <SectionCard card={card} title={t('admin.plansTitle')}>
