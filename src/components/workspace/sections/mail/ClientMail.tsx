@@ -15,17 +15,22 @@ import {
 } from './model'
 import { AUTOMATIONS, BRAND, CLICKS, CONTACTS, DEPARTMENTS, OUTGOING, PROJECTS, REPLIES, SENT_THIS_MONTH, TEMPLATES } from './sample'
 import { mxFor, useMx } from './strings'
+import { ANSWERS, SEGMENTS } from './sample'
+import { DomainWizard, Gate, PlanBar, PortalTab, SendTab, Thread } from './ClientMailV2'
+import { CAPS, PHASE_TEMPLATES, phaseTemplate, senderFor } from './v2'
+import type { MailPlan } from './model'
 
-export const TAB_LABELS = ['Approval', 'Clients', 'Templates', 'Automations', 'History', 'Results', 'Departments'] as const
+export const TAB_LABELS = ['Approval', 'Clients', 'Templates', 'Automations', 'History', 'Results', 'Departments', 'Send', 'Client page'] as const
 const TABS = [
-  { id: 'approval', label: TAB_LABELS[0] }, { id: 'clients', label: TAB_LABELS[1] }, { id: 'templates', label: TAB_LABELS[2] },
-  { id: 'automations', label: TAB_LABELS[3] }, { id: 'history', label: TAB_LABELS[4] }, { id: 'results', label: TAB_LABELS[5] }, { id: 'departments', label: TAB_LABELS[6] },
+  { id: 'approval', label: TAB_LABELS[0] }, { id: 'send', label: TAB_LABELS[7] }, { id: 'clients', label: TAB_LABELS[1] }, { id: 'templates', label: TAB_LABELS[2] },
+  { id: 'automations', label: TAB_LABELS[3] }, { id: 'history', label: TAB_LABELS[4] }, { id: 'results', label: TAB_LABELS[5] }, { id: 'portal', label: TAB_LABELS[8] }, { id: 'departments', label: TAB_LABELS[6] },
 ] as const
 type TabId = typeof TABS[number]['id']
 
 export const BLOCK_LABELS: Record<BlockKind, string> = {
   heading: 'Heading', text: 'Text', health: 'Health Score with trend', deliveries: 'Accepted deliveries', issues: 'Issues closed',
   milestones: 'Milestones', capture: '3D capture with viewer link', certificate: 'Certificate', button: 'Button to the project', divider: 'Divider',
+  summary: 'Client summary from project data', timeline: 'Project timeline', clashes: 'Clashes resolved', rules: 'Requirement checks', portal: 'Link to the project page',
 }
 export const CONSENT_LABELS = { granted: 'Agreed', pending: 'Waiting for confirmation', withdrawn: 'Unsubscribed' } as const
 export const SOURCE_LABELS = { 'double-opt-in': 'Confirmed by email', contract: 'Clause in the contract', form: 'Form on the portal' } as const
@@ -42,6 +47,8 @@ export const SAMPLE_TEXTS = [
   ...AUTOMATIONS.map((a) => a.name), ...CONTACTS.map((c) => c.role),
   ...OUTGOING.flatMap((o) => [o.cause.split(':')[0], o.note].filter((x): x is string => !!x)),
   ...REPLIES.map((r) => r.text), 'Health centre Benimaclet',
+  ...SEGMENTS.map((x) => x.name), ...ANSWERS.map((a) => a.text),
+  ...PHASE_TEMPLATES.flatMap((k) => { const t = phaseTemplate(k, 'x', (x) => x); return [t.name, t.subject, ...t.blocks.map((b) => b.text).filter((x): x is string => !!x)] }),
 ]
 const uniq = <T,>(a: T[]) => [...new Set(a)]
 export const SAMPLE_KEYS = uniq(SAMPLE_TEXTS)
@@ -57,8 +64,9 @@ const fmt = (iso: string, lang: string) => new Intl.DateTimeFormat(lang, { day: 
 const NOW = '2026-11-11T09:00:00Z'
 const UNSUB = 'https://ifcvieweronline.eu/u/unsubscribe'
 
-export default function ClientMail(_: SectionProps) {
+export default function ClientMail({ data }: SectionProps) {
   const { mx, lang } = useMx()
+  const [plan, setPlan] = useState<MailPlan>(data?.account?.plan === 'pro' ? 'pro' : 'team')
   const L = loc(mx)
   const [tab, setTab] = useSubTab<TabId>('mail', TABS)
   const [contacts, setContacts] = useState<Contact[]>(CONTACTS)
@@ -107,12 +115,15 @@ export default function ClientMail(_: SectionProps) {
       <div className="mb-4">
         <Banner tone="info" title={mx('Coming soon · Team plan')}>{mx('Sample data. Sending is off: approving a message builds it and shows it, and nothing leaves your browser.')}</Banner>
       </div>
+      <PlanBar mx={mx} plan={plan} setPlan={setPlan} sent={SENT_THIS_MONTH} />
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <select aria-label={mx('Project')} className={`${inputClass} max-w-[300px]`} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
           {projects.map((p) => <option key={p.id} value={p.id}>{p.id} · {p.name}</option>)}
         </select>
-        <Quiet onClick={() => simulate('delivery-accepted')}>{mx('Try: a delivery is accepted')}</Quiet>
-        <Quiet onClick={() => simulate('milestone')}>{mx('Try: a milestone is reached')}</Quiet>
+        {CAPS[plan].automations && <>
+          <Quiet onClick={() => simulate('delivery-accepted')}>{mx('Try: a delivery is accepted')}</Quiet>
+          <Quiet onClick={() => simulate('milestone')}>{mx('Try: a milestone is reached')}</Quiet>
+        </>}
       </div>
       {notice && <div className="mb-4"><Banner tone="ok" title={notice} action={<Quiet onClick={() => setNotice(null)}>{mx('Close')}</Quiet>} /></div>}
       <Tabs label={mx('Client updates')} tabs={TABS.map((t) => ({ ...t, label: mx(t.label), count: t.id === 'approval' ? awaiting.length : undefined }))} value={tab} onChange={setTab} />
@@ -121,11 +132,15 @@ export default function ClientMail(_: SectionProps) {
       {tab === 'clients' && <ClientsTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} depts={depts} queue={queue} replies={replies} templates={templates}
         update={(c) => setContacts((all) => all.map((x) => (x.id === c.id ? c : x)))} add={(c) => setContacts((all) => [...all, c])} projectId={projectId} />}
       {tab === 'templates' && <TemplatesTab mx={mx} templates={templates} setTemplates={setTemplates} depts={depts} project={project} />}
-      {tab === 'automations' && <AutomationsTab mx={mx} lang={lang} autos={autos.filter((a) => a.projectId === projectId)} templates={templates} setAuto={(a) => setAutos((all) => all.map((x) => (x.id === a.id ? a : x)))} />}
+      {tab === 'send' && <SendTab mx={mx} plan={plan} project={project} contacts={contacts.filter((c) => c.projectId === projectId)} templates={templates}
+        addTemplate={(t) => setTemplates((a) => [...a, t])} queueIt={(m) => { setQueue((q) => [m, ...q]); setNotice(mx('{{n}} new messages wait for approval.', { n: 1 })); setTab('approval') }} />}
+      {tab === 'portal' && <PortalTab mx={mx} project={project} lang={lang} />}
+      {tab === 'automations' && !CAPS[plan].automations && <Gate mx={mx} cap="automations" plan={plan}>{null}</Gate>}
+      {tab === 'automations' && CAPS[plan].automations && <AutomationsTab mx={mx} lang={lang} autos={autos.filter((a) => a.projectId === projectId)} templates={templates} setAuto={(a) => setAutos((all) => all.map((x) => (x.id === a.id ? a : x)))} />}
       {tab === 'history' && <HistoryTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} queue={queue} templates={templates} replies={replies}
         route={(r, to) => setReplies((all) => all.map((x) => (x.id === r.id ? routeReply(r, to, to === 'issue' ? `${projectId} · issue #${140 + all.indexOf(x)}` : `${projectId} · comment ${120 + all.indexOf(x)}`) : x)))} />}
-      {tab === 'results' && <ResultsTab mx={mx} lang={lang} queue={queue} templates={templates} project={project} />}
-      {tab === 'departments' && <DepartmentsTab mx={mx} depts={depts} setDepts={setDepts} />}
+      {tab === 'results' && <ResultsTab mx={mx} lang={lang} queue={queue} templates={templates} project={project} plan={plan} />}
+      {tab === 'departments' && <DepartmentsTab mx={mx} depts={depts} setDepts={setDepts} plan={plan} />}
     </div>
   )
 }
@@ -360,6 +375,7 @@ function HistoryTab({ mx, lang, contacts, queue, templates, replies, route }: { 
                       <Quiet onClick={() => route(r, 'issue')}>{mx('Make it an issue')}</Quiet>
                       <Quiet onClick={() => route(r, 'comment')}>{mx('Save as a comment')}</Quiet>
                     </div>)}
+                {r && <Thread mx={mx} reply={r} clientName={c.name} lang={lang} />}
               </li>
             )
           })}
@@ -371,16 +387,16 @@ function HistoryTab({ mx, lang, contacts, queue, templates, replies, route }: { 
 
 // ── Results: aggregate, no pixel ──────────────────────────────────────────────
 
-function ResultsTab({ mx, lang, queue, templates, project }: { mx: Mx; lang: string; queue: Outgoing[]; templates: Template[]; project: ProjectSnapshot }) {
+function ResultsTab({ mx, lang, queue, templates, project, plan }: { mx: Mx; lang: string; queue: Outgoing[]; templates: Template[]; project: ProjectSnapshot; plan: MailPlan }) {
   const clicks = aggregateClicks(CLICKS)
   const sent = queue.filter((m) => m.status === 'sent')
-  const q = quotaUse(SENT_THIS_MONTH, 'team')
+  const q = quotaUse(SENT_THIS_MONTH, plan)
   const d = trend(project.health)
   return (
     <div className="flex flex-col gap-4">
       <Banner tone="info" title={mx('No tracking pixel')}>{mx('We do not record who opens an email. We count clicks on the project link per message, never per person, and show fewer than {{n}} as “<{{n}}”.', { n: MIN_GROUP })}</Banner>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Panel className="p-4"><p className="text-[12px] text-[var(--text-faint)]">{mx('Sent this month')}</p><p className="text-[26px] font-semibold tabular-nums">{SENT_THIS_MONTH}<span className="text-[13px] text-[var(--text-faint)]"> / {QUOTA.team}</span></p><p className="text-[12px] text-[var(--text-dim)]">{mx('{{n}} left in the Team plan', { n: q.left })}</p></Panel>
+        <Panel className="p-4"><p className="text-[12px] text-[var(--text-faint)]">{mx('Sent this month')}</p><p className="text-[26px] font-semibold tabular-nums">{SENT_THIS_MONTH}<span className="text-[13px] text-[var(--text-faint)]"> / {QUOTA[plan]}</span></p><p className="text-[12px] text-[var(--text-dim)]">{mx('{{n}} left this month', { n: q.left })}</p></Panel>
         <Panel className="p-4"><p className="text-[12px] text-[var(--text-faint)]">{mx('Client replies')}</p><p className="text-[26px] font-semibold tabular-nums">{REPLIES.length}</p><p className="text-[12px] text-[var(--text-dim)]">{mx('Back in the project as comments or issues')}</p></Panel>
         <Panel className="p-4"><p className="text-[12px] text-[var(--text-faint)]">{mx('Health Score the client saw')}</p><div className="flex items-end gap-3"><p className="text-[26px] font-semibold tabular-nums" style={{ color: scoreColor(project.health[project.health.length - 1]) }}>{project.health[project.health.length - 1]}</p><Sparkline values={project.health} /></div><p className="text-[12px] text-[var(--text-dim)]">{d >= 0 ? `+${d}` : d}</p></Panel>
       </div>
@@ -396,13 +412,14 @@ function ResultsTab({ mx, lang, queue, templates, project }: { mx: Mx; lang: str
 
 // ── Departments: one sender each ──────────────────────────────────────────────
 
-function DepartmentsTab({ mx, depts, setDepts }: { mx: Mx; depts: Department[]; setDepts: (f: (d: Department[]) => Department[]) => void }) {
+function DepartmentsTab({ mx, depts, setDepts, plan }: { mx: Mx; depts: Department[]; setDepts: (f: (d: Department[]) => Department[]) => void; plan: MailPlan }) {
   const set = (d: Department) => setDepts((all) => all.map((x) => (x.id === d.id ? d : x)))
   return (
     <div className="flex flex-col gap-4">
       {depts.map((d) => (
         <Panel key={d.id} className="p-4">
-          <p className="text-[14px] font-medium mb-3 inline-flex items-center gap-2"><Mail size={14} aria-hidden />{d.name}</p>
+          <p className="text-[14px] font-medium mb-1 inline-flex items-center gap-2"><Mail size={14} aria-hidden />{d.name}</p>
+          <p className="text-[12px] text-[var(--text-faint)] mb-3">{mx('Leaves as')}: {senderFor(plan, d, false).from} · {mx('replies to')} {d.replyTo}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={mx('Sender name')}><input className={inputClass} value={d.senderName} onChange={(e) => set({ ...d, senderName: e.target.value })} /></Field>
             <Field label={mx('From address')} hint={mx('Needs your domain verified (SPF and DKIM). Until then mail leaves from our domain with your name.')}><input className={inputClass} value={d.from} onChange={(e) => set({ ...d, from: e.target.value })} /></Field>
@@ -411,6 +428,8 @@ function DepartmentsTab({ mx, depts, setDepts }: { mx: Mx; depts: Department[]; 
           </div>
         </Panel>
       ))}
+      {depts.length > CAPS[plan].departments && <p className="text-[12px] text-[var(--warn)]">{mx('Your plan includes {{n}} sending department; the rest send under the first one.', { n: CAPS[plan].departments })}</p>}
+      <DomainWizard mx={mx} plan={plan} />
       <Panel className="p-4">
         <SectionLabel>{mx('How mail is sent')}</SectionLabel>
         <ul className="text-[12.5px] text-[var(--text-dim)] flex flex-col gap-1.5">

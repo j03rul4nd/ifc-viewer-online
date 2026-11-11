@@ -70,16 +70,23 @@ export interface ProjectSnapshot {
   viewerUrl: string
   captureAlt: string
   certificate: { id: string; score: number; date: string }
+  /** Clash detection runs (lib/clash/trend), oldest first. */
+  clashes?: { at: string; open: number; resolved: number }[]
+  /** Rule checks at the current phase (rules-v2). */
+  rules?: { checked: number; failing: number; fixedThisWeek: number; phase: string }
+  /** Where the project stands: kickoff → closeout. */
+  phase?: 'kickoff' | 'design' | 'construction' | 'closeout'
+  portalUrl?: string
 }
 
 export const trend = (w: number[]) => (w.length > 1 ? w[w.length - 1] - w[w.length - 2] : 0)
 
 // ── Templates and blocks ──────────────────────────────────────────────────────
 
-export const BLOCK_KINDS = ['heading', 'text', 'health', 'deliveries', 'issues', 'milestones', 'capture', 'certificate', 'button', 'divider'] as const
+export const BLOCK_KINDS = ['heading', 'text', 'health', 'deliveries', 'issues', 'milestones', 'capture', 'certificate', 'button', 'divider', 'summary', 'timeline', 'clashes', 'rules', 'portal'] as const
 export type BlockKind = typeof BLOCK_KINDS[number]
 /** Blocks filled from the project at send time: the part nobody else has. */
-export const LIVE_BLOCKS: BlockKind[] = ['health', 'deliveries', 'issues', 'milestones', 'capture', 'certificate']
+export const LIVE_BLOCKS: BlockKind[] = ['health', 'deliveries', 'issues', 'milestones', 'capture', 'certificate', 'summary', 'timeline', 'clashes', 'rules', 'portal']
 
 export interface Block { id: string; kind: BlockKind; text?: string }
 
@@ -222,13 +229,19 @@ export async function sendMessage(m: Outgoing, contacts: Contact[], build: (c: C
 // ── Plans, quota and cost ─────────────────────────────────────────────────────
 
 /** Sends per month by plan. Proposed, pending Joel (doc 28). */
-export const QUOTA = { pro: 0, team: 1000, reception: 3000 } as const
-/** Resend Pro: 20 $/month for 50,000 sends (resend.com/pricing, seen 2026-11-11). */
+/** Sends per month by plan — decided 2026-11-12 (doc 28). Enterprise: by contract. */
+export const QUOTA = { pro: 200, team: 1000, reception: 3000, enterprise: 10000 } as const
+export type MailPlan = keyof typeof QUOTA
+/** Price of sends over the quota, and our cost (Resend Pro ~20 $ / 50,000, seen 2026-11-11). */
+export const OVERAGE_PER_1000_EUR = 1
 export const COST_PER_1000_EUR = 0.4
+export const WARN_AT = 0.8
 
-export function quotaUse(sent: number, plan: keyof typeof QUOTA) {
+export function quotaUse(sent: number, plan: MailPlan) {
   const limit = QUOTA[plan]
-  return { limit, left: Math.max(0, limit - sent), over: sent > limit, cost: (sent / 1000) * COST_PER_1000_EUR }
+  const extra = Math.max(0, sent - limit)
+  const level: 'ok' | 'warn' | 'over' = sent > limit ? 'over' : sent >= limit * WARN_AT ? 'warn' : 'ok'
+  return { limit, left: Math.max(0, limit - sent), over: sent > limit, level, extra, overageEur: Math.ceil(extra / 1000) * OVERAGE_PER_1000_EUR, cost: (sent / 1000) * COST_PER_1000_EUR }
 }
 
 // ── Links, clicks, replies ────────────────────────────────────────────────────
@@ -326,6 +339,31 @@ export function renderEmail(i: RenderInput): { subject: string; html: string; te
       case 'button':
         row(`<a href="${esc(link)}" style="display:inline-block;background:${esc(brand.color)};color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold">${esc(b.text || mx('See the project'))}</a>`)
         text.push(`${b.text || mx('See the project')}: ${link}`); break
+      case 'summary': {
+        const lines = clientSummary(p, mx)
+        row(`<div style="border-left:3px solid ${esc(brand.color)};padding-left:12px">${lines.map((l) => `<div style="margin:2px 0">${esc(l)}</div>`).join('')}</div>`)
+        text.push(lines.join(' ')); break
+      }
+      case 'timeline': {
+        const ev = projectTimeline(p).slice(0, 6)
+        row(`<strong>${esc(mx('Project timeline'))}</strong>${ev.map((e) => `<div style="font-size:13px;color:${e.done ? c.text : c.dim}">${e.done ? '●' : '○'} ${esc(e.date)} · ${esc(e.label)}</div>`).join('')}`)
+        text.push(`${mx('Project timeline')}: ${ev.map((e) => `${e.date} ${e.label}`).join('; ')}`); break
+      }
+      case 'clashes': {
+        const k = clashWeek(p.clashes)
+        if (!k) break
+        const line = mx('{{n}} clashes resolved this week, {{o}} still open', { n: k.resolvedThisWeek, o: k.open })
+        row(`<strong>${esc(line)}</strong><div style="color:${c.dim};font-size:13px">${esc(k.openDelta <= 0 ? mx('Open clashes down by {{n}}', { n: -k.openDelta }) : mx('Open clashes up by {{n}}', { n: k.openDelta }))}</div>`)
+        text.push(line); break
+      }
+      case 'rules': {
+        if (!p.rules) break
+        const line = mx('{{c}} requirement checks at {{ph}}: {{f}} to fix, {{x}} fixed this week', { c: p.rules.checked, ph: p.rules.phase, f: p.rules.failing, x: p.rules.fixedThisWeek })
+        row(esc(line)); text.push(line); break
+      }
+      case 'portal':
+        row(`<a href="${esc(portalLink(p.portalUrl ?? p.viewerUrl, i.messageId))}" style="color:${esc(brand.color)};font-weight:bold">${esc(mx('Your project page: timeline, model and every update'))} →</a>`)
+        text.push(`${mx('Your project page: timeline, model and every update')}: ${portalLink(p.portalUrl ?? p.viewerUrl, i.messageId)}`); break
       case 'divider': html.push(`<tr><td style="padding:4px 28px"><hr style="border:0;border-top:1px solid ${c.line}"></td></tr>`); break
     }
   }
@@ -347,4 +385,37 @@ export function envelopeFor(i: RenderInput, to: string): Envelope {
     from: `${i.dept.senderName} <${i.dept.from}>`, replyTo: i.dept.replyTo, to, subject: r.subject, html: r.html, text: r.text,
     headers: { 'List-Unsubscribe': `<${i.unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
   }
+}
+
+// ── v2: summary, timeline, clashes ────────────────────────────────────────────
+
+/** Clash runs reduced to this week: resolved since the previous run, open now. */
+export function clashWeek(runs?: { open: number; resolved: number }[]) {
+  if (!runs || runs.length === 0) return null
+  const now = runs[runs.length - 1], prev = runs.length > 1 ? runs[runs.length - 2] : { open: now.open, resolved: now.resolved }
+  return { open: now.open, resolvedThisWeek: Math.max(0, now.resolved - prev.resolved), openDelta: now.open - prev.open }
+}
+
+/** A client summary written from the numbers: fixed sentences, no generated prose. */
+export function clientSummary(p: ProjectSnapshot, mx: Mx): string[] {
+  const out: string[] = []
+  const score = p.health[p.health.length - 1], d = trend(p.health)
+  out.push(d > 0 ? mx('Model quality is improving: Health Score {{s}}, up {{d}}.', { s: score, d }) : d < 0 ? mx('Model quality dipped: Health Score {{s}}, down {{d}}. We are on it.', { s: score, d: -d }) : mx('Model quality is steady at {{s}}.', { s: score }))
+  const acc = p.deliveries.filter((x) => x.verdict === 'accepted').length
+  if (acc) out.push(mx('{{n}} supplier models passed our checks.', { n: acc }))
+  const k = clashWeek(p.clashes)
+  if (k && k.resolvedThisWeek) out.push(mx('{{n}} clashes between disciplines were resolved.', { n: k.resolvedThisWeek }))
+  const next = p.milestones.find((m) => !m.done)
+  if (next) out.push(mx('Next milestone: {{m}} on {{d}}.', { m: next.name, d: next.date }))
+  return out
+}
+
+export interface TimelineEvent { date: string; label: string; done: boolean }
+
+export function projectTimeline(p: ProjectSnapshot): TimelineEvent[] {
+  const ev: TimelineEvent[] = [
+    ...p.milestones.map((m) => ({ date: m.date, label: m.name, done: m.done })),
+    ...p.deliveries.filter((x) => x.verdict === 'accepted').map((x) => ({ date: x.date, label: `${x.supplier} ✓`, done: true })),
+  ]
+  return ev.sort((a, b) => b.date.localeCompare(a.date))
 }
