@@ -11,6 +11,9 @@ import {
 } from '../ui'
 import { featureName } from './Overview'
 import { useTx } from '../i18n'
+import VersionCompare from './pro/VersionCompare'
+import ClientLinks from './pro/ClientLinks'
+import { useP } from './pro/pro-i18n'
 
 
 const PROFILES = ['Health Score only', 'ISO 19650 basics', 'IDS CatSalut', 'EIR Ajuntament de Sabadell 2026']
@@ -84,13 +87,17 @@ const DETAIL_TABS = [
   { id: 'certificates', label: 'Certificates' },
   { id: 'settings', label: 'Settings' },
 ] as const
-type DetailTab = (typeof DETAIL_TABS)[number]['id']
+type DetailTab = (typeof DETAIL_TABS)[number]['id'] | 'links'
 
 function ProjectDetail({ project, data, actions, onBack }: SectionProps & { project: SampleProject; onBack: () => void }) {
   const tx = useTx()
   const [tab, setTab] = useState<DetailTab>('deliveries')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [alerts, setAlerts] = useState(true)
+  const p = useP()
+  const [compare, setCompare] = useState<{ from: string; to: string } | null>(null)
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkPreset, setLinkPreset] = useState<string | undefined>()
   const versions = [...project.versions].reverse()
   const prevOf = (label: string) => versions[versions.findIndex((v) => v.label === label) + 1]
   const jobs = data.jobs.filter((j) => j.project === project.id)
@@ -112,7 +119,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
         ))}
       </div>
 
-      <Tabs label={tx("Project")} tabs={DETAIL_TABS.map((t) => ({ ...t, count: t.id === 'jobs' ? jobs.length : t.id === 'certificates' ? certs.length : t.id === 'deliveries' ? versions.length : undefined }))} value={tab} onChange={setTab} />
+      <Tabs label={tx("Project")} tabs={[...DETAIL_TABS.slice(0, 3).map((t) => ({ ...t, count: t.id === 'jobs' ? jobs.length : t.id === 'certificates' ? certs.length : t.id === 'deliveries' ? versions.length : undefined })), { id: 'links' as const, label: p('Client links') }, DETAIL_TABS[3]]} value={tab} onChange={setTab} />
 
       {tab === 'deliveries' && (
         <>
@@ -135,7 +142,7 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
               { key: 'new', header: tx("New"), cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">+{v.newIssues}</span> },
               { key: 'fixed', header: tx("Fixed"), cell: (v) => <span className="tabular-nums text-[var(--text-dim)]">−{v.fixedIssues}</span> },
             ]}
-            actions={(v) => { const prev = prevOf(v.label); return <><Quiet className="md:hidden lg:inline-flex">{tx("Open in viewer")}</Quiet>{prev && <Quiet>{tx('Compare with {{version}}', { version: prev.label })}</Quiet>}</> }}
+            actions={(v) => { const prev = prevOf(v.label); return <><Quiet className="md:hidden lg:inline-flex">{tx("Open in viewer")}</Quiet>{prev && <Quiet onClick={() => setCompare({ from: prev.label, to: v.label })}>{tx('Compare with {{version}}', { version: prev.label })}</Quiet>}</> }}
           />
         </>
       )}
@@ -159,6 +166,11 @@ function ProjectDetail({ project, data, actions, onBack }: SectionProps & { proj
               { key: 'score', header: tx("Score"), cell: (c) => <span className="tabular-nums font-semibold">{c.score}</span> },
               { key: 'status', header: tx("Status"), cell: (c) => (c.revoked ? tx('Revoked') : tx('Valid')) },
             ]} />)}
+
+      {tab === 'links' && <ClientLinks versions={versions.map((v) => v.label)} newOpen={linkOpen} setNewOpen={setLinkOpen} preset={linkPreset} />}
+
+      {compare && <VersionCompare from={compare.from} to={compare.to} single={project.versions.length < 2} onClose={() => setCompare(null)}
+        onShare={() => { setLinkPreset(p('What changed {{from}} → {{to}}', compare)); setCompare(null); setTab('links'); setLinkOpen(true) }} />}
 
       {tab === 'settings' && (
         <>

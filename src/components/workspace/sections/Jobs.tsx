@@ -1,6 +1,9 @@
 import type { JobStatus } from '../sample-data'
 import type { SectionProps } from '../registry'
-import { Head, Primary, Quiet, Empty, DataList, Dot, fmtInt } from '../ui'
+import { useState } from 'react'
+import { Head, Primary, Quiet, Empty, DataList, Dot, Tabs, fmtInt } from '../ui'
+import BatchFolder from './pro/BatchFolder'
+import { useP } from './pro/pro-i18n'
 import { featureName } from './Overview'
 import { useTx } from '../i18n'
 
@@ -18,10 +21,13 @@ function Status({ status, refunded }: { status: JobStatus; refunded?: boolean })
 
 export default function Jobs({ data, actions }: SectionProps) {
   const tx = useTx()
+  const p = useP()
+  const [tab, setTab] = useState<'cloud' | 'folder'>('cloud')
   return (
     <>
-      <Head title={tx("Cloud jobs")} sub={tx("Run on our servers in the EU. Files are deleted when a job ends; corrected files stay downloadable for 7 days.")} action={<Primary onClick={actions.newJob}>{tx("New job")}</Primary>} />
-      {data.jobs.length === 0 ? (
+      <Head title={tx("Cloud jobs")} sub={tx("Run on our servers in the EU. Files are deleted when a job ends; corrected files stay downloadable for 7 days.")} action={tab === 'cloud' ? <Primary onClick={actions.newJob}>{tx("New job")}</Primary> : undefined} />
+      <Tabs label={tx("Cloud jobs")} tabs={[{ id: 'cloud', label: tx("Cloud jobs"), count: data.jobs.length }, { id: 'folder', label: p('Folder · in your browser') }]} value={tab} onChange={setTab} />
+      {tab === 'folder' ? <BatchFolder /> : data.jobs.length === 0 ? (
         <Empty title={tx("No cloud jobs yet")} body={tx("Cloud jobs handle what a browser can't: fixing a model and giving you a clean IFC, validating files over 200 MB, clash detection and deep geometry tests.")} action={<Primary onClick={actions.newJob}>{tx("Run your first job")}</Primary>} />
       ) : (
         <DataList tour="job-list"
