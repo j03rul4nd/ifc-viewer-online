@@ -713,7 +713,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setQuery('') } }}
               placeholder={t('search')}
-              className="w-full h-7 pl-7 pr-7 bg-[var(--surface-2)] border border-[var(--border)] rounded-md text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-faint)]"
+              className="w-full h-7 pl-7 pr-7 bg-[var(--surface-2)] border border-[var(--border-control)] rounded-md text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-faint)]"
             />
             {query && (
               <button
