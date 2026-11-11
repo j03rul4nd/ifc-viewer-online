@@ -1513,5 +1513,8 @@
   "Your webhook URL": "Tu URL de webhook",
   "Your webhooks": "Tus webhooks",
   "Your workspace": "Tu espacio de trabajo",
-  "Your workspace plan does not include this yet.": "El plan de tu espacio de trabajo aún no incluye esto."
+  "Your workspace plan does not include this yet.": "El plan de tu espacio de trabajo aún no incluye esto.",
+  "Client updates": "Novedades para clientes",
+  "Updates": "Avisos",
+  "Keep clients up to date with real project data: Health Score, accepted models, closed issues and milestones.": "Mantén al día a tus clientes con datos reales del proyecto: Health Score, modelos aceptados, incidencias cerradas e hitos."
 }
