@@ -23,7 +23,9 @@ const STATE_STYLE: Record<CheckState, { dot: string; text: string }> = {
 }
 
 /** One line per naming problem, in the supplier's language. */
-function issueText(t: (k: string, o?: Record<string, unknown>) => string, i: NamingIssue): string {
+function issueText(tf: unknown, i: NamingIssue): string {
+  // Keys are built from the issue code, so the typed key union is bypassed here.
+  const t = tf as (k: string, o?: Record<string, unknown>) => string
   switch (i.code) {
     case 'value': return t('requirements.naming.issue.value', { field: i.field, value: i.value, allowed: i.allowed.slice(0, 8).join(', ') + (i.allowed.length > 8 ? '…' : '') })
     case 'length': return t('requirements.naming.issue.length', { field: i.field, value: i.value, min: i.min ?? 1, max: i.max ?? i.min ?? 1 })
