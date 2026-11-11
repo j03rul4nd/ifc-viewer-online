@@ -450,6 +450,11 @@ export function createSuppressor(
         && MEASURED_HEIGHT.has(feature.height?.source ?? '')
         && f.riseM < (feature.height.heightM - feature.height.minHeightM) * DWARFED_SHARE
       if (!dwarfed && inside / projected.length >= COVERAGE_FRACTION) return false
+      // A building:PART touching the plan is a piece of the structure the model
+      // replaces. The Oriental Pearl is mapped as some sixty parts and no
+      // outline; the ones at the feet of its raking legs only straddle the
+      // model's edge, and left standing they drew a grey second tower round it.
+      if (!dwarfed && feature.isBuildingPart && inside > 0) return false
 
       // Both remaining directions need the areas, and both refuse to touch a
       // polygon far larger than the model — see CONTAINMENT_AREA_RATIO.
@@ -510,4 +515,46 @@ export function footprintFromBounds(
   // expandPolygon's outward direction does, and it works from the centroid, so
   // winding is irrelevant here too. Left unnormalized on purpose.
   return { polygon, kind, marginN }
+}
+
+/** How close two building parts must be to count as one structure, metres. */
+export const PART_CONTACT_M = 2
+
+/**
+ * The building parts still standing that touch a part the model replaced,
+ * followed from part to part: one structure, so they go too.
+ *
+ * A model's plan is its own outline, and OSM's version of the same landmark is
+ * rarely the same size. The Oriental Pearl is mapped as some sixty parts with no
+ * outline; its raking legs run past the IFC's, and their outer pieces, clear of
+ * the plan, stood round the model as a second, grey tower. Nothing but parts is
+ * followed, so the ordinary building next door is never reached this way.
+ */
+export function withAttachedPartsRemoved(
+  all: ReadonlyArray<OsmFeature>, kept: ReadonlyArray<OsmFeature>, mToDeg: { lat: number; lon: number },
+): OsmFeature[] {
+  const keptIds = new Set(kept.map((f) => f.id))
+  const box = (f: OsmFeature) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    for (const p of f.ring!) { x0 = Math.min(x0, p.lon); y0 = Math.min(y0, p.lat); x1 = Math.max(x1, p.lon); y1 = Math.max(y1, p.lat) }
+    return { x0, y0, x1, y1 }
+  }
+  const parts = all.filter((f) => f.isBuildingPart && f.ring && f.ring.length >= 3)
+  const removed = parts.filter((f) => !keptIds.has(f.id)).map(box)
+  if (removed.length === 0) return [...kept]
+  const standing = parts.filter((f) => keptIds.has(f.id)).map((f) => ({ f, b: box(f) }))
+  const gx = PART_CONTACT_M * mToDeg.lon, gy = PART_CONTACT_M * mToDeg.lat
+  const touches = (a: ReturnType<typeof box>, b: ReturnType<typeof box>) =>
+    a.x0 - gx <= b.x1 && b.x0 - gx <= a.x1 && a.y0 - gy <= b.y1 && b.y0 - gy <= a.y1
+  const drop = new Set<string>()
+  let frontier = removed
+  while (frontier.length > 0) {
+    const next: Array<ReturnType<typeof box>> = []
+    for (const s of standing) {
+      if (drop.has(s.f.id)) continue
+      if (frontier.some((r) => touches(r, s.b))) { drop.add(s.f.id); next.push(s.b) }
+    }
+    frontier = next
+  }
+  return drop.size === 0 ? [...kept] : kept.filter((f) => !drop.has(f.id))
 }

@@ -1,3 +1,4 @@
+import { withAttachedPartsRemoved } from './context-suppression'
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
@@ -85,6 +86,15 @@ describe('a BUILDING replaces the building on its plot — and nothing else', ()
   it('keeps ground cover, which the building simply covers', () => {
     expect(suppress(square('green', 'g1', 0, 0, 40))).toBe(true)
     expect(suppress(square('water', 'w1', 0, 0, 40))).toBe(true)
+  })
+
+  it('drops a building part that only straddles the plan — the foot of a tower leg', () => {
+    // Half of it inside: the 60 % coverage test keeps an outline like this,
+    // but a part is a piece of the structure the model replaces.
+    const leg = { ...square('building', 'p1', 50, 0, 20), isBuildingPart: true }
+    expect(suppress(leg)).toBe(false)
+    // An ordinary building in the same position is a neighbour, and stays.
+    expect(suppress(square('building', 'b3', 55, 0, 20))).toBe(true)
   })
 })
 
@@ -540,5 +550,25 @@ describe('a plan is not a volume — a low model does not replace a tall mapped 
 
   it('leaves the trees in the plan of a low model to the existing policy', () => {
     expect(createSuppressor([hub(2.9)], project)(node('tree', 't', 0, 0))).toBe(false)
+  })
+})
+
+describe('the rest of a structure the model replaced', () => {
+  const part = (id: string, cx: number) => ({ ...square('building', id, cx, 0, 2), isBuildingPart: true })
+  const deg = { lat: 1, lon: 1 }
+
+  it('follows the parts of a leg past the model and drops them all', () => {
+    const inside = part('a', 0), next = part('b', 3), outer = part('c', 6)
+    const all = [inside, next, outer]
+    // The model removed only the part on its plan; the other two stood past it.
+    const out = withAttachedPartsRemoved(all, [next, outer], deg)
+    expect(out.map((f) => f.id)).toEqual([])
+  })
+
+  it('never reaches an ordinary building, however close', () => {
+    const inside = part('a', 0)
+    const neighbour = square('building', 'n', 3, 0, 2)
+    const out = withAttachedPartsRemoved([inside, neighbour], [neighbour], deg)
+    expect(out.map((f) => f.id)).toEqual(['n'])
   })
 })
