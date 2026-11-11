@@ -257,6 +257,10 @@ export default function Toolbar({
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
   const { t: tViewer } = useTranslation('viewer')
+  const { mode: themeMode, setMode: setThemeMode } = useTheme()
+  const themeLabel = t('theme.toggle', {
+    mode: themeMode === 'light' ? t('theme.light') : themeMode === 'system' ? t('theme.system') : t('theme.dark'),
+  })
   const dualStatus = useDualScreenStore((s) => s.status)
   const setDualPref = useDualScreenStore((s) => s.setPref)
 
@@ -951,8 +955,8 @@ export default function Toolbar({
         )}
         <button
           onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : themeMode === 'light' ? 'system' : 'dark')}
-          title={t('theme.toggle', { mode: t(`theme.${themeMode}`) })}
-          aria-label={t('theme.toggle', { mode: t(`theme.${themeMode}`) })}
+          title={themeLabel}
+          aria-label={themeLabel}
           className="flex items-center justify-center h-[28px] w-[28px] rounded-[5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors duration-100"
         >
           {themeMode === 'light' ? <Sun aria-hidden size={14} /> : themeMode === 'system' ? <Monitor aria-hidden size={14} /> : <Moon aria-hidden size={14} />}
