@@ -28,7 +28,7 @@ export const SCENE_THEMES: Readonly<Record<ResolvedTheme, SceneTheme>> = {
   dark: {
     backgroundTop: '#100f0c',
     backgroundBottom: '#100f0c',
-    fog: '#0a0a0c',
+    fog: '#100f0c',
     grid: '#2a2d36',
     axes: { x: '#e0523f', y: '#3fa866', z: '#4c7dd9' },
     selection: '#55cac3',

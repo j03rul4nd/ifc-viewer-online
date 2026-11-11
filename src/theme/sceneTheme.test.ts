@@ -10,6 +10,8 @@ describe('sceneTheme', () => {
     const d = SCENE_THEMES.dark
     expect(d.backgroundTop).toBe(DEFAULT_BACKGROUND.top)
     expect(d.grid).toBe(gridColorFor(DEFAULT_BACKGROUND))
+    // applyBackground has always set the fog to the backdrop colour.
+    expect(d.fog).toBe(DEFAULT_BACKGROUND.top)
     expect(d.ambientIntensity).toBe(0.6)
     expect(d.directionalIntensity).toBe(1.1)
   })
