@@ -157,7 +157,7 @@ function MiniSheet({
             transition={{ duration: 0.18 }}
             className="fixed inset-0 z-[21]"
             style={{
-              background: 'color-mix(in srgb, var(--scrim, #000) 22%, transparent)',
+              background: 'color-mix(in srgb, var(--scrim) 22%, transparent)',
               backdropFilter: 'blur(3px)',
               WebkitBackdropFilter: 'blur(3px)',
             }}

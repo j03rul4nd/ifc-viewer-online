@@ -263,7 +263,7 @@ export function MobileSheet({
     <>
       <motion.div
         key="sheet-scrim"
-        style={{ opacity: scrimOpacity, background: 'var(--scrim, #000)', pointerEvents: resizable ? 'none' : 'auto' }}
+        style={{ opacity: scrimOpacity, background: 'var(--scrim)', pointerEvents: resizable ? 'none' : 'auto' }}
         onClick={resizable ? undefined : onClose}
         className="fixed inset-0 z-[58]"
       />

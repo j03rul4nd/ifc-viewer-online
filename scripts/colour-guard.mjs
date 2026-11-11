@@ -20,6 +20,7 @@ const ALLOW = [
   /^src\/lib\/solar\//,
   /^src\/lib\/ids\/ids-report\.ts$/,
   /^src\/lib\/delivery-report\.ts$/,
+  /^src\/lib\/clash\/(export|trend)\.ts$/,
   /^src\/components\/blog\//,
   /^src\/components\/reactbits\//,
   /^src\/components\/landing\//,

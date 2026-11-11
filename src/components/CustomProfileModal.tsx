@@ -34,7 +34,7 @@ interface SyncedValidatorProfile {
 function severityColor(sev: 'error' | 'warning' | 'info'): string {
   if (sev === 'error')   return 'var(--danger)'
   if (sev === 'warning') return 'var(--warning)'
-  return '#5E9ED6' // severity 'info': proposed token --info
+  return 'var(--info)'
 }
 
 const ICON_OPTIONS = ['⚙️', '🏗️', '🏢', '📐', '🔧', '🔍', '📋', '✅', '🌍', '🏛️']
@@ -66,7 +66,7 @@ function SeverityPicker({ value, defaultSeverity, onChange }: {
             title={s === defaultSeverity ? `${s} (default)` : s}
             className="w-5 h-5 rounded text-[9px] font-mono font-bold leading-none transition-colors border"
             style={active
-              ? { color: c, borderColor: `${c}66`, background: `${c}1a` }
+              ? { color: c, borderColor: `color-mix(in srgb, ${c} 40%, transparent)`, background: `color-mix(in srgb, ${c} 10%, transparent)` }
               : { color: 'var(--text-faint)', borderColor: 'transparent', background: 'transparent' }}
           >
             {s[0].toUpperCase()}

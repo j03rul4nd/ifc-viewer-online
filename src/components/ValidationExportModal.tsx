@@ -489,14 +489,14 @@ export default function ValidationExportModal({
     { id: 'csv',         label: t('export.fmtCsvLabel'),   desc: t('export.fmtCsvDesc'),   tag: 'CSV',  color: 'var(--ok)' },
     { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: 'var(--warning)' },
     { id: 'bcf',         label: t('export.fmtBcfLabel'),   desc: t('export.fmtBcfDesc'),   tag: 'BCF',  color: 'var(--accent)' },
-    { id: 'delivery',    label: t('export.fmtReportLabel'), desc: t('export.fmtReportDesc'), tag: 'HTML', color: '#5E9ED6' },
+    { id: 'delivery',    label: t('export.fmtReportLabel'), desc: t('export.fmtReportDesc'), tag: 'HTML', color: 'var(--info)' },
     { id: 'cobie',       label: t('export.fmtCobieLabel'),  desc: t('export.fmtCobieDesc'),  tag: 'XLSX', color: 'var(--ok)' },
   ]
 
   const SEVERITIES: Array<{ id: Severity; label: string; color: string }> = [
     { id: 'error',   label: t('filters.errors'),   color: 'var(--danger)' },
     { id: 'warning', label: t('filters.warnings'), color: 'var(--warning)' },
-    { id: 'info',    label: t('filters.info'),     color: '#5E9ED6' },
+    { id: 'info',    label: t('filters.info'),     color: 'var(--info)' },
   ]
 
   const toggleId = (set: Set<string>, id: string, setter: (s: Set<string>) => void) => {

@@ -232,7 +232,7 @@ function IssuePill({ issue }: { issue: ValidationIssue }) {
   const colors = {
     error:   { bg: 'color-mix(in srgb, var(--danger) 12%, var(--bg-surface))', border: 'color-mix(in srgb, var(--danger) 27%, transparent)', text: 'var(--danger)', dot: 'var(--danger)' },
     warning: { bg: 'color-mix(in srgb, var(--warning) 12%, var(--bg-surface))', border: 'color-mix(in srgb, var(--warning) 27%, transparent)', text: 'var(--warning)', dot: 'var(--warning)' },
-    info:    { bg: '#5E9ED618', border: '#5E9ED644', text: '#5E9ED6', dot: '#5E9ED6' },
+    info:    { bg: 'color-mix(in srgb, var(--info) 9%, transparent)', border: 'color-mix(in srgb, var(--info) 27%, transparent)', text: 'var(--info)', dot: 'var(--info)' },
   }[issue.severity]
 
   return (

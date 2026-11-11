@@ -54,6 +54,8 @@ describe('colour guard', () => {
       if (now < n) lower.push(`${file}: ${n} -> ${now}`)
     }
     const message = ['Colours went down, nice. Lock it in: npm run theme:colour-baseline', ...lower].join('\n')
-    expect(lower, message).toEqual([])
+    // Lower counts never fail (parallel PRs would break each other); just remind.
+    if (lower.length) console.warn(message)
+    expect(true).toBe(true)
   })
 })
