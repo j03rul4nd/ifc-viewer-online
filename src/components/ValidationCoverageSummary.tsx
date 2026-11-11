@@ -31,12 +31,12 @@ export function getCoveredCategories(rules: RulesConfig): ValidationCategoryType
 const CATEGORY_COLORS: Partial<Record<ValidationCategoryType, string>> = {
   schema:         '#5E9ED6',
   spatial:        '#5E9ED6',
-  quality:        '#3FA866',
-  lod:            '#E9A23B',
+  quality:        'var(--success)',
+  lod:            'var(--warning)',
   iso19650:       '#9B8EF7',
-  classification: '#E9A23B',
+  classification: 'var(--warning)',
   mep:            '#5E9ED6',
-  clash:          '#E0523F',
+  clash:          'var(--danger)',
 }
 
 function CategoryChip({ cat, checked }: { cat: ValidationCategoryType; checked: boolean }) {
@@ -47,7 +47,7 @@ function CategoryChip({ cat, checked }: { cat: ValidationCategoryType; checked: 
       className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium border leading-none"
       style={
         checked
-          ? { background: `${color}14`, color, borderColor: `${color}33` }
+          ? { background: `color-mix(in srgb, ${color} 8%, transparent)`, color, borderColor: `color-mix(in srgb, ${color} 20%, transparent)` }
           : { background: 'var(--surface)', color: 'var(--text-faint)', borderColor: 'var(--border)' }
       }
     >
@@ -83,8 +83,8 @@ function getSuggestedProfile(uncovered: ValidationCategoryType[]): string | null
 function ScoreRing({ score }: { score: number }) {
   const { t } = useTranslation('validation')
   const color =
-    score >= 80 ? '#3FA866' :
-    score >= 50 ? '#E9A23B' :
+    score >= 80 ? 'var(--success)' :
+    score >= 50 ? 'var(--warning)' :
     'var(--danger)'
 
   const label =

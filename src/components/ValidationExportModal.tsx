@@ -487,7 +487,7 @@ export default function ValidationExportModal({
   const FORMATS: Array<{ id: ExportFormat; label: string; desc: string; tag: string; color: string }> = [
     { id: 'json',        label: t('export.fmtJsonLabel'),  desc: t('export.fmtJsonDesc'),  tag: 'JSON', color: 'var(--accent)' },
     { id: 'csv',         label: t('export.fmtCsvLabel'),   desc: t('export.fmtCsvDesc'),   tag: 'CSV',  color: 'var(--ok)' },
-    { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: '#E9A23B' },
+    { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: 'var(--warning)' },
     { id: 'bcf',         label: t('export.fmtBcfLabel'),   desc: t('export.fmtBcfDesc'),   tag: 'BCF',  color: 'var(--accent)' },
     { id: 'delivery',    label: t('export.fmtReportLabel'), desc: t('export.fmtReportDesc'), tag: 'HTML', color: '#5E9ED6' },
     { id: 'cobie',       label: t('export.fmtCobieLabel'),  desc: t('export.fmtCobieDesc'),  tag: 'XLSX', color: 'var(--ok)' },
@@ -495,7 +495,7 @@ export default function ValidationExportModal({
 
   const SEVERITIES: Array<{ id: Severity; label: string; color: string }> = [
     { id: 'error',   label: t('filters.errors'),   color: 'var(--danger)' },
-    { id: 'warning', label: t('filters.warnings'), color: '#E9A23B' },
+    { id: 'warning', label: t('filters.warnings'), color: 'var(--warning)' },
     { id: 'info',    label: t('filters.info'),     color: '#5E9ED6' },
   ]
 
@@ -519,7 +519,7 @@ export default function ValidationExportModal({
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          className="absolute inset-0 bg-[var(--overlay)] backdrop-blur-sm"
           onClick={onClose}
         />
         <motion.div
@@ -528,7 +528,7 @@ export default function ValidationExportModal({
           exit={{ opacity: 0, scale: 0.97, y: 8 }}
           transition={{ duration: 0.18 }}
           role="dialog" aria-modal="true" aria-label={t('export.title')}
-          className="m-sheet relative z-[81] w-[440px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,14,18,0.98)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+          className="m-sheet relative z-[81] w-[440px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[color-mix(in_srgb,var(--bg-surface)_98%,transparent)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_color-mix(in_srgb,var(--bg-app)_60%,transparent)] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
         <SheetGrip onClose={onClose} />
@@ -563,7 +563,7 @@ export default function ValidationExportModal({
                       ? { background: 'var(--surface-2)', borderColor: f.color }
                       : { background: 'transparent', borderColor: 'var(--border)' }}
                   >
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ color: f.color, background: `${f.color}1a` }}>{f.tag}</span>
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ color: f.color, background: `color-mix(in srgb, ${f.color} 10%, transparent)` }}>{f.tag}</span>
                     <span className="text-[12px] font-medium text-[var(--text)]">{f.label}</span>
                     <span className="text-[10px] text-[var(--text-muted)] leading-tight">{f.desc}</span>
                   </button>
@@ -574,9 +574,9 @@ export default function ValidationExportModal({
 
           {/* Verifiable certificate (F1) — only rendered with a configured backend */}
           {format === 'certificate' && cloudAvailable && (
-            <section className="rounded-lg border border-[#E9A23B33] bg-[#E9A23B0a] p-2.5 flex flex-col gap-2">
+            <section className="rounded-lg border border-[color-mix(in_srgb,var(--warning)_20%,transparent)] bg-[color-mix(in_srgb,var(--warning)_4%,transparent)] p-2.5 flex flex-col gap-2">
               <div className="flex items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#E9A23B" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--warning)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 1l4 1.5v3c0 2.5-1.7 4.4-4 5.5-2.3-1.1-4-3-4-5.5v-3L6 1z"/><path d="M4.2 6l1.3 1.3 2.3-2.6"/>
                 </svg>
                 <span className="text-[11px] font-semibold text-[var(--text)]">{t('export.verifiableTitle')}</span>
@@ -584,7 +584,7 @@ export default function ValidationExportModal({
               <p className="text-[10px] text-[var(--text-muted)] leading-snug">{t('export.verifiableDesc')}</p>
 
               {certifyState === 'failed' && (
-                <p className="text-[10px] leading-snug" style={{ color: '#E9A23B' }}>{t('export.verifiableError')}</p>
+                <p className="text-[10px] leading-snug" style={{ color: 'var(--warning)' }}>{t('export.verifiableError')}</p>
               )}
 
               {typeof certifyState === 'object' ? (
@@ -650,7 +650,7 @@ export default function ValidationExportModal({
                     onClick={handleIssueVerifiable}
                     disabled={certifyState === 'busy' || selectedModels.length !== 1}
                     className="self-start h-7 px-3 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: '#E9A23B', color: '#1a1205' }}
+                    style={{ background: 'var(--warning)', color: 'var(--accent-contrast)' }}
                   >
                     {certifyState === 'busy' ? t('export.verifiableBusy') : t('export.verifiableBtn')}
                   </button>
@@ -710,7 +710,7 @@ export default function ValidationExportModal({
                       onClick={() => toggleId(severities as Set<string>, s.id, (set) => setSeverities(set as Set<Severity>))}
                       className="flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11px] font-medium transition-colors border"
                       style={active
-                        ? { background: `${s.color}1a`, borderColor: `${s.color}66`, color: s.color }
+                        ? { background: `color-mix(in srgb, ${s.color} 10%, transparent)`, borderColor: `color-mix(in srgb, ${s.color} 40%, transparent)`, color: s.color }
                         : { background: 'transparent', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                     >
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? s.color : 'var(--text-faint)' }} />
@@ -749,8 +749,8 @@ export default function ValidationExportModal({
         </div>
 
         {/* Footer — live summary + download */}
-        <div className="px-4 py-3 border-t border-[var(--border)] bg-[rgba(255,255,255,0.02)] shrink-0 flex items-center justify-between gap-3">
-          <p className="text-[11px] leading-tight" style={format === 'cobie' && cobieState === 'failed' ? { color: 'var(--danger, #e0523f)' } : { color: 'var(--text-muted)' }}>
+        <div className="px-4 py-3 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--text-primary)_2%,transparent)] shrink-0 flex items-center justify-between gap-3">
+          <p className="text-[11px] leading-tight" style={format === 'cobie' && cobieState === 'failed' ? { color: 'var(--danger)' } : { color: 'var(--text-muted)' }}>
             {format === 'cobie' && cobieState === 'failed'
               ? t('export.cobieFailed')
               : severityApplies
