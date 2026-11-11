@@ -16,6 +16,7 @@
   --bg-hover: #21201D;
   --border-subtle: #2B2A26;
   --border-strong: #3A3933;
+  --border-control: #3A3933; /* inputs/form controls only */
   --text-primary: #ECEBE7;
   --text-secondary: #A09E98;
   --text-tertiary: #85837E; /* 4.7:1 on --surface (was #7F7D78, 4.4:1) */
@@ -32,16 +33,17 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg-app: #F6F6F4;
+  --bg-app: #F1F0ED;
   --bg-surface: #FFFFFF;
-  --bg-surface-raised: #F0EFEC;
-  --bg-hover: #E9E8E4;
+  --bg-surface-raised: #F7F6F3;
+  --bg-hover: #EEEDE9;
   --border-subtle: #DEDDD8;
-  --border-strong: #8A8984;  /* 3:1 UI contrast on white */
+  --border-strong: #C9C8C2;  /* emphasis divider, decorative */
+  --border-control: #8A8984; /* inputs/form controls only: 3:1 on surface */
   --text-primary: #1C1B16;
   --text-secondary: #4E4D48;
   --text-tertiary: #65635E;
-  --text-muted: #4E4D48;
+  --text-muted: #5A5853;
   --accent: #00696A;
   --accent-strong: #005556;
   --accent-contrast: #FFFFFF;
@@ -50,7 +52,7 @@
   --danger: #AF2B25;
   --focus-ring: #00696A;
   --shadow: 0 1px 2px rgba(28, 27, 22, 0.08), 0 4px 12px rgba(28, 27, 22, 0.06);
-  --overlay: rgba(28, 27, 22, 0.35);
+  --overlay: rgba(28, 27, 22, 0.20);
 }
 
 :root {
@@ -326,29 +328,31 @@ body {
   .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
 }
 
-/* Light theme: same frosted glass, light surface (dark values above unchanged). */
-[data-theme="light"] .glass {
-  background: color-mix(in srgb, var(--bg-surface) 85%, transparent);
-}
-[data-theme="light"] .glass-md {
-  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
-}
-[data-theme="light"] .glass-xl {
-  background: color-mix(in srgb, var(--text-primary) 35%, transparent);
-}
+/* Light theme: floating panels are solid surfaces with a hairline and no
+   shadow (shadow is kept for popovers/menus only). Modal scrim is a flat,
+   unblurred --overlay. Dark values above unchanged. */
+[data-theme="light"] .glass,
+[data-theme="light"] .glass-md,
 [data-theme="light"] .mobile-pill-glass,
 [data-theme="light"] .mobile-sheet-glass {
-  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-  -webkit-backdrop-filter: blur(36px) saturate(1.6);
-  backdrop-filter: blur(36px) saturate(1.6);
-  border: 0.5px solid var(--border-subtle);
-  box-shadow: var(--shadow);
+  background: var(--bg-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 1px solid var(--border-subtle);
+  box-shadow: none;
+}
+[data-theme="light"] .glass-xl {
+  background: var(--overlay);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 @media (max-width: 767px) {
   [data-theme="light"] .mobile-sidebar-sheet {
-    background: color-mix(in srgb, var(--bg-surface) 95%, transparent) !important;
-    border-top: 0.5px solid var(--border-subtle) !important;
-    box-shadow: var(--shadow);
+    background: var(--bg-surface) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-top: 1px solid var(--border-subtle) !important;
+    box-shadow: none;
   }
 }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
