@@ -54,11 +54,11 @@ export default function TimeBar() {
 
   return (
     <div className="absolute -translate-x-1/2 bottom-[132px] sm:bottom-[60px] z-[21]
-      flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] bg-[rgba(16,18,24,0.88)] border border-[#ffd23f]/40 backdrop-blur-md shadow-xl text-[var(--text)]"
+      flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] bg-[var(--bg-surface)] border border-[#ffd23f]/40 backdrop-blur-md text-[var(--text)]"
       style={{ left: `calc((100% - ${reserve}px) / 2)`, width: `min(560px, calc(100% - 32px - ${reserve}px))` }}
       role="group" aria-label={t('history.bar')} data-testid="time-bar">
       <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#ffd23f]" title={t('history.pastHint')}>{t('history.past')}</span>
-      <button type="button" className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/15"
+      <button type="button" className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] hover:bg-[color-mix(in_srgb,var(--text-primary)_15%,transparent)]"
         onClick={() => {
           // Play from the start when parked at the end.
           if (!tt.playing && tt.t >= tt.to) set({ t: tt.from, playing: true })
@@ -70,7 +70,7 @@ export default function TimeBar() {
           : <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1 L9 5 L2 9 Z" /></svg>}
       </button>
       <select value={tt.speed} onChange={(e) => set({ speed: Number(e.target.value) })} aria-label={t('history.speed')}
-        className="shrink-0 px-1 py-0.5 rounded-[5px] text-[10px] bg-white/5 border border-white/10 text-[var(--text)]">
+        className="shrink-0 px-1 py-0.5 rounded-[5px] text-[10px] bg-[var(--bg-surface-raised)] border border-[var(--border-control)] text-[var(--text)]">
         {SPEEDS.map((s) => <option key={s} value={s}>×{s}</option>)}
       </select>
       <input type="range" min={0} max={span} step={1000} value={tt.t - tt.from}
