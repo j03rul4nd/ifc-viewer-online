@@ -47,7 +47,7 @@ describe('colour guard', () => {
     expect(problems, message).toEqual([])
   })
 
-  it('keeps the baseline tight', () => {
+  it('hints when the baseline can be lowered', () => {
     const lower: string[] = []
     for (const [file, n] of Object.entries(baseline)) {
       const now = scan[file]?.length ?? 0

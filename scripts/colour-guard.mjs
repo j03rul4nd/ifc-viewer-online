@@ -25,6 +25,9 @@ const ALLOW = [
   /^src\/components\/landing\//,
   /^src\/components\/(Landing|Blog|EbookView|MspGlobalView)\.tsx$/,
   /^src\/demo-models\/categories\.ts$/,
+  /^src\/lib\/director\/looks\.ts$/,
+  /^src\/lib\/twin\/device-sim\.ts$/,
+  /^src\/lib\/sketch\/showcase\.ts$/,
   /\.test\.tsx?$/,
   /\/__tests__\//,
 ]

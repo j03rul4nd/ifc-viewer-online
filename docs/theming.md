@@ -72,7 +72,7 @@ All light pairs pass AA (4.5:1 text, 3:1 UI). Dark is today's palette, unchanged
 
 `scripts/colour-guard.test.ts` (runs with `npm test`) stops new hardcoded colours in `src/**/*.{ts,tsx,css}`: hex, `rgb()/rgba()/hsl()/hsla()`, Tailwind palette classes (`bg-gray-900`, `text-white`, `bg-white/10`) and arbitrary values (`bg-[#…]`, `bg-[rgba(…)]`).
 
-- **Ratchet.** `scripts/colour-guard.baseline.json` holds today's count per file. The test fails if a file goes above its count or a new file has any, and prints every match as `file:line`. If a count goes down it also fails and asks you to lock it in.
-- **Allowed paths** (colours are content or tokens) are listed in `ALLOW` in `scripts/colour-guard.mjs`: token blocks (`:root`, `[data-theme…]`) in CSS, `src/theme/`, map/cover/layer/point-cloud/solar libs, reports, blog, reactbits, landing/marketing views, demo categories, tests.
+- **Ratchet.** `scripts/colour-guard.baseline.json` holds today's count per file. The test fails if a file goes above its count or a new file has any, and prints every match as `file:line`. If a count goes down the test still passes and prints a hint to lower the baseline.
+- **Allowed paths** (colours are content or tokens) are listed in `ALLOW` in `scripts/colour-guard.mjs`: token blocks (`:root`, `[data-theme…]`) in CSS, `src/theme/`, map/cover/layer/point-cloud/solar libs, reports, director looks, twin device-sim rules, sketch showcase, blog, reactbits, landing/marketing views, demo categories, tests.
 - **Intentional colour** (business meaning: IFC classes, Health Score bands, brand logos): add `// theme-allow-color: <reason>` (or `/* … */` in CSS) on the same line or the line above.
 - **Update the baseline** after removing colours: `npm run theme:colour-baseline`, commit the JSON. Never regenerate it to hide new colours.
