@@ -36,8 +36,20 @@ export function clashShot(point: P, a: Box3Like | null, b: Box3Like | null): Cla
   if (s[0] > s[2] * 1.5) { hx = 0.25; hz = 0.97 } else if (s[2] > s[0] * 1.5) { hx = 0.97; hz = 0.25 }
   // Size on the small element, but not on its full length when it is a long run:
   // the clash is a spot on it, so cap at a few metres of context.
-  const spot = Math.min(diag(s), Math.max(Math.min(s[0], s[1], s[2]) * 4, 3))
-  const dist = Math.min(18, Math.max(2.2, spot * 1.3 + 1.2))
+  const spot = Math.min(diag(s), Math.max(Math.min(s[0], s[1], s[2]) * 4, 4.5))
+  const dist = Math.min(18, Math.max(3, spot * 1.3 + 1.2))
+  // Stand on the side away from where the two elements spread in plan
+  // (centre weighted by plan area): outside the building looking at a
+  // facade, not inside it looking down at the slab's top.
+  let ax = 0, az = 0, aw = 0
+  for (const bx of [a, b]) {
+    if (!bx) continue
+    const w = Math.max(1e-3, (bx.max.x - bx.min.x) * (bx.max.z - bx.min.z))
+    ax += w * (bx.min.x + bx.max.x) / 2; az += w * (bx.min.z + bx.max.z) / 2; aw += w
+  }
+  const cx = ax / aw, cz = az / aw
+  if ((point[0] - cx) * hx < 0) hx = -hx
+  if ((point[2] - cz) * hz < 0) hz = -hz
   const up = Math.sin(Math.PI / 6), flat = Math.cos(Math.PI / 6)
   return { target, position: { x: point[0] + hx * flat * dist, y: point[1] + up * dist, z: point[2] + hz * flat * dist } }
 }

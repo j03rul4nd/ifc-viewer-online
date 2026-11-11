@@ -169,3 +169,13 @@ describe('clash framing between two big elements', () => {
     expect(Math.abs(s.position.z - 0.1)).toBeGreaterThan(Math.abs(s.position.x - 15)) // looking at the facade, not along it
   })
 })
+
+describe('clash framing side', () => {
+  it('stands outside the slab, on the facade side', async () => {
+    const { clashShot } = await import('./frame')
+    const b = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => ({ min: { x: x0, y: y0, z: z0 }, max: { x: x1, y: y1, z: z1 } })
+    // Slab runs from the facade (z≈0) inwards to z = -20.
+    const s = clashShot([15, 12.15, 0.1], b(0, 0, 0, 30, 40, 0.3), b(0, 12, -20, 30, 12.3, 0.2))
+    expect(s.position.z).toBeGreaterThan(0.1)
+  })
+})
