@@ -59,7 +59,7 @@ export function ruleFromApi(a: ApiAutomation): Rule {
 const BLANK: Omit<Rule, 'id' | 'on' | 'runs'> = { name: '', trigger: 'version', cond: 'score_below', value: 80, contains: '', act: 'issue', minutes: 15 }
 
 /** The coordinator's routine, built once. Tried on real history before it runs; never publishes by itself. */
-export default function Automations(_: SectionProps) {
+export default function Automations({ embedded }: SectionProps & { embedded?: boolean }) {
   const tx = useTx()
   const RECIPES: Recipe[] = [
     { name: tx('Stop bad supplier models at the door'), why: tx('A failing delivery goes back with its report before anyone on your team opens it.'), for: ['contractor', 'owner'], trigger: 'delivery', cond: 'score_below', value: 80, contains: '', act: 'notify', minutes: 45 },
@@ -112,8 +112,12 @@ export default function Automations(_: SectionProps) {
 
   return (
     <>
-      <Head title={tx('Automations')} sub={tx('The routine checks and chasing of a BIM coordinator, done every time, by rules you own.')} action={<Primary onClick={() => setDraft(BLANK)}>{tx('New automation')}</Primary>} />
-      <SoonBanner section="automations" source={q.source} error={q.error} />
+      {embedded
+        ? <div className="flex justify-end"><Primary onClick={() => setDraft(BLANK)}>{tx('New automation')}</Primary></div>
+        : <>
+            <Head title={tx('Automations')} sub={tx('The routine checks and chasing of a BIM coordinator, done every time, by rules you own.')} action={<Primary onClick={() => setDraft(BLANK)}>{tx('New automation')}</Primary>} />
+            <SoonBanner section="automations" source={q.source} error={q.error} />
+          </>}
       {err && <p role="alert" className="mt-3 text-[12.5px] text-[var(--danger)]">{err}</p>}
 
       <div className="mt-6 mb-8">

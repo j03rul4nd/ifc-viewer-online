@@ -165,9 +165,10 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   // Offered once per tour, never started on its own.
   const offerTour = pageTour && !seen.has(pageTour.id) && !tour ? pageTour : undefined
   const status = data.account.status
+  const light = usePrefersLight()
   return (
     <AccessContext.Provider value={access}>
-    <div ref={top} className="min-h-[100dvh] bg-[var(--bg)] text-[var(--text)]">
+    <div ref={top} className={`min-h-[100dvh] bg-[var(--bg)] text-[var(--text)] ${light ? 'lp-light' : ''}`}>
       <header className="sticky top-0 z-20 flex items-center gap-2 sm:gap-3 px-4 sm:px-6 h-[48px] border-b border-[var(--border)] bg-[var(--bg)] pt-[env(safe-area-inset-top)] box-content">
         <button onClick={onNavigateHome} className="text-[13.5px] font-semibold truncate">{tx("IFC Viewer Online")}</button>
         <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-dim)] whitespace-nowrap">{tx(live ? "Preview" : "Design preview · sample data")}</span>
@@ -318,4 +319,17 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
     </div>
     </AccessContext.Provider>
   )
+}
+
+/** The workspace follows the system theme, using the landing's light tokens. */
+function usePrefersLight(): boolean {
+  const [light, setLight] = useState(() => typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches)
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return
+    const q = matchMedia('(prefers-color-scheme: light)')
+    const on = (e: MediaQueryListEvent) => setLight(e.matches)
+    q.addEventListener('change', on)
+    return () => q.removeEventListener('change', on)
+  }, [])
+  return light
 }
