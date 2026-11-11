@@ -3,16 +3,21 @@
 // reasons proposed from those checks. The e-mail to the supplier is shown as a
 // preview; nothing is sent from the preview.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { fixGuidePath } from '../../../../lib/fix-guide-url'
 import { Dialog, Primary, Quiet, Banner, scoreColor, inputClass } from '../../ui'
 import { fmtDate, namingIssueText, short, VerdictChip } from './format'
-import { namingOf, proposedReasons, suggestedVerdict, type RxDelivery, type RxProject, type RxSupplier } from './sample'
+import { RULE_META, namingOf, proposedReasons, sampleElements, suggestedVerdict, versionsOf, type RxDelivery, type RxProject, type RxSupplier } from './sample'
 import type { RegisterEntry } from './register'
 import type { Rx } from './strings'
 
 export interface Decision { verdict: 'accepted' | 'returned'; reasons: string[]; note: string }
 
-export default function DeliveryReview({ project, delivery: d, supplier, entries, rx, lang, onDecide, onClose }: {
+export interface Queue { pos: number; total: number; prev?: () => void; next?: () => void }
+
+export default function DeliveryReview({ project, delivery: d, supplier, entries, deliveries = [], queue, rx, lang, onDecide, onClose }: {
+  deliveries?: RxDelivery[]
+  queue?: Queue
   project: RxProject
   delivery: RxDelivery
   supplier: RxSupplier | undefined
@@ -33,11 +38,33 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
   const tokens = naming.stem.split(project.naming.sep)
   const fieldsOk = tokens.length >= project.naming.f.length
 
+  const versions = useMemo(() => versionsOf(project, d, deliveries), [project, d, deliveries])
+  const [open3d, setOpen3d] = useState<string | null>(null)
+  const confirmRef = useRef<() => void>(() => {})
+
+  // Review queue shortcuts: A accept, D return, Enter confirm, J/K next/previous.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') || e.metaKey || e.ctrlKey || e.altKey) return
+      const k = e.key.toLowerCase()
+      if (k === 'j' && queue?.next) { e.preventDefault(); queue.next() }
+      else if (k === 'k' && queue?.prev) { e.preventDefault(); queue.prev() }
+      else if (!pending) return
+      else if (k === 'a') { e.preventDefault(); setVerdict('accepted') }
+      else if (k === 'd') { e.preventDefault(); setVerdict('returned') }
+      else if (k === 'enter' && t?.tagName !== 'BUTTON') { e.preventDefault(); confirmRef.current() }
+    }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [queue, pending])
+
   function confirm() {
     setTried(true)
     if (missingReason) return
     onDecide(d, { verdict, reasons: verdict === 'returned' ? reasons : [], note: note.trim() })
   }
+  confirmRef.current = confirm
 
   const footer = pending ? (
     <>
@@ -52,6 +79,36 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
         {supplier?.name ?? d.supplierId} · {rx('received {{date}}', { date: fmtDate(d.receivedAt, lang) })} · {d.sizeMb} MB · {rx('{{profile}} v{{v}}', { profile: project.profile, v: d.profileVersion })}
         {d.profileVersion < project.profileVersion && <> · <span className="text-[var(--warn)]">{rx('checked against an older version')}</span></>}
       </p>
+
+      {queue && (
+        <div className="flex items-center gap-2 mb-4 text-[12px] text-[var(--text-dim)]">
+          <span className="tabular-nums">{rx('{{pos}} of {{total}} to review', { pos: queue.pos, total: queue.total })}</span>
+          <span className="flex-1" />
+          <Quiet onClick={queue.prev} disabled={!queue.prev} aria-label={rx('Previous')}>‹ K</Quiet>
+          <Quiet onClick={queue.next} disabled={!queue.next} aria-label={rx('Next')}>J ›</Quiet>
+          <span className="hidden sm:inline text-[11.5px] text-[var(--text-faint)]">{rx('A accept · D return · Enter confirm')}</span>
+        </div>
+      )}
+
+      {versions.length > 1 && (
+        <section aria-labelledby="rx-ver" className="mb-5">
+          <h3 id="rx-ver" className="text-[13px] font-medium mb-2">{rx('Before and after')}</h3>
+          <ol className="flex flex-wrap items-stretch gap-1.5">
+            {versions.map((v, i) => {
+              const prev = versions[i - 1]
+              const fixed = prev ? prev.failures.filter((f) => !v.failures.some((x) => x.rule === f.rule)).length : 0
+              return (
+                <li key={v.id} className={`flex-1 min-w-[96px] rounded-[8px] border px-2.5 py-2 ${v.id === d.id ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}>
+                  <p className="font-mono text-[11.5px] text-[var(--text-faint)] truncate">{namingOf(project, v).revision ?? `#${i + 1}`} · {new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short' }).format(new Date(v.receivedAt))}</p>
+                  <p className="text-[18px] font-semibold tabular-nums leading-tight" style={{ color: v.score === null ? undefined : scoreColor(v.score) }}>{v.score ?? '—'}</p>
+                  <VerdictChip verdict={v.verdict} rx={rx} />
+                  {fixed > 0 && <p className="text-[11px] text-[var(--ok)] mt-0.5">{rx('{{n}} fixed', { n: fixed })}</p>}
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      )}
 
       {d.score === null && (
         <Banner tone="danger" title={rx('The file could not be read')}>{rx('It is not an IFC file or it is damaged. Nothing was checked; return it and ask for the .ifc file.')}</Banner>
@@ -99,12 +156,32 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
           </div>
           {d.failures.length === 0 ? <p className="text-[12.5px] text-[var(--text-dim)]">{rx('Every requirement passes.')}</p> : (
             <ul className="divide-y divide-[var(--border)] rounded-[8px] border border-[var(--border)]">
-              {d.failures.map((f) => (
-                <li key={f.rule} className="flex justify-between gap-3 px-3 py-2 text-[12.5px]">
-                  <span className="min-w-0">{rx(f.rule)}</span>
-                  <span className="tabular-nums text-[var(--text-dim)] whitespace-nowrap">{rx('{{n}} elements', { n: f.count })}</span>
-                </li>
-              ))}
+              {d.failures.map((f) => {
+                const meta = RULE_META[f.rule]
+                const els = sampleElements(d, f.rule)
+                return (
+                  <li key={f.rule} className="px-3 py-2 text-[12.5px]">
+                    <div className="flex justify-between gap-3">
+                      <span className="min-w-0 font-medium">{rx(f.rule)}</span>
+                      <span className="tabular-nums text-[var(--text-dim)] whitespace-nowrap">{rx('{{n}} elements', { n: f.count })}</span>
+                    </div>
+                    {els.length > 0 && (
+                      <ul className="mt-1.5 space-y-1">
+                        {els.map((e) => (
+                          <li key={e.guid} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px]">
+                            <span className="font-mono text-[11.5px] text-[var(--text-dim)]">{e.guid}</span>
+                            <span className="text-[var(--text-faint)]">{e.ifcType} · {e.storey}</span>
+                            <button onClick={() => setOpen3d(open3d === e.guid ? null : e.guid)} className="ml-auto text-[var(--accent)] hover:underline">{rx('See in 3D')}</button>
+                            {open3d === e.guid && <span role="note" className="basis-full text-[11.5px] text-[var(--text-faint)]">{rx('In the live version this opens the model at this element, isolated and framed.')}</span>}
+                          </li>
+                        ))}
+                        {f.count > els.length && <li className="text-[11.5px] text-[var(--text-faint)]">{rx('and {{n}} more', { n: f.count - els.length })}</li>}
+                      </ul>
+                    )}
+                    {meta?.fixRule && <a href={'/' + fixGuidePath(meta.fixRule, lang)} target="_blank" rel="noopener" className="inline-block mt-1.5 text-[12px] text-[var(--accent)] hover:underline">{rx('How to fix it (free guide)')} ↗</a>}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </section>

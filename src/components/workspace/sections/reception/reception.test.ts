@@ -4,13 +4,16 @@ import { resolve } from 'node:path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { RX_LOCALES, rxFor } from './strings'
+import { milestoneStates, savings, sampleElements, versionsOf, DEFAULT_ASSUMPTIONS } from './sample'
+import { buildReport } from './ReportDialog'
 import { DISCIPLINES, REASONS, RULES, SAMPLE_DELIVERIES, SAMPLE_PROJECTS, SAMPLE_SUPPLIERS, namingOf, proposedReasons, suggestedVerdict, supplierStats, uploadLink } from './sample'
 import { FIELD_LABELS, VERDICT_LABELS } from './format'
 import { GENESIS, appendEntry, buildChain, draftsFrom, registerCsv, verifyChain } from './register'
 import ReceptionWorkspace, { FILTER_LABELS, TAB_LABELS } from './ReceptionWorkspace'
 import { EVENT_LABELS } from './RegisterTab'
 import { PROJECT_LABELS } from './ProjectTab'
-import { SUPPLIER_VIEW_LABELS } from './SupplierView'
+import { SUPPLIER_VIEW_LABELS, SUPPLIER_STEP_LABELS } from './SupplierView'
+import { LIGHT_LABELS, MILESTONE_LABELS, ASSUMPTION_LABELS } from './OverviewTab'
 import type { SectionProps } from '../../registry'
 
 const DIR = __dirname
@@ -22,7 +25,7 @@ function englishKeys(): string[] {
     for (const m of readFileSync(resolve(DIR, f), 'utf8').matchAll(/\brx\(\s*'([^']*)'/g)) keys.add(m[1])
   }
   for (const k of [...DISCIPLINES, ...Object.values(REASONS), ...Object.values(RULES), ...FIELD_LABELS, ...VERDICT_LABELS,
-    ...TAB_LABELS, ...FILTER_LABELS, ...EVENT_LABELS, ...PROJECT_LABELS, ...SUPPLIER_VIEW_LABELS]) keys.add(k)
+    ...TAB_LABELS, ...FILTER_LABELS, ...EVENT_LABELS, ...PROJECT_LABELS, ...SUPPLIER_VIEW_LABELS, ...SUPPLIER_STEP_LABELS, ...LIGHT_LABELS, ...MILESTONE_LABELS, ...ASSUMPTION_LABELS]) keys.add(k)
   return [...keys].sort()
 }
 
@@ -123,9 +126,48 @@ describe('reception screen', () => {
   it('renders the inbox on sample data, marked as coming soon', () => {
     const html = renderToStaticMarkup(createElement(ReceptionWorkspace, props))
     expect(html).toContain('Residencial Mirador del Turia')
-    expect(html).toContain('MDT-INS-ZZ-02-M3-M-0001-S2-P04.ifc')
+    expect(html).toContain('Suppliers by milestone')
     expect(html).toContain('Coming soon')
-    expect(html).toContain('Late suppliers')
+    expect(html).toContain('Estimated saving on this project')
     expect(html).not.toContain('Live data from the API')
+  })
+})
+
+describe('reception v2', () => {
+  const sup = (id: string) => SAMPLE_SUPPLIERS.find((s) => s.id === id)!
+  it('estimates savings from the sample and shows the multiple of the cost', () => {
+    const s = savings(SAMPLE_DELIVERIES)
+    expect(s.checked).toBe(SAMPLE_DELIVERIES.length)
+    expect(s.hours).toBe(Math.round((s.checked * DEFAULT_ASSUMPTIONS.minutesPerCheck + s.avoided * DEFAULT_ASSUMPTIONS.minutesPerCycle) / 60))
+    expect(s.eur).toBe(s.hours * DEFAULT_ASSUMPTIONS.hourlyEur)
+    expect(s.multiple).toBeGreaterThan(1)
+    expect(savings(SAMPLE_DELIVERIES, { ...DEFAULT_ASSUMPTIONS, hourlyEur: 0 }).eur).toBe(0)
+  })
+
+  it('colours suppliers by milestone', () => {
+    expect(milestoneStates(mdt, sup('arq'), SAMPLE_DELIVERIES)).toEqual(['done', 'ok', 'none'])
+    expect(milestoneStates(mdt, sup('fon'), SAMPLE_DELIVERIES)[1]).toBe('late')
+    expect(milestoneStates(mdt, sup('urb'), SAMPLE_DELIVERIES)[1]).toBe('late')
+    expect(milestoneStates(mdt, sup('ins'), SAMPLE_DELIVERIES)[1]).toBe('risk')
+  })
+
+  it('finds every version of a delivery for the before/after', () => {
+    const last = SAMPLE_DELIVERIES.filter((d) => d.supplierId === 'pci').at(-1)!
+    const v = versionsOf(mdt, last, SAMPLE_DELIVERIES)
+    expect(v.map((x) => x.verdict)).toEqual(['returned', 'returned', 'pending'])
+  })
+
+  it('lists stable sample elements behind a failure', () => {
+    const d = SAMPLE_DELIVERIES.find((x) => x.failures.some((f) => f.rule === RULES.systems))!
+    const a = sampleElements(d, RULES.systems), b = sampleElements(d, RULES.systems)
+    expect(a).toEqual(b)
+    expect(a[0].guid).toMatch(/^[0-9A-Za-z_$]{22}$/)
+  })
+
+  it('writes the site management report', () => {
+    const text = buildReport(mdt, SAMPLE_SUPPLIERS, SAMPLE_DELIVERIES, rxFor('en'), 'en')
+    expect(text).toContain('Residencial Mirador del Turia')
+    expect(text).toContain('Not delivered this week: Fontanería Ruzafa')
+    expect(text).toContain('MDT-INS-ZZ-02-M3-M-0001-S2-P04.ifc')
   })
 })

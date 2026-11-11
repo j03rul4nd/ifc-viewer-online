@@ -253,3 +253,94 @@ export function medianHoursToDecide(deliveries: RxDelivery[]): number | null {
 export function uploadLink(project: RxProject, s: RxSupplier): string {
   return `https://www.ifcvieweronline.eu/deliver/${project.code.toLowerCase()}-${s.originator.toLowerCase()}-${(s.id + project.id).split('').map((c) => c.charCodeAt(0).toString(36)).join('').slice(0, 10)}`
 }
+
+// ── v2: milestones, elements behind each failure, versions, savings ──────────
+
+export const MILESTONES = ['Basic design', 'Construction', 'As-built'] as const
+export type MilestoneState = 'done' | 'ok' | 'risk' | 'late' | 'none'
+
+/** Per supplier and milestone: done (accepted before the cut), current state, or not started. */
+export function milestoneStates(project: RxProject, s: RxSupplier, deliveries: RxDelivery[], now = SAMPLE_NOW): MilestoneState[] {
+  const mine = deliveries.filter((d) => d.supplierId === s.id).sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
+  // Basic design closed on 2026-10-28: done with an accepted model by then, late without one.
+  const cut = '2026-10-28'
+  const basic: MilestoneState = mine.some((d) => d.receivedAt < cut && d.verdict === 'accepted') ? 'done' : s.invitedAt >= cut ? 'none' : 'late'
+  const st = supplierStats(project, s, deliveries, now)
+  const last = mine.at(-1)
+  let current: MilestoneState = 'none'
+  if (s.state === 'bounced') current = 'late'
+  else if (!last) current = s.state === 'invited' ? 'risk' : 'none'
+  else if (st.daysLate > 0) current = 'late'
+  else if (last.score === null || last.verdict === 'returned') current = 'risk'
+  else if (last.verdict === 'pending') current = suggestedVerdict(project, last) === 'accepted' ? 'ok' : 'risk'
+  else current = 'ok'
+  return [basic, current, 'none']
+}
+
+/** What each sample rule is about: the IFC class it lists and the free guide that explains the fix. */
+export const RULE_META: Record<string, { ifcType: string; fixRule?: string }> = {
+  [RULES.classification]: { ifcType: 'IfcWall', fixRule: 'RULE_MISSING_PROPERTY_SET' },
+  [RULES.spaceName]: { ifcType: 'IfcSpace', fixRule: 'RULE_EMPTY_NAME' },
+  [RULES.proxy]: { ifcType: 'IfcBuildingElementProxy', fixRule: 'RULE_PROXY_OVERUSE' },
+  [RULES.fire]: { ifcType: 'IfcWall', fixRule: 'RULE_MISSING_PROPERTY_SET' },
+  [RULES.levels]: { ifcType: 'IfcBuildingStorey', fixRule: 'RULE_NAMING_CONVENTION' },
+  [RULES.guids]: { ifcType: 'IfcBeam', fixRule: 'RULE_DUPLICATE_GUID' },
+  [RULES.systems]: { ifcType: 'IfcDuctSegment', fixRule: 'RULE_MISSING_TYPE' },
+  [RULES.georef]: { ifcType: 'IfcProject' },
+}
+
+export interface RxElement { guid: string; ifcType: string; storey: string; name: string }
+
+const B64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$'
+const STOREYS = ['P-1 Sótano', 'P00 Baja', 'P01', 'P02', 'P03', 'P04 Cubierta']
+
+/** A few of the elements behind a failure (sample: deterministic, not from a model). */
+export function sampleElements(d: RxDelivery, rule: string, max = 4): RxElement[] {
+  const meta = RULE_META[rule] ?? { ifcType: 'IfcProduct' }
+  const count = Math.min(max, d.failures.find((f) => f.rule === rule)?.count ?? 0)
+  let seed = [...(d.id + rule)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)
+  const next = () => { seed = (Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) + 0x9e3779b9) >>> 0; return seed >>> 8 }
+  return Array.from({ length: count }, (_, i) => {
+    const guid = Array.from({ length: 22 }, () => B64[next() % 64]).join('')
+    const storey = STOREYS[next() % STOREYS.length]
+    return { guid, ifcType: meta.ifcType, storey, name: `${meta.ifcType.replace('Ifc', '')} ${storey.split(' ')[0]}-${String(i + 1).padStart(3, '0')}` }
+  })
+}
+
+/** The container a file is a version of: the name without status and revision. */
+export function containerOf(project: RxProject, d: Pick<RxDelivery, 'fileName'>): string {
+  const n = namingOf(project, d)
+  return n.stem.split(project.naming.sep).slice(0, project.naming.f.length).join(project.naming.sep)
+}
+
+/** Every version this supplier sent of the same container (by name, or the whole history when names were wrong), oldest first. */
+export function versionsOf(project: RxProject, d: RxDelivery, deliveries: RxDelivery[]): RxDelivery[] {
+  const mine = deliveries.filter((x) => x.supplierId === d.supplierId).sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
+  const key = containerOf(project, d)
+  const same = mine.filter((x) => containerOf(project, x) === key)
+  return same.length > 1 ? same : mine
+}
+
+/** Checks suppliers ran in their browser before sending (sample counts per supplier). */
+export const PRE_CHECKS: Record<string, { runs: number; failedThenFixed: number }> = {
+  arq: { runs: 11, failedThenFixed: 4 }, est: { runs: 7, failedThenFixed: 2 }, ins: { runs: 19, failedThenFixed: 9 },
+  ele: { runs: 6, failedThenFixed: 2 }, fon: { runs: 5, failedThenFixed: 1 }, pci: { runs: 9, failedThenFixed: 4 },
+  fac: { runs: 8, failedThenFixed: 3 }, car: { runs: 3, failedThenFixed: 0 },
+}
+
+export interface SavingsAssumptions { hourlyEur: number; minutesPerCheck: number; minutesPerCycle: number }
+export const DEFAULT_ASSUMPTIONS: SavingsAssumptions = { hourlyEur: 45, minutesPerCheck: 40, minutesPerCycle: 90 }
+
+/**
+ * Estimate, not a measurement: every delivery arrives already checked
+ * (minutes of manual checking saved), and every check that failed in the
+ * supplier's browser and was fixed before sending is a return cycle avoided.
+ */
+export function savings(deliveries: RxDelivery[], a: SavingsAssumptions = DEFAULT_ASSUMPTIONS, monthlyEur = 290) {
+  const checked = deliveries.length
+  const avoided = Object.entries(PRE_CHECKS).filter(([id]) => deliveries.some((d) => d.supplierId === id)).reduce((n, [, v]) => n + v.failedThenFixed, 0)
+  const hours = Math.round((checked * a.minutesPerCheck + avoided * a.minutesPerCycle) / 60)
+  const eur = hours * a.hourlyEur
+  const months = 2
+  return { checked, avoided, hours, eur, cost: monthlyEur * months, months, multiple: eur / (monthlyEur * months) }
+}
