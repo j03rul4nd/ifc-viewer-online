@@ -22,7 +22,7 @@ import { createOverlayController, type SeverityFilter, type OverlayMaterials } f
 import { ownerModelId } from './element-owner'
 import { pivotForYaw } from './geo/multi-placement'
 import { resolveThemedBackground, followsTheme, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
-import { getSceneTheme, subscribeSceneTheme } from '../theme/sceneTheme'
+import { getSceneTheme, subscribeSceneTheme, type SceneTheme } from '../theme/sceneTheme'
 import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
@@ -978,7 +978,7 @@ export interface ViewerAPI {
 // ─── Highlight material presets ──────────────────────────────────────────────
 
 const HOVER_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0x0a8481),
+  color: new THREE.Color(getSceneTheme().highlight.hover),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.45,
   transparent: true,
@@ -986,7 +986,7 @@ const HOVER_MAT: FRAGS.MaterialDefinition = {
 }
 
 const SELECT_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0x6C7CEC),
+  color: new THREE.Color(getSceneTheme().highlight.select),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.75,
   transparent: true,
@@ -994,7 +994,7 @@ const SELECT_MAT: FRAGS.MaterialDefinition = {
 }
 
 const VALIDATION_ERROR_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0xE5484D),
+  color: new THREE.Color(getSceneTheme().highlight.error),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.85,
   transparent: true,
@@ -1002,7 +1002,7 @@ const VALIDATION_ERROR_MAT: FRAGS.MaterialDefinition = {
 }
 
 const VALIDATION_WARN_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0xF5A623),
+  color: new THREE.Color(getSceneTheme().highlight.warn),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.85,
   transparent: true,
@@ -1010,7 +1010,7 @@ const VALIDATION_WARN_MAT: FRAGS.MaterialDefinition = {
 }
 
 const VALIDATION_INFO_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0x5E9ED6),
+  color: new THREE.Color(getSceneTheme().highlight.info),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.7,
   transparent: true,
@@ -1021,7 +1021,7 @@ const VALIDATION_INFO_MAT: FRAGS.MaterialDefinition = {
 // IDS and validation highlights are mutually exclusive (shared overlay channel),
 // so the two never appear together.
 const IDS_FAIL_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0xE5484D),
+  color: new THREE.Color(getSceneTheme().highlight.error),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.9,
   transparent: true,
@@ -1034,11 +1034,26 @@ const IDS_FAIL_MAT: FRAGS.MaterialDefinition = {
 // writes no depth). Flat (preserveOriginalMaterial:false) so the model reads as a
 // uniform ghost; resetHighlight() reverts cleanly to the per-category palette.
 const OVERLAY_GHOST_MAT: FRAGS.MaterialDefinition = {
-  color: new THREE.Color(0x9AA0AE),
+  color: new THREE.Color(getSceneTheme().highlight.ghost),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.1,
   transparent: true,
   preserveOriginalMaterial: false,
+}
+
+/**
+ * Repaint the shared highlight colours for a theme. The Color objects are
+ * mutated in place, so every definition spread from these presets follows.
+ */
+function applyHighlightTheme(t: SceneTheme): void {
+  const h = t.highlight
+  HOVER_MAT.color.set(h.hover)
+  SELECT_MAT.color.set(h.select)
+  VALIDATION_ERROR_MAT.color.set(h.error)
+  VALIDATION_WARN_MAT.color.set(h.warn)
+  VALIDATION_INFO_MAT.color.set(h.info)
+  IDS_FAIL_MAT.color.set(h.error)
+  OVERLAY_GHOST_MAT.color.set(h.ghost)
 }
 
 /**
@@ -1259,9 +1274,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.scene.three.background = new THREE.Color(0x0A0A0C)
   world.scene.three.fog        = new THREE.Fog(0x0A0A0C, 80, 200)
 
-  const hemi = new THREE.HemisphereLight(0xB8C4E0, 0x1A1A22, 0.6)
+  const hemi = new THREE.HemisphereLight(0xB8C4E0, 0x1A1A22, getSceneTheme().ambientIntensity)
   world.scene.three.add(hemi)
-  const dir = new THREE.DirectionalLight(0xFFF5E8, 1.1)
+  const dir = new THREE.DirectionalLight(0xFFF5E8, getSceneTheme().directionalIntensity)
   dir.position.set(40, 60, 30)
   dir.castShadow = true
   dir.shadow.mapSize.set(2048, 2048)
@@ -1342,8 +1357,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   applyBackground(DEFAULT_BACKGROUND)
 
   // UI theme switch: only the default backdrop follows it, updated in place.
-  const unsubscribeSceneTheme = subscribeSceneTheme(() => {
+  applyHighlightTheme(getSceneTheme())
+  const unsubscribeSceneTheme = subscribeSceneTheme((t) => {
     if (followsTheme(currentBackground)) applyBackground(currentBackground)
+    applyHighlightTheme(t)
+    // Default light levels follow the theme; a custom setLighting() keeps its own.
+    const wasDefault = hemi.intensity === defaultLighting.ambient && dir.intensity === defaultLighting.keyIntensity
+    defaultLighting.ambient = t.ambientIntensity
+    defaultLighting.keyIntensity = t.directionalIntensity
+    if (wasDefault) { hemi.intensity = t.ambientIntensity; dir.intensity = t.directionalIntensity }
+    if (selectionBox) (selectionBox.material as THREE.LineBasicMaterial).color.set(t.highlight.selectBox)
+    // Live highlights hold a copy of the old colour: repaint the selection.
+    reassertSelection()
   })
 
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
@@ -2257,7 +2282,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         removeSelectionBox()
         if (box.isEmpty()) return
         box.expandByScalar(0.05)
-        const helper = new THREE.Box3Helper(box, new THREE.Color(0x6C7CEC))
+        const helper = new THREE.Box3Helper(box, new THREE.Color(getSceneTheme().highlight.selectBox))
         const mat = helper.material as THREE.LineBasicMaterial
         mat.depthTest    = false
         mat.transparent  = true
