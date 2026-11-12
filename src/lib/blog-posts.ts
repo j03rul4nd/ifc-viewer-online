@@ -13,6 +13,7 @@ import { DRAWINGS_POSTS_EN } from './blog-drawings-en.ts'
 import { MCP_POSTS_EN } from './blog-mcp-en.ts'
 import { COMPARISON_POSTS_EN } from './blog-comparisons-en.ts'
 import { PREVIEW_FEATURE_POSTS_EN } from './blog-preview-features-en.ts'
+import { PREVIEW_FEATURE_POSTS2_EN } from './blog-preview-features2-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -376,6 +377,7 @@ export interface BlogPost {
 
 const EN_POSTS_SOURCE: BlogPost[] = [
   ...PREVIEW_FEATURE_POSTS_EN,
+  ...PREVIEW_FEATURE_POSTS2_EN,
   ...COMPARISON_POSTS_EN,
   ...MCP_POSTS_EN,
   ...TWIN_CLUSTER2_POSTS_EN,
@@ -1648,6 +1650,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
         type: 'p',
         text: ['That is not a weakness; it is scope. Use IDS for information requirements, a model checker for structure and geometry, and keep the two reports side by side in the delivery. The broader workflow is in ', { text: 'how to validate an IFC file', to: 'how-to-validate-ifc-file' }, '.'],
       },
+      { type: 'related', to: 'write-test-custom-bim-rules' },
     ],
   },
 
@@ -1857,6 +1860,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
         text: ['Where BCF fits in the full delivery package — next to the validation report and the transmittal — is covered in ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '. Raising topics automatically from a revision comparison is in ', { text: 'how to compare two IFC versions', to: 'compare-ifc-versions-what-changed' }, '.'],
       },
       { type: 'related', to: 'ifc-clash-detection-browser' },
+      { type: 'related', to: 'shared-bcf-issues-small-teams' },
     ],
   },
 
@@ -3919,6 +3923,7 @@ fragments.load(cached);            // fast`,
       },
       { type: 'callout', variant: 'tip', text: "Run your last three delivered models through the checks before you set the number. A threshold that your own team cannot currently meet is a clause that will be waived on the first delivery, and a clause waived once is a clause gone." },
       { type: 'related', to: 'review-subcontractor-ifc-models' },
+      { type: 'related', to: 'bim-rule-library-versions-approval' },
     ],
   },
 
@@ -4117,6 +4122,7 @@ fragments.load(cached);            // fast`,
         text: ['The criteria the receiver applies to all of this are covered in ', { text: 'IFC acceptance criteria', to: 'ifc-acceptance-criteria' }, ', and the clauses that make them binding in ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '. For the ISO 19650 framing around all three, see the ', { text: 'ISO 19650 IFC delivery checklist', to: 'iso19650-ifc-checklist' }, '.'],
       },
       { type: 'tool', id: 'handbook' },
+      { type: 'related', to: 'weekly-bim-client-update' },
     ],
   },
 
@@ -6309,6 +6315,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         text: ["To understand what the 44 quality rules actually check — and how they relate to schema validation and IDS — see ", { text: 'the complete IFC model checker guide', to: 'ifc-model-checker-guide' }, ". For the Health Score that summarises quality as a single number, see ", { text: 'the IFC Health Score guide', to: 'ifc-health-score-guide' }, ". If you need to fix property values or GUIDs on a received IFC file without uploading it anywhere, the ", { text: 'free online IFC editor', to: 'ifc-editor-online' }, " applies the same browser-first architecture to non-destructive property editing."],
       },
       { type: 'related', to: 'batch-validate-ifc-files' },
+      { type: 'related', to: 'automatic-ifc-validation-ci-webhooks' },
     ],
   },
 

@@ -165,6 +165,7 @@ export const PREVIEW_FEATURE_POSTS_EN: BlogPost[] = [
       { type: 'p', text: ['None of this takes away what is already free: ', { text: 'opening and federating several IFC files', href: `${SITE}/` }, ', colouring by discipline, importing and exporting BCF, comparing versions and ', { text: 'checking each model with its Health Score', to: 'ifc-model-checker' }, '. Clash detection is a new tool and it will be paid. For a broader comparison with Solibri, see the ', { text: 'Solibri alternative', href: `${SITE}/solibri-alternative/` }, ' page.'] },
       { type: 'h2', text: 'Want to try it when it opens?' },
       { type: 'p', text: ['Clash detection is in preview. If you coordinate models and want to try it with your own IFC files before anyone else, ', { text: 'join the waitlist', href: `${SITE}/pricing/?role=team` }, ' and we will write when it opens. If your team coordinates several projects and you would rather see it on a call, ', { text: 'talk to us', href: `${SITE}/for-engineering/` }, '.'] },
+      { type: 'related', to: 'write-test-custom-bim-rules' },
     ],
   },
 
@@ -265,6 +266,7 @@ export const PREVIEW_FEATURE_POSTS_EN: BlogPost[] = [
       { type: 'h2', text: 'Do you receive IFC files from other companies on a project?' },
       { type: 'p', text: ['We are running pilots with a few contractors and developers: we set up the link with your requirements and your naming convention, and each week we send you the report by supplier. If that fits, ', { text: 'talk to us', href: `${SITE}/for-contractors/` }, ' for 20 minutes about how you receive models today. Or start now, for free, by ', { text: 'checking a model in the validator', href: `${SITE}/ifc-validator/` }, '.'] },
       { type: 'related', to: 'iso19650-ifc-checklist', why: 'The checklist to give suppliers along with the link.' },
+      { type: 'related', to: 'bim-rule-library-versions-approval' },
     ],
   },
 
@@ -343,6 +345,7 @@ export const PREVIEW_FEATURE_POSTS_EN: BlogPost[] = [
       { type: 'tool', id: 'validator', why: 'Check one IFC file now, free and without uploading it.' },
       { type: 'h2', text: 'Do you check a lot of IFC files every month?' },
       { type: 'p', text: ['If every month you have a whole folder to review, ', { text: 'join the waitlist', href: `${SITE}/pricing/?role=solo` }, ' and we will tell you when the batch opens. Meanwhile, you can ', { text: 'check any IFC for free', href: `${SITE}/ifc-validator/` }, '.'] },
+      { type: 'related', to: 'automatic-ifc-validation-ci-webhooks' },
     ],
   },
 ]
