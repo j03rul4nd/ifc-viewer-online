@@ -10,7 +10,8 @@
  * (same path as the manual placement editor) and measures every fixed view with
  * the city cells (`autoDetail`) on and off:
  *   fps over 5 s at rest (reported, not judged: vsync caps it at 60) and the
- *   median of 3 scripted 120 m/s pans of 8 s each (the repeatable number),
+ *   median of 3 back-and-forth 120 m/s pans (±120 m) of 8 s each after one
+ *   uncounted warm-up over the same ground (the repeatable number),
  *   time until `getCityStats().cells === wanted`, triangles and draw calls, JS heap,
  *   city-cell bytes, device px per texel of the relief and of the flat map, and
  *   requests per host (Playwright sees the workers' fetches too).
@@ -47,6 +48,9 @@ const REST_MS = QUICK ? 2000 : 5000
 const PAN_MS = QUICK ? 3000 : 8000
 const PANS = QUICK ? 1 : 3
 const PAN_SPEED = 120 // m/s
+// Back and forth over ±PAN_AMP m around the pose: the ground is loaded by the
+// warm-up pan, so the measured pans time drawing, not downloading.
+const PAN_AMP = 120 // m
 const SETTLE_MS = QUICK ? 4000 : 8000
 const CELLS_TIMEOUT_MS = 90_000
 const port = Number(args.port ?? 3341)
@@ -137,7 +141,7 @@ function viewPose(name, s, g) {
 }
 
 /** rAF deltas inside the page; also optionally drives a pan. */
-function frameSampler({ ms, pan, pose, speed }) {
+function frameSampler({ ms, pan, pose, speed, amp }) {
   return new Promise((resolve) => {
     const v = globalThis.__ifcViewer
     const dts = []
@@ -148,7 +152,9 @@ function frameSampler({ ms, pan, pose, speed }) {
       dts.push(now - last); last = now
       const t = (now - t0) / 1000
       if (pan) {
-        const d = speed * t
+        // Triangle wave 0 → +amp → −amp → 0 at constant speed.
+        const x = ((speed * t) / amp) % 4
+        const d = amp * (x < 1 ? x : x < 3 ? 2 - x : x - 4)
         v.setCameraLookAt(
           { x: pose.pos[0] + dir[0] * d, y: pose.pos[1], z: pose.pos[2] + dir[1] * d },
           { x: pose.target[0] + dir[0] * d, y: pose.target[1], z: pose.target[2] + dir[1] * d }, false)
@@ -243,11 +249,14 @@ async function measureView(page, site, name, autoDetail, hosts) {
   const scene = await page.evaluate(sampleScene, { H, lat: site.lat })
   const toPose = () => page.evaluate(({ p }) => globalThis.__ifcViewer.setCameraLookAt(
     { x: p.pos[0], y: p.pos[1], z: p.pos[2] }, { x: p.target[0], y: p.target[1], z: p.target[2] }, false), { p })
+  // Warm-up pan over the same ground, not counted.
+  await toPose(); await sleep(500)
+  await page.evaluate(frameSampler, { ms: PAN_MS, pan: true, pose: p, speed: PAN_SPEED, amp: PAN_AMP })
   const pans = []
   for (let i = 0; i < PANS; i++) {
     // Each pan starts from the pose (same ground ahead every time).
     await toPose(); await sleep(1500)
-    pans.push(await page.evaluate(frameSampler, { ms: PAN_MS, pan: true, pose: p, speed: PAN_SPEED }))
+    pans.push(await page.evaluate(frameSampler, { ms: PAN_MS, pan: true, pose: p, speed: PAN_SPEED, amp: PAN_AMP }))
   }
   await toPose()
   const means = pans.map((x) => x.fpsMean).sort((a, b) => a - b)
@@ -297,7 +306,7 @@ async function runSite(browser, base, siteName, commit) {
     return { ua: navigator.userAgent, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency, gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null }
   })
   await ctx.close()
-  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} pans × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s`, loadRequests, requestsByHost: hosts, results }
+  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} back-and-forth pans (±${PAN_AMP} m) × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s after 1 warm-up`, loadRequests, requestsByHost: hosts, results }
 }
 
 function table(run) {
