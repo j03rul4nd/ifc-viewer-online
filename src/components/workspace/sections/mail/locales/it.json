@@ -278,5 +278,18 @@
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "{{n}} invii oltre il piano: {{eur}} € in più nella prossima fattura.",
  "{{n}} supplier models passed our checks.": "{{n}} modelli dei fornitori hanno superato i nostri controlli.",
  "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "{{n}} e-mail sono in coda nella posta in uscita dello spazio. Non viene inviato nulla finché l'invio non è attivo.",
- "The outbox could not be reached. Nothing was queued; try again.": "Impossibile raggiungere la posta in uscita. Non è stato messo nulla in coda; riprova."
+ "The outbox could not be reached. Nothing was queued; try again.": "Impossibile raggiungere la posta in uscita. Non è stato messo nulla in coda; riprova.",
+ "Could not load the contacts ({{error}}).": "Impossibile caricare i contatti ({{error}}).",
+ "Write a valid e-mail address.": "Scrivi un indirizzo e-mail valido.",
+ "Not saved ({{error}}). Nothing changed.": "Non salvato ({{error}}). Non è cambiato nulla.",
+ "{{email}} unsubscribed earlier and stays out.": "{{email}} si è disiscritto e resta fuori.",
+ "{{email}} saved with consent.": "{{email}} salvato con consenso.",
+ "{{email}} saved without consent: no message will be queued for them.": "{{email}} salvato senza consenso: nessun messaggio verrà messo in coda.",
+ "E-mail": "E-mail",
+ "Language": "Lingua",
+ "Where consent comes from": "Origine del consenso",
+ "Signed contract, form…": "Contratto firmato, modulo…",
+ "Add contact": "Aggiungi contatto",
+ "Yes": "Sì",
+ "No consent": "Senza consenso"
 }

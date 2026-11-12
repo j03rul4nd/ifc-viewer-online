@@ -278,5 +278,18 @@
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "{{n}} envois au-delà du forfait : {{eur}} € de plus sur la prochaine facture.",
  "{{n}} supplier models passed our checks.": "{{n}} modèles de fournisseurs ont passé nos contrôles.",
  "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "{{n}} e-mails ont été mis dans la file d'envoi de l'espace. Rien n'est envoyé tant que l'envoi n'est pas activé.",
- "The outbox could not be reached. Nothing was queued; try again.": "La file d'envoi est injoignable. Rien n'a été mis en file ; réessayez."
+ "The outbox could not be reached. Nothing was queued; try again.": "La file d'envoi est injoignable. Rien n'a été mis en file ; réessayez.",
+ "Could not load the contacts ({{error}}).": "Impossible de charger les contacts ({{error}}).",
+ "Write a valid e-mail address.": "Saisissez une adresse e-mail valide.",
+ "Not saved ({{error}}). Nothing changed.": "Non enregistré ({{error}}). Rien n’a changé.",
+ "{{email}} unsubscribed earlier and stays out.": "{{email}} s’est désabonné et le reste.",
+ "{{email}} saved with consent.": "{{email}} enregistré avec consentement.",
+ "{{email}} saved without consent: no message will be queued for them.": "{{email}} enregistré sans consentement : aucun message ne lui sera mis en file.",
+ "E-mail": "E-mail",
+ "Language": "Langue",
+ "Where consent comes from": "Origine du consentement",
+ "Signed contract, form…": "Contrat signé, formulaire…",
+ "Add contact": "Ajouter un contact",
+ "Yes": "Oui",
+ "No consent": "Sans consentement"
 }

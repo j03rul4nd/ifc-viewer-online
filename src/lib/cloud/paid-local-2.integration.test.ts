@@ -29,7 +29,7 @@ function as(role: 'owner' | 'admin' | 'editor' | 'reviewer' | 'viewer' | 'guest'
 /** Runner pass in the background, so the caller can wait for the verdict meanwhile. */
 function runnerInBackground(): Promise<void> {
   return new Promise((res) => {
-    const p = spawn(process.execPath, ['scripts/local-runner/dist/runner.mjs', '--once'], { env: { ...process.env, IFC_API_URL: API }, stdio: 'ignore' })
+    const p = spawn(process.execPath, ['scripts/local-runner/dist/runner.mjs', '--drain'], { env: { ...process.env, IFC_API_URL: API }, stdio: 'ignore' })
     p.on('exit', () => res())
   })
 }

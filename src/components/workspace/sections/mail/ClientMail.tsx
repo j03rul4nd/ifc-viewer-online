@@ -21,6 +21,7 @@ import { CAPS, PHASE_TEMPLATES, phaseTemplate, senderFor } from './v2'
 import type { MailAdapter, MailPlan } from './model'
 import { usePaidDataSource } from '../../../../hooks/usePaidQuery'
 import { paidApi } from '../../../../lib/cloud/paid-client'
+import ContactsLive from './ContactsLive'
 
 /**
  * Local / cloud workspace: an approved message is QUEUED in the workspace's
@@ -156,7 +157,8 @@ export default function ClientMail({ data }: SectionProps) {
       <Tabs label={mx('Client updates')} tabs={TABS.map((t) => ({ ...t, label: mx(t.label), count: t.id === 'approval' ? awaiting.length : undefined }))} value={tab} onChange={setTab} />
 
       {tab === 'approval' && <ApprovalTab mx={mx} lang={lang} queue={queue} contacts={contacts} templates={templates} build={build} onDecide={onDecide} cause={L.cause} />}
-      {tab === 'clients' && <ClientsTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} depts={depts} queue={queue} replies={replies} templates={templates}
+      {tab === 'clients' && source !== 'sample' && <ContactsLive mx={mx} />}
+      {tab === 'clients' && source === 'sample' && <ClientsTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} depts={depts} queue={queue} replies={replies} templates={templates}
         update={(c) => setContacts((all) => all.map((x) => (x.id === c.id ? c : x)))} add={(c) => setContacts((all) => [...all, c])} projectId={projectId} />}
       {tab === 'templates' && <TemplatesTab mx={mx} templates={templates} setTemplates={setTemplates} depts={depts} project={project} />}
       {tab === 'send' && <SendTab mx={mx} plan={plan} project={project} contacts={contacts.filter((c) => c.projectId === projectId)} templates={templates}

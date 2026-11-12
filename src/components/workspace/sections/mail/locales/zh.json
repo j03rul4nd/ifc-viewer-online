@@ -278,5 +278,18 @@
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "超出方案 {{n}} 次发送：下一张账单将额外收取 {{eur}} €。",
  "{{n}} supplier models passed our checks.": "{{n}} 个供应商模型已通过我们的检查。",
  "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "已将 {{n}} 封邮件放入工作区的发件队列。在开启发送之前不会发送任何邮件。",
- "The outbox could not be reached. Nothing was queued; try again.": "无法连接发件队列。没有加入任何邮件,请重试。"
+ "The outbox could not be reached. Nothing was queued; try again.": "无法连接发件队列。没有加入任何邮件,请重试。",
+ "Could not load the contacts ({{error}}).": "无法加载联系人({{error}})。",
+ "Write a valid e-mail address.": "请填写有效的电子邮件地址。",
+ "Not saved ({{error}}). Nothing changed.": "未保存({{error}})。没有任何更改。",
+ "{{email}} unsubscribed earlier and stays out.": "{{email}} 已退订,不会重新加入。",
+ "{{email}} saved with consent.": "已保存 {{email}}(已同意)。",
+ "{{email}} saved without consent: no message will be queued for them.": "已保存 {{email}}(未同意):不会为其排队任何邮件。",
+ "E-mail": "电子邮件",
+ "Language": "语言",
+ "Where consent comes from": "同意来源",
+ "Signed contract, form…": "已签合同、表单…",
+ "Add contact": "添加联系人",
+ "Yes": "是",
+ "No consent": "未同意"
 }

@@ -26,7 +26,7 @@ function as(role: 'owner' | 'admin' | 'editor' | 'reviewer' | 'viewer' | 'guest'
 
 /** One runner pass with the real engine (built by scripts/local-runner/build.mjs). */
 function runnerOnce(timeoutMs = 120_000) {
-  execFileSync(process.execPath, ['scripts/local-runner/dist/runner.mjs', '--once'], { env: { ...process.env, IFC_API_URL: API }, stdio: 'pipe', timeout: timeoutMs })
+  execFileSync(process.execPath, ['scripts/local-runner/dist/runner.mjs', '--drain'], { env: { ...process.env, IFC_API_URL: API }, stdio: 'pipe', timeout: timeoutMs })
 }
 
 function bytesOf(path: string, salt = ''): ArrayBuffer {
