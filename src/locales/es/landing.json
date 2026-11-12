@@ -197,9 +197,6 @@
     "body": "El código fuente está en GitHub. Construido con @thatopen/components, three.js, web-ifc y React."
   },
   "sdk": {
-    "label": "SDK · INTEGRACIONES",
-    "title": "Integra el visor en tu CDE o herramientas internas",
-    "body": "Inserta el mismo visor del navegador en tu CDE, gemelo digital o herramientas internas de proyecto. Carga datos IFC desde tu propia aplicación mientras el procesamiento del modelo permanece en el cliente.",
     "b1": "Sin backend de subida",
     "b2": "Se ejecuta directamente en el navegador",
     "b3": "Preparado para IFC, BCF e IDS",

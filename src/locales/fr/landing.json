@@ -386,9 +386,6 @@
     "solibri": "Alternative à Solibri"
   },
   "sdk": {
-    "label": "SDK · INTÉGRATIONS",
-    "title": "Intégrez le visualiseur dans votre CDE ou vos outils internes",
-    "body": "Insérez le même visualiseur navigateur dans votre CDE, jumeau numérique ou outils internes de projet. Chargez des données IFC depuis votre propre application, le traitement du modèle restant côté client.",
     "b1": "Aucun backend de téléversement requis",
     "b2": "S'exécute directement dans le navigateur",
     "b3": "Prêt pour IFC, BCF et IDS",

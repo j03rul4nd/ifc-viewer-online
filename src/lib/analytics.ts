@@ -9,6 +9,7 @@
  *
  * Acquisition
  *   landing_cta_clicked    → user clicked a CTA on the landing page
+ *   landing_integration_click → a click in the home integrations section (which one, what it did)
  *   email_captured         → user subscribed via the landing page email form
  *   invite_link_opened     → app opened from a personalized ?ref=/?invite= link
  *   invite_feedback_prompted  → post-aha Mom-Test nudge shown to an invited visitor
@@ -1060,4 +1061,16 @@ export function trackRequirementsLinkOpened(props: { has_score: boolean; has_ids
 /** The model got its verdict against a requirements link. */
 export function trackRequirementsVerdict(props: { pass: boolean; score_bucket: string | null; naming_pass?: boolean; managed_version?: number; version_moved?: boolean }): void {
   track('requirements_verdict', props)
+}
+
+/**
+ * A click in the home page's integrations section: which integration and what
+ * the click did (open its docs/guide, ask to be notified, copy or switch the
+ * code example). No URL, no text.
+ */
+export function trackLandingIntegrationClick(props: {
+  integration: string
+  action: 'open' | 'notify' | 'tab' | 'cta'
+}): void {
+  track('landing_integration_click', props)
 }

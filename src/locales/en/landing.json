@@ -197,9 +197,6 @@
     "body": "The source code is on GitHub. Built with @thatopen/components, three.js, web-ifc, and React."
   },
   "sdk": {
-    "label": "SDK · INTEGRATIONS",
-    "title": "Embed the viewer in your CDE or internal tools",
-    "body": "Insert the same browser viewer into your CDE, digital twin, or internal project tools. Load IFC data straight from your own app while model processing stays on the client.",
     "b1": "No upload backend required",
     "b2": "Runs directly in the browser",
     "b3": "Ready for IFC, BCF & IDS",
