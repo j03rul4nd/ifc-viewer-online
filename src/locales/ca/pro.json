@@ -336,5 +336,108 @@
     "cancel": "Anul·lar la trucada",
     "footer": "Prefereixes escriure’m?",
     "eventTitle": "Trucada amb en Joel (IFC Viewer Online)"
+  },
+  "dash": {
+    "title": "El teu compte",
+    "signedInAs": "Sessió iniciada com a {{email}}",
+    "openViewer": "Obrir el visor",
+    "admin": "Consola d'administració",
+    "navAria": "Compte",
+    "tabsAria": "Seccions del compte",
+    "loading": "Carregant el teu compte…",
+    "pastDueCta": "Actualitzar el pagament",
+    "tabs": {
+      "overview": "Resum",
+      "settings": "Configuració"
+    },
+    "anon": {
+      "title": "El teu compte d'IFC Viewer Online",
+      "body": "Inicia la sessió per guardar els teus certificats verificables, tenir els perfils de regles a tots els dispositius i rebre resposta al que demanis.",
+      "cta": "Iniciar la sessió",
+      "continue": "Continuar sense compte",
+      "p1": "Historial de certificats per compartir amb el client",
+      "p2": "Perfils de regles a tots els teus dispositius",
+      "p3": "Peticions amb resposta de qui construeix l'eina",
+      "free": "El visor i el validador continuen gratuïts i sense compte."
+    },
+    "start": {
+      "title": "Primers passos",
+      "sub": "Tres passos fins al teu primer certificat verificable.",
+      "s1t": "Obre un IFC o carrega el model de demo",
+      "s1d": "Funciona al navegador: el fitxer no surt mai del teu ordinador.",
+      "s2t": "Valida'l i mira'n el Health Score",
+      "s2d": "44 regles i IDS, amb una guia per arreglar cada error.",
+      "s3t": "Emet un certificat verificable",
+      "s3d": "Des del diàleg d'exportar, amb la sessió iniciada. Apareixerà aquí.",
+      "cta": "Obrir el visor",
+      "private": "Gratuït, sense pujar res, sense targeta."
+    },
+    "cont": {
+      "title": "Continuar",
+      "last": "Últim certificat",
+      "issued": "Emès el {{date}}",
+      "view": "Veure el certificat",
+      "validate": "Validar un altre model",
+      "recent": "Certificats anteriors",
+      "viewAria": "Veure el certificat amb nota {{score}} del {{date}}"
+    },
+    "plan": {
+      "title": "Plans",
+      "sub": "El que tens gratis i el que afegeixen Pro i Team.",
+      "current": "El teu pla",
+      "soon": "Aviat",
+      "freeNote": "Per sempre, no es treu res",
+      "free1": "Visor, mesura, secció i diversos models",
+      "free2": "Health Score, comprovació de regles i IDS",
+      "free3": "Informe de lliurament i BCF",
+      "free4": "Els fitxers no surten del navegador",
+      "perMonth": "{{amount}} / mes",
+      "proNote": "Pagament anual · {{amount}} mes a mes",
+      "pro1": "Certificats verificables amb el teu logo",
+      "pro2": "Historial de certificats al teu compte",
+      "pro3": "Projectes amb cada versió i la seva nota",
+      "pro4": "Enllaç per al client amb contrasenya i caducitat",
+      "pro5": "Fitxers de fins a 1 GB processats en servidors de la UE",
+      "perEditor": "{{amount}} / editor / mes",
+      "teamNote": "Pagament anual · {{amount}} mes a mes · des de {{min}} editors · revisors i convidats gratuïts",
+      "team1": "Tot el de Pro per a cada editor",
+      "team2": "Incidències BCF compartides amb responsable i termini",
+      "team3": "Comprovació automàtica a cada pujada amb les regles de l'empresa",
+      "team4": "Estàndard de la casa compartit entre projectes",
+      "cta": "Passar a Pro",
+      "compare": "Comparar tots els plans",
+      "forTeams": "Plans per a equips",
+      "call": "Parlar 15 minuts",
+      "waitlist": "El pagament obre aviat. Et porto a la llista d'espera, sense compromís."
+    },
+    "fb": {
+      "title": "Què t'ajudaria més?",
+      "body": "Amb un toc em dius què construir després. Llegeixo i responc cada resposta.",
+      "cta": "Explicar-m'ho"
+    },
+    "team": {
+      "title": "El teu equip",
+      "body": "Afegeix o treu editors i descarrega factures al portal de facturació. Revisors i convidats són gratuïts.",
+      "cta": "Gestionar llocs",
+      "upsell": "Treballeu {{min}} persones o més? Team afegeix incidències BCF compartides i una comprovació a cada pujada.",
+      "upsellCta": "Veure Team"
+    },
+    "billing": {
+      "title": "Facturació",
+      "body": "Targeta, factures i canvis de pla, al portal de pagament segur.",
+      "cta": "Gestionar la facturació"
+    },
+    "locked": {
+      "logoTitle": "El teu logo a cada certificat",
+      "logoBody": "El client verifica un certificat amb el logo del teu estudi a la capçalera, en pantalla i en paper. Inclòs a Pro.",
+      "apiTitle": "API de validació allotjada",
+      "apiBody": "Valida des dels teus scripts o CI amb claus d'API: 500 comprovacions al mes a Pro, aviat.",
+      "cta": "Veure Pro"
+    },
+    "settings": {
+      "later": "Disponible quan s'obri l'emmagatzematge al núvol del teu pla.",
+      "logoAlt": "El teu logo actual",
+      "profileTitle": "Perfil i inici de sessió"
+    }
   }
 }

@@ -336,5 +336,108 @@
     "cancel": "Gespräch absagen",
     "footer": "Lieber schreiben?",
     "eventTitle": "Gespräch mit Joel (IFC Viewer Online)"
+  },
+  "dash": {
+    "title": "Ihr Konto",
+    "signedInAs": "Angemeldet als {{email}}",
+    "openViewer": "Viewer öffnen",
+    "admin": "Admin-Konsole",
+    "navAria": "Konto",
+    "tabsAria": "Kontobereiche",
+    "loading": "Konto wird geladen…",
+    "pastDueCta": "Zahlung aktualisieren",
+    "tabs": {
+      "overview": "Übersicht",
+      "settings": "Einstellungen"
+    },
+    "anon": {
+      "title": "Ihr IFC-Viewer-Online-Konto",
+      "body": "Melden Sie sich an, um Ihre prüfbaren Zertifikate zu speichern, Ihre Regelprofile auf allen Geräten zu nutzen und Antworten auf Ihre Anfragen zu erhalten.",
+      "cta": "Anmelden",
+      "continue": "Ohne Konto fortfahren",
+      "p1": "Zertifikatsverlauf, den Sie mit Ihrem Kunden teilen können",
+      "p2": "Regelprofile auf jedem Gerät",
+      "p3": "Anfragen mit Antwort direkt vom Entwickler des Tools",
+      "free": "Viewer und Validator bleiben kostenlos und ohne Konto nutzbar."
+    },
+    "start": {
+      "title": "Erste Schritte",
+      "sub": "Drei Schritte bis zu Ihrem ersten prüfbaren Zertifikat.",
+      "s1t": "IFC öffnen oder Demomodell laden",
+      "s1d": "Läuft im Browser: Die Datei verlässt Ihren Rechner nie.",
+      "s2t": "Validieren und den Health Score lesen",
+      "s2d": "44 Regeln und IDS, mit einer Anleitung für jeden Fehler.",
+      "s3t": "Prüfbares Zertifikat ausstellen",
+      "s3d": "Über den Exportdialog, angemeldet. Es erscheint dann hier.",
+      "cta": "Viewer öffnen",
+      "private": "Kostenlos, kein Upload, keine Karte."
+    },
+    "cont": {
+      "title": "Weitermachen",
+      "last": "Letztes Zertifikat",
+      "issued": "Ausgestellt am {{date}}",
+      "view": "Zertifikat ansehen",
+      "validate": "Weiteres Modell validieren",
+      "recent": "Frühere Zertifikate",
+      "viewAria": "Zertifikat mit Wert {{score}} vom {{date}} ansehen"
+    },
+    "plan": {
+      "title": "Pläne",
+      "sub": "Was Sie kostenlos behalten und was Pro und Team hinzufügen.",
+      "current": "Ihr Plan",
+      "soon": "Bald",
+      "freeNote": "Dauerhaft, nichts wird weggenommen",
+      "free1": "Viewer, Messen, Schnitt und mehrere Modelle",
+      "free2": "Health Score, Regelprüfung und IDS",
+      "free3": "Übergabebericht und BCF",
+      "free4": "Dateien verlassen Ihren Browser nicht",
+      "perMonth": "{{amount}} / Monat",
+      "proNote": "Jährliche Zahlung · {{amount}} bei monatlicher Zahlung",
+      "pro1": "Prüfbare Zertifikate mit Ihrem Logo",
+      "pro2": "Zertifikatsverlauf in Ihrem Konto",
+      "pro3": "Projekte mit jeder Version und ihrem Wert",
+      "pro4": "Kundenlink mit Passwort und Ablaufdatum",
+      "pro5": "Dateien bis 1 GB, verarbeitet auf EU-Servern",
+      "perEditor": "{{amount}} / Editor / Monat",
+      "teamNote": "Jährliche Zahlung · {{amount}} bei monatlicher Zahlung · ab {{min}} Editoren · Prüfer und Gäste kostenlos",
+      "team1": "Alles aus Pro für jeden Editor",
+      "team2": "Gemeinsame BCF-Issues mit Zuständigen und Fristen",
+      "team3": "Automatische Prüfung bei jedem Upload mit den Regeln Ihres Unternehmens",
+      "team4": "Hausstandard für alle Projekte",
+      "cta": "Auf Pro wechseln",
+      "compare": "Alle Pläne vergleichen",
+      "forTeams": "Pläne für Teams",
+      "call": "15 Minuten sprechen",
+      "waitlist": "Die Zahlung öffnet bald. Sie gelangen zur Warteliste, unverbindlich."
+    },
+    "fb": {
+      "title": "Was würde Ihnen am meisten helfen?",
+      "body": "Mit einem Klick sagen Sie mir, was ich als Nächstes baue. Ich lese und beantworte jede Antwort.",
+      "cta": "Mitteilen"
+    },
+    "team": {
+      "title": "Ihr Team",
+      "body": "Editoren hinzufügen oder entfernen und Rechnungen im Abrechnungsportal herunterladen. Prüfer und Gäste sind kostenlos.",
+      "cta": "Plätze verwalten",
+      "upsell": "Arbeiten Sie zu {{min}} oder mehr? Team bietet gemeinsame BCF-Issues und eine Prüfung bei jedem Upload.",
+      "upsellCta": "Team ansehen"
+    },
+    "billing": {
+      "title": "Abrechnung",
+      "body": "Karte, Rechnungen und Planwechsel im sicheren Abrechnungsportal.",
+      "cta": "Abrechnung verwalten"
+    },
+    "locked": {
+      "logoTitle": "Ihr Logo auf jedem Zertifikat",
+      "logoBody": "Ihr Kunde prüft ein Zertifikat mit dem Logo Ihres Büros in der Kopfzeile, am Bildschirm und gedruckt. In Pro enthalten.",
+      "apiTitle": "Gehostete Validierungs-API",
+      "apiBody": "Validieren Sie aus Ihren Skripten oder Ihrer CI mit API-Schlüsseln: 500 Prüfungen pro Monat in Pro, bald verfügbar.",
+      "cta": "Pro ansehen"
+    },
+    "settings": {
+      "later": "Verfügbar, sobald der Cloud-Speicher Ihres Plans freigeschaltet ist.",
+      "logoAlt": "Ihr aktuelles Logo",
+      "profileTitle": "Profil und Anmeldung"
+    }
   }
 }
