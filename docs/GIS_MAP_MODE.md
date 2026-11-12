@@ -1211,3 +1211,23 @@ needs that building hidden by hand.
   Report what was found; never let the UI imply absence of data means absence
   of the thing. Roof shapes are the clearest case — in Paris only 20 of 1254
   buildings tag `roof:shape` at all.
+
+### Sharp relief with raster providers (WP6, 2026-11)
+
+**Hybrid (PNOA under the vectors).** The relief's sharp squares (`terrain-detail-layer.ts`) used to be painted vectors-only, so in Hybrid the photo stayed at the big texture's 0.9 m per texel under sharp streets. Each square is now composed with the style's WMTS imagery at its own sharpness: `squareRasterPlan` (`basemap/raster-sources.ts`) picks the WMTS level that matches the square (style zoom z = WMTS level z + 1), capped at **level 19** and at **81 tiles per square** (25 on constrained devices). Over the cap it takes one level coarser. PNOA-MA is a 25 cm photo, and level 19 is 0.22 m per pixel here. Level 20 is the same photo resampled by IGN, so it would cost 4× the tiles for no new detail. Tiles are kept as blobs in an LRU of 256 (≈ 8 MB), so panning back over ground fetches nothing again. Only sources with a WMTS pyramid are mixed in. Catastro (WMS) and the computed hillshade (stops at z15) are left out, which means no new requests to Catastro.
+
+**OSM raster (`tile.openstreetmap.org`) and other XYZ raster providers.** No sharp squares, and **zero new requests**. The tile usage policy of the OSM volunteer servers asks apps not to bulk-fetch, so the relief keeps its single texture there. Measured: 0 squares painted, 0 imagery fetches. Relief px/texel stays 3.5 / 7 / 14 at 200 / 100 / 50 m.
+
+Measured with `npm run bench:map -- --site catalunya --views m200,m100,cerca --quick` at commit 5a56dc81. The new flags are `--provider vt-hybrid|osm` and `--quality economy`, and the new views are `m200` and `m100` (45°). These are device px per texel at the camera target.
+
+| | 200 m | 100 m | 50 m |
+|---|---|---|---|
+| Hybrid relief square | 0.87 (z18) | 0.87 (z19) | 0.87 (z20) |
+| Hybrid imagery in it (PNOA level 19) | 0.87 | 1.75 | 3.49 |
+| OSM raster relief (no squares) | 3.49 | 6.98 | 13.97 |
+| Flat map, vector, `balanced` | 0.44 | 0.44 | 0.44 |
+| Flat map, vector, `economy` | 0.87 | 0.87 | 0.87 |
+
+Beyond 200 m the photo, not the texture, limits Hybrid: at 50 m one 25 cm PNOA pixel covers 3.5 device px. Hybrid made 128–208 imagery requests per session, all to www.ign.es and cached after the first visit. The flat map's own PNOA tiles add ~1 450 more requests, which happened before this change too.
+
+The flat map in `balanced` averages 0.44 px/texel, below the 1.5 threshold, so there is no case for lowering the vector error target. The bench's flat-map figure uses the deepest visible tile, so it is a low bound. FPS from these runs is not valid: three packages benched at the same time. The px/texel and per-host request figures do not depend on load.
