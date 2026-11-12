@@ -9,7 +9,8 @@
  * relief and the OSM district, moves to the site with the dev-only `__geoRelocate`
  * (same path as the manual placement editor) and measures every fixed view with
  * the city cells (`autoDetail`) on and off:
- *   fps median / p5 over 5 s at rest and during a scripted 120 m/s pan for 3 s,
+ *   fps over 5 s at rest (reported, not judged: vsync caps it at 60) and the
+ *   median of 3 scripted 120 m/s pans of 8 s each (the repeatable number),
  *   time until `getCityStats().cells === wanted`, triangles and draw calls, JS heap,
  *   city-cell bytes, device px per texel of the relief and of the flat map, and
  *   requests per host (Playwright sees the workers' fetches too).
@@ -17,9 +18,13 @@
  *
  * Output: `<out>/<date>-<commit>-<site>.json` (default out: C:/repo/ifc/docs-planning/mapa-osm/bench)
  * and a table on the console. Dev handles only exist in the dev build.
+ *
+ * `npm run bench:map -- --compare a.json b.json` checks two runs of the same
+ * commit pair by pair: pan median within 10 %, or within 3 fps when the mean of
+ * the two is under 30 fps. Exit code 1 if any pair fails.
  */
 import { spawn, execSync } from 'node:child_process'
-import { mkdirSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
@@ -39,7 +44,8 @@ const SCENE = '/?model=/models/barcelona-catalunya/fonts-bessones.ifc&map=terrai
 const W = 1600, H = 900
 const QUICK = !!args.quick
 const REST_MS = QUICK ? 2000 : 5000
-const PAN_MS = 3000
+const PAN_MS = QUICK ? 3000 : 8000
+const PANS = QUICK ? 1 : 3
 const PAN_SPEED = 120 // m/s
 const SETTLE_MS = QUICK ? 4000 : 8000
 const CELLS_TIMEOUT_MS = 90_000
@@ -198,6 +204,8 @@ function sampleScene({ H, lat }) {
 
 async function measureView(page, site, name, autoDetail, hosts) {
   const before = { ...hosts }
+  // The hold is lost if the geo-system is recreated (provider change): re-apply per view.
+  await page.evaluate(() => globalThis.__basemapQuality?.hold('balanced'))
   const pose = await page.evaluate(({ site, name }) => {
     const geo = globalThis.__geoSystem
     const s = geo.sceneOfLatLon(site.lat, site.lon)
@@ -211,20 +219,39 @@ async function measureView(page, site, name, autoDetail, hosts) {
   if (autoDetail) {
     try {
       await sleep(600) // let the manager plan the new view
-      cellsMs = 600 + await waitFor(page, () => {
-        const c = globalThis.__geoSystem.getCityStats?.()
-        return c && c.wanted > 0 && c.cells === c.wanted && c.inFlight === 0
-      }, null, CELLS_TIMEOUT_MS, 'cells === wanted')
+      // Ready = cells === wanted with nothing in flight, held for 1 s: a single
+      // true poll could still be the previous view's state before the replan.
+      const t0 = Date.now()
+      let since = null
+      for (;;) {
+        const ok = await page.evaluate(() => {
+          const c = globalThis.__geoSystem.getCityStats?.()
+          return !!(c && c.wanted > 0 && c.cells === c.wanted && c.inFlight === 0)
+        }).catch(() => false)
+        const now = Date.now()
+        if (!ok) since = null
+        else if (since === null) since = now
+        else if (now - since >= 1000) { cellsMs = 600 + (since - t0); break }
+        if (now - t0 > CELLS_TIMEOUT_MS) throw new Error('timeout')
+        await sleep(250)
+      }
     } catch { cellsMs = 'timeout' }
   }
   await page.bringToFront()
   await sleep(SETTLE_MS)
   const rest = await page.evaluate(frameSampler, { ms: REST_MS, pan: false })
   const scene = await page.evaluate(sampleScene, { H, lat: site.lat })
-  const pan = await page.evaluate(frameSampler, { ms: PAN_MS, pan: true, pose: p, speed: PAN_SPEED })
-  // Back to the pose so the next view starts from the same place.
-  await page.evaluate(({ p }) => globalThis.__ifcViewer.setCameraLookAt(
+  const toPose = () => page.evaluate(({ p }) => globalThis.__ifcViewer.setCameraLookAt(
     { x: p.pos[0], y: p.pos[1], z: p.pos[2] }, { x: p.target[0], y: p.target[1], z: p.target[2] }, false), { p })
+  const pans = []
+  for (let i = 0; i < PANS; i++) {
+    // Each pan starts from the pose (same ground ahead every time).
+    await toPose(); await sleep(1500)
+    pans.push(await page.evaluate(frameSampler, { ms: PAN_MS, pan: true, pose: p, speed: PAN_SPEED }))
+  }
+  await toPose()
+  const means = pans.map((x) => x.fpsMean).sort((a, b) => a - b)
+  const pan = { fpsMedianOfMeans: means[Math.floor(means.length / 2)], means: pans.map((x) => +x.fpsMean.toFixed(2)), seconds: PAN_MS / 1000, runs: pans }
   const requests = Object.fromEntries(Object.entries(hosts).map(([h, n]) => [h, n - (before[h] ?? 0)]).filter(([, n]) => n > 0))
   return { view: name, autoDetail, cellsReadyMs: cellsMs, rest, pan, ...scene, requests }
 }
@@ -261,7 +288,7 @@ async function runSite(browser, base, siteName, commit) {
     for (const v of viewNames) {
       const r = await measureView(page, site, v, autoDetail, hosts)
       results.push(r)
-      log(`${siteName} ${v.padEnd(6)} auto=${autoDetail ? 'on ' : 'off'} rest ${r.rest.fpsMean.toFixed(1)}~${r.rest.fpsMedian.toFixed(1)}/${r.rest.fpsP5.toFixed(1)} pan ${r.pan.fpsMean.toFixed(1)}~${r.pan.fpsMedian.toFixed(1)}/${r.pan.fpsP5.toFixed(1)} fps  ${(r.triangles / 1e6).toFixed(2)} M tris ${r.calls} calls`)
+      log(`${siteName} ${v.padEnd(6)} auto=${autoDetail ? 'on ' : 'off'} rest ${r.rest.fpsMean.toFixed(1)}~${r.rest.fpsMedian.toFixed(1)}/${r.rest.fpsP5.toFixed(1)} pan ${r.pan.fpsMedianOfMeans.toFixed(1)} [${r.pan.means.join(' ')}] fps  ${(r.triangles / 1e6).toFixed(2)} M tris ${r.calls} calls`)
     }
   }
   const env = await page.evaluate(() => {
@@ -270,14 +297,14 @@ async function runSite(browser, base, siteName, commit) {
     return { ua: navigator.userAgent, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency, gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null }
   })
   await ctx.close()
-  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', quick: QUICK, pxPerTexelAt: 'camera-target distance', loadRequests, requestsByHost: hosts, results }
+  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} pans × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s`, loadRequests, requestsByHost: hosts, results }
 }
 
 function table(run) {
   const rows = run.results.map((r) => ({
     view: r.view, auto: r.autoDetail ? 'on' : 'off',
     'rest mean': r.rest.fpsMean.toFixed(1), 'rest med': r.rest.fpsMedian.toFixed(1), 'rest p5': r.rest.fpsP5.toFixed(1),
-    'pan mean': r.pan.fpsMean.toFixed(1), 'pan med': r.pan.fpsMedian.toFixed(1), 'pan p5': r.pan.fpsP5.toFixed(1),
+    'pan med-of-3': r.pan.fpsMedianOfMeans.toFixed(1), 'pan means': r.pan.means.join(' '),
     'cells s': r.cellsReadyMs == null ? '-' : typeof r.cellsReadyMs === 'string' ? r.cellsReadyMs : (r.cellsReadyMs / 1000).toFixed(1),
     'M tris': r.triangles == null ? '-' : (r.triangles / 1e6).toFixed(2), calls: r.calls,
     'heap MB': r.heapMB, 'city MB': r.city?.bytesMB ?? '-',
@@ -288,7 +315,36 @@ function table(run) {
   console.log('requests by host:', run.requestsByHost)
 }
 
+// ── compare two runs ──────────────────────────────────────────────────────────
+function compare(fa, fb) {
+  const a = JSON.parse(readFileSync(fa, 'utf8')), b = JSON.parse(readFileSync(fb, 'utf8'))
+  const panOf = (r) => r.pan.fpsMedianOfMeans ?? r.pan.fpsMean
+  if (a.commit !== b.commit) console.log(`WARNING: different commits ${a.commit} / ${b.commit}`)
+  if (a.dirty || b.dirty) console.log('WARNING: a run was taken on a dirty tree')
+  const rows = []; let fails = 0
+  for (const ra of a.results) {
+    const rb = b.results.find((x) => x.view === ra.view && x.autoDetail === ra.autoDetail)
+    if (!rb) continue
+    const x = panOf(ra), y = panOf(rb), mean = (x + y) / 2, abs = Math.abs(x - y), rel = abs / mean
+    const ok = rel < 0.10 || (mean < 30 && abs < 3)
+    if (!ok) fails++
+    rows.push({ view: ra.view, auto: ra.autoDetail ? 'on' : 'off', 'pan A': x.toFixed(1), 'pan B': y.toFixed(1), 'Δ fps': abs.toFixed(2), 'Δ %': (100 * rel).toFixed(1), ok: ok ? 'yes' : 'NO', 'rest A': ra.rest.fpsMean.toFixed(1), 'rest B': rb.rest.fpsMean.toFixed(1) })
+  }
+  console.log(`
+${a.site}: ${a.commit} vs ${b.commit} — ${rows.length - fails}/${rows.length} pairs pass`)
+  console.table(rows)
+  return fails
+}
+if (args.compare) {
+  const files = process.argv.slice(process.argv.indexOf('--compare') + 1).filter((x) => !x.startsWith('--'))
+  if (files.length !== 2) throw new Error('--compare a.json b.json')
+  process.exit(compare(files[0], files[1]) ? 1 : 0)
+}
+
 const commit = execSync('git rev-parse --short=8 HEAD', { cwd: ROOT }).toString().trim()
+// Tracked changes would be filed under a commit that does not hold them.
+const dirty = execSync('git status --porcelain --untracked-files=no', { cwd: ROOT }).toString().trim() !== ''
+if (dirty && !args.dirty) throw new Error('working tree has uncommitted changes; commit them or pass --dirty')
 const server = await startServer()
 let browser = null
 try {
