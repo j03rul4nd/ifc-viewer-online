@@ -266,6 +266,7 @@ export const COMPARISON_POSTS_EN: BlogPost[] = [
       { type: 'h2', text: 'Viewers are not checkers' },
       { type: 'p', text: ['Trimble Connect, Dalux and Autodesk Viewer open IFC files and are good at sharing them, but their pages do not describe rule checks on the data of the model. They belong in the ', { text: 'comparison of free IFC viewers', to: 'best-free-ifc-viewer' }, '. If what you need is the list of errors a check can return and how to correct each, see the ', { text: 'IFC validation errors and fixes', href: `${SITE}/fix/` }, '.'] },
       { type: 'tool', id: 'validator' },
+      { type: 'related', to: 'ifc-clash-detection-browser' },
     ],
   },
 
