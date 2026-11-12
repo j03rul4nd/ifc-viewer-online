@@ -278,5 +278,18 @@
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "{{n}} enviaments per sobre del pla: {{eur}} € extra a la propera factura.",
  "{{n}} supplier models passed our checks.": "{{n}} models de proveïdors han superat les nostres comprovacions.",
  "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "{{n}} correus han quedat a la cua de sortida de l'espai. No s'envia res fins que s'activi l'enviament.",
- "The outbox could not be reached. Nothing was queued; try again.": "No s'ha pogut arribar a la cua de sortida. No s'ha posat res a la cua; torna-ho a provar."
+ "The outbox could not be reached. Nothing was queued; try again.": "No s'ha pogut arribar a la cua de sortida. No s'ha posat res a la cua; torna-ho a provar.",
+ "Could not load the contacts ({{error}}).": "No s'han pogut carregar els contactes ({{error}}).",
+ "Write a valid e-mail address.": "Escriu un correu vàlid.",
+ "Not saved ({{error}}). Nothing changed.": "No s'ha desat ({{error}}). No ha canviat res.",
+ "{{email}} unsubscribed earlier and stays out.": "{{email}} es va donar de baixa i continua fora.",
+ "{{email}} saved with consent.": "{{email}} desat amb consentiment.",
+ "{{email}} saved without consent: no message will be queued for them.": "{{email}} desat sense consentiment: no se li posarà cap missatge a la cua.",
+ "E-mail": "Correu",
+ "Language": "Idioma",
+ "Where consent comes from": "D'on ve el consentiment",
+ "Signed contract, form…": "Contracte signat, formulari…",
+ "Add contact": "Afegir contacte",
+ "Yes": "Sí",
+ "No consent": "Sense consentiment"
 }

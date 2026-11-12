@@ -14,9 +14,9 @@ import type { Result } from '../result'
 export type PaidErrorCode =
   | 'network' | 'cloud_disabled' | 'unauthorized' | 'forbidden' | 'plan_required' | 'not_found'
   | 'invalid_payload' | 'service_disabled' | 'gate_blocked' | 'bad_transition' | 'no_seat' | 'last_owner'
-  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict'
+  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password'
 
-export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[] }
+export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[]; /** On a 409 edit conflict: the row as it is now on the server. */ current?: Record<string, unknown> }
 export type PaidResult<T> = Result<T, PaidError>
 
 const TIMEOUT_MS = 15_000
@@ -67,10 +67,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<PaidResult<
       signal: controller.signal,
     })
     if (res.status === 204) return { ok: true, value: undefined as T }
-    const body = await res.json().catch(() => null) as ({ error?: PaidError & { code?: string } } & T) | null
+    const body = await res.json().catch(() => null) as ({ error?: PaidError & { code?: string }; current?: Record<string, unknown> } & T) | null
     if (res.ok) return { ok: true, value: body as T }
     const e = body?.error
-    return { ok: false, error: { code: (e?.code as PaidErrorCode) ?? 'internal', message: e?.message, reasons: e?.reasons } }
+    return { ok: false, error: { code: (e?.code as PaidErrorCode) ?? 'internal', message: e?.message, reasons: e?.reasons, ...(body?.current ? { current: body.current } : {}) } }
   } catch {
     return { ok: false, error: { code: 'network' } }
   } finally {
@@ -101,6 +101,17 @@ async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
  * A supplier delivers one file: register (idempotent on the file hash) →
  * PUT straight to storage → confirm. A replay of the same file skips the PUT.
  */
+/** What the client sees when opening a share link (no session). */
+export async function openClientLink(token: string, password?: string): Promise<PaidResult<ApiOpenedLink>> {
+  const base = paidApiBase()
+  if (!base) return { ok: false, error: { code: 'cloud_disabled' } }
+  try {
+    const res = await fetch(`${base}/l/${encodeURIComponent(token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(password ? { password } : {}) })
+    const body = await res.json().catch(() => null) as ({ error?: { code?: string; message?: string } } & ApiOpenedLink) | null
+    return res.ok ? { ok: true, value: body as ApiOpenedLink } : { ok: false, error: { code: (body?.error?.code as PaidErrorCode) ?? 'internal', message: body?.error?.message } }
+  } catch { return { ok: false, error: { code: 'network' } } }
+}
+
 /** Public unsubscribe link (no session): the token from the message footer. */
 export async function unsubscribeByToken(token: string): Promise<PaidResult<{ unsubscribed: boolean }>> {
   const base = paidApiBase()
@@ -151,6 +162,8 @@ export interface ApiMail { id: string; to: string; subject: string; kind: string
 export type ApiMailKind = 'delivery_rejected' | 'delivery_accepted' | 'issue_digest' | 'clash_report' | 'other'
 export interface ApiContact { id: string; email: string; name: string | null; lang: string; consent_at: string | null; consent_source: string | null; unsubscribed_at: string | null; created_at: string }
 export interface ApiRuleset { id: string; name: string; kind: string; content: string; created_at: string; updated_at: string }
+export interface ApiClientLink { id: string; label: string; project: string; version: string; expires_at: string | null; password: boolean; allow_download: boolean; show_report: boolean; views: number; state: 'active' | 'expired' | 'revoked' | 'locked'; created_at: string }
+export interface ApiOpenedLink { label: string; project: string; version: string; expires_at: string | null; allow_download: boolean; show_report: boolean }
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
@@ -170,7 +183,8 @@ export const paidApi = {
 
   issues: (status?: ApiIssue['status']) => get<{ issues: ApiIssue[] }>(`/issues${status ? `?status=${status}` : ''}`),
   createIssue: (input: { title: string; description?: string; priority?: ApiIssue['priority']; assignee_id?: string | null; element_guids?: string[]; due_at?: string }) => send<{ issue: ApiIssue }>('POST', '/issues', input),
-  patchIssue: (n: number, patch: Partial<Pick<ApiIssue, 'status' | 'priority' | 'assignee_id' | 'title'>>) => send<{ changed: string[] }>('PATCH', `/issues/${n}`, patch),
+  /** Pass if_updated_at (the updated_at you loaded) to get a visible 409 conflict instead of overwriting someone else's change. */
+  patchIssue: (n: number, patch: Partial<Pick<ApiIssue, 'status' | 'priority' | 'assignee_id' | 'title'>> & { if_updated_at?: string }) => send<{ changed: string[] }>('PATCH', `/issues/${n}`, patch),
   comment: (n: number, body: string) => send<unknown>('POST', `/issues/${n}/comments`, { body }),
 
   standard: () => get<{ standard: ApiStandard }>('/quality/standard'),
@@ -231,11 +245,20 @@ export const paidApi = {
   rulesets: (kind?: string) => get<{ rulesets: Array<{ id: string; name: string; kind: string; updated_at: string }> }>(`/rulesets${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`),
   ruleset: (id: string) => get<ApiRuleset>(`/rulesets/${encodeURIComponent(id)}`),
   createRuleset: (name: string, kind: string, content: string) => send<{ id: string; name: string; kind: string }>('POST', '/rulesets', { name, kind, content }),
-  updateRuleset: (id: string, patch: { name?: string; content?: string }) => send<{ updated: boolean }>('PUT', `/rulesets/${encodeURIComponent(id)}`, patch),
+  /** if_updated_at: the updated_at you loaded → 409 conflict (with `current`) instead of overwriting. */
+  updateRuleset: (id: string, patch: { name?: string; content?: string; if_updated_at?: string }) => send<{ updated: boolean; updated_at?: string }>('PUT', `/rulesets/${encodeURIComponent(id)}`, patch),
   deleteRuleset: (id: string) => send<{ deleted: boolean }>('DELETE', `/rulesets/${encodeURIComponent(id)}`),
 
   deleteEndpoint: (id: string) => send<unknown>('DELETE', `/webhooks/endpoints/${id}`),
   createEndpoint: (url: string, events: string[]) => send<{ endpoint: ApiEndpoint; secret: string }>('POST', '/webhooks/endpoints', { url, events }),
+
+  links: () => get<{ links: ApiClientLink[] }>('/links'),
+  /** The token comes back once; the share URL is built from it. */
+  createLink: (b: { label: string; project: string; version: string; expires_in_days: number | null; password?: string; allow_download?: boolean; show_report?: boolean }) => send<{ link: ApiClientLink; token: string }>('POST', '/links', b),
+  revokeLink: (id: string) => send<{ link: ApiClientLink }>('POST', `/links/${id}/revoke`),
+
+  branding: () => get<{ logo: string | null }>('/account/branding'),
+  setBranding: (logo: string) => send<unknown>('PUT', '/account/branding', { logo }),
 
   credits: () => get<ApiCredits>('/credits'),
   endpoints: () => get<{ endpoints: ApiEndpoint[] }>('/webhooks/endpoints'),

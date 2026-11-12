@@ -278,5 +278,18 @@
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "プラン超過{{n}}件：次回の請求に{{eur}} €が加算されます。",
  "{{n}} supplier models passed our checks.": "協力会社のモデル{{n}}件がチェックに合格しました。",
  "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "{{n}} 件のメールをワークスペースの送信キューに入れました。送信をオンにするまで何も送られません。",
- "The outbox could not be reached. Nothing was queued; try again.": "送信キューに接続できませんでした。何もキューに入っていません。もう一度お試しください。"
+ "The outbox could not be reached. Nothing was queued; try again.": "送信キューに接続できませんでした。何もキューに入っていません。もう一度お試しください。",
+ "Could not load the contacts ({{error}}).": "連絡先を読み込めませんでした({{error}})。",
+ "Write a valid e-mail address.": "有効なメールアドレスを入力してください。",
+ "Not saved ({{error}}). Nothing changed.": "保存されていません({{error}})。何も変更されていません。",
+ "{{email}} unsubscribed earlier and stays out.": "{{email}} は配信停止済みのため、追加されません。",
+ "{{email}} saved with consent.": "{{email}} を同意ありで保存しました。",
+ "{{email}} saved without consent: no message will be queued for them.": "{{email}} を同意なしで保存しました。メッセージはキューに入りません。",
+ "E-mail": "メール",
+ "Language": "言語",
+ "Where consent comes from": "同意の出どころ",
+ "Signed contract, form…": "署名済み契約、フォーム…",
+ "Add contact": "連絡先を追加",
+ "Yes": "はい",
+ "No consent": "同意なし"
 }

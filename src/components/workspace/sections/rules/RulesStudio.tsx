@@ -4,7 +4,9 @@
 // screen's state until a backend exists. The free EIR editor and IDS checks
 // in the viewer stay free; this is the authoring and governance layer.
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePaidDataSource } from '../../../../hooks/usePaidQuery'
+import { loadLibrary, saveSet, type Synced, type SyncMap } from './library-sync'
 import type { SectionProps } from '../../registry'
 import type { EirRule, EirSeverity, NumericOperator } from '../../../../lib/eir/eir-types'
 import { Head, Panel, Primary, Quiet, Banner, Dot, Tabs, inputClass, Field, useSubTab } from '../../ui'
@@ -37,7 +39,50 @@ export default function RulesStudio(_: SectionProps) {
   const r = useR()
   const [tab, setTab] = useSubTab<Tab>('rules', TABS)
   const [rule, setRule] = useState<EirRule>(DEFAULT_RULE)
-  const [library, setLibrary] = useState<RuleSet[]>(SAMPLE_LIBRARY)
+  const live = usePaidDataSource() !== 'sample'
+  // Preview: the sample library. Workspace (local/cloud): the server's, empty until loaded.
+  const [library, setLibrary] = useState<RuleSet[]>(live ? [] : SAMPLE_LIBRARY)
+  const [sync, setSync] = useState<SyncMap>({})
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+  const [conflict, setConflict] = useState<{ mine: RuleSet; theirs: RuleSet; synced: Synced } | null>(null)
+  const before = useRef<RuleSet[] | null>(null)
+  useEffect(() => {
+    if (!live) return
+    void loadLibrary().then((res) => {
+      if (!res.ok) { setSyncMsg(r('Could not load the library ({{error}}). Nothing was changed.', { error: res.error.code })); return }
+      before.current = res.sets
+      setLibrary(res.sets); setSync(res.sync)
+    })
+  }, [live]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Save every set that changed, one request each, with the version the screen loaded.
+  useEffect(() => {
+    if (!live || before.current === null) return
+    const prev = before.current
+    before.current = library
+    for (const set of library) {
+      if (prev.includes(set)) continue
+      void saveSet(set, sync[set.id]).then((res) => {
+        if (res.ok) { setSync((m) => ({ ...m, [set.id]: res.synced })); setSyncMsg(r('Saved in the workspace.')); return }
+        if ('conflict' in res) { setConflict({ mine: set, theirs: res.conflict, synced: res.synced }); return }
+        setSyncMsg(r('Not saved ({{error}}). Your change is still on screen; try again.', { error: res.error.code }))
+      })
+    }
+  }, [library]) // eslint-disable-line react-hooks/exhaustive-deps
+  const keepTheirs = () => {
+    if (!conflict) return
+    before.current = library.map((x) => (x.id === conflict.mine.id ? conflict.theirs : x))
+    setLibrary(before.current); setSync((m) => ({ ...m, [conflict.mine.id]: conflict.synced })); setConflict(null)
+  }
+  const keepMine = () => {
+    if (!conflict) return
+    const c = conflict
+    setConflict(null)
+    void saveSet(c.mine, c.synced).then((res) => {
+      if (res.ok) { setSync((m) => ({ ...m, [c.mine.id]: res.synced })); setSyncMsg(r('Saved in the workspace.')) }
+      else if ('conflict' in res) setConflict({ mine: c.mine, theirs: res.conflict, synced: res.synced })
+      else setSyncMsg(r('Not saved ({{error}}). Your change is still on screen; try again.', { error: res.error.code }))
+    })
+  }
   const useInEditor = (x: EirRule) => { setRule({ ...x, id: 'draft' }); setTab('editor') }
 
   return (
@@ -46,6 +91,13 @@ export default function RulesStudio(_: SectionProps) {
       <Banner tone="info" title={r('Preview on a sample model · Pro and Team plans')}>
         {r('Checking against your rules stays free in the viewer. Writing, testing and governing rules here is part of Pro; the shared library with approval is Team.')}
       </Banner>
+      {syncMsg && <p role="status" className="text-[12.5px] text-[var(--text-dim)] mb-2">{syncMsg}</p>}
+      {conflict && (
+        <Banner tone="warn" title={r('Someone else saved “{{name}}” while you were editing it', { name: conflict.mine.name })}>
+          <p className="text-[12.5px]">{r('Yours: v{{a}} · Theirs: v{{b}}. Nothing was overwritten. Choose which one stays.', { a: latest(conflict.mine).version, b: latest(conflict.theirs).version })}</p>
+          <div className="flex gap-2 mt-2"><Primary onClick={keepTheirs}>{r('Keep theirs')}</Primary><Quiet onClick={keepMine}>{r('Keep mine')}</Quiet></div>
+        </Banner>
+      )}
       <Tabs tabs={TABS.map((t) => ({ id: t.id, label: t.id === 'library' ? `${r('Library')} · Team` : r(t.label) }))} value={tab} onChange={setTab} label={r('Rules')} />
       {tab === 'editor' && <Editor rule={rule} setRule={setRule} onSave={(set) => setLibrary((l) => l.map((s) => s.id === set ? newVersion(s, ME, TODAY, [...latest(s).rules.filter((x) => x.id !== rule.id), { ...rule, id: rule.id === 'draft' ? newId() : rule.id }], r('Rule added from the editor.')) : s))} library={library} />}
       {tab === 'advanced' && <AdvancedTab />}

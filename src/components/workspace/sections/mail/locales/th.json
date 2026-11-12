@@ -278,5 +278,18 @@
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "ส่งเกินแพ็กเกจ {{n}} ครั้ง: เพิ่ม {{eur}} € ในใบแจ้งหนี้ถัดไป",
  "{{n}} supplier models passed our checks.": "โมเดลจากผู้รับเหมา {{n}} รายการผ่านการตรวจสอบของเรา",
  "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "ใส่อีเมล {{n}} ฉบับไว้ในคิวขาออกของพื้นที่ทำงานแล้ว จะไม่มีการส่งจนกว่าจะเปิดการส่ง",
- "The outbox could not be reached. Nothing was queued; try again.": "เข้าถึงคิวขาออกไม่ได้ ยังไม่มีอะไรเข้าคิว โปรดลองอีกครั้ง"
+ "The outbox could not be reached. Nothing was queued; try again.": "เข้าถึงคิวขาออกไม่ได้ ยังไม่มีอะไรเข้าคิว โปรดลองอีกครั้ง",
+ "Could not load the contacts ({{error}}).": "โหลดผู้ติดต่อไม่ได้ ({{error}})",
+ "Write a valid e-mail address.": "กรอกอีเมลที่ถูกต้อง",
+ "Not saved ({{error}}). Nothing changed.": "ยังไม่ได้บันทึก ({{error}}) ไม่มีอะไรเปลี่ยนแปลง",
+ "{{email}} unsubscribed earlier and stays out.": "{{email}} ยกเลิกรับไปแล้วและจะไม่ถูกเพิ่มกลับ",
+ "{{email}} saved with consent.": "บันทึก {{email}} พร้อมความยินยอมแล้ว",
+ "{{email}} saved without consent: no message will be queued for them.": "บันทึก {{email}} โดยไม่มีความยินยอม จะไม่มีข้อความเข้าคิว",
+ "E-mail": "อีเมล",
+ "Language": "ภาษา",
+ "Where consent comes from": "ที่มาของความยินยอม",
+ "Signed contract, form…": "สัญญาที่ลงนาม แบบฟอร์ม…",
+ "Add contact": "เพิ่มผู้ติดต่อ",
+ "Yes": "ใช่",
+ "No consent": "ไม่มีความยินยอม"
 }

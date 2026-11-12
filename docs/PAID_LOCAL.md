@@ -90,3 +90,13 @@ the rule library by role (Owner/Admin edit; Editor, Reviewer, Viewer and Guest c
 versions published at the same time (never two with the same number). The webhook receiver listens
 on `PAID_LOCAL_HOOK_PORT` (default 9912): workerd cannot reach ephemeral ports. The suites run one
 after the other because they share the runner queue.
+
+Part 3 (`paid-local-3.integration.test.ts`, robustness): every role tries every write and gets exactly
+what `lib/team.ts` allows; a proxy (`PAID_LOCAL_PROXY_PORT`, default 9913) lets the backend commit and
+then drops the answer, and the retry neither duplicates (mail by key) nor overwrites (issue and rule
+set edits come back as a conflict showing the change already saved); two people editing the same issue
+or rule set — the second gets a 409 with the current copy; Pro client links (password, wrong password,
+views, revoke, lock after 10 tries); a certificate signed from a real validation
+(`runner.mjs --validate <file>`) carries the company logo on the public lookup. `.dev.vars` also needs
+`FEATURE_CLIENT_LINKS=true` and a dev `CERT_SIGNING_KEY_PKCS8` (`npm run generate-key`, local only).
+The tests run the runner with `--drain`, so an earlier job never takes a later test's place.
