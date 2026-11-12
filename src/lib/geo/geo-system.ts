@@ -3117,9 +3117,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // geoRoot's scale is metres per normalized unit at this latitude.
       texelN: pixelM / geoRoot.scale.x,
       dpr: Math.min(2, Math.max(1, Math.round(lod.effectiveDpr * 4) / 4)),
-      // How steeply the ground at the focus is seen: street names painted on
-      // it are left out below 20° (terrain-detail, streetNamesReadable).
-      viewAngleRad: Math.atan2(detailEye.y - ground, Math.max(1e-6, Math.hypot(detailHit.x - detailEye.x, detailHit.z - detailEye.z))),
+      // How steeply the ground is seen: street names painted on it are left
+      // out below 20° (terrain-detail, streetNamesReadable).
+      // The camera's own pitch, not the (capped) focus point: on a slope
+      // the capped point would read steeper than the view really is.
+      viewAngleRad: Math.asin(Math.max(0, Math.min(1, -detailDir.y))),
     })
     updateCity(local.x, local.y, distance)
   }
