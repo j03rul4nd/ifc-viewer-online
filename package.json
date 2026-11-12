@@ -15,7 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "runner:local": "node scripts/local-runner/build.mjs && node scripts/local-runner/dist/runner.mjs",
-    "test:paid-local": "node scripts/local-runner/build.mjs && vitest run src/lib/cloud/paid-local.integration.test.ts",
+    "test:paid-local": "node scripts/local-runner/build.mjs && vitest run --no-file-parallelism src/lib/cloud/paid-local.integration.test.ts src/lib/cloud/paid-local-2.integration.test.ts",
     "theme:colour-baseline": "node scripts/colour-guard.mjs --write",
     "test:flood-gpu": "node scripts/flood/gpu-suite.mjs",
     "ebook": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/ebook/build-ebook.mjs",

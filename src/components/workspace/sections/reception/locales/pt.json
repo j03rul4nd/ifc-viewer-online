@@ -286,5 +286,8 @@
   "{{n}} fixed": "{{n}} corrigidos",
   "{{pos}} of {{total}} to review": "{{pos}} de {{total}} por rever",
   "{{profile}} v{{v}} requirements": "Requisitos {{profile}} v{{v}}",
-  "{{x}}×": "{{x}}×"
+  "{{x}}×": "{{x}}×",
+  "Could not save: {{error}}. Nothing changed.": "Não foi possível guardar: {{error}}. Nada mudou.",
+  "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} convidado. O token de envio, mostrado só uma vez: {{token}}",
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} guardada no espaço. Código de entrega: {{slug}}. Agora convide os fornecedores."
 }

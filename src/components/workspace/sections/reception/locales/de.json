@@ -286,5 +286,8 @@
   "{{n}} fixed": "{{n}} behoben",
   "{{pos}} of {{total}} to review": "{{pos}} von {{total}} zu prüfen",
   "{{profile}} v{{v}} requirements": "Anforderungen {{profile}} v{{v}}",
-  "{{x}}×": "{{x}}×"
+  "{{x}}×": "{{x}}×",
+  "Could not save: {{error}}. Nothing changed.": "Speichern nicht möglich: {{error}}. Nichts wurde geändert.",
+  "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} eingeladen. Upload-Token, wird nur einmal angezeigt: {{token}}",
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Projekt {{name}} im Arbeitsbereich gespeichert. Liefercode: {{slug}}. Laden Sie jetzt die Lieferanten ein."
 }
