@@ -171,7 +171,7 @@ export default function CompareModal({ onClose, viewerApiRef }: {
         )}
         {error && <Hint tone="error">{t('error', { message: error })}</Hint>}
 
-        <div role="tablist" className="sticky top-0 z-10 -mx-3 px-3 sm:-mx-4 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar border-b border-[var(--border)] bg-[rgba(14,14,18,0.98)]">
+        <div role="tablist" className="sticky top-0 z-10 -mx-3 px-3 sm:-mx-4 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar border-b border-[var(--border)] bg-[rgba(14,14,18,0.98)] [[data-theme=light]_&]:bg-[var(--bg-surface)]">
           {tabs.map((k) => (
             <button
               key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)}

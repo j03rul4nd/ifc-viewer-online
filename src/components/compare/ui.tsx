@@ -36,7 +36,7 @@ export function Button({
       title={title}
       className={`${small ? 'h-7 px-2.5 text-[11px]' : 'h-8 px-3 text-[12px]'} inline-flex items-center gap-1.5 rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
         primary
-          ? 'bg-[var(--accent)] border-[var(--accent)] text-white hover:brightness-110'
+          ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110'
           : 'border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--text-faint)]'
       }`}
     >
@@ -67,7 +67,7 @@ export function Section({ title, children, right }: { title: string; children: R
 }
 
 export function Hint({ children, tone }: { children: React.ReactNode; tone?: 'warn' | 'error' }) {
-  const color = tone === 'error' ? 'var(--danger)' : tone === 'warn' ? '#E9A23B' : 'var(--text-faint)'
+  const color = tone === 'error' ? 'var(--danger)' : tone === 'warn' ? 'var(--warning)' : 'var(--text-faint)'
   return <p className="m-0 text-[11px] leading-relaxed" style={{ color }}>{children}</p>
 }
 

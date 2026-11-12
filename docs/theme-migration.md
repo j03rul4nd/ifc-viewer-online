@@ -90,9 +90,15 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 
 - Selección 3D en oscuro: hoy sin tinte (aclarado); decidir si pasa a verde azulado.
 - `--text-muted` sigue sin definir en oscuro (rareza documentada en theming.md).
-- Colores de interfaz nuevos de `ClashPanel` y `ClientMailV2` (llegados de otras PR) quedan en la línea base, sin migrar.
 - Velos sobre vídeo/imagen/3D sin marcar `theme-allow-color`.
-- Sin revisar a ojo: gemelo, modal de cuenta, barra de tiempo, comparación, editor de capas.
+- Comparación de versiones (`CompareModal`, `compare/ChangesTab`, `CompareDock`, `SidePicker`, `ui`): fondos oscuros fijos con variante clara por token, texto sobre acento con `--accent-contrast`, ámbar `#E9A23B` → `--warning`; el dock en claro queda sólido sin sombra. Oscuro sin cambios. Falta mirarlo a ojo con dos versiones cargadas.
+- Comparación: `compare/IdsTab.tsx` ya usa `--warning` (mismo valor en oscuro). Los colores de tipo de cambio en `compare/ui.tsx` (añadido/modificado/borrado) son de significado y no se tocan.
+- Editor de capas: insignia de alertas y puntos del historial mantienen `#ff3b30`/`#5ce27a` en oscuro y pasan a `--danger`/`--ok` en claro; texto de la insignia con `--accent-contrast`. Paleta, franjas de zoom y colores por defecto son de datos.
+- Guía de la demo (`DemoGuide`): texto de los botones con `--accent-contrast`.
+- Barra de tiempo: ya tiene variante clara; ámbar/verde de pasado/en vivo son de estado.
+- Gemelo (`twin/*`): sin colores de interfaz fijos; los de `BindingsTab` (regla, caducado) son de datos.
+- `ClashPanel`: solo fallbacks dentro de `var()` y el lienzo blanco del informe; estados de choque son de significado. `ClientMailV2`: el verde `#2f6f62` y su texto blanco son la marca del cliente en la vista previa del portal (contenido); marcados con `theme-allow-color`.
+- Sin revisar a ojo: modal de cuenta.
 
 ## Dudas para Joel (colores con significado)
 

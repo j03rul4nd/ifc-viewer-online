@@ -25,6 +25,7 @@ import { join, relative, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { pricingPath } from '../../src/lib/pricing/pricing-paths'
 import { COPY as PRICING_COPY } from './pricing/pricing-i18n'
+import { SLUGS as SOLUTION_SLUGS } from './solution-landings/pages'
 
 export const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'] as const
 export type Lang = (typeof LANGS)[number]
@@ -119,39 +120,39 @@ const EXAMPLES: Record<Lang, string> = {
 }
 
 interface Copy {
-  menu: string; product: string; examples: string; guides: string; blog: string; pricing: string; open: string
+  menu: string; product: string; solutions: string; examples: string; guides: string; blog: string; pricing: string; open: string
   nextTitle: string; steps: [string, string][]; nextLead: string
 }
 
 export const COPY: Record<Lang, Copy> = {
-  en: { menu: 'Main menu', product: 'Viewer', examples: 'Examples', guides: 'Fix guides', blog: 'Blog', pricing: 'Pricing', open: 'Open the viewer',
+  en: { menu: 'Main menu', product: 'Viewer', solutions: 'Solutions', examples: 'Examples', guides: 'Fix guides', blog: 'Blog', pricing: 'Pricing', open: 'Open the viewer',
     nextTitle: 'Your next step', nextLead: 'Free, in your browser. Nothing is uploaded.',
     steps: [['Open a sample model', 'See the Health Score and the failing rules on a real IFC in under a minute.'], ['Create a free account', 'Keep your checks and share the report with your team or client.'], ['Compare the plans', 'Pro, Team and model reception for whoever receives the deliveries.']] },
-  es: { menu: 'Menú principal', product: 'Visor', examples: 'Ejemplos', guides: 'Guías de corrección', blog: 'Blog', pricing: 'Precios', open: 'Abrir el visor',
+  es: { menu: 'Menú principal', product: 'Visor', solutions: 'Soluciones', examples: 'Ejemplos', guides: 'Guías de corrección', blog: 'Blog', pricing: 'Precios', open: 'Abrir el visor',
     nextTitle: 'Siguiente paso', nextLead: 'Gratis, en tu navegador. No se sube nada.',
     steps: [['Abre un modelo de ejemplo', 'Mira el Health Score y las reglas que fallan en un IFC real en menos de un minuto.'], ['Crea una cuenta gratuita', 'Guarda tus comprobaciones y comparte el informe con tu equipo o tu cliente.'], ['Compara los planes', 'Pro, Team y recepción de modelos para quien recibe las entregas.']] },
-  de: { menu: 'Hauptmenü', product: 'Viewer', examples: 'Beispiele', guides: 'Fehler-Anleitungen', blog: 'Blog', pricing: 'Preise', open: 'Viewer öffnen',
+  de: { menu: 'Hauptmenü', product: 'Viewer', solutions: 'Lösungen', examples: 'Beispiele', guides: 'Fehler-Anleitungen', blog: 'Blog', pricing: 'Preise', open: 'Viewer öffnen',
     nextTitle: 'Nächster Schritt', nextLead: 'Kostenlos, im Browser. Es wird nichts hochgeladen.',
     steps: [['Beispielmodell öffnen', 'Health Score und fehlgeschlagene Regeln an einem echten IFC – in unter einer Minute.'], ['Kostenloses Konto anlegen', 'Prüfungen speichern und den Bericht mit Team oder Auftraggeber teilen.'], ['Pläne vergleichen', 'Pro, Team und Modellannahme für alle, die Lieferungen prüfen.']] },
-  fr: { menu: 'Menu principal', product: 'Visionneuse', examples: 'Exemples', guides: 'Guides de correction', blog: 'Blog', pricing: 'Tarifs', open: 'Ouvrir la visionneuse',
+  fr: { menu: 'Menu principal', product: 'Visionneuse', solutions: 'Solutions', examples: 'Exemples', guides: 'Guides de correction', blog: 'Blog', pricing: 'Tarifs', open: 'Ouvrir la visionneuse',
     nextTitle: 'Étape suivante', nextLead: 'Gratuit, dans votre navigateur. Rien n’est envoyé.',
     steps: [['Ouvrir un modèle d’exemple', 'Voyez le Health Score et les règles en échec sur un vrai IFC en moins d’une minute.'], ['Créer un compte gratuit', 'Conservez vos contrôles et partagez le rapport avec l’équipe ou le maître d’ouvrage.'], ['Comparer les offres', 'Pro, Team et réception des maquettes pour ceux qui reçoivent les livrables.']] },
-  pt: { menu: 'Menu principal', product: 'Visualizador', examples: 'Exemplos', guides: 'Guias de correção', blog: 'Blog', pricing: 'Preços', open: 'Abrir o visualizador',
+  pt: { menu: 'Menu principal', product: 'Visualizador', solutions: 'Soluções', examples: 'Exemplos', guides: 'Guias de correção', blog: 'Blog', pricing: 'Preços', open: 'Abrir o visualizador',
     nextTitle: 'Próximo passo', nextLead: 'Grátis, no seu navegador. Nada é enviado.',
     steps: [['Abrir um modelo de exemplo', 'Veja o Health Score e as regras que falham num IFC real em menos de um minuto.'], ['Criar uma conta gratuita', 'Guarde as verificações e partilhe o relatório com a equipa ou o cliente.'], ['Comparar os planos', 'Pro, Team e receção de modelos para quem recebe as entregas.']] },
-  it: { menu: 'Menu principale', product: 'Visualizzatore', examples: 'Esempi', guides: 'Guide alle correzioni', blog: 'Blog', pricing: 'Prezzi', open: 'Apri il visualizzatore',
+  it: { menu: 'Menu principale', product: 'Visualizzatore', solutions: 'Soluzioni', examples: 'Esempi', guides: 'Guide alle correzioni', blog: 'Blog', pricing: 'Prezzi', open: 'Apri il visualizzatore',
     nextTitle: 'Prossimo passo', nextLead: 'Gratis, nel browser. Non viene caricato nulla.',
     steps: [['Apri un modello di esempio', 'Guarda l’Health Score e le regole non superate su un IFC reale in meno di un minuto.'], ['Crea un account gratuito', 'Conserva i controlli e condividi il report con il team o il committente.'], ['Confronta i piani', 'Pro, Team e ricezione dei modelli per chi riceve le consegne.']] },
-  ca: { menu: 'Menú principal', product: 'Visor', examples: 'Exemples', guides: 'Guies de correcció', blog: 'Blog', pricing: 'Preus', open: 'Obrir el visor',
+  ca: { menu: 'Menú principal', product: 'Visor', solutions: 'Solucions', examples: 'Exemples', guides: 'Guies de correcció', blog: 'Blog', pricing: 'Preus', open: 'Obrir el visor',
     nextTitle: 'Següent pas', nextLead: 'Gratuït, al navegador. No es puja res.',
     steps: [['Obre un model d’exemple', 'Mira el Health Score i les regles que fallen en un IFC real en menys d’un minut.'], ['Crea un compte gratuït', 'Desa les comprovacions i comparteix l’informe amb l’equip o el client.'], ['Compara els plans', 'Pro, Team i recepció de models per a qui rep els lliuraments.']] },
-  zh: { menu: '主菜单', product: '查看器', examples: '示例', guides: '修复指南', blog: '博客', pricing: '价格', open: '打开查看器',
+  zh: { menu: '主菜单', product: '查看器', solutions: '解决方案', examples: '示例', guides: '修复指南', blog: '博客', pricing: '价格', open: '打开查看器',
     nextTitle: '下一步', nextLead: '免费，在浏览器中运行，不上传任何文件。',
     steps: [['打开示例模型', '一分钟内在真实 IFC 上查看健康评分和未通过的规则。'], ['创建免费账户', '保存检查结果，并与团队或业主共享报告。'], ['比较方案', 'Pro、Team，以及面向接收交付方的模型验收。']] },
-  ja: { menu: 'メインメニュー', product: 'ビューア', examples: '事例', guides: '修正ガイド', blog: 'ブログ', pricing: '料金', open: 'ビューアを開く',
+  ja: { menu: 'メインメニュー', product: 'ビューア', solutions: 'ソリューション', examples: '事例', guides: '修正ガイド', blog: 'ブログ', pricing: '料金', open: 'ビューアを開く',
     nextTitle: '次のステップ', nextLead: '無料・ブラウザ内で動作。ファイルはアップロードされません。',
     steps: [['サンプルモデルを開く', '実際の IFC で Health Score と不合格ルールを 1 分以内に確認できます。'], ['無料アカウントを作成', 'チェック結果を保存し、チームや発注者とレポートを共有できます。'], ['プランを比較', 'Pro、Team、そして納品を受け取る側のためのモデル受入れ。']] },
-  th: { menu: 'เมนูหลัก', product: 'ตัวดู', examples: 'ตัวอย่าง', guides: 'คู่มือแก้ไข', blog: 'บล็อก', pricing: 'ราคา', open: 'เปิดตัวดู',
+  th: { menu: 'เมนูหลัก', product: 'ตัวดู', solutions: 'โซลูชัน', examples: 'ตัวอย่าง', guides: 'คู่มือแก้ไข', blog: 'บล็อก', pricing: 'ราคา', open: 'เปิดตัวดู',
     nextTitle: 'ขั้นตอนถัดไป', nextLead: 'ฟรี ทำงานในเบราว์เซอร์ ไม่มีการอัปโหลดไฟล์',
     steps: [['เปิดโมเดลตัวอย่าง', 'ดู Health Score และกฎที่ไม่ผ่านบน IFC จริงได้ภายในหนึ่งนาที'], ['สร้างบัญชีฟรี', 'เก็บผลการตรวจและแชร์รายงานกับทีมหรือเจ้าของโครงการ'], ['เปรียบเทียบแพ็กเกจ', 'Pro, Team และการรับมอบโมเดลสำหรับฝ่ายที่รับงานส่งมอบ']] },
 }
@@ -168,6 +169,7 @@ export function chromeLinks(l: Lang) {
   return {
     nav: [
       { href: home(l), label: c.product },
+      { href: `/${SOLUTION_SLUGS.contractors[l]}/`, label: c.solutions },
       { href: `${pre(l)}/${EXAMPLES[l]}/`, label: c.examples },
       { href: `${pre(l)}/fix/`, label: c.guides },
       { href: `${pre(l)}/blog/`, label: c.blog },

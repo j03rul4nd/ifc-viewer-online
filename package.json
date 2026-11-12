@@ -45,7 +45,8 @@
     "indexnow": "node scripts/seo/indexnow.mjs",
     "seo:chrome": "tsx scripts/seo/landing-chrome.ts",
     "seo:core": "tsx scripts/seo/generate-core-landings.ts",
-    "bench:map": "node scripts/geo/map-bench.mjs"
+    "bench:map": "node scripts/geo/map-bench.mjs",
+    "seo:solutions": "tsx scripts/seo/generate-solution-landings.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",

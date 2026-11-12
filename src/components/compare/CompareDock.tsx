@@ -50,7 +50,7 @@ export default function CompareDock({ viewerApiRef, onClose }: {
       className="fixed z-[60] left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[min(560px,calc(100vw-24px))]
         bottom-[calc(env(safe-area-inset-bottom)+76px)] sm:bottom-5
         flex flex-col gap-1.5 p-2 rounded-2xl border border-[var(--border-strong)]
-        bg-[rgba(14,14,18,0.94)] backdrop-blur-md shadow-[0_16px_40px_rgba(0,0,0,0.55)] animate-[fadeIn_140ms_ease]"
+        bg-[rgba(14,14,18,0.94)] backdrop-blur-md shadow-[0_16px_40px_rgba(0,0,0,0.55)] [[data-theme=light]_&]:bg-[var(--bg-surface)] [[data-theme=light]_&]:backdrop-blur-none [[data-theme=light]_&]:shadow-none animate-[fadeIn_140ms_ease]"
     >
       <div className="flex items-center gap-1">
         <button type="button" className={iconBtn} onClick={() => go(cursor - 1)} disabled={!navList.length} aria-label={t('dock.prev')} title={`${t('dock.prev')} ([)`}>‹</button>
@@ -84,7 +84,7 @@ export default function CompareDock({ viewerApiRef, onClose }: {
           {highlight ? t('changes.hide3d') : t('changes.show3d')}
         </button>
         <span className="flex-1" />
-        <button type="button" onClick={() => setDocked(false)} className="h-9 sm:h-7 px-3 rounded-full text-[11.5px] bg-[var(--accent)] text-white hover:brightness-110">
+        <button type="button" onClick={() => setDocked(false)} className="h-9 sm:h-7 px-3 rounded-full text-[11.5px] bg-[var(--accent)] text-[var(--accent-contrast)] hover:brightness-110">
           {t('dock.expand')}
         </button>
         <button type="button" onClick={onClose} className={iconBtn} aria-label={t('dock.close')} title={t('dock.close')}>✕</button>

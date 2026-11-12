@@ -99,8 +99,8 @@ export default function DemoGuide() {
         <button disabled={step === 0} onClick={() => go(step - 1)} className="inline-flex items-center gap-1 h-[32px] px-3 rounded-[8px] border border-[var(--border)] text-[12.5px] disabled:opacity-40"><ArrowLeft size={13} aria-hidden />{dx('Back')}</button>
         <span className="flex-1 text-[11px] text-[var(--text-faint)] hidden sm:block">{dx('Alt + arrows')}</span>
         {last
-          ? <button onClick={() => go(0)} className="inline-flex items-center gap-1 h-[32px] px-3 rounded-[8px] bg-[var(--accent)] text-white text-[12.5px] font-medium">{dx('Start again')}</button>
-          : <button onClick={() => go(step + 1)} className="inline-flex items-center gap-1 h-[32px] px-3 rounded-[8px] bg-[var(--accent)] text-white text-[12.5px] font-medium">{dx('Next')}<ArrowRight size={13} aria-hidden /></button>}
+          ? <button onClick={() => go(0)} className="inline-flex items-center gap-1 h-[32px] px-3 rounded-[8px] bg-[var(--accent)] text-[var(--accent-contrast)] text-[12.5px] font-medium">{dx('Start again')}</button>
+          : <button onClick={() => go(step + 1)} className="inline-flex items-center gap-1 h-[32px] px-3 rounded-[8px] bg-[var(--accent)] text-[var(--accent-contrast)] text-[12.5px] font-medium">{dx('Next')}<ArrowRight size={13} aria-hidden /></button>}
       </div>
     </aside>
   )

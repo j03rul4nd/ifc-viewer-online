@@ -76,7 +76,7 @@
   <!-- pricing:start (scripts/seo/generate-pricing-pages.ts) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/pricing/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -93,7 +93,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/es/precios/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -110,7 +110,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/de/preise/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -127,7 +127,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/tarifs/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -144,7 +144,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/pt/precos/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -161,7 +161,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/it/prezzi/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -178,7 +178,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ca/preus/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -195,7 +195,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/zh/pricing/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -212,7 +212,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/ja/pricing/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -229,7 +229,7 @@
   </url>
   <url>
     <loc>https://www.ifcvieweronline.eu/th/pricing/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/pricing/" />
@@ -2817,6 +2817,498 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/pricing/" />
   </url>
   <!-- pricing:end -->
+  <!-- solution-landings:start (scripts/seo/generate-solution-landings.ts) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/for-contractors/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/para-constructoras/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/para-construtoras/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/per-a-constructores/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/for-contractors/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/for-contractors/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/for-contractors/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-constructoras/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-bauunternehmen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-entreprises-generales/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-construtoras/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-imprese-di-costruzione/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-constructores/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-contractors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-contractors/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-overview-estimated-savings.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-requirements-link-for-subcontractors.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-supplier-page-what-to-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-review-queue-before-after.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-return-reason-elements-3d.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-trend-estimated-cost.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-project-page-progress.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/reception-site-management-report.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/for-engineering/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/para-ingenierias/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/para-engenharias/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/per-a-enginyeries/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/for-engineering/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/for-engineering/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/for-engineering/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-geometry-relations-issue.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/rules-company-library-approval.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/clash-ignore-rules-tower.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-issue-suggested-fix.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/team-publish-gate-history.jpg</image:loc></image:image>
+    <image:image><image:loc>https://www.ifcvieweronline.eu/images/solutions/client-updates-send-by-phase.jpg</image:loc></image:image>
+  </url>
+  <!-- solution-landings:end -->
   <!-- core-landings:start (scripts/seo/generate-core-landings.ts) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-validator/</loc>

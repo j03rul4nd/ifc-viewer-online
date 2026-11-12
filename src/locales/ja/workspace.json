@@ -1098,7 +1098,7 @@
   "Save connection": "接続を保存",
   "Save once, reuse everywhere": "一度保存すればどこでも再利用",
   "Save the house standard": "社内標準を保存",
-  "Saved": "保存しました",
+  "Saved": "保存済み",
   "Saved checks do {{share}} of a manual review: names, properties, IDS and the Health Score.": "保存したチェックが手作業の確認の {{share}} を担います：名前、プロパティ、IDS、Health Score。",
   "Saved once, encrypted in the EU, reused by every connection that needs them. We never show a secret again after you save it.": "一度保存すれば EU 内で暗号化され、必要なすべての接続で再利用されます。保存後はシークレットを二度と表示しません。",
   "Saved views of your models and data, to present, share or embed.": "モデルとデータの保存済みビュー。発表、共有、埋め込みに。",

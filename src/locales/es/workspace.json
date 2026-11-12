@@ -907,7 +907,7 @@
   "Parameter name": "Nombre del parámetro",
   "Password": "Contraseña",
   "password authentication failed for user \"viewer_ro\"": "password authentication failed for user \"viewer_ro\"",
-  "Password changed? Replace it here and every connection using it recovers. Expiry dates show in amber before they bite.": "¿Cambió la contraseña? Sustitúyela aquí y todas las conexiones que la usan se recuperan. Las caducidades se ven en ámbar antes de causar problemas.",
+  "Password changed? Replace it here and every connection using it recovers. Expiry dates show in amber before they bite.": "¿Ha cambiado la contraseña? Sustitúyela aquí y todas las conexiones que la usan se recuperan. Las caducidades se ven en ámbar antes de causar problemas.",
   "Password rejected since Friday": "Contraseña rechazada desde el viernes",
   "Paste a viewer link; it embeds.": "Pega un enlace del visor y se inserta.",
   "Paste it in your system's webhook or HTTP action settings.": "Pégala en los ajustes de webhook o acción HTTP de tu sistema.",

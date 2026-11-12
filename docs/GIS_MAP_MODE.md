@@ -697,6 +697,8 @@ What it records:
 
 The JSON goes to `docs-planning/mapa-osm/bench/`. The script refuses a tree with uncommitted tracked changes, so the commit in the file name is what was measured (`--dirty` overrides). `--compare a.json b.json` checks two runs pair by pair: within 10 %, or within 3 fps when the pair's mean is under 30 fps.
 
+Repeatability, measured 2026-11-12 on three runs of one commit: on an idle machine 14 of 16 pan pairs pass. The two that fail are Catalunya with `autoDetail` off, `amplia` (48.4 / 50.4 / 60.2 fps) and `baja` (8.2 / 11.0 / 14.8). The three pans inside one run agree; the spread is between runs, so compare those two views across at least three runs. Under load (tsc or vitest just finished) only 10 of 16 pass: run the bench on an idle machine.
+
 Traps:
 - FPS is capped by vsync at 60. Median FPS snaps to 60 or 30, so compare **mean** FPS.
 - `--disable-gpu-vsync` does nothing on Chrome 157 / D3D11.
