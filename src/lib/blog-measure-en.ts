@@ -178,6 +178,7 @@ export const MEASURE_POSTS_EN: BlogPost[] = [
       { type: 'h2', text: 'Sending the result' },
       { type: 'p', text: ['Checks are only useful once somebody else sees them. The pass/fail marks are painted into screenshots and into the snapshot of a BCF topic, so an issue about a narrow corridor carries the evidence in its image. The CSV adds Requirement, Check and Note columns next to the values, ready for a review log. For the issue round-trip, see ', { text: 'BCF 2.1 vs 3.0', to: 'bcf-2-1-vs-3-0-viewpoints' }, '.'] },
       { type: 'callout', variant: 'info', text: 'A manual check is a sample, not a proof. It is the right tool for a design review, a site query or an accessibility walk-through of the critical routes. For rules that must hold on every element — every door, every stair — write them as IDS requirements and validate the whole model.' },
+      { type: 'related', to: 'write-test-custom-bim-rules' },
     ],
   },
 
