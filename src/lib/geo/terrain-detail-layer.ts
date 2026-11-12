@@ -40,6 +40,8 @@ export interface TerrainDetailView {
   texelN: number
   /** Device pixels per CSS pixel the squares are styled for (≤ 2). */
   dpr: number
+  /** Angle of the view ray above the ground at the focus, radians. */
+  viewAngleRad?: number
 }
 
 export interface TerrainDetailLayer {
@@ -229,7 +231,7 @@ ${Array.from({ length: SLOTS }, (_, i) => `	sampledDiffuseColor.rgb = mixDetail(
         ? planDetailLevels({
           focus: { nx: view.focusNx, ny: view.focusNy }, texelN: view.texelN,
           patch: opts.patch, baseTexelN: opts.baseTexelN(),
-          size: budget.size, maxLevels: budget.maxLevels,
+          size: budget.size, maxLevels: budget.maxLevels, viewAngleRad: view.viewAngleRad,
         })
         : []
       // Sharpest first: it is the one being looked at.

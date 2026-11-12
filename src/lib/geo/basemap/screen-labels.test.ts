@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
-import { labelKey, labelsWanted, placeScreenLabels, screenBoxOf, STREET_LEVEL_M, type ScreenItem } from './screen-labels'
+import {
+  boxHitsHull, convexHull, HORIZON_FACTOR, KEEP_BONUS, labelHorizonM, labelKey, labelsWanted, placeScreenLabels,
+  screenBoxOf, screenHullOf, STREET_LEVEL_M, type ScreenItem, type ScreenPoint,
+} from './screen-labels'
 
 const item = (key: string, priority: number, sx: number, sy: number, w = 60, h = 16): ScreenItem =>
   ({ key, priority, sx, sy, w, h })
@@ -86,5 +89,55 @@ describe('names and the model', () => {
     const at = (x: number, z: number) => new THREE.Box3(new THREE.Vector3(x - 1, -1, z - 1), new THREE.Vector3(x + 1, 1, z + 1))
     expect(screenBoxOf(at(0, 30), camera, vp)).toBeNull()
     expect(screenBoxOf(at(500, -20), camera, vp)).toBeNull()
+  })
+})
+
+describe('names, second pass (WP5)', () => {
+  it('horizon: no name further than HORIZON_FACTOR × the camera–focus distance', () => {
+    // 160 m up looking down 10°: focus ≈ 921 m away along the ray.
+    const dirY = -Math.sin((10 * Math.PI) / 180)
+    const lim = labelHorizonM(160, dirY)
+    expect(lim).toBeCloseTo(HORIZON_FACTOR * (160 / -dirY), 6)
+    // Rubí from the bench "baja" view is ~15 km away: out.
+    expect(lim).toBeLessThan(15000)
+    // Looking at the horizon the limit stays finite.
+    expect(Number.isFinite(labelHorizonM(160, 0.2))).toBe(true)
+    // Straight down from 1 km: 3 km.
+    expect(labelHorizonM(1000, -1)).toBeCloseTo(1000 * HORIZON_FACTOR, 6)
+  })
+
+  it('model gap: a name in the corner of the rectangle but off the outline is kept', () => {
+    // A diamond (a box seen at 45°) centred at 200,200, radius 100.
+    const diamond: ScreenPoint[] = [[200, 100], [300, 200], [200, 300], [100, 200]]
+    expect(convexHull([...diamond, [200, 200]])).toHaveLength(4)
+    const corner = item('corner', 1, 115, 115, 20, 10) // in the rectangle, outside the diamond
+    const inside = item('inside', 2, 200, 200, 20, 10)
+    expect(boxHitsHull([105, 105, 125, 125], diamond)).toBe(false)
+    expect(placeScreenLabels([corner, inside], 10, {}, [diamond])).toEqual(['corner'])
+    // The old rectangle would have dropped both.
+    expect(placeScreenLabels([corner, inside], 10, {}, [[100, 100, 300, 300]])).toEqual([])
+  })
+
+  it('model gap: the screen outline of a box is its convex hull and blocks its centre', () => {
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000)
+    camera.position.set(10, 10, 10); camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
+    const vp = { width: 800, height: 800 }
+    const hull = screenHullOf(new THREE.Box3(new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, 1, 1)), camera, vp)!
+    // A cube seen along its diagonal is a hexagon.
+    expect(hull).toHaveLength(6)
+    expect(boxHitsHull([395, 395, 405, 405], hull)).toBe(true)
+    const rect = screenBoxOf(new THREE.Box3(new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, 1, 1)), camera, vp)!
+    // Its rectangle's corner is free map.
+    expect(boxHitsHull([rect[0], rect[1], rect[0] + 3, rect[1] + 3], hull)).toBe(false)
+  })
+
+  it('hysteresis: a name placed the frame before keeps its spot against a peer', () => {
+    const a = item('a', 700, 100, 100)
+    const b = item('b', 710, 110, 104)
+    expect(placeScreenLabels([a, b], 10)).toEqual(['b'])
+    expect(placeScreenLabels([a, b], 10, {}, [], new Set(['a']))).toEqual(['a'])
+    // …but not against a whole class above.
+    const city = item('city', 700 + KEEP_BONUS + 1, 110, 104)
+    expect(placeScreenLabels([a, city], 10, {}, [], new Set(['a']))).toEqual(['city'])
   })
 })
