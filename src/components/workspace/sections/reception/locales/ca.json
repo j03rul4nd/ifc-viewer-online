@@ -289,5 +289,6 @@
   "{{x}}×": "{{x}}×",
   "Could not save: {{error}}. Nothing changed.": "No s'ha pogut desar: {{error}}. No ha canviat res.",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} convidat. El seu token de pujada, que només es mostra una vegada: {{token}}",
-  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} desada a l'espai. Codi de lliurament: {{slug}}. Ara convida'n els proveïdors."
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} desada a l'espai. Codi de lliurament: {{slug}}. Ara convida'n els proveïdors.",
+  "Saved in the workspace.": "Desat a l'espai."
 }

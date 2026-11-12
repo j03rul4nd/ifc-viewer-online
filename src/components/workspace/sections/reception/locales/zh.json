@@ -289,5 +289,6 @@
   "{{x}}×": "{{x}}×",
   "Could not save: {{error}}. Nothing changed.": "无法保存:{{error}}。没有任何更改。",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "已邀请 {{name}}。其上传令牌(仅显示一次):{{token}}",
-  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "项目 {{name}} 已保存到工作区。交付代码:{{slug}}。接下来邀请供应商。"
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "项目 {{name}} 已保存到工作区。交付代码:{{slug}}。接下来邀请供应商。",
+  "Saved in the workspace.": "已保存到工作区。"
 }
