@@ -210,6 +210,7 @@ export default function SketchDemo({ scene, labels, onOpen }: { scene: ShowcaseI
           style={{ touchAction: mode === 'draw' ? 'none' : 'pan-y', cursor: mode === 'draw' ? 'crosshair' : 'grab' }}
           onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         />
+        {/* theme-allow-color: over media (3D canvas) */}
         <p className="pointer-events-none absolute left-3 top-3 max-w-[80%] rounded-md bg-black/60 px-2 py-1 text-[11px] text-white">{mode === 'draw' ? labels.hintDraw : labels.hintOrbit}</p>
       </div>
       <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--border)] p-2">
