@@ -16,7 +16,7 @@ import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { createQualityGovernor, lodResolution } from './basemap/tile-quality'
 import { createCityLod, type CityLod, type CityLodStats } from './city-lod'
-import { cityTriangleBudget } from './city-cells'
+import { cityTriangleBudget, cityByteBudget, cityAdmitTriangles } from './city-cells'
 import { loadTileJson } from './basemap/tilejson'
 import { OPENFREEMAP_TILEJSON } from './providers'
 import { isMemoryConstrained } from '../loading/device-profile'
@@ -2797,6 +2797,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     }
     const restored = (): void => {
       frameWatch.pause(performance.now() + REBUILD_GRACE_MS)
+      // The city's meshes keep no CPU copy for three to re-upload: rebuild them.
+      cityLod?.contextRestored()
       if (osmFeatures && geoRoot) void requestRebuild()
     }
     canvas.addEventListener('webglcontextlost', lost)
@@ -3131,7 +3133,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const on = autoDetail && buildingsEnabled && layerVisibility.building
     cityLod.group.visible = on
     cityLod.setTone(contextTone)
-    cityLod.setBudget(cityTriangleBudget(deviceTier(), isMemoryConstrained()) * (budgetLifted ? 3 : 1))
+    const lift = budgetLifted ? 3 : 1
+    cityLod.setBudget(cityAdmitTriangles(
+      cityTriangleBudget(deviceTier(), isMemoryConstrained()) * lift,
+      cityByteBudget(deviceTier(), isMemoryConstrained()) * lift,
+    ))
     // The district's box, once it has buildings of its own to show there.
     const anchorN = latLonToNormalized(placement.lat, placement.lon)
     const halfN = BUILDINGS_HALF_SIZE_M / geoRoot.scale.x
