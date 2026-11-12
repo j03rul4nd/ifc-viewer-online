@@ -775,13 +775,18 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       if (!p) throw new Error('no placement')
       useGeoStore.getState().beginEditing(p)
       useGeoStore.getState().updateDraft({ lat, lon })
-      await finishEditPlacement(true)
+      try {
+        await finishEditPlacement(true)
+      } catch (err) {
+        if (useGeoStore.getState().editing) useGeoStore.getState().cancelEditing()
+        throw err
+      }
       if (useGeoStore.getState().buildingsEnabled) {
         await toggleBuildings(false)
         await toggleBuildings(true)
       }
     }
-    return () => { delete g.__geoRelocate }
+    return () => { delete g.__geoRelocate; delete g.__geoStore }
   }, [finishEditPlacement, toggleBuildings])
 
   return useMemo<GeoController>(() => ({
