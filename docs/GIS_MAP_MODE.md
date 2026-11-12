@@ -688,13 +688,14 @@ What it does:
 - Measures four fixed views (`amplia`, `baja`, `cerca` 50 m at 45°, `calle` 25 m at 45°), with `autoDetail` on and off.
 
 What it records:
-- Mean, median and p5 FPS over 5 s at rest, and the same during a 120 m/s pan of 3 s.
+- Mean, median and p5 FPS over 5 s at rest (reported only: vsync caps it).
+- Three 120 m/s pans of 8 s, each from the view's pose; the judged number is the median of the three mean FPS.
 - Time until the cells loaded match the cells wanted.
 - Triangles and draw calls, JS heap, and cell bytes.
 - Device px per texel, for both the relief and the flat map.
 - Requests per host.
 
-The JSON goes to `docs-planning/mapa-osm/bench/`.
+The JSON goes to `docs-planning/mapa-osm/bench/`. The script refuses a tree with uncommitted tracked changes, so the commit in the file name is what was measured (`--dirty` overrides). `--compare a.json b.json` checks two runs pair by pair: within 10 %, or within 3 fps when the pair's mean is under 30 fps.
 
 Traps:
 - FPS is capped by vsync at 60. Median FPS snaps to 60 or 30, so compare **mean** FPS.
@@ -702,7 +703,13 @@ Traps:
 - Views that sit at the cap cannot show an improvement at rest. The pan is where the differences show.
 - The flat map's px/texel uses the deepest visible tile against the target distance. It is a low bound.
 
-Baseline: `main` 2d13e2b8, AMD Radeon integrated GPU, two consecutive runs. Mean FPS agreed within 10 % in 45 of 48 pairs; the worst pair differed by 11 %.
+Repeatability with 3 × 8 s pans (`main` ecfc81cd + bench, commit 88072ec3, two consecutive runs): 11 of 16 pairs pass.
+- Catalunya passes 6/8. Failures: baja with cells on (6.9 / 3.1 fps) and amplia with cells off (52 / 59 fps, 11.5 %).
+- El Carmel passes 5/8. Failures: amplia with cells on (43 / 51 fps), baja on (30 / 37), baja off (31 / 39), each 17–23 %.
+- Close-up pans now run at 1–2 fps, against 4–6 fps with the 3 s pan: 8 s at 120 m/s covers 960 m of ground that is not loaded yet. Those pairs pass only on the 3 fps absolute rule.
+- Rest FPS varied as much as 60 → 47 between runs. Machine noise is real.
+
+Earlier baseline (3 s pan): `main` 2d13e2b8, AMD Radeon integrated GPU, two consecutive runs. Mean FPS agreed within 10 % in 45 of 48 pairs; the worst pair differed by 11 %.
 
 | Site, view | auto | rest fps | pan fps | M tris | cells ready |
 |---|---|---|---|---|---|
