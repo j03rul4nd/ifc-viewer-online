@@ -673,6 +673,57 @@ view takes ~30 s — that is the harness, not the product (measured: 3 rAF in
 `tile.openstreetmap.org` (still comparable to Leaflet at DPR 1). It is another
 reason the vector basemap is the default.
 
+## Map bench (2026-11, `npm run bench:map`)
+
+`scripts/geo/map-bench.mjs` measures the 3D map in a headed Chrome (1600×900, DPR 1).
+A hidden pane or a headless page throttles `requestAnimationFrame`, so no FPS from them is real.
+The script also calls `page.bringToFront()`; without it the page ran at 1 frame/s.
+
+What it does:
+- Starts this worktree's dev server on :3341, or uses `--url`.
+- Opens `fonts-bessones.ifc` with `map=terrain,buildings` and clicks "Enable map".
+- Waits for `buildingsStatus` and `terrainStatus` to be `ready`.
+- For El Carmel, calls the dev handle `__geoRelocate(lat, lon)`. It goes through the placement editor's path (draft, then confirm) and rebuilds the OSM district.
+- Holds the flat map in `balanced` with `__basemapQuality.hold`.
+- Measures four fixed views (`amplia`, `baja`, `cerca` 50 m at 45°, `calle` 25 m at 45°), with `autoDetail` on and off.
+
+What it records:
+- Mean, median and p5 FPS over 5 s at rest, and the same during a 120 m/s pan of 3 s.
+- Time until the cells loaded match the cells wanted.
+- Triangles and draw calls, JS heap, and cell bytes.
+- Device px per texel, for both the relief and the flat map.
+- Requests per host.
+
+The JSON goes to `docs-planning/mapa-osm/bench/`.
+
+Traps:
+- FPS is capped by vsync at 60. Median FPS snaps to 60 or 30, so compare **mean** FPS.
+- `--disable-gpu-vsync` does nothing on Chrome 157 / D3D11.
+- Views that sit at the cap cannot show an improvement at rest. The pan is where the differences show.
+- The flat map's px/texel uses the deepest visible tile against the target distance. It is a low bound.
+
+Baseline: `main` 2d13e2b8, AMD Radeon integrated GPU, two consecutive runs. Mean FPS agreed within 10 % in 45 of 48 pairs; the worst pair differed by 11 %.
+
+| Site, view | auto | rest fps | pan fps | M tris | cells ready |
+|---|---|---|---|---|---|
+| Catalunya amplia | on / off | 43 / 60 | 36 / 59 | 3.45 / 1.77 | 31 s |
+| Catalunya baja | on / off | 54–60 / 60 | 19 / 24 | 2.58 / 1.77 | 2.7 s |
+| Catalunya cerca | on / off | 60 / 60 | 6 / 6 | 1.97 / 1.77 | 3 s |
+| Catalunya calle | on / off | 60 / 60 | 4.3 / 4.4 | 1.98 / 1.78 | 3 s |
+| El Carmel amplia | on / off | 57 / 60 | 46 / 52 | 2.79 / 1.91 | 30 s |
+| El Carmel baja | on / off | 60 / 60 | 43–49 / 49 | 2.12 / 1.90 | 2.7 s |
+| El Carmel cerca | on / off | 60 / 60 | 6 / 6 | 2.02 / 1.91 | 2.7 s |
+| El Carmel calle | on / off | 60 / 60 | 5 / 5 | 2.01 / 1.90 | 3 s |
+
+Other numbers:
+- City cells, Catalunya amplia: 278 cells, 2.25 M triangles, 142 MB. El Carmel amplia: 136 MB.
+- Heap is 375–535 MB.
+- Flat map in `balanced`, px/texel at amplia / baja / cerca / calle:
+  - Catalunya: 0.4 / 0.09 / 0.44 / 0.87.
+  - El Carmel: 0.4 / 0.17 / 1.75 / 3.49.
+- Relief, px/texel: 0.87 up close, 0.35–0.69 at baja.
+- Panning close to the ground (50 m and 25 m) runs at 4–6 fps, with or without the cells. That is the main cost the next packages should look at.
+
 ## Maintainer notes
 
 - `3d-tiles-renderer` is pinned at 0.4.28 semantics: `GeneratedSurfacePlugin`
