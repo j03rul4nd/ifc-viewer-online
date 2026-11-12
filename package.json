@@ -44,7 +44,8 @@
     "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo",
     "indexnow": "node scripts/seo/indexnow.mjs",
     "seo:chrome": "tsx scripts/seo/landing-chrome.ts",
-    "seo:core": "tsx scripts/seo/generate-core-landings.ts"
+    "seo:core": "tsx scripts/seo/generate-core-landings.ts",
+    "bench:map": "node scripts/geo/map-bench.mjs"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",
