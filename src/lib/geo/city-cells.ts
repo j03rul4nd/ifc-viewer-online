@@ -250,7 +250,7 @@ export const CELL_BYTES_PER_VERTEX = 14
 
 /** Bytes of far city each device class may hold, on top of the district. */
 export function cityByteBudget(tier: 'low' | 'mid' | 'high', constrained: boolean): number {
-  const MB = 1024 * 1024
+  const MB = 1_000_000
   if (constrained || tier === 'low') return 20 * MB
   return tier === 'mid' ? 48 * MB : 90 * MB
 }

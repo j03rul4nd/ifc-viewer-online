@@ -137,7 +137,7 @@ describe('footprints', () => {
 
 describe('memory (WP1)', () => {
   it('spends whichever of the triangle and byte budgets runs out first', () => {
-    const MB = 1024 * 1024
+    const MB = 1_000_000
     expect(cityByteBudget('high', false)).toBe(90 * MB)
     expect(cityByteBudget('mid', false)).toBe(48 * MB)
     expect(cityByteBudget('high', true)).toBe(20 * MB)
