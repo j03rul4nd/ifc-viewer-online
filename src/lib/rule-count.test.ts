@@ -34,7 +34,8 @@ const TOTAL_CLAIM_MIN = 26
 // The window between the number and the keyword is capped at 15 non-digit,
 // same-line chars so unrelated numbers earlier in a sentence don't bind.
 const NUMBER_BEFORE_WORD =
-  /(?<![\d.,])(\d{2,3})(?=[^\d\n]{0,15}(?:rules\b|reglas\b|règles\b|Regeln\b|regole\b|regras\b|regles\b|规则|条|ルール|กฎ))/giu
+  // A percentage is never a count: "30% 折扣，条件…" (条 inside 条件) is not "30 rules".
+  /(?<![\d.,])(\d{2,3})(?!\s*[%％])(?=[^\d\n]{0,15}(?:rules\b|reglas\b|règles\b|Regeln\b|regole\b|regras\b|regles\b|规则|条|ルール|กฎ))/giu
 // Hyphenated compounds: "44-rule IFC validator" / "44-rule validation".
 const HYPHEN_COMPOUND = /(?<![\d.,])(\d{2,3})-(?:rule|regla|règle|Regel|regola|regra)\b/giu
 // Thai writes the counter before the number: "กฎ 44 ข้อ".
