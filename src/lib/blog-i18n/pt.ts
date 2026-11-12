@@ -193,8 +193,8 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "image",
         src: "blog/images/rule-geometry-relations-fix-english.jpg",
-        alt: "Regras de geometria e de relações na etapa S4, falhas com um botão para criar uma pendência e como corrigir a falha em cada software de autoria",
-        caption: "Prévia de design com dados de exemplo, interface em inglês. Cada falha vira uma pendência que traz como corrigi-la no Revit, Archicad, Tekla e Allplan.",
+        alt: "Regras de geometria e de relações na etapa S4, falhas com um botão para criar uma ocorrência e como corrigir a falha em cada software de autoria",
+        caption: "Prévia de design com dados de exemplo, interface em inglês. Cada falha vira uma ocorrência que traz como corrigi-la no Revit, Archicad, Tekla e Allplan.",
         width: 1140,
         height: 1000,
         srcSet: [{ src: "blog/images/rule-geometry-relations-fix-english.webp", width: 1140 }],
@@ -204,7 +204,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "p",
         text: [
-          "Uma falha pode virar uma pendência com um clique, e a pendência traz a correção para cada software de autoria: o mesmo texto escrito à mão dos ",
+          "Uma falha pode virar uma ocorrência com um clique, e a ocorrência traz a correção para cada software de autoria: o mesmo texto escrito à mão dos ",
           { text: "guias de correção", href: "https://www.ifcvieweronline.eu/fix/" },
           " gratuitos, não texto gerado.",
         ],
@@ -259,7 +259,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ],
           [
             "Preço",
-            "A partir de €1,428/ano (Essential), €2,109/ano (Advanced), por licença",
+            "A partir de 1.428 €/ano (Essential), 2.109 €/ano (Advanced), por licença",
             "Grátis",
             "Planejado dentro do Pro, a partir de €39/mês",
           ],
@@ -503,7 +503,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ],
           [
             "Preço",
-            "€2,772/ano por licença",
+            "2.772 €/ano por licença",
             "Planejado dentro do Team, a partir de €59 por editor por mês (mínimo de 3 editores)",
           ],
         ],
@@ -536,10 +536,10 @@ export const BLOG_POSTS_PT: BlogPost[] = [
   },
   {
     slug: "shared-bcf-issues-small-teams",
-    title: "Pendências BCF compartilhadas para equipes pequenas: o que você precisa e quanto custa",
-    seoTitle: "Pendências BCF compartilhadas para equipes BIM pequenas",
-    seoDescription: "Uma lista de pendências BCF para toda a equipe, com câmera salva, prazo e a correção por software. Clientes entram de graça. Em prévia.",
-    excerpt: "Uma equipe de seis pessoas não precisa de um gerenciador de pendências corporativo. Precisa de uma lista que todos veem, com a câmera salva em cada pendência, e de clientes que comentam sem ocupar uma licença. Uma prévia e o custo das alternativas.",
+    title: "Ocorrências BCF compartilhadas para equipes pequenas: o que você precisa e quanto custa",
+    seoTitle: "Ocorrências BCF compartilhadas para equipes BIM pequenas",
+    seoDescription: "Uma lista de ocorrências BCF para toda a equipe, com câmera salva, prazo e a correção por software. Clientes entram de graça. Em prévia.",
+    excerpt: "Uma equipe de seis pessoas não precisa de um gerenciador de ocorrências corporativo. Precisa de uma lista que todos veem, com a câmera salva em cada ocorrência, e de clientes que comentam sem ocupar uma licença. Uma prévia e o custo das alternativas.",
     date: "2026-11-12",
     dateModified: "2026-11-12",
     author: "IFC Viewer Online",
@@ -547,15 +547,15 @@ export const BLOG_POSTS_PT: BlogPost[] = [
     categorySlug: "tools",
     readTimeMin: 6,
     heroImage: "blog/images/team-issue-suggested-fix.jpg",
-    heroAlt: "Uma pendência BCF compartilhada com a câmera salva, a correção sugerida para cada software de autoria, estado, responsável e prazo",
+    heroAlt: "Uma ocorrência BCF compartilhada com a câmera salva, a correção sugerida para cada software de autoria, estado, responsável e prazo",
     heroCredit: "IFC Viewer Online",
     keywords: [
-      "pendências BCF compartilhadas",
-      "gestão de pendências BCF em equipe",
-      "gerenciador de pendências BIM",
+      "ocorrências BCF compartilhadas",
+      "gestão de ocorrências BCF em equipe",
+      "gerenciador de ocorrências BIM",
       "BCF na nuvem",
       "alternativa ao BIMcollab",
-      "pendências BIM equipe pequena",
+      "ocorrências BIM equipe pequena",
       "shared BCF issues",
       "BCF issue management team",
       "BIM issue tracker",
@@ -583,20 +583,20 @@ export const BLOG_POSTS_PT: BlogPost[] = [
     ],
     faqs: [
       {
-        q: "Posso usar pendências compartilhadas hoje?",
-        a: "Ainda não: a lista de pendências da equipe está em prévia com dados de exemplo. Importar e exportar BCF 2.1 e 3.0 no visualizador é grátis hoje.",
+        q: "Posso usar ocorrências compartilhadas hoje?",
+        a: "Ainda não: a lista de ocorrências da equipe está em prévia com dados de exemplo. Importar e exportar BCF 2.1 e 3.0 no visualizador é grátis hoje.",
       },
       {
         q: "Clientes e construtoras precisam de uma licença?",
         a: "Não. Os convidados entram por e-mail, comentam e mudam o estado do que foi atribuído a eles, e não ocupam uma licença.",
       },
       {
-        q: "Posso levar as pendências para outra ferramenta?",
+        q: "Posso levar as ocorrências para outra ferramenta?",
         a: "Sim. Elas são exportadas como BCF 2.1 ou 3.0 com câmeras, e é possível importar BCF do BIMcollab ou do Solibri, com um aviso sobre duplicatas.",
       },
       {
         q: "Quanto vai custar?",
-        a: "As pendências compartilhadas estão planejadas para o plano Team, a partir de €59 por editor por mês com cobrança anual, com mínimo de 3 editores. Os preços planejados estão na página de preços.",
+        a: "As ocorrências compartilhadas estão planejadas para o plano Team, a partir de €59 por editor por mês com cobrança anual, com mínimo de 3 editores. Os preços planejados estão na página de preços.",
       },
     ],
     content: [
@@ -605,34 +605,34 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         variant: "info",
         title: "Prévia",
         text: [
-          "As pendências compartilhadas estão construídas com dados de exemplo e ainda não foram abertas. Importar e exportar BCF no visualizador é grátis hoje. ",
+          "As ocorrências compartilhadas estão construídas com dados de exemplo e ainda não foram abertas. Importar e exportar BCF no visualizador é grátis hoje. ",
           { text: "Entre na lista de espera", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " para testar com a sua equipe quando for aberto.",
         ],
       },
       {
         type: "p",
-        text: "Em uma pequena empresa de engenharia, as pendências de um projeto costumam viver em três lugares: arquivos BCF enviados por e-mail, uma planilha que alguém mantém em dia e a memória de quem esteve na reunião. Cada arquivo BCF é um retrato de um momento. Ninguém sabe qual é o mais recente, e o cliente pergunta por e-mail sobre algo que foi encerrado na semana passada.",
+        text: "Em uma pequena empresa de engenharia, as ocorrências de um projeto costumam viver em três lugares: arquivos BCF enviados por e-mail, uma planilha que alguém mantém em dia e a memória de quem esteve na reunião. Cada arquivo BCF é um retrato de um momento. Ninguém sabe qual é o mais recente, e o cliente pergunta por e-mail sobre algo que foi encerrado na semana passada.",
       },
       {
         type: "takeaways",
         items: [
           "Uma lista para a equipe, com abertas, minhas, atrasadas e encerradas.",
-          "Cada pendência guarda a sua câmera: todos abrem o modelo na mesma vista.",
-          "A pendência diz como corrigir o problema no Revit, Archicad, Tekla ou Allplan.",
+          "Cada ocorrência guarda a sua câmera: todos abrem o modelo na mesma vista.",
+          "A ocorrência diz como corrigir o problema no Revit, Archicad, Tekla ou Allplan.",
           "Clientes e construtoras entram de graça, sem ocupar uma licença.",
         ],
       },
       { type: "h2", text: "Uma lista, igual para todos" },
       {
         type: "p",
-        text: "A lista tem abas para abertas, atribuídas a mim, atrasadas e concluídas, com contagens. Cada linha mostra de onde veio a pendência (o visualizador, um relatório de verificação, uma automação, um BCF importado), o estado, quem está com ela e quando vence, em vermelho se estiver atrasada. Você pode buscar por título, modelo ou número e filtrar por disciplina.",
+        text: "A lista tem abas para abertas, atribuídas a mim, atrasadas e concluídas, com contagens. Cada linha mostra de onde veio a ocorrência (o visualizador, um relatório de verificação, uma automação, um BCF importado), o estado, quem está com ela e quando vence, em vermelho se estiver atrasada. Você pode buscar por título, modelo ou número e filtrar por disciplina.",
       },
       {
         type: "image",
         src: "blog/images/team-issues-list.jpg",
-        alt: "Lista de pendências da equipe: contagens de abertas, atrasadas e encerradas, e cada pendência com estado, responsável, prazo, prioridade e disciplina",
-        caption: "Prévia de design com dados de exemplo, interface em espanhol. Os títulos das pendências de exemplo estão em inglês.",
+        alt: "Lista de ocorrências da equipe: contagens de abertas, atrasadas e encerradas, e cada ocorrência com estado, responsável, prazo, prioridade e disciplina",
+        caption: "Prévia de design com dados de exemplo, interface em espanhol. Os títulos das ocorrências de exemplo estão em inglês.",
         width: 1600,
         height: 1263,
         srcSet: [
@@ -642,15 +642,15 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         sizes: "(max-width: 860px) 100vw, 820px",
         credit: "IFC Viewer Online",
       },
-      { type: "h2", text: "A câmera faz parte da pendência" },
+      { type: "h2", text: "A câmera faz parte da ocorrência" },
       {
         type: "p",
-        text: "Uma pendência sem vista é só uma frase. Criada a partir do visualizador, a pendência já chega com o título, o elemento (GlobalId) e a câmera preenchidos. “Abrir no visualizador com esta câmera” leva qualquer pessoa da equipe à mesma vista.",
+        text: "Uma ocorrência sem vista é só uma frase. Criada a partir do visualizador, a ocorrência já chega com o título, o elemento (GlobalId) e a câmera preenchidos. “Abrir no visualizador com esta câmera” leva qualquer pessoa da equipe à mesma vista.",
       },
       {
         type: "image",
         src: "blog/images/team-issue-saved-camera.jpg",
-        alt: "Uma pendência com a câmera salva, o elemento, o estado, o responsável, o prazo e um comentário da construtora",
+        alt: "Uma ocorrência com a câmera salva, o elemento, o estado, o responsável, o prazo e um comentário da construtora",
         caption: "Prévia de design com dados de exemplo, interface em espanhol.",
         width: 1600,
         height: 1263,
@@ -669,15 +669,15 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ".",
         ],
       },
-      { type: "h2", text: "A pendência diz como corrigir" },
+      { type: "h2", text: "A ocorrência diz como corrigir" },
       {
         type: "p",
-        text: "Esta é a parte que os outros gerenciadores deixam de fora. Quando uma pendência vem de uma verificação que falhou, ela traz a correção sugerida para cada software de autoria: o que fazer no Revit, Archicad, Tekla ou Allplan. É um texto escrito pela nossa equipe para cada regra, o mesmo dos guias de correção gratuitos, não texto gerado.",
+        text: "Esta é a parte que os outros gerenciadores deixam de fora. Quando uma ocorrência vem de uma verificação que falhou, ela traz a correção sugerida para cada software de autoria: o que fazer no Revit, Archicad, Tekla ou Allplan. É um texto escrito pela nossa equipe para cada regra, o mesmo dos guias de correção gratuitos, não texto gerado.",
       },
       {
         type: "image",
         src: "blog/images/team-issue-suggested-fix.jpg",
-        alt: "Correção sugerida na pendência, com uma aba para cada software de autoria",
+        alt: "Correção sugerida na ocorrência, com uma aba para cada software de autoria",
         caption: "Prévia de design com dados de exemplo, interface em espanhol.",
         width: 1600,
         height: 1263,
@@ -691,7 +691,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "Clientes e construtoras entram de graça" },
       {
         type: "p",
-        text: "Clientes e construtoras são convidados por e-mail. Eles veem as pendências que você compartilha, comentam e mudam o estado das que foram atribuídas a eles. Não ocupam uma licença, e antes de convidá-los você vê o que eles vão ver.",
+        text: "Clientes e construtoras são convidados por e-mail. Eles veem as ocorrências que você compartilha, comentam e mudam o estado das que foram atribuídas a eles. Não ocupam uma licença, e antes de convidá-los você vê o que eles vão ver.",
       },
       {
         type: "image",
@@ -710,12 +710,12 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "Como a equipe está indo" },
       {
         type: "p",
-        text: "A primeira tela não é a lista, e sim a equipe: o Health Score de cada projeto com a sua tendência, as pendências abertas por pessoa e os prazos em risco.",
+        text: "A primeira tela não é a lista, e sim a equipe: o Health Score de cada projeto com a sua tendência, as ocorrências abertas por pessoa e os prazos em risco.",
       },
       {
         type: "image",
         src: "blog/images/team-dashboard-projects-people.jpg",
-        alt: "Painel da equipe: Health Score por projeto, pendências abertas por pessoa e prazos em risco",
+        alt: "Painel da equipe: Health Score por projeto, ocorrências abertas por pessoa e prazos em risco",
         caption: "Prévia de design com dados de exemplo, interface em espanhol.",
         width: 1600,
         height: 1263,
@@ -742,7 +742,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         rows: [
           [
             "Preço por pessoa",
-            "Basic €12.50, Advanced €18.75, Enterprise €25 por usuário por mês, com cobrança anual (€19, €29, €39 com cobrança mensal)",
+            "Basic 12,50 €, Advanced 18,75 €, Enterprise €25 por usuário por mês, com cobrança anual (€19, €29, €39 com cobrança mensal)",
             "€59 por editor por mês, com cobrança anual (mínimo de 3 editores)",
           ],
           ["Convidados (cliente, construtora)", "Veja os planos deles", "Grátis, sem licença"],
@@ -750,16 +750,16 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ["BCF 2.1 / 3.0", "Sim", "Sim, importação e exportação"],
           [
             "O que mais está incluído",
-            "Plataforma de pendências; Zoom e Nexus conforme o plano",
+            "Plataforma de ocorrências; Zoom e Nexus conforme o plano",
             "Detecção de conflitos, regras, automações e a atualização para o cliente",
           ],
         ],
-        caption: "Fonte: bimcollab.com/pricing, consultada em 12 de novembro de 2026; a página não informa um número mínimo de usuários. Por licença, o BIMcollab é mais barato só para pendências; o Team inclui mais do que pendências. Nossos preços planejados estão na página de preços.",
+        caption: "Fonte: bimcollab.com/pricing, consultada em 12 de novembro de 2026; a página não informa um número mínimo de usuários. Por licença, o BIMcollab é mais barato só para ocorrências; o Team inclui mais do que ocorrências. Nossos preços planejados estão na página de preços.",
       },
       {
         type: "p",
         text: [
-          "Se tudo de que você precisa são pendências, uma plataforma dedicada custa menos por pessoa. O Team faz sentido quando a mesma equipe também coordena conflitos (veja ",
+          "Se tudo de que você precisa são ocorrências, uma plataforma dedicada custa menos por pessoa. O Team faz sentido quando a mesma equipe também coordena conflitos (veja ",
           { text: "detecção de conflitos no navegador", to: "ifc-clash-detection-browser" },
           ") e verifica as entregas automaticamente.",
         ],
@@ -768,16 +768,16 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "p",
         text: [
-          "Abrir vários modelos IFC juntos, criar pendências BCF a partir do visualizador e exportar ou importar BCF 2.1 e 3.0. De graça, no seu navegador. ",
+          "Abrir vários modelos IFC juntos, criar ocorrências BCF a partir do visualizador e exportar ou importar BCF 2.1 e 3.0. De graça, no seu navegador. ",
           { text: "Abrir o visualizador", href: "https://www.ifcvieweronline.eu/" },
           ".",
         ],
       },
-      { type: "h2", text: "Sua equipe compartilha pendências por e-mail hoje?" },
+      { type: "h2", text: "Sua equipe compartilha ocorrências por e-mail hoje?" },
       {
         type: "p",
         text: [
-          "As pendências compartilhadas estão em prévia. ",
+          "As ocorrências compartilhadas estão em prévia. ",
           { text: "Entre na lista de espera", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " ou veja como o plano Team se encaixa em ",
           { text: "uma empresa de engenharia", href: "https://www.ifcvieweronline.eu/for-engineering/" },
@@ -846,7 +846,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
       {
         q: "O que acontece quando uma entrega falha?",
-        a: "Você escolhe: abrir uma pendência atribuída a alguém com prazo, enviar um webhook ou nada. A mesma entrega nunca abre duas pendências.",
+        a: "Você escolhe: abrir uma ocorrência atribuída a alguém com prazo, enviar um webhook ou nada. A mesma entrega nunca abre duas ocorrências.",
       },
       {
         q: "Existe um limite de tamanho de arquivo?",
@@ -881,7 +881,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         items: [
           "Três fontes: pasta monitorada, pipeline de CI ou API.",
           "Antes de ligar, você vê o que teria acontecido com as entregas da semana passada.",
-          "Uma falha pode abrir uma pendência sozinha, com a regra, o arquivo e a câmera.",
+          "Uma falha pode abrir uma ocorrência sozinha, com a regra, o arquivo e a câmera.",
           "Uma barreira impede que modelos abaixo de uma pontuação cheguem a “Publicado”, com o histórico de cada exceção.",
         ],
       },
@@ -907,7 +907,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "Veja o resultado antes de ligar" },
       {
         type: "p",
-        text: "Uma automação configurada às cegas costuma ser desligada depois da primeira semana barulhenta. Por isso o assistente roda o perfil escolhido sobre as suas entregas da última semana: “de 31 entregas, 25 passariam, 6 falhariam e 5 pendências seriam abertas; a falha mais comum: portas sem FireRating.”",
+        text: "Uma automação configurada às cegas costuma ser desligada depois da primeira semana barulhenta. Por isso o assistente roda o perfil escolhido sobre as suas entregas da última semana: “de 31 entregas, 25 passariam, 6 falhariam e 5 ocorrências seriam abertas; a falha mais comum: portas sem FireRating.”",
       },
       {
         type: "image",
@@ -930,7 +930,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "Cada execução, em uma só tabela" },
       {
         type: "p",
-        text: "Cada entrega mostra o arquivo, a fonte, o perfil, a pontuação, o resultado, o que aconteceu e quanto tempo levou. Uma execução que falhou leva à sua pendência. Um arquivo que não pôde ser verificado diz o motivo (no exemplo, 231 MB contra um limite de 200 MB). No topo, a semana: verificadas, reprovadas, pendências abertas automaticamente, tempo médio até o relatório.",
+        text: "Cada entrega mostra o arquivo, a fonte, o perfil, a pontuação, o resultado, o que aconteceu e quanto tempo levou. Uma execução que falhou leva à sua ocorrência. Um arquivo que não pôde ser verificado diz o motivo (no exemplo, 231 MB contra um limite de 200 MB). No topo, a semana: verificadas, reprovadas, ocorrências abertas automaticamente, tempo médio até o relatório.",
       },
       {
         type: "image",
@@ -973,7 +973,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "image",
         src: "blog/images/automation-webhooks-phone.jpg",
-        alt: "Webhooks em um celular: um canal do Teams inscrito nos eventos de validação e de pendências, com as últimas entregas",
+        alt: "Webhooks em um celular: um canal do Teams inscrito nos eventos de validação e de ocorrências, com as últimas entregas",
         caption: "Prévia de design com dados de exemplo, interface em espanhol.",
         width: 468,
         height: 1013,
@@ -1001,7 +1001,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ],
           ["Funciona direto sobre IFC", "Pelo modelo próprio do Speckle", "Sim, com IDS 1.0 ou perfis de EIR"],
           ["Prévia da última semana antes de ativar", "Resultados por execução", "Sim"],
-          ["A falha abre uma pendência com a correção", "Depende da função que você escreve", "Sim"],
+          ["A falha abre uma ocorrência com a correção", "Depende da função que você escreve", "Sim"],
         ],
         caption: "Fonte: speckle.systems/pricing, consultada em 12 de novembro de 2026. Nossos preços planejados estão na página de preços.",
       },
@@ -1129,14 +1129,14 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         items: [
           "Frases fixas preenchidas com os números do projeto: qualidade, entregas aceitas, conflitos resolvidos, próximo marco.",
           "Uma página do projeto que o cliente abre sem conta, com a vista 3D.",
-          "As respostas voltam para a equipe como uma conversa, ou viram uma pendência.",
+          "As respostas voltam para a equipe como uma conversa, ou viram uma ocorrência.",
           "Consentimento, cancelamento em um clique e nenhum pixel de rastreamento.",
         ],
       },
       { type: "h2", text: "Comece por uma fase, não por uma página em branco" },
       {
         type: "p",
-        text: "Os modelos acompanham o projeto: início do projeto, entrega aceita, marco atingido, entrega. Cada um já traz blocos ao vivo: o Health Score (pontuação de qualidade do modelo) com a sua tendência, entregas aceitas, pendências encerradas, marcos, uma captura 3D. Você escolhe quem recebe (incorporador, investidores, equipe técnica), apenas entre as pessoas que aceitaram.",
+        text: "Os modelos acompanham o projeto: início do projeto, entrega aceita, marco atingido, entrega. Cada um já traz blocos ao vivo: o Health Score (pontuação de qualidade do modelo) com a sua tendência, entregas aceitas, ocorrências encerradas, marcos, uma captura 3D. Você escolhe quem recebe (incorporador, investidores, equipe técnica), apenas entre as pessoas que aceitaram.",
       },
       {
         type: "image",
@@ -1215,12 +1215,12 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       { type: "h2", text: "As respostas voltam como uma conversa" },
       {
         type: "p",
-        text: "“Quando as amostras da fachada chegam à obra?” A resposta do cliente volta para a equipe como uma conversa, a equipe responde a partir do seu departamento e, se a mensagem for um problema e não uma pergunta, ela pode virar uma pendência com um clique.",
+        text: "“Quando as amostras da fachada chegam à obra?” A resposta do cliente volta para a equipe como uma conversa, a equipe responde a partir do seu departamento e, se a mensagem for um problema e não uma pergunta, ela pode virar uma ocorrência com um clique.",
       },
       {
         type: "image",
         src: "blog/images/client-update-reply-thread.jpg",
-        alt: "A resposta de um cliente em uma conversa, com a sugestão de transformá-la em pendência",
+        alt: "A resposta de um cliente em uma conversa, com a sugestão de transformá-la em ocorrência",
         caption: "Prévia de design com dados de exemplo, interface em espanhol.",
         width: 1140,
         height: 900,
@@ -1279,7 +1279,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             "Varia",
             "Sem pixel; só cliques, por mensagem",
           ],
-          ["A resposta vira uma pendência", "Não", "Não", "Sim"],
+          ["A resposta vira uma ocorrência", "Não", "Não", "Sim"],
         ],
         caption: "Fonte da descrição do portal: buildertrend.com, consultado em 11 de novembro de 2026. As outras colunas descrevem categorias, não um produto específico.",
       },
@@ -12220,7 +12220,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           {
             icon: "🌐",
             title: "Funciona offline",
-            body: "Depois de carregado, o app funciona sem conexão de rede. Nenhuma dependência de CDN em tempo de execução.",
+            body: "Depois de carregado, o app funciona sem conexão de rede. Nenhuma deocorrência de CDN em tempo de execução.",
           },
           {
             icon: "📐",
@@ -12415,7 +12415,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
   {
     slug: "duplicate-guids-ifc",
     title: "GUIDs Duplicados em IFC: O Erro Silencioso Que Quebra Tudo",
-    excerpt: "Três semanas dentro de uma pendência de coordenação via BCF, você percebe que os comentários referenciam elementos que sumiram do modelo. O modelo parece normal. O erro: dois elementos compartilhando o mesmo GlobalId — e toda ferramenta mais adiante ficou silenciosamente confusa desde o primeiro dia.",
+    excerpt: "Três semanas dentro de uma ocorrência de coordenação via BCF, você percebe que os comentários referenciam elementos que sumiram do modelo. O modelo parece normal. O erro: dois elementos compartilhando o mesmo GlobalId — e toda ferramenta mais adiante ficou silenciosamente confusa desde o primeiro dia.",
     seoDescription: "Seus comentários BCF referenciam elementos que sumiram. O modelo parece normal. A causa: dois elementos compartilhando um GlobalId, confundindo tudo depois.",
     date: "2026-05-20",
     readTimeMin: 8,
@@ -12460,7 +12460,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           {
             icon: "💬",
             title: "Coordenação via BCF",
-            body: "As pendências do BCF referenciam elementos pelo GlobalId. Uma duplicata significa que os comentários se anexam a qualquer elemento que a ferramenta receptora carregar primeiro — o outro elemento fica inalcançável por referência.",
+            body: "As ocorrências do BCF referenciam elementos pelo GlobalId. Uma duplicata significa que os comentários se anexam a qualquer elemento que a ferramenta receptora carregar primeiro — o outro elemento fica inalcançável por referência.",
           },
           {
             icon: "🔗",
@@ -12569,7 +12569,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           color: "accent",
           items: [
             "Legível por qualquer ferramenta BIM certificada",
-            "Ativo permanente — sem dependência de fabricante",
+            "Ativo permanente — sem deocorrência de fabricante",
             "Inclui conjuntos de propriedades completos e hierarquia espacial",
             "Suporta workflows de coordenação via BCF",
             "Pode ser validado contra regras de schema",
@@ -13064,7 +13064,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
   {
     slug: "ifc-guids-changing-every-export",
     title: "Por Que os GUIDs do IFC Mudam a Cada Exportação (e Como Estabilizá-los)",
-    excerpt: "Você reexporta o mesmo modelo, envia ao seu coordenador, e de repente todo comentário BCF, toda pendência de colisão e toda etiqueta de FM aponta para o elemento errado — ou para nada. A causa: seus GlobalIds do IFC foram regenerados. Veja por que isso acontece e como travá-los.",
+    excerpt: "Você reexporta o mesmo modelo, envia ao seu coordenador, e de repente todo comentário BCF, toda ocorrência de colisão e toda etiqueta de FM aponta para o elemento errado — ou para nada. A causa: seus GlobalIds do IFC foram regenerados. Veja por que isso acontece e como travá-los.",
     seoTitle: "Por Que os GUIDs do IFC Mudam a Cada Exportação",
     seoDescription: "Você reexporta o modelo e todo comentário BCF, colisão e etiqueta de FM aponta para o elemento errado. Seus GlobalIds foram regenerados; veja como travá-los.",
     date: "2026-06-03",
@@ -13103,7 +13103,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "callout",
         variant: "warning",
-        text: "Um GlobalId regenerado não é um erro de schema. O arquivo valida contra o schema, abre normalmente em qualquer visualizador e parece correto. O dano só aparece mais adiante, dias depois, quando uma pendência do BCF resolve para o elemento errado — e é exatamente por isso que é tão caro depurar depois do fato.",
+        text: "Um GlobalId regenerado não é um erro de schema. O arquivo valida contra o schema, abre normalmente em qualquer visualizador e parece correto. O dano só aparece mais adiante, dias depois, quando uma ocorrência do BCF resolve para o elemento errado — e é exatamente por isso que é tão caro depurar depois do fato.",
       },
       { type: "h2", text: "Por que o Revit regenera GUIDs" },
       {
@@ -15193,7 +15193,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             "GDPR: sem cookies, interesse legítimo",
             "Código-fonte: MIT, código aberto, totalmente auditável",
             "4 subprocessadores, nenhum lida com dados do modelo",
-            "Funciona offline — sem dependência persistente de servidor",
+            "Funciona offline — sem deocorrência persistente de servidor",
           ],
         },
         right: {
@@ -17692,7 +17692,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       },
       {
         type: "p",
-        text: "Em obras, onde a conectividade 4G é a norma e a banda é compartilhada entre os escritórios de obra e os tablets de BIM, enviar um arquivo IFC de 1 GB é um compromisso de 45 minutos antes que uma única regra de validação seja executada. A validação no navegador processa o mesmo arquivo localmente em 90 a 180 segundos, sem nenhuma dependência de rede — e em 2 a 5 segundos nas sessões seguintes, graças ao cache do OPFS.",
+        text: "Em obras, onde a conectividade 4G é a norma e a banda é compartilhada entre os escritórios de obra e os tablets de BIM, enviar um arquivo IFC de 1 GB é um compromisso de 45 minutos antes que uma única regra de validação seja executada. A validação no navegador processa o mesmo arquivo localmente em 90 a 180 segundos, sem nenhuma deocorrência de rede — e em 2 a 5 segundos nas sessões seguintes, graças ao cache do OPFS.",
       },
       {
         type: "callout",
@@ -17715,7 +17715,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ["Disponibilidade offline", "✅ Suporte offline total", "❌ Exige internet"],
           ["Uso em campo, em obra", "✅ Funciona em 4G ou offline", "❌ Lento / instável em obra"],
           [
-            "Dependência de internet",
+            "Deocorrência de internet",
             "✅ Nenhuma (após o carregamento inicial)",
             "❌ Necessária a cada execução",
           ],
@@ -17868,7 +17868,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           {
             icon: "💾",
             title: "Cache do OPFS para recargas",
-            body: "Os fragmentos de geometria processada persistem no OPFS após a primeira sessão. As recargas são ~10× mais rápidas — sem reprocessamento, sem dependência de rede. O cache é privado à origem do navegador e inacessível a servidores remotos.",
+            body: "Os fragmentos de geometria processada persistem no OPFS após a primeira sessão. As recargas são ~10× mais rápidas — sem reprocessamento, sem deocorrência de rede. O cache é privado à origem do navegador e inacessível a servidores remotos.",
           },
           {
             icon: "📋",

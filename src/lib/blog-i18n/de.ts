@@ -264,9 +264,9 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
           ],
           [
             "Preis",
-            "Ab €1,428/Jahr (Essential), €2,109/Jahr (Advanced), pro Lizenz",
+            "Ab 1.428 €/Jahr (Essential), 2.109 €/Jahr (Advanced), pro Lizenz",
             "Kostenlos",
-            "Geplant in Pro enthalten, ab €39/Monat",
+            "Geplant in Pro enthalten, ab 39 €/Monat",
           ],
         ],
         caption: "Quelle: solibri.com/pricing, abgerufen am 12. November 2026. Solibri hat weit mehr geometrische Regeln als wir; das ist seine Stärke. Unsere geplanten Preise stehen auf der Preisseite.",
@@ -508,8 +508,8 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
           ],
           [
             "Preis",
-            "€2,772/Jahr pro Lizenz",
-            "Geplant in Team enthalten, ab €59 pro Editor und Monat (mindestens 3 Editoren)",
+            "2.772 €/Jahr pro Lizenz",
+            "Geplant in Team enthalten, ab 59 € pro Editor und Monat (mindestens 3 Editoren)",
           ],
         ],
         caption: "Quelle: solibri.com/pricing, abgerufen am 12. November 2026. Unsere geplanten Preise stehen auf der Preisseite.",
@@ -555,7 +555,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
     categorySlug: "tools",
     readTimeMin: 6,
     heroImage: "blog/images/team-issue-suggested-fix.jpg",
-    heroAlt: "Ein gemeinsames BCF-Issue mit gespeicherter Kamera, vorgeschlagener Korrektur je Autorensoftware, Status, Bearbeiter und Fälligkeitsdatum",
+    heroAlt: "Ein gemeinsames BCF-Issue mit gespeicherter Kamera, vorgeschlagener Korrektur je Autorensoftware, Status, Zuständigem und Fälligkeitsdatum",
     heroCredit: "IFC Viewer Online",
     keywords: [
       "gemeinsame BCF-Issues",
@@ -604,7 +604,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       },
       {
         q: "Was wird es kosten?",
-        a: "Gemeinsame Issues sind für den Team-Tarif geplant, ab €59 pro Editor und Monat bei jährlicher Abrechnung, mit mindestens 3 Editoren. Die geplanten Preise stehen auf der Preisseite.",
+        a: "Gemeinsame Issues sind für den Team-Tarif geplant, ab 59 € pro Editor und Monat bei jährlicher Abrechnung, mit mindestens 3 Editoren. Die geplanten Preise stehen auf der Preisseite.",
       },
     ],
     content: [
@@ -642,7 +642,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "image",
         src: "blog/images/team-issues-list.jpg",
-        alt: "Issue-Liste des Teams: Anzahl offener, überfälliger und geschlossener Issues sowie jedes Issue mit Status, Bearbeiter, Fälligkeitsdatum, Priorität und Fachdisziplin",
+        alt: "Issue-Liste des Teams: Anzahl offener, überfälliger und geschlossener Issues sowie jedes Issue mit Status, Zuständigem, Fälligkeitsdatum, Priorität und Fachdisziplin",
         caption: "Design-Vorschau mit Beispieldaten, spanische Oberfläche. Die Titel der Beispiel-Issues sind englisch.",
         width: 1600,
         height: 1263,
@@ -661,7 +661,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "image",
         src: "blog/images/team-issue-saved-camera.jpg",
-        alt: "Ein Issue mit gespeicherter Kamera, Element, Status, Bearbeiter, Fälligkeitsdatum und einem Kommentar des Auftragnehmers",
+        alt: "Ein Issue mit gespeicherter Kamera, Element, Status, Zuständigem, Fälligkeitsdatum und einem Kommentar des Auftragnehmers",
         caption: "Design-Vorschau mit Beispieldaten, spanische Oberfläche.",
         width: 1600,
         height: 1263,
@@ -753,8 +753,8 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         rows: [
           [
             "Preis pro Person",
-            "Basic €12.50, Advanced €18.75, Enterprise €25 pro Nutzer und Monat bei jährlicher Abrechnung (€19, €29, €39 bei monatlicher Abrechnung)",
-            "€59 pro Editor und Monat bei jährlicher Abrechnung (mindestens 3 Editoren)",
+            "Basic 12,50 €, Advanced 18,75 €, Enterprise 25 € pro Nutzer und Monat bei jährlicher Abrechnung (19 €, 29 €, 39 € bei monatlicher Abrechnung)",
+            "59 € pro Editor und Monat bei jährlicher Abrechnung (mindestens 3 Editoren)",
           ],
           ["Gäste (Auftraggeber, Auftragnehmer)", "Siehe deren Tarife", "Kostenlos, ohne Platz"],
           ["Vorgeschlagene Korrektur je Autorensoftware", "Nein", "Ja"],
@@ -860,7 +860,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       },
       {
         q: "Was passiert, wenn eine Lieferung durchfällt?",
-        a: "Sie entscheiden: ein Issue mit Bearbeiter und Fälligkeitsdatum eröffnen, einen Webhook senden oder nichts. Dieselbe Lieferung eröffnet nie zwei Issues.",
+        a: "Sie entscheiden: ein Issue mit Zuständigem und Fälligkeitsdatum eröffnen, einen Webhook senden oder nichts. Dieselbe Lieferung eröffnet nie zwei Issues.",
       },
       {
         q: "Gibt es eine Dateigrößenbeschränkung?",
@@ -1008,7 +1008,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         headers: ["", "Speckle Automate", "IFC Viewer Online (Vorschau)"],
         rows: [
           ["Tarif", "Nur individuelle Tarife", "Team (Automatisierungen) und Developer (API)"],
-          ["Öffentlicher Preis", "Nein", "Geplant: Team ab €59 pro Editor und Monat; Developer ab €149/Monat"],
+          ["Öffentlicher Preis", "Nein", "Geplant: Team ab 59 € pro Editor und Monat; Developer ab 149 €/Monat"],
           ["Arbeitet direkt mit IFC", "Über Speckles eigenes Modell", "Ja, mit IDS 1.0 oder AIA-Profilen"],
           ["Vorschau auf die letzte Woche vor dem Aktivieren", "Ergebnisse pro Lauf", "Ja"],
           [
@@ -1333,7 +1333,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
     slug: "ifc-clash-detection-browser",
     title: "IFC-Kollisionsprüfung im Browser: Was ohne Navisworks geht (und was nicht)",
     seoTitle: "IFC-Kollisionsprüfung im Browser, ohne Navisworks",
-    seoDescription: "Hard- und Abstandskollisionen zwischen IFC-Modellen, ohne Installation und ohne Upload. Was es kann, was nicht und der Vergleich. In der Vorschau.",
+    seoDescription: "Harte und Abstandskollisionen zwischen IFC-Modellen, ohne Installation und ohne Upload. Was es kann, was nicht und der Vergleich. In der Vorschau.",
     excerpt: "Kollisionen zu finden ist der leichte Teil. Die richtigen zu finden und zu verhindern, dass sie nach jedem Export als „neu“ wiederkehren, ist die eigentliche Arbeit. Eine Vorschau auf eine Kollisionsprüfung, die direkt auf Ihren IFC-Dateien im Browser läuft.",
     date: "2026-11-12",
     dateModified: "2026-11-12",
@@ -1683,7 +1683,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
             "Siehe Autodesk Store",
             "Ab 1.428 €/Jahr (Essential) oder 2.109 €/Jahr (Advanced), pro Lizenz",
             "Siehe bimcollab.com",
-            "Geplant: Pro ab 39 €/Monat; Koordination in Team ab 59 €/Bearbeiter",
+            "Geplant: Pro ab 39 €/Monat; Koordination in Team ab 59 € pro Editor und Monat",
           ],
         ],
         caption: "Quellen: solibri.com/pricing, abgelesen am 12. November 2026. Für Navisworks und BIMcollab Zoom war an diesem Tag auf den offiziellen Seiten kein lesbarer Preis zu sehen. Unsere geplanten Preise stehen auf der Preisseite.",
@@ -1799,7 +1799,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       },
       {
         q: "Müssen meine Lieferanten zahlen?",
-        a: "Nein. Der Empfangs-Tarif ist pro Projekt geplant, nicht pro Arbeitsplatz, die 15 Firmen, die Ihnen liefern, zahlen also nichts.",
+        a: "Nein. Der Reception-Tarif ist pro Projekt geplant, nicht pro Arbeitsplatz, die 15 Firmen, die Ihnen liefern, zahlen also nichts.",
       },
     ],
     content: [
@@ -1841,7 +1841,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "ol",
         items: [
-          "Der Container: Dateiname, Status (S0–S4) und Revision (P01, C01…) gemäß der Projektkonvention.",
+          "Der Informationscontainer: Dateiname, Status (S0–S4) und Revision (P01, C01…) gemäß der Projektkonvention.",
           "Der Inhalt: was Ihre AIA oder Ihr BAP verlangt (Klassifikation, Eigenschaften, Systeme, Informationstiefe).",
           "Die Entscheidung: annehmen oder mit Begründung zurückgeben und das festhalten.",
         ],
@@ -1872,7 +1872,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         type: "image",
         src: "blog/images/subcontractor-requirements-link-what-to-fix.jpg",
         alt: "Die Seite, die der Lieferant sieht: sein Modell erfüllt die Anforderungen nicht, was zu korrigieren ist und wie",
-        caption: "Designvorschau mit Beispieldaten, spanische Oberfläche. Die Prüfung über den Link ist heute kostenlos; das Branding des Bauunternehmens und die Empfangsbestätigung gehören zum Empfangs-Tarif.",
+        caption: "Designvorschau mit Beispieldaten, spanische Oberfläche. Die Prüfung über den Link ist heute kostenlos; das Branding des Bauunternehmens und die Empfangsbestätigung gehören zum Reception-Tarif.",
         width: 1600,
         height: 1111,
         srcSet: [
@@ -2013,7 +2013,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       { type: "h2", text: "Und der Auftraggeber erhält ein Update, ohne etwas zu öffnen (Vorschau)" },
       {
         type: "p",
-        text: "Wenn eine Lieferung angenommen oder ein Meilenstein erreicht wird, kann der Auftraggeber eine E-Mail aus festen Sätzen erhalten, gefüllt mit den Zahlen des Projekts (Qualität, angenommene Lieferungen, nächster Meilenstein), und einen Link zu einer Projektseite, ohne Konto. Sie wird nur an Personen verschickt, die eingewilligt haben, mit Abmeldung per Klick und ohne Tracking-Pixel. Im Empfangs-Tarif kann die E-Mail von der eigenen Domain des Bauunternehmens kommen.",
+        text: "Wenn eine Lieferung angenommen oder ein Meilenstein erreicht wird, kann der Auftraggeber eine E-Mail aus festen Sätzen erhalten, gefüllt mit den Zahlen des Projekts (Qualität, angenommene Lieferungen, nächster Meilenstein), und einen Link zu einer Projektseite, ohne Konto. Sie wird nur an Personen verschickt, die eingewilligt haben, mit Abmeldung per Klick und ohne Tracking-Pixel. Im Reception-Tarif kann die E-Mail von der eigenen Domain des Bauunternehmens kommen.",
       },
       {
         type: "image",
@@ -2045,26 +2045,26 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
           [
             "Eingang pro Projekt, Entscheidung auf einem Bildschirm, Warteschlange mit Tastenkürzeln",
             "Nein",
-            "Vorschau (Empfangs-Tarif)",
+            "Vorschau (Reception-Tarif)",
           ],
           [
             "Protokoll mit Fingerabdrücken und CSV, Erfüllungsblatt pro Lieferant",
             "Nein",
-            "Vorschau (Empfangs-Tarif)",
+            "Vorschau (Reception-Tarif)",
           ],
           [
             "Bericht für die Bauleitung",
             "Im Pilotprojekt jede Woche von Hand erstellt",
-            "Vorschau (Empfangs-Tarif)",
+            "Vorschau (Reception-Tarif)",
           ],
           ["Regeln pro Phase mit Freigabe und der Auswirkung jeder Änderung", "Nein", "Vorschau (Team-Tarif)"],
-          ["Automatisches Update an den Auftraggeber von Ihrer Domain", "Nein", "Vorschau (Empfangs-Tarif)"],
+          ["Automatisches Update an den Auftraggeber von Ihrer Domain", "Nein", "Vorschau (Reception-Tarif)"],
         ],
       },
       {
         type: "p",
         text: [
-          "Der Empfangs-Tarif wird pro Projekt berechnet, nicht pro Arbeitsplatz: Ihre 15 Lieferanten zahlen nichts. Der geplante Preis steht auf der ",
+          "Der Reception-Tarif wird pro Projekt berechnet, nicht pro Arbeitsplatz: Ihre 15 Lieferanten zahlen nichts. Der geplante Preis steht auf der ",
           { text: "Preisseite", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
           ". ",
           { cite: "ivo-pricing" },

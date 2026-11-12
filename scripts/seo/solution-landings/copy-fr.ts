@@ -104,16 +104,16 @@ export const copy: LangCopy = {
     },
     engineering: {
       title: 'Coordination BIM pour bureaux d’études — offre Team',
-      desc: 'Des modèles acceptés du premier coup : règles partagées, conflits, tickets avec correction suggérée, contrôle avant publication. Offre Team en aperçu.',
+      desc: 'Des modèles acceptés du premier coup : règles partagées, conflits, problèmes avec correction suggérée, contrôle avant publication. Offre Team en aperçu.',
       nav: 'Pour les bureaux d’études',
       kicker: 'Pour bureaux d’études et agences de conception · Offre Team · Aperçu',
       h1: ['Livrez des modèles que le client accepte du premier coup', 'pour les bureaux d’études et agences qui coordonnent plusieurs disciplines'],
-      lead: 'Un seul jeu de règles pour l’entreprise, la détection de conflits dans le navigateur, des tickets avec la vue caméra et une correction suggérée, et un verrou qui empêche de publier un modèle sous votre score minimal. Le client voit l’avancement sans que vous ayez à l’écrire.',
+      lead: 'Un seul jeu de règles pour l’entreprise, la détection de conflits dans le navigateur, des problèmes avec la vue caméra et une correction suggérée, et un verrou qui empêche de publier un modèle sous votre score minimal. Le client voit l’avancement sans que vous ayez à l’écrire.',
       cta: 'Rejoindre la liste d’attente Team',
       cta2: 'La détection de conflits dans le navigateur',
       note: 'Aperçu : l’offre Team est conçue et présentée ici avec des données d’exemple. Elle n’est pas encore en vente et rien n’est enregistré. Vérifier un modèle avec votre IDS est gratuit et fonctionne dès aujourd’hui.',
       hero: {
-        alt: 'Tableau de bord Team avec des données d’exemple : Health Score par projet et sa tendance, tickets ouverts par personne et échéances menacées',
+        alt: 'Tableau de bord Team avec des données d’exemple : Health Score par projet et sa tendance, problèmes ouverts par personne et échéances menacées',
         cap: 'Le tableau de bord de l’équipe, avec des données d’exemple : santé de chaque projet, charge par personne et échéances menacées. Interface en espagnol.',
       },
       sections: [
@@ -122,7 +122,7 @@ export const copy: LangCopy = {
           ps: [
             'Les clients envoient désormais leurs propres exigences d’information, souvent en IDS. Une livraison où manque un nom de propriété ou une classification est renvoyée, et la correction coûte plus cher que la vérification.',
             'Un consultant BIM décrit un problème de validation de données IFC qui a coûté des semaines, dû à des noms de propriétés qui ne correspondaient pas à ce qui était demandé. L’ISO 19650-2 fait de la vérification avant partage une étape de l’équipe de réalisation, pas du client.',
-            'Dans un bureau, les règles vivent dans la tête ou le tableur d’une seule personne, les conflits sont passés en revue en réunion et les tickets finissent dans des fils d’e-mails, sans la vue qui les explique.',
+            'Dans un bureau, les règles vivent dans la tête ou le tableur d’une seule personne, les conflits sont passés en revue en réunion et les problèmes finissent dans des fils d’e-mails, sans la vue qui les explique.',
           ],
           sources: ['bimCorner', 'ukbimPartC'],
         },
@@ -130,12 +130,12 @@ export const copy: LangCopy = {
           kind: 'flow', label: 'Comment ça marche', h2: 'Des règles de l’entreprise au modèle publié',
           sub: 'Toutes les captures ci-dessous montrent la conception de Team avec des données d’exemple. L’interface est en espagnol.',
           steps: [
-            { h: 'Écrivez les règles une fois, sous forme de phrases', p: 'Classe, condition, exigence et gravité, y compris la géométrie (dégagement devant les portes, hauteur libre) et les relations (porte dans un mur). Chaque règle est en IDS 1.0.', alt: 'Éditeur de règles avec des règles de géométrie et de relation, les résultats sur le modèle d’exemple et un ticket créé avec sa correction', cap: 'Règles de géométrie et de relation vérifiées sur un modèle d’exemple.' },
+            { h: 'Écrivez les règles une fois, sous forme de phrases', p: 'Classe, condition, exigence et gravité, y compris la géométrie (dégagement devant les portes, hauteur libre) et les relations (porte dans un mur). Chaque règle est en IDS 1.0.', alt: 'Éditeur de règles avec des règles de géométrie et de relation, les résultats sur le modèle d’exemple et un problème créé avec sa correction', cap: 'Règles de géométrie et de relation vérifiées sur un modèle d’exemple.' },
             { h: 'Gérez-les à l’échelle de l’entreprise', p: 'Une bibliothèque partagée avec versions, auteur, relecture et approbation (l’auteur n’approuve pas sa propre règle), commentaires et export en IDS.', alt: 'Bibliothèque de règles de l’entreprise avec une version en relecture, les changements de v2 à v3 et des commentaires', cap: 'Un jeu de règles en relecture : ce qui a changé, qui l’approuve et l’historique.' },
             { h: 'Détectez les conflits dans le navigateur', p: 'Conflits physiques et de dégagement entre disciplines, regroupés, avec des règles pour ignorer ce qui est accepté et un coût estimé pour chacun.', alt: 'Panneau des conflits sur un modèle de tour avec des règles d’exclusion masquant les conflits acceptés', cap: 'Règles d’exclusion sur un modèle de tour : 1 569 résultats sur 4 827 masqués.' },
-            { h: 'Faites de chaque échec un ticket avec sa correction', p: 'Assigné, avec une échéance, la caméra enregistrée et une correction suggérée par logiciel auteur, tirée de nos guides de correction. Les invités commentent gratuitement ; BCF en entrée et en sortie.', alt: 'Ticket avec une correction suggérée pour plusieurs logiciels auteurs, responsable, échéance et commentaires', cap: 'Un ticket avec sa correction suggérée, son responsable et son échéance.' },
+            { h: 'Faites de chaque échec un problème avec sa correction', p: 'Assigné, avec une échéance, la caméra enregistrée et une correction suggérée par logiciel auteur, tirée de nos guides de correction. Les invités commentent gratuitement ; BCF en entrée et en sortie.', alt: 'Problème avec une correction suggérée pour plusieurs logiciels auteurs, responsable, échéance et commentaires', cap: 'Un problème avec sa correction suggérée, son responsable et son échéance.' },
             { h: 'Bloquez un modèle insuffisant avant sa publication', p: 'Rien n’atteint le statut Publié sous votre score minimal, avec un relecteur optionnel et un historique de ce qui est passé et pourquoi.', alt: 'Contrôle avant publication avec un score minimal de 80 et l’historique des modèles publiés et retenus', cap: 'Le contrôle avant publication et son historique.' },
-            { h: 'Tenez le client informé', p: 'Des points d’avancement par phase construits à partir des données en direct : score, livraisons, tickets et jalons. L’envoi est simulé dans l’aperçu.', alt: 'Écran de point d’avancement client avec le choix d’une phase, d’un modèle et des destinataires', cap: 'Un point d’avancement client par phase du projet.' },
+            { h: 'Tenez le client informé', p: 'Des points d’avancement par phase construits à partir des données en direct : score, livraisons, problèmes et jalons. L’envoi est simulé dans l’aperçu.', alt: 'Écran de point d’avancement client avec le choix d’une phase, d’un modèle et des destinataires', cap: 'Un point d’avancement client par phase du projet.' },
           ],
         },
         {
@@ -159,12 +159,12 @@ export const copy: LangCopy = {
           head: ['', 'BIMcollab', 'Solibri', 'IFC Viewer Online Team (aperçu)'],
           rows: [
             ['Prix publié', 'Basic 12,50 €, Advanced 18,75 €, Enterprise 25 € par utilisateur et par mois en facturation annuelle', 'Par licence et par an : Essential 1 428 €, Advanced 2 109 €, Premium 2 772 €', 'Prévu : 59 € par éditeur et par mois en facturation annuelle, trois éditeurs minimum. Pas encore en vente'],
-            ['Tickets', 'Gestion des tickets basée sur BCF avec des plug-ins pour les outils BIM', 'Gestion des tickets BCF dès Essential', 'Tickets avec caméra, échéance et correction suggérée ; BCF en entrée et en sortie (aperçu)'],
+            ['Problèmes', 'Gestion des problèmes basée sur BCF avec des plug-ins pour les outils BIM', 'Gestion des problèmes BCF dès Essential', 'Problèmes avec caméra, échéance et correction suggérée ; BCF en entrée et en sortie (aperçu)'],
             ['Règles', 'Règles de conflits et smart views partagées pour BIMcollab Zoom', 'Règles prédéfinies dès Essential ; règles personnalisées dès Advanced ; gouvernance des règles en Premium', 'Règles sous forme de phrases, IDS 1.0, bibliothèque partagée avec approbation (aperçu)'],
             ['Invités', 'Un ou deux comptes invités par utilisateur payant, selon l’offre', 'Non indiqué sur la page tarifs', 'Les invités commentent gratuitement'],
           ],
           after: [
-            'Solibri est le meilleur choix pour une vérification approfondie par règles sur poste de travail, et BIMcollab pour un vaste flux de tickets entre outils. Team s’adresse aux bureaux qui veulent les règles, les conflits, les tickets et le point client au même endroit, dans le navigateur.',
+            'Solibri est le meilleur choix pour une vérification approfondie par règles sur poste de travail, et BIMcollab pour un vaste flux de problèmes entre outils. Team s’adresse aux bureaux qui veulent les règles, les conflits, les problèmes et le point client au même endroit, dans le navigateur.',
           ],
           sources: ['bimcollab', 'solibri'],
         },
@@ -172,7 +172,7 @@ export const copy: LangCopy = {
           kind: 'cols', label: 'Gratuit et aperçu', h2: 'Ce qui fonctionne aujourd’hui et ce qui est en aperçu',
           cols: [
             { h: 'Gratuit, disponible aujourd’hui', items: ['Ouvrir et fédérer plusieurs fichiers IFC dans le navigateur', 'Vérifier chaque modèle avec votre IDS 1.0 et 44 règles', 'Import et export BCF, comparaison de versions', 'Les [guides de correction](fix) de chaque règle'] },
-            { h: 'Offre Team, en aperçu', items: ['Bibliothèque de règles de l’entreprise avec approbation', 'Détection de conflits entre disciplines', 'Tickets partagés avec correction suggérée, contrôle avant publication', 'Points d’avancement client par phase'] },
+            { h: 'Offre Team, en aperçu', items: ['Bibliothèque de règles de l’entreprise avec approbation', 'Détection de conflits entre disciplines', 'Problèmes partagés avec correction suggérée, contrôle avant publication', 'Points d’avancement client par phase'] },
           ],
         },
       ],
