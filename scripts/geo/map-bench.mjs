@@ -58,7 +58,11 @@ async function up(url) {
 async function startServer() {
   if (args.url) return { base: String(args.url).replace(/\/$/, ''), stop: () => {} }
   const base = `http://localhost:${port}`
-  if (await up(base)) { log(`reusing server on ${base}`); return { base, stop: () => {} } }
+  if (await up(base)) {
+    // Another worktree's server would be filed under this commit.
+    if (!args.reuse) throw new Error(`port ${port} is busy; pass --reuse if it serves this worktree, or --port`)
+    log(`reusing server on ${base}`); return { base, stop: () => {} }
+  }
   const vite = join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js')
   const child = spawn(process.execPath, [vite, '--port', String(port), '--strictPort'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] })
   child.stdout.on('data', () => {}); child.stderr.on('data', (d) => { if (/error/i.test(String(d))) process.stderr.write(d) })
@@ -192,7 +196,8 @@ function sampleScene({ H, lat }) {
   }
 }
 
-async function measureView(page, site, name, autoDetail) {
+async function measureView(page, site, name, autoDetail, hosts) {
+  const before = { ...hosts }
   const pose = await page.evaluate(({ site, name }) => {
     const geo = globalThis.__geoSystem
     const s = geo.sceneOfLatLon(site.lat, site.lon)
@@ -210,17 +215,18 @@ async function measureView(page, site, name, autoDetail) {
         const c = globalThis.__geoSystem.getCityStats?.()
         return c && c.wanted > 0 && c.cells === c.wanted && c.inFlight === 0
       }, null, CELLS_TIMEOUT_MS, 'cells === wanted')
-    } catch { cellsMs = null }
+    } catch { cellsMs = 'timeout' }
   }
   await page.bringToFront()
   await sleep(SETTLE_MS)
-  const scene = await page.evaluate(sampleScene, { H, lat: site.lat })
   const rest = await page.evaluate(frameSampler, { ms: REST_MS, pan: false })
+  const scene = await page.evaluate(sampleScene, { H, lat: site.lat })
   const pan = await page.evaluate(frameSampler, { ms: PAN_MS, pan: true, pose: p, speed: PAN_SPEED })
   // Back to the pose so the next view starts from the same place.
   await page.evaluate(({ p }) => globalThis.__ifcViewer.setCameraLookAt(
     { x: p.pos[0], y: p.pos[1], z: p.pos[2] }, { x: p.target[0], y: p.target[1], z: p.target[2] }, false), { p })
-  return { view: name, autoDetail, cellsReadyMs: cellsMs, rest, pan, ...scene }
+  const requests = Object.fromEntries(Object.entries(hosts).map(([h, n]) => [h, n - (before[h] ?? 0)]).filter(([, n]) => n > 0))
+  return { view: name, autoDetail, cellsReadyMs: cellsMs, rest, pan, ...scene, requests }
 }
 
 async function runSite(browser, base, siteName, commit) {
@@ -246,13 +252,14 @@ async function runSite(browser, base, siteName, commit) {
     const at = await page.evaluate(() => globalThis.__geoStore.getState().placement)
     log(`${siteName}: relocated to ${at.lat.toFixed(5)},${at.lon.toFixed(5)} in ${(relocateMs / 1000).toFixed(1)} s`)
   }
+  const loadRequests = { ...hosts }
   await page.evaluate(() => globalThis.__basemapQuality?.hold('balanced'))
   const results = []
   for (const autoDetail of [true, false]) {
     await page.evaluate((v) => globalThis.__geoStore.getState().setAutoDetail(v), autoDetail)
     await sleep(1500)
     for (const v of viewNames) {
-      const r = await measureView(page, site, v, autoDetail)
+      const r = await measureView(page, site, v, autoDetail, hosts)
       results.push(r)
       log(`${siteName} ${v.padEnd(6)} auto=${autoDetail ? 'on ' : 'off'} rest ${r.rest.fpsMean.toFixed(1)}~${r.rest.fpsMedian.toFixed(1)}/${r.rest.fpsP5.toFixed(1)} pan ${r.pan.fpsMean.toFixed(1)}~${r.pan.fpsMedian.toFixed(1)}/${r.pan.fpsP5.toFixed(1)} fps  ${(r.triangles / 1e6).toFixed(2)} M tris ${r.calls} calls`)
     }
@@ -263,7 +270,7 @@ async function runSite(browser, base, siteName, commit) {
     return { ua: navigator.userAgent, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency, gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null }
   })
   await ctx.close()
-  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', requestsByHost: hosts, results }
+  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', quick: QUICK, pxPerTexelAt: 'camera-target distance', loadRequests, requestsByHost: hosts, results }
 }
 
 function table(run) {
@@ -271,7 +278,7 @@ function table(run) {
     view: r.view, auto: r.autoDetail ? 'on' : 'off',
     'rest mean': r.rest.fpsMean.toFixed(1), 'rest med': r.rest.fpsMedian.toFixed(1), 'rest p5': r.rest.fpsP5.toFixed(1),
     'pan mean': r.pan.fpsMean.toFixed(1), 'pan med': r.pan.fpsMedian.toFixed(1), 'pan p5': r.pan.fpsP5.toFixed(1),
-    'cells s': r.cellsReadyMs == null ? '-' : (r.cellsReadyMs / 1000).toFixed(1),
+    'cells s': r.cellsReadyMs == null ? '-' : typeof r.cellsReadyMs === 'string' ? r.cellsReadyMs : (r.cellsReadyMs / 1000).toFixed(1),
     'M tris': r.triangles == null ? '-' : (r.triangles / 1e6).toFixed(2), calls: r.calls,
     'heap MB': r.heapMB, 'city MB': r.city?.bytesMB ?? '-',
     'relief px/tx': r.relief.pxPerTexel ?? '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-',
@@ -283,8 +290,9 @@ function table(run) {
 
 const commit = execSync('git rev-parse --short=8 HEAD', { cwd: ROOT }).toString().trim()
 const server = await startServer()
-const browser = await launch()
+let browser = null
 try {
+  browser = await launch()
   mkdirSync(outDir, { recursive: true })
   for (const name of siteNames) {
     if (!SITES[name]) throw new Error(`unknown site ${name}`)
@@ -295,6 +303,6 @@ try {
     log(`saved ${file}`)
   }
 } finally {
-  await browser.close()
+  await browser?.close()
   server.stop()
 }
