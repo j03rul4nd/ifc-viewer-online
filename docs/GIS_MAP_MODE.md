@@ -689,7 +689,7 @@ What it does:
 
 What it records:
 - Mean, median and p5 FPS over 5 s at rest (reported only: vsync caps it).
-- Three 120 m/s pans of 8 s, each from the view's pose; the judged number is the median of the three mean FPS.
+- One uncounted warm-up pan, then three pans of 8 s at 120 m/s going back and forth over ±120 m around the view's pose. The judged number is the median of the three mean FPS. The ground is already loaded, so this times drawing, not downloading.
 - Time until the cells loaded match the cells wanted.
 - Triangles and draw calls, JS heap, and cell bytes.
 - Device px per texel, for both the relief and the flat map.
@@ -703,7 +703,22 @@ Traps:
 - Views that sit at the cap cannot show an improvement at rest. The pan is where the differences show.
 - The flat map's px/texel uses the deepest visible tile against the target distance. It is a low bound.
 
-Repeatability with 3 × 8 s pans (`main` ecfc81cd + bench, commit 88072ec3, two consecutive runs): 11 of 16 pairs pass.
+Repeatability, back-and-forth pan (`main` ecfc81cd + bench, commit c08db705, two consecutive runs): **16 of 16 pairs pass**. The worst pair is Catalunya cerca with cells on, 1.9 / 2.2 fps (within 3 fps). The worst relative pair is Catalunya baja with cells on, 9.7 %.
+
+| Site, view | pan fps, auto on (A / B) | pan fps, auto off (A / B) |
+|---|---|---|
+| Catalunya amplia | 40.6 / 40.4 | 60.2 / 60.2 |
+| Catalunya baja | 15.9 / 17.5 | 20.3 / 21.7 |
+| Catalunya cerca | 1.9 / 2.2 | 2.2 / 2.1 |
+| Catalunya calle | 1.9 / 1.9 | 1.9 / 1.9 |
+| El Carmel amplia | 55.9 / 54.5 | 60.2 / 60.2 |
+| El Carmel baja | 51.2 / 51.8 | 51.9 / 49.7 |
+| El Carmel cerca | 2.6 / 2.7 | 2.5 / 2.5 |
+| El Carmel calle | 2.3 / 2.4 | 2.5 / 2.5 |
+
+Close-up pans (50 m and 25 m) stay at 2–3 fps even over loaded ground, with the cells on or off. The cost is drawing near the ground, not downloads.
+
+Superseded: a one-way pan of 3 × 8 s (commit 88072ec3, two consecutive runs): 11 of 16 pairs pass.
 - Catalunya passes 6/8. Failures: baja with cells on (6.9 / 3.1 fps) and amplia with cells off (52 / 59 fps, 11.5 %).
 - El Carmel passes 5/8. Failures: amplia with cells on (43 / 51 fps), baja on (30 / 37), baja off (31 / 39), each 17–23 %.
 - Close-up pans now run at 1–2 fps, against 4–6 fps with the 3 s pan: 8 s at 120 m/s covers 960 m of ground that is not loaded yet. Those pairs pass only on the 3 fps absolute rule.
