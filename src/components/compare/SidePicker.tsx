@@ -82,7 +82,7 @@ export default function SidePicker({ side, state, baselines, busy, onLoad }: Pro
         baselines.length === 0 ? <Hint>{t('source.baselineEmpty')}</Hint> : (
           <select
             value={baselineId} onChange={(e) => setBaselineId(e.target.value)}
-            className="h-10 sm:h-8 px-2 rounded-lg border border-[var(--border)] bg-[rgba(14,14,18,0.98)] text-[12px] text-[var(--text)] w-full min-w-0"
+            className="h-10 sm:h-8 px-2 rounded-lg border border-[var(--border)] bg-[rgba(14,14,18,0.98)] [[data-theme=light]_&]:bg-[var(--bg-surface)] text-[12px] text-[var(--text)] w-full min-w-0"
           >
             {baselines.map((b) => (
               <option key={b.id} value={b.id}>

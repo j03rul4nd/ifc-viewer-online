@@ -85,7 +85,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
 
   const view3d = (): void => { setHighlight(true); setCursor(-1); setDocked(true) }
   const activeFilters = [category, cls, storey].filter(Boolean).length
-  const selectCls = 'h-10 sm:h-8 px-2 rounded-lg border border-[var(--border-control)] bg-[rgba(14,14,18,0.98)] text-[12px] sm:text-[11.5px] text-[var(--text-dim)] w-full'
+  const selectCls = 'h-10 sm:h-8 px-2 rounded-lg border border-[var(--border-control)] bg-[rgba(14,14,18,0.98)] [[data-theme=light]_&]:bg-[var(--bg-surface)] text-[12px] sm:text-[11.5px] text-[var(--text-dim)] w-full'
   const exports: Array<[string, () => void]> = [
     [t('export.html'), () => downloadBlob(new Blob([diffToHtml(diff, reportText, ids?.diff, i18n.language)], { type: 'text/html' }), `${fileBase}.html`)],
     [t('export.csv'), () => downloadBlob(new Blob([diffToCsv(diff)], { type: 'text/csv' }), `${fileBase}.csv`)],
@@ -130,7 +130,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
           <summary className="list-none cursor-pointer h-8 px-3 inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)]">
             {t('export.menu')} <span className="text-[9px] transition-transform group-open:rotate-180">▾</span>
           </summary>
-          <div className="absolute z-20 mt-1 left-0 min-w-[160px] p-1 rounded-lg border border-[var(--border-strong)] bg-[rgba(14,14,18,0.98)] shadow-lg flex flex-col">
+          <div className="absolute z-20 mt-1 left-0 min-w-[160px] p-1 rounded-lg border border-[var(--border-strong)] bg-[rgba(14,14,18,0.98)] [[data-theme=light]_&]:bg-[var(--bg-surface)] shadow-lg [[data-theme=light]_&]:shadow-[var(--shadow)] flex flex-col">
             {exports.map(([label, run]) => (
               <button
                 key={label} type="button"
@@ -158,7 +158,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
                 {f.base ?? '—'} <span className="text-[var(--text-faint)]">→</span> {f.head ?? '—'}
               </span>
               <span className="flex items-center gap-2">
-                <span className="text-[10.5px]" style={{ color: f.reason === 'unmatched' || f.reason === 'file-name' ? '#E9A23B' : 'var(--text-faint)' }}>
+                <span className="text-[10.5px]" style={{ color: f.reason === 'unmatched' || f.reason === 'file-name' ? 'var(--warning)' : 'var(--text-faint)' }}>
                   {t(`pairing.${f.reason}`)}{f.overlap ? ` · ${Math.round(f.overlap * 100)} %` : ''}
                 </span>
                 <span className="ml-auto tabular-nums whitespace-nowrap">
@@ -183,7 +183,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
             className={`shrink-0 h-10 sm:h-8 px-3 rounded-lg border text-[12px] transition-colors ${showFilters || activeFilters ? 'border-[var(--accent)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]'}`}
           >
             {t('filter.toggle')}
-            {activeFilters > 0 && <span className="ml-1.5 px-1.5 rounded-full bg-[var(--accent)] text-white text-[10px]">{activeFilters}</span>}
+            {activeFilters > 0 && <span className="ml-1.5 px-1.5 rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] text-[10px]">{activeFilters}</span>}
           </button>
         </div>
         {showFilters && (
@@ -230,7 +230,7 @@ export default function ChangesTab({ viewerApiRef, onSaveBaseline }: {
                     <span className="text-[10.5px] font-mono text-[var(--text-faint)] break-all">{e.globalId}</span>
                     {e.changes.length === 0 && <span className="text-[11px] text-[var(--text-dim)]">{e.status === 'added' ? e.headFile : e.baseFile}</span>}
                     {e.changes.map((ch, i) => (
-                      <div key={i} className="text-[11.5px] text-[var(--text-dim)] break-words rounded-md bg-white/[0.03] px-2 py-1">
+                      <div key={i} className="text-[11.5px] text-[var(--text-dim)] break-words rounded-md bg-white/[0.03] [[data-theme=light]_&]:bg-[var(--bg-surface-raised)] px-2 py-1">
                         <b className="font-medium text-[var(--text)]">{t(`category.${ch.category}`)}</b>
                         {ch.key && <code className="mx-1 text-[10.5px]">{ch.key}</code>}
                         <div className="flex flex-wrap items-center gap-x-1.5">
