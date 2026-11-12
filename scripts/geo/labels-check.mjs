@@ -33,6 +33,7 @@ const W = 1600, H = 900
 const port = Number(args.port ?? 3342)
 const outDir = args.out ?? 'C:/repo/ifc/docs-planning/mapa-osm/bench'
 const siteNames = (args.site && args.site !== 'all') ? String(args.site).split(',') : Object.keys(SITES)
+const FACTORS = args['no-horizon'] ? [0] : [1e6, 6, 4, 3, 2]
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const log = (...m) => console.log(`[labels ${new Date().toISOString().slice(11, 19)}]`, ...m)
 
@@ -123,7 +124,7 @@ async function runSite(browser, base, siteName) {
   const horizon = []
   for (const [name, p] of Object.entries(V)) {
     await look(page, p.pos, p.target); await sleep(5000)
-    for (const f of [1e6, 6, 4, 3, 2]) {
+    for (const f of FACTORS) {
       await page.evaluate((f) => globalThis.__screenLabels.setHorizonFactor(f), f)
       await sleep(1200)
       const d = await dbg(page)
@@ -135,29 +136,38 @@ async function runSite(browser, base, siteName) {
     await page.evaluate(() => globalThis.__screenLabels.setHorizonFactor(0)) // back to the default
   }
 
-  // 2. Stability: 10 stops from the baja/amplia poses.
+  // 2. Stability: 10 stops from the baja/amplia poses, with and without hysteresis.
   const stops = []
-  for (let k = 0; k < 10; k++) {
-    const p = k % 2 ? V.amplia : V.baja
-    const ang = (k * 37 * Math.PI) / 180
-    const dx = Math.cos(ang) * 150, dz = Math.sin(ang) * 150
-    for (let t = 0; t <= 20; t++) {
-      const a = t / 20
-      await look(page, [p.pos[0] + dx * a, p.pos[1], p.pos[2] + dz * a], [p.target[0] + dx * a, p.target[1], p.target[2] + dz * a])
-      await sleep(50)
+  for (const bonus of [-1, 0]) {
+    await page.evaluate((b) => globalThis.__screenLabels.setKeepBonus(b), bonus)
+    for (let k = 0; k < 10; k++) {
+      const p = k % 2 ? V.amplia : V.baja
+      const ang = (k * 37 * Math.PI) / 180
+      const dx = Math.cos(ang) * 150, dz = Math.sin(ang) * 150
+      for (let t = 0; t <= 20; t++) {
+        const a = t / 20
+        await look(page, [p.pos[0] + dx * a, p.pos[1], p.pos[2] + dz * a], [p.target[0] + dx * a, p.target[1], p.target[2] + dz * a])
+        await sleep(50)
+      }
+      const stoppedAt = await page.evaluate(() => performance.now())
+      // The first placement after the stop (220 ms of stillness), then 1 s later.
+      let first = null, firstAt = 0
+      const t0 = Date.now()
+      while (Date.now() - t0 < 3000) {
+        const d = await dbg(page)
+        if (d.placedAt > stoppedAt) { first = d.placed; firstAt = d.placedAt; break }
+        await sleep(15)
+      }
+      await sleep(1000)
+      const dl = await dbg(page)
+      const A = new Set(first ?? []), B = new Set(dl.placed)
+      const changed = [...A].filter((x) => !B.has(x)).length + [...B].filter((x) => !A.has(x)).length
+      const share = changed / Math.max(1, Math.max(A.size, B.size))
+      stops.push({ hysteresis: bonus !== 0, stop: k, first: A.size, later: B.size, changed, share: +share.toFixed(3), gapMs: Math.round(dl.placedAt - firstAt) })
+      log(siteName, bonus ? 'hyst' : 'none', 'stop', k, A.size, '→', B.size, 'changed', changed, `${(100 * share).toFixed(0)} %`)
     }
-    // First still placement comes 220 ms after the last move.
-    let first = null
-    const t0 = Date.now()
-    while (Date.now() - t0 < 2000) { const d = await dbg(page); if (d.placed.length) { first = d.placed; break } await sleep(30) }
-    await sleep(1000)
-    const later = (await dbg(page)).placed
-    const A = new Set(first ?? []), B = new Set(later)
-    const changed = [...A].filter((x) => !B.has(x)).length + [...B].filter((x) => !A.has(x)).length
-    const share = changed / Math.max(1, Math.max(A.size, B.size))
-    stops.push({ stop: k, first: A.size, later: B.size, changed, share: +share.toFixed(3) })
-    log(siteName, 'stop', k, A.size, '→', B.size, 'changed', changed, `${(100 * share).toFixed(0)} %`)
   }
+  await page.evaluate(() => globalThis.__screenLabels.setKeepBonus(-1))
 
   // 3. Model gap: 20 random views.
   let rng = 12345

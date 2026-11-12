@@ -39,7 +39,7 @@ import {
   type BasemapQuality, type LodResolution, type TileFormat,
 } from './basemap/tile-quality'
 import { createVectorOverlay, VECTOR_TILE_PX } from './basemap/vector-overlay'
-import { createScreenLabelLayer, setLabelHorizonFactor, type ScreenLabelLayer } from './basemap/screen-labels'
+import { createScreenLabelLayer, setLabelHorizonFactor, setLabelKeepBonus, type ScreenLabelLayer } from './basemap/screen-labels'
 import { getMapStyle } from './basemap/map-styles'
 
 const log = createLogger('Basemap')
@@ -284,6 +284,7 @@ export function createBasemapEngine(): BasemapEngine {
         debug: () => labels?.debug(visibleRegionKeys()),
         visible: () => [...visibleRegionKeys()].slice(0, 3),
         setHorizonFactor: setLabelHorizonFactor,
+        setKeepBonus: setLabelKeepBonus,
       }
     }
     underlayBase.set(groundColorFor(p))

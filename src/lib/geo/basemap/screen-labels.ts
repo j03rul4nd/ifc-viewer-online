@@ -60,6 +60,8 @@ export interface ScreenLabelLayer {
     regions: number; candidates: number; entries: number; visibleMatched: number; sampleRegion?: string
     /** Keys placed in the last still frame, and the distance limit then (m). */
     placed: string[]; horizonM: number; beyondHorizon: number
+    /** performance.now() of that placement. */
+    placedAt: number
     /** Screen hulls of the keep-out boxes and the placed names' boxes, CSS px. */
     blocked: ScreenPoint[][]; placedBoxes: Array<{ key: string; box: ScreenBox; distM: number }>
   }
@@ -114,6 +116,9 @@ const MIN_FOCUS_PITCH_RAD = (3 * Math.PI) / 180
  * above (a kept village, 600, still yields to a new city, 800).
  */
 export const KEEP_BONUS = 120
+let keepBonus = KEEP_BONUS
+/** Dev: 0 turns the hysteresis off (the WP5 check compares both). */
+export function setLabelKeepBonus(n: number): void { keepBonus = n >= 0 ? n : KEEP_BONUS }
 
 // -- While the camera moves ---------------------------------------------------
 // A name is pinned to a place and drawn at a fixed size, so in a moving view
@@ -205,6 +210,7 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   /** Keys placed the last time the view was still. */
   let placedKeys: string[] = []
   let lastHorizonM = Infinity
+  let placedAt = 0
   let lastBeyond = 0
   let lastBlocked: ScreenPoint[][] = []
   let lastPlacedBoxes: Array<{ key: string; box: ScreenBox; distM: number }> = []
@@ -348,7 +354,8 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
           if (r) blocked.push(r)
         }
         // Names already on screen keep their spot (KEEP_BONUS).
-        placedKeys = placeScreenLabels(onScreen, MAX_VISIBLE, SCREEN_QUOTA, blocked, new Set(placedKeys))
+        placedKeys = placeScreenLabels(onScreen, MAX_VISIBLE, SCREEN_QUOTA, blocked, new Set(placedKeys), keepBonus)
+        placedAt = now
         lastHorizonM = horizonM
         lastBeyond = beyond
         lastBlocked = blocked
@@ -385,7 +392,7 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
       if (visibleRegions) for (const k of visibleRegions) if (regions.has(k)) visibleMatched++
       return {
         regions: regions.size, candidates, entries: entries.size, visibleMatched, sampleRegion: regions.keys().next().value,
-        placed: [...placedKeys], horizonM: lastHorizonM, beyondHorizon: lastBeyond,
+        placed: [...placedKeys], placedAt, horizonM: lastHorizonM, beyondHorizon: lastBeyond,
         blocked: lastBlocked, placedBoxes: lastPlacedBoxes,
       }
     },
@@ -538,9 +545,9 @@ export interface ScreenItem {
 export function placeScreenLabels(
   items: readonly ScreenItem[], max: number, quota: Readonly<Record<string, number>> = {},
   blocked: ReadonlyArray<ScreenBox | readonly ScreenPoint[]> = [],
-  previous?: ReadonlySet<string>,
+  previous?: ReadonlySet<string>, bonus = KEEP_BONUS,
 ): string[] {
-  const rank = (it: ScreenItem) => it.priority + (previous?.has(it.key) ? KEEP_BONUS : 0)
+  const rank = (it: ScreenItem) => it.priority + (previous?.has(it.key) ? bonus : 0)
   const ordered = [...items].sort((a, b) => rank(b) - rank(a))
   // Blocked shapes count as already placed: nothing may touch them.
   const hulls: Array<readonly ScreenPoint[]> = []
