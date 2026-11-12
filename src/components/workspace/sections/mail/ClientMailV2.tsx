@@ -140,8 +140,8 @@ export function PortalTab({ mx, project, lang, last }: { mx: Mx; project: Projec
     <div>
       <p className="text-[12.5px] text-[var(--text-dim)] mb-3 max-w-[680px]">{mx('What the client sees when they open the link in an update: no account, only this project, and a reply box that goes back to your team.')}</p>
       <div className="rounded-[12px] border border-[var(--border)] overflow-hidden max-w-[880px]">
-        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-3" style={{ borderTop: '4px solid #2f6f62' }}>
-          <span className="w-8 h-8 rounded-[6px] grid place-items-center text-white text-[12px] font-bold" style={{ background: '#2f6f62' }}>CL</span>
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-3" style={{ borderTop: '4px solid #2f6f62' /* theme-allow-color: client's brand colour in the portal preview */ }}>
+          <span className="w-8 h-8 rounded-[6px] grid place-items-center text-white text-[12px] font-bold" style={{ background: '#2f6f62' /* theme-allow-color: client's brand logo tile */ }}>CL</span>
           <div className="min-w-0"><p className="text-[14px] font-medium truncate">{project.name}</p><p className="text-[12px] text-[var(--text-faint)]">Constructora Levante · {mx(PHASE_STATE_LABELS[project.phase ?? 'construction'])}</p></div>
         </div>
         <div className="p-4 grid gap-4 md:grid-cols-[1fr_260px]">

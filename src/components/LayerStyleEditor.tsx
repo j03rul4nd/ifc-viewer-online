@@ -642,7 +642,7 @@ function AlertsTab({ layer, rows, schema, t }: { layer: VectorLayer; rows: Rows;
               <input className={`${sel} flex-1`} value={r.name} aria-label={t('alerts.name')}
                 onChange={(e) => setRule({ ...r, name: e.target.value })} />
               {n.length > 0 && (
-                <button className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#ff3b30] text-white"
+                <button className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#ff3b30] [[data-theme=light]_&]:bg-[var(--danger)] text-[var(--accent-contrast)]"
                   title={t('alerts.show')} onClick={() => { void focusVectorFeature(layer.id, n[0]) }}>
                   {n.length}
                 </button>
@@ -735,7 +735,7 @@ function AlertLog({ layer, t }: { layer: VectorLayer; t: T }) {
             {[...mine].reverse().slice(0, 100).map((e, i) => (
               <div key={i} className="flex items-baseline gap-1.5 px-1.5 py-1 text-[10px] border-b border-[var(--border)] last:border-b-0">
                 <span className="shrink-0 tabular-nums text-[var(--text-faint)]">{when(e.at)}</span>
-                <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${e.kind === 'start' ? 'bg-[#ff3b30]' : 'bg-[#5ce27a]'}`} />
+                <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${e.kind === 'start' ? 'bg-[#ff3b30] [[data-theme=light]_&]:bg-[var(--danger)]' : 'bg-[#5ce27a] [[data-theme=light]_&]:bg-[var(--ok)]'}`} />
                 <span className="min-w-0 text-[var(--text)]">
                   {e.kind === 'start' ? t('alerts.log.start', { rule: e.rule, n: e.n }) : t('alerts.log.clear', { rule: e.rule })}
                   {e.sample.length > 0 && <span className="text-[var(--text-dim)]"> · {e.sample.join(', ')}{e.n > e.sample.length ? '…' : ''}</span>}
