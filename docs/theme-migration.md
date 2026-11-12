@@ -92,7 +92,13 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 - `--text-muted` sigue sin definir en oscuro (rareza documentada en theming.md).
 - Colores de interfaz nuevos de `ClashPanel` y `ClientMailV2` (llegados de otras PR) quedan en la línea base, sin migrar.
 - Velos sobre vídeo/imagen/3D sin marcar `theme-allow-color`.
-- Sin revisar a ojo: gemelo, modal de cuenta, barra de tiempo, comparación, editor de capas.
+- Comparación de versiones (`CompareModal`, `compare/ChangesTab`, `CompareDock`, `SidePicker`, `ui`): fondos oscuros fijos con variante clara por token, texto sobre acento con `--accent-contrast`, ámbar `#E9A23B` → `--warning`; el dock en claro queda sólido sin sombra. Oscuro sin cambios. Falta mirarlo a ojo con dos versiones cargadas.
+- Pendiente en comparación: `compare/IdsTab.tsx` (`text-[#E9A23B]` → `--warning`); colores de tipo de cambio en `compare/ui.tsx` (añadido/modificado/borrado) son de significado y no se tocan.
+- Editor de capas: insignia de alertas `bg-[#ff3b30] text-white` y puntos del historial rojo/verde sin migrar; paleta, franjas de zoom y colores por defecto son de datos.
+- Barra de tiempo: ya tiene variante clara; ámbar/verde de pasado/en vivo son de estado.
+- Gemelo (`twin/*`): sin colores de interfaz fijos; los de `BindingsTab` (regla, caducado) son de datos.
+- `ClashPanel`: solo fallbacks dentro de `var()` y el lienzo blanco del informe; estados de choque son de significado. `ClientMailV2`: 3 colores en la línea base, sin revisar.
+- Sin revisar a ojo: modal de cuenta.
 
 ## Dudas para Joel (colores con significado)
 
