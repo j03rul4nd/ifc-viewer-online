@@ -276,5 +276,7 @@
  "{{n}} recipients, only people who agreed.": "{{n}} Empfänger, nur Personen, die zugestimmt haben.",
  "{{n}} sends left this month. After that each 1,000 costs {{eur}} €; nothing stops.": "Noch {{n}} Sendungen diesen Monat. Danach kosten je 1.000 {{eur}} €; nichts wird gestoppt.",
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "{{n}} Sendungen über dem Tarif: {{eur}} € extra auf der nächsten Rechnung.",
- "{{n}} supplier models passed our checks.": "{{n}} Lieferantenmodelle haben unsere Prüfungen bestanden."
+ "{{n}} supplier models passed our checks.": "{{n}} Lieferantenmodelle haben unsere Prüfungen bestanden.",
+ "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "{{n}} E-Mails wurden in den Postausgang des Arbeitsbereichs gestellt. Nichts wird gesendet, bis der Versand eingeschaltet ist.",
+ "The outbox could not be reached. Nothing was queued; try again.": "Der Postausgang ist nicht erreichbar. Nichts wurde eingereiht; bitte erneut versuchen."
 }

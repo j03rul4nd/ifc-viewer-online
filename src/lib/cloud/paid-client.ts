@@ -32,6 +32,23 @@ export function devSession(): string | null {
   return s && /^dev:user_[A-Za-z0-9]+(:org_[A-Za-z0-9]+)?$/.test(s) ? s : null
 }
 
+/**
+ * Where the paid workspace reads and writes. One answer for every screen:
+ *   sample — sample data, nothing leaves the browser (public preview, tests);
+ *   local  — a dev build talking to ifc-cloud-api on this machine
+ *            (wrangler dev + docker, `dev:` session; see docs/PAID_LOCAL.md);
+ *   cloud  — a signed-in session against the deployed API (dark today).
+ * `signedIn` comes from the account store; callers pass it so this stays pure.
+ */
+export type PaidDataSource = 'sample' | 'local' | 'cloud'
+
+export function paidDataSource(signedIn: boolean): PaidDataSource {
+  const base = paidApiBase()
+  if (!base) return 'sample'
+  if (devSession() && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(base)) return 'local'
+  return signedIn ? 'cloud' : 'sample'
+}
+
 export async function getPaidToken(): Promise<string | null> {
   return devSession() ?? (await useCloudAccountStore.getState().getToken?.()) ?? null
 }
@@ -61,7 +78,49 @@ async function request<T>(path: string, init?: RequestInit): Promise<PaidResult<
   }
 }
 
-const get = <T>(path: string) => request<T>(path)
+/** Supplier side of Reception: no account, the supplier token is the credential. */
+async function supplierRequest<T>(token: string, path: string, body?: unknown): Promise<PaidResult<T>> {
+  const base = paidApiBase()
+  if (!base) return { ok: false, error: { code: 'cloud_disabled' } }
+  try {
+    const res = await fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Supplier-Token': token }, body: JSON.stringify(body ?? {}) })
+    const json = await res.json().catch(() => null) as ({ error?: { code?: string; message?: string } } & T) | null
+    if (res.ok) return { ok: true, value: json as T }
+    return { ok: false, error: { code: (json?.error?.code as PaidErrorCode) ?? 'internal', message: json?.error?.message } }
+  } catch {
+    return { ok: false, error: { code: 'network' } }
+  }
+}
+
+async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', bytes)
+  return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * A supplier delivers one file: register (idempotent on the file hash) →
+ * PUT straight to storage → confirm. A replay of the same file skips the PUT.
+ */
+export async function deliverFile(token: string, requirementSlug: string, fileName: string, bytes: ArrayBuffer): Promise<PaidResult<{ deliveryId: string; replayed: boolean; fileHash: string }>> {
+  const fileHash = await sha256Hex(bytes)
+  const reg = await supplierRequest<{ delivery: { id: string }; upload: { url: string } | null; replayed: boolean }>(token, '/reception/deliveries', { requirement_slug: requirementSlug, file_name: fileName, file_hash: fileHash, size_bytes: bytes.byteLength })
+  if (!reg.ok) return reg
+  if (reg.value.upload) {
+    try {
+      const put = await fetch(reg.value.upload.url, { method: 'PUT', body: bytes })
+      if (!put.ok) return { ok: false, error: { code: 'network', message: `upload failed (${put.status})` } }
+    } catch { return { ok: false, error: { code: 'network', message: 'upload failed' } } }
+  }
+  const done = await supplierRequest<unknown>(token, `/reception/deliveries/${reg.value.delivery.id}/uploaded`)
+  if (!done.ok) return done
+  return { ok: true, value: { deliveryId: reg.value.delivery.id, replayed: reg.value.replayed, fileHash } }
+}
+
+/** Reads retry once on a network failure (a dropped keep-alive socket, a blip); writes never retry blindly. */
+const get = async <T>(path: string): Promise<PaidResult<T>> => {
+  const r = await request<T>(path)
+  return !r.ok && r.error.code === 'network' ? request<T>(path) : r
+}
 const send = <T>(method: string, path: string, body?: unknown) => request<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) })
 
 // ── Shapes (snake_case as the API sends them) ────────────────────────────────
@@ -73,10 +132,13 @@ export interface ApiIssue { number: number; title: string; status: 'open' | 'in_
 export interface ApiVersion { id: string; container: string; revision: number; file_name: string; state: 'wip' | 'shared' | 'published' | 'archived'; suitability: string; score: number | null; failed_specs: number | null; uploaded_by: string | null; created_at: string; validated_at: string | null }
 export interface ApiStandard { min_score: number; require_review: boolean; auto_issues: boolean; requirement_set_id: string | null }
 export interface ApiAuditEvent { type: string; actor_id: string | null; from: string | null; to: string | null; details: Record<string, unknown>; at: string }
-export interface ApiDelivery { id: string; file_name: string; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
+export interface ApiDelivery { id: string; file_name: string; file_hash?: string; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
 export interface ApiSupplier { id: string; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
 export interface ApiCredits { plan: string; balances: { cloud: number; ai: number; api: number }; monthly: { cloud: number; ai: number; api: number } }
 export interface ApiRequirementVersion { version: number; note: string; created_by: string; created_at: string }
+export interface ApiRequirementSet { id: string; name: string; slug: string; min_score: number }
+export interface ApiMail { id: string; to: string; subject: string; kind: string; ref_type: string | null; ref_id: string | null; status: 'queued' | 'cancelled' | 'sent'; created_by: string; created_at: string; cancelled_at: string | null }
+export type ApiMailKind = 'delivery_rejected' | 'delivery_accepted' | 'issue_digest' | 'clash_report' | 'other'
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
@@ -95,7 +157,7 @@ export const paidApi = {
   setRole: (userId: string, role: ApiRole) => send<{ member: ApiMember }>('PATCH', `/team/members/${encodeURIComponent(userId)}`, { role }),
 
   issues: (status?: ApiIssue['status']) => get<{ issues: ApiIssue[] }>(`/issues${status ? `?status=${status}` : ''}`),
-  createIssue: (input: { title: string; priority?: ApiIssue['priority']; assignee_id?: string | null }) => send<{ issue: ApiIssue }>('POST', '/issues', input),
+  createIssue: (input: { title: string; description?: string; priority?: ApiIssue['priority']; assignee_id?: string | null; element_guids?: string[]; due_at?: string }) => send<{ issue: ApiIssue }>('POST', '/issues', input),
   patchIssue: (n: number, patch: Partial<Pick<ApiIssue, 'status' | 'priority' | 'assignee_id' | 'title'>>) => send<{ changed: string[] }>('PATCH', `/issues/${n}`, patch),
   comment: (n: number, body: string) => send<unknown>('POST', `/issues/${n}/comments`, { body }),
 
@@ -138,6 +200,16 @@ export const paidApi = {
   createRequirementProfile: (name: string, content: string) => send<{ id: string; name: string }>('POST', '/rulesets', { name, kind: 'requirements', content }),
   requirementVersions: (id: string) => get<{ versions: ApiRequirementVersion[] }>(`/rulesets/${encodeURIComponent(id)}/versions`),
   publishRequirementVersion: (id: string, content: string, note: string) => send<{ version: number; created_at: string }>('POST', `/rulesets/${encodeURIComponent(id)}/versions`, { content, note }),
+
+  requirementSets: () => get<{ requirement_sets: ApiRequirementSet[] }>('/reception/requirements'),
+  createRequirementSet: (name: string, min_score: number, content: string) => send<{ requirement_set: ApiRequirementSet }>('POST', '/reception/requirements', { name, min_score, content }),
+  createSupplier: (name: string, discipline?: string) => send<{ supplier: { id: string; name: string }; token: string }>('POST', '/reception/suppliers', { name, ...(discipline ? { discipline } : {}) }),
+
+  outbox: () => get<{ messages: ApiMail[] }>('/mail/outbox'),
+  /** Queues a message (never sent from here). Same key → same row. */
+  queueMail: (m: { to: string; subject: string; body: string; kind?: ApiMailKind; ref_type?: 'delivery' | 'issue' | 'clash' | 'version'; ref_id?: string }, idempotencyKey: string) =>
+    request<{ message: ApiMail; replayed: boolean }>('/mail/outbox', { method: 'POST', body: JSON.stringify(m), headers: { 'Idempotency-Key': idempotencyKey } }),
+  cancelMail: (id: string) => send<{ message: ApiMail }>('POST', `/mail/outbox/${id}/cancel`),
 
   credits: () => get<ApiCredits>('/credits'),
   endpoints: () => get<{ endpoints: ApiEndpoint[] }>('/webhooks/endpoints'),
