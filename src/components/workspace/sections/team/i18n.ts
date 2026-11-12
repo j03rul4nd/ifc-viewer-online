@@ -4,6 +4,7 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TEAM_LOCALES } from './locales'
+import { sampleTitle } from './sample-titles'
 
 export type TeamTx = (text: string, vars?: Record<string, string | number>) => string
 
@@ -17,4 +18,11 @@ export function useTeamTx(): TeamTx {
   const { i18n } = useTranslation()
   const lng = i18n?.language || 'en'
   return useCallback<TeamTx>((text, vars) => teamT(lng, text, vars), [lng])
+}
+
+/** `const st = useSampleTitle()` — the sample issue titles in the current language. */
+export function useSampleTitle(): (title: string) => string {
+  const { i18n } = useTranslation()
+  const lng = i18n?.language || 'en'
+  return useCallback((title: string) => sampleTitle(lng, title), [lng])
 }

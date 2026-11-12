@@ -126,3 +126,16 @@ describe('team v2', () => {
     expect(trend(PROJECT_HEALTH[0].weeks)).toBe(2)
   })
 })
+
+describe('sample issue titles', () => {
+  it('every sample title is translated in the nine languages', async () => {
+    const { SAMPLE_TITLES, sampleTitle } = await import('./sample-titles')
+    const titles = [...ISSUES.map((i) => i.title), 'Door swing blocked by column in room 1.12', 'EIR-HCA-07: 18 doors without FireRating']
+    for (const l of ['ca', 'de', 'es', 'fr', 'it', 'ja', 'pt', 'th', 'zh']) {
+      expect(titles.filter((t) => !SAMPLE_TITLES[l]?.[t])).toEqual([])
+      expect(Object.keys(SAMPLE_TITLES[l]).filter((t) => !titles.includes(t))).toEqual([])
+    }
+    expect(sampleTitle('es-ES', 'Slab opening missing for riser R3')).toBe('Falta el hueco en el forjado para el montante R3')
+    expect(sampleTitle('en', 'A title the user typed')).toBe('A title the user typed')
+  })
+})

@@ -4,13 +4,14 @@
 import { useState } from 'react'
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import { Panel, SectionLabel, Sparkline, scoreColor } from '../../ui'
-import type { TeamTx } from './i18n'
+import { useSampleTitle, type TeamTx } from './i18n'
 import { Avatar } from './TeamIssues'
 import { COST_SOURCE_DATE, GATE, PROJECT_HEALTH, atRisk, costCompare, member, trend, workload, type TeamIssue } from './sample'
 
 const eur = (n: number) => `${Math.round(n).toLocaleString('es-ES')} €`
 
 export function TeamPanel({ issues, tt, onOpen }: { issues: TeamIssue[]; tt: TeamTx; onOpen: (n: number) => void }) {
+  const st = useSampleTitle()
   const load = workload(issues)
   const max = Math.max(1, ...load.map((l) => l.open))
   const risk = atRisk(issues)
@@ -71,7 +72,7 @@ export function TeamPanel({ issues, tt, onOpen }: { issues: TeamIssue[]; tt: Tea
                 {risk.slice(0, 5).map((i) => (
                   <li key={i.n}><button type="button" onClick={() => onOpen(i.n)} className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-[var(--surface-2)] min-w-0">
                     <span className={`shrink-0 w-[76px] text-[12px] tabular-nums ${i.inDays < 0 ? 'text-[var(--danger)]' : 'text-[var(--warn)]'}`}>{i.inDays < 0 ? tt('{{n}} d late', { n: -i.inDays }) : i.inDays === 0 ? tt('today') : tt('in {{n}} d', { n: i.inDays })}</span>
-                    <span className="flex-1 min-w-0 text-[12.5px] truncate">#{i.n} · {i.title}</span>
+                    <span className="flex-1 min-w-0 text-[12.5px] truncate">#{i.n} · {st(i.title)}</span>
                     <Avatar m={member(i.assignee)} />
                   </button></li>
                 ))}
