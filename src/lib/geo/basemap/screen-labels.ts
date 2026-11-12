@@ -61,7 +61,7 @@ export interface ScreenLabelLayer {
     /** Keys placed in the last still frame, and the distance limit then (m). */
     placed: string[]; horizonM: number; beyondHorizon: number
     /** Screen hulls of the keep-out boxes and the placed names' boxes, CSS px. */
-    blocked: ScreenPoint[][]; placedBoxes: Array<{ key: string; box: ScreenBox }>
+    blocked: ScreenPoint[][]; placedBoxes: Array<{ key: string; box: ScreenBox; distM: number }>
   }
 }
 
@@ -96,6 +96,9 @@ const SAME_TEXT_PX = 260
  * "Names, second pass").
  */
 export const HORIZON_FACTOR = 3
+let horizonFactor = HORIZON_FACTOR
+/** Dev: try another factor live (the WP5 check measures several). */
+export function setLabelHorizonFactor(n: number): void { horizonFactor = n > 0 ? n : HORIZON_FACTOR }
 /**
  * Looking at (or above) the horizon there is no focus on the ground; the
  * focus is taken where a ray this many radians below the horizontal meets it
@@ -204,7 +207,8 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   let lastHorizonM = Infinity
   let lastBeyond = 0
   let lastBlocked: ScreenPoint[][] = []
-  let lastPlacedBoxes: Array<{ key: string; box: ScreenBox }> = []
+  let lastPlacedBoxes: Array<{ key: string; box: ScreenBox; distM: number }> = []
+  const distOf = new Map<string, number>()
   const corner = new THREE.Vector3()
 
   function ensureSprite(e: Entry, dpr: number): void {
@@ -298,7 +302,7 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
       // At eye level the names stand in the street (see labelsWanted).
       const wanted = labelsWanted(heightM)
       // Names beyond the horizon limit are not candidates (labelHorizonM).
-      const horizonM = labelHorizonM(heightM, dir.y)
+      const horizonM = labelHorizonM(heightM, dir.y, horizonFactor)
       let beyond = 0
       if (moving) {
         // Nothing is placed or rasterised: what was there dims or leaves.
@@ -314,7 +318,9 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
         // Normalized planar (centred) → world, through the tiles' own matrix.
         v.set(e.cand.nx - 0.5, e.cand.ny - 0.5, 0).applyMatrix4(tileFrame)
         const world = v.clone()
-        if (world.distanceTo(eye) > horizonM) { beyond++; continue }
+        const distM = world.distanceTo(eye)
+        if (distM > horizonM) { beyond++; continue }
+        distOf.set(e.cand.key, distM)
         v.project(camera)
         if (v.z > 1 || v.z < -1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05) continue
         // Only now, for a name that is actually on screen, rasterise it.
@@ -349,8 +355,9 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
         const byKey = new Map(onScreen.map((it) => [it.key, it]))
         lastPlacedBoxes = placedKeys.map((key) => {
           const it = byKey.get(key)!
-          return { key, box: [it.sx - it.w / 2, it.sy - it.h / 2, it.sx + it.w / 2, it.sy + it.h / 2] as ScreenBox }
+          return { key, box: [it.sx - it.w / 2, it.sy - it.h / 2, it.sx + it.w / 2, it.sy + it.h / 2] as ScreenBox, distM: distOf.get(key) ?? 0 }
         })
+        distOf.clear()
         for (const key of placedKeys) {
           const e = entries.get(key)!
           e.target = 1
