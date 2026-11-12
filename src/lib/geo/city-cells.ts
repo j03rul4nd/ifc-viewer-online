@@ -232,3 +232,130 @@ export function simplifyRing<T extends Pt>(ring: readonly T[], tolerance: number
 export const FAR_TOLERANCE_M = 3
 /** Far level: a footprint smaller than this is a shed or a kiosk, not skyline. */
 export const FAR_MIN_AREA_M2 = 80
+
+// ── Memory ────────────────────────────────────────────────────────────────────
+//
+// Measured before WP1: Plaça de Catalunya from 1.7 km held 146 MB of cell
+// buffers at 22 bytes a vertex, plus a CPU copy of every one of them. Now a
+// vertex is 14 bytes on the GPU and nothing on the CPU:
+//   position  3 × int16, normalized over the mesh's own box (≈ 1.4 cm in a
+//             917 m cell, 2.8 cm in a far tile)              6 bytes
+//   color     3 × uint8                                       3
+//   normal    3 × int8                                        3
+//   aTopH     uint16, whole metres                            2
+// Cells are not indexed: three vertices a triangle.
+
+/** GPU bytes a cell vertex costs (see above). */
+export const CELL_BYTES_PER_VERTEX = 14
+
+/** Bytes of far city each device class may hold, on top of the district. */
+export function cityByteBudget(tier: 'low' | 'mid' | 'high', constrained: boolean): number {
+  const MB = 1024 * 1024
+  if (constrained || tier === 'low') return 20 * MB
+  return tier === 'mid' ? 48 * MB : 90 * MB
+}
+
+/**
+ * The triangle budget the planner spends: the device's triangle budget, or
+ * fewer when the byte budget runs out first. Cells are not indexed, so bytes
+ * and triangles are in a fixed ratio and one number is enough.
+ */
+export function cityAdmitTriangles(triangles: number, bytes: number): number {
+  return Math.min(triangles, Math.floor(bytes / (3 * CELL_BYTES_PER_VERTEX)))
+}
+
+/**
+ * Positions as 16-bit integers over the mesh's own box. One scale for the
+ * three axes, so the mesh's matrix stays a uniform scale and its normals need
+ * no correction; the mesh is placed at `centre` and scaled by `scale`.
+ */
+export function quantizePositions(src: Float32Array): { array: Int16Array; centre: [number, number, number]; scale: number } {
+  const min = [Infinity, Infinity, Infinity]
+  const max = [-Infinity, -Infinity, -Infinity]
+  for (let i = 0; i < src.length; i += 3) {
+    for (let a = 0; a < 3; a++) {
+      const v = src[i + a]
+      if (v < min[a]) min[a] = v
+      if (v > max[a]) max[a] = v
+    }
+  }
+  const centre: [number, number, number] = [0, 0, 0]
+  let half = 0
+  for (let a = 0; a < 3; a++) {
+    if (!(min[a] <= max[a])) { min[a] = max[a] = 0 }
+    centre[a] = (min[a] + max[a]) / 2
+    half = Math.max(half, (max[a] - min[a]) / 2)
+  }
+  const scale = half > 0 ? half : 1
+  const k = 32767 / scale
+  const array = new Int16Array(src.length)
+  for (let i = 0; i < src.length; i += 3) {
+    for (let a = 0; a < 3; a++) array[i + a] = Math.round((src[i + a] - centre[a]) * k)
+  }
+  // three reads a normalized int16 as max(v / 32767, -1): scale back the same way.
+  return { array, centre, scale }
+}
+
+// ── Far tiles ─────────────────────────────────────────────────────────────────
+//
+// A far cell is a few thousand triangles: as one mesh each, the far ring was
+// mostly draw calls. Where no cell of a z14 data tile is wanted at `mid`, the
+// tile is ONE mesh with all four of its cells.
+
+export interface CityUnit {
+  /** `x/y` for a cell, `t/x/y` (z14) for a whole far tile. */
+  key: string
+  lod: CellLod
+  tile: boolean
+  /** Address at CELL_Z for a cell, at CELL_DATA_Z for a tile. */
+  x: number
+  y: number
+  /** Cell keys it draws (a tile: all four). */
+  cells: string[]
+  distM: number
+}
+
+export const tileKey = (x: number, y: number): string => `t/${x}/${y}`
+
+/** The four cells of a z14 tile, in quarter order (row by row, north first). */
+export function tileCells(x: number, y: number): string[] {
+  const k = 2 ** (CELL_Z - CELL_DATA_Z)
+  const out: string[] = []
+  for (let qy = 0; qy < k; qy++) for (let qx = 0; qx < k; qx++) out.push(cellKey({ x: x * k + qx, y: y * k + qy }))
+  return out
+}
+
+/** Admitted cells → meshes to hold, nearest first. */
+export function planUnits(admitted: readonly CellWant[]): CityUnit[] {
+  const k = 2 ** (CELL_Z - CELL_DATA_Z)
+  const midTiles = new Set<string>()
+  for (const w of admitted) if (w.lod === 'mid') midTiles.add(tileKey(Math.floor(w.x / k), Math.floor(w.y / k)))
+  const out: CityUnit[] = []
+  const seen = new Set<string>()
+  for (const w of admitted) {
+    const tx = Math.floor(w.x / k), ty = Math.floor(w.y / k)
+    const tk = tileKey(tx, ty)
+    if (w.lod === 'far' && !midTiles.has(tk)) {
+      if (seen.has(tk)) continue
+      seen.add(tk)
+      out.push({ key: tk, lod: 'far', tile: true, x: tx, y: ty, cells: tileCells(tx, ty), distM: w.distM })
+    } else {
+      const key = cellKey(w)
+      out.push({ key, lod: w.lod, tile: false, x: w.x, y: w.y, cells: [key], distM: w.distM })
+    }
+  }
+  return out
+}
+
+// ── Fade-in ───────────────────────────────────────────────────────────────────
+
+/** A new mesh dissolves in over this long (screen-door, no transparency). */
+export const FADE_MS = 350
+/** Shared fading materials: a mesh steps through them, none is its own. */
+export const FADE_LEVELS = 8
+
+/** Which fading material a mesh born `ageMs` ago uses; null = done fading. */
+export function fadeLevel(ageMs: number): number | null {
+  if (!(ageMs >= 0) || ageMs >= FADE_MS) return null
+  return Math.min(FADE_LEVELS - 1, Math.floor((ageMs / FADE_MS) * FADE_LEVELS))
+}
