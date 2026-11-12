@@ -31,8 +31,8 @@ describe('sceneTheme', () => {
     }
   })
 
-  it('highlight palette: dark is unchanged, light keeps hues and stays hex', () => {
-    expect(SCENE_THEMES.dark.highlight).toEqual({ hover: '#0a8481', select: '#6c7cec', selectOpacity: 0.75, tint: false, selectBox: '#6c7cec', error: '#e5484d', warn: '#f5a623', info: '#5e9ed6', ghost: '#9aa0ae' })
+  it('highlight palette: both themes tint in brand teal and stays hex', () => {
+    expect(SCENE_THEMES.dark.highlight).toEqual({ hover: '#3cc4bf', select: '#14a39f', selectOpacity: 0.88, tint: true, selectBox: '#3cc4bf', error: '#e5484d', warn: '#f5a623', info: '#5e9ed6', ghost: '#9aa0ae' })
     const l = SCENE_THEMES.light.highlight
     expect(l.hover).toBe('#0a8481')
     expect(l.select).toBe('#0a8481')
