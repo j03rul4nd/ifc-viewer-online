@@ -60,7 +60,7 @@ const en: PricingCopy = {
   htmlLang: 'en',
   meta: {
     title: 'Pricing — IFC Viewer Online',
-    description: 'Everything that runs in your browser is free: IFC viewer, Health Score, IDS, BCF. Pro, Team and Reception add EU storage, client links, quality gates and delivery reception.',
+    description: 'Everything in your browser is free: IFC viewer, Health Score, IDS, BCF. Pro, Team and Reception add EU storage, client links, quality gates and delivery intake.',
   },
   nav: { validator: 'Validator', sdk: 'SDK', blog: 'Blog', open: 'Open the viewer', theme: 'Switch light or dark' },
   h1: 'Free in your browser. Paid when our servers work for you.',
@@ -161,7 +161,7 @@ const es: PricingCopy = {
   htmlLang: 'es',
   meta: {
     title: 'Precios — IFC Viewer Online',
-    description: 'Todo lo que funciona en tu navegador es gratis: visor IFC, Health Score, IDS y BCF. Pro, Team y Recepción añaden almacenamiento en la UE, enlaces para el cliente, control de calidad y recepción de entregas.',
+    description: 'Gratis en tu navegador: visor IFC, Health Score, IDS y BCF. Pro, Team y Recepción añaden almacenamiento en la UE, enlaces al cliente y control de entregas.',
   },
   nav: { validator: 'Validador', sdk: 'SDK', blog: 'Blog', open: 'Abrir el visor', theme: 'Cambiar a claro u oscuro' },
   h1: 'Gratis en tu navegador. De pago cuando trabajan nuestros servidores.',
@@ -262,7 +262,7 @@ const de: PricingCopy = {
   htmlLang: 'de',
   meta: {
     title: 'Preise — IFC Viewer Online',
-    description: 'Alles, was im Browser läuft, ist kostenlos: IFC-Viewer, Health Score, IDS, BCF. Pro, Team und Annahme ergänzen EU-Speicher, Links für Auftraggeber, Qualitätsprüfung und die Annahme von Lieferungen.',
+    description: 'Kostenlos im Browser: IFC-Viewer, Health Score, IDS, BCF. Pro, Team und Annahme ergänzen EU-Speicher, Links für Auftraggeber und die Prüfung von Lieferungen.',
   },
   nav: { validator: 'Validator', sdk: 'SDK', blog: 'Blog', open: 'Viewer öffnen', theme: 'Hell oder dunkel' },
   h1: 'Kostenlos im Browser. Kostenpflichtig, wenn unsere Server arbeiten.',
@@ -363,7 +363,7 @@ const fr: PricingCopy = {
   htmlLang: 'fr',
   meta: {
     title: 'Tarifs — IFC Viewer Online',
-    description: 'Tout ce qui tourne dans votre navigateur est gratuit : visionneuse IFC, Health Score, IDS, BCF. Pro, Team et Réception ajoutent le stockage dans l’UE, des liens pour le client, le contrôle qualité et la réception des livrables.',
+    description: 'Gratuit dans votre navigateur : visionneuse IFC, Health Score, IDS, BCF. Pro, Team et Réception ajoutent stockage UE, liens client et contrôle des livrables.',
   },
   nav: { validator: 'Validateur', sdk: 'SDK', blog: 'Blog', open: 'Ouvrir la visionneuse', theme: 'Mode clair ou sombre' },
   h1: 'Gratuit dans votre navigateur. Payant quand nos serveurs travaillent.',
@@ -464,7 +464,7 @@ const pt: PricingCopy = {
   htmlLang: 'pt',
   meta: {
     title: 'Preços — IFC Viewer Online',
-    description: 'Tudo o que corre no seu navegador é gratuito: visualizador IFC, Health Score, IDS, BCF. Pro, Team e Receção acrescentam armazenamento na UE, links para o cliente, controlo de qualidade e receção de entregas.',
+    description: 'Grátis no navegador: visualizador IFC, Health Score, IDS, BCF. Pro, Team e Receção acrescentam armazenamento na UE, links para o cliente e controlo de entregas.',
   },
   nav: { validator: 'Validador', sdk: 'SDK', blog: 'Blog', open: 'Abrir o visualizador', theme: 'Mudar para claro ou escuro' },
   h1: 'Gratuito no navegador. Pago quando os nossos servidores trabalham.',
@@ -565,7 +565,7 @@ const it: PricingCopy = {
   htmlLang: 'it',
   meta: {
     title: 'Prezzi — IFC Viewer Online',
-    description: 'Tutto ciò che funziona nel browser è gratis: visualizzatore IFC, Health Score, IDS, BCF. Pro, Team e Ricezione aggiungono archiviazione nell’UE, link per il cliente, controllo qualità e ricezione delle consegne.',
+    description: 'Gratis nel browser: visualizzatore IFC, Health Score, IDS, BCF. Pro, Team e Ricezione aggiungono archiviazione nell’UE, link al cliente e controllo consegne.',
   },
   nav: { validator: 'Validatore', sdk: 'SDK', blog: 'Blog', open: 'Apri il visualizzatore', theme: 'Tema chiaro o scuro' },
   h1: 'Gratis nel browser. A pagamento quando lavorano i nostri server.',
@@ -666,7 +666,7 @@ const ca: PricingCopy = {
   htmlLang: 'ca',
   meta: {
     title: 'Preus — IFC Viewer Online',
-    description: 'Tot el que funciona al navegador és gratuït: visor IFC, Health Score, IDS i BCF. Pro, Team i Recepció afegeixen emmagatzematge a la UE, enllaços per al client, control de qualitat i recepció de lliuraments.',
+    description: 'Gratuït al navegador: visor IFC, Health Score, IDS i BCF. Pro, Team i Recepció afegeixen emmagatzematge a la UE, enllaços al client i control de lliuraments.',
   },
   nav: { validator: 'Validador', sdk: 'SDK', blog: 'Blog', open: 'Obrir el visor', theme: 'Canviar a clar o fosc' },
   h1: 'Gratuït al navegador. De pagament quan treballen els nostres servidors.',
@@ -969,7 +969,7 @@ const th: PricingCopy = {
   htmlLang: 'th',
   meta: {
     title: 'ราคา — IFC Viewer Online',
-    description: 'ทุกอย่างที่ทำงานในเบราว์เซอร์ใช้ฟรี: ตัวดู IFC, Health Score, IDS, BCF ส่วน Pro, Team และแผนตรวจรับเพิ่มพื้นที่เก็บในสหภาพยุโรป ลิงก์สำหรับลูกค้า ด่านตรวจคุณภาพ และการตรวจรับงานส่งมอบ',
+    description: 'ฟรีในเบราว์เซอร์: ตัวดู IFC, Health Score, IDS, BCF ส่วน Pro, Team และแผนตรวจรับเพิ่มพื้นที่เก็บในสหภาพยุโรป ลิงก์สำหรับลูกค้า และการตรวจรับงานส่งมอบ',
   },
   nav: { validator: 'ตัวตรวจสอบ', sdk: 'SDK', blog: 'บล็อก', open: 'เปิดตัวดู', theme: 'สลับโหมดสว่างหรือมืด' },
   h1: 'ฟรีในเบราว์เซอร์ จ่ายเมื่อใช้เซิร์ฟเวอร์ของเรา',
