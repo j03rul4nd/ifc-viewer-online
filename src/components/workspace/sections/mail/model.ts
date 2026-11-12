@@ -199,7 +199,7 @@ export function decide(m: Outgoing, verdict: 'approve' | 'reject', by: string, n
 
 export interface Envelope { from: string; replyTo: string; to: string; subject: string; html: string; text: string; headers: Record<string, string> }
 
-export interface MailAdapter { id: 'dry-run' | 'resend' | 'smtp'; send(e: Envelope): Promise<{ id: string }> }
+export interface MailAdapter { id: 'dry-run' | 'resend' | 'smtp' | 'outbox'; send(e: Envelope): Promise<{ id: string }> }
 
 export class MailDisabledError extends Error { constructor() { super('Sending is off: this module is not live') } }
 

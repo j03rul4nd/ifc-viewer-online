@@ -276,5 +276,7 @@
  "{{n}} recipients, only people who agreed.": "{{n}} destinataris, només persones que han acceptat.",
  "{{n}} sends left this month. After that each 1,000 costs {{eur}} €; nothing stops.": "Queden {{n}} enviaments aquest mes. Després, cada 1.000 costen {{eur}} €; res no s'atura.",
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "{{n}} enviaments per sobre del pla: {{eur}} € extra a la propera factura.",
- "{{n}} supplier models passed our checks.": "{{n}} models de proveïdors han superat les nostres comprovacions."
+ "{{n}} supplier models passed our checks.": "{{n}} models de proveïdors han superat les nostres comprovacions.",
+ "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "{{n}} correus han quedat a la cua de sortida de l'espai. No s'envia res fins que s'activi l'enviament.",
+ "The outbox could not be reached. Nothing was queued; try again.": "No s'ha pogut arribar a la cua de sortida. No s'ha posat res a la cua; torna-ho a provar."
 }

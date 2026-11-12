@@ -276,5 +276,7 @@
  "{{n}} recipients, only people who agreed.": "ผู้รับ {{n}} คน เฉพาะผู้ที่ยินยอมแล้ว",
  "{{n}} sends left this month. After that each 1,000 costs {{eur}} €; nothing stops.": "เหลือการส่ง {{n}} ครั้งในเดือนนี้ หลังจากนั้นทุก 1,000 ครั้งคิด {{eur}} € การส่งจะไม่หยุด",
  "{{n}} sends over the plan: {{eur}} € extra on the next invoice.": "ส่งเกินแพ็กเกจ {{n}} ครั้ง: เพิ่ม {{eur}} € ในใบแจ้งหนี้ถัดไป",
- "{{n}} supplier models passed our checks.": "โมเดลจากผู้รับเหมา {{n}} รายการผ่านการตรวจสอบของเรา"
+ "{{n}} supplier models passed our checks.": "โมเดลจากผู้รับเหมา {{n}} รายการผ่านการตรวจสอบของเรา",
+ "{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.": "ใส่อีเมล {{n}} ฉบับไว้ในคิวขาออกของพื้นที่ทำงานแล้ว จะไม่มีการส่งจนกว่าจะเปิดการส่ง",
+ "The outbox could not be reached. Nothing was queued; try again.": "เข้าถึงคิวขาออกไม่ได้ ยังไม่มีอะไรเข้าคิว โปรดลองอีกครั้ง"
 }
