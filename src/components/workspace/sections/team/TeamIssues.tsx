@@ -6,7 +6,7 @@ import { Camera as CameraIcon, Eye, FileText, Workflow, Download, Upload, UserPl
 import type { SectionProps } from '../../registry'
 import { CopyField, DataList, Dialog, Dot, Empty, Field, Head, Panel, Primary, Quiet, SectionLabel, Tabs, inputClass } from '../../ui'
 import { SoonBanner } from '../../Soon'
-import { useTeamTx, type TeamTx } from './i18n'
+import { useSampleTitle, useTeamTx, type TeamTx } from './i18n'
 import { useTranslation } from 'react-i18next'
 import { TeamPanel } from './TeamPanel'
 import {
@@ -77,6 +77,7 @@ const REPORT_DRAFT: Draft = { title: 'EIR-HCA-07: 18 doors without FireRating', 
 
 export default function TeamIssues({ data }: SectionProps) {
   const tt = useTeamTx()
+  const st = useSampleTitle()
   const empty = data.projects.length === 0
   const [issues, setIssues] = useState<TeamIssue[]>(empty ? [] : ISSUES)
   const [view, setView] = useState<'panel' | 'list'>('panel')
@@ -117,13 +118,13 @@ export default function TeamIssues({ data }: SectionProps) {
         action={<>
           <Quiet onClick={() => setDialog('guests')}><UserPlus size={14} className="mr-1.5" aria-hidden />{tt('Guests')}</Quiet>
           {!empty && <Quiet onClick={() => setDialog('export')}><Download size={14} className="mr-1.5" aria-hidden />{tt('Export BCF')}</Quiet>}
-          <Primary onClick={() => setDraft(VIEWER_DRAFT)}>{tt('New issue')}</Primary>
+          <Primary onClick={() => setDraft({ ...VIEWER_DRAFT, title: st(VIEWER_DRAFT.title) })}>{tt('New issue')}</Primary>
         </>} />
       <SoonBanner section="issues" />
 
       {empty ? (
         <Empty title={tt('No issues yet')} body={tt('Open one from the viewer with the camera where you are, from a failing rule in a report, or bring the BCF file you already have.')}
-          action={<><Primary onClick={() => setDraft(VIEWER_DRAFT)}>{tt('New issue')}</Primary><Quiet onClick={() => setDialog('import')}>{tt('Import BCF')}</Quiet></>} />
+          action={<><Primary onClick={() => setDraft({ ...VIEWER_DRAFT, title: st(VIEWER_DRAFT.title) })}>{tt('New issue')}</Primary><Quiet onClick={() => setDialog('import')}>{tt('Import BCF')}</Quiet></>} />
       ) : (
         <>
           <div className="mb-5"><Tabs tabs={[{ id: 'panel' as const, label: tt('Team panel') }, { id: 'list' as const, label: tt('All issues'), count: count('open') }]} value={view} onChange={setView} label={tt('Issues')} /></div>
@@ -154,7 +155,7 @@ export default function TeamIssues({ data }: SectionProps) {
                 primary={(i) => {
                   const Icon = SOURCE_ICON[i.source]
                   return <button type="button" onClick={() => setOpen(i.n)} className="text-left w-full min-w-0 group">
-                    <p className="font-medium group-hover:underline [overflow-wrap:anywhere]">{i.title}</p>
+                    <p className="font-medium group-hover:underline [overflow-wrap:anywhere]">{st(i.title)}</p>
                     <p className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-[var(--text-faint)] min-w-0"><Icon size={12} aria-hidden className="shrink-0" /><span className="truncate">#{i.n} · {i.model}{i.rule ? ` · ${i.rule}` : ''}</span>{i.comments.length > 0 && <span className="inline-flex items-center gap-0.5 shrink-0"><MessageSquare size={11} aria-hidden />{i.comments.length}</span>}</p>
                   </button>
                 }}
@@ -172,7 +173,7 @@ export default function TeamIssues({ data }: SectionProps) {
       )}
 
       {current && (
-        <Dialog title={`#${current.n} · ${current.title}`} size="lg" onClose={() => setOpen(null)}
+        <Dialog title={`#${current.n} · ${st(current.title)}`} size="lg" onClose={() => setOpen(null)}
           footer={<><Quiet onClick={() => setOpen(null)}>{tt('Close')}</Quiet><Primary onClick={() => setOpen(null)}><CameraIcon size={14} className="mr-1.5" aria-hidden />{tt('Open in the viewer at this camera')}</Primary></>}>
           <IssueDetail i={current} me={me} tt={tt} patch={patch} />
         </Dialog>
@@ -183,7 +184,7 @@ export default function TeamIssues({ data }: SectionProps) {
           footer={<><Quiet onClick={() => setDraft(null)}>{tt('Cancel')}</Quiet><Primary disabled={draft.title.trim().length < 4} onClick={() => create(draft)}>{tt('Create issue')}</Primary></>}>
           <div className="flex flex-col gap-4">
             <Tabs tabs={[{ id: 'viewer' as const, label: tt('From the viewer') }, { id: 'report' as const, label: tt('From a report') }]} value={draft.origin}
-              onChange={(o) => setDraft(o === 'viewer' ? VIEWER_DRAFT : REPORT_DRAFT)} label={tt('Where it comes from')} />
+              onChange={(o) => setDraft(o === 'viewer' ? { ...VIEWER_DRAFT, title: st(VIEWER_DRAFT.title) } : { ...REPORT_DRAFT, title: st(REPORT_DRAFT.title) })} label={tt('Where it comes from')} />
             <p className="text-[12.5px] text-[var(--text-dim)]">{draft.origin === 'viewer'
               ? tt('The camera and the selected element come from your current view, so whoever opens it sees exactly this.')
               : tt('The rule, the failing elements and the model come from the report. The camera frames the first element.')}</p>
@@ -325,6 +326,7 @@ function ImportDialog({ tt, onClose }: { tt: TeamTx; onClose: () => void }) {
 }
 
 function GuestsDialog({ tt, onClose }: { tt: TeamTx; onClose: () => void }) {
+  const st = useSampleTitle()
   const [guests, setGuests] = useState(MEMBERS.filter((m) => m.role === 'guest'))
   const [email, setEmail] = useState('')
   const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)
@@ -350,8 +352,8 @@ function GuestsDialog({ tt, onClose }: { tt: TeamTx; onClose: () => void }) {
             <p className="text-[11px] text-[var(--text-faint)]">Ribera Ingeniería · Hospital Comarcal Alzira</p>
             <p className="mt-1 text-[13px] font-medium">{tt('3 issues assigned to you')}</p>
             <ul className="mt-2 flex flex-col gap-1.5 text-[12px]">
-              <li className="flex items-center gap-2"><Dot color="var(--warn)" /><span className="truncate">#212 · Slab opening missing for riser R3</span></li>
-              <li className="flex items-center gap-2"><Dot color="var(--text)" /><span className="truncate">#208 · Ramp slope above 8 % at the main entrance</span></li>
+              <li className="flex items-center gap-2"><Dot color="var(--warn)" /><span className="truncate">#212 · {st('Slab opening missing for riser R3')}</span></li>
+              <li className="flex items-center gap-2"><Dot color="var(--text)" /><span className="truncate">#208 · {st('Ramp slope above 8 % at the main entrance')}</span></li>
             </ul>
             <p className="mt-2 text-[11px] text-[var(--text-faint)]">{tt('Model in the browser, no install, no account fee.')}</p>
           </div>

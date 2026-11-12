@@ -12,6 +12,7 @@ import { SKETCH_POSTS_EN } from './blog-sketch-en.ts'
 import { DRAWINGS_POSTS_EN } from './blog-drawings-en.ts'
 import { MCP_POSTS_EN } from './blog-mcp-en.ts'
 import { COMPARISON_POSTS_EN } from './blog-comparisons-en.ts'
+import { PREVIEW_FEATURE_POSTS_EN } from './blog-preview-features-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -374,6 +375,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...PREVIEW_FEATURE_POSTS_EN,
   ...COMPARISON_POSTS_EN,
   ...MCP_POSTS_EN,
   ...TWIN_CLUSTER2_POSTS_EN,
