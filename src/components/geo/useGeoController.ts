@@ -13,7 +13,7 @@
 // both. Sections read the store and call these actions — nothing else.
 
 import type { SubsurfaceMode } from '../../lib/geo/subsurface'
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSceneAnchorStore } from '../../stores/sceneAnchorStore'
 import { useGeoStore } from '../../stores/geoStore'
@@ -761,6 +761,33 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
     })
     toast(t('placement.saveToIfcDone'), 'success')
   }, [t])
+
+  // DEV bench handle (scripts/geo/map-bench.mjs): move the model to another
+  // site by the same path as the manual placement editor (draft + confirm),
+  // then rebuild the OSM district around the new anchor — confirming alone
+  // re-seats the relief but keeps the old district.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const g = globalThis as Record<string, unknown>
+    g.__geoStore = useGeoStore
+    g.__geoRelocate = async (lat: number, lon: number): Promise<void> => {
+      const p = useGeoStore.getState().placement
+      if (!p) throw new Error('no placement')
+      useGeoStore.getState().beginEditing(p)
+      useGeoStore.getState().updateDraft({ lat, lon })
+      try {
+        await finishEditPlacement(true)
+      } catch (err) {
+        if (useGeoStore.getState().editing) useGeoStore.getState().cancelEditing()
+        throw err
+      }
+      if (useGeoStore.getState().buildingsEnabled) {
+        await toggleBuildings(false)
+        await toggleBuildings(true)
+      }
+    }
+    return () => { delete g.__geoRelocate; delete g.__geoStore }
+  }, [finishEditPlacement, toggleBuildings])
 
   return useMemo<GeoController>(() => ({
     getGeo, withGeo, flow, setFlow,

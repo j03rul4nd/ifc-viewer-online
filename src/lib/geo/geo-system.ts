@@ -824,6 +824,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const frameWatch = createFrameWatch()
   /** Lowers the basemap's sharpness in a slow view and gives it back after. */
   const basemapQuality = createQualityGovernor()
+  /** DEV only: the bench holds one quality mode to measure it. */
+  let basemapQualityHeld = false
   let contextListeners: { lost: (e: Event) => void; restored: () => void } | null = null
   /** Authored props, once fetched. Null until showcase mode asks for them. */
   let propAssets: Map<string, THREE.BufferGeometry> | null = null
@@ -1287,7 +1289,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
           if (verdict) {
             // Basemap sharpness goes first — cheapest thing on screen to lose —
             // and comes back once the view is fast again (tile-quality).
-            const q = basemapQuality.step(engine.getQuality(), verdict)
+            // DEV bench (`__basemapQuality.hold`) pins the mode to measure it.
+            const q = basemapQualityHeld ? null : basemapQuality.step(engine.getQuality(), verdict)
             if (q) engine.setQuality(q)
             perfCb?.(verdict)
           }
@@ -4146,6 +4149,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // The patch itself: `__geoTerrain().sampleMeasuredM(nx, ny)` against
     // `.sampleGroundM(nx, ny)` is what a ground correction did at a point.
     ;(globalThis as Record<string, unknown>).__geoTerrain = () => terrain
+    // Bench handle (scripts/geo/map-bench.mjs): read, force and hold the
+    // flat map's quality mode — the governor would otherwise move it.
+    ;(globalThis as Record<string, unknown>).__basemapQuality = {
+      get: () => engine?.getQuality() ?? null,
+      hold: (q: 'high' | 'balanced' | 'economy' | null) => {
+        basemapQualityHeld = q !== null
+        if (q) engine?.setQuality(q)
+      },
+    }
   }
   return api
 }
