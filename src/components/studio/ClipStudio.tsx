@@ -299,6 +299,7 @@ export default function ClipStudio() {
                 </div>
               )}
               {job && (
+                /* theme-allow-color: over media (video preview) */
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/70 p-6 text-center text-white">
                   <p className="text-[13px] font-medium">{job.label.replace(/\d+%$/, '')}{job.progress !== null && ` ${Math.round(job.progress * 100)}%`}</p>
                   <div className="h-1.5 w-48 overflow-hidden rounded-full bg-white/20">

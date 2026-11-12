@@ -386,6 +386,7 @@ export default function DrawingDock({ viewerApiRef, style, onResize }: Props) {
               </div>
             </div>
           )}
+          {/* theme-allow-color: over media (drawing canvas) */}
           {busy && <span role="status" className="absolute top-2 left-2 text-[11px] px-2 py-1 rounded bg-black/70 text-white">{t('working')}</span>}
         </div>
 
