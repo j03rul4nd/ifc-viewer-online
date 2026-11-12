@@ -400,7 +400,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           "A detecção de conflitos está em prévia. Se você coordena modelos e quer testá-la com os seus próprios arquivos IFC antes de todo mundo, ",
           { text: "entre na lista de espera", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " e escreveremos quando abrir. Se a sua equipe coordena vários projetos e você prefere ver isso em uma chamada, ",
-          { text: "fale com a gente", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "fale com a gente", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           ".",
         ],
       },
@@ -748,7 +748,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
         type: "p",
         text: [
           "Estamos fazendo pilotos com algumas construtoras e incorporadoras: configuramos o link com os seus requisitos e a sua convenção de nomes, e toda semana enviamos a você o relatório por fornecedor. Se fizer sentido, ",
-          { text: "fale com a gente", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "fale com a gente", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           " por 20 minutos sobre como você recebe modelos hoje. Ou comece agora, de graça, ",
           {
             text: "verificando um modelo no validador",

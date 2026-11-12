@@ -357,7 +357,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "干渉チェックは現在プレビュー版です。モデルの調整を担当していて、自分のIFCファイルでいち早く試したい方は",
           { text: "ウェイティングリストに登録", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           "してください。提供開始時にご連絡します。チームで複数のプロジェクトを調整していて、オンライン通話で見てみたい方は",
-          { text: "お問い合わせ", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "お問い合わせ", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           "ください。",
         ],
       },
@@ -672,7 +672,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         type: "p",
         text: [
           "現在、数社の施工会社・デベロッパーとパイロットを実施しています。要件と命名規則を反映したリンクを設定し、協力会社別のレポートを毎週お送りします。ご興味があれば、現在のモデルの受け取り方について20分ほど",
-          { text: "お話ししましょう", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "お話ししましょう", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           "。または、",
           { text: "バリデーターでモデルをチェック", href: "https://www.ifcvieweronline.eu/ifc-validator/" },
           "して、今すぐ無料で始めることもできます。",

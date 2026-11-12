@@ -194,7 +194,7 @@ export function imageObject(s: ShotImage, alt: string, cap: string, l: Lang, pri
   }
 }
 
-const CSS = `
+export const CSS = `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
     a { color: inherit; }

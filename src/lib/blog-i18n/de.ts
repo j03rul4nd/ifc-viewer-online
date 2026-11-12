@@ -408,7 +408,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
             href: "https://www.ifcvieweronline.eu/pricing/?role=team",
           },
           ", und wir schreiben Ihnen, sobald sie öffnet. Wenn Ihr Team mehrere Projekte koordiniert und Sie es lieber in einem Gespräch sehen möchten, ",
-          { text: "sprechen Sie uns an", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "sprechen Sie uns an", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           ".",
         ],
       },
@@ -756,7 +756,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         type: "p",
         text: [
           "Wir führen Pilotprojekte mit einigen Bauunternehmen und Bauherren durch: Wir richten den Link mit Ihren Anforderungen und Ihrer Benennungskonvention ein und schicken Ihnen jede Woche den Bericht pro Lieferant. Wenn das passt, ",
-          { text: "sprechen Sie uns an", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "sprechen Sie uns an", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           " für 20 Minuten darüber, wie Sie heute Modelle empfangen. Oder fangen Sie jetzt kostenlos an und ",
           { text: "prüfen ein Modell im Validator", href: "https://www.ifcvieweronline.eu/ifc-validator/" },
           ".",

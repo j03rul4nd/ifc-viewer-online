@@ -63,6 +63,11 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 
 ## Related pages
 
+<!-- solution-landings:start -->
+- For contractors (EN, + 9 languages; plan in preview): https://www.ifcvieweronline.eu/for-contractors/
+- For engineering firms (EN, + 9 languages; plan in preview): https://www.ifcvieweronline.eu/for-engineering/
+<!-- solution-landings:end -->
+
 <!-- core-landings:start -->
 - IFC Validator (EN, + 9 languages): https://www.ifcvieweronline.eu/ifc-validator/
 - Cloud IFC Validator (EN, + 9 languages): https://www.ifcvieweronline.eu/cloud-ifc-validator/
