@@ -86,11 +86,14 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 
 - 2026-11-11, revisión estética (crítica en `.claude/theme-qa/review.md`, local): superficies en escalones cálidos, velo de modal oscuro suave sin blur, paneles flotantes sólidos con borde en claro, hover y medida 3D en verde azulado (Joel).
 
+- 2026-11-12, dudas resueltas (Joel): la nota y el score de validación mantienen el tono y se oscurecen en claro vía tokens; el fondo 3D es claro por defecto en tema claro; las rampas de datos (nubes, solar, inundación, leyendas) no se tocan; `VerifyCertificateView` (página pública) queda fuera de alcance. `/admin` sí se migró (grupo 15).
+- 2026-11-12: selección 3D en oscuro con tinte verde azulado #14a39f (hecho).
+- 2026-11-12: modal de cuenta revisado a ojo en producción en claro (Clerk en claro, correcto).
+
 ## Pendiente tras el cierre (2026-11-12)
 
-- Selección 3D en oscuro: hoy sin tinte (aclarado); decidir si pasa a verde azulado.
 - `--text-muted` sigue sin definir en oscuro (rareza documentada en theming.md).
-- Velos sobre vídeo/imagen/3D sin marcar `theme-allow-color`.
+- Velos sobre vídeo/imagen/3D: marcados con `theme-allow-color` en CoverStudioModal, VideoPanel, DrawingDock, SketchDemo y ClipStudio; quedan por revisar CodeBlock, DropOverlay, `geo/flows.tsx`, MobileActionSheet, GuidedTour, SoundToClip, StudioTimeline, FloodTimeline y los lienzos de `lib/capture` (blog y demos MSP ya están en la lista permitida).
 - Comparación de versiones (`CompareModal`, `compare/ChangesTab`, `CompareDock`, `SidePicker`, `ui`): fondos oscuros fijos con variante clara por token, texto sobre acento con `--accent-contrast`, ámbar `#E9A23B` → `--warning`; el dock en claro queda sólido sin sombra. Oscuro sin cambios. Falta mirarlo a ojo con dos versiones cargadas.
 - Comparación: `compare/IdsTab.tsx` ya usa `--warning` (mismo valor en oscuro). Los colores de tipo de cambio en `compare/ui.tsx` (añadido/modificado/borrado) son de significado y no se tocan.
 - Editor de capas: insignia de alertas y puntos del historial mantienen `#ff3b30`/`#5ce27a` en oscuro y pasan a `--danger`/`--ok` en claro; texto de la insignia con `--accent-contrast`. Paleta, franjas de zoom y colores por defecto son de datos.
@@ -98,11 +101,3 @@ Leyenda de estado: pendiente / en curso / PR abierta / mergeada.
 - Barra de tiempo: ya tiene variante clara; ámbar/verde de pasado/en vivo son de estado.
 - Gemelo (`twin/*`): sin colores de interfaz fijos; los de `BindingsTab` (regla, caducado) son de datos.
 - `ClashPanel`: solo fallbacks dentro de `var()` y el lienzo blanco del informe; estados de choque son de significado. `ClientMailV2`: el verde `#2f6f62` y su texto blanco son la marca del cliente en la vista previa del portal (contenido); marcados con `theme-allow-color`.
-- Sin revisar a ojo: modal de cuenta.
-
-## Dudas para Joel (colores con significado)
-
-- **Nota y score de validación** (verde/ámbar/rojo): ¿se oscurecen en claro manteniendo el tono, o se usa la misma paleta con otro fondo?
-- **Fondo 3D en claro:** ¿gris muy claro por defecto, o se mantiene el fondo oscuro en el visor aunque la interfaz sea clara (como Figma o Blender)?
-- **Fuera de alcance:** ¿lo son `VerifyCertificateView` (página pública) y `/admin`?
-- **Rampas de datos** (nubes, solar, inundación, leyendas): propuesta de no tocarlas.

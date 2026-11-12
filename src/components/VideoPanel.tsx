@@ -450,6 +450,7 @@ export default function VideoPanel({
             <img
               src={DEMO_VIDEOS[0].posterUrl}
               alt=""
+              /* theme-allow-color: over media (video poster) */
               className="w-20 aspect-video object-cover rounded-[6px] bg-black/30"
             />
             <div className="min-w-0 flex-1">

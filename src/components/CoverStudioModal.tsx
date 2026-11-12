@@ -708,6 +708,7 @@ export default function CoverStudioModal({ viewerApiRef, onClose }: Props) {
                       </button>
                       {p.kind !== 'cover' && (
                         <button onClick={() => update((d) => ({ ...d, hidden: off ? d.hidden.filter((k) => k !== p.key) : [...d.hidden, p.key] }))}
+                          /* theme-allow-color: over media (slide thumbnail) */
                           className="absolute top-1 right-1 p-0.5 rounded-[4px] bg-black/60 text-white" title={t(off ? 'cover.slideShow' : 'cover.slideHide')} aria-label={t(off ? 'cover.slideShow' : 'cover.slideHide')}>
                           {off ? <Icons.EyeOff size={11} /> : <Icons.Eye size={11} />}
                         </button>
