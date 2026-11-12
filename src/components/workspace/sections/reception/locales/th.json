@@ -289,5 +289,6 @@
   "{{x}}×": "{{x}}×",
   "Could not save: {{error}}. Nothing changed.": "บันทึกไม่ได้: {{error}} ไม่มีอะไรเปลี่ยนแปลง",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "เชิญ {{name}} แล้ว โทเค็นอัปโหลด (แสดงครั้งเดียว): {{token}}",
-  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "บันทึกโครงการ {{name}} ในพื้นที่ทำงานแล้ว รหัสส่งงาน: {{slug}} ต่อไปเชิญผู้รับเหมา"
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "บันทึกโครงการ {{name}} ในพื้นที่ทำงานแล้ว รหัสส่งงาน: {{slug}} ต่อไปเชิญผู้รับเหมา",
+  "Saved in the workspace.": "บันทึกในพื้นที่ทำงานแล้ว"
 }

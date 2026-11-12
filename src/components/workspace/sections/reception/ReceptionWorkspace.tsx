@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SectionProps } from '../../registry'
 import { RECEPTION_UNLIMITED_EUR, planDef } from '../../../../lib/plans/plans'
-import { paidApi, type ApiDelivery } from '../../../../lib/cloud/paid-client'
+import { paidApi } from '../../../../lib/cloud/paid-client'
 import { usePaidQuery } from '../../../../hooks/usePaidQuery'
 import { SAMPLE_API_DELIVERIES } from '../../api-samples'
 import { Head, DataList, Tabs, useSubTab, scoreColor, Primary, Quiet, Banner, Empty, Sparkline, Panel, inputClass } from '../../ui'
@@ -26,6 +26,7 @@ import RegisterTab from './RegisterTab'
 import ProjectTab, { NewProjectDialog } from './ProjectTab'
 import SupplierView from './SupplierView'
 import OverviewTab from './OverviewTab'
+import { deliveryFromApi, projectsFromApi, suppliersFromApi } from './live'
 import ReportDialog from './ReportDialog'
 
 const TABS = [
@@ -39,13 +40,6 @@ export const FILTER_LABELS = FILTERS.map((f) => f[1])
 
 type Open = { kind: 'delivery'; id: string } | { kind: 'supplier'; id: string } | { kind: 'invite' } | { kind: 'new-project' } | { kind: 'report' } | null
 
-/** Live API rows in the screen's shape (supplier = its name). */
-function fromApi(d: ApiDelivery): RxDelivery {
-  return {
-    id: d.id, projectId: 'mdt', supplierId: d.supplier, fileName: d.file_name, receivedAt: d.received_at, score: d.score,
-    sizeMb: 0, profileVersion: 1, failures: [], verdict: d.verdict === 'rejected' ? 'returned' : d.verdict, reasons: d.reason ? [d.reason] : [],
-  }
-}
 
 export default function ReceptionWorkspace(_: SectionProps) {
   const { rx, lang } = useRx()
@@ -64,8 +58,26 @@ export default function ReceptionWorkspace(_: SectionProps) {
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const project = projects.find((p) => p.id === projectId) ?? projects[0]
-  const deliveries = live ? api.data.deliveries.map(fromApi) : sampleDeliveries
+  // Workspace (local / cloud): projects and suppliers come from the server too,
+  // so every tab reads the same real data. The preview keeps the sample.
+  const [liveTick, setLiveTick] = useState(0)
+  const reloadLive = () => { api.reload(); setLiveTick((n) => n + 1) }
+  useEffect(() => {
+    if (!live) return
+    let alive = true
+    void Promise.all([paidApi.requirementSets(), paidApi.suppliers()]).then(([sets, sups]) => {
+      if (!alive) return
+      if (!sets.ok || !sups.ok) { setError((sets.ok ? (sups.ok ? null : sups.error) : sets.error)?.code ?? null); return }
+      const ps = projectsFromApi(sets.value.requirement_sets)
+      setProjects(ps)
+      setSuppliers(suppliersFromApi(sups.value.suppliers, api.data.deliveries, ps))
+      setProjectId((cur) => (ps.some((p) => p.id === cur) ? cur : ps[0]?.id ?? cur))
+      setChains({})
+    })
+    return () => { alive = false }
+  }, [live, liveTick, api.data]) // eslint-disable-line react-hooks/exhaustive-deps
+  const project = projects.find((p) => p.id === projectId) ?? projects[0] ?? SAMPLE_PROJECTS[0]
+  const deliveries = live ? api.data.deliveries.map(deliveryFromApi) : sampleDeliveries
   const pSuppliers = useMemo(() => suppliers.filter((s) => s.projectId === project.id), [suppliers, project.id])
   const pDeliveries = useMemo(() => deliveries.filter((d) => d.projectId === project.id), [deliveries, project.id])
   const supplierName = (id: string) => suppliers.find((s) => s.id === id)?.name ?? id
@@ -77,7 +89,10 @@ export default function ReceptionWorkspace(_: SectionProps) {
     let alive = true
     setChains((c) => ({ ...c, [project.id]: null }))
     void (async () => {
-      const built = await buildChain(await draftsFrom(SAMPLE_SUPPLIERS.filter((s) => s.projectId === project.id), SAMPLE_DELIVERIES.filter((d) => d.projectId === project.id)))
+      // Live: the register is built from the server's deliveries and decisions, with the real file hashes.
+      const srcSuppliers = live ? suppliers : SAMPLE_SUPPLIERS
+      const srcDeliveries = live ? deliveries : SAMPLE_DELIVERIES
+      const built = await buildChain(await draftsFrom(srcSuppliers.filter((s) => s.projectId === project.id), srcDeliveries.filter((d) => d.projectId === project.id), live ? '' : undefined))
       if (alive) setChains((c) => ({ ...c, [project.id]: built }))
     })()
     return () => { alive = false }
@@ -111,6 +126,9 @@ export default function ReceptionWorkspace(_: SectionProps) {
       const r = await paidApi.createSupplier(s.name, s.discipline.slice(0, 24))
       if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
       token = r.value.token
+      setOpen(null); reloadLive()
+      setNotice(rx('{{name}} invited. Their upload token, shown only once: {{token}}', { name: s.name, token }))
+      return
     }
     const id = `${s.originator.toLowerCase()}-${Date.now().toString(36)}`
     const invitedAt = new Date().toISOString().slice(0, 10)
@@ -122,6 +140,16 @@ export default function ReceptionWorkspace(_: SectionProps) {
       : rx('{{name}} invited with their own upload link. In this preview no e-mail is sent.', { name: s.name }))
   }
 
+  async function saveProject(p: RxProject) {
+    if (live) {
+      const content = JSON.stringify({ project: p.code, profile: p.profile, profile_version: p.profileVersion, due_day: p.dueDay, due_hour: p.dueHour, client: p.client, place: p.place })
+      const r = await paidApi.updateRequirementSet(p.id, { name: p.name, min_score: p.minScore, content })
+      if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+      reloadLive(); setNotice(rx('Saved in the workspace.')); return
+    }
+    setProjects((all) => all.map((x) => (x.id === p.id ? p : x))); setNotice(rx('Saved in this preview. Suppliers would see the change on their next check.'))
+  }
+
   async function createProject(d: Omit<RxProject, 'id' | 'naming'>) {
     let slug: string | null = null
     if (live) {
@@ -130,6 +158,9 @@ export default function ReceptionWorkspace(_: SectionProps) {
       const r = await paidApi.createRequirementSet(d.name, d.minScore, content)
       if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
       slug = r.value.requirement_set.slug
+      setOpen(null); setTab('suppliers'); setProjectId(r.value.requirement_set.id); reloadLive()
+      setNotice(rx('Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.', { name: d.name, slug }))
+      return
     }
     const id = d.code.toLowerCase()
     const base = SAMPLE_PROJECTS[1].naming
@@ -251,7 +282,7 @@ export default function ReceptionWorkspace(_: SectionProps) {
       )}
 
       {tab === 'register' && <RegisterTab project={project} chain={chain} supplierName={supplierName} rx={rx} lang={lang} />}
-      {tab === 'project' && <ProjectTab key={project.id} project={project} rx={rx} codes={projects.map((p) => p.code)} onSave={(p) => { setProjects((all) => all.map((x) => (x.id === p.id ? p : x))); setNotice(rx('Saved in this preview. Suppliers would see the change on their next check.')) }} />}
+      {tab === 'project' && <ProjectTab key={project.id} project={project} rx={rx} codes={projects.map((p) => p.code)} onSave={(p) => void saveProject(p)} />}
       {tab === 'supplier-view' && (pSuppliers[0]
         ? <SupplierView project={project} supplier={pSuppliers.find((s) => s.id === 'ins') ?? pSuppliers[0]} rx={rx} lang={lang} />
         : <Empty title={rx('No suppliers in this project yet')} body={rx('Invite one to see the page they get.')} />)}

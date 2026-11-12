@@ -153,11 +153,11 @@ export interface ApiIssue { number: number; title: string; status: 'open' | 'in_
 export interface ApiVersion { id: string; container: string; revision: number; file_name: string; state: 'wip' | 'shared' | 'published' | 'archived'; suitability: string; score: number | null; failed_specs: number | null; uploaded_by: string | null; created_at: string; validated_at: string | null }
 export interface ApiStandard { min_score: number; require_review: boolean; auto_issues: boolean; requirement_set_id: string | null }
 export interface ApiAuditEvent { type: string; actor_id: string | null; from: string | null; to: string | null; details: Record<string, unknown>; at: string }
-export interface ApiDelivery { id: string; file_name: string; file_hash?: string; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
-export interface ApiSupplier { id: string; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
+export interface ApiDelivery { id: string; file_name: string; file_hash?: string; size_bytes?: number; supplier_id?: string; requirement_set_id?: string; decided_at?: string | null; decided_by?: string | null; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
+export interface ApiSupplier { id: string; created_at?: string; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
 export interface ApiCredits { plan: string; balances: { cloud: number; ai: number; api: number }; monthly: { cloud: number; ai: number; api: number } }
 export interface ApiRequirementVersion { version: number; note: string; created_by: string; created_at: string }
-export interface ApiRequirementSet { id: string; name: string; slug: string; min_score: number }
+export interface ApiRequirementSet { id: string; name: string; slug: string; min_score: number; content?: string }
 export interface ApiMail { id: string; to: string; subject: string; kind: string; ref_type: string | null; ref_id: string | null; status: 'queued' | 'cancelled' | 'sent'; created_by: string; created_at: string; cancelled_at: string | null }
 export type ApiMailKind = 'delivery_rejected' | 'delivery_accepted' | 'issue_digest' | 'clash_report' | 'other'
 export interface ApiContact { id: string; email: string; name: string | null; lang: string; consent_at: string | null; consent_source: string | null; unsubscribed_at: string | null; created_at: string }
@@ -229,6 +229,7 @@ export const paidApi = {
 
   requirementSets: () => get<{ requirement_sets: ApiRequirementSet[] }>('/reception/requirements'),
   createRequirementSet: (name: string, min_score: number, content: string) => send<{ requirement_set: ApiRequirementSet }>('POST', '/reception/requirements', { name, min_score, content }),
+  updateRequirementSet: (id: string, patch: { name?: string; min_score?: number; content?: string }) => send<{ requirement_set: ApiRequirementSet }>('PATCH', `/reception/requirements/${id}`, patch),
   createSupplier: (name: string, discipline?: string) => send<{ supplier: { id: string; name: string }; token: string }>('POST', '/reception/suppliers', { name, ...(discipline ? { discipline } : {}) }),
 
   outbox: () => get<{ messages: ApiMail[] }>('/mail/outbox'),
@@ -259,6 +260,7 @@ export const paidApi = {
 
   branding: () => get<{ logo: string | null }>('/account/branding'),
   setBranding: (logo: string) => send<unknown>('PUT', '/account/branding', { logo }),
+  clearBranding: () => send<unknown>('DELETE', '/account/branding'),
 
   credits: () => get<ApiCredits>('/credits'),
   endpoints: () => get<{ endpoints: ApiEndpoint[] }>('/webhooks/endpoints'),

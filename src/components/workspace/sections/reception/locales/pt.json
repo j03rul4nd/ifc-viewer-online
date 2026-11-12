@@ -289,5 +289,6 @@
   "{{x}}×": "{{x}}×",
   "Could not save: {{error}}. Nothing changed.": "Não foi possível guardar: {{error}}. Nada mudou.",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} convidado. O token de envio, mostrado só uma vez: {{token}}",
-  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} guardada no espaço. Código de entrega: {{slug}}. Agora convide os fornecedores."
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} guardada no espaço. Código de entrega: {{slug}}. Agora convide os fornecedores.",
+  "Saved in the workspace.": "Guardado no espaço."
 }

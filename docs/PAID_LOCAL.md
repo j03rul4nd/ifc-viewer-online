@@ -100,3 +100,9 @@ views, revoke, lock after 10 tries); a certificate signed from a real validation
 (`runner.mjs --validate <file>`) carries the company logo on the public lookup. `.dev.vars` also needs
 `FEATURE_CLIENT_LINKS=true` and a dev `CERT_SIGNING_KEY_PKCS8` (`npm run generate-key`, local only).
 The tests run the runner with `--drain`, so an earlier job never takes a later test's place.
+
+Part 4 (`paid-local-4.integration.test.ts`): Reception tabs built from the server's requirement sets,
+suppliers and deliveries (the register hash-chains the real file SHA-256 and the decision); project
+edits by role; clash statuses shared through `cloudSync` between two members (a late older copy never
+wins, a Viewer cannot write); an issue from a clash with both GlobalIds; the certificate logo set and
+removed only by Owner/Admin.
