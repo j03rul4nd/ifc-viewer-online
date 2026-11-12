@@ -94,8 +94,8 @@ const SAME_TEXT_PX = 260
  * A name further from the eye than this many times the camera–focus distance
  * is not placed. In a low pitched view the far half of the screen is the
  * horizon: "Rubí", "Terrassa", "Sabadell" floated over it, 15–20 km away,
- * pinned to points nobody was looking at. Measured (docs/GIS_MAP_MODE.md,
- * "Names, second pass").
+ * pinned to points nobody was looking at. 3 keeps every name up to 2.7 km in
+ * the bench's low view (docs/GIS_MAP_MODE.md, "Names, second pass").
  */
 export const HORIZON_FACTOR = 3
 let horizonFactor = HORIZON_FACTOR
