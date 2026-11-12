@@ -1,0 +1,166 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IFC Viewer Online — Validation API",
+    "version": "1.0.0-preview",
+    "summary": "Validate IFC models from your own pipeline, get signed webhooks back, export results for Power BI.",
+    "description": "Preview: this API is designed and documented but not switched on. Base URL and keys are given to pilot accounts. Every request needs `Authorization: Bearer <API key>`. Results are the same as the free browser validator (44 rules, Health Score 0-100) plus your IDS / house profile.",
+    "license": { "name": "Proprietary" }
+  },
+  "servers": [{ "url": "{apiBase}", "variables": { "apiBase": { "default": "https://api.example.test", "description": "Given to your account when the API opens." } } }],
+  "security": [{ "apiKey": [] }],
+  "tags": [
+    { "name": "Validations" },
+    { "name": "Webhooks" },
+    { "name": "Exports", "description": "CSV and OData v4 for Power BI and Excel." }
+  ],
+  "paths": {
+    "/v1/validations": {
+      "post": {
+        "tags": ["Validations"],
+        "operationId": "createValidation",
+        "summary": "Validate an IFC file",
+        "description": "Upload one IFC (≤ 200 MB). Idempotent by file hash: sending the same bytes with the same profile returns the existing validation. Returns 202 while it runs; the result arrives by webhook (`validation.completed`) or by polling.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "profile": { "type": "string", "description": "Profile id (house standard, IDS, ISO 19650 naming). Default: built-in rules only.", "examples": ["house-v3"] },
+                  "project": { "type": "string", "examples": ["Hospital Fase 2"] },
+                  "min_score": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Below this the validation is `failed`." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Validation" } } } },
+          "200": { "description": "Same file already validated (idempotent)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Validation" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "get": {
+        "tags": ["Validations"],
+        "operationId": "listValidations",
+        "summary": "List validations",
+        "parameters": [
+          { "name": "project", "in": "query", "schema": { "type": "string" } },
+          { "name": "since", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 500 } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "validations": { "type": "array", "items": { "$ref": "#/components/schemas/Validation" } }, "next": { "type": ["string", "null"] } } } } } }
+        }
+      }
+    },
+    "/v1/validations/{id}": {
+      "get": {
+        "tags": ["Validations"],
+        "operationId": "getValidation",
+        "summary": "Get one validation and its report",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Validation" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/webhooks": {
+      "get": { "tags": ["Webhooks"], "operationId": "listWebhooks", "summary": "List endpoints", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "endpoints": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEndpoint" } } } } } } } } },
+      "post": {
+        "tags": ["Webhooks"],
+        "operationId": "createWebhook",
+        "summary": "Add an endpoint",
+        "description": "The response shows the signing secret once.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["url", "events"], "properties": { "url": { "type": "string", "format": "uri" }, "events": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEventName" } } } } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/WebhookEndpoint" }, { "type": "object", "properties": { "secret": { "type": "string", "examples": ["whsec_…"] } } }] } } } } }
+      }
+    },
+    "/v1/webhooks/{id}/deliveries": {
+      "get": {
+        "tags": ["Webhooks"],
+        "operationId": "listDeliveries",
+        "summary": "Delivery log: attempts, HTTP status, retry",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "deliveries": { "type": "array", "items": { "$ref": "#/components/schemas/Delivery" } } } } } } } }
+      }
+    },
+    "/v1/exports/validations.csv": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "exportValidationsCsv",
+        "summary": "CSV for Excel / Power BI (UTF-8 with BOM, stable columns)",
+        "parameters": [{ "name": "project", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK", "content": { "text/csv": { "schema": { "type": "string" }, "example": "project,model,version,checkedAt,score,passed,errors,warnings,issuesOpen,profile\r\nHospital Fase 2,ARQ_v6.ifc,c1,2026-11-12T10:00:00Z,92,true,0,3,1,house-v3\r\n" } } } }
+      }
+    },
+    "/odata/Validations": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "odataValidations",
+        "summary": "OData v4 feed — Power BI: Get data → OData feed",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "@odata.context": { "type": "string" }, "value": { "type": "array", "items": { "$ref": "#/components/schemas/ValidationRow" } } } } } } } }
+      }
+    },
+    "/odata/$metadata": {
+      "get": { "tags": ["Exports"], "operationId": "odataMetadata", "summary": "OData CSDL", "responses": { "200": { "description": "OK", "content": { "application/xml": { "schema": { "type": "string" } } } } } }
+    }
+  },
+  "webhooks": {
+    "validation.completed": {
+      "post": {
+        "summary": "A validation finished",
+        "description": "Signed: `X-Signature: t=<unix>,v1=<hex HMAC-SHA256 of \"<t>.<raw body>\">`. Reject if the timestamp is more than 5 minutes off. Answer 2xx within 10 s; 408, 429, 5xx and timeouts are retried at 30 s, 2 min, 10 min, 1 h and 6 h; other 4xx stop retries.",
+        "parameters": [
+          { "name": "X-Signature", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "X-Event", "in": "header", "required": true, "schema": { "$ref": "#/components/schemas/WebhookEventName" } },
+          { "name": "X-Delivery-Id", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookPayload" } } } },
+        "responses": { "2XX": { "description": "Received" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "apiKey": { "type": "http", "scheme": "bearer", "description": "API key from the workspace (API section)." } },
+    "responses": {
+      "Error": { "description": "Error", "content": { "application/json": { "schema": { "type": "object", "required": ["error"], "properties": { "error": { "type": "object", "properties": { "code": { "type": "string", "examples": ["unauthorized", "file_too_large", "rate_limited"] }, "message": { "type": "string" } } } } } } } }
+    },
+    "schemas": {
+      "Validation": {
+        "type": "object",
+        "required": ["id", "status"],
+        "properties": {
+          "id": { "type": "string", "examples": ["val_01J…"] },
+          "status": { "type": "string", "enum": ["queued", "running", "passed", "failed", "error"] },
+          "file_name": { "type": "string" },
+          "sha256": { "type": "string" },
+          "project": { "type": "string" },
+          "profile": { "type": "string" },
+          "score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+          "errors": { "type": "integer" },
+          "warnings": { "type": "integer" },
+          "report_url": { "type": ["string", "null"], "format": "uri" },
+          "view_url": { "type": ["string", "null"], "format": "uri", "description": "Opens the model at the first problem." },
+          "created_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "ValidationRow": {
+        "type": "object",
+        "properties": { "project": { "type": "string" }, "model": { "type": "string" }, "version": { "type": "string" }, "checkedAt": { "type": "string", "format": "date-time" }, "score": { "type": "integer" }, "passed": { "type": "boolean" }, "errors": { "type": "integer" }, "warnings": { "type": "integer" }, "issuesOpen": { "type": "integer" }, "profile": { "type": "string" } }
+      },
+      "WebhookEventName": { "type": "string", "enum": ["delivery.received", "delivery.accepted", "delivery.rejected", "validation.completed", "validation.failed", "score.dropped", "issue.created", "issue.closed", "link.opened"] },
+      "WebhookEndpoint": { "type": "object", "properties": { "id": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "events": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEventName" } }, "paused": { "type": "boolean" } } },
+      "WebhookPayload": { "type": "object", "required": ["id", "event", "createdAt", "data"], "properties": { "id": { "type": "string" }, "event": { "$ref": "#/components/schemas/WebhookEventName" }, "createdAt": { "type": "string", "format": "date-time" }, "data": { "$ref": "#/components/schemas/Validation" } } },
+      "Delivery": { "type": "object", "properties": { "id": { "type": "string" }, "event": { "$ref": "#/components/schemas/WebhookEventName" }, "state": { "type": "string", "enum": ["delivered", "failed", "retrying"] }, "attempts": { "type": "array", "items": { "type": "object", "properties": { "at": { "type": "string", "format": "date-time" }, "status": { "type": ["integer", "null"] }, "error": { "type": "string" }, "durationMs": { "type": "integer" } } } } } }
+    }
+  }
+}

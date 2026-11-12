@@ -1,0 +1,22 @@
+# Copy to .github/workflows/validate-ifc.yml in the repository that holds your models.
+# Add IFCVO_API_KEY under Settings → Secrets and variables → Actions.
+name: Validate IFC
+on:
+  pull_request:
+    paths: ['**/*.ifc']
+  push:
+    branches: [main]
+    paths: ['**/*.ifc']
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - uses: ./integrations/github-action   # or <owner>/<repo>/integrations/github-action@<ref>
+        with:
+          files: 'models/**/*.ifc'
+          profile: house-v3
+          min-score: '80'
+          api-url: ${{ vars.IFCVO_API_URL }}
+          api-key: ${{ secrets.IFCVO_API_KEY }}
