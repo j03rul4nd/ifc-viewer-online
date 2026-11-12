@@ -60,6 +60,11 @@ function imageryBlob(url: string): Promise<Blob | null> {
       return b.type.startsWith('image/') ? b : null
     })
     .catch(() => null)
+    .then((b) => {
+      // A failure is not remembered: the next square asks again.
+      if (!b && imageryBlobs.get(url) === p) imageryBlobs.delete(url)
+      return b
+    })
   imageryBlobs.set(url, p)
   while (imageryBlobs.size > IMAGERY_CACHE) imageryBlobs.delete(imageryBlobs.keys().next().value as string)
   return p
@@ -188,7 +193,14 @@ export function createTerrainDetailLayer(opts: {
         for (const r of rasters) for (const piece of r.pieces) (piece.image as ImageBitmap).close?.()
         throw new DOMException('aborted', 'AbortError')
       }
-      return p.paint({
+      const closeRasters = (err: unknown): never => {
+        // Rejected before the worker took them (pool disposed, aborted).
+        for (const r of rasters) for (const piece of r.pieces) (piece.image as ImageBitmap).close?.()
+        throw err
+      }
+      let painting
+      try {
+        painting = p.paint({
         template: src.template, styleId: src.styleId,
         width: budget.size, height: budget.size,
         zoom: level.z,
@@ -205,7 +217,9 @@ export function createTerrainDetailLayer(opts: {
         collect: true,
         groundLabels: level.labels,
         fontBase: new URL(`${import.meta.env.BASE_URL}fonts/`, location.href).href,
-      }, abort.signal).then((res) => ({ res, imageryLevel }))
+      }, abort.signal)
+      } catch (err) { return closeRasters(err) }
+      return painting.then((res) => ({ res, imageryLevel }), closeRasters)
     }).then(({ res, imageryLevel }) => {
       inFlight.delete(level.key)
       // Wanted still? A square for a zoom the view has left is dropped; one
