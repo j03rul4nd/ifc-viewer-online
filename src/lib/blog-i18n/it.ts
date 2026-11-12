@@ -259,7 +259,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           ],
           [
             "Prezzo",
-            "Da €1,428/anno (Essential), €2,109/anno (Advanced), per licenza",
+            "Da 1.428 €/anno (Essential), 2.109 €/anno (Advanced), per licenza",
             "Gratis",
             "Previsto nel piano Pro, da €39/mese",
           ],
@@ -499,7 +499,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           ],
           [
             "Prezzo",
-            "€2,772/anno per licenza",
+            "2.772 €/anno per licenza",
             "Previsto nel piano Team, da €59 per editor al mese (minimo 3 editor)",
           ],
         ],
@@ -738,7 +738,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         rows: [
           [
             "Prezzo per persona",
-            "Basic €12.50, Advanced €18.75, Enterprise €25 per utente al mese, fatturazione annuale (€19, €29, €39 con fatturazione mensile)",
+            "Basic 12,50 €, Advanced 18,75 €, Enterprise €25 per utente al mese, fatturazione annuale (€19, €29, €39 con fatturazione mensile)",
             "€59 per editor al mese, fatturazione annuale (minimo 3 editor)",
           ],
           ["Ospiti (cliente, impresa)", "Vedi i loro piani", "Gratis, senza postazione"],

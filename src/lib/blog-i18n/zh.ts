@@ -1153,7 +1153,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
     slug: "ifc-clash-detection-browser",
     title: "在浏览器中做 IFC 碰撞检查：不用 Navisworks 能做什么，不能做什么",
     seoTitle: "IFC 碰撞检查：浏览器在线，无需 Navisworks",
-    seoDescription: "在浏览器中对 IFC 模型做硬碰撞和间隙碰撞检查，无需安装、无需上传。本文说明它能做什么、不能做什么，以及与同类工具的对比（预览版）。",
+    seoDescription: "在浏览器中对 IFC 模型做硬碰撞和净距碰撞检查，无需安装、无需上传。本文说明它能做什么、不能做什么，以及与同类工具的对比（预览版）。",
     excerpt: "找出碰撞并不难。难的是找出真正要紧的那些，并且不让它们在每次导出后又以“新碰撞”的身份回来。本文介绍一项直接在浏览器中对 IFC 文件运行的碰撞检查功能（预览版）。",
     date: "2026-11-12",
     dateModified: "2026-11-12",
@@ -1170,7 +1170,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       "浏览器 碰撞检查",
       "Navisworks 替代 碰撞检查",
       "BIM 碰撞检查",
-      "IFC 间隙碰撞",
+      "IFC 净距碰撞",
       "碰撞检查矩阵",
       "BCF 碰撞",
       "IFC clash detection",
@@ -1203,7 +1203,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
     faqs: [
       { q: "现在就能对 IFC 文件做碰撞检查吗？", a: "还不能。碰撞检查已经开发完成并经过实测，但目前是预览版，尚未开放。整合多个 IFC 模型、按专业着色和导出 BCF 现在都是免费的。" },
       { q: "运行碰撞检查需要上传模型吗？", a: "不需要。几何在你的浏览器中读取和检测，模型始终留在你的电脑上。" },
-      { q: "它能找出哪些类型的碰撞？", a: "硬碰撞，即两个构件相互穿插（逐个三角面检测，而不只是比较包围盒）；以及间隙碰撞，即两个构件之间的距离小于设定值。" },
+      { q: "它能找出哪些类型的碰撞？", a: "硬碰撞，即两个构件相互穿插（逐个三角面检测，而不只是比较包围盒）；以及净距碰撞，即两个构件之间的距离小于设定值。" },
       {
         q: "它能处理多大的模型？",
         a: "一个 94 MB、含 144 万个三角面的 IFC 在笔记本电脑上做全部对全部检测，用时约 8 秒。超过 1 到 2 GB 时浏览器内存会不够用，这时桌面软件是更好的选择。",
@@ -1232,7 +1232,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       {
         type: "takeaways",
         items: [
-          "硬碰撞和间隙检测，逐个三角面比较，组织成可以保存的矩阵。",
+          "硬碰撞和净距检测，逐个三角面比较，组织成可以保存的矩阵。",
           "忽略规则过滤噪音：在一座真实塔楼上隐藏了 4,827 条结果中的 1,569 条。",
           "每个碰撞按检测项和 GlobalId 对来跟踪，状态在新版本中得以保留。",
           "预览版：这里的功能都尚未开放，现在免费的功能会继续免费。",
@@ -1246,7 +1246,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       {
         type: "image",
         src: "blog/images/clash-detection-4827-clashes-94mb-tower.jpg",
-        alt: "对上海中心大厦 IFC 的碰撞检测：4,827 条结果分组显示，以及每个步骤的耗时",
+        alt: "对上海中心大厦 IFC 的碰撞检查：4,827 条结果分组显示，以及每个步骤的耗时",
         caption: "设计预览，使用示例数据，界面为西班牙语。在笔记本电脑上读取几何用时 0.7 秒，检测约 8 秒，不经过服务器。",
         width: 800,
         height: 491,
@@ -1255,13 +1255,13 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         credit: "IFC Viewer Online",
       },
       { type: "p", text: "找出大量碰撞的工具并不是在帮你。真正重要的是你多快能拿到那份短清单。" },
-      { type: "h2", text: "硬碰撞和间隙检测，组织成矩阵" },
+      { type: "h2", text: "硬碰撞和净距检测，组织成矩阵" },
       { type: "p", text: "检测分两种：" },
       {
         type: "ul",
         items: [
           "硬碰撞：两个构件相互穿插。检测是逐个三角面进行的，而不只用包围盒，所以一根从梁旁边经过但没有接触的管道不会被计入。",
-          "间隙碰撞：两个构件之间的距离小于允许值（例如机电管线与结构之间 50 mm）。",
+          "净距碰撞：两个构件之间的距离小于允许值（例如机电管线与结构之间 50 mm）。",
         ],
       },
       {
@@ -1271,7 +1271,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       {
         type: "image",
         src: "blog/images/clash-detection-test-matrix.jpg",
-        alt: "碰撞检测矩阵：建筑对结构和机电，带容差",
+        alt: "碰撞检查矩阵：建筑对结构和机电，带容差",
         caption: "设计预览，使用示例数据，界面为西班牙语。",
         width: 800,
         height: 491,
@@ -1429,7 +1429,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         type: "table",
         headers: ["", "Navisworks Manage", "Solibri", "BIMcollab Zoom", "IFC Viewer Online（预览版）"],
         rows: [
-          ["硬碰撞 / 间隙", "支持 / 支持", "支持（构件规则和间隙规则）", "支持 / 支持", "支持 / 支持，逐个三角面检测"],
+          ["硬碰撞 / 净距", "支持 / 支持", "支持（构件规则和净距规则）", "支持 / 支持", "支持 / 支持，逐个三角面检测"],
           ["保存检测矩阵", "支持（Clash Detective，XML）", "规则集", "规则集", "支持，按模型、类和系统；JSON"],
           ["跨版本的状态", "绑定 NWF 文件", "按会话", "按 BCF 问题", "绑定 GlobalId 对"],
           ["安装", "Windows", "Windows / Mac", "Windows", "浏览器，无需安装"],

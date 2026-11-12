@@ -74,7 +74,7 @@ export const SAMPLE_TITLES: Record<string, Record<string, string>> = {
     'Fire doors without FireRating in level 01': 'Portas corta-fogo sem FireRating no pavimento 01',
     'Slab opening missing for riser R3': 'Falta a abertura na laje para a prumada R3',
     'Room names do not match the client room schedule': 'Os nomes dos ambientes não batem com o quadro do cliente',
-    'Sprinkler head inside the cable tray zone': 'Sprinkler dentro da zona do eletrocalha',
+    'Sprinkler head inside the cable tray zone': 'Sprinkler dentro da zona da eletrocalha',
     'Façade panels without classification code': 'Painéis de fachada sem código de classificação',
     'Ramp slope above 8 % at the main entrance': 'Inclinação da rampa acima de 8 % na entrada principal',
     'Column C-7 offset 40 mm from grid': 'Pilar C-7 deslocado 40 mm do eixo',
