@@ -403,7 +403,7 @@ function BeatStrip({ music, wave, cut, onDrop, label }: {
       ctx.globalAlpha = 1
     }
     // Drop.
-    ctx.fillStyle = '#ff4d6d'
+    ctx.fillStyle = '#ff4d6d' // theme-allow-color: over media (waveform canvas playhead)
     ctx.fillRect(x(music.dropSec) - 1, 0, 2, h)
     ctx.beginPath(); ctx.arc(x(music.dropSec), 6, 4, 0, Math.PI * 2); ctx.fill()
   }, [music, wave, cut, span])

@@ -55,7 +55,7 @@ export function MobileActionSheet({
           transition={{ duration: 0.18 }}
           onClick={onClose}
           className="fixed inset-0 z-[68]"
-          style={{ background: 'rgba(0,0,0,0.45)' }}
+          style={{ background: 'color-mix(in srgb, var(--scrim) 45%, transparent)' }}
         />
       )}
       {open && (

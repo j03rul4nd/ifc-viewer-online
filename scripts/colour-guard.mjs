@@ -18,6 +18,7 @@ const ALLOW = [
   /^src\/lib\/layers\//,
   /^src\/lib\/pointcloud\//,
   /^src\/lib\/solar\//,
+  /^src\/lib\/capture\//, // canvases drawn into exported clips/images (content)
   /^src\/lib\/ids\/ids-report\.ts$/,
   /^src\/lib\/delivery-report\.ts$/,
   /^src\/lib\/clash\/(export|trend)\.ts$/,

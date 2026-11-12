@@ -81,10 +81,10 @@ export default function GuidedTour({ title, steps, onClose }: { title: string; s
   return (
     <div className="fixed inset-0 z-[60]" aria-live="polite">
       {/* Click shield + dim. With a target, the dim is the spotlight's shadow instead. */}
-      <div className="absolute inset-0" style={{ background: rect ? 'transparent' : 'rgba(0,0,0,0.55)' }} onClick={(e) => e.stopPropagation()} />
+      <div className="absolute inset-0" style={{ background: rect ? 'transparent' : 'color-mix(in srgb, var(--scrim) 55%, transparent)' }} onClick={(e) => e.stopPropagation()} />
       {rect && (
         <div aria-hidden className="absolute rounded-[10px] pointer-events-none transition-[top,left,width,height] duration-200 motion-reduce:transition-none"
-          style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height, boxShadow: '0 0 0 9999px rgba(0,0,0,0.55), 0 0 0 2px var(--accent)' }} />
+          style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height, boxShadow: '0 0 0 9999px color-mix(in srgb, var(--scrim) 55%, transparent), 0 0 0 2px var(--accent)' }} />
       )}
       <div ref={card} role="dialog" aria-modal="true" aria-labelledby={titleId}
         className={place.mode === 'docked'
@@ -101,7 +101,7 @@ export default function GuidedTour({ title, steps, onClose }: { title: string; s
             </div>
             {!last && <button onClick={() => onClose(false)} className="h-[32px] px-2 text-[12.5px] text-[var(--text-faint)] hover:text-[var(--text)]">{tx("Skip")}</button>}
             {i > 0 && <button onClick={() => go(-1)} className="h-[32px] px-3 rounded-[7px] border border-[var(--border)] text-[12.5px] text-[var(--text-dim)] hover:text-[var(--text)]">{tx("Back")}</button>}
-            <button ref={next} onClick={() => go(1)} className="h-[32px] px-3.5 rounded-[7px] bg-[var(--accent)] text-white text-[12.5px] font-medium hover:brightness-110">{last ? tx("Done") : tx("Next")}</button>
+            <button ref={next} onClick={() => go(1)} className="h-[32px] px-3.5 rounded-[7px] bg-[var(--accent)] text-[var(--accent-contrast)] text-[12.5px] font-medium hover:brightness-110">{last ? tx("Done") : tx("Next")}</button>
           </div>
         </div>
       </div>
