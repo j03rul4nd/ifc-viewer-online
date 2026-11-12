@@ -189,6 +189,10 @@ function sampleScene({ H, lat }) {
   const dbg = terrain?.detailDebug?.()
   const zs = (dbg?.slots ?? []).filter((s) => s && s.opacity > 0.5).map((s) => Number(String(s.key).split('/')[0]))
   const reliefZ = zs.length ? Math.max(...zs) : null
+  // Imagery mixed into that square (Hybrid = PNOA WMTS, 256 px tiles): its own
+  // texel, which is what the eye sees when it is coarser than the square's.
+  const top = (dbg?.slots ?? []).find((s) => s && s.opacity > 0.5 && Number(String(s.key).split('/')[0]) === reliefZ)
+  const imageryTexelM = top?.imageryLevel != null ? C / (256 * 2 ** top.imageryLevel) : null
   // No detail square → the base patch: 3×3 tiles at `terrain.zoom` in one 3 072 px texture.
   const reliefTexelM = reliefZ !== null ? C / (512 * 2 ** reliefZ)
     : (terrain?.zoom ? (3 * C / 2 ** terrain.zoom) / 3072 : null)
@@ -208,7 +212,7 @@ function sampleScene({ H, lat }) {
     triangles: rs?.triangles ?? null, calls: rs?.calls ?? null,
     heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
     city: city ? { cells: city.cells, wanted: city.wanted, buildings: city.buildings, triangles: city.triangles, bytesMB: +(city.bytes / 1048576).toFixed(1) } : null,
-    relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length, imageryFetches: dbg.imageryFetches ?? null, imageryCached: dbg.imageryCached ?? null, lastError: dbg.lastError ?? null } : null },
+    relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length, imageryFetches: dbg.imageryFetches ?? null, imageryLevel: top?.imageryLevel ?? null, imageryPxPerTexel: imageryTexelM && +pxPerTexel(imageryTexelM).toFixed(2), imageryCached: dbg.imageryCached ?? null, lastError: dbg.lastError ?? null } : null },
     flatMap: { quality: globalThis.__basemapQuality?.get?.() ?? null, errorTarget: tiles?.errorTarget ?? null, maxDepth: mapZ, texelM: mapTexelM && +mapTexelM.toFixed(3), pxPerTexel: mapTexelM && +pxPerTexel(mapTexelM).toFixed(2), visibleTiles: tiles?.visibleTiles?.size ?? null },
   }
 }
@@ -324,7 +328,7 @@ function table(run) {
     'cells s': r.cellsReadyMs == null ? '-' : typeof r.cellsReadyMs === 'string' ? r.cellsReadyMs : (r.cellsReadyMs / 1000).toFixed(1),
     'M tris': r.triangles == null ? '-' : (r.triangles / 1e6).toFixed(2), calls: r.calls,
     'heap MB': r.heapMB, 'city MB': r.city?.bytesMB ?? '-',
-    'relief px/tx': r.relief.pxPerTexel ?? '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-',
+    'relief px/tx': r.relief.pxPerTexel ?? '-', 'img px/tx': r.relief.detail?.imageryPxPerTexel ?? '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-',
   }))
   console.log(`\n${run.site} @ ${run.commit}`)
   console.table(rows)
