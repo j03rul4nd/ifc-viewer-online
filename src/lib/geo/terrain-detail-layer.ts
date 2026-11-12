@@ -47,6 +47,9 @@ const IMAGERY_CACHE = 256
 
 const imageryBlobs = new Map<string, Promise<Blob | null>>()
 let imageryFetches = 0
+/** Squares composed with imagery, and the most tiles one of them asked for (bench). */
+let imagerySquares = 0
+let imageryMaxPerSquare = 0
 
 /** One imagery tile, fetched once per session while it stays in the cache. */
 function imageryBlob(url: string): Promise<Blob | null> {
@@ -82,6 +85,8 @@ async function squareImagery(styleId: MapStyleId, level: DetailLevel, maxTiles: 
     const plan = squareRasterPlan(RASTER_SOURCES[use.source], level, level.z, maxTiles)
     if (plan.pieces.length === 0) continue
     imageryLevel = imageryLevel === null ? plan.level : Math.min(imageryLevel, plan.level)
+    imagerySquares++
+    imageryMaxPerSquare = Math.max(imageryMaxPerSquare, plan.pieces.length)
     const pieces = await Promise.all(plan.pieces.map(async (p) => {
       const blob = await imageryBlob(p.url)
       if (!blob) return null
@@ -120,7 +125,7 @@ export interface TerrainDetailLayer {
   update(view: TerrainDetailView | null, nowMs: number): void
   dispose(): void
   /** Dev diagnosis. */
-  debug(): { slots: Array<{ key: string; opacity: number; imageryLevel: number | null } | null>; inFlight: number; painted: number; lastPaintMs: number; wanted: string[]; source: boolean; lastError: string | null; imageryFetches: number; imageryCached: number }
+  debug(): { slots: Array<{ key: string; opacity: number; imageryLevel: number | null } | null>; inFlight: number; painted: number; lastPaintMs: number; wanted: string[]; source: boolean; lastError: string | null; imageryFetches: number; imageryCached: number; imagerySquares: number; imageryMaxPerSquare: number }
 }
 
 interface Slot {
@@ -347,7 +352,7 @@ ${Array.from({ length: SLOTS }, (_, i) => `	sampledDiffuseColor.rgb = mixDetail(
         slots: slots.map((s) => s ? { key: s.level.key, opacity: Math.min(1, (performance.now() - s.bornAt) / FADE_MS), imageryLevel: s.imageryLevel } : null),
         inFlight: inFlight.size, painted, lastPaintMs: Math.round(lastPaintMs),
         wanted: wanted.map((w) => w.key), source: source !== null, lastError,
-        imageryFetches, imageryCached: imageryBlobs.size,
+        imageryFetches, imageryCached: imageryBlobs.size, imagerySquares, imageryMaxPerSquare,
       }
     },
   }

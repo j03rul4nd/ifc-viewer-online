@@ -18,7 +18,7 @@
  *   requests per host (Playwright sees the workers' fetches too).
  * The flat map is measured in `balanced` (held through `__basemapQuality.hold`).
  *
- * Output: `<out>/<date>-<commit>-<site>.json` (default out: C:/repo/ifc/docs-planning/mapa-osm/bench)
+ * Output: `<out>/<date>-<commit>-<site>-<provider>[-<quality>][-<tag>].json` (default out: C:/repo/ifc/docs-planning/mapa-osm/bench)
  * and a table on the console. Dev handles only exist in the dev build.
  *
  * `npm run bench:map -- --compare a.json b.json` checks two runs of the same
@@ -212,13 +212,21 @@ function sampleScene({ H, lat }) {
     triangles: rs?.triangles ?? null, calls: rs?.calls ?? null,
     heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
     city: city ? { cells: city.cells, wanted: city.wanted, buildings: city.buildings, triangles: city.triangles, bytesMB: +(city.bytes / 1048576).toFixed(1) } : null,
-    relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length, imageryFetches: dbg.imageryFetches ?? null, imageryLevel: top?.imageryLevel ?? null, imageryPxPerTexel: imageryTexelM && +pxPerTexel(imageryTexelM).toFixed(2), imageryCached: dbg.imageryCached ?? null, lastError: dbg.lastError ?? null } : null },
+    relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length, imageryFetches: dbg.imageryFetches ?? null, imageryLevel: top?.imageryLevel ?? null, imageryPxPerTexel: imageryTexelM && +pxPerTexel(imageryTexelM).toFixed(2), imageryCached: dbg.imageryCached ?? null, imagerySquares: dbg.imagerySquares ?? null, imageryMaxPerSquare: dbg.imageryMaxPerSquare ?? null, lastError: dbg.lastError ?? null } : null },
     flatMap: { quality: globalThis.__basemapQuality?.get?.() ?? null, errorTarget: tiles?.errorTarget ?? null, maxDepth: mapZ, texelM: mapTexelM && +mapTexelM.toFixed(3), pxPerTexel: mapTexelM && +pxPerTexel(mapTexelM).toFixed(2), visibleTiles: tiles?.visibleTiles?.size ?? null },
   }
 }
 
+const IGN = 'www.ign.es'
+/** The relief squares' own imagery fetches (terrain-detail-layer), cumulative. */
+async function imageryCounters(page) {
+  const d = await page.evaluate(() => globalThis.__geoTerrain?.()?.detailDebug?.() ?? null).catch(() => null)
+  return { fetches: d?.imageryFetches ?? 0, squares: d?.imagerySquares ?? 0, maxPerSquare: d?.imageryMaxPerSquare ?? 0 }
+}
+
 async function measureView(page, site, name, autoDetail, hosts) {
   const before = { ...hosts }
+  const sqBefore = await imageryCounters(page)
   // The hold is lost if the geo-system is recreated (provider change): re-apply per view.
   await page.evaluate((q) => globalThis.__basemapQuality?.hold(q), QUALITY)
   const pose = await page.evaluate(({ site, name }) => {
@@ -271,7 +279,10 @@ async function measureView(page, site, name, autoDetail, hosts) {
   const means = pans.map((x) => x.fpsMean).sort((a, b) => a - b)
   const pan = { fpsMedianOfMeans: means[Math.floor(means.length / 2)], means: pans.map((x) => +x.fpsMean.toFixed(2)), seconds: PAN_MS / 1000, runs: pans }
   const requests = Object.fromEntries(Object.entries(hosts).map(([h, n]) => [h, n - (before[h] ?? 0)]).filter(([, n]) => n > 0))
-  return { view: name, autoDetail, cellsReadyMs: cellsMs, rest, pan, ...scene, requests }
+  const sq = await imageryCounters(page)
+  const ign = { total: requests[IGN] ?? 0, squares: sq.fetches - sqBefore.fetches, squaresComposed: sq.squares - sqBefore.squares }
+  ign.flat = ign.total - ign.squares
+  return { view: name, autoDetail, cellsReadyMs: cellsMs, rest, pan, ...scene, requests, ign }
 }
 
 async function runSite(browser, base, siteName, commit) {
@@ -300,6 +311,7 @@ async function runSite(browser, base, siteName, commit) {
     log(`${siteName}: relocated to ${at.lat.toFixed(5)},${at.lon.toFixed(5)} in ${(relocateMs / 1000).toFixed(1)} s`)
   }
   const loadRequests = { ...hosts }
+  const sqLoad = await imageryCounters(page)
   await page.evaluate((q) => globalThis.__basemapQuality?.hold(q), QUALITY)
   const results = []
   for (const autoDetail of [true, false]) {
@@ -316,8 +328,16 @@ async function runSite(browser, base, siteName, commit) {
     const ext = gl?.getExtension('WEBGL_debug_renderer_info')
     return { ua: navigator.userAgent, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency, gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null }
   })
+  const sqEnd = await imageryCounters(page)
+  // www.ign.es split: the relief squares' imagery (counted by the layer) vs the
+  // rest (flat map tiles, PNOA surface). The cap is checked per square.
+  const ign = {
+    total: hosts[IGN] ?? 0, squares: sqEnd.fetches, flat: (hosts[IGN] ?? 0) - sqEnd.fetches,
+    atLoad: { total: loadRequests[IGN] ?? 0, squares: sqLoad.fetches },
+    squaresComposed: sqEnd.squares, maxTilesPerSquare: sqEnd.maxPerSquare,
+  }
   await ctx.close()
-  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: `${QUALITY} (held)`, provider: PROVIDER ?? 'default', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} back-and-forth pans (±${PAN_AMP} m) × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s after 1 warm-up`, loadRequests, requestsByHost: hosts, results }
+  return { ign, date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: `${QUALITY} (held)`, provider: PROVIDER ?? 'default', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} back-and-forth pans (±${PAN_AMP} m) × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s after 1 warm-up`, loadRequests, requestsByHost: hosts, results }
 }
 
 function table(run) {
@@ -328,11 +348,12 @@ function table(run) {
     'cells s': r.cellsReadyMs == null ? '-' : typeof r.cellsReadyMs === 'string' ? r.cellsReadyMs : (r.cellsReadyMs / 1000).toFixed(1),
     'M tris': r.triangles == null ? '-' : (r.triangles / 1e6).toFixed(2), calls: r.calls,
     'heap MB': r.heapMB, 'city MB': r.city?.bytesMB ?? '-',
-    'relief px/tx': r.relief.pxPerTexel ?? '-', 'img px/tx': r.relief.detail?.imageryPxPerTexel ?? '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-',
+    'relief px/tx': r.relief.pxPerTexel ?? '-', 'img px/tx': r.relief.detail?.imageryPxPerTexel ?? '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-', 'ign sq': r.ign?.squares ?? '-', 'ign flat': r.ign?.flat ?? '-',
   }))
   console.log(`\n${run.site} @ ${run.commit}`)
   console.table(rows)
   console.log('requests by host:', run.requestsByHost)
+  console.log('www.ign.es:', run.ign)
 }
 
 // ── compare two runs ──────────────────────────────────────────────────────────
@@ -373,7 +394,7 @@ try {
   for (const name of siteNames) {
     if (!SITES[name]) throw new Error(`unknown site ${name}`)
     const run = await runSite(browser, server.base, name, commit)
-    const file = join(outDir, `${run.date.slice(0, 10)}-${commit}-${name}${args.tag ? `-${args.tag}` : ''}.json`)
+    const file = join(outDir, `${run.date.slice(0, 10)}-${commit}-${name}-${PROVIDER ?? 'default'}${QUALITY !== 'balanced' ? `-${QUALITY}` : ''}${args.tag ? `-${args.tag}` : ''}.json`)
     writeFileSync(file, JSON.stringify(run, null, 2))
     table(run)
     log(`saved ${file}`)
