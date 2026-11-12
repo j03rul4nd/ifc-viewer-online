@@ -1856,6 +1856,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
         type: 'p',
         text: ['Where BCF fits in the full delivery package — next to the validation report and the transmittal — is covered in ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '. Raising topics automatically from a revision comparison is in ', { text: 'how to compare two IFC versions', to: 'compare-ifc-versions-what-changed' }, '.'],
       },
+      { type: 'related', to: 'ifc-clash-detection-browser' },
     ],
   },
 
@@ -2553,6 +2554,7 @@ const EN_POSTS_SOURCE: BlogPost[] = [
         body: 'The BIM Information Handbook covers what this checklist sits inside: how a common data environment actually works, the OIR → AIR → EIR → BEP requirement chain, level of information need instead of LOD numbers, delivery planning and handover. 48 pages, free.',
       },
       { type: 'tool', id: 'handbook' },
+      { type: 'related', to: 'review-subcontractor-ifc-models' },
     ],
   },
 
@@ -2965,6 +2967,7 @@ python validate_and_score.py model.ifc`,
       { type: 'callout', variant: 'tip', text: "If a model still struggles, trim it before loading: export per discipline rather than one monolithic file, drop detail you don't need for the task at hand, and prefer IFC4 — its tessellated geometry is typically far smaller than the equivalent IFC2x3 B-rep notation. See 'IFC2x3 vs IFC4' in this blog." },
       { type: 'p', text: "The takeaway: you don't need a 64 GB workstation or a paid platform to inspect a 1 GB model. You need a pipeline that parses once, caches the result, and only draws what you're looking at — and you can get that in a browser tab." },
       { type: 'tool', id: 'viewer' },
+      { type: 'related', to: 'ifc-clash-detection-browser' },
     ],
   },
 
@@ -3915,6 +3918,7 @@ fragments.load(cached);            // fast`,
         text: ['To see what those requirements look like in practice before you commit to them, run the checks on a model you have already delivered — the ', { text: 'pre-delivery model check workflow', to: 'how-to-check-ifc-model-before-delivery' }, ' takes about a minute per file, and the result will tell you whether 80 is a generous threshold on your project or an ambitious one.'],
       },
       { type: 'callout', variant: 'tip', text: "Run your last three delivered models through the checks before you set the number. A threshold that your own team cannot currently meet is a clause that will be waived on the first delivery, and a clause waived once is a clause gone." },
+      { type: 'related', to: 'review-subcontractor-ifc-models' },
     ],
   },
 
@@ -4023,6 +4027,7 @@ fragments.load(cached);            // fast`,
         type: 'p',
         text: ['Those waivers belong in the transmittal, alongside the report and everything else that travels with the container — see ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '.'],
       },
+      { type: 'related', to: 'review-subcontractor-ifc-models' },
     ],
   },
 
@@ -5760,6 +5765,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           ".",
         ],
       },
+      { type: 'related', to: 'batch-validate-ifc-files' },
     ],
   },
 
@@ -6302,6 +6308,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         type: 'p',
         text: ["To understand what the 44 quality rules actually check — and how they relate to schema validation and IDS — see ", { text: 'the complete IFC model checker guide', to: 'ifc-model-checker-guide' }, ". For the Health Score that summarises quality as a single number, see ", { text: 'the IFC Health Score guide', to: 'ifc-health-score-guide' }, ". If you need to fix property values or GUIDs on a received IFC file without uploading it anywhere, the ", { text: 'free online IFC editor', to: 'ifc-editor-online' }, " applies the same browser-first architecture to non-destructive property editing."],
       },
+      { type: 'related', to: 'batch-validate-ifc-files' },
     ],
   },
 
@@ -7320,6 +7327,7 @@ Archive report → Upload to CDE`,
         headline: 'The full pre-delivery routine, in one PDF',
         body: 'Every check with the fix in Revit, ArchiCAD, Tekla and Allplan, the Health Score formula in full, the seven-step delivery workflow and a pre-delivery checklist you can print. 64 pages, free.',
       },
+      { type: 'related', to: 'batch-validate-ifc-files' },
     ],
   },
 
