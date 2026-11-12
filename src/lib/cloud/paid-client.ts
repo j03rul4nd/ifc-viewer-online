@@ -14,7 +14,7 @@ import type { Result } from '../result'
 export type PaidErrorCode =
   | 'network' | 'cloud_disabled' | 'unauthorized' | 'forbidden' | 'plan_required' | 'not_found'
   | 'invalid_payload' | 'service_disabled' | 'gate_blocked' | 'bad_transition' | 'no_seat' | 'last_owner'
-  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal'
+  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict'
 
 export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[] }
 export type PaidResult<T> = Result<T, PaidError>
@@ -101,6 +101,16 @@ async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
  * A supplier delivers one file: register (idempotent on the file hash) →
  * PUT straight to storage → confirm. A replay of the same file skips the PUT.
  */
+/** Public unsubscribe link (no session): the token from the message footer. */
+export async function unsubscribeByToken(token: string): Promise<PaidResult<{ unsubscribed: boolean }>> {
+  const base = paidApiBase()
+  if (!base) return { ok: false, error: { code: 'cloud_disabled' } }
+  try {
+    const res = await fetch(`${base}/mail/unsubscribe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
+    return res.ok ? { ok: true, value: await res.json() } : { ok: false, error: { code: res.status === 400 ? 'invalid_payload' : 'internal' } }
+  } catch { return { ok: false, error: { code: 'network' } } }
+}
+
 export async function deliverFile(token: string, requirementSlug: string, fileName: string, bytes: ArrayBuffer): Promise<PaidResult<{ deliveryId: string; replayed: boolean; fileHash: string }>> {
   const fileHash = await sha256Hex(bytes)
   const reg = await supplierRequest<{ delivery: { id: string }; upload: { url: string } | null; replayed: boolean }>(token, '/reception/deliveries', { requirement_slug: requirementSlug, file_name: fileName, file_hash: fileHash, size_bytes: bytes.byteLength })
@@ -139,6 +149,8 @@ export interface ApiRequirementVersion { version: number; note: string; created_
 export interface ApiRequirementSet { id: string; name: string; slug: string; min_score: number }
 export interface ApiMail { id: string; to: string; subject: string; kind: string; ref_type: string | null; ref_id: string | null; status: 'queued' | 'cancelled' | 'sent'; created_by: string; created_at: string; cancelled_at: string | null }
 export type ApiMailKind = 'delivery_rejected' | 'delivery_accepted' | 'issue_digest' | 'clash_report' | 'other'
+export interface ApiContact { id: string; email: string; name: string | null; lang: string; consent_at: string | null; consent_source: string | null; unsubscribed_at: string | null; created_at: string }
+export interface ApiRuleset { id: string; name: string; kind: string; content: string; created_at: string; updated_at: string }
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
@@ -210,6 +222,20 @@ export const paidApi = {
   queueMail: (m: { to: string; subject: string; body: string; kind?: ApiMailKind; ref_type?: 'delivery' | 'issue' | 'clash' | 'version'; ref_id?: string }, idempotencyKey: string) =>
     request<{ message: ApiMail; replayed: boolean }>('/mail/outbox', { method: 'POST', body: JSON.stringify(m), headers: { 'Idempotency-Key': idempotencyKey } }),
   cancelMail: (id: string) => send<{ message: ApiMail }>('POST', `/mail/outbox/${id}/cancel`),
+
+  contacts: () => get<{ contacts: ApiContact[] }>('/mail/contacts'),
+  /** Adds a contact or records consent. The unsubscribe token comes back once, on creation. */
+  saveContact: (c: { email: string; name?: string; lang?: string; consent_source?: string }) => send<{ contact: ApiContact; unsubscribe_token: string | null }>('POST', '/mail/contacts', c),
+  unsubscribeContact: (id: string) => send<{ contact: ApiContact }>('POST', `/mail/contacts/${id}/unsubscribe`),
+
+  rulesets: (kind?: string) => get<{ rulesets: Array<{ id: string; name: string; kind: string; updated_at: string }> }>(`/rulesets${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`),
+  ruleset: (id: string) => get<ApiRuleset>(`/rulesets/${encodeURIComponent(id)}`),
+  createRuleset: (name: string, kind: string, content: string) => send<{ id: string; name: string; kind: string }>('POST', '/rulesets', { name, kind, content }),
+  updateRuleset: (id: string, patch: { name?: string; content?: string }) => send<{ updated: boolean }>('PUT', `/rulesets/${encodeURIComponent(id)}`, patch),
+  deleteRuleset: (id: string) => send<{ deleted: boolean }>('DELETE', `/rulesets/${encodeURIComponent(id)}`),
+
+  deleteEndpoint: (id: string) => send<unknown>('DELETE', `/webhooks/endpoints/${id}`),
+  createEndpoint: (url: string, events: string[]) => send<{ endpoint: ApiEndpoint; secret: string }>('POST', '/webhooks/endpoints', { url, events }),
 
   credits: () => get<ApiCredits>('/credits'),
   endpoints: () => get<{ endpoints: ApiEndpoint[] }>('/webhooks/endpoints'),

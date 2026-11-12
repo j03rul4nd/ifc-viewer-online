@@ -286,5 +286,8 @@
   "{{n}} fixed": "{{n}} 件修正",
   "{{pos}} of {{total}} to review": "レビュー {{pos}} / {{total}}",
   "{{profile}} v{{v}} requirements": "{{profile}} v{{v}} の要件",
-  "{{x}}×": "{{x}}×"
+  "{{x}}×": "{{x}}×",
+  "Could not save: {{error}}. Nothing changed.": "保存できませんでした: {{error}}。何も変更されていません。",
+  "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} を招待しました。アップロード用トークン(一度だけ表示): {{token}}",
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "プロジェクト {{name}} をワークスペースに保存しました。納品コード: {{slug}}。次に協力会社を招待してください。"
 }

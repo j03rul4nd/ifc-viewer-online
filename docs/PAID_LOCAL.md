@@ -36,10 +36,10 @@ The bucket `ifc-deliveries` is created with a signed `PUT` to `http://localhost:
 (see the backend README). `.dev.vars` (gitignored) needs `ENVIRONMENT=development`, `DEV_AUTH=true`,
 the local `DATABASE_URL`, the `R2_*` values of the SeaweedFS container, a `RUNNER_TOKEN` of 32+
 characters and the `FEATURE_*` flags (`RECEPTION`, `ISSUES`, `AUTOMATIONS`, `MAIL_QUEUE`, `WEBHOOKS`,
-`QUALITY_GATE`) set to `true`. Then:
+`QUALITY_GATE`) set to `true`, plus `WEBHOOKS_ALLOW_LOCAL=true` (signed webhooks to a local receiver). Then:
 
 ```bash
-npx wrangler dev --port 8787 --ip 127.0.0.1
+npx wrangler dev --port 8787 --ip 127.0.0.1 --test-scheduled
 ```
 
 The seed creates `org_localdemo` with one member per role:
@@ -81,3 +81,12 @@ clash and edited by two users at once (both changes kept); roles (Reviewer canno
 see deliveries, Viewer cannot queue mail); the mail queue (same key → one message, cancel); network
 errors returned as a code. `PAID_LOCAL_BIG=1` also delivers the 94 MB Shanghai Tower. Without
 `PAID_LOCAL_API` the file is skipped, so CI stays green.
+
+Part 2 (`paid-local-2.integration.test.ts`) covers: a watched folder (contract mock of the
+SharePoint/Drive connector) → a real Reception delivery → server validation → the result written next
+to the model, and the signed webhooks (`delivery.received`, `validation.completed`) verified with the
+connector's `verifySignature`; mail contacts (consent, unsubscribe by link, no consent → refused);
+the rule library by role (Owner/Admin edit; Editor, Reviewer, Viewer and Guest cannot) and requirement
+versions published at the same time (never two with the same number). The webhook receiver listens
+on `PAID_LOCAL_HOOK_PORT` (default 9912): workerd cannot reach ephemeral ports. The suites run one
+after the other because they share the runner queue.

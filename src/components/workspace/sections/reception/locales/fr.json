@@ -286,5 +286,8 @@
   "{{n}} fixed": "{{n}} corrigés",
   "{{pos}} of {{total}} to review": "{{pos}} sur {{total}} à examiner",
   "{{profile}} v{{v}} requirements": "Exigences {{profile}} v{{v}}",
-  "{{x}}×": "{{x}}×"
+  "{{x}}×": "{{x}}×",
+  "Could not save: {{error}}. Nothing changed.": "Enregistrement impossible : {{error}}. Rien n'a changé.",
+  "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} invité. Son jeton d'envoi, affiché une seule fois : {{token}}",
+  "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Projet {{name}} enregistré dans l'espace. Code de livraison : {{slug}}. Invitez maintenant ses fournisseurs."
 }

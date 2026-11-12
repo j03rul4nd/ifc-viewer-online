@@ -105,21 +105,40 @@ export default function ReceptionWorkspace(_: SectionProps) {
   }
 
   async function invite(s: Omit<RxSupplier, 'id' | 'projectId' | 'invitedAt' | 'state'>) {
+    let token: string | null = null
+    if (live) {
+      // Local / cloud workspace: the supplier exists on the server; its upload token is shown once.
+      const r = await paidApi.createSupplier(s.name, s.discipline.slice(0, 24))
+      if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+      token = r.value.token
+    }
     const id = `${s.originator.toLowerCase()}-${Date.now().toString(36)}`
     const invitedAt = new Date().toISOString().slice(0, 10)
     setSuppliers((all) => [...all, { ...s, id, projectId: project.id, invitedAt, state: 'invited' }])
     setOpen(null)
     await log({ at: new Date().toISOString(), event: 'invited', supplierId: id, subject: s.email, by: RECEIVER, detail: s.originator })
-    setNotice(rx('{{name}} invited with their own upload link. In this preview no e-mail is sent.', { name: s.name }))
+    setNotice(token
+      ? rx('{{name}} invited. Their upload token, shown only once: {{token}}', { name: s.name, token })
+      : rx('{{name}} invited with their own upload link. In this preview no e-mail is sent.', { name: s.name }))
   }
 
-  function createProject(d: Omit<RxProject, 'id' | 'naming'>) {
+  async function createProject(d: Omit<RxProject, 'id' | 'naming'>) {
+    let slug: string | null = null
+    if (live) {
+      // The project's requirements, minimum score and deadline become a requirement set on the server.
+      const content = JSON.stringify({ project: d.code, profile: d.profile, profile_version: d.profileVersion, due_day: d.dueDay, due_hour: d.dueHour, client: d.client, place: d.place })
+      const r = await paidApi.createRequirementSet(d.name, d.minScore, content)
+      if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+      slug = r.value.requirement_set.slug
+    }
     const id = d.code.toLowerCase()
     const base = SAMPLE_PROJECTS[1].naming
     setProjects((all) => [...all, { ...d, id, naming: { ...base, f: base.f.map((f, i) => (i === 0 ? { ...f, v: [d.code] } : f)) } }])
     setChains((c) => ({ ...c, [id]: [] }))
     setProjectId(id); setOpen(null); setTab('suppliers')
-    setNotice(rx('Project {{name}} created. Invite its suppliers next.', { name: d.name }))
+    setNotice(slug
+      ? rx('Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.', { name: d.name, slug })
+      : rx('Project {{name}} created. Invite its suppliers next.', { name: d.name }))
   }
 
   // ── Numbers for the strip above the inbox ──
@@ -241,7 +260,7 @@ export default function ReceptionWorkspace(_: SectionProps) {
       {openSupplier && <SupplierCard project={project} supplier={openSupplier} deliveries={pDeliveries} rx={rx} lang={lang} onOpenDelivery={(id) => setOpen({ kind: 'delivery', id })} onClose={() => setOpen(null)} />}
       {open?.kind === 'invite' && <InviteDialog project={project} taken={pSuppliers.map((s) => s.originator)} rx={rx} onInvite={(s) => void invite(s)} onClose={() => setOpen(null)} />}
       {open?.kind === 'report' && <ReportDialog project={project} suppliers={pSuppliers} deliveries={pDeliveries} rx={rx} lang={lang} onClose={() => setOpen(null)} />}
-      {open?.kind === 'new-project' && <NewProjectDialog rx={rx} codes={projects.map((p) => p.code)} onCreate={createProject} onClose={() => setOpen(null)} />}
+      {open?.kind === 'new-project' && <NewProjectDialog rx={rx} codes={projects.map((p) => p.code)} onCreate={(d) => void createProject(d)} onClose={() => setOpen(null)} />}
     </>
   )
 }
