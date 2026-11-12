@@ -335,7 +335,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "碰撞检查目前是预览版。如果你负责协调模型，想抢先用自己的 IFC 文件试一试，请",
           { text: "加入候补名单", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           "，开放时我们会通知你。如果你的团队要协调多个项目，更希望在通话中看演示，欢迎",
-          { text: "联系我们", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "联系我们", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           "。",
         ],
       },
@@ -634,7 +634,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         type: "p",
         text: [
           "我们正在与几家承包商和开发商开展试点：我们按你的要求和命名约定设置好链接，每周把按供应商划分的报告发给你。如果合适，欢迎",
-          { text: "联系我们", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "联系我们", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           "，花 20 分钟聊聊你现在是如何接收模型的。或者现在就免费开始，",
           { text: "在验证器中检查一个模型", href: "https://www.ifcvieweronline.eu/ifc-validator/" },
           "。",

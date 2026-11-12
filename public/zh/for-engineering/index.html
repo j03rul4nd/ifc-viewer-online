@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>面向工程公司的 BIM 协调 — Team 方案</title>
+  <meta name="description" content="交付业主一次就接受的模型：共享规则、碰撞检测、附修复建议的问题以及发布关卡。Team 方案处于预览阶段。" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+  <meta property="og:title" content="面向工程公司的 BIM 协调 — Team 方案" />
+  <meta property="og:description" content="交付业主一次就接受的模型：共享规则、碰撞检测、附修复建议的问题以及发布关卡。Team 方案处于预览阶段。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg" />
+  <meta property="og:image:width" content="1600" />
+  <meta property="og:image:height" content="1265" />
+  <meta property="og:image:alt" content="使用示例数据的 Team 仪表板：每个项目的 Health Score 及趋势、每人未解决的问题以及有风险的截止日期" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="面向工程公司的 BIM 协调 — Team 方案" />
+  <meta name="twitter:description" content="交付业主一次就接受的模型：共享规则、碰撞检测、附修复建议的问题以及发布关卡。Team 方案处于预览阶段。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/for-engineering/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/para-ingenierias/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/fuer-ingenieurbueros/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/pour-bureaux-etudes/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/para-engenharias/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/per-studi-di-ingegneria/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/per-a-enginyeries/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/for-engineering/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/for-engineering/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/for-engineering/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/for-engineering/" />
+  <link rel="preload" as="image" type="image/webp" imagesrcset="/images/solutions/team-dashboard-project-health-800.webp 800w, /images/solutions/team-dashboard-project-health-1600.webp 1600w" imagesizes="(max-width: 1120px) 100vw, 1072px" fetchpriority="high" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/zh/for-engineering/",
+      "url": "https://www.ifcvieweronline.eu/zh/for-engineering/",
+      "name": "面向工程公司的 BIM 协调 — Team 方案",
+      "description": "交付业主一次就接受的模型：共享规则、碰撞检测、附修复建议的问题以及发布关卡。Team 方案处于预览阶段。",
+      "inLanguage": "zh",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg#image"
+      },
+      "dateModified": "2026-11-12"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg#image",
+      "contentUrl": "https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg",
+      "url": "https://www.ifcvieweronline.eu/images/solutions/team-dashboard-project-health.jpg",
+      "width": 1600,
+      "height": 1265,
+      "name": "使用示例数据的 Team 仪表板：每个项目的 Health Score 及趋势、每人未解决的问题以及有风险的截止日期",
+      "caption": "使用示例数据的团队仪表板：各项目健康状况、每人工作量以及有风险的截止日期。界面为西班牙语。",
+      "inLanguage": "zh",
+      "representativeOfPage": true,
+      "creator": {
+        "@type": "Organization",
+        "name": "IFC Viewer Online",
+        "url": "https://www.ifcvieweronline.eu/"
+      },
+      "creditText": "IFC Viewer Online",
+      "copyrightNotice": "© 2026 IFC Viewer Online",
+      "license": "https://www.ifcvieweronline.eu/terms/",
+      "acquireLicensePage": "https://www.ifcvieweronline.eu/terms/"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "现在可以使用 Team 吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "还不行。它已完成设计，并用示例数据展示。加入候补名单，开放时我们会通知您。用您的 IDS 检查模型是免费的，现在即可在查看器中使用。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "碰撞检测免费吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不免费。各专业之间的碰撞检测是一项新工具，将会收费。打开、联合和检查每个模型仍然免费。详见浏览器中的碰撞检测一文。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "可以使用业主的 IDS 吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "可以，这部分现在就是免费的。在 Team 中，您还可以将 IDS 导入公司规则库并保留其版本。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "它会取代 BIMcollab 或 Solibri 吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "并非对所有团队都适用。请参阅上方对比，其中有来自其页面的价格和我们阅读的日期。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "价格是多少？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "计划为每位编辑者每月 €59，按年计费，最少三位编辑者；访客免费。上线前价格可能调整；请查看方案。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "可以检查整个文件夹的模型吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "这也属于付费预览的一部分：了解批量验证的工作方式。"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "IFC Viewer Online",
+          "item": "https://www.ifcvieweronline.eu/zh/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "面向工程公司",
+          "item": "https://www.ifcvieweronline.eu/zh/for-engineering/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--lc-canvas); color: var(--lc-text); font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Noto Sans', sans-serif; line-height: 1.55; }
+    a { color: inherit; }
+    main a { color: var(--lc-accent-text); text-underline-offset: 3px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .hero { padding: 56px 0 24px; }
+    .badge { font-size: 14px; color: var(--lc-text-2); margin-bottom: 18px; }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.1rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 20px; max-width: 18ch; }
+    h1 span { display: block; color: var(--lc-text-2); font-weight: 600; font-size: 0.62em; line-height: 1.25; letter-spacing: -0.015em; margin-top: 10px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--lc-text-2); max-width: 640px; margin-bottom: 28px; }
+    .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .btn { display: inline-flex; align-items: center; min-height: 48px; background: var(--lc-accent); color: var(--lc-on-accent); padding: 0 24px; border: 0; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    main a.btn { color: var(--lc-on-accent); }
+    .alt { font-size: 15px; }
+    .note { font-size: 14px; color: var(--lc-text-3); margin-top: 14px; max-width: 640px; }
+    .shot { margin: 40px 0 0; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--lc-line); background: var(--lc-panel); }
+    figcaption { font-size: 14px; color: var(--lc-text-3); margin-top: 10px; max-width: 760px; }
+    .section { padding: 56px 0; border-top: 1px solid var(--lc-line); }
+    .hero + .section { margin-top: 40px; }
+    .label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--lc-accent-text); text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 12px; max-width: 26ch; }
+    .sub { font-size: 16px; color: var(--lc-text-2); margin-bottom: 28px; max-width: 720px; }
+    h2 + .cols, h2 + .table-wrap, h2 + .prose, h2 + .steps, h2 + .shot, h2 + .form, h2 + .faq { margin-top: 28px; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .col { background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 10px; padding: 22px 24px; }
+    .col h3 { font-size: 16px; font-weight: 650; margin-bottom: 12px; }
+    .col ul { list-style: none; display: grid; gap: 10px; }
+    .col li { font-size: 15px; color: var(--lc-text-2); padding-left: 16px; position: relative; }
+    .col li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 1px; background: var(--lc-text-3); }
+    .table-wrap { border: 1px solid var(--lc-line); border-radius: 10px; overflow: hidden; background: var(--lc-panel); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    thead th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lc-text-3); padding: 12px 18px; border-bottom: 1px solid var(--lc-line); }
+    tbody th { text-align: left; font-weight: 600; color: var(--lc-text); padding: 14px 18px; vertical-align: top; width: 18%; min-width: 150px; }
+    td { padding: 14px 18px; vertical-align: top; color: var(--lc-text-2); }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--lc-line); }
+    table.cmp td:last-child { color: var(--lc-text); }
+    .after, .prose { font-size: 16px; color: var(--lc-text-2); max-width: 720px; }
+    .after { margin-top: 18px; }
+    .prose + .prose { margin-top: 14px; }
+    .src { font-size: 13px; color: var(--lc-text-3); margin-top: 18px; max-width: 720px; }
+    main .src a { color: var(--lc-text-2); }
+    .steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+    .steps li { counter-increment: step; border-top: 2px solid var(--lc-line); padding-top: 14px; }
+    .steps li::before { content: counter(step); font-size: 13px; font-weight: 600; color: var(--lc-accent-text); }
+    .steps h3 { font-size: 16px; font-weight: 650; margin: 4px 0 6px; }
+    .steps p { font-size: 15px; color: var(--lc-text-2); }
+    .faq { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); }
+    .faq div { padding: 20px 24px; }
+    .faq div + div { border-top: 1px solid var(--lc-line); }
+    .faq h3 { font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+    .faq p { font-size: 15px; color: var(--lc-text-2); max-width: 760px; }
+    .form { display: grid; gap: 16px; max-width: 720px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .form label { display: grid; gap: 6px; font-size: 14px; color: var(--lc-text-2); }
+    .form input, .form select, .form textarea { font: inherit; font-size: 16px; color: var(--lc-text); background: var(--lc-panel); border: 1px solid var(--lc-line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%; }
+    .form .btn { justify-self: start; }
+    .form-note { font-size: 14px; color: var(--lc-text-3); }
+    .related { display: flex; flex-wrap: wrap; gap: 10px 22px; list-style: none; font-size: 15px; }
+    .bottom { padding: 56px 0 64px; border-top: 1px solid var(--lc-line); }
+    .bottom p { font-size: 16px; color: var(--lc-text-2); margin-bottom: 24px; }
+    footer { border-top: 1px solid var(--lc-line); padding: 24px 0; }
+    .links { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .links a { font-size: 14px; text-decoration: none; }
+    .copy { font-size: 13px; }
+    main a:focus-visible, .btn:focus-visible, .form :focus-visible { outline: 2px solid var(--lc-accent-text); outline-offset: 2px; border-radius: 4px; }
+    @media (max-width: 700px) {
+      .container { padding: 0 16px; }
+      .hero { padding-top: 36px; }
+      .section { padding: 44px 0; }
+      table.cmp thead { display: none; }
+      table.cmp tr, table.cmp th, table.cmp td { display: block; width: auto; }
+      table.cmp tbody th { padding-bottom: 4px; }
+      table.cmp td { padding-top: 4px; padding-bottom: 10px; }
+      table.cmp tbody tr + tr td { border-top: 0; }
+      table.cmp td::before { content: attr(data-h); display: block; font-size: 13px; font-weight: 600; color: var(--lc-text-3); margin-bottom: 2px; }
+      table.facts tbody th { width: 34%; min-width: 0; }
+      table.facts thead { display: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .btn { transition: filter 0.15s; } }
+
+    .flow { list-style: none; display: grid; gap: 48px; }
+    .flow li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 24px 40px; align-items: start; }
+    .flow .shot { margin: 0; }
+    .flow h3 { font-size: 18px; font-weight: 650; margin-bottom: 8px; }
+    .flow p { font-size: 15px; color: var(--lc-text-2); }
+    .tag { display: inline-block; font-size: 13px; font-weight: 600; color: var(--lc-text-2); border: 1px solid var(--lc-line); border-radius: 6px; padding: 1px 8px; margin-bottom: 10px; }
+    .preview-note { border: 1px solid var(--lc-line); border-radius: 10px; background: var(--lc-panel); padding: 14px 18px; color: var(--lc-text-2); }
+    @media (max-width: 860px) { .flow li { grid-template-columns: 1fr; } }
+  </style>
+  <script data-landing-chrome>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <style data-landing-chrome>
+:root{--lc-canvas:#100f0c;--lc-panel:#181714;--lc-line:#34332e;--lc-text:#ecebe7;--lc-text-2:#b2b1ab;--lc-text-3:#94928d;--lc-accent:#0a8481;--lc-on-accent:#ffffff;--lc-accent-text:#55cac3;--lc-ok:#6fc884;--lc-warn:#f2af48;--lc-danger:#f66e60;--lc-ink:#ffffff;--lc-shadow:#000000;--lc-tint:1;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}}
+:root[data-theme="light"]{--lc-canvas:#f4f3f0;--lc-panel:#fefdfc;--lc-line:#d5d4d0;--lc-text:#1c1b16;--lc-text-2:#4e4d48;--lc-text-3:#65635e;--lc-accent:#00696a;--lc-on-accent:#ffffff;--lc-accent-text:#00696a;--lc-ok:#206b38;--lc-warn:#915c08;--lc-danger:#af2b25;--lc-ink:#1c1b16;--lc-shadow:#1c1b16;--lc-tint:.4;color-scheme:light}
+html,body{background:var(--lc-canvas)!important;color:var(--lc-text)}
+.lc-theme{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--lc-line);border-radius:8px;background:transparent;color:var(--lc-text-2);cursor:pointer}
+.lc-theme:hover{color:var(--lc-text)}
+.lc-theme:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px}
+.lc-top{position:sticky;top:0;z-index:50;background:var(--lc-canvas);border-bottom:1px solid var(--lc-line)}
+.lc-top .lc-in{max-width:1120px;margin:0 auto;padding:0 16px;min-height:60px;display:flex;align-items:center;gap:20px}
+.lc-logo{color:var(--lc-text);font-weight:650;font-size:15px;text-decoration:none;margin-right:auto;white-space:nowrap}
+.lc-nav{display:flex;gap:18px;flex-wrap:wrap}
+.lc-nav a{color:var(--lc-text-2);font-size:14px;text-decoration:none}
+.lc-nav a:hover{color:var(--lc-text)}
+.lc-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:8px;background:var(--lc-accent);color:var(--lc-on-accent);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.lc-btn:hover{filter:brightness(1.1)}
+.lc-top a:focus-visible,.lc-next a:focus-visible{outline:2px solid var(--lc-accent-text);outline-offset:2px;border-radius:4px}
+@media (max-width:820px){.lc-nav{display:none}.lc-top .lc-in{gap:12px}}
+.lc-next{border-top:1px solid var(--lc-line);background:var(--lc-canvas);padding:56px 16px}
+.lc-next .lc-in{max-width:1120px;margin:0 auto}
+.lc-next h2{color:var(--lc-text);font-size:24px;line-height:1.25;margin:0 0 6px}
+.lc-next .lc-lead{color:var(--lc-text-2);font-size:15px;margin:0 0 24px}
+.lc-next ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lc-next li a{display:block;height:100%;box-sizing:border-box;padding:18px;border:1px solid var(--lc-line);border-radius:10px;background:var(--lc-panel);text-decoration:none}
+.lc-next li a:hover{border-color:var(--lc-text-2)}
+.lc-next .lc-n{color:var(--lc-accent-text);font-size:13px;font-weight:600}
+.lc-next strong{display:block;color:var(--lc-text);font-size:16px;margin:6px 0 4px}
+.lc-next li span:last-child{color:var(--lc-text-2);font-size:14px;line-height:1.5}
+/* First screen: a page, not a template. Left-aligned like /pricing/, no glow or dot field,
+   and the pill above the h1 becomes a plain line of facts. */
+section.hero{text-align:left!important;background:none!important}
+section.hero::before,section.hero .hero-bg{display:none!important}
+section.hero .container>*{margin-left:0!important;margin-right:auto!important}
+section.hero p:not(.badge),section.hero .hero-desc{max-width:640px}
+section.hero [class*="cta"],section.hero [class*="actions"],section.hero [class*="buttons"]{justify-content:flex-start!important;align-items:flex-start!important}
+section.hero .badge,section.hero .hero-badge,section.hero .notice-badge{display:block!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:var(--lc-text-2)!important;font-size:14px!important;font-weight:500!important}
+section.hero .badge svg,section.hero .hero-badge svg,section.hero .notice-badge svg{display:none}
+footer a,footer p,footer span,footer li{color:var(--lc-text-3)!important}
+footer a:hover{color:var(--lc-text)!important}
+
+</style>
+</head>
+<body>
+  <header class="lc-top" data-landing-chrome>
+    <div class="lc-in">
+      <a href="/zh/" class="lc-logo">IFC Viewer Online</a>
+      <nav class="lc-nav" aria-label="主菜单">
+        <a href="/zh/">查看器</a>
+        <a href="/zh/for-contractors/">解决方案</a>
+        <a href="/zh/ifc-viewer-examples/">示例</a>
+        <a href="/zh/fix/">修复指南</a>
+        <a href="/zh/blog/">博客</a>
+        <a href="/zh/pricing/">价格</a>
+      </nav>
+      <button type="button" class="lc-theme" data-lc-theme aria-label="切换浅色或深色" title="切换浅色或深色"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+      <a href="/zh/" class="lc-btn">打开查看器</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="badge">面向工程公司与设计工作室 · Team 方案 · 预览</p>
+        <h1>交付业主一次就接受的模型 <span>面向协调多个专业的工程公司与设计工作室</span></h1>
+        <p class="lead">一套公司规则、在浏览器中运行的碰撞检测、带视角和修复建议的问题，以及阻止低于最低分数的模型发布的关卡。业主无需您撰写即可看到进展。</p>
+        <div class="go">
+          <a href="/zh/pricing/?role=team" class="btn" data-cta="solution_engineering">加入 Team 候补名单</a>
+          <a href="/zh/blog/ifc-clash-detection-browser/" class="alt">了解浏览器中的碰撞检测</a>
+        </div>
+        <p class="note preview-note">预览：Team 方案已完成设计，此处使用示例数据展示。尚未开售，也不会保存任何内容。用您的 IDS 检查模型免费，现在即可使用。</p>
+        <figure class="shot">
+          <a href="/images/solutions/team-dashboard-project-health.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/team-dashboard-project-health-800.webp 800w, /images/solutions/team-dashboard-project-health-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/team-dashboard-project-health.jpg" width="1600" height="1265" alt="使用示例数据的 Team 仪表板：每个项目的 Health Score 及趋势、每人未解决的问题以及有风险的截止日期" fetchpriority="high" />
+          </picture></a>
+          <figcaption>使用示例数据的团队仪表板：各项目健康状况、每人工作量以及有风险的截止日期。界面为西班牙语。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">问题所在</p>
+        <h2>退回往往源于没人检查的细节</h2>
+        <p class="prose">业主现在会发送自己的信息要求，通常是 IDS 格式。缺少一个属性名称或分类的交付就会被退回，而修改的代价远高于事先检查。</p>
+        <p class="prose">一位 BIM 顾问描述了一个耗费数周的 IFC 数据验证问题，原因是属性名称与要求不符。ISO 19650-2 将共享前的检查列为交付团队的步骤，而不是业主的步骤。</p>
+        <p class="prose">在工作室里，规则往往只存在于某个人的脑中或电子表格里，碰撞在会议上审查，问题最终散落在邮件往来中，缺少能说明问题的视图。</p>
+        <p class="src" data-sources="bimCorner ukbimPartC">来源: <a href="https://bimcorner.com/the-ifc-data-validation-nightmare-that-cost-me-weeks-and-what-helped/" rel="nofollow noopener">BIM Corner</a> (阅读于 <time datetime="2026-11-11">2026-11-11</time>), <a href="https://ukbimframework.org/wp-content/uploads/2021/02/Guidance-Part-C_Facilitating-the-common-data-environment-workflow-and-technical-solutions_Edition-1.pdf" rel="nofollow noopener">UK BIM Framework, Guidance Part C</a> (阅读于 <time datetime="2026-11-11">2026-11-11</time>)</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">工作方式</p>
+        <h2>从公司规则到已发布的模型</h2>
+        <p class="sub">以下每张截图都是使用示例数据的 Team 设计。界面为西班牙语。</p>
+        <ol class="flow">
+          <li>
+            <div class="flow-text"><p class="tag">预览</p><h3>用句子一次写好规则</h3><p>类别、条件、要求和严重程度，包括几何（门前净空、净高）和关系（墙中的门）。每条规则都是 IDS 1.0。</p></div>
+            <figure class="shot">
+          <a href="/images/solutions/rules-geometry-relations-issue.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/rules-geometry-relations-issue-800.webp 800w, /images/solutions/rules-geometry-relations-issue-1138.webp 1138w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/rules-geometry-relations-issue.jpg" width="1138" height="1000" alt="规则编辑器，含几何和关系规则、示例模型上的结果以及已创建的附修复方法的问题" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>在示例模型上检查的几何和关系规则。</figcaption>
+        </figure>
+          </li>
+          <li>
+            <div class="flow-text"><p class="tag">预览</p><h3>以公司层面统一管理</h3><p>共享规则库，带版本、作者、审查和批准（作者不能批准自己的规则）、评论以及导出为 IDS。</p></div>
+            <figure class="shot">
+          <a href="/images/solutions/rules-company-library-approval.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/rules-company-library-approval-800.webp 800w, /images/solutions/rules-company-library-approval-1138.webp 1138w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/rules-company-library-approval.jpg" width="1138" height="1000" alt="公司规则库，显示审查中的版本、从 v2 到 v3 的变更和评论" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>审查中的规则集：改了什么、谁来批准以及历史记录。</figcaption>
+        </figure>
+          </li>
+          <li>
+            <div class="flow-text"><p class="tag">预览</p><h3>在浏览器中运行碰撞检测</h3><p>各专业之间的硬碰撞和间隙碰撞，分组显示，可设规则忽略已接受的碰撞，并为每项给出预计成本。</p></div>
+            <figure class="shot">
+          <a href="/images/solutions/clash-ignore-rules-tower.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/clash-ignore-rules-tower-800.webp 800w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/clash-ignore-rules-tower.jpg" width="800" height="491" alt="塔楼模型上的碰撞面板，忽略规则隐藏了已接受的碰撞" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>塔楼模型上的忽略规则：4,827 个结果中隐藏了 1,569 个。</figcaption>
+        </figure>
+          </li>
+          <li>
+            <div class="flow-text"><p class="tag">预览</p><h3>将每个失败项转为附修复方法的问题</h3><p>指定负责人和截止日期，保存视角，并根据我们的修复指南为每种建模软件给出修复建议。访客免费评论；支持 BCF 导入导出。</p></div>
+            <figure class="shot">
+          <a href="/images/solutions/team-issue-suggested-fix.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/team-issue-suggested-fix-800.webp 800w, /images/solutions/team-issue-suggested-fix-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/team-issue-suggested-fix.jpg" width="1600" height="1265" alt="附多种建模软件修复建议、负责人、截止日期和评论的问题" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>一个问题及其修复建议、负责人和截止日期。</figcaption>
+        </figure>
+          </li>
+          <li>
+            <div class="flow-text"><p class="tag">预览</p><h3>在发布前拦下质量差的模型</h3><p>低于您最低分数的模型不会进入&quot;已发布&quot;，可选审查人，并记录哪些通过及其原因。</p></div>
+            <figure class="shot">
+          <a href="/images/solutions/team-publish-gate-history.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/team-publish-gate-history-800.webp 800w, /images/solutions/team-publish-gate-history-1600.webp 1600w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/team-publish-gate-history.jpg" width="1600" height="1265" alt="最低分数为 80 的发布关卡，以及已发布和被拦截模型的历史记录" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>发布关卡及其历史记录。</figcaption>
+        </figure>
+          </li>
+          <li>
+            <div class="flow-text"><p class="tag">预览</p><h3>让业主了解进展</h3><p>基于实时数据按阶段生成更新：分数、交付、问题和里程碑。预览中的发送为模拟。</p></div>
+            <figure class="shot">
+          <a href="/images/solutions/client-updates-send-by-phase.jpg"><picture>
+            <source type="image/webp" srcset="/images/solutions/client-updates-send-by-phase-800.webp 800w, /images/solutions/client-updates-send-by-phase-1138.webp 1138w" sizes="(max-width: 1120px) 100vw, 1072px" />
+            <img src="/images/solutions/client-updates-send-by-phase.jpg" width="1138" height="900" alt="业主更新界面，选择阶段、模板和收件人" loading="lazy" decoding="async" />
+          </picture></a>
+          <figcaption>按项目阶段的业主更新。</figcaption>
+        </figure>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">预计节省</p>
+        <h2>按我们的假设，每月约节省 17 小时</h2>
+        <p class="sub">这是三人团队的估算，不是实测。请换成您自己的数字。</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col">任务</th><th scope="col">假设</th><th scope="col">节省比例（假设）</th><th scope="col">每月分钟数</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">发送前检查交付</th><td data-h="假设">12 次交付 × 60 分钟</td><td data-h="节省比例（假设）">60 %</td><td data-h="每月分钟数">432</td></tr>
+            <tr><th scope="row">准备碰撞协调会议</th><td data-h="假设">4 次会议 × 90 分钟</td><td data-h="节省比例（假设）">70 %</td><td data-h="每月分钟数">252</td></tr>
+            <tr><th scope="row">返工被退回的交付</th><td data-h="假设">3 次退回 × 120 分钟</td><td data-h="节省比例（假设）">50 %</td><td data-h="每月分钟数">180</td></tr>
+            <tr><th scope="row">撰写业主更新</th><td data-h="假设">8 次更新 × 30 分钟</td><td data-h="节省比例（假设）">70 %</td><td data-h="每月分钟数">168</td></tr>
+            <tr><th scope="row">合计</th><td data-h="假设"></td><td data-h="节省比例（假设）"></td><td data-h="每月分钟数">1,032 分钟 ≈ 17 小时</td></tr>
+          </tbody>
+        </table></div>
+        <p class="after">按每小时 €45 计算，每月约 €775。Team 计划为每位编辑者每月 €59，按年计费，最少三位编辑者（每月 €177），因此按这些假设，回报约为成本的四倍。</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">对比</p>
+        <h2>与常用协调工具并列比较</h2>
+        <p class="sub">每个厂商列仅反映我们阅读当天该厂商官网页面的内容。</p>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th scope="col"></th><th scope="col">BIMcollab</th><th scope="col">Solibri</th><th scope="col">IFC Viewer Online Team（预览）</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">公开价格</th><td data-h="BIMcollab">Basic €12.50、Advanced €18.75、Enterprise €25，每用户每月，按年计费</td><td data-h="Solibri">每许可每年：Essential €1,428、Advanced €2,109、Premium €2,772</td><td data-h="IFC Viewer Online Team（预览）">计划：每位编辑者每月 €59，按年计费，最少三位编辑者。尚未开售</td></tr>
+            <tr><th scope="row">问题管理</th><td data-h="BIMcollab">基于 BCF 的问题管理，带 BIM 工具插件</td><td data-h="Solibri">自 Essential 起提供 BCF 问题管理</td><td data-h="IFC Viewer Online Team（预览）">带视角、截止日期和修复建议的问题；BCF 导入导出（预览）</td></tr>
+            <tr><th scope="row">规则</th><td data-h="BIMcollab">碰撞规则和智能视图，共享后在 BIMcollab Zoom 中使用</td><td data-h="Solibri">Essential 起提供预定义规则；Advanced 起提供自定义规则；Premium 提供规则治理</td><td data-h="IFC Viewer Online Team（预览）">以句子编写规则，IDS 1.0，带审批的共享规则库（预览）</td></tr>
+            <tr><th scope="row">访客</th><td data-h="BIMcollab">视方案而定，每个付费用户一到两个访客账户</td><td data-h="Solibri">价格页面未说明</td><td data-h="IFC Viewer Online Team（预览）">访客免费评论</td></tr>
+          </tbody>
+        </table></div>
+        <p class="after">Solibri 更适合在桌面端进行深入的规则检查，BIMcollab 更适合跨工具的大型问题工作流。Team 面向希望在浏览器中一处完成规则、碰撞、问题和业主更新的工作室。</p>
+        <p class="src" data-sources="bimcollab solibri">来源: <a href="https://www.bimcollab.com/pricing" rel="nofollow noopener">bimcollab.com/pricing</a> (阅读于 <time datetime="2026-11-12">2026-11-12</time>), <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> (阅读于 <time datetime="2026-11-12">2026-11-12</time>)</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">免费与预览</p>
+        <h2>哪些现在可用，哪些是预览</h2>
+        <div class="cols">
+          <div class="col"><h3>免费，现已可用</h3><ul>
+            <li>在浏览器中打开并联合多个 IFC 文件</li>
+            <li>用您的 IDS 1.0 和 44 条规则检查每个模型</li>
+            <li>BCF 导入导出，版本对比</li>
+            <li>每条规则的<a href="/zh/fix/">修复指南</a></li>
+          </ul></div>
+          <div class="col"><h3>Team 方案，预览中</h3><ul>
+            <li>带审批的公司规则库</li>
+            <li>各专业之间的碰撞检测</li>
+            <li>附修复建议的共享问题、发布关卡</li>
+            <li>按阶段的业主更新</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">常见问题</p>
+        <h2>买家常问的问题</h2>
+        <div class="faq">
+          <div><h3>现在可以使用 Team 吗？</h3><p>还不行。它已完成设计，并用示例数据展示。<a href="/zh/pricing/?role=team">加入候补名单</a>，开放时我们会通知您。用您的 IDS 检查模型是免费的，现在即可在<a href="/zh/">查看器</a>中使用。</p></div>
+          <div><h3>碰撞检测免费吗？</h3><p>不免费。各专业之间的碰撞检测是一项新工具，将会收费。打开、联合和检查每个模型仍然免费。详见<a href="/zh/blog/ifc-clash-detection-browser/">浏览器中的碰撞检测</a>一文。</p></div>
+          <div><h3>可以使用业主的 IDS 吗？</h3><p>可以，这部分现在就是免费的。在 Team 中，您还可以将 IDS 导入公司规则库并保留其版本。</p></div>
+          <div><h3>它会取代 BIMcollab 或 Solibri 吗？</h3><p>并非对所有团队都适用。请参阅上方对比，其中有来自其页面的价格和我们阅读的日期。</p></div>
+          <div><h3>价格是多少？</h3><p>计划为每位编辑者每月 €59，按年计费，最少三位编辑者；访客免费。上线前价格可能调整；请查看<a href="/zh/pricing/?role=team">方案</a>。</p></div>
+          <div><h3>可以检查整个文件夹的模型吗？</h3><p>这也属于付费预览的一部分：了解<a href="/zh/blog/batch-validate-ifc-files/">批量验证</a>的工作方式。</p></div>
+        </div>
+        <p class="src" data-sources="bimcollab solibri">来源: <a href="https://www.bimcollab.com/pricing" rel="nofollow noopener">bimcollab.com/pricing</a> (阅读于 <time datetime="2026-11-12">2026-11-12</time>), <a href="https://www.solibri.com/pricing" rel="nofollow noopener">solibri.com/pricing</a> (阅读于 <time datetime="2026-11-12">2026-11-12</time>)</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="label">相关内容</p>
+        <ul class="related">
+          <li><a href="/zh/for-contractors/">面向总包</a></li>
+          <li><a href="/zh/blog/review-subcontractor-ifc-models/">审查分包商的 IFC 模型</a></li>
+          <li><a href="/zh/blog/ifc-clash-detection-browser/">在浏览器中进行碰撞检测</a></li>
+          <li><a href="/zh/blog/batch-validate-ifc-files/">一次验证多个 IFC 文件</a></li>
+          <li><a href="/zh/pricing/">方案与价格</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container">
+        <h2>正在协调多个专业？</h2>
+        <p>加入 Team 候补名单，告诉我们您有多少位编辑者。开放时我们会写信通知您。</p>
+        <a href="/zh/pricing/?role=team" class="btn" data-cta="solution_engineering_bottom">加入 Team 候补名单</a>
+      </div>
+    </section>
+  </main>
+  <section class="lc-next" data-landing-chrome aria-labelledby="lc-next-h">
+    <div class="lc-in">
+      <h2 id="lc-next-h">下一步</h2>
+      <p class="lc-lead">免费，在浏览器中运行，不上传任何文件。</p>
+      <ol>
+        <li><a href="/zh/?model=https%3A%2F%2Fraw.githubusercontent.com%2FyoushengCode%2FIfcSampleFiles%2Fmain%2FIfc4_SampleHouse.ifc"><span class="lc-n">1</span><strong>打开示例模型</strong><span>一分钟内在真实 IFC 上查看健康评分和未通过的规则。</span></a></li>
+        <li><a href="/sign-up"><span class="lc-n">2</span><strong>创建免费账户</strong><span>保存检查结果，并与团队或业主共享报告。</span></a></li>
+        <li><a href="/zh/pricing/"><span class="lc-n">3</span><strong>比较方案</strong><span>Pro、Team，以及面向接收交付方的模型验收。</span></a></li>
+      </ol>
+    </div>
+  </section>
+  <footer>
+    <div class="container">
+      <div class="links">
+        <a href="/zh/">IFC Viewer Online</a>
+        <a href="/zh/for-contractors/">面向总包</a>
+        <a href="/zh/for-engineering/">面向工程公司</a>
+        <a href="/zh/pricing/">方案与价格</a>
+      </div>
+      <p class="copy">IFC Viewer Online © 2026 · MIT</p>
+    </div>
+  </footer>
+<script data-landing-chrome>document.querySelectorAll('[data-lc-theme]').forEach(function(b){b.addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})})</script>
+</body>
+</html>

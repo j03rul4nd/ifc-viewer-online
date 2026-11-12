@@ -388,7 +388,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "การตรวจสอบการชนกันยังเป็นเวอร์ชันพรีวิว หากคุณประสานงานโมเดลและอยากลองกับไฟล์ IFC ของคุณเองก่อนใคร ",
           { text: "ลงชื่อในรายชื่อรอ", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " แล้วเราจะแจ้งเมื่อเปิดตัว หากทีมของคุณประสานงานหลายโครงการและอยากดูผ่านการโทรคุยมากกว่า ",
-          { text: "พูดคุยกับเรา", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "พูดคุยกับเรา", href: "https://www.ifcvieweronline.eu/for-engineering/" },
         ],
       },
     ],
@@ -725,7 +725,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         type: "p",
         text: [
           "เรากำลังทดลองนำร่องกับผู้รับเหมาและผู้พัฒนาโครงการจำนวนหนึ่ง: เราตั้งค่าลิงก์ตามข้อกำหนดและรูปแบบการตั้งชื่อของคุณ และส่งรายงานแยกตามผู้ส่งงานให้ทุกสัปดาห์ หากสนใจ ",
-          { text: "พูดคุยกับเรา", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "พูดคุยกับเรา", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           " 20 นาทีว่าวันนี้คุณรับโมเดลอย่างไร หรือเริ่มได้เลยฟรีด้วย ",
           { text: "การตรวจโมเดลในเครื่องมือตรวจสอบ", href: "https://www.ifcvieweronline.eu/ifc-validator/" },
         ],

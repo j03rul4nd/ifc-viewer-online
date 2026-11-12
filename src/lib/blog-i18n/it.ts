@@ -399,7 +399,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "La clash detection è in anteprima. Se coordini modelli e vuoi provarla con i tuoi file IFC prima di tutti, ",
           { text: "iscriviti alla lista d'attesa", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " e ti scriveremo quando aprirà. Se il tuo team coordina più progetti e preferisci vederla in una call, ",
-          { text: "parla con noi", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "parla con noi", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           ".",
         ],
       },
@@ -744,7 +744,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         type: "p",
         text: [
           "Stiamo conducendo progetti pilota con alcune imprese e sviluppatori: configuriamo il link con i tuoi requisiti e la tua convenzione di denominazione, e ogni settimana ti inviamo il report per fornitore. Se può fare al caso tuo, ",
-          { text: "parla con noi", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "parla con noi", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           " per 20 minuti di come ricevi oggi i modelli. Oppure parti subito, gratis, ",
           {
             text: "controllando un modello nel validatore",

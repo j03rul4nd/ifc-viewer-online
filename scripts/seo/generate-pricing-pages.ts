@@ -21,6 +21,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { PRICING_LANGS, pricingPath, type PricingLang } from '../../src/lib/pricing/pricing-paths'
 import { GROUPS, PLAN_FOR_ROLE, PRICES, ROLES, TABLE_PLANS, type Cell, type Plan, type TablePlan } from './pricing/pricing-data'
 import { COPY, type PricingCopy } from './pricing/pricing-i18n'
+import { COPY as CHROME } from './landing-chrome'
+import { SLUGS as SOLUTION_SLUGS } from './solution-landings/pages'
+import { COPY as SOLUTION_COPY } from './solution-landings/copy'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', '..')
 const SITE = 'https://www.ifcvieweronline.eu'
@@ -231,6 +234,7 @@ ${alternates}
       <a href="${home}" class="logo">IFC Viewer Online</a>
       <nav aria-label="Main">
         <a href="${VALIDATOR[lang]}" class="hide-s">${esc(c.nav.validator)}</a>
+        <a href="/${SOLUTION_SLUGS.contractors[lang]}/" class="hide-s">${esc(CHROME[lang].solutions)}</a>
         <a href="/sdk/" class="hide-s">${esc(c.nav.sdk)}</a>
         <a href="${blog}" class="hide-s">${esc(c.nav.blog)}</a>
         <button type="button" class="theme" id="theme" aria-label="${esc(c.nav.theme)}" title="${esc(c.nav.theme)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
@@ -260,7 +264,7 @@ ${dialog(c)}
     <nav aria-label="${esc(c.plans.show)}" class="langs">${PRICING_LANGS.map((l) => l === lang
       ? `<span aria-current="page">${LANG_NAME[l]}</span>`
       : `<a href="${pricingPath(l)}" hreflang="${l}" lang="${l}">${LANG_NAME[l]}</a>`).join('')}</nav>
-    <p><a href="${home}">IFC Viewer Online</a><a href="${VALIDATOR[lang]}">${esc(c.nav.validator)}</a><a href="/on-premise-ifc-validator/">${esc(c.footer.onPrem)}</a><a href="/sdk/">SDK</a><a href="/privacy">${esc(c.footer.privacy)}</a><a href="/terms">${esc(c.footer.terms)}</a></p>
+    <p><a href="${home}">IFC Viewer Online</a><a href="${VALIDATOR[lang]}">${esc(c.nav.validator)}</a><a href="/on-premise-ifc-validator/">${esc(c.footer.onPrem)}</a><a href="/${SOLUTION_SLUGS.contractors[lang]}/">${esc(SOLUTION_COPY[lang].pages.contractors.nav)}</a><a href="/${SOLUTION_SLUGS.engineering[lang]}/">${esc(SOLUTION_COPY[lang].pages.engineering.nav)}</a><a href="/sdk/">SDK</a><a href="/privacy">${esc(c.footer.privacy)}</a><a href="/terms">${esc(c.footer.terms)}</a></p>
   </footer>
 
   <script type="application/json" id="pricing-i18n">${jsonEsc(JSON.stringify(i18n))}</script>

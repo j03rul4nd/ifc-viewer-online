@@ -402,7 +402,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "La détection de conflits est en aperçu. Si vous coordonnez des maquettes et voulez l'essayer avec vos propres fichiers IFC avant tout le monde, ",
           { text: "rejoignez la liste d'attente", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " et nous vous écrirons à l'ouverture. Si votre équipe coordonne plusieurs projets et que vous préférez la voir lors d'un appel, ",
-          { text: "parlez-nous", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "parlez-nous", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           ".",
         ],
       },
@@ -750,7 +750,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         type: "p",
         text: [
           "Nous menons des pilotes avec quelques entreprises générales et maîtres d'ouvrage : nous configurons le lien avec vos exigences et votre convention de nommage, et chaque semaine nous vous envoyons le rapport par fournisseur. Si cela vous convient, ",
-          { text: "parlez-nous", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "parlez-nous", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           " pendant 20 minutes de la façon dont vous recevez les maquettes aujourd'hui. Ou commencez dès maintenant, gratuitement, en ",
           {
             text: "vérifiant une maquette dans le validateur",

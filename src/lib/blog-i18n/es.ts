@@ -399,7 +399,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
           "La detección de colisiones está en vista previa. Si coordinas modelos y quieres probarla con tus IFC antes que nadie, ",
           { text: "apúntate a la lista de espera", href: "https://www.ifcvieweronline.eu/pricing/?role=team" },
           " y te escribimos cuando se abra. Si tu equipo coordina varios proyectos y prefieres verla en una llamada, ",
-          { text: "habla con nosotros", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "habla con nosotros", href: "https://www.ifcvieweronline.eu/for-engineering/" },
           ".",
         ],
       },
@@ -741,7 +741,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         type: "p",
         text: [
           "Estamos haciendo pilotos con pocas constructoras y promotoras: montamos el enlace con tus requisitos y tu convención de nombres, y cada semana te enviamos el informe por proveedor. Si te encaja, ",
-          { text: "habla con nosotros", href: "https://www.ifcvieweronline.eu/pricing/?role=receive" },
+          { text: "habla con nosotros", href: "https://www.ifcvieweronline.eu/for-contractors/" },
           " 20 minutos sobre cómo recibes hoy los modelos. O empieza ya, gratis, ",
           {
             text: "comprobando un modelo en el validador",
