@@ -49,6 +49,7 @@ export function DropOverlay({ enabled }: { enabled: boolean }) {
 
   if (!active) return null
   return (
+    // theme-allow-color: over media (3D canvas / map while dragging files in)
     <div data-testid="drop-overlay" aria-hidden className="absolute inset-0 z-[80] pointer-events-none bg-black/30">
       <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-[var(--accent)]" />
       <div className="absolute inset-0 flex items-center justify-center p-4">

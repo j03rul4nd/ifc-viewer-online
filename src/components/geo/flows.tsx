@@ -406,7 +406,7 @@ export function ConsentDialog() {
       {open && activeModelId && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(0,0,0,0.5)] pointer-events-auto"
+          className="absolute inset-0 z-30 flex items-center justify-center bg-[color-mix(in_srgb,var(--scrim)_50%,transparent)] pointer-events-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="geo-consent-title"

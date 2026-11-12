@@ -154,14 +154,14 @@ export function FloodTimeline({ system, t }: { system: FloodSystemAPI | null; t:
 
   return (
     <div
-      className="absolute left-1/2 -translate-x-1/2 bottom-[132px] sm:bottom-[60px] z-[21] w-[min(780px,calc(100%-24px))] px-3 py-2 rounded-[12px] bg-[rgba(16,18,24,0.9)] border border-[var(--border)] backdrop-blur-md text-[11px] text-[var(--text-dim)] shadow-lg select-none"
+      className="absolute left-1/2 -translate-x-1/2 bottom-[132px] sm:bottom-[60px] z-[21] w-[min(780px,calc(100%-24px))] px-3 py-2 rounded-[12px] bg-[rgba(16,18,24,0.9)] [[data-theme=light]_&]:bg-[var(--bg-surface)] border border-[var(--border)] backdrop-blur-md text-[11px] text-[var(--text-dim)] shadow-lg select-none"
       role="group"
       aria-label={t('timeline.label')}
     >
       <div className="flex items-center gap-2">
         <button
           onClick={togglePlay}
-          className="shrink-0 w-8 h-8 max-md:w-10 max-md:h-10 rounded-full bg-[var(--accent)] text-white flex items-center justify-center hover:brightness-110"
+          className="shrink-0 w-8 h-8 max-md:w-10 max-md:h-10 rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] flex items-center justify-center hover:brightness-110"
           aria-label={tl.playing ? t('timeline.pause') : t('timeline.play')}
           title={tl.playing ? t('timeline.pause') : t('timeline.play')}
         >
@@ -225,7 +225,7 @@ export function FloodTimeline({ system, t }: { system: FloodSystemAPI | null; t:
         <button
           onClick={toggleProbe}
           aria-pressed={probing}
-          className={`shrink-0 h-[26px] px-2 rounded-[7px] border text-[10.5px] ${probing ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'}`}
+          className={`shrink-0 h-[26px] px-2 rounded-[7px] border text-[10.5px] ${probing ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-contrast)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'}`}
           title={t('timeline.probeHint')}
         >
           {t('timeline.probe')}
