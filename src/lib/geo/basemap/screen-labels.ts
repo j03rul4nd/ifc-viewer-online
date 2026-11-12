@@ -135,6 +135,15 @@ const MOVE_PAN_PER_S = 0.12
 const MOVE_TURN_PER_S = 0.1
 /** The view must hold still this long before names are placed again. */
 const SETTLE_MS = 220
+/**
+ * After a stop, tiles that were still loading bring their names in late, and
+ * a placement made the moment the view settled is redone a few hundred ms
+ * later with new names in it. So the first still placement also waits until
+ * no tile has brought names for this long…
+ */
+const TILES_QUIET_MS = 350
+/** …but never longer than this after the view settled. */
+const TILES_WAIT_MAX_MS = 1500
 /** What stays of a name while the camera moves, by layer; the rest go. */
 const MOVING_OPACITY: Readonly<Record<string, number>> = { place: 0.32, 'water-name': 0.2 }
 
@@ -207,6 +216,10 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   let lastZoom = 1
   let seen = false
   let movedAt = -Infinity
+  /** Last time a tile brought or took names. */
+  let regionsAt = -Infinity
+  /** Whether a placement was made since the view last settled. */
+  let stillPlaced = true
   /** Keys placed the last time the view was still. */
   let placedKeys: string[] = []
   let lastHorizonM = Infinity
@@ -250,8 +263,8 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
   return {
     group,
 
-    setRegion(key, cands) { regions.set(key, cands) },
-    removeRegion(key) { regions.delete(key) },
+    setRegion(key, cands) { regions.set(key, cands); if (cands.length) regionsAt = performance.now() },
+    removeRegion(key) { if (regions.delete(key)) regionsAt = performance.now() },
 
     update(camera, viewport, visibleRegions, dpr, tileFrame, keepOut) {
       const now = performance.now()
@@ -275,7 +288,12 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
       }
       seen = true
       lastEye.copy(eye); lastDir.copy(dir); lastZoom = zoom
-      const moving = now - movedAt < SETTLE_MS
+      const viewMoving = now - movedAt < SETTLE_MS
+      if (viewMoving) stillPlaced = false
+      // Just stopped and tiles are still arriving: hold as if moving, once.
+      const moving = viewMoving || (!stillPlaced
+        && now - regionsAt < TILES_QUIET_MS && now - movedAt < SETTLE_MS + TILES_WAIT_MAX_MS)
+      if (!moving) stillPlaced = true
       if (dpr !== builtDpr) {
         // Re-rasterise at the new DPR (a window moved to another monitor).
         for (const e of entries.values()) dropSprite(e)
