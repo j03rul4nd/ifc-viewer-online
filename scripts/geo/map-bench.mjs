@@ -2,6 +2,7 @@
 /**
  * Map 3D bench — `npm run bench:map [-- --site catalunya|carmel|all] [--port 3341]
  *   [--url http://localhost:3341] [--views amplia,baja,cerca,calle] [--out dir] [--quick]`
+ *   [--provider vt-hybrid] [--quality balanced|economy|high]  (extra views: m200, m100 at 45°)
  *
  * Headed Chrome (a hidden or headless page throttles requestAnimationFrame and no
  * FPS from it is real), 1600×900, DPR 1. Starts this worktree's dev server unless
@@ -56,6 +57,8 @@ const CELLS_TIMEOUT_MS = 90_000
 const port = Number(args.port ?? 3341)
 const outDir = args.out ?? 'C:/repo/ifc/docs-planning/mapa-osm/bench'
 const siteNames = (args.site && args.site !== 'all') ? String(args.site).split(',') : Object.keys(SITES)
+const QUALITY = args.quality ? String(args.quality) : 'balanced'
+const PROVIDER = args.provider ? String(args.provider) : null
 const viewNames = args.views ? String(args.views).split(',') : ['amplia', 'baja', 'cerca', 'calle']
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -134,6 +137,8 @@ function viewPose(name, s, g) {
   switch (name) {
     case 'amplia': return { pos: [s.x + 900, g + 900, s.z + 1200], target: [s.x, s.y, s.z] }
     case 'baja': return { pos: [s.x + 250, g + 160, s.z + 330], target: [s.x - 300, g, s.z - 500] }
+    case 'm200': return at45(200)
+    case 'm100': return at45(100)
     case 'cerca': return at45(50)
     case 'calle': return at45(25)
     default: throw new Error(`unknown view ${name}`)
@@ -203,7 +208,7 @@ function sampleScene({ H, lat }) {
     triangles: rs?.triangles ?? null, calls: rs?.calls ?? null,
     heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
     city: city ? { cells: city.cells, wanted: city.wanted, buildings: city.buildings, triangles: city.triangles, bytesMB: +(city.bytes / 1048576).toFixed(1) } : null,
-    relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length } : null },
+    relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length, imageryFetches: dbg.imageryFetches ?? null, imageryCached: dbg.imageryCached ?? null, lastError: dbg.lastError ?? null } : null },
     flatMap: { quality: globalThis.__basemapQuality?.get?.() ?? null, errorTarget: tiles?.errorTarget ?? null, maxDepth: mapZ, texelM: mapTexelM && +mapTexelM.toFixed(3), pxPerTexel: mapTexelM && +pxPerTexel(mapTexelM).toFixed(2), visibleTiles: tiles?.visibleTiles?.size ?? null },
   }
 }
@@ -211,7 +216,7 @@ function sampleScene({ H, lat }) {
 async function measureView(page, site, name, autoDetail, hosts) {
   const before = { ...hosts }
   // The hold is lost if the geo-system is recreated (provider change): re-apply per view.
-  await page.evaluate(() => globalThis.__basemapQuality?.hold('balanced'))
+  await page.evaluate((q) => globalThis.__basemapQuality?.hold(q), QUALITY)
   const pose = await page.evaluate(({ site, name }) => {
     const geo = globalThis.__geoSystem
     const s = geo.sceneOfLatLon(site.lat, site.lon)
@@ -270,6 +275,8 @@ async function runSite(browser, base, siteName, commit) {
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })
   const hosts = {}
   ctx.on('request', (r) => { try { const h = new URL(r.url()).host; hosts[h] = (hosts[h] ?? 0) + 1 } catch {} })
+  // The base layer is a persisted preference: set it before the app reads it.
+  if (PROVIDER) await ctx.addInitScript((id) => { try { localStorage.setItem('ifc-geo-layer:v1', id) } catch {} }, PROVIDER)
   const page = await ctx.newPage()
   page.on('pageerror', (e) => log('pageerror:', e.message.slice(0, 160)))
   const t0 = Date.now()
@@ -289,7 +296,7 @@ async function runSite(browser, base, siteName, commit) {
     log(`${siteName}: relocated to ${at.lat.toFixed(5)},${at.lon.toFixed(5)} in ${(relocateMs / 1000).toFixed(1)} s`)
   }
   const loadRequests = { ...hosts }
-  await page.evaluate(() => globalThis.__basemapQuality?.hold('balanced'))
+  await page.evaluate((q) => globalThis.__basemapQuality?.hold(q), QUALITY)
   const results = []
   for (const autoDetail of [true, false]) {
     await page.evaluate((v) => globalThis.__geoStore.getState().setAutoDetail(v), autoDetail)
@@ -306,7 +313,7 @@ async function runSite(browser, base, siteName, commit) {
     return { ua: navigator.userAgent, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency, gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null }
   })
   await ctx.close()
-  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: 'balanced (held)', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} back-and-forth pans (±${PAN_AMP} m) × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s after 1 warm-up`, loadRequests, requestsByHost: hosts, results }
+  return { date: new Date().toISOString(), commit, site: siteName, lat: site.lat, lon: site.lon, viewport: [W, H], env, firstReadyMs, relocateMs, flatMapMode: `${QUALITY} (held)`, provider: PROVIDER ?? 'default', quick: QUICK, pxPerTexelAt: 'camera-target distance', dirty, panRule: `median of ${PANS} back-and-forth pans (±${PAN_AMP} m) × ${PAN_MS / 1000} s at ${PAN_SPEED} m/s after 1 warm-up`, loadRequests, requestsByHost: hosts, results }
 }
 
 function table(run) {
