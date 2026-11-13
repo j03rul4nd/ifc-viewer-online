@@ -9,7 +9,7 @@ import { createSceneGizmo, type SceneGizmo, type GizmoOptions } from './scene-gi
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
-import { bindNavigation } from './camera-nav'
+import { bindNavigation, PINCH_DOLLY_MARK } from './camera-nav'
 import { aimPoint } from './aim-point'
 import { bindWalkNavigation, type WalkNavigation, type WalkState } from './camera-walk'
 import { createFrameCoalescer } from './frame-coalescer'
@@ -1181,6 +1181,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   container.addEventListener('pointerleave', () => { wheelEngaged = false }, { passive: true })
   container.addEventListener('wheel', (e) => {
     if (wheelMode !== 'ctrl' || wheelEngaged || e.ctrlKey || e.metaKey) return
+    // A pinch re-raised as a plain wheel by camera-nav: the original passed.
+    if ((e as unknown as Record<string, unknown>)[PINCH_DOLLY_MARK]) return
     e.stopPropagation()
     showWheelHint()
   }, { capture: true, passive: true })

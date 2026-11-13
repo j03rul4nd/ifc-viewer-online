@@ -21,7 +21,7 @@ import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { Modal } from '../Modal'
 import { openAccountModal, useCloudAccountStore } from '../../stores/cloudAccountStore'
 import {
-  trackFeatureRequestChosen, trackFeatureRequestOpened, trackFeatureRequestStep, trackFeatureRequestSubmitted,
+  trackFeatureRequestChosen, trackFeatureRequestOpened, trackFeatureRequestStep, trackFeatureRequestSubmitted, trackRcFeedbackSent,
 } from '../../lib/analytics'
 import { markSeen, noteAnswered, readSignals, savePendingDraft, suggestedFeatures } from '../../lib/feedback-gate'
 import {
@@ -298,6 +298,7 @@ export default function FeatureRequestModal() {
     setBusy(false)
     if (!res.ok) { setError(res.error); return }
     setSentId(res.id)
+    if (source === 'revision-compare') trackRcFeedbackSent()
     saveRequestProfile(role, team)
     noteAnswered()
     trackFeatureRequestSubmitted({
@@ -525,7 +526,8 @@ export default function FeatureRequestModal() {
                 label={(v) => t(`requests.team.${v}`)} onChange={setTeam} />
               <div className="flex flex-col gap-1.5 pt-1">
                 <Check checked={beta} onChange={setBeta}>{t('requests.beta')}</Check>
-                <Check checked={call} onChange={setCall}>{BOOKING_URL ? t('requests.callBook') : t('requests.call')}</Check>
+                {/* Revision compare offers feedback only, never a call (decision 2026-11-13). */}
+                {source !== 'revision-compare' && <Check checked={call} onChange={setCall}>{BOOKING_URL ? t('requests.callBook') : t('requests.call')}</Check>}
               </div>
             </div>
           )}

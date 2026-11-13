@@ -24,7 +24,29 @@ export interface SnapElement extends IdsElement {
    * placement origin in metres, used to report how far a moved element went.
    * Absent when the snapshot was taken without geometry.
    */
-  geo?: { h: string; c: [number, number, number] } | null
+  geo?: GeoFingerprint | null
+  /** Name of the relating IfcTypeObject (IfcRelDefinesByType), when any. Optional: older baselines lack it. */
+  typeName?: string | null
+}
+
+export interface GeoFingerprint {
+  h: string
+  c: [number, number, number]
+  /**
+   * World axis-aligned bounding box size in metres (x, y, z), rounded to 0.1 mm.
+   * Optional: baselines saved before revision compare do not have it and fall
+   * back to the hash `h`.
+   */
+  s?: [number, number, number]
+  /** Mesh volume in m³ (closed-shell signed-volume sum). Optional, like `s`. */
+  v?: number
+  /**
+   * World AABB minimum corner (mesh frame, metres, 0.1 mm). With `s` it gives
+   * the box layers 3–4 of revision compare match on. Optional (older baselines).
+   */
+  m?: [number, number, number]
+  /** Unit local X axis of the element placement (mesh frame): orientation, for rotations. Optional. */
+  x?: [number, number, number]
 }
 
 export interface ModelSnapshot {

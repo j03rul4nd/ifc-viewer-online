@@ -14,6 +14,22 @@ export interface PdfPage {
   /** Pixel size of the JPEG. */
   width: number
   height: number
+  /**
+   * Optional invisible text layer (render mode 3) laid over the picture, so
+   * the page can be searched and copied. Coordinates in JPEG pixels.
+   */
+  text?: PdfTextRun[]
+}
+
+/** One run of invisible text: top-left corner, font size and drawn width, in JPEG pixels. */
+export interface PdfTextRun {
+  s: string
+  x: number
+  /** Top of the text box (canvas textBaseline 'top'). */
+  y: number
+  size: number
+  /** Width the run takes on the picture; the run is stretched to it. */
+  width: number
 }
 
 export interface PdfMeta {
@@ -47,6 +63,31 @@ function pdfDate(d: Date): string {
   return `D:${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`
 }
 
+/** Default CID width (1/1000 em) of the invisible font; runs are stretched with Tz. */
+const GLYPH_W = 500
+
+function utf16Hex(s: string): string {
+  let h = ''
+  for (let i = 0; i < s.length; i++) h += s.charCodeAt(i).toString(16).padStart(4, '0')
+  return h.toUpperCase()
+}
+
+function textLayer(p: PdfPage, W: number, H: number): string {
+  if (!p.text?.length) return ''
+  const k = W / p.width, ky = H / p.height
+  const ops: string[] = ['\nBT 3 Tr']
+  for (const r of p.text) {
+    if (!r.s) continue
+    const size = r.size * ky
+    const natural = r.s.length * size * (GLYPH_W / 1000)
+    const tz = natural > 0 ? Math.max(1, (r.width * k / natural) * 100) : 100
+    const x = r.x * k, y = H - (r.y + r.size * 0.8) * ky
+    ops.push(`/F1 ${size.toFixed(2)} Tf ${tz.toFixed(1)} Tz 1 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm <${utf16Hex(r.s)}> Tj`)
+  }
+  ops.push('ET')
+  return ops.join('\n')
+}
+
 export function buildImagePdf(pages: PdfPage[], meta: PdfMeta = {}): Uint8Array {
   const [W, H] = meta.pageSize ?? A4
   const enc = new TextEncoder()
@@ -78,10 +119,13 @@ export function buildImagePdf(pages: PdfPage[], meta: PdfMeta = {}): Uint8Array 
   ].filter(Boolean).join(' ')
   obj(3, () => push(`<< ${info} >>`))
 
+  const hasText = pages.some((p) => p.text && p.text.length > 0)
+  const fontRef = `${4 + pages.length * 3} 0 R`
   pages.forEach((p, i) => {
     const id = pageId(i)
-    const content = `q ${W.toFixed(2)} 0 0 ${H.toFixed(2)} 0 0 cm /Im0 Do Q`
-    obj(id, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W.toFixed(2)} ${H.toFixed(2)}] /Resources << /XObject << /Im0 ${id + 2} 0 R >> >> /Contents ${id + 1} 0 R >>`))
+    const content = `q ${W.toFixed(2)} 0 0 ${H.toFixed(2)} 0 0 cm /Im0 Do Q` + textLayer(p, W, H)
+    const font = hasText ? ` /Font << /F1 ${fontRef} >>` : ''
+    obj(id, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W.toFixed(2)} ${H.toFixed(2)}] /Resources << /XObject << /Im0 ${id + 2} 0 R >>${font} >> /Contents ${id + 1} 0 R >>`))
     obj(id + 1, () => {
       push(`<< /Length ${enc.encode(content).length} >>\nstream\n`)
       push(content)
@@ -94,7 +138,24 @@ export function buildImagePdf(pages: PdfPage[], meta: PdfMeta = {}): Uint8Array 
     })
   })
 
-  const count = 4 + pages.length * 3
+  // Shared font of the text layer: Type0 / Identity-H with a ToUnicode map
+  // where every UTF-16 code unit is its own CID. Never painted (Tr 3), so no
+  // glyphs are embedded; the map is what search and copy read.
+  const fontBase = 4 + pages.length * 3
+  if (hasText) {
+    obj(fontBase, () => push(`<< /Type /Font /Subtype /Type0 /BaseFont /Helvetica /Encoding /Identity-H /DescendantFonts [${fontBase + 1} 0 R] /ToUnicode ${fontBase + 2} 0 R >>`))
+    obj(fontBase + 1, () => push(`<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Helvetica /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor ${fontBase + 3} 0 R /DW ${GLYPH_W} /CIDToGIDMap /Identity >>`))
+    // A bfrange may only vary in its last byte: one range per high byte, 2 × 128.
+    const hx = (n: number) => n.toString(16).padStart(2, '0').toUpperCase()
+    const ranges = (from: number) => Array.from({ length: 128 }, (_, i) => `<${hx(from + i)}00> <${hx(from + i)}FF> <${hx(from + i)}00>`).join('\n')
+    const cmap = '/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def /CMapName /Adobe-Identity-UCS def /CMapType 2 def\n1 begincodespacerange <0000> <FFFF> endcodespacerange\n'
+      + `128 beginbfrange\n${ranges(0)}\nendbfrange\n128 beginbfrange\n${ranges(128)}\nendbfrange\n`
+      + 'endcmap CMapName currentdict /CMap defineresource pop end end'
+    obj(fontBase + 2, () => { push(`<< /Length ${enc.encode(cmap).length} >>\nstream\n`); push(cmap); push('\nendstream') })
+    obj(fontBase + 3, () => push('<< /Type /FontDescriptor /FontName /Helvetica /Flags 32 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 800 /Descent -200 /CapHeight 700 /StemV 80 >>'))
+  }
+
+  const count = fontBase + (hasText ? 4 : 0)
   const xref = length
   push(`xref\n0 ${count}\n0000000000 65535 f \n`)
   for (let id = 1; id < count; id++) push(`${String(offsets[id]).padStart(10, '0')} 00000 n \n`)

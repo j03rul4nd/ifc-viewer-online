@@ -14,6 +14,8 @@ import { MCP_POSTS_EN } from './blog-mcp-en.ts'
 import { COMPARISON_POSTS_EN } from './blog-comparisons-en.ts'
 import { PREVIEW_FEATURE_POSTS_EN } from './blog-preview-features-en.ts'
 import { PREVIEW_FEATURE_POSTS2_EN } from './blog-preview-features2-en.ts'
+import { PREVIEW_FEATURE_POSTS3_EN } from './blog-preview-features3-en.ts'
+import { PREVIEW_FEATURE_POSTS4_EN } from './blog-preview-features4-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -265,6 +267,18 @@ export type ContentBlock =
       defaultFileName?: string
       defaultHeight?: number
     }
+  /**
+   * The guided paid-workspace demo inside a preview post (FeatureDemo.tsx),
+   * opened at `step`, with the free → demo → waitlist/talk ladder. Its labels
+   * live in blog-feature-demo-copy.ts (×10), so the block has no text.
+   */
+  | {
+      type: 'feature-demo'
+      step: 'drop' | 'naming' | 'rules' | 'clashes' | 'issues' | 'resolve' | 'mail' | 'value'
+      free: 'validator' | 'viewer'
+      role: 'solo' | 'team' | 'receive' | 'build'
+      talk: 'contractors' | 'engineering'
+    }
   | { type: 'stat-row'; stats: Array<{ value: number; suffix?: string; prefix?: string; label: string }> }
   | { type: 'feature-grid'; items: Array<{ icon: string; title: string; body: string }> }
   | { type: 'comparison'; left: { label: string; color: string; items: string[] }; right: { label: string; color: string; items: string[] } }
@@ -376,7 +390,9 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...PREVIEW_FEATURE_POSTS4_EN,
   ...PREVIEW_FEATURE_POSTS_EN,
+  ...PREVIEW_FEATURE_POSTS3_EN,
   ...PREVIEW_FEATURE_POSTS2_EN,
   ...COMPARISON_POSTS_EN,
   ...MCP_POSTS_EN,

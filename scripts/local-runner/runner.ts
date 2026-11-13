@@ -14,7 +14,7 @@
 
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { validateIfc, checkIds } from '../../mcp/src/engine'
+import { validateIfc, checkIds, DamagedIfcError } from '../../mcp/src/engine'
 import { looksLikeIfc, summarize } from './summarize'
 
 const API = (process.env.IFC_API_URL ?? 'http://127.0.0.1:8787').replace(/\/$/, '')
@@ -30,7 +30,10 @@ if (VALIDATE > 0) {
   validateIfc(bytes).then((r) => {
     process.stdout.write(JSON.stringify({ healthScore: r.healthScore, issues: r.result.issues, stats: r.result.stats, fileHash: createHash('sha256').update(bytes).digest('hex') }))
     process.exit(0)
-  }, (e) => { console.error(e); process.exit(1) })
+  }, (e) => {
+    if (e instanceof DamagedIfcError) { process.stdout.write(JSON.stringify({ damaged: e.integrity })); process.exit(0) }
+    console.error(e); process.exit(1)
+  })
 } else if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(API)) { console.error(`Refusing: ${API} is not a local API.`); process.exit(1) }
 if (VALIDATE < 0 && TOKEN.length < 32) { console.error('RUNNER_TOKEN (≥ 32 characters) is required.'); process.exit(1) }
 
@@ -70,7 +73,9 @@ export async function runOnce(): Promise<boolean> {
         }
         body = summarize(report.result, report.healthScore, failedSpecs, ENGINE)
       } catch (e) {
-        body = { outcome: 'invalid_file', reason: `the validator could not read it: ${(e as Error).message}`.slice(0, 300) }
+        body = e instanceof DamagedIfcError
+          ? { outcome: 'damaged', code: e.integrity.code, reason: e.integrity.reason.slice(0, 300) }
+          : { outcome: 'invalid_file', reason: `the validator could not read it: ${(e as Error).message}`.slice(0, 300) }
       }
     }
   } catch (e) {

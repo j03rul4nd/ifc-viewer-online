@@ -1,3 +1,4 @@
+import { ONBOARDING_LABELS } from './Onboarding'
 import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -25,7 +26,7 @@ function englishKeys(): string[] {
     for (const m of readFileSync(resolve(DIR, f), 'utf8').matchAll(/\brx\(\s*'([^']*)'/g)) keys.add(m[1])
   }
   for (const k of [...DISCIPLINES, ...Object.values(REASONS), ...Object.values(RULES), ...FIELD_LABELS, ...VERDICT_LABELS,
-    ...TAB_LABELS, ...FILTER_LABELS, ...EVENT_LABELS, ...PROJECT_LABELS, ...SUPPLIER_VIEW_LABELS, ...SUPPLIER_STEP_LABELS, ...LIGHT_LABELS, ...MILESTONE_LABELS, ...ASSUMPTION_LABELS]) keys.add(k)
+    ...TAB_LABELS, ...FILTER_LABELS, ...EVENT_LABELS, ...PROJECT_LABELS, ...SUPPLIER_VIEW_LABELS, ...SUPPLIER_STEP_LABELS, ...LIGHT_LABELS, ...MILESTONE_LABELS, ...ASSUMPTION_LABELS, ...ONBOARDING_LABELS]) keys.add(k)
   return [...keys].sort()
 }
 

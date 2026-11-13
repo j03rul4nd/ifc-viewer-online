@@ -142,7 +142,10 @@ export default function WorkspacePreview({ onNavigateHome }: { onNavigateHome: (
   const live = usePaidLive()
   const plan = live ? 'team' : data.account.plan
   const current = SECTIONS.find((s) => s.id === section)!
-  const visible = SECTIONS.filter((s) => canSee(s.id, access.can))
+  // The guided demo is also embedded in blog posts, which never talk about AI:
+  // the optional AI-credits section stays out of its navigation.
+  const inDemo = typeof location !== 'undefined' && readDemo(location.search, typeof sessionStorage !== 'undefined' ? sessionStorage : null) !== null
+  const visible = SECTIONS.filter((s) => canSee(s.id, access.can) && !(inDemo && s.id === 'ai'))
   const tabs = visible.filter((s) => !s.secondary)
   const more = visible.filter((s) => s.secondary)
   const work = visible.filter((s) => s.group !== 'account')

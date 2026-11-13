@@ -170,7 +170,36 @@
       "need": "Open two sheets to compare.",
       "before": "Before",
       "after": "After",
-      "run": "Compare"
+      "run": "Compare",
+      "pdfTitle": "Compare two PDF revisions",
+      "pdfBlurb": "Old and new set, any scale or position. Sheets pair by number; the title block is left out.",
+      "oldPdf": "Old revision (PDF)",
+      "newPdf": "New revision (PDF)",
+      "pages_one": "{{count}} page",
+      "pages_other": "{{count}} pages",
+      "pdfError": "That PDF could not be read.",
+      "pdfDone": "{{clouds}} revision clouds on {{sheets}} sheets in {{seconds}} s.",
+      "overlayName": "Changes {{sheet}}",
+      "results": "Compared sheets",
+      "clouds_one": "{{count}} cloud",
+      "clouds_other": "{{count}} clouds",
+      "aligned": "{{method}}, scale ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Cloud {{id}}: +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} zone changed on every sheet and was left out",
+      "autoExcluded_other": "{{count}} zones changed on every sheet and were left out",
+      "exportPdf": "Download new revision with clouds (PDF)",
+      "cloudLayer": "Revision clouds",
+      "status": {
+        "notVector": "Not vector (scan): not compared",
+        "onlyA": "Only in the old set",
+        "onlyB": "Only in the new set",
+        "noAlignment": "Could not align"
+      },
+      "method": {
+        "frame": "frame",
+        "ransac": "drawing",
+        "identity": "none"
+      }
     },
     "beyond": "Show beyond the cut (m)",
     "poche": "Fill cut walls and structure",

@@ -27,7 +27,7 @@ describe.skipIf(!API)('paid workspace on the local backend (part 4)', () => {
   beforeAll(async () => {
     vi.stubEnv('VITE_API_URL', API)
     as('owner')
-    const set = await paidApi.createRequirementSet(`Tabs ${run}`, 60, JSON.stringify({ project: 'TAB', due_day: 2, due_hour: 10, profile: 'EIR', profile_version: 1 }))
+    const set = await paidApi.createRequirementSet(`Tabs ${run}`, 60, JSON.stringify({ naming: false, project: 'TAB', due_day: 2, due_hour: 10, profile: 'EIR', profile_version: 1 }))
     const sup = await paidApi.createSupplier(`Tabs supplier ${run}`, 'MEP')
     if (!set.ok || !sup.ok) throw new Error('setup failed')
     setId = set.value.requirement_set.id

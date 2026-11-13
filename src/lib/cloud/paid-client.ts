@@ -14,7 +14,7 @@ import type { Result } from '../result'
 export type PaidErrorCode =
   | 'network' | 'cloud_disabled' | 'unauthorized' | 'forbidden' | 'plan_required' | 'not_found'
   | 'invalid_payload' | 'service_disabled' | 'gate_blocked' | 'bad_transition' | 'no_seat' | 'last_owner'
-  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large'
+  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large' | 'naming' | 'rate_limited' | 'confirmation_required'
 
 export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[]; /** On a 409 edit conflict: the row as it is now on the server. */ current?: Record<string, unknown> }
 export type PaidResult<T> = Result<T, PaidError>
@@ -124,9 +124,10 @@ export async function unsubscribeByToken(token: string): Promise<PaidResult<{ un
   } catch { return { ok: false, error: { code: 'network' } } }
 }
 
-export async function deliverFile(token: string, requirementSlug: string, fileName: string, bytes: ArrayBuffer): Promise<PaidResult<{ deliveryId: string; replayed: boolean; fileHash: string }>> {
+/** `source` sets the validation priority: the upload page (a person waits) before a watched folder's bulk drop. */
+export async function deliverFile(token: string, requirementSlug: string, fileName: string, bytes: ArrayBuffer, source: 'page' | 'folder' | 'api' = 'api'): Promise<PaidResult<{ deliveryId: string; replayed: boolean; fileHash: string }>> {
   const fileHash = await sha256Hex(bytes)
-  const reg = await supplierRequest<{ delivery: { id: string }; upload: { url: string } | null; replayed: boolean }>(token, '/reception/deliveries', { requirement_slug: requirementSlug, file_name: fileName, file_hash: fileHash, size_bytes: bytes.byteLength })
+  const reg = await supplierRequest<{ delivery: { id: string }; upload: { url: string } | null; replayed: boolean }>(token, '/reception/deliveries', { requirement_slug: requirementSlug, file_name: fileName, file_hash: fileHash, size_bytes: bytes.byteLength, source })
   if (!reg.ok) return reg
   if (reg.value.upload) {
     try {
@@ -140,7 +141,7 @@ export async function deliverFile(token: string, requirementSlug: string, fileNa
 }
 
 export interface ApiSupplierProject { name: string; slug: string; min_score: number; project?: string; profile?: string; profile_version?: number; due_day?: number; due_hour?: number; client?: string; place?: string }
-export interface ApiSupplierDelivery { id: string; file_name: string; file_hash: string; project: string; score: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; uploaded: boolean; received_at: string }
+export interface ApiSupplierDelivery { id: string; file_name: string; file_hash: string; project: string; score: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; file_status?: ApiFileStatus; uploaded: boolean; received_at: string }
 export interface ApiSupplierHome { supplier: { name: string }; receiver: string; max_file_mb: number; projects: ApiSupplierProject[]; deliveries: ApiSupplierDelivery[] }
 
 /** The supplier's own page: no account, only the token from their link. One retry on a network blip. */
@@ -171,8 +172,10 @@ export interface ApiIssue { number: number; title: string; status: 'open' | 'in_
 export interface ApiVersion { id: string; container: string; revision: number; file_name: string; state: 'wip' | 'shared' | 'published' | 'archived'; suitability: string; score: number | null; failed_specs: number | null; uploaded_by: string | null; created_at: string; validated_at: string | null }
 export interface ApiStandard { min_score: number; require_review: boolean; auto_issues: boolean; requirement_set_id: string | null }
 export interface ApiAuditEvent { type: string; actor_id: string | null; from: string | null; to: string | null; details: Record<string, unknown>; at: string }
-export interface ApiDelivery { id: string; file_name: string; file_hash?: string; size_bytes?: number; supplier_id?: string; requirement_set_id?: string; decided_at?: string | null; decided_by?: string | null; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
-export interface ApiSupplier { id: string; created_at?: string; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
+/** The delivered file itself: still waiting, fine, cut short / unclosed, not an IFC, or not the file declared. */
+export type ApiFileStatus = 'pending' | 'ok' | 'damaged' | 'not_ifc' | 'mismatch'
+export interface ApiDelivery { file_status?: ApiFileStatus; auto?: { verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; at: string | null } | null; review?: { verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; by: string; at: string | null } | null; id: string; file_name: string; file_hash?: string; size_bytes?: number; supplier_id?: string; requirement_set_id?: string; decided_at?: string | null; decided_by?: string | null; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
+export interface ApiSupplier { id: string; created_at?: string; revoked_at?: string | null; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
 export interface ApiCredits { plan: string; balances: { cloud: number; ai: number; api: number }; monthly: { cloud: number; ai: number; api: number } }
 export interface ApiRequirementVersion { version: number; note: string; created_by: string; created_at: string }
 export interface ApiRequirementSet { id: string; name: string; slug: string; min_score: number; content?: string }
@@ -184,6 +187,17 @@ export interface ApiClientLink { id: string; label: string; project: string; ver
 export interface ApiOpenedLink { label: string; project: string; version: string; expires_at: string | null; allow_download: boolean; show_report: boolean }
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
+export type ApiOnboardingStep = 'project' | 'requirements' | 'suppliers' | 'connect' | 'first_delivery'
+export interface ApiOnboarding { steps: { key: ApiOnboardingStep; done: boolean; by: 'data' | 'mark' | null; manual: boolean }[]; done: number; total: number; dismissed: boolean }
+/** Everything of one project, as the server exports it (format ifcviewer.project-export/1). */
+export interface ApiProjectExport {
+  format: string; exported_at: string; exported_by: string
+  project: { id: string; slug: string; name: string; min_score: number; requirements: string; created_at: string; archived_at: string | null }
+  suppliers: { id: string; name: string; discipline: string | null; invited_at: string; revoked_at: string | null }[]
+  deliveries: (Pick<ApiDelivery, 'id' | 'file_name' | 'file_hash' | 'size_bytes' | 'supplier' | 'supplier_id' | 'score' | 'failed_specs' | 'file_status' | 'auto' | 'review' | 'verdict' | 'reason' | 'sealed_at'> & { source: string; received_at: string })[]
+  register: { type: string; actor: string | null; from: string | null; to: string | null; details: unknown; at: string }[]
+  issues: { number: number; title: string; status: string; priority: string; assignee: string | null; rule_id: string | null; delivery_id: string | null; element_guids: string[]; created_at: string; updated_at: string }[]
+}
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
 export interface ApiAutomationRun { id: string; automation_id: string; subject: string; results: Record<string, unknown>[] | null; minutes_saved: number; at: string }
 export interface ApiAutomation { id: string; name: string; enabled: boolean; trigger: 'version.validated' | 'delivery.validated' | 'issue.overdue'; conditions: Record<string, unknown>; actions: Record<string, unknown>[]; minutes_saved: number; runs_30d?: number }
@@ -213,7 +227,7 @@ export const paidApi = {
   moveVersion: (id: string, to: ApiVersion['state'], suitability?: string) => send<{ version: { state: string; suitability: string } }>('POST', `/versions/${id}/state`, { to, ...(suitability ? { suitability } : {}) }),
   review: (id: string, decision: 'approve' | 'reject', note?: string) => send<unknown>('POST', `/versions/${id}/review`, { decision, ...(note ? { note } : {}) }),
 
-  deliveries: () => get<{ deliveries: ApiDelivery[] }>('/reception/deliveries'),
+  deliveries: (opts: { limit?: number; requirementSet?: string } = {}) => get<{ deliveries: ApiDelivery[] }>(`/reception/deliveries${opts.limit || opts.requirementSet ? `?${new URLSearchParams({ ...(opts.limit ? { limit: String(opts.limit) } : {}), ...(opts.requirementSet ? { requirement_set: opts.requirementSet } : {}) })}` : ''}`),
   suppliers: () => get<{ suppliers: ApiSupplier[] }>('/reception/suppliers'),
   decide: (id: string, verdict: 'accepted' | 'rejected', reason?: string) => send<unknown>('POST', `/reception/deliveries/${id}/decision`, { verdict, ...(reason ? { reason } : {}) }),
 
@@ -250,8 +264,18 @@ export const paidApi = {
   requirementSets: () => get<{ requirement_sets: ApiRequirementSet[] }>('/reception/requirements'),
   createRequirementSet: (name: string, min_score: number, content: string) => send<{ requirement_set: ApiRequirementSet }>('POST', '/reception/requirements', { name, min_score, content }),
   updateRequirementSet: (id: string, patch: { name?: string; min_score?: number; content?: string }) => send<{ requirement_set: ApiRequirementSet }>('PATCH', `/reception/requirements/${id}`, patch),
+  /** New token, the old one dead at once (Owner/Admin/Editor with reception.manage). */
+  rotateSupplier: (id: string) => send<{ supplier: { id: string }; token: string }>('POST', `/reception/suppliers/${id}/rotate`),
+  /** The token is dead for good; past deliveries stay on the register. */
+  revokeSupplier: (id: string) => send<{ supplier: { id: string; revoked: true } }>('POST', `/reception/suppliers/${id}/revoke`),
   createSupplier: (name: string, discipline?: string) => send<{ supplier: { id: string; name: string }; token: string }>('POST', '/reception/suppliers', { name, ...(discipline ? { discipline } : {}) }),
 
+  onboarding: () => get<ApiOnboarding>('/onboarding'),
+  markOnboarding: (step: ApiOnboardingStep, done: boolean) => send<unknown>('POST', '/onboarding/marks', { step, done }),
+  dismissOnboarding: (dismissed: boolean) => send<unknown>('POST', '/onboarding/dismiss', { dismissed }),
+  exportProject: (id: string) => get<ApiProjectExport>(`/reception/requirements/${id}/export`),
+  /** `confirm` must be the project's name, typed by the person. */
+  deleteProject: (id: string, confirm: string) => send<{ project: string; deliveries: number; issues: number; files_deleted: number; files_left: number }>('DELETE', `/reception/requirements/${id}`, { confirm }),
   outbox: () => get<{ messages: ApiMail[] }>('/mail/outbox'),
   /** Queues a message (never sent from here). Same key → same row. */
   queueMail: (m: { to: string; subject: string; body: string; kind?: ApiMailKind; ref_type?: 'delivery' | 'issue' | 'clash' | 'version'; ref_id?: string }, idempotencyKey: string) =>

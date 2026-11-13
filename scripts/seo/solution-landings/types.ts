@@ -64,6 +64,7 @@ export interface UiCopy {
   postReception: string
   postClash: string
   postBatch: string
+  postSupplier: string
 }
 
 export interface LangCopy { ui: UiCopy; pages: Record<Solution, PageCopy> }

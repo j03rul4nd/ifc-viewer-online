@@ -1,4 +1,4 @@
-// ─── The supplier's upload page (/deliver#t=sup_…) ───────────────────────────
+// ─── The supplier’s upload page (/deliver#t=sup_…) ───────────────────────────
 // What a supplier opens from the receiver's link, with no account: the
 // projects it may deliver to and their requirements, a free check of the IFC
 // in its own browser (the viewer's validator — the same engine and score the
@@ -9,6 +9,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Primary, Quiet, scoreColor } from '../../ui'
 import { fixGuidePath } from '../../../../lib/fix-guide-url'
+import { helpPath } from '../../../../lib/help-paths'
+import { stepIntegrity } from '../../../../lib/step-integrity'
 import { runStandaloneValidation } from '../../../../lib/certify/deep-verify'
 import { calculateQualityScore, explainQualityScore } from '../../../../lib/quality-score'
 import { deliverFile, supplierHome, type ApiSupplierDelivery, type ApiSupplierHome } from '../../../../lib/cloud/paid-client'
@@ -17,8 +19,8 @@ import { namingOf } from './sample'
 import { originatorOf, supplierProjectFromApi } from './live'
 import { useRx } from './strings'
 
-type Load = { state: 'loading' } | { state: 'no_token' } | { state: 'invalid' } | { state: 'error' } | { state: 'ok'; home: ApiSupplierHome }
-type Check = { state: 'idle' } | { state: 'checking'; pct: number } | { state: 'not_ifc' } | { state: 'too_big' } | { state: 'done'; score: number; worst: { rule: string; count: number }[] }
+type Load = { state: 'loading' } | { state: 'no_token' } | { state: 'invalid' } | { state: 'error' } | { state: 'busy' } | { state: 'ok'; home: ApiSupplierHome }
+type Check = { state: 'idle' } | { state: 'checking'; pct: number } | { state: 'not_ifc' } | { state: 'damaged' } | { state: 'too_big' } | { state: 'done'; score: number; worst: { rule: string; count: number }[] }
 type Sent = { state: 'idle' } | { state: 'sending' } | { state: 'failed'; reason: string } | { state: 'sent'; id: string; hash: string; at: string; replayed: boolean }
 
 export function tokenFromHash(hash: string): string {
@@ -48,7 +50,7 @@ export default function SupplierUploadPage() {
     if (!token) return
     const r = await supplierHome(token, linkProject)
     if (r.ok) { setLoad({ state: 'ok', home: r.value }); setSlug((s) => s || (r.value.projects.some((p) => p.slug === linkProject) ? linkProject : r.value.projects[0]?.slug) || '') }
-    else setLoad((l) => (l.state === 'ok' ? l : { state: r.error.code === 'unauthorized' ? 'invalid' : 'error' }))
+    else setLoad((l) => (l.state === 'ok' ? l : { state: r.error.code === 'unauthorized' ? 'invalid' : r.error.code === 'rate_limited' ? 'busy' : 'error' }))
   }, [token, linkProject])
   useEffect(() => { void refresh() }, [refresh])
 
@@ -74,6 +76,11 @@ export default function SupplierUploadPage() {
     if (home.max_file_mb > 0 && f.size > home.max_file_mb * 1024 * 1024) { setFile(null); setCheck({ state: 'too_big' }); return }
     const bytes = await f.arrayBuffer()
     setFile({ name: f.name, bytes })
+    // A file cut short would still score: say it is damaged instead (the server refuses it too).
+    if (/\.ifc$/i.test(f.name)) {
+      const integrity = stepIntegrity(new Uint8Array(bytes))
+      if (!integrity.ok) { setCheck({ state: integrity.code === 'not_step' ? 'not_ifc' : 'damaged' }); return }
+    }
     setCheck({ state: 'checking', pct: 0 })
     try {
       const issues = await runStandaloneValidation(bytes, (pct) => { if (run.current === id) setCheck({ state: 'checking', pct }) })
@@ -89,8 +96,8 @@ export default function SupplierUploadPage() {
   async function send() {
     if (!file || !slug) return
     setSent({ state: 'sending' })
-    const r = await deliverFile(token, slug, file.name, file.bytes)
-    if (!r.ok) { setSent({ state: 'failed', reason: r.error.code === 'file_too_large' ? rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home?.max_file_mb ?? 0 }) : r.error.message ?? r.error.code }); return }
+    const r = await deliverFile(token, slug, file.name, file.bytes, 'page')
+    if (!r.ok) { setSent({ state: 'failed', reason: r.error.code === 'file_too_large' ? rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home?.max_file_mb ?? 0 }) : r.error.code === 'naming' ? rx('The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.') : r.error.code === 'rate_limited' ? rx('Too many attempts from your connection. Wait a minute and try again; nothing was lost.') : r.error.code === 'network' ? rx('The upload was interrupted. Check your connection and send it again: a second send of the same file is never a duplicate.') : r.error.message ?? r.error.code }); return }
     setSent({ state: 'sent', id: r.value.deliveryId, hash: r.value.fileHash, at: new Date().toISOString(), replayed: r.value.replayed })
     void refresh()
   }
@@ -108,6 +115,12 @@ export default function SupplierUploadPage() {
             <h1 className="text-[17px] font-semibold">{rx('This upload link has expired')}</h1>
             <p className="text-[13px] text-[var(--text-dim)] mt-2">{load.state === 'no_token' ? rx('This upload link is not complete. Open the link exactly as you received it.') : rx('Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.')}</p>
             <p className="text-[12px] text-[var(--text-faint)] mt-4"><a className="text-[var(--accent)] hover:underline" href="/">{rx('You can still check your model for free in the viewer, without an account.')}</a></p>
+          </div>
+        )}
+        {load.state === 'busy' && (
+          <div className="text-center py-10" role="alert">
+            <p className="text-[14px]">{rx('Too many attempts from your connection. Wait a minute and try again; nothing was lost.')}</p>
+            <Quiet className="mt-3" onClick={() => { setLoad({ state: 'loading' }); void refresh() }}>{rx('Try again')}</Quiet>
           </div>
         )}
         {load.state === 'error' && (
@@ -135,8 +148,15 @@ export default function SupplierUploadPage() {
             {home.projects.length === 0 && (
               <p className="text-[13px] text-[var(--text-dim)]" role="alert">{rx('This upload link is not complete. Open the link exactly as you received it.')}</p>
             )}
+            {project && home.deliveries.length === 0 && (
+              <ol className="mb-4 grid sm:grid-cols-3 gap-2 text-[12.5px]" aria-label={rx('How it works')}>
+                {[rx('Choose your IFC: it is checked here, in your browser, for free.'), rx('Fix what the check points out, or send it as it is.'), rx('Send it: the receiver gets it already checked and you see their verdict here.')].map((t, i) => (
+                  <li key={i} className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"><span className="font-semibold tabular-nums mr-1">{i + 1}.</span>{t}</li>
+                ))}
+              </ol>
+            )}
             {project && (
-              <section className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 space-y-4">
+              <section className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5 space-y-4">
                 <ul className="text-[12.5px] text-[var(--text-dim)] space-y-1.5">
                   <li>✓ {rx('Requirements: {{profile}} v{{v}}, minimum score {{min}}', { profile: project.profile, v: project.profileVersion, min: project.minScore })}</li>
                   <li>✓ {rx('File name: {{example}}', { example: `${project.code}-${org}-ZZ-XX-M3-…-0001-S2-P01.ifc` })}</li>
@@ -157,8 +177,9 @@ export default function SupplierUploadPage() {
                 <p className="text-[11.5px] text-[var(--text-faint)] text-center">{rx('No account needed. The check runs in your browser and is free.')}</p>
 
                 {check.state === 'checking' && <p className="text-[12.5px] text-[var(--text-dim)]" role="status">{rx('Checking your model in your browser…')} {check.pct}%</p>}
-                {check.state === 'too_big' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home.max_file_mb })}</p>}
-                {check.state === 'not_ifc' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('This file does not open as an IFC.')}</p>}
+                {check.state === 'too_big' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home.max_file_mb })} <span className="text-[var(--text-dim)]">{rx('Export without unused elements, or split the model by level or discipline; or ask the receiver to raise the limit.')}</span></p>}
+                {check.state === 'damaged' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.')}</p>}
+                {check.state === 'not_ifc' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('This file does not open as an IFC.')} <span className="text-[var(--text-dim)]">{rx('Export it again as IFC (2x3 or 4) from your modelling tool: a native file, a DWG or a PDF renamed to .ifc will not work.')}</span></p>}
 
                 {check.state === 'done' && file && naming && (
                   <div className="space-y-3">
@@ -181,11 +202,11 @@ export default function SupplierUploadPage() {
                         </ul>
                       </div>
                     )}
-                    <p className="text-[12.5px] text-[var(--text-dim)]">{pass ? rx('Ready to send. The receiver still reviews it.') : rx('Fix it and check again before sending. You can still send it, but it will most likely be returned.')}</p>
+                    <p className="text-[12.5px] text-[var(--text-dim)]">{pass ? rx('Ready to send. The receiver still reviews it.') : !naming.ok ? rx('Rename the file first: the receiver does not accept a name that breaks the project rule. Then choose it again.') : rx('Fix it and check again before sending. You can still send it, but it will most likely be returned.')}</p>
                     {sent.state !== 'sent' && (
                       <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                         <Quiet onClick={() => input.current?.click()}>{rx('Choose another file')}</Quiet>
-                        <Primary disabled={sent.state === 'sending'} onClick={() => void send()}>{sent.state === 'sending' ? rx('Sending…') : pass ? rx('Send delivery') : rx('Send anyway')}</Primary>
+                        <Primary disabled={sent.state === 'sending' || !naming.ok} onClick={() => void send()}>{sent.state === 'sending' ? rx('Sending…') : pass ? rx('Send delivery') : !naming.ok ? rx('Rename the file first') : rx('Send anyway')}</Primary>
                       </div>
                     )}
                     {sent.state === 'failed' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('Could not send it: {{reason}}', { reason: sent.reason })}</p>}
@@ -223,7 +244,7 @@ export default function SupplierUploadPage() {
                 </ul>
               </section>
             )}
-            <p className="mt-6 text-[11px] text-[var(--text-faint)] text-center">{rx('Checked with IFC Viewer Online · free for suppliers')}</p>
+            <p className="mt-6 text-[11px] text-[var(--text-faint)] text-center">{rx('Checked with IFC Viewer Online · free for suppliers')} · <a className="underline" href={helpPath('suppliers', lang)} target="_blank" rel="noopener">{rx('Help for suppliers')}</a></p>
           </>
         )}
       </div>

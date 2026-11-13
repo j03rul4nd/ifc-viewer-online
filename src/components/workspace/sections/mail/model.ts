@@ -5,6 +5,8 @@
 // aggregate clicks and the send adapter. Built dark: MAIL_LIVE is false and
 // every real adapter refuses to send while it is.
 
+import { renderIssue, type EBlock, type Issue, type Publication } from './editorial/render'
+
 export const MAIL_LIVE = false
 
 export type Mx = (text: string, vars?: Record<string, unknown>) => string
@@ -281,7 +283,6 @@ export function historyOf(c: Contact, messages: Outgoing[], replies: Reply[], su
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!))
 
 export function fillVars(s: string, v: Record<string, string>) { return s.replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m) }
 
@@ -297,86 +298,74 @@ export interface RenderInput {
   unsubscribeUrl: string
 }
 
-/** Email-safe HTML (tables, inline styles, 600 px), its plain text, and the subject. No tracking pixel, ever. */
+/**
+ * Email-safe HTML, its plain text and the subject, in the editorial system
+ * (./editorial). Older block templates map onto its blocks so every message
+ * the section sends shares one design. No tracking pixel, ever.
+ */
 export function renderEmail(i: RenderInput): { subject: string; html: string; text: string } {
   const { project: p, mx, brand } = i
-  const dark = i.theme === 'dark'
-  const c = { bg: dark ? '#111315' : '#f4f5f7', card: dark ? '#1b1e21' : '#ffffff', text: dark ? '#e8eaed' : '#1d2125', dim: dark ? '#a0a6ad' : '#5c6670', line: dark ? '#2c3136' : '#e3e6ea' }
   const vars = { client: i.contact.name.split(' ')[0], project: p.name, company: brand.company }
   const subject = fillVars(i.template.subject, vars)
   const link = portalLink(p.viewerUrl, i.messageId)
   const score = p.health[p.health.length - 1], d = trend(p.health)
-  const html: string[] = [], text: string[] = []
-  const row = (inner: string) => html.push(`<tr><td style="padding:12px 28px;color:${c.text};font:15px/1.5 Arial,sans-serif">${inner}</td></tr>`)
+  const blocks: EBlock[] = []
   for (const b of i.template.blocks) {
+    const id = b.id
     switch (b.kind) {
-      case 'heading': row(`<h1 style="margin:0;font-size:22px">${esc(fillVars(b.text ?? '', vars))}</h1>`); text.push(fillVars(b.text ?? '', vars).toUpperCase()); break
-      case 'text': row(esc(fillVars(b.text ?? '', vars)).replace(/\n/g, '<br>')); text.push(fillVars(b.text ?? '', vars)); break
+      case 'heading': blocks.push({ id, k: 'editor', headline: fillVars(b.text ?? '', vars), lede: '', sign: false }); break
+      case 'text': blocks.push({ id, k: 'note', text: fillVars(b.text ?? '', vars) }); break
       case 'health': {
         const t = d > 0 ? mx('up {{n}} since last week', { n: d }) : d < 0 ? mx('down {{n}} since last week', { n: -d }) : mx('same as last week')
-        const color = score >= 80 ? '#1f9d61' : score >= 60 ? '#c98a12' : '#d0453a'
-        const bars = p.health.slice(-8).map((v) => `<td valign="bottom" style="padding:0 2px"><div style="width:10px;height:${Math.max(4, Math.round(v / 3))}px;background:${color};opacity:.75"></div></td>`).join('')
-        row(`<div style="color:${c.dim};font-size:13px">${esc(mx('Model Health Score'))}</div><table role="presentation"><tr><td style="font-size:36px;font-weight:bold;color:${color};padding-right:16px">${score}</td>${bars}</tr></table><div style="color:${c.dim};font-size:13px">${esc(t)}</div>`)
-        text.push(`${mx('Model Health Score')}: ${score} (${t})`); break
+        blocks.push({ id, k: 'stamp', title: mx('Model Health Score'), score, prev: p.health.length > 1 ? p.health[p.health.length - 2] : undefined, against: p.name, note: t })
+        break
       }
       case 'deliveries': {
         const acc = p.deliveries.filter((x) => x.verdict === 'accepted')
-        row(`<strong>${esc(mx('{{n}} deliveries accepted', { n: acc.length }))}</strong>${acc.slice(0, 4).map((x) => `<div style="color:${c.dim};font-size:13px">✓ ${esc(x.supplier)} · ${esc(x.file)}</div>`).join('')}`)
-        text.push(mx('{{n}} deliveries accepted', { n: acc.length })); break
+        blocks.push({ id, k: 'list', title: mx('{{n}} deliveries accepted', { n: acc.length }), items: acc.slice(0, 4).map((x) => ({ term: x.supplier, text: `${x.file} · ${x.date}` })) })
+        break
       }
       case 'issues':
-        row(`<strong>${esc(mx('{{n}} issues closed, {{o}} still open', { n: p.issues.closed, o: p.issues.open }))}</strong>${p.issues.closedTitles.slice(0, 3).map((x) => `<div style="color:${c.dim};font-size:13px">✓ ${esc(x)}</div>`).join('')}`)
-        text.push(mx('{{n}} issues closed, {{o}} still open', { n: p.issues.closed, o: p.issues.open })); break
+        blocks.push({ id, k: 'list', title: mx('{{n}} issues closed, {{o}} still open', { n: p.issues.closed, o: p.issues.open }), items: p.issues.closedTitles.slice(0, 3).map((x, n) => ({ term: String(n + 1).padStart(2, '0'), text: x })) })
+        break
       case 'milestones':
-        row(`<strong>${esc(mx('Milestones'))}</strong>${p.milestones.map((m) => `<div style="color:${m.done ? c.text : c.dim};font-size:13px">${m.done ? '●' : '○'} ${esc(m.name)} · ${esc(m.date)}</div>`).join('')}`)
-        text.push(`${mx('Milestones')}: ${p.milestones.map((m) => `${m.done ? '[x]' : '[ ]'} ${m.name} ${m.date}`).join('; ')}`); break
-      case 'capture':
-        row(`<a href="${esc(link)}" style="display:block;border:1px solid ${c.line};border-radius:8px;padding:48px 12px;text-align:center;color:${c.dim};text-decoration:none;background:${dark ? '#22262a' : '#eef1f4'}">▣ ${esc(p.captureAlt)}<br><span style="font-size:13px">${esc(mx('Open the model in 3D'))}</span></a>`)
-        text.push(`${mx('Open the model in 3D')}: ${link}`); break
+        blocks.push({ id, k: 'milestones', title: mx('Milestones'), items: p.milestones.map((m, n) => ({ name: m.name, date: m.date, state: m.done ? 'done' : p.milestones.findIndex((x) => !x.done) === n ? 'next' : 'later' })) })
+        break
+      case 'capture': blocks.push({ id, k: 'capture', w: 16, h: 9, caption: `${p.captureAlt} · ${mx('Open the model in 3D')}`, href: link }); break
       case 'certificate':
-        row(`<div style="border:1px solid ${c.line};border-radius:8px;padding:12px">${esc(mx('Delivery certificate {{id}} · score {{s}} · {{d}}', { id: p.certificate.id, s: p.certificate.score, d: p.certificate.date }))}</div>`)
-        text.push(mx('Delivery certificate {{id}} · score {{s}} · {{d}}', { id: p.certificate.id, s: p.certificate.score, d: p.certificate.date })); break
-      case 'button':
-        row(`<a href="${esc(link)}" style="display:inline-block;background:${esc(brand.color)};color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold">${esc(b.text || mx('See the project'))}</a>`)
-        text.push(`${b.text || mx('See the project')}: ${link}`); break
-      case 'summary': {
-        const lines = clientSummary(p, mx)
-        row(`<div style="border-left:3px solid ${esc(brand.color)};padding-left:12px">${lines.map((l) => `<div style="margin:2px 0">${esc(l)}</div>`).join('')}</div>`)
-        text.push(lines.join(' ')); break
-      }
-      case 'timeline': {
-        const ev = projectTimeline(p).slice(0, 6)
-        row(`<strong>${esc(mx('Project timeline'))}</strong>${ev.map((e) => `<div style="font-size:13px;color:${e.done ? c.text : c.dim}">${e.done ? '●' : '○'} ${esc(e.date)} · ${esc(e.label)}</div>`).join('')}`)
-        text.push(`${mx('Project timeline')}: ${ev.map((e) => `${e.date} ${e.label}`).join('; ')}`); break
-      }
+        blocks.push({ id, k: 'stamp', score: p.certificate.score, against: p.name, cert: p.certificate.id, note: mx('Delivery certificate {{id}} · score {{s}} · {{d}}', { id: p.certificate.id, s: p.certificate.score, d: p.certificate.date }) })
+        break
+      case 'button': blocks.push({ id, k: 'cta', label: b.text || mx('See the project'), href: link }); break
+      case 'summary': blocks.push({ id, k: 'note', text: clientSummary(p, mx).join('\n') }); break
+      case 'timeline':
+        blocks.push({ id, k: 'milestones', title: mx('Project timeline'), items: projectTimeline(p).slice(0, 6).map((e) => ({ name: e.label, date: e.date, state: e.done ? 'done' : 'later' })) })
+        break
       case 'clashes': {
         const k = clashWeek(p.clashes)
         if (!k) break
-        const line = mx('{{n}} clashes resolved this week, {{o}} still open', { n: k.resolvedThisWeek, o: k.open })
-        row(`<strong>${esc(line)}</strong><div style="color:${c.dim};font-size:13px">${esc(k.openDelta <= 0 ? mx('Open clashes down by {{n}}', { n: -k.openDelta }) : mx('Open clashes up by {{n}}', { n: k.openDelta }))}</div>`)
-        text.push(line); break
+        blocks.push({ id, k: 'kpis', items: [{ label: mx('{{n}} clashes resolved this week, {{o}} still open', { n: k.resolvedThisWeek, o: k.open }), value: String(k.open), delta: k.openDelta <= 0 ? mx('Open clashes down by {{n}}', { n: -k.openDelta }) : mx('Open clashes up by {{n}}', { n: k.openDelta }) }] })
+        break
       }
-      case 'rules': {
-        if (!p.rules) break
-        const line = mx('{{c}} requirement checks at {{ph}}: {{f}} to fix, {{x}} fixed this week', { c: p.rules.checked, ph: p.rules.phase, f: p.rules.failing, x: p.rules.fixedThisWeek })
-        row(esc(line)); text.push(line); break
-      }
-      case 'portal':
-        row(`<a href="${esc(portalLink(p.portalUrl ?? p.viewerUrl, i.messageId))}" style="color:${esc(brand.color)};font-weight:bold">${esc(mx('Your project page: timeline, model and every update'))} →</a>`)
-        text.push(`${mx('Your project page: timeline, model and every update')}: ${portalLink(p.portalUrl ?? p.viewerUrl, i.messageId)}`); break
-      case 'divider': html.push(`<tr><td style="padding:4px 28px"><hr style="border:0;border-top:1px solid ${c.line}"></td></tr>`); break
+      case 'rules':
+        if (p.rules) blocks.push({ id, k: 'note', text: mx('{{c}} requirement checks at {{ph}}: {{f}} to fix, {{x}} fixed this week', { c: p.rules.checked, ph: p.rules.phase, f: p.rules.failing, x: p.rules.fixedThisWeek }) })
+        break
+      case 'portal': blocks.push({ id, k: 'cta', label: mx('Your project page: timeline, model and every update'), href: portalLink(p.portalUrl ?? p.viewerUrl, i.messageId) }); break
+      case 'divider': break
     }
   }
-  const footer = `${esc(i.dept.signature)}<br>${esc(brand.address)}<br><a href="${esc(i.unsubscribeUrl)}" style="color:${c.dim}">${esc(mx('Stop these updates'))}</a> · ${esc(mx('Reply to this email to answer the team.'))}`
-  const doc = `<!doctype html><html lang="${esc(i.contact.lang)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light dark"><title>${esc(subject)}</title></head>`
-    + `<body style="margin:0;background:${c.bg}"><table role="presentation" width="100%" style="background:${c.bg}"><tr><td align="center" style="padding:16px 8px">`
-    + `<table role="presentation" width="100%" style="max-width:600px;background:${c.card};border-radius:10px;overflow:hidden">`
-    + `<tr><td style="padding:18px 28px;border-top:4px solid ${esc(brand.color)}"><table role="presentation"><tr><td style="width:34px;height:34px;border-radius:6px;background:${esc(brand.color)};color:#fff;font:bold 13px Arial;text-align:center">${esc(brand.initials)}</td><td style="padding-left:10px;color:${c.text};font:bold 14px Arial">${esc(brand.company)}<div style="font-weight:normal;color:${c.dim};font-size:12px">${esc(i.dept.name)} · ${esc(p.name)}</div></td></tr></table></td></tr>`
-    + html.join('')
-    + `<tr><td style="padding:18px 28px;color:${c.dim};font:12px/1.5 Arial,sans-serif;border-top:1px solid ${c.line}">${footer}</td></tr>`
-    + `</table></td></tr></table></body></html>`
-  text.push('', i.dept.signature, `${mx('Stop these updates')}: ${i.unsubscribeUrl}`)
-  return { subject, html: doc, text: text.join('\n\n') }
+  const pub: Publication = {
+    name: p.name, tagline: i.dept.name, project: p.client, phase: p.phase ?? '', rev: '', code: p.id,
+    editor: { name: i.dept.senderName, role: i.dept.name }, studio: { name: brand.company }, accent: brand.color, pairing: 'editorial', address: brand.address,
+  }
+  const issue: Issue = {
+    templateId: i.template.id, audience: 'client', register: 'editorial', to: i.contact.name, kicker: fillVars(i.template.name, vars),
+    subject, preheader: fillVars(i.template.name, vars), number: 1, date: p.certificate.date, blocks,
+  }
+  const r = renderIssue(issue, pub, {
+    lang: i.contact.lang, scheme: i.theme, unsubscribeUrl: i.unsubscribeUrl,
+    footer: { why: mx('Reply to this email to answer the team.'), unsubscribe: mx('Stop these updates'), signature: i.dept.signature },
+  })
+  return { subject, html: r.html, text: r.text }
 }
 
 export function envelopeFor(i: RenderInput, to: string): Envelope {

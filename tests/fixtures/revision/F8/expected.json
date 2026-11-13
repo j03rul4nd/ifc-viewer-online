@@ -1,0 +1,47 @@
+{
+  "id": "F8",
+  "description": "Poblenou A/S/M: move + add in A, reshape + remove in S, properties in M",
+  "changes": [
+    {
+      "globalIdA": "3QBfMQMe9J39KjGHm4gOtE",
+      "globalIdB": "3QBfMQMe9J39KjGHm4gOtE",
+      "kind": "moved",
+      "method": "guid",
+      "file": "BCN-IVO-ZZ-XX-M3-A-0001.ifc",
+      "direction": "W"
+    },
+    {
+      "globalIdB": "0RevCmpF8A000000000001",
+      "kind": "added",
+      "method": "none",
+      "file": "BCN-IVO-ZZ-XX-M3-A-0001.ifc"
+    },
+    {
+      "globalIdA": "2rTAYmpIrHgxQRmQGJAJQJ",
+      "globalIdB": "2rTAYmpIrHgxQRmQGJAJQJ",
+      "kind": "reshaped",
+      "method": "guid",
+      "file": "BCN-IVO-ZZ-XX-M3-S-0001.ifc"
+    },
+    {
+      "globalIdA": "0EiQ8ymu1GJhDlfL6rL__a",
+      "kind": "removed",
+      "method": "none",
+      "file": "BCN-IVO-ZZ-XX-M3-S-0001.ifc"
+    },
+    {
+      "globalIdA": "1wEYNo2anGOuuT3LrzWIiZ",
+      "globalIdB": "1wEYNo2anGOuuT3LrzWIiZ",
+      "kind": "properties_changed",
+      "method": "guid",
+      "file": "BCN-IVO-ZZ-XX-M3-M-0001.ifc"
+    }
+  ],
+  "counts": {
+    "moved": 1,
+    "added": 1,
+    "reshaped": 1,
+    "removed": 1,
+    "properties_changed": 1
+  }
+}

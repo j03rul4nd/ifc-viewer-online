@@ -110,7 +110,86 @@
     "status": "Status",
     "element": "Element",
     "detail": "What changed",
-    "truncated": "Showing the first {{shown}} of {{total}} changed elements — the CSV export has all of them."
+    "truncated": "Showing the first {{shown}} of {{total}} changed elements — the CSV export has all of them.",
+    "revision": {
+      "title": "Revision changes",
+      "versionA": "Version A (before)",
+      "versionB": "Version B (after)",
+      "files": "Files",
+      "date": "Date",
+      "revision": "Rev.",
+      "status": "Status",
+      "generated": "Generated",
+      "summary": "Summary",
+      "byKind": "By kind of change",
+      "byStorey": "By storey",
+      "total": "Changes",
+      "noStorey": "No storey",
+      "change": "Change",
+      "kindLabel": "Kind",
+      "element": "Element",
+      "ifcClass": "Class",
+      "storey": "Storey",
+      "fileA": "File A",
+      "fileB": "File B",
+      "field": "Field",
+      "a": "A",
+      "b": "B",
+      "reviewLabel": "Review",
+      "noCapture": "No capture (model not loaded)",
+      "page": "Page {{n}} of {{total}}",
+      "sheetSummary": "Summary",
+      "sheetChanges": "Changes",
+      "kind": {
+        "removed": "Removed",
+        "added": "Added",
+        "type_changed": "Type changed",
+        "reshaped": "Reshaped",
+        "moved": "Moved",
+        "relations_changed": "Relations changed",
+        "properties_changed": "Properties changed",
+        "unchanged": "Unchanged"
+      },
+      "review": {
+        "pending": "Pending",
+        "reviewed": "Reviewed",
+        "affects_site": "Affects site"
+      },
+      "fields": {
+        "move": "Displacement",
+        "direction": "Direction",
+        "size": "Size",
+        "volume": "Volume"
+      },
+      "dir": {
+        "N": "north",
+        "NE": "north-east",
+        "E": "east",
+        "SE": "south-east",
+        "S": "south",
+        "SW": "south-west",
+        "W": "west",
+        "NW": "north-west",
+        "up": "up",
+        "down": "down"
+      },
+      "sentence": {
+        "added": "New {{class}}",
+        "removed": "{{class}} removed",
+        "moved_mm": "Moved {{mm}} mm {{dir}}",
+        "height_mm": "Height {{before}} → {{after}} mm",
+        "size_mm": "Size ({{axis}}) {{before}} → {{after}} mm",
+        "volume_m3": "Volume {{before}} → {{after}} m³ ({{pct}} %)",
+        "reshaped": "Shape changed",
+        "type_changed": "Type {{before}} → {{after}}",
+        "storey_changed": "Storey {{before}} → {{after}}",
+        "file_changed": "File {{before}} → {{after}}",
+        "relations_changed": "Relations changed",
+        "property_changed": "{{key}}: {{before}} → {{after}}",
+        "properties_changed": "{{count}} properties changed",
+        "unchanged": "Unchanged"
+      }
+    }
   },
   "ids": {
     "runTitle": "Check both versions against an IDS",
@@ -201,5 +280,253 @@
     "close": "Close comparison",
     "start_one": "{{count}} change — tap › to go through it",
     "start_other": "{{count}} changes — tap › to go through them"
+  },
+  "rc": {
+    "title": "Revision compare",
+    "subtitle": "Drop the old revision and the new one. The comparison starts by itself.",
+    "drop": {
+      "a": "Old revision (A)",
+      "b": "New revision (B)",
+      "hint": "Drop IFC files here or tap to choose",
+      "files_one": "{{count}} file",
+      "files_other": "{{count}} files",
+      "swap": "Swap A and B"
+    },
+    "local": "Processed in your browser: files never leave this device.",
+    "localShort": "Local",
+    "reading": "Reading the revisions…",
+    "advanced": "Weekly deliveries, baselines, IDS and BCF →",
+    "back": "Back",
+    "none": "No changes match the filters.",
+    "prev": "Previous",
+    "next": "Next",
+    "frame": "Frame",
+    "list_one": "{{count}} change",
+    "list_other": "{{count}} changes",
+    "keys": "J / K next · R reviewed · S affects site · F frame",
+    "paused": "Validation and IDS colours are paused while comparing.",
+    "guidRegenerated": "The designer regenerated the element IDs: elements were matched by mark and position. Check the confidence of each match.",
+    "originShift": "The whole model moved {{x}}, {{y}}, {{z}} mm (east, north, up). That shift is ignored when classifying.",
+    "match": "Matched by {{method}} · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "mark",
+      "geometry": "position and shape",
+      "split": "split",
+      "merge": "merge",
+      "none": "—"
+    },
+    "kind": {
+      "added": "Added",
+      "removed": "Removed",
+      "moved": "Moved",
+      "reshaped": "Reshaped",
+      "type_changed": "Type changed",
+      "relations_changed": "Relations changed",
+      "properties_changed": "Properties changed",
+      "unchanged": "Unchanged"
+    },
+    "review": {
+      "pending": "Pending",
+      "reviewed": "Reviewed",
+      "affects_site": "Affects site"
+    },
+    "counter": {
+      "changes_one": "{{count}} change",
+      "changes_other": "{{count}} changes",
+      "reviewed_one": "{{count}} reviewed",
+      "reviewed_other": "{{count}} reviewed"
+    },
+    "view": {
+      "label": "View",
+      "changes": "Changes",
+      "curtain": "Slider",
+      "split": "Split",
+      "blink": "Blink",
+      "blinkHint": "Space to switch"
+    },
+    "filter": {
+      "kind": "Change type",
+      "storey": "Storey",
+      "anyStorey": "All storeys",
+      "file": "Discipline (file)",
+      "anyFile": "All files",
+      "class": "Class",
+      "anyClass": "All classes",
+      "review": "Review state",
+      "anyReview": "Any state",
+      "marks": "Marks, names or IDs (paste a list)",
+      "toggle": "Filters"
+    },
+    "tol": {
+      "title": "Tolerances",
+      "move": "Movement",
+      "size": "Size per axis",
+      "volume": "Volume",
+      "apply": "Recalculate",
+      "close": "Close",
+      "took": "{{ms}} ms",
+      "hint": "Recalculated from the revisions already read; the files are not read again."
+    },
+    "table": {
+      "toggle": "Before / after",
+      "field": "Field",
+      "before": "Before (A)",
+      "after": "After (B)",
+      "empty": "No field-level detail.",
+      "added": "New element in {{file}}.",
+      "removed": "Element no longer in {{file}}."
+    },
+    "field": {
+      "positionX": "Position east–west",
+      "positionY": "Position north–south",
+      "positionZ": "Elevation",
+      "distance": "Distance moved",
+      "sizeX": "Size east–west",
+      "sizeY": "Size north–south",
+      "height": "Height",
+      "volume": "Volume"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "Preparing {{done}} / {{total}}…",
+      "failed": "Export failed: {{message}}",
+      "pdfHint": "Report with a capture per change",
+      "xlsxHint": "Spreadsheet of every changed field",
+      "bcfHint": "Issues for the designer, one per change"
+    },
+    "dir": {
+      "N": "north",
+      "NE": "north-east",
+      "E": "east",
+      "SE": "south-east",
+      "S": "south",
+      "SW": "south-west",
+      "W": "west",
+      "NW": "north-west",
+      "up": "up",
+      "down": "down"
+    },
+    "axis": {
+      "x": "east–west",
+      "y": "north–south",
+      "z": "height"
+    },
+    "summary": {
+      "added": "New {{class}}",
+      "removed": "{{class}} removed",
+      "unchanged": "No change",
+      "moved_mm": "Moved {{mm}} mm {{dir}}",
+      "moved_mm_nodir": "Moved {{mm}} mm",
+      "height_mm": "Height {{before}} → {{after}} mm",
+      "size_mm": "Size {{axis}} {{before}} → {{after}} mm",
+      "volume_m3": "Volume {{before}} → {{after}} m³ ({{pct}} %)",
+      "reshaped": "Shape changed",
+      "type_changed": "Type {{before}} → {{after}}",
+      "storey_changed": "Storey {{before}} → {{after}}",
+      "file_changed": "Now in file {{after}} (was {{before}})",
+      "relations_changed": "Relations changed",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_one": "{{count}} property changed",
+      "properties_changed_other": "{{count}} properties changed",
+      "changed": "Changed"
+    },
+    "tour": {
+      "title": "Revision compare tour",
+      "ui": {
+        "of": "{{title}} · {{n}} of {{total}}",
+        "skip": "Skip",
+        "back": "Back",
+        "next": "Next",
+        "done": "Done"
+      },
+      "offer": "New here? A 2-minute tour shows what to look at.",
+      "start": "Start the tour",
+      "dismiss": "No thanks",
+      "local": {
+        "title": "Old vs new, nothing uploaded",
+        "body": "A is the old revision, B the new one. Both are read in this browser: the files never leave your computer."
+      },
+      "list": {
+        "title": "Every change, ordered by impact",
+        "body": "Moved and removed elements first, then shape, then data. J / K or the arrows go through them one by one."
+      },
+      "moved": {
+        "title": "What moved, and how far",
+        "body": "The arrow in 3D goes from the old position to the new one, and the sentence says it in site terms, like “Moved 120 mm W”."
+      },
+      "table": {
+        "title": "Before and after",
+        "body": "Position, size, height and changed properties side by side, with the difference. No need to open both files."
+      },
+      "review": {
+        "title": "Mark what you checked",
+        "body": "“Reviewed” when it is fine, “Affects site” when it changes work on site. The counter at the top keeps the tally."
+      },
+      "filters": {
+        "title": "Only your floor, only your pieces",
+        "body": "Filter by storey, discipline, element type or piece mark. Paste a list of marks to see only those."
+      },
+      "views": {
+        "title": "Slider A | B",
+        "body": "Drag the line across the model: old on the left, new on the right. Or flip between A and B in the same view."
+      },
+      "export": {
+        "title": "Send it on",
+        "body": "A PDF or spreadsheet for the site team, a BCF file for the designer — every change with its picture."
+      },
+      "end": {
+        "title": "Try it with your own files",
+        "body": "◀ Back opens the two drop zones: old revision, new revision. And tell us what you think: Help / Feedback is always here."
+      }
+    },
+    "help": {
+      "button": "Help / Feedback",
+      "feedback": "Send feedback",
+      "tour": "Replay the tour"
+    },
+    "demo": {
+      "loading": "Loading the sample revisions…",
+      "failed": "The sample revisions could not be loaded: {{message}}"
+    },
+    "cls": {
+      "wall": "Wall",
+      "slab": "Slab",
+      "column": "Column",
+      "beam": "Beam",
+      "door": "Door",
+      "window": "Window",
+      "stair": "Stair",
+      "stair_flight": "Stair flight",
+      "roof": "Roof",
+      "member": "Member",
+      "plate": "Plate",
+      "covering": "Covering",
+      "railing": "Railing",
+      "curtain_wall": "Curtain wall",
+      "footing": "Footing",
+      "pile": "Pile",
+      "space": "Space",
+      "opening": "Opening",
+      "furniture": "Furniture",
+      "building_element_proxy": "Element",
+      "pipe_segment": "Pipe",
+      "duct_segment": "Duct",
+      "flow_segment": "Duct or pipe",
+      "flow_terminal": "Terminal",
+      "flow_fitting": "Fitting",
+      "rebar": "Rebar"
+    },
+    "close": {
+      "title": "Close the comparison",
+      "body": "Both revisions are still loaded in the 3D view. What should stay?",
+      "removeBoth": "Remove A and B from the scene",
+      "removeA": "Remove only A (old revision)",
+      "keep": "Keep both in the scene",
+      "cancel": "Cancel"
+    }
   }
 }

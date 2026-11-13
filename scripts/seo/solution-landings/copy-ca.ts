@@ -15,6 +15,7 @@ export const copy: LangCopy = {
     postReception: 'Revisar els models IFC dels subcontractistes',
     postClash: 'Detecció de col·lisions al navegador',
     postBatch: 'Validar molts fitxers IFC alhora',
+    postSupplier: 'Pàgina de pujada per a proveïdors sense compte',
   },
   pages: {
     contractors: {
@@ -93,7 +94,7 @@ export const copy: LangCopy = {
       ],
       faq: [
         ['Puc fer servir Reception avui?', 'Encara no. Està dissenyat i es mostra amb dades d\'exemple. Si reps models de subcontractistes, [parla amb nosaltres](pricing): busquem uns quants projectes pilot. Comprovar un model amb els teus requisits és gratuït i funciona avui al [visor](viewer).'],
-        ['Els subcontractistes paguen o necessiten compte?', 'No. Obren el teu enllaç i comproven el seu model de franc al navegador. Paga qui rep i gestiona els lliuraments.'],
+        ['Els subcontractistes paguen o necessiten compte?', 'No. Obren el teu enllaç i comproven el seu model de franc al navegador. Paga qui rep i gestiona els lliuraments. Com funciona: [pàgina de pujada per a proveïdors sense compte](postSupplier).'],
         ['Substitueix Catenda, Dalux o Autodesk Construction Cloud?', 'No. Comprova el model abans que arribi al teu CDE i funciona amb qualsevol CDE. Cada CDE té el seu propi flux; mira la comparativa de dalt amb la data en què vam llegir les seves pàgines.'],
         ['Es puja el model per comprovar-lo?', 'En la comprovació gratuïta, no: s\'executa al navegador del subcontractista. A Reception, el lliurament que acceptes es desa per a tu a la UE.'],
         ['Quant costarà?', 'Està previst des de 290 € per projecte al mes amb 15 proveïdors, o 790 € per a projectes il·limitats. Els preus poden canviar abans del llançament; consulta els [plans](pricing).'],

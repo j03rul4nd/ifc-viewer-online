@@ -119,3 +119,52 @@ suppliers and deliveries (the register hash-chains the real file SHA-256 and the
 edits by role; clash statuses shared through `cloudSync` between two members (a late older copy never
 wins, a Viewer cannot write); an issue from a clash with both GlobalIds; the certificate logo set and
 removed only by Owner/Admin.
+
+Part 6 (`paid-local-6.integration.test.ts`, security): the seed adds a second company
+(`org_localrival`, `user_rivalowner`). Company B creates one of every paid object; company A lists,
+reads, changes and deletes each by id and gets nothing back and changes nothing. Also: an issue or
+automation can only be assigned to a member of the same company; supplier tokens rotate (old one dead at
+once) and revoke (deliveries stay); 40 wrong tokens from one address end in 429 (`SUPPLIER_LIMITER`,
+30/min — wrangler simulates it locally); client links expire, revoke and refuse a wrong token; webhook
+secrets are shown once and `file://`, metadata and `gopher://` URLs are refused; hostile file names
+(`../`, back-slashes, control characters, no `.ifc`) are a 400; a name that breaks the ISO 19650 rule of a set with a `project` code is a 422 `naming` with the issues (`"naming": false` switches it off); every sensitive action lands in
+`/quality/audit`. The last test trips the per-address limit for a minute.
+
+## 5. Simulated pilot
+
+```bash
+PAID_LOCAL_PILOT=1 PILOT_OUT=pilot.json PAID_LOCAL_API=http://127.0.0.1:8787 RUNNER_TOKEN=<token> npx vitest run src/lib/cloud/pilot.integration.test.ts
+```
+
+A contractor (`org_localpilot`) opens a site, invites 5 suppliers; they deliver real public IFC files
+(Port de Barcelona library and the sample buildings) through the upload page's calls and a watched
+folder, good and bad (a renamed PDF, a file cut at 60 %, a double send, a misnamed file); the contractor
+accepts, returns, raises and resolves issues, shares 25 clash statuses and the mail queue fills. Every
+step is timed into `PILOT_OUT`. Results: docs-planning/32 «Piloto simulado».
+
+Part 7 (`paid-local-7.integration.test.ts`): a STEP file cut short comes back `file_status: damaged`
+with its reason, never a low score; `auto` (the server's verdict) and `review` (a person's) are separate
+fields while `verdict`/`reason` stay the effective values; an upload-page delivery is validated before
+an older folder drop (`source` → job priority; `RUNNER_PER_WORKSPACE`, default 3, caps one company's
+running jobs); public routes answer 429 after 60/min per address and paid routes after 600/min per
+caller, with `Retry-After`. With `PAID_LOCAL_DB_CONTAINER=ifc-cloud-api-db-1` it also proves row-level
+security on its own: as `ifc_api_local` (no superuser, no BYPASSRLS) bound to company A, not one row of
+company B is visible in 12 tenant tables and writing into B is refused by the database.
+
+**Row-level security locally:** run `DATABASE_URL=postgresql://ifc:ifc@localhost:54329/ifc_real node
+scripts/local-rls-role.mjs` once in the backend, then set `.dev.vars`
+`DATABASE_URL=postgresql://ifc_api_local:local@localhost:54329/ifc_real` (keep `DIRECT_URL` on the owner
+for migrations). All suites pass under it.
+
+The API contract for deliveries (file status, automatic verdict, review, errors, 429) is in the
+backend's `docs/openapi-reception.yaml`.
+
+## 6. Pilot at scale
+
+```bash
+PAID_LOCAL_PILOT_SCALE=1 PILOT_OUT=pilot-scale.json PAID_LOCAL_API=http://127.0.0.1:8787 RUNNER_TOKEN=<token> npx vitest run src/lib/cloud/pilot-scale.integration.test.ts
+```
+
+50 folder deliveries (3 damaged, 3 misnamed) handled 4 at a time by 3 runners, plus the 94 MB Shanghai
+Tower through the upload page; CPU load is sampled during the run. `PILOT_RUNNERS` and
+`PILOT_CONCURRENCY` change the set-up. Results: docs-planning/32 «Piloto a escala».

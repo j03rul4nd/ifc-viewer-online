@@ -170,7 +170,36 @@
       "need": "比較するシートを 2 枚開いてください。",
       "before": "変更前",
       "after": "変更後",
-      "run": "比較"
+      "run": "比較",
+      "pdfTitle": "2つのPDF改訂版を比較",
+      "pdfBlurb": "旧版と新版、縮尺や位置は問いません。図面は図番で対応付け、表題欄は除外します。",
+      "oldPdf": "旧改訂版 (PDF)",
+      "newPdf": "新改訂版 (PDF)",
+      "pages_one": "{{count}} ページ",
+      "pages_other": "{{count}} ページ",
+      "pdfError": "このPDFを読み込めませんでした。",
+      "pdfDone": "{{sheets}} 枚の図面に {{clouds}} 個の改訂雲マーク（{{seconds}} 秒）。",
+      "overlayName": "変更 {{sheet}}",
+      "results": "比較した図面",
+      "clouds_one": "{{count}} 個の雲マーク",
+      "clouds_other": "{{count}} 個の雲マーク",
+      "aligned": "{{method}}、縮尺 ×{{scale}}、RMS {{rms}} mm",
+      "cloudLine": "雲マーク {{id}}：+{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} 個の領域が全図面で変化したため除外しました",
+      "autoExcluded_other": "{{count}} 個の領域が全図面で変化したため除外しました",
+      "exportPdf": "雲マーク付きの新改訂版をダウンロード (PDF)",
+      "cloudLayer": "改訂雲マーク",
+      "status": {
+        "notVector": "ベクターではありません（スキャン）：比較なし",
+        "onlyA": "旧版のみ",
+        "onlyB": "新版のみ",
+        "noAlignment": "位置合わせできません"
+      },
+      "method": {
+        "frame": "図枠",
+        "ransac": "図形",
+        "identity": "なし"
+      }
     },
     "beyond": "切断面の先を表示(m)",
     "poche": "切断された壁と構造を塗りつぶす",

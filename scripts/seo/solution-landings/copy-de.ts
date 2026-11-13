@@ -15,6 +15,7 @@ export const copy: LangCopy = {
     postReception: 'IFC-Modelle von Nachunternehmern prüfen',
     postClash: 'Kollisionsprüfung im Browser',
     postBatch: 'Viele IFC-Dateien auf einmal validieren',
+    postSupplier: 'Upload-Seite für Lieferanten ohne Konto',
   },
   pages: {
     contractors: {
@@ -93,7 +94,7 @@ export const copy: LangCopy = {
       ],
       faq: [
         ['Kann ich Reception heute nutzen?', 'Noch nicht. Es ist entworfen und wird mit Beispieldaten gezeigt. Wenn Sie Modelle von Nachunternehmern erhalten, [sprechen Sie mit uns](pricing): Wir suchen einige Pilotprojekte. Ein Modell gegen Ihre Anforderungen zu prüfen ist kostenlos und funktioniert heute im [Viewer](viewer).'],
-        ['Zahlen Nachunternehmer oder brauchen sie ein Konto?', 'Nein. Sie öffnen Ihren Link und prüfen ihr Modell kostenlos im Browser. Bezahlt wird von dem, der die Lieferungen erhält und verwaltet.'],
+        ['Zahlen Nachunternehmer oder brauchen sie ein Konto?', 'Nein. Sie öffnen Ihren Link und prüfen ihr Modell kostenlos im Browser. Bezahlt wird von dem, der die Lieferungen erhält und verwaltet. So funktioniert es: [Upload-Seite für Lieferanten ohne Konto](postSupplier).'],
         ['Ersetzt es Catenda, Dalux oder Autodesk Construction Cloud?', 'Nein. Es prüft das Modell, bevor es Ihre CDE erreicht, und funktioniert mit jeder CDE. Jede CDE hat ihren eigenen Workflow; siehe den Vergleich oben mit dem Datum, an dem wir ihre Seiten gelesen haben.'],
         ['Wird das Modell zur Prüfung hochgeladen?', 'Bei der kostenlosen Prüfung nicht: Sie läuft im Browser des Nachunternehmers. In Reception wird die angenommene Lieferung für Sie in der EU gespeichert.'],
         ['Was wird es kosten?', 'Geplant sind ab 290 € pro Projekt und Monat mit 15 Lieferanten oder 790 € für unbegrenzte Projekte. Die Preise können sich bis zum Start ändern; siehe die [Pläne](pricing).'],

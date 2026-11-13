@@ -170,7 +170,36 @@
       "need": "Öffnen Sie zwei Blätter zum Vergleichen.",
       "before": "Vorher",
       "after": "Nachher",
-      "run": "Vergleichen"
+      "run": "Vergleichen",
+      "pdfTitle": "Zwei PDF-Revisionen vergleichen",
+      "pdfBlurb": "Alter und neuer Satz, beliebiger Maßstab und Lage. Blätter werden nach Nummer gepaart; das Schriftfeld bleibt außen vor.",
+      "oldPdf": "Alte Revision (PDF)",
+      "newPdf": "Neue Revision (PDF)",
+      "pages_one": "{{count}} Seite",
+      "pages_other": "{{count}} Seiten",
+      "pdfError": "Dieses PDF konnte nicht gelesen werden.",
+      "pdfDone": "{{clouds}} Revisionswolken auf {{sheets}} Blättern in {{seconds}} s.",
+      "overlayName": "Änderungen {{sheet}}",
+      "results": "Verglichene Blätter",
+      "clouds_one": "{{count}} Wolke",
+      "clouds_other": "{{count}} Wolken",
+      "aligned": "{{method}}, Maßstab ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Wolke {{id}}: +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} Bereich änderte sich auf jedem Blatt und wurde ausgeschlossen",
+      "autoExcluded_other": "{{count}} Bereiche änderten sich auf jedem Blatt und wurden ausgeschlossen",
+      "exportPdf": "Neue Revision mit Wolken herunterladen (PDF)",
+      "cloudLayer": "Revisionswolken",
+      "status": {
+        "notVector": "Nicht vektoriell (Scan): nicht verglichen",
+        "onlyA": "Nur im alten Satz",
+        "onlyB": "Nur im neuen Satz",
+        "noAlignment": "Ausrichten nicht möglich"
+      },
+      "method": {
+        "frame": "Rahmen",
+        "ransac": "Zeichnung",
+        "identity": "keine"
+      }
     },
     "beyond": "Hinter dem Schnitt zeigen (m)",
     "poche": "Geschnittene Wände und Tragwerk füllen",

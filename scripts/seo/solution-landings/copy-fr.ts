@@ -15,6 +15,7 @@ export const copy: LangCopy = {
     postReception: 'Contrôler les modèles IFC des sous-traitants',
     postClash: 'Détection de conflits dans le navigateur',
     postBatch: 'Valider de nombreux fichiers IFC à la fois',
+    postSupplier: 'Une page de dépôt pour fournisseurs sans compte',
   },
   pages: {
     contractors: {
@@ -93,7 +94,7 @@ export const copy: LangCopy = {
       ],
       faq: [
         ['Puis-je utiliser Reception aujourd’hui ?', 'Pas encore. L’offre est conçue et présentée avec des données d’exemple. Si vous recevez des modèles de sous-traitants, [parlez-nous](pricing) : nous cherchons quelques projets pilotes. Vérifier un modèle selon vos exigences est gratuit et fonctionne aujourd’hui dans le [visualiseur](viewer).'],
-        ['Les sous-traitants paient-ils ou ont-ils besoin d’un compte ?', 'Non. Ils ouvrent votre lien et vérifient leur modèle gratuitement dans le navigateur. C’est celui qui reçoit et gère les livraisons qui paie.'],
+        ['Les sous-traitants paient-ils ou ont-ils besoin d’un compte ?', 'Non. Ils ouvrent votre lien et vérifient leur modèle gratuitement dans le navigateur. C’est celui qui reçoit et gère les livraisons qui paie. Comment ça marche : [une page de dépôt pour fournisseurs sans compte](postSupplier).'],
         ['Est-ce que cela remplace Catenda, Dalux ou Autodesk Construction Cloud ?', 'Non. Cela vérifie le modèle avant qu’il n’atteigne votre CDE et fonctionne quel que soit le CDE utilisé. Chaque CDE a son propre flux ; voir la comparaison ci-dessus avec la date à laquelle nous avons lu leurs pages.'],
         ['Le modèle est-il téléversé pour être vérifié ?', 'Pour la vérification gratuite, non : elle s’exécute dans le navigateur du sous-traitant. Dans Reception, la livraison que vous acceptez est stockée pour vous dans l’UE.'],
         ['Combien cela coûtera-t-il ?', 'C’est prévu à partir de 290 € par projet et par mois avec 15 fournisseurs, ou 790 € pour des projets illimités. Les prix peuvent changer avant le lancement ; voir les [offres](pricing).'],

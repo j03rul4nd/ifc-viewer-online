@@ -7,11 +7,11 @@
 // ⚠ Imports web-ifc at runtime (through ids-gather) — only the snapshot worker
 //   and tests may import this module. Main-thread code imports types.ts.
 
-import { IFCPROJECT } from 'web-ifc'
+import { IFCPROJECT, IFCRELDEFINESBYTYPE } from 'web-ifc'
 import type { IfcAPI } from 'web-ifc'
 import { gatherIdsElements, type GatherHooks } from '../ids/ids-gather'
 import type { IdsDocument } from '../ids/ids-types'
-import type { ModelSnapshot, SnapElement } from './types'
+import type { GeoFingerprint, ModelSnapshot, SnapElement } from './types'
 
 /**
  * A document that gathers EVERYTHING: no entity in the applicability, so every
@@ -81,38 +81,137 @@ export interface SnapshotHooks extends GatherHooks {
   onGeometryProgress?: (fraction: number) => void
 }
 
-/** Per-element geometry fingerprint from web-ifc's mesh stream (no vertex reads). */
+interface GeomStats {
+  /** "vertexSize/indexSize" — the tessellation fingerprint. */
+  sz: string
+  /** Local-space AABB, or null when the geometry has no vertices. */
+  min: [number, number, number] | null
+  max: [number, number, number] | null
+  /** Local-space mesh volume (absolute signed-volume sum), m³. */
+  vol: number
+}
+
+/** Local AABB + volume of one tessellated geometry (interleaved xyz + normal). */
+export function meshStats(verts: ArrayLike<number>, index: ArrayLike<number>, stride = 6): Omit<GeomStats, 'sz'> {
+  const n = Math.floor(verts.length / stride)
+  if (n === 0) return { min: null, max: null, vol: 0 }
+  const min: [number, number, number] = [Infinity, Infinity, Infinity]
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+  for (let i = 0; i < n; i++) {
+    for (let k = 0; k < 3; k++) {
+      const v = verts[i * stride + k]
+      if (v < min[k]) min[k] = v
+      if (v > max[k]) max[k] = v
+    }
+  }
+  // Signed volume about the box corner, not the origin: float32 vertices far
+  // from the origin would otherwise cancel into noise.
+  const [ox, oy, oz] = min
+  let vol = 0
+  for (let t = 0; t + 2 < index.length; t += 3) {
+    const a = index[t] * stride, b = index[t + 1] * stride, c = index[t + 2] * stride
+    const ax = verts[a] - ox, ay = verts[a + 1] - oy, az = verts[a + 2] - oz
+    const bx = verts[b] - ox, by = verts[b + 1] - oy, bz = verts[b + 2] - oz
+    const cx = verts[c] - ox, cy = verts[c + 1] - oy, cz = verts[c + 2] - oz
+    vol += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)
+  }
+  return { min, max, vol: Math.abs(vol) / 6 }
+}
+
+const round = (v: number, step: number): number => Math.round(v / step) * step
+
+/**
+ * Per-element geometry fingerprint from web-ifc's mesh stream.
+ * `h` hashes tessellation sizes + placement (as before), `c` is the first
+ * placement origin, `s` the world AABB size and `v` the mesh volume. Vertex
+ * data is read once per geometry (instanced geometry is cached).
+ */
 export function fingerprintGeometry(api: IfcAPI, modelId: number, onProgress?: (f: number) => void):
-  Map<number, { h: string; c: [number, number, number] }> {
-  const sizes = new Map<number, string>() // geometryExpressID → "v/i"
-  const out = new Map<number, { h: string; c: [number, number, number] }>()
+  Map<number, GeoFingerprint> {
+  const stats = new Map<number, GeomStats>() // geometryExpressID → stats
+  const out = new Map<number, GeoFingerprint>()
   api.StreamAllMeshes(modelId, (mesh, index, total) => {
     const parts: string[] = []
     let c: [number, number, number] | null = null
+    let ax: [number, number, number] | null = null
+    const wmin = [Infinity, Infinity, Infinity], wmax = [-Infinity, -Infinity, -Infinity]
+    let vol = 0
     const n = mesh.geometries.size()
     for (let i = 0; i < n; i++) {
       const pg = mesh.geometries.get(i)
-      let sz = sizes.get(pg.geometryExpressID)
-      if (sz === undefined) {
+      let st = stats.get(pg.geometryExpressID)
+      if (st === undefined) {
         try {
           const g = api.GetGeometry(modelId, pg.geometryExpressID)
-          sz = `${g.GetVertexDataSize()}/${g.GetIndexDataSize()}`
+          const verts = api.GetVertexArray(g.GetVertexData(), g.GetVertexDataSize())
+          const idx = api.GetIndexArray(g.GetIndexData(), g.GetIndexDataSize())
+          st = { sz: `${g.GetVertexDataSize()}/${g.GetIndexDataSize()}`, ...meshStats(verts, idx) }
           g.delete()
-        } catch { sz = '?' }
-        sizes.set(pg.geometryExpressID, sz)
+        } catch { st = { sz: '?', min: null, max: null, vol: 0 } }
+        stats.set(pg.geometryExpressID, st)
       }
       const m = pg.flatTransformation
       // Rotation to 1e-4, translation to the millimetre: stable across
       // re-exports, sensitive to anything a person would call a change.
       const rot = [m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]].map((v) => Math.round(v * 1e4)).join(',')
       const tr = [m[12], m[13], m[14]].map((v) => Math.round(v * 1000)).join(',')
-      parts.push(`${sz}@${rot};${tr}`)
-      if (!c) c = [m[12], m[13], m[14]]
+      parts.push(`${st.sz}@${rot};${tr}`)
+      if (!c) {
+        c = [m[12], m[13], m[14]]
+        // Orientation: local X axis of the first placement (rotation, V2.5).
+        const len = Math.hypot(m[0], m[1], m[2])
+        if (len > 1e-9) ax = [m[0], m[1], m[2]].map((v) => round(v / len, 1e-6)) as [number, number, number]
+      }
+      if (st.min && st.max) {
+        // World box of the transformed local box (8 corners): exact for
+        // axis-aligned placements, a stable over-estimate for rotated ones.
+        for (let corner = 0; corner < 8; corner++) {
+          const x = corner & 1 ? st.max[0] : st.min[0]
+          const y = corner & 2 ? st.max[1] : st.min[1]
+          const z = corner & 4 ? st.max[2] : st.min[2]
+          const w = [
+            m[0] * x + m[4] * y + m[8] * z + m[12],
+            m[1] * x + m[5] * y + m[9] * z + m[13],
+            m[2] * x + m[6] * y + m[10] * z + m[14],
+          ]
+          for (let k = 0; k < 3; k++) { if (w[k] < wmin[k]) wmin[k] = w[k]; if (w[k] > wmax[k]) wmax[k] = w[k] }
+        }
+        const det = m[0] * (m[5] * m[10] - m[9] * m[6]) - m[4] * (m[1] * m[10] - m[9] * m[2]) + m[8] * (m[1] * m[6] - m[5] * m[2])
+        vol += st.vol * Math.abs(det)
+      }
     }
     parts.sort()
-    out.set(mesh.expressID, { h: fnv1a(parts.join('|')), c: c ?? [0, 0, 0] })
+    const fp: GeoFingerprint = { h: fnv1a(parts.join('|')), c: c ?? [0, 0, 0] }
+    if (wmin[0] !== Infinity) {
+      fp.s = [0, 1, 2].map((k) => round(wmax[k] - wmin[k], 1e-4)) as [number, number, number]
+      fp.v = Number(vol.toPrecision(6))
+      fp.m = [0, 1, 2].map((k) => round(wmin[k], 1e-4)) as [number, number, number]
+    }
+    if (ax) fp.x = ax
+    out.set(mesh.expressID, fp)
     if (onProgress && index % 500 === 0) onProgress(total ? index / total : 0)
   })
+  return out
+}
+
+/** expressId → relating type name, from IfcRelDefinesByType. */
+function typeNames(api: IfcAPI, modelId: number): Map<number, string | null> {
+  const out = new Map<number, string | null>()
+  try {
+    const rels = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYTYPE)
+    for (let i = 0; i < rels.size(); i++) {
+      const rel = api.GetLine(modelId, rels.get(i)) as {
+        RelatedObjects?: Array<{ value: number }>; RelatingType?: { value: number }
+      }
+      if (!rel.RelatingType) continue
+      let name: string | null = null
+      try {
+        const t = api.GetLine(modelId, rel.RelatingType.value) as { Name?: { value?: string } }
+        name = t.Name?.value ?? null
+      } catch { /* unreadable type */ }
+      for (const o of rel.RelatedObjects ?? []) out.set(o.value, name)
+    }
+  } catch { /* no type relations */ }
   return out
 }
 
@@ -135,6 +234,8 @@ export async function buildSnapshot(
   // them; dropping them roughly halves a stored baseline.
   const elements: SnapElement[] = gathered.map(({ psetTypes: _t, ...rest }) => rest)
   resolveStoreys(elements)
+  const types = typeNames(api, modelId)
+  for (const e of elements) { const t = types.get(e.expressId); if (t !== undefined) e.typeName = t }
 
   if (meta.geometry) {
     const geo = fingerprintGeometry(api, modelId, hooks.onGeometryProgress)

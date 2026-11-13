@@ -30,13 +30,13 @@ export function receptionValidator(target: ReceptionTarget, opts: WaitOptions = 
   const intervalMs = opts.intervalMs ?? 2_000
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   return async (file: RemoteFile, bytes: ArrayBuffer): Promise<ValidationOutcome> => {
-    const d = await deliverFile(target.supplierToken, target.requirementSlug, file.name, bytes)
+    const d = await deliverFile(target.supplierToken, target.requirementSlug, file.name, bytes, 'folder')
     if (!d.ok) throw new Error(`delivery refused: ${d.error.code}${d.error.message ? ` (${d.error.message})` : ''}`)
     // Reading the verdict needs the receiver's session (the folder is watched
     // from the receiving company's workspace).
     let row: ApiDelivery | undefined
     for (const start = Date.now(); Date.now() - start < timeoutMs; await sleep(intervalMs)) {
-      const list = await paidApi.deliveries()
+      const list = await paidApi.deliveries({ limit: 500 })
       row = list.ok ? list.value.deliveries.find((x) => x.id === d.value.deliveryId) : undefined
       if (row && row.score !== null) break
       if (row?.verdict === 'rejected') break // rejected before validation (not an IFC, hash mismatch)
@@ -47,7 +47,7 @@ export function receptionValidator(target: ReceptionTarget, opts: WaitOptions = 
       issues: row?.failed_specs ?? 0,
       report: {
         delivery_id: d.value.deliveryId, file_hash: d.value.fileHash, replayed: d.value.replayed,
-        verdict: row?.verdict ?? 'pending', reason: row?.reason ?? null, required_score: row?.required_score ?? null,
+        verdict: row?.verdict ?? 'pending', reason: row?.reason ?? null, file_status: row?.file_status ?? 'pending', required_score: row?.required_score ?? null,
       },
     }
   }
