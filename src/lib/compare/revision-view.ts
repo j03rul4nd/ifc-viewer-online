@@ -24,11 +24,11 @@ export const KIND_GROUP: Record<ShownKind, ColourGroup> = {
 
 /** One source of truth for the colour code: 3D, list, table, chips. */
 export const GROUP_COLOUR: Record<ColourGroup, string> = {
-  added: '#2E9E5B',
-  removed: '#D64545',
-  moved: '#2F6FDE',
-  reshaped: '#E08A1E',
-  properties: '#8B5CF6',
+  added: '#2E9E5B', // theme-allow-color: revision change code (05-ux §2)
+  removed: '#D64545', // theme-allow-color: revision change code (05-ux §2)
+  moved: '#2F6FDE', // theme-allow-color: revision change code (05-ux §2)
+  reshaped: '#E08A1E', // theme-allow-color: revision change code (05-ux §2)
+  properties: '#8B5CF6', // theme-allow-color: revision change code (05-ux §2)
 }
 
 /** Icon + letter, so the code never depends on colour alone. */
@@ -43,6 +43,7 @@ export const SHOWN_KINDS: readonly ShownKind[] = [
   'removed', 'added', 'type_changed', 'reshaped', 'moved', 'relations_changed', 'properties_changed',
 ]
 
+// theme-allow-color: revision change code, neutral for unchanged
 export const kindColour = (k: ChangeKind): string => (k === 'unchanged' ? '#8A8F98' : GROUP_COLOUR[KIND_GROUP[k]])
 
 /** CSS custom properties for the workspace root, so components read tokens, not hex. */

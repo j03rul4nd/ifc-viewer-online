@@ -35,9 +35,9 @@ function useNarrow(): boolean {
   return m
 }
 
-const panel = 'bg-[rgba(14,14,18,0.94)] backdrop-blur-md border border-[var(--border-strong)] [[data-theme=light]_&]:bg-[var(--bg-surface)] [[data-theme=light]_&]:backdrop-blur-none'
+const panel = 'bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-strong)] [[data-theme=light]_&]:bg-[var(--bg-surface)] [[data-theme=light]_&]:backdrop-blur-none'
 const chip = 'h-8 px-2.5 rounded-full border text-[11.5px] inline-flex items-center gap-1.5 transition-colors'
-const sel = 'h-9 sm:h-8 px-2 rounded-lg border border-[var(--border-control)] bg-[rgba(14,14,18,0.98)] [[data-theme=light]_&]:bg-[var(--bg-surface)] text-[12px] sm:text-[11.5px] text-[var(--text-dim)] w-full min-w-0'
+const sel = 'h-9 sm:h-8 px-2 rounded-lg border border-[var(--border-control)] bg-[var(--bg-surface)] text-[12px] sm:text-[11.5px] text-[var(--text-dim)] w-full min-w-0'
 
 // ── Before / after table (M4) ────────────────────────────────────────────────
 
@@ -445,13 +445,13 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft') st.setCurtain(curtain - 0.02); if (e.key === 'ArrowRight') st.setCurtain(curtain + 0.02) }}
     >
-      <div className="w-[3px] h-full bg-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]" />
-      <div className="absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white text-black text-[13px] font-bold flex items-center justify-center shadow-lg">A|B</div>
+      <div className="w-[3px] h-full bg-[var(--text-primary)] shadow-[0_0_0_1px_var(--scrim)]" />
+      <div className="absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-[var(--text-primary)] text-[var(--bg)] text-[13px] font-bold flex items-center justify-center shadow-lg">A|B</div>
     </div>
   )
 
   const fpsBadge = view === 'curtain' && fps > 0 && (
-    <span className="fixed z-[55] right-3 bottom-3 px-2 py-0.5 rounded-md text-[10.5px] tabular-nums text-[var(--text-faint)] bg-black/40" data-testid="rc-fps">{fps} FPS</span>
+    <span className="fixed z-[55] right-3 bottom-3 px-2 py-0.5 rounded-md text-[10.5px] tabular-nums text-[var(--text-faint)] bg-[var(--scrim)]" data-testid="rc-fps">{fps} FPS</span>
   )
 
   const header = (

@@ -20,9 +20,11 @@ function label(text: string, colour: string): THREE.Sprite {
   const w = Math.ceil(ctx.measureText(text).width) + 36
   c.width = w; c.height = 72
   ctx.font = '600 44px system-ui, sans-serif'
+  // theme-allow-color: label baked into a 3D texture, always dark for contrast
   ctx.fillStyle = 'rgba(14,14,18,0.88)'
   ctx.beginPath(); ctx.roundRect(0, 0, w, 72, 18); ctx.fill()
   ctx.strokeStyle = colour; ctx.lineWidth = 4; ctx.stroke()
+  // theme-allow-color: white text on the dark label texture
   ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(text, 18, 38)
   const tex = new THREE.CanvasTexture(c)
   tex.colorSpace = THREE.SRGBColorSpace

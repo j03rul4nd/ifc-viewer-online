@@ -14,6 +14,7 @@ export function KindBadge({ kind, size = 22 }: { kind: ShownKind; size?: number 
   const g = KIND_GROUP[kind]
   return (
     <span
+      // theme-allow-color: white glyph on the change-code colour
       className="shrink-0 inline-flex items-center justify-center rounded-md font-bold leading-none text-white"
       style={{ width: size, height: size, background: kindColour(kind), fontSize: size * 0.5 }}
       aria-hidden
