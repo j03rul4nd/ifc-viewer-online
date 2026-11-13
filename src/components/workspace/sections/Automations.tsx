@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
-import { paidApi, type ApiAutomation, type ApiBacktest } from '../../../lib/cloud/paid-client'
+import { paidApi, type ApiAutomation, type ApiAutomationRun, type ApiBacktest } from '../../../lib/cloud/paid-client'
 import { usePaidQuery } from '../../../hooks/usePaidQuery'
 import type { SectionProps } from '../registry'
 import { DataList, Dialog, Field, Head, Panel, Primary, Quiet, SectionLabel, Tabs, Toggle, fmtInt, inputClass } from '../ui'
 import { SoonBanner } from '../Soon'
-import { useTx } from '../i18n'
+import { useTx, wsT } from '../i18n'
 
 type Trigger = 'version' | 'delivery' | 'overdue'
 type Audience = 'contractor' | 'studio' | 'owner'
 type Cond = 'score_below' | 'score_drop' | 'clean' | 'overdue_days'
-type Act = 'issue' | 'notify' | 'share' | 'escalate'
+type Act = 'issue' | 'notify' | 'share' | 'escalate' | 'mail'
 
-interface Rule { id: string; name: string; trigger: Trigger; cond: Cond; value: number; contains: string; act: Act; minutes: number; on: boolean; runs: number }
+interface Rule { id: string; name: string; trigger: Trigger; cond: Cond; value: number; contains: string; act: Act; minutes: number; on: boolean; runs: number; to?: string }
 interface Recipe extends Omit<Rule, 'id' | 'on' | 'runs'> { why: string; for: Audience[] }
 
-const ACTS_FOR: Record<Trigger, Act[]> = { version: ['issue', 'notify', 'share'], delivery: ['issue', 'notify'], overdue: ['escalate', 'notify'] }
+const ACTS_FOR: Record<Trigger, Act[]> = { version: ['issue', 'notify', 'share', 'mail'], delivery: ['issue', 'notify', 'mail'], overdue: ['escalate', 'notify', 'mail'] }
 const CONDS_FOR: Record<Trigger, Cond[]> = { version: ['score_below', 'score_drop', 'clean'], delivery: ['score_below', 'clean'], overdue: ['overdue_days'] }
 
 /** A sample history to try a rule on; the API runs this on the company's last 90 days. */
@@ -43,8 +43,10 @@ const API_COND: Record<Cond, (v: number) => Record<string, unknown>> = {
   score_below: (v) => ({ score_below: v }), score_drop: (v) => ({ score_drop_at_least: v }), clean: (v) => ({ score_at_least: v, no_failed_specs: true }), overdue_days: (v) => ({ days_overdue_at_least: v }),
 }
 const conditionsOf = (r: Pick<Rule, 'cond' | 'value' | 'contains'>) => ({ ...API_COND[r.cond](r.value), ...(r.contains.trim() ? { name_contains: r.contains.trim() } : {}) })
-const actionOf = (r: Pick<Rule, 'act' | 'name'>): Record<string, unknown> => (
-  r.act === 'issue' ? { type: 'create_issue', title: '{{name}}: {{score}}', priority: 'high', due_days: 3 }
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const actionOf = (r: Pick<Rule, 'act' | 'name' | 'to'>, mailSubject = ''): Record<string, unknown> => (
+  r.act === 'mail' ? { type: 'queue_mail', to: (r.to ?? '').trim(), subject: mailSubject, body: mailSubject }
+  : r.act === 'issue' ? { type: 'create_issue', title: '{{name}}: {{score}}', priority: 'high', due_days: 3 }
     : r.act === 'notify' ? { type: 'notify', message: `${r.name}: {{name}} ({{score}})` }
       : r.act === 'share' ? { type: 'share_version' } : { type: 'escalate_issue', priority: 'high' })
 
@@ -53,7 +55,14 @@ export function ruleFromApi(a: ApiAutomation): Rule {
   const c = a.conditions as Record<string, number | string | boolean | undefined>
   const t = (a.actions[0]?.type as string | undefined) ?? 'notify'
   const cond: Cond = c.score_drop_at_least !== undefined ? 'score_drop' : c.no_failed_specs ? 'clean' : c.days_overdue_at_least !== undefined ? 'overdue_days' : 'score_below'
-  return { id: a.id, name: a.name, trigger: a.trigger === 'version.validated' ? 'version' : a.trigger === 'delivery.validated' ? 'delivery' : 'overdue', cond, value: Number(c.score_drop_at_least ?? c.score_at_least ?? c.days_overdue_at_least ?? c.score_below ?? 0), contains: String(c.name_contains ?? ''), act: t === 'create_issue' ? 'issue' : t === 'share_version' ? 'share' : t === 'escalate_issue' ? 'escalate' : 'notify', minutes: a.minutes_saved, on: a.enabled, runs: a.runs_30d ?? 0 }
+  return { id: a.id, name: a.name, trigger: a.trigger === 'version.validated' ? 'version' : a.trigger === 'delivery.validated' ? 'delivery' : 'overdue', cond, value: Number(c.score_drop_at_least ?? c.score_at_least ?? c.days_overdue_at_least ?? c.score_below ?? 0), contains: String(c.name_contains ?? ''), act: t === 'create_issue' ? 'issue' : t === 'share_version' ? 'share' : t === 'escalate_issue' ? 'escalate' : t === 'queue_mail' ? 'mail' : 'notify', minutes: a.minutes_saved, on: a.enabled, runs: a.runs_30d ?? 0, to: typeof a.actions[0]?.to === 'string' ? a.actions[0].to : undefined }
+}
+
+function runText(x: Record<string, unknown>, to?: string): string {
+  if (x.skipped) return wsT('Not queued: {{why}}', { why: String(x.skipped) })
+  if (x.type === 'queue_mail') return wsT('E-mail queued to {{to}}', { to: to ?? '' })
+  if (x.type === 'create_issue' && x.issue) return `#${String(x.issue)}`
+  return String(x.type)
 }
 
 const BLANK: Omit<Rule, 'id' | 'on' | 'runs'> = { name: '', trigger: 'version', cond: 'score_below', value: 80, contains: '', act: 'issue', minutes: 15 }
@@ -71,7 +80,7 @@ export default function Automations({ embedded }: SectionProps & { embedded?: bo
   ]
   const AUDIENCES = [{ id: 'contractor' as const, label: tx('Contractor') }, { id: 'studio' as const, label: tx('Design studio') }, { id: 'owner' as const, label: tx('Owner or developer') }]
   const TRIGGER: Record<Trigger, string> = { version: tx('A version is validated'), delivery: tx('A supplier delivery is validated'), overdue: tx('An issue is overdue') }
-  const ACT: Record<Act, string> = { issue: tx('Open an issue'), notify: tx('Notify through a webhook'), share: tx('Move it to Shared'), escalate: tx('Raise priority and reassign') }
+  const ACT: Record<Act, string> = { issue: tx('Open an issue'), notify: tx('Notify through a webhook'), share: tx('Move it to Shared'), escalate: tx('Raise priority and reassign'), mail: tx('Queue an e-mail') }
   const COND: Record<Cond, string> = { score_below: tx('Score below'), score_drop: tx('Score dropped by at least'), clean: tx('No failed specs and score of at least'), overdue_days: tx('Days overdue, at least') }
 
   const [audience, setAudience] = useState<Audience>('contractor')
@@ -86,6 +95,9 @@ export default function Automations({ embedded }: SectionProps & { embedded?: bo
   const q = usePaidQuery(() => paidApi.automations(), { automations: [] as ApiAutomation[] })
   const live = q.source === 'live'
   useEffect(() => { if (live) setRules(q.data.automations.map(ruleFromApi)) }, [live, q.data])
+  // What really ran, with each action's result (issue number, queued e-mail, or why it was skipped).
+  const [runs, setRuns] = useState<ApiAutomationRun[]>([])
+  useEffect(() => { if (live) void paidApi.automationRuns().then((r) => { if (r.ok) setRuns(r.value.runs.slice(0, 10)) }) }, [live, q.data])
   const [real, setReal] = useState<ApiBacktest | null>(null)
   const [err, setErr] = useState<string | null>(null)
   useEffect(() => {
@@ -103,7 +115,7 @@ export default function Automations({ embedded }: SectionProps & { embedded?: bo
   }
   const create = async (d: NonNullable<typeof draft>) => {
     if (live) {
-      const r = await paidApi.createAutomation({ name: d.name.trim(), enabled: true, trigger: API_TRIGGER[d.trigger], conditions: conditionsOf(d), actions: [actionOf(d)], minutes_saved: d.minutes })
+      const r = await paidApi.createAutomation({ name: d.name.trim(), enabled: true, trigger: API_TRIGGER[d.trigger], conditions: conditionsOf(d), actions: [actionOf(d, tx('{{name}}: delivery {{file}} validated, score {{score}}', { name: d.name.trim(), file: '{{name}}', score: '{{score}}' }))], minutes_saved: d.minutes })
       if (!r.ok) { setErr(r.error.message ?? r.error.code); return }
       q.reload()
     } else setRules((all) => [...all, { ...d, id: `r${Date.now().toString(36)}`, on: true, runs: 0 }])
@@ -132,6 +144,21 @@ export default function Automations({ embedded }: SectionProps & { embedded?: bo
           actions={(r) => <Toggle checked={r.on} label={r.name} onChange={(on) => toggle(r, on)} />} />
       </div>
 
+      {live && runs.length > 0 && (
+        <div className="mb-8">
+          <SectionLabel>{tx('Last runs')}</SectionLabel>
+          <ul className="text-[12.5px] divide-y divide-[var(--border)] rounded-[10px] border border-[var(--border)]">
+            {runs.map((run) => (
+              <li key={run.id} className="px-3 py-2 flex flex-wrap gap-x-3 gap-y-0.5">
+                <span className="font-medium">{rules.find((x) => x.id === run.automation_id)?.name ?? '—'}</span>
+                <span className="text-[var(--text-faint)] font-mono text-[11.5px] [overflow-wrap:anywhere]">{run.subject}</span>
+                <span className="text-[var(--text-dim)]">{(run.results ?? []).map((x) => runText(x, rules.find((y) => y.id === run.automation_id)?.to)).join(' · ')}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <SectionLabel>{tx('Start from your situation')}</SectionLabel>
       <div className="mb-3"><Tabs tabs={AUDIENCES} value={audience} onChange={setAudience} label={tx('Start from your situation')} /></div>
       <div className="grid gap-3 sm:grid-cols-2 mb-8">
@@ -146,7 +173,7 @@ export default function Automations({ embedded }: SectionProps & { embedded?: bo
 
       {draft && (
         <Dialog title={draft.name || tx('New automation')} size="lg" onClose={() => setDraft(null)}
-          footer={<><Quiet onClick={() => setDraft(null)}>{tx('Cancel')}</Quiet><Primary disabled={draft.name.trim().length < 3} onClick={() => void create(draft)}>{tx('Turn on')}</Primary></>}>
+          footer={<><Quiet onClick={() => setDraft(null)}>{tx('Cancel')}</Quiet><Primary disabled={draft.name.trim().length < 3 || (draft.act === 'mail' && !EMAIL.test((draft.to ?? '').trim()))} onClick={() => void create(draft)}>{tx('Turn on')}</Primary></>}>
           <div className="flex flex-col gap-4">
             <Field label={tx('Name')}><input className={inputClass} value={draft.name} onChange={(e) => set('name', e.target.value)} /></Field>
             <Field label={tx('When')}>
@@ -162,6 +189,11 @@ export default function Automations({ embedded }: SectionProps & { embedded?: bo
             <Field label={tx('Then')}>
               <select className={inputClass} value={draft.act} onChange={(e) => set('act', e.target.value as Act)}>{ACTS_FOR[draft.trigger].map((a) => <option key={a} value={a}>{ACT[a]}</option>)}</select>
             </Field>
+            {draft.act === 'mail' && (
+              <Field label={tx('Send to')} hint={tx('The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.')}>
+                <input className={inputClass} type="email" autoComplete="off" value={draft.to ?? ''} onChange={(e) => set('to', e.target.value)} />
+              </Field>
+            )}
             <Field label={tx('Minutes this saves each time')} hint={tx('Your estimate. It feeds the value report, which shows it as an assumption.')}><input className={`${inputClass} tabular-nums`} inputMode="numeric" value={draft.minutes} onChange={(e) => set('minutes', Number(e.target.value.replace(/\D/g, '')))} /></Field>
             {draft.trigger !== 'overdue' && (
               <Panel className="p-3 min-w-0">

@@ -11,6 +11,8 @@ export type Verdict = 'pending' | 'accepted' | 'returned'
 
 export interface RxProject {
   id: string
+  /** The server's short public token for the project (workspace mode); in the upload link. */
+  slug?: string
   name: string
   place: string
   code: string

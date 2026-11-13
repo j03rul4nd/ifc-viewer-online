@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "No s'ha pogut desar: {{error}}. No ha canviat res.",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} convidat. El seu token de pujada, que només es mostra una vegada: {{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} desada a l'espai. Codi de lliurament: {{slug}}. Ara convida'n els proveïdors.",
-  "Saved in the workspace.": "Desat a l'espai."
+  "Saved in the workspace.": "Desat a l'espai.",
+  "Already delivered: same file, same receipt.": "Ja lliurat: mateix fitxer, mateix justificant.",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "Demana un enllaç nou a l'empresa que te'l va enviar. Els teus fitxers no es perden: no s'ha pujat res.",
+  "Checking your model in your browser…": "Comprovant el teu model al navegador…",
+  "Could not reach the server. Check your connection and try again.": "No s'ha pogut connectar amb el servidor. Revisa la connexió i torna-ho a provar.",
+  "Could not send it: {{reason}}": "No s'ha pogut enviar: {{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "Propera entrega: {{day}} a les {{hour}}:00",
+  "Sending…": "Enviant…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "El fitxer supera els {{mb}} MB que accepta el receptor.",
+  "This file does not open as an IFC.": "Aquest fitxer no s'obre com a IFC.",
+  "This upload link is not complete. Open the link exactly as you received it.": "Aquest enllaç de pujada és incomplet. Obre'l tal com el vas rebre.",
+  "Try again": "Torna-ho a provar",
+  "Validated, waiting for review": "Validat, pendent de revisió",
+  "Waiting for validation…": "Esperant la validació…",
+  "Your deliveries": "Els teus lliuraments",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} convidat. El seu enllaç de pujada, que només es mostra una vegada: {{link}}"
 }

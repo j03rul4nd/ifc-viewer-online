@@ -1546,5 +1546,12 @@
   "Validation API": "API de validation",
   "Watched folders": "Dossiers surveillés",
   "Watching": "Surveillé",
-  "Webhook deliveries": "Livraisons de webhooks"
+  "Webhook deliveries": "Livraisons de webhooks",
+  "Queue an e-mail": "Mettre un e-mail en file d’attente",
+  "Send to": "Envoyer à",
+  "The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.": "L’e-mail attend dans la file d’envoi. Rien n’est envoyé tant qu’aucun expéditeur n’est activé.",
+  "{{name}}: delivery {{file}} validated, score {{score}}": "{{name}} : livraison {{file}} validée, score {{score}}",
+  "Last runs": "Dernières exécutions",
+  "E-mail queued to {{to}}": "E-mail en file pour {{to}}",
+  "Not queued: {{why}}": "Pas mis en file : {{why}}"
 }

@@ -14,7 +14,7 @@ import type { Result } from '../result'
 export type PaidErrorCode =
   | 'network' | 'cloud_disabled' | 'unauthorized' | 'forbidden' | 'plan_required' | 'not_found'
   | 'invalid_payload' | 'service_disabled' | 'gate_blocked' | 'bad_transition' | 'no_seat' | 'last_owner'
-  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password'
+  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large'
 
 export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[]; /** On a 409 edit conflict: the row as it is now on the server. */ current?: Record<string, unknown> }
 export type PaidResult<T> = Result<T, PaidError>
@@ -79,11 +79,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<PaidResult<
 }
 
 /** Supplier side of Reception: no account, the supplier token is the credential. */
-async function supplierRequest<T>(token: string, path: string, body?: unknown): Promise<PaidResult<T>> {
+async function supplierRequest<T>(token: string, path: string, body?: unknown, method: 'GET' | 'POST' = 'POST'): Promise<PaidResult<T>> {
   const base = paidApiBase()
   if (!base) return { ok: false, error: { code: 'cloud_disabled' } }
   try {
-    const res = await fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Supplier-Token': token }, body: JSON.stringify(body ?? {}) })
+    const res = await fetch(`${base}${path}`, method === 'GET'
+      ? { method, headers: { 'X-Supplier-Token': token } }
+      : { method, headers: { 'Content-Type': 'application/json', 'X-Supplier-Token': token }, body: JSON.stringify(body ?? {}) })
     const json = await res.json().catch(() => null) as ({ error?: { code?: string; message?: string } } & T) | null
     if (res.ok) return { ok: true, value: json as T }
     return { ok: false, error: { code: (json?.error?.code as PaidErrorCode) ?? 'internal', message: json?.error?.message } }
@@ -137,6 +139,22 @@ export async function deliverFile(token: string, requirementSlug: string, fileNa
   return { ok: true, value: { deliveryId: reg.value.delivery.id, replayed: reg.value.replayed, fileHash } }
 }
 
+export interface ApiSupplierProject { name: string; slug: string; min_score: number; project?: string; profile?: string; profile_version?: number; due_day?: number; due_hour?: number; client?: string; place?: string }
+export interface ApiSupplierDelivery { id: string; file_name: string; file_hash: string; project: string; score: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; uploaded: boolean; received_at: string }
+export interface ApiSupplierHome { supplier: { name: string }; receiver: string; max_file_mb: number; projects: ApiSupplierProject[]; deliveries: ApiSupplierDelivery[] }
+
+/** The supplier's own page: no account, only the token from their link. One retry on a network blip. */
+export async function supplierHome(token: string, project = ''): Promise<PaidResult<ApiSupplierHome>> {
+  const path = `/reception/supplier${project ? `?project=${encodeURIComponent(project)}` : ''}`
+  const r = await supplierRequest<ApiSupplierHome>(token, path, undefined, 'GET')
+  return !r.ok && r.error.code === 'network' ? supplierRequest<ApiSupplierHome>(token, path, undefined, 'GET') : r
+}
+
+/** The link a supplier opens: token and project in the hash, so neither reaches a server log or a Referer. */
+export function supplierUploadUrl(origin: string, token: string, projectSlug: string): string {
+  return `${origin}/deliver#t=${encodeURIComponent(token)}&p=${encodeURIComponent(projectSlug)}`
+}
+
 /** Reads retry once on a network failure (a dropped keep-alive socket, a blip); writes never retry blindly. */
 const get = async <T>(path: string): Promise<PaidResult<T>> => {
   const r = await request<T>(path)
@@ -167,6 +185,7 @@ export interface ApiOpenedLink { label: string; project: string; version: string
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
+export interface ApiAutomationRun { id: string; automation_id: string; subject: string; results: Record<string, unknown>[] | null; minutes_saved: number; at: string }
 export interface ApiAutomation { id: string; name: string; enabled: boolean; trigger: 'version.validated' | 'delivery.validated' | 'issue.overdue'; conditions: Record<string, unknown>; actions: Record<string, unknown>[]; minutes_saved: number; runs_30d?: number }
 export interface ApiBacktest { events: number; would_fire: number; minutes: number; examples: { name: string; score: number }[] }
 export interface ApiValue { months: number; assumptions: { hourly_eur: number; monthly_cost_eur: number; rejected_minutes: number }; hours_saved: number; value_eur: number; cost_eur: number; net_eur: number; multiple: number | null; measured: { automation_runs: number; deliveries_stopped: number; publishes_blocked: number }; deliveries: number; issues_closed: number; median_days_to_close: number | null }
@@ -182,7 +201,7 @@ export const paidApi = {
   setRole: (userId: string, role: ApiRole) => send<{ member: ApiMember }>('PATCH', `/team/members/${encodeURIComponent(userId)}`, { role }),
 
   issues: (status?: ApiIssue['status']) => get<{ issues: ApiIssue[] }>(`/issues${status ? `?status=${status}` : ''}`),
-  createIssue: (input: { title: string; description?: string; priority?: ApiIssue['priority']; assignee_id?: string | null; element_guids?: string[]; due_at?: string }) => send<{ issue: ApiIssue }>('POST', '/issues', input),
+  createIssue: (input: { title: string; description?: string; priority?: ApiIssue['priority']; assignee_id?: string | null; element_guids?: string[]; due_at?: string; rule_id?: string }) => send<{ issue: ApiIssue; replayed?: boolean }>('POST', '/issues', input),
   /** Pass if_updated_at (the updated_at you loaded) to get a visible 409 conflict instead of overwriting someone else's change. */
   patchIssue: (n: number, patch: Partial<Pick<ApiIssue, 'status' | 'priority' | 'assignee_id' | 'title'>> & { if_updated_at?: string }) => send<{ changed: string[] }>('PATCH', `/issues/${n}`, patch),
   comment: (n: number, body: string) => send<unknown>('POST', `/issues/${n}/comments`, { body }),
@@ -203,6 +222,7 @@ export const paidApi = {
   setMemberProjects: (userId: string, projects: string[]) => send<unknown>('PUT', `/team/members/${encodeURIComponent(userId)}/projects`, { projects }),
 
   automations: () => get<{ automations: ApiAutomation[] }>('/automations'),
+  automationRuns: () => get<{ runs: ApiAutomationRun[] }>('/automations/runs'),
   createAutomation: (a: Omit<ApiAutomation, 'id' | 'runs_30d'>) => send<{ automation: ApiAutomation }>('POST', '/automations', a),
   patchAutomation: (id: string, patch: { enabled?: boolean }) => send<unknown>('PATCH', `/automations/${id}`, patch),
   backtest: (trigger: 'version.validated' | 'delivery.validated', conditions: Record<string, unknown>, minutes_saved: number) => send<ApiBacktest>('POST', '/automations/backtest', { trigger, conditions, minutes_saved }),

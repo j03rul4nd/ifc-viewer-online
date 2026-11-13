@@ -3,7 +3,7 @@
 // (overview, inbox, suppliers, register, project) reads the same real data.
 // Pure: tested without a backend.
 
-import type { ApiDelivery, ApiRequirementSet, ApiSupplier } from '../../../../lib/cloud/paid-client'
+import type { ApiDelivery, ApiRequirementSet, ApiSupplier, ApiSupplierProject } from '../../../../lib/cloud/paid-client'
 import { SAMPLE_PROJECTS, type RxDelivery, type RxProject, type RxSupplier } from './sample'
 
 interface SetContent { project?: string; profile?: string; profile_version?: number; due_day?: number; due_hour?: number; client?: string; place?: string }
@@ -19,7 +19,7 @@ export function projectsFromApi(sets: (ApiRequirementSet & { content?: string })
     const c = contentOf(s)
     const code = (c.project ?? s.slug.slice(0, 6)).toUpperCase()
     return {
-      id: s.id, name: s.name, place: c.place ?? '', code, client: c.client ?? '',
+      id: s.id, slug: s.slug, name: s.name, place: c.place ?? '', code, client: c.client ?? '',
       profile: c.profile ?? '—', profileVersion: c.profile_version ?? 1, minScore: s.min_score,
       dueDay: c.due_day ?? 1, dueHour: c.due_hour ?? 12,
       naming: { ...naming, f: naming.f.map((f, i) => (i === 0 ? { ...f, v: [code] } : f)) },
@@ -35,7 +35,7 @@ export function suppliersFromApi(suppliers: (ApiSupplier & { created_at?: string
     const ids = projectIds.length ? projectIds : projects[0] ? [projects[0].id] : []
     for (const projectId of ids) {
       out.push({
-        id: s.id, projectId, name: s.name, originator: s.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase() || 'XXX',
+        id: s.id, projectId, name: s.name, originator: originatorOf(s.name),
         discipline: s.discipline ?? 'Architecture', contact: s.name, email: '', invitedAt: (s.created_at ?? new Date().toISOString()).slice(0, 10),
         state: s.deliveries > 0 ? 'active' : 'invited',
       } as RxSupplier)
@@ -51,4 +51,17 @@ export function deliveryFromApi(d: ApiDelivery): RxDelivery {
     verdict: d.verdict === 'rejected' ? 'returned' : d.verdict, reasons: d.reason ? [d.reason] : [],
     decidedBy: d.decided_by ?? undefined, decidedAt: d.decided_at ?? undefined, fileHash: d.file_hash,
   }
+}
+
+/** The originator code shown for a supplier: its name's letters and digits, six at most. */
+export function originatorOf(name: string): string {
+  return name.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase() || 'XXX'
+}
+
+/** A project as the supplier's own page sees it: the naming rule accepts only that supplier's originator. */
+export function supplierProjectFromApi(p: ApiSupplierProject, supplierName: string): RxProject {
+  const { name, slug, min_score, ...meta } = p
+  const [project] = projectsFromApi([{ id: slug, name, slug, min_score, content: JSON.stringify(meta) }])
+  const f = project.naming.f.map((x, i) => (i === 1 ? { ...x, v: [originatorOf(supplierName)] } : x))
+  return { ...project, naming: { ...project.naming, f } }
 }

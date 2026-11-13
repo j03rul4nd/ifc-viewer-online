@@ -69,6 +69,13 @@ VITE_PAID_DEV_SESSION=dev:user_localowner:org_localdemo
 
 Open `/workspace?preview=pricing`. Change the session to act as another role.
 
+The supplier's upload page (`/deliver#t=<supplier token>&p=<project slug>`) exists only with
+`VITE_FEATURE_SUPPLIER_UPLOAD=true` in `.env.local`; production has no such flag, so the route stays
+off. Inviting a supplier in Reception (workspace mode) shows that link once. The page checks the IFC in
+the browser with the viewer's validator (the same score the runner gives) and the project's ISO 19650
+naming rule, delivers straight to storage and shows the receiver's verdict once the runner has
+validated it (`npm run runner:local -- --drain`).
+
 ## 4. Integration tests
 
 ```bash
@@ -81,6 +88,12 @@ clash and edited by two users at once (both changes kept); roles (Reviewer canno
 see deliveries, Viewer cannot queue mail); the mail queue (same key → one message, cancel); network
 errors returned as a code. `PAID_LOCAL_BIG=1` also delivers the 94 MB Shanghai Tower. Without
 `PAID_LOCAL_API` the file is skipped, so CI stays green.
+
+Part 5 (`paid-local-5.integration.test.ts`) covers the supplier page (the token alone shows no
+project; with the link's project it shows that one; own deliveries only, with the real verdict), an
+issue raised from a validation result (the same rule on the same element twice is one issue; Viewer and
+Guest cannot), and automations whose e-mail action lands in `/mail/outbox` after a real delivery is
+validated, never sent, and skips a contact who unsubscribed.
 
 Part 2 (`paid-local-2.integration.test.ts`) covers: a watched folder (contract mock of the
 SharePoint/Drive connector) → a real Reception delivery → server validation → the result written next

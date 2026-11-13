@@ -310,7 +310,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'sketch' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'feedbackAdmin' | 'call' | 'workspace' | 'plans'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'msp' | 'twin' | 'sketch' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin' | 'feedbackAdmin' | 'call' | 'workspace' | 'plans' | 'deliver'
 }): void {
   track('route_changed', props)
 }

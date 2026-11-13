@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "บันทึกไม่ได้: {{error}} ไม่มีอะไรเปลี่ยนแปลง",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "เชิญ {{name}} แล้ว โทเค็นอัปโหลด (แสดงครั้งเดียว): {{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "บันทึกโครงการ {{name}} ในพื้นที่ทำงานแล้ว รหัสส่งงาน: {{slug}} ต่อไปเชิญผู้รับเหมา",
-  "Saved in the workspace.": "บันทึกในพื้นที่ทำงานแล้ว"
+  "Saved in the workspace.": "บันทึกในพื้นที่ทำงานแล้ว",
+  "Already delivered: same file, same receipt.": "ส่งแล้ว: ไฟล์เดิม ใบรับเดิม",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "ขอลิงก์ใหม่จากบริษัทที่ส่งมา ไฟล์ของคุณไม่หาย ยังไม่มีการอัปโหลดใดๆ",
+  "Checking your model in your browser…": "กำลังตรวจโมเดลในเบราว์เซอร์ของคุณ…",
+  "Could not reach the server. Check your connection and try again.": "ติดต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
+  "Could not send it: {{reason}}": "ส่งไม่ได้: {{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "ส่งงานครั้งถัดไป: {{day}} เวลา {{hour}}:00",
+  "Sending…": "กำลังส่ง…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "ไฟล์ใหญ่กว่า {{mb}} MB ที่ผู้รับยอมรับ",
+  "This file does not open as an IFC.": "ไฟล์นี้เปิดเป็น IFC ไม่ได้",
+  "This upload link is not complete. Open the link exactly as you received it.": "ลิงก์อัปโหลดนี้ไม่สมบูรณ์ เปิดตามที่ได้รับมาเท่านั้น",
+  "Try again": "ลองอีกครั้ง",
+  "Validated, waiting for review": "ตรวจแล้ว รอการพิจารณา",
+  "Waiting for validation…": "รอการตรวจ…",
+  "Your deliveries": "งานส่งของคุณ",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "เชิญ {{name}} แล้ว ลิงก์อัปโหลด (แสดงครั้งเดียว): {{link}}"
 }

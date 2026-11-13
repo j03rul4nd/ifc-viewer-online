@@ -1546,5 +1546,12 @@
   "Validation API": "验证 API",
   "Watched folders": "监视的文件夹",
   "Watching": "监视中",
-  "Webhook deliveries": "Webhook 投递"
+  "Webhook deliveries": "Webhook 投递",
+  "Queue an e-mail": "将邮件放入队列",
+  "Send to": "发送给",
+  "The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.": "邮件在邮件队列中等待。在启用发件服务之前不会发送任何内容。",
+  "{{name}}: delivery {{file}} validated, score {{score}}": "{{name}}：交付 {{file}} 已验证，得分 {{score}}",
+  "Last runs": "最近运行",
+  "E-mail queued to {{to}}": "已为 {{to}} 排队邮件",
+  "Not queued: {{why}}": "未排队：{{why}}"
 }

@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "Speichern nicht möglich: {{error}}. Nichts wurde geändert.",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} eingeladen. Upload-Token, wird nur einmal angezeigt: {{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Projekt {{name}} im Arbeitsbereich gespeichert. Liefercode: {{slug}}. Laden Sie jetzt die Lieferanten ein.",
-  "Saved in the workspace.": "Im Arbeitsbereich gespeichert."
+  "Saved in the workspace.": "Im Arbeitsbereich gespeichert.",
+  "Already delivered: same file, same receipt.": "Bereits geliefert: gleiche Datei, gleiche Quittung.",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "Bitten Sie das Unternehmen, das ihn geschickt hat, um einen neuen Link. Ihre Dateien sind nicht verloren: Es wurde nichts hochgeladen.",
+  "Checking your model in your browser…": "Ihr Modell wird in Ihrem Browser geprüft…",
+  "Could not reach the server. Check your connection and try again.": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+  "Could not send it: {{reason}}": "Senden nicht möglich: {{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "Nächste Lieferung fällig: {{day}} um {{hour}}:00",
+  "Sending…": "Wird gesendet…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "Die Datei ist größer als die {{mb}} MB, die der Empfänger annimmt.",
+  "This file does not open as an IFC.": "Diese Datei lässt sich nicht als IFC öffnen.",
+  "This upload link is not complete. Open the link exactly as you received it.": "Dieser Upload-Link ist unvollständig. Öffnen Sie ihn genau so, wie Sie ihn erhalten haben.",
+  "Try again": "Erneut versuchen",
+  "Validated, waiting for review": "Geprüft, wartet auf Freigabe",
+  "Waiting for validation…": "Warten auf die Prüfung…",
+  "Your deliveries": "Ihre Lieferungen",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} eingeladen. Der Upload-Link, nur einmal angezeigt: {{link}}"
 }

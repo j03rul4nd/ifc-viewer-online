@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SectionProps } from '../../registry'
 import { RECEPTION_UNLIMITED_EUR, planDef } from '../../../../lib/plans/plans'
-import { paidApi } from '../../../../lib/cloud/paid-client'
+import { paidApi, supplierUploadUrl } from '../../../../lib/cloud/paid-client'
 import { usePaidQuery } from '../../../../hooks/usePaidQuery'
 import { SAMPLE_API_DELIVERIES } from '../../api-samples'
 import { Head, DataList, Tabs, useSubTab, scoreColor, Primary, Quiet, Banner, Empty, Sparkline, Panel, inputClass } from '../../ui'
@@ -127,7 +127,10 @@ export default function ReceptionWorkspace(_: SectionProps) {
       if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
       token = r.value.token
       setOpen(null); reloadLive()
-      setNotice(rx('{{name}} invited. Their upload token, shown only once: {{token}}', { name: s.name, token }))
+      // The link carries the token and this project; the page shows only the projects it may deliver to.
+      setNotice(project.slug
+        ? rx('{{name}} invited. Their upload link, shown only once: {{link}}', { name: s.name, link: supplierUploadUrl(window.location.origin, token, project.slug) })
+        : rx('{{name}} invited. Their upload token, shown only once: {{token}}', { name: s.name, token }))
       return
     }
     const id = `${s.originator.toLowerCase()}-${Date.now().toString(36)}`

@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "无法保存:{{error}}。没有任何更改。",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "已邀请 {{name}}。其上传令牌(仅显示一次):{{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "项目 {{name}} 已保存到工作区。交付代码:{{slug}}。接下来邀请供应商。",
-  "Saved in the workspace.": "已保存到工作区。"
+  "Saved in the workspace.": "已保存到工作区。",
+  "Already delivered: same file, same receipt.": "已交付：同一文件，同一回执。",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "请向发送链接的公司索取新链接。你的文件没有丢失：没有上传任何内容。",
+  "Checking your model in your browser…": "正在浏览器中检查你的模型…",
+  "Could not reach the server. Check your connection and try again.": "无法连接服务器。请检查网络后重试。",
+  "Could not send it: {{reason}}": "无法发送：{{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "下次交付：{{day}} {{hour}}:00",
+  "Sending…": "正在发送…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "文件超过接收方允许的 {{mb}} MB。",
+  "This file does not open as an IFC.": "此文件无法作为 IFC 打开。",
+  "This upload link is not complete. Open the link exactly as you received it.": "此上传链接不完整。请按收到的原样打开。",
+  "Try again": "重试",
+  "Validated, waiting for review": "已验证，等待审核",
+  "Waiting for validation…": "等待验证…",
+  "Your deliveries": "你的交付",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "已邀请 {{name}}。其上传链接（仅显示一次）：{{link}}"
 }

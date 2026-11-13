@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "Enregistrement impossible : {{error}}. Rien n'a changé.",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} invité. Son jeton d'envoi, affiché une seule fois : {{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Projet {{name}} enregistré dans l'espace. Code de livraison : {{slug}}. Invitez maintenant ses fournisseurs.",
-  "Saved in the workspace.": "Enregistré dans l’espace."
+  "Saved in the workspace.": "Enregistré dans l’espace.",
+  "Already delivered: same file, same receipt.": "Déjà livré : même fichier, même reçu.",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "Demandez un nouveau lien à l'entreprise qui vous l'a envoyé. Vos fichiers ne sont pas perdus : rien n'a été envoyé.",
+  "Checking your model in your browser…": "Vérification de votre modèle dans votre navigateur…",
+  "Could not reach the server. Check your connection and try again.": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+  "Could not send it: {{reason}}": "Envoi impossible : {{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "Prochaine livraison : {{day}} à {{hour}} h 00",
+  "Sending…": "Envoi…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "Le fichier dépasse les {{mb}} Mo acceptés par le destinataire.",
+  "This file does not open as an IFC.": "Ce fichier ne s'ouvre pas comme un IFC.",
+  "This upload link is not complete. Open the link exactly as you received it.": "Ce lien de dépôt est incomplet. Ouvrez-le exactement tel que vous l’avez reçu.",
+  "Try again": "Réessayer",
+  "Validated, waiting for review": "Validée, en attente de revue",
+  "Waiting for validation…": "En attente de validation…",
+  "Your deliveries": "Vos livraisons",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} invité. Son lien de dépôt, affiché une seule fois : {{link}}"
 }
