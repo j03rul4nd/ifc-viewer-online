@@ -15,6 +15,7 @@ export const copy: LangCopy = {
     postReception: 'Reviewing subcontractor IFC models',
     postClash: 'Clash detection in the browser',
     postBatch: 'Validating many IFC files at once',
+    postSupplier: 'An upload page for suppliers without an account',
   },
   pages: {
     contractors: {
@@ -93,7 +94,7 @@ export const copy: LangCopy = {
       ],
       faq: [
         ['Can I use Reception today?', 'Not yet. It is designed and shown with sample data. If you receive models from subcontractors, [talk to us](pricing): we are looking for a few pilot projects. Checking a model against your requirements is free and works today in the [viewer](viewer).'],
-        ['Do subcontractors pay or need an account?', 'No. They open your link and check their model for free in the browser. Paying is for whoever receives and manages the deliveries.'],
+        ['Do subcontractors pay or need an account?', 'No. They open your link and check their model for free in the browser. Paying is for whoever receives and manages the deliveries. How the upload page works: [an upload page for suppliers without an account](postSupplier).'],
         ['Does it replace Catenda, Dalux or Autodesk Construction Cloud?', 'No. It checks the model before it reaches your CDE and works whichever CDE you use. Each CDE has its own workflow; see the comparison above with the date we read their pages.'],
         ['Is the model uploaded to check it?', 'For the free check, no: it runs in the subcontractor\'s browser. In Reception, the delivery you accept is stored for you in the EU.'],
         ['How much will it cost?', 'It is planned from €290 per project a month with 15 suppliers, or €790 for unlimited projects. Prices may change before launch; see the [plans](pricing).'],

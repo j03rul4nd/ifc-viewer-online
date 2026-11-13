@@ -77,10 +77,11 @@ export const POSTS = {
   postReception: 'review-subcontractor-ifc-models',
   postClash: 'ifc-clash-detection-browser',
   postBatch: 'batch-validate-ifc-files',
+  postSupplier: 'supplier-ifc-upload-page-no-account',
 } as const
 
 export const IMAGE_CREDIT = 'IFC Viewer Online'
 export const IMAGE_COPYRIGHT = '© 2026 IFC Viewer Online'
 
 /** [text](key) targets. */
-export const LINK_KEYS = ['viewer', 'pricing', 'contractors', 'engineering', 'postReception', 'postClash', 'postBatch', 'validator', 'fix'] as const
+export const LINK_KEYS = ['viewer', 'pricing', 'contractors', 'engineering', 'postReception', 'postClash', 'postBatch', 'postSupplier', 'validator', 'fix'] as const

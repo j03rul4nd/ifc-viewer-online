@@ -15,6 +15,7 @@ export const copy: LangCopy = {
     postReception: 'Controllare i modelli IFC dei subappaltatori',
     postClash: 'Clash detection nel browser',
     postBatch: 'Validare molti file IFC in una volta',
+    postSupplier: 'Pagina di caricamento per fornitori senza account',
   },
   pages: {
     contractors: {
@@ -93,7 +94,7 @@ export const copy: LangCopy = {
       ],
       faq: [
         ['Posso usare Reception oggi?', 'Non ancora. È progettato e mostrato con dati di esempio. Se ricevi modelli dai subappaltatori, [parla con noi](pricing): cerchiamo alcuni progetti pilota. Verificare un modello sui tuoi requisiti è gratuito e funziona oggi nel [visualizzatore](viewer).'],
-        ['I subappaltatori pagano o hanno bisogno di un account?', 'No. Aprono il tuo link e verificano il loro modello gratis nel browser. Paga chi riceve e gestisce le consegne.'],
+        ['I subappaltatori pagano o hanno bisogno di un account?', 'No. Aprono il tuo link e verificano il loro modello gratis nel browser. Paga chi riceve e gestisce le consegne. Come funziona: [pagina di caricamento per fornitori senza account](postSupplier).'],
         ['Sostituisce Catenda, Dalux o Autodesk Construction Cloud?', 'No. Verifica il modello prima che arrivi al tuo CDE e funziona con qualunque CDE usi. Ogni CDE ha il proprio flusso; vedi il confronto qui sopra con la data in cui abbiamo letto le loro pagine.'],
         ['Il modello viene caricato per verificarlo?', 'Per la verifica gratuita no: avviene nel browser del subappaltatore. In Reception, la consegna che accetti viene archiviata per te nell’UE.'],
         ['Quanto costerà?', 'È previsto da 290 € per progetto al mese con 15 fornitori, o 790 € per progetti illimitati. I prezzi possono cambiare prima del lancio; vedi i [piani](pricing).'],
