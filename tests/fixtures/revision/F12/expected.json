@@ -1,0 +1,16 @@
+{
+  "id": "F12",
+  "description": "One column turned 5° in plan (counter-clockwise)",
+  "changes": [
+    {
+      "globalIdA": "3nYRTA3bjG9PXrajF3Avof",
+      "globalIdB": "3nYRTA3bjG9PXrajF3Avof",
+      "kind": "moved",
+      "method": "guid",
+      "rotationDeg": 5
+    }
+  ],
+  "counts": {
+    "moved": 1
+  }
+}

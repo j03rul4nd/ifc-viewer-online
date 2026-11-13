@@ -28,7 +28,7 @@ const PAVILION = 'public/models/video-demo/IVO-Operations-Pavilion.ifc'
 const POBLENOU = ['A', 'S', 'M'].map((d) => `public/models/poblenou/BCN-IVO-ZZ-XX-M3-${d}-0001.ifc`)
 
 type Kind = 'added' | 'removed' | 'moved' | 'reshaped' | 'type_changed' | 'properties_changed' | 'relations_changed'
-interface Expected { globalIdA?: string; globalIdB?: string; kind: Kind; method: 'guid' | 'tag' | 'none'; file?: string; direction?: string }
+interface Expected { globalIdA?: string; globalIdB?: string; kind: Kind; method: 'guid' | 'tag' | 'geometry' | 'split' | 'none'; file?: string; direction?: string; rotationDeg?: number }
 
 const api = new WebIFC.IfcAPI()
 await api.Init()
@@ -77,6 +77,8 @@ class Step {
     throw new Error(`${gid} not found`)
   }
   guid(): string { return `0RevCmp${this.tag}${String(++this.guidSeq).padStart(15 - this.tag.length, '0')}` }
+  /** Every line id, in file order. */
+  ofClassAll(): number[] { return [...this.order] }
   /** Elements of the given IFC classes, in file order. */
   ofClass(...classes: string[]): Array<{ id: number; gid: string }> {
     const out: Array<{ id: number; gid: string }> = []
@@ -221,6 +223,79 @@ function addCopy(s: Step, srcId: number, d: [number, number, number]): string {
   return gid
 }
 
+/** Give every rooted entity but the project a new GlobalId (an author "regenerating ids" on export). Old → new. */
+function regenerateGuids(s: Step, keepClasses: string[] = ['IFCPROJECT']): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const id of [...s.ofClassAll()]) {
+    const body = s.get(id)
+    const m = /^(IFC[A-Z0-9]+)\('([^']{22})'/.exec(body)
+    if (!m || keepClasses.includes(m[1])) continue
+    const gid = s.guid()
+    map[m[2]] = gid
+    s.set(id, body.replace(`'${m[2]}'`, `'${gid}'`))
+  }
+  return map
+}
+
+/** Turn one element in plan about its placement origin (new RefDirection). */
+function rotateElement(s: Step, elId: number, deg: number): void {
+  const lp = s.line(elId).ObjectPlacement.value as number
+  s.only(lp, elId, 'placement')
+  const a2p = s.line(lp).RelativePlacement.value as number
+  s.only(a2p, lp, 'axis placement')
+  const body = s.get(a2p)
+  const m = /^IFCAXIS2PLACEMENT3D\((#\d+),(#\d+|\$),(#\d+|\$)\);$/.exec(body)
+  if (!m) throw new Error('unexpected axis placement')
+  if (m[3] !== '$' && !/^IFCDIRECTION\(\(1\.,0\.,0\.\)\);$/.test(s.get(Number(m[3].slice(1))))) throw new Error('already turned')
+  if (m[2] !== '$' && !/^IFCDIRECTION\(\(0\.,0\.,1\.\)\);$/.test(s.get(Number(m[2].slice(1))))) throw new Error('not vertical')
+  const r = deg * Math.PI / 180
+  const dir = s.add(`IFCDIRECTION((${num(Math.cos(r))},${num(Math.sin(r))},0.));`)
+  s.set(a2p, `IFCAXIS2PLACEMENT3D(${m[1]},${m[2]},#${dir});`)
+}
+
+/**
+ * Split a slab whose body is one extrusion of a rectangular point list in two
+ * halves along the profile's x: the original line keeps the first half under a
+ * new GlobalId, a new slab (same placement, container, psets) takes the other.
+ * Returns the two new GlobalIds.
+ */
+function splitSlab(s: Step, elId: number): [string, string] {
+  const solid = ownSolid(s, elId)
+  const prof = s.line(solid).SweptArea.value as number
+  s.only(prof, solid, 'profile')
+  const curve = s.line(prof).OuterCurve.value as number
+  s.only(curve, prof, 'curve')
+  const list = s.line(curve).Points.value as number
+  s.only(list, curve, 'point list')
+  const pts = (s.line(list).CoordList as Array<Array<{ value: number }>>).map((p) => p.map((v) => v.value))
+  const xs = [...new Set(pts.map((p) => p[0]))], ys = [...new Set(pts.map((p) => p[1]))]
+  if (pts.length !== 4 || xs.length !== 2 || ys.length !== 2) throw new Error('profile is not a rectangle')
+  const [x0, x1] = xs.sort((a, b) => a - b), [y0, y1] = ys.sort((a, b) => a - b)
+  const xm = (x0 + x1) / 2
+  const rect = (a: number, b: number): string => `IFCCARTESIANPOINTLIST2D(((${num(a)},${num(y0)}),(${num(b)},${num(y0)}),(${num(b)},${num(y1)}),(${num(a)},${num(y1)})));`
+  s.set(list, rect(x0, xm))
+  // Second half: its own representation chain.
+  const nl = s.add(rect(xm, x1))
+  const nc = s.add(s.get(curve).replace(`#${list},`, `#${nl},`))
+  const np = s.add(s.get(prof).replace(`#${curve})`, `#${nc})`))
+  const ns = s.add(s.get(solid).replace(`#${prof},`, `#${np},`))
+  const rep = s.line(elId).Representation.value as number
+  const sr = (s.line(rep).Representations as Array<{ value: number }>).map((r) => r.value).find((r) => s.get(r).includes(`(#${solid})`))!
+  const nsr = s.add(s.get(sr).replace(`(#${solid})`, `(#${ns})`))
+  const npds = s.add(`IFCPRODUCTDEFINITIONSHAPE($,$,(#${nsr}));`)
+  const src = s.get(elId)
+  const oldGid = /^IFC[A-Z0-9]+\('([^']{22})'/.exec(src)![1]
+  const g1 = s.guid(), g2 = s.guid()
+  s.set(elId, src.replace(`'${oldGid}'`, `'${g1}'`))
+  const id2 = s.add(src.replace(`'${oldGid}'`, `'${g2}'`).replace(new RegExp(`#${rep},`), `#${npds},`))
+  // Same relationships as the original (container, type, psets, material).
+  for (const r of s.referrers(elId)) {
+    if (r === id2 || !s.get(r).startsWith('IFCREL')) continue
+    s.set(r, s.get(r).replace(new RegExp(`#${elId}(?![0-9])`), `#${elId},#${id2}`))
+  }
+  return [g1, g2]
+}
+
 /** Try candidates in order until a mutation applies cleanly. */
 function firstThat<T>(cands: Array<{ id: number; gid: string }>, fn: (c: { id: number; gid: string }) => T, skip: Set<number> = new Set()): { id: number; gid: string; out: T } {
   for (const c of cands) {
@@ -337,6 +412,36 @@ const walls = (s: Step) => s.ofClass('IFCWALL')
   const b = Object.fromEntries(names.map((n, i) => [n, [A, S, M][i].toString()]))
   ;[A, S, M].forEach((s) => s.close())
   writeCase('F8', 'Poblenou A/S/M: move + add in A, reshape + remove in S, properties in M', a, b, exp)
+}
+
+// F9 — every GlobalId regenerated (project kept), one wall moved 120 mm +X.
+{
+  const s = new Step(tunnel, 'F9')
+  const w = firstThat(walls(s), (c) => moveElement(s, c.id, [0.12, 0, 0]))
+  const guidMap = regenerateGuids(s)
+  writeCase('F9', 'All GlobalIds regenerated (IfcProject kept) + one wall moved 120 mm in +X', tunnel, s.toString(),
+    [{ globalIdA: w.gid, globalIdB: guidMap[w.gid], kind: 'moved', method: 'geometry', direction: 'E' }], { guidMap })
+  s.close()
+}
+
+// F10 — the pavilion floor slab split in two halves (construction joint).
+{
+  const pav = read(PAVILION)
+  const s = new Step(pav, 'F10')
+  const sl = firstThat(s.ofClass('IFCSLAB'), (c) => splitSlab(s, c.id))
+  writeCase('F10', 'One slab split in two halves along its profile x (1 → 2)', pav, s.toString(),
+    [{ globalIdA: sl.gid, globalIdB: sl.out[0], kind: 'reshaped', method: 'split' }], { parts: sl.out })
+  s.close()
+}
+
+// F12 — one pavilion column turned 5° in plan about its placement origin.
+{
+  const pav = read(PAVILION)
+  const s = new Step(pav, 'F12')
+  const col = firstThat(s.ofClass('IFCCOLUMN'), (c) => rotateElement(s, c.id, 5))
+  writeCase('F12', 'One column turned 5° in plan (counter-clockwise)', pav, s.toString(),
+    [{ globalIdA: col.gid, globalIdB: col.gid, kind: 'moved', method: 'guid', rotationDeg: 5 }])
+  s.close()
 }
 
 // F11 — re-tessellation of the Pavilion: same solids, denser profiles.

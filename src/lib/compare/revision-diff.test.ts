@@ -206,7 +206,7 @@ describe('diffRevisions classification', () => {
     const mark = (m: string) => ({ psets: { Pset_Precast: { Mark: m } } })
     const b = snap('S.ifc', [el('G1', mark('P1')), el('G2', mark('DUP')), el('G3', mark('DUP'))])
     const h = snap('S.ifc', [el('N1', mark('P1')), el('N2', mark('DUP')), el('N3', mark('DUP'))])
-    const d = diffRevisions([b], [h], { markProperties: ['Pset_Precast.Mark'] })
+    const d = diffRevisions([b], [h], { markProperties: ['Pset_Precast.Mark'] }, { extraMatchers: [] }) // layer 2 alone
     expect(d.byKind.unchanged).toBe(1)
     expect(d.byKind.added).toBe(2)
     expect(d.byKind.removed).toBe(2)

@@ -40,6 +40,13 @@ export interface GeoFingerprint {
   s?: [number, number, number]
   /** Mesh volume in m³ (closed-shell signed-volume sum). Optional, like `s`. */
   v?: number
+  /**
+   * World AABB minimum corner (mesh frame, metres, 0.1 mm). With `s` it gives
+   * the box layers 3–4 of revision compare match on. Optional (older baselines).
+   */
+  m?: [number, number, number]
+  /** Unit local X axis of the element placement (mesh frame): orientation, for rotations. Optional. */
+  x?: [number, number, number]
 }
 
 export interface ModelSnapshot {

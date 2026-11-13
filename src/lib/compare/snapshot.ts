@@ -133,6 +133,7 @@ export function fingerprintGeometry(api: IfcAPI, modelId: number, onProgress?: (
   api.StreamAllMeshes(modelId, (mesh, index, total) => {
     const parts: string[] = []
     let c: [number, number, number] | null = null
+    let ax: [number, number, number] | null = null
     const wmin = [Infinity, Infinity, Infinity], wmax = [-Infinity, -Infinity, -Infinity]
     let vol = 0
     const n = mesh.geometries.size()
@@ -155,7 +156,12 @@ export function fingerprintGeometry(api: IfcAPI, modelId: number, onProgress?: (
       const rot = [m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]].map((v) => Math.round(v * 1e4)).join(',')
       const tr = [m[12], m[13], m[14]].map((v) => Math.round(v * 1000)).join(',')
       parts.push(`${st.sz}@${rot};${tr}`)
-      if (!c) c = [m[12], m[13], m[14]]
+      if (!c) {
+        c = [m[12], m[13], m[14]]
+        // Orientation: local X axis of the first placement (rotation, V2.5).
+        const len = Math.hypot(m[0], m[1], m[2])
+        if (len > 1e-9) ax = [m[0], m[1], m[2]].map((v) => round(v / len, 1e-6)) as [number, number, number]
+      }
       if (st.min && st.max) {
         // World box of the transformed local box (8 corners): exact for
         // axis-aligned placements, a stable over-estimate for rotated ones.
@@ -179,7 +185,9 @@ export function fingerprintGeometry(api: IfcAPI, modelId: number, onProgress?: (
     if (wmin[0] !== Infinity) {
       fp.s = [0, 1, 2].map((k) => round(wmax[k] - wmin[k], 1e-4)) as [number, number, number]
       fp.v = Number(vol.toPrecision(6))
+      fp.m = [0, 1, 2].map((k) => round(wmin[k], 1e-4)) as [number, number, number]
     }
+    if (ax) fp.x = ax
     out.set(mesh.expressID, fp)
     if (onProgress && index % 500 === 0) onProgress(total ? index / total : 0)
   })
