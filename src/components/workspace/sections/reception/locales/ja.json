@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "保存できませんでした: {{error}}。何も変更されていません。",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} を招待しました。アップロード用トークン(一度だけ表示): {{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "プロジェクト {{name}} をワークスペースに保存しました。納品コード: {{slug}}。次に協力会社を招待してください。",
-  "Saved in the workspace.": "ワークスペースに保存しました。"
+  "Saved in the workspace.": "ワークスペースに保存しました。",
+  "Already delivered: same file, same receipt.": "納品済みです。同じファイル、同じ受領証です。",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "送ってきた会社に新しいリンクを依頼してください。ファイルは失われていません。何もアップロードされていません。",
+  "Checking your model in your browser…": "ブラウザーでモデルをチェック中…",
+  "Could not reach the server. Check your connection and try again.": "サーバーに接続できませんでした。接続を確認してもう一度お試しください。",
+  "Could not send it: {{reason}}": "送信できませんでした: {{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "次回の納品期限: {{day}} {{hour}}:00",
+  "Sending…": "送信中…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "ファイルが受領者の上限 {{mb}} MB を超えています。",
+  "This file does not open as an IFC.": "このファイルは IFC として開けません。",
+  "This upload link is not complete. Open the link exactly as you received it.": "このアップロードリンクは不完全です。受け取ったとおりに開いてください。",
+  "Try again": "再試行",
+  "Validated, waiting for review": "検証済み、レビュー待ち",
+  "Waiting for validation…": "検証待ち…",
+  "Your deliveries": "あなたの納品",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} を招待しました。アップロードリンク（一度だけ表示）: {{link}}"
 }

@@ -290,5 +290,20 @@
   "Could not save: {{error}}. Nothing changed.": "No se ha podido guardar: {{error}}. No ha cambiado nada.",
   "{{name}} invited. Their upload token, shown only once: {{token}}": "{{name}} invitado. Su token de subida, que solo se muestra una vez: {{token}}",
   "Project {{name}} saved in the workspace. Delivery code: {{slug}}. Invite its suppliers next.": "Obra {{name}} guardada en el espacio. Código de entrega: {{slug}}. Ahora invita a sus proveedores.",
-  "Saved in the workspace.": "Guardado en el espacio."
+  "Saved in the workspace.": "Guardado en el espacio.",
+  "Already delivered: same file, same receipt.": "Ya entregado: mismo archivo, mismo justificante.",
+  "Ask the company that sent it for a new link. Your files are not lost: nothing was uploaded.": "Pide un enlace nuevo a la empresa que te lo envió. Tus archivos no se pierden: no se ha subido nada.",
+  "Checking your model in your browser…": "Comprobando tu modelo en tu navegador…",
+  "Could not reach the server. Check your connection and try again.": "No se pudo conectar con el servidor. Revisa tu conexión y vuelve a intentarlo.",
+  "Could not send it: {{reason}}": "No se pudo enviar: {{reason}}",
+  "Next delivery due {{day}} at {{hour}}:00": "Próxima entrega: {{day}} a las {{hour}}:00",
+  "Sending…": "Enviando…",
+  "The file is larger than the {{mb}} MB the receiver accepts.": "El archivo supera los {{mb}} MB que acepta el receptor.",
+  "This file does not open as an IFC.": "Este archivo no se abre como IFC.",
+  "This upload link is not complete. Open the link exactly as you received it.": "Este enlace de subida está incompleto. Ábrelo tal y como lo recibiste.",
+  "Try again": "Reintentar",
+  "Validated, waiting for review": "Validada, pendiente de revisión",
+  "Waiting for validation…": "Esperando la validación…",
+  "Your deliveries": "Tus entregas",
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} invitado. Su enlace de subida, que solo se muestra una vez: {{link}}"
 }

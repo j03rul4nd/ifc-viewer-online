@@ -1546,5 +1546,12 @@
   "Validation API": "検証 API",
   "Watched folders": "監視フォルダー",
   "Watching": "監視中",
-  "Webhook deliveries": "Webhook 配信"
+  "Webhook deliveries": "Webhook 配信",
+  "Queue an e-mail": "メールをキューに入れる",
+  "Send to": "送信先",
+  "The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.": "メールはメールキューで待機します。送信元が有効になるまで何も送信されません。",
+  "{{name}}: delivery {{file}} validated, score {{score}}": "{{name}}: 納品 {{file}} を検証、スコア {{score}}",
+  "Last runs": "最近の実行",
+  "E-mail queued to {{to}}": "{{to}} 宛のメールをキューに追加",
+  "Not queued: {{why}}": "キューに入れませんでした: {{why}}"
 }

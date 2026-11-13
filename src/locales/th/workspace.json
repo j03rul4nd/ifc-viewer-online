@@ -1546,5 +1546,12 @@
   "Validation API": "API ตรวจสอบ",
   "Watched folders": "โฟลเดอร์ที่เฝ้าดู",
   "Watching": "กำลังเฝ้าดู",
-  "Webhook deliveries": "การส่ง Webhook"
+  "Webhook deliveries": "การส่ง Webhook",
+  "Queue an e-mail": "ใส่อีเมลในคิว",
+  "Send to": "ส่งถึง",
+  "The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.": "อีเมลรออยู่ในคิว จะไม่มีการส่งจนกว่าจะเปิดผู้ส่ง",
+  "{{name}}: delivery {{file}} validated, score {{score}}": "{{name}}: ตรวจงานส่ง {{file}} แล้ว คะแนน {{score}}",
+  "Last runs": "การทำงานล่าสุด",
+  "E-mail queued to {{to}}": "อีเมลถึง {{to}} อยู่ในคิว",
+  "Not queued: {{why}}": "ไม่ได้ใส่คิว: {{why}}"
 }

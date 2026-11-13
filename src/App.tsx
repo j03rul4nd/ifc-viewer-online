@@ -100,6 +100,9 @@ const LazyWorkspacePreview = React.lazy(() =>
   // Its translations travel with the route: start both downloads together.
   Promise.all([import('./components/workspace/WorkspacePreview'), i18n.loadNamespaces('workspace')]).then(([m]) => m))
 // Hidden plan landings (/plans/*) — same pricing-preview gate as the workspace.
+// The supplier's upload page (/deliver#t=…): dark until the paid backend is live.
+const LazySupplierUploadPage = React.lazy(() =>
+  Promise.all([import('./components/workspace/sections/reception/SupplierUploadPage'), i18n.loadNamespaces('workspace')]).then(([m]) => m))
 const LazyPlansSite = React.lazy(() => import('./components/plans/PlansSite'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
@@ -755,6 +758,7 @@ export default function App() {
       if (rel === '/twin-builder' || rel === '/twin-builder/') return 'twin'
       if (rel === '/sketch' || rel === '/sketch/') return 'sketch'
       if ((rel === '/workspace' || rel.startsWith('/workspace/')) && isPricingPreview()) return 'workspace'
+      if ((rel === '/deliver' || rel === '/deliver/') && import.meta.env.VITE_FEATURE_SUPPLIER_UPLOAD === 'true') return 'deliver'
       if ((rel === '/plans' || rel.startsWith('/plans/')) && isPricingPreview()) return 'plans'
       // Dedicated auth pages (F2) — only exist when accounts are enabled.
       if (isAccountEnabled()) {
@@ -4822,6 +4826,11 @@ export default function App() {
           </motion.div>
         )}
 
+        {route === 'deliver' && (
+          <motion.div key="deliver" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} className="absolute inset-0 overflow-y-auto">
+            <React.Suspense fallback={null}><LazySupplierUploadPage /></React.Suspense>
+          </motion.div>
+        )}
         {route === 'verify' && (
           <motion.div
             key="verify"

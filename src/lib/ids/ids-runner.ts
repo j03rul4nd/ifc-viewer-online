@@ -7,7 +7,7 @@
 // keyed by run id — never in the Zustand store (non-serialisable).
 
 import { parseIds } from './ids-parser'
-import type { IdsDocument, IdsErrorCode, IdsPhase, IdsResult } from './ids-types'
+import type { IdsDocument, IdsElement, IdsErrorCode, IdsPhase, IdsResult } from './ids-types'
 import { parseIdsWorkerMsg } from '../worker-schemas'
 import { createLogger } from '../logger'
 
@@ -26,9 +26,11 @@ export interface IdsRunOptions {
   signal?: AbortSignal
   /** Throttled progress (≤ ~10/s): pct 0–100 across open/gather/check phases. */
   onProgress?: (pct: number, phase: IdsPhase) => void
+  /** Also return the elements the check gathered (classes, attributes, property sets). */
+  returnElements?: boolean
 }
 
-export interface IdsRunOutput { doc: IdsDocument; result: IdsResult }
+export interface IdsRunOutput { doc: IdsDocument; result: IdsResult; elements?: IdsElement[] }
 
 /** After a cancel request the worker gets this long to exit cleanly. */
 const CANCEL_GRACE_MS = 2_000
@@ -81,6 +83,7 @@ export async function runIds(
   options.signal?.addEventListener('abort', onExternalAbort, { once: true })
 
   try {
+    let elements: IdsElement[] | undefined
     const result = await new Promise<IdsResult>((resolve, reject) => {
       const worker = new Worker(new URL('../../workers/ids.worker.ts', import.meta.url), { type: 'module' })
       let graceTimer: ReturnType<typeof setTimeout> | null = null
@@ -143,7 +146,7 @@ export async function runIds(
           if (!settled) options.onProgress?.(m.pct, m.phase)
           return
         }
-        if (m.type === 'result') settle(() => resolve(m.result))
+        if (m.type === 'result') settle(() => { elements = m.elements as unknown as IdsElement[] | undefined; resolve(m.result) })
         else settle(() => reject(new IdsCheckError(m.code, m.message)))
       }
       worker.onerror = (e): void => {
@@ -151,9 +154,9 @@ export async function runIds(
       }
 
       armWatchdog()
-      worker.postMessage({ type: 'check-ids', id, buffer, doc }, [buffer])
+      worker.postMessage({ type: 'check-ids', id, buffer, doc, ...(options.returnElements ? { options: { returnElements: true } } : {}) }, [buffer])
     })
-    return { doc, result }
+    return { doc, result, elements }
   } finally {
     activeRuns.delete(id)
     options.signal?.removeEventListener('abort', onExternalAbort)

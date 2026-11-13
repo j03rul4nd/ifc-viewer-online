@@ -1546,5 +1546,12 @@
   "Validation API": "API de validación",
   "Watched folders": "Carpetas vigiladas",
   "Watching": "Vigilando",
-  "Webhook deliveries": "Entregas de webhooks"
+  "Webhook deliveries": "Entregas de webhooks",
+  "Queue an e-mail": "Poner un correo en la cola",
+  "Send to": "Enviar a",
+  "The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.": "El correo espera en la cola de correo. No se envía nada hasta que se active un remitente.",
+  "{{name}}: delivery {{file}} validated, score {{score}}": "{{name}}: entrega {{file}} validada, puntuación {{score}}",
+  "Last runs": "Últimas ejecuciones",
+  "E-mail queued to {{to}}": "Correo en cola para {{to}}",
+  "Not queued: {{why}}": "No se puso en cola: {{why}}"
 }

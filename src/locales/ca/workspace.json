@@ -1546,5 +1546,12 @@
   "Validation API": "API de validació",
   "Watched folders": "Carpetes vigilades",
   "Watching": "Vigilant",
-  "Webhook deliveries": "Lliuraments de webhooks"
+  "Webhook deliveries": "Lliuraments de webhooks",
+  "Queue an e-mail": "Posar un correu a la cua",
+  "Send to": "Envia a",
+  "The e-mail waits in the mail queue. Nothing is sent until a sender is switched on.": "El correu espera a la cua de correu. No s'envia res fins que s'activi un remitent.",
+  "{{name}}: delivery {{file}} validated, score {{score}}": "{{name}}: lliurament {{file}} validat, puntuació {{score}}",
+  "Last runs": "Darreres execucions",
+  "E-mail queued to {{to}}": "Correu a la cua per a {{to}}",
+  "Not queued: {{why}}": "No s'ha posat a la cua: {{why}}"
 }
