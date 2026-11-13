@@ -61,10 +61,11 @@ export async function verifyChain(chain: RegisterEntry[]): Promise<number | null
 }
 
 /** The register drafts implied by the suppliers and deliveries. */
-export async function draftsFrom(suppliers: RxSupplier[], deliveries: RxDelivery[]): Promise<DraftEntry[]> {
-  const out: DraftEntry[] = suppliers.map((s) => ({ at: `${s.invitedAt}T08:00:00Z`, event: 'invited', supplierId: s.id, subject: s.email, by: 'Laura Méndez', detail: s.originator }))
+/** `inviter`: who invited the suppliers (the sample's coordinator; the server does not record it yet). */
+export async function draftsFrom(suppliers: RxSupplier[], deliveries: RxDelivery[], inviter = 'Laura Méndez'): Promise<DraftEntry[]> {
+  const out: DraftEntry[] = suppliers.map((s) => ({ at: `${s.invitedAt}T08:00:00Z`, event: 'invited', supplierId: s.id, subject: s.email, by: inviter, detail: s.originator }))
   for (const d of deliveries) {
-    out.push({ at: d.receivedAt, event: 'received', supplierId: d.supplierId, subject: d.fileName, by: d.supplierId, fileHash: await sha256Hex(`${d.fileName}@${d.receivedAt}`), detail: d.score === null ? 'unreadable' : `score ${d.score} · profile v${d.profileVersion}` })
+    out.push({ at: d.receivedAt, event: 'received', supplierId: d.supplierId, subject: d.fileName, by: d.supplierId, fileHash: d.fileHash ?? await sha256Hex(`${d.fileName}@${d.receivedAt}`), detail: d.score === null ? 'unreadable' : `score ${d.score} · profile v${d.profileVersion}` })
     if (d.verdict !== 'pending' && d.decidedAt) {
       out.push({ at: d.decidedAt, event: d.verdict, supplierId: d.supplierId, subject: d.fileName, by: d.decidedBy ?? '', detail: d.reasons.join(' | ') })
     }

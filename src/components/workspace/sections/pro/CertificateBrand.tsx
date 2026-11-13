@@ -1,8 +1,12 @@
 // Certificate branding (Pro, dark): logo + studio name on new certificates,
 // previewed live, and the certificate as a document to attach to an invoice
 // with a line ready to paste. Issued certificates keep their fingerprint.
+// Workspace (local / cloud): the logo is the workspace's, stored on the server
+// and printed on every certificate it signs (PNG, JPG or WebP; no SVG there).
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { usePaidDataSource } from '../../../../hooks/usePaidQuery'
+import { paidApi } from '../../../../lib/cloud/paid-client'
 import { Panel, Primary, Quiet, Field, inputClass, scoreColor, CopyField } from '../../ui'
 import { LOGO_MAX_KB, LOGO_TYPES, SAMPLE_BRAND, SAMPLE_CERT_DOC } from './pro-sample'
 import { certificateHtml, invoiceLine, openPrintable, verifyUrl } from './pro-reports'
@@ -23,13 +27,23 @@ export default function CertificateBrand() {
   const [saved, setSaved] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const cert = SAMPLE_CERT_DOC
+  const live = usePaidDataSource() !== 'sample'
+  useEffect(() => {
+    if (!live) return
+    void paidApi.branding().then((r) => { if (r.ok) setBrand({ logo: r.value.logo }); else setErr(p('Could not load: {{error}}. Showing nothing rather than old data.', { error: r.error.code })) })
+  }, [live])
 
   const pick = async (f?: File) => {
     if (!f) return
     const e = logoError(f)
     setErr(e)
     if (e) return
-    setBrand({ logo: await readAsDataUrl(f) }); setSaved(false)
+    const logo = await readAsDataUrl(f)
+    if (live) {
+      const r = await paidApi.setBranding(logo)
+      if (!r.ok) { setErr(p('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+    }
+    setBrand({ logo }); setSaved(false)
   }
 
   return (
@@ -42,7 +56,7 @@ export default function CertificateBrand() {
             <Field label={p('Logo')} hint={err ? <span className="text-[var(--danger)]" role="alert">{p(err)}</span> : p('PNG, SVG or JPG, up to 512 KB.')}>
               <div className="flex flex-wrap gap-2">
                 <Quiet onClick={() => input.current?.click()}>{brand.logo ? p('Replace logo') : p('Upload logo')}</Quiet>
-                {brand.logo && <Quiet onClick={() => { setBrand({ logo: null }); setSaved(false) }}>{p('Remove')}</Quiet>}
+                {brand.logo && <Quiet onClick={() => { void (live ? paidApi.clearBranding() : Promise.resolve({ ok: true })).then((r) => { if (r.ok) { setBrand({ logo: null }); setSaved(false) } else setErr(p('Could not save: {{error}}. Nothing changed.', { error: r.ok ? '' : (r as { error: { code: string } }).error.code })) }) }}>{p('Remove')}</Quiet>}
               </div>
             </Field>
             <input ref={input} type="file" accept={LOGO_TYPES.join(',')} className="hidden" onChange={(e) => void pick(e.target.files?.[0])} />

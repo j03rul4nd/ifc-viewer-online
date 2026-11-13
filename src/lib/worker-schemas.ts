@@ -431,7 +431,8 @@ export const IdsCheckMsgSchema = z.object({
   id:      z.string(),
   buffer:  z.instanceof(ArrayBuffer),
   doc:     IdsDocumentSchema,
-  options: z.object({ modelSchemaHint: z.string().optional() }).optional(),
+  /** returnElements: also send back the gathered elements (the rules studio tests rules on them). */
+  options: z.object({ modelSchemaHint: z.string().optional(), returnElements: z.boolean().optional() }).optional(),
 })
 
 export const IdsCancelMsgSchema = z.object({
@@ -453,6 +454,8 @@ export const IdsResultMsgSchema = z.object({
   type:   z.literal('result'),
   id:     z.string(),
   result: IdsResultSchema,
+  /** Only when the check asked for them (options.returnElements). Shape: IdsElement. */
+  elements: z.array(z.record(z.string(), z.unknown())).optional(),
 })
 
 export const IdsErrorMsgSchema = z.object({

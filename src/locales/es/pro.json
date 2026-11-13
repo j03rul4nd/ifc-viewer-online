@@ -336,5 +336,108 @@
     "cancel": "Anular la llamada",
     "footer": "¿Prefieres escribirme?",
     "eventTitle": "Llamada con Joel (IFC Viewer Online)"
+  },
+  "dash": {
+    "title": "Tu cuenta",
+    "signedInAs": "Sesión iniciada como {{email}}",
+    "openViewer": "Abrir el visor",
+    "admin": "Consola de administración",
+    "navAria": "Cuenta",
+    "tabsAria": "Secciones de la cuenta",
+    "loading": "Cargando tu cuenta…",
+    "pastDueCta": "Actualizar el pago",
+    "tabs": {
+      "overview": "Resumen",
+      "settings": "Ajustes"
+    },
+    "anon": {
+      "title": "Tu cuenta de IFC Viewer Online",
+      "body": "Inicia sesión para guardar tus certificados verificables, tener tus perfiles de reglas en todos tus dispositivos y recibir respuesta a lo que pidas.",
+      "cta": "Iniciar sesión",
+      "continue": "Seguir sin cuenta",
+      "p1": "Historial de certificados para compartir con tu cliente",
+      "p2": "Perfiles de reglas en todos tus dispositivos",
+      "p3": "Peticiones con respuesta de quien construye la herramienta",
+      "free": "El visor y el validador siguen gratis y sin cuenta."
+    },
+    "start": {
+      "title": "Primeros pasos",
+      "sub": "Tres pasos hasta tu primer certificado verificable.",
+      "s1t": "Abre un IFC o carga el modelo de demo",
+      "s1d": "Funciona en tu navegador: el archivo nunca sale de tu ordenador.",
+      "s2t": "Valídalo y mira su Health Score",
+      "s2d": "44 reglas e IDS, con una guía para arreglar cada error.",
+      "s3t": "Emite un certificado verificable",
+      "s3d": "Desde el diálogo de exportar, con la sesión iniciada. Aparecerá aquí.",
+      "cta": "Abrir el visor",
+      "private": "Gratis, sin subir nada, sin tarjeta."
+    },
+    "cont": {
+      "title": "Continuar",
+      "last": "Último certificado",
+      "issued": "Emitido el {{date}}",
+      "view": "Ver certificado",
+      "validate": "Validar otro modelo",
+      "recent": "Certificados anteriores",
+      "viewAria": "Ver el certificado con nota {{score}} del {{date}}"
+    },
+    "plan": {
+      "title": "Planes",
+      "sub": "Lo que tienes gratis y lo que añaden Pro y Team.",
+      "current": "Tu plan",
+      "soon": "Próximamente",
+      "freeNote": "Para siempre, no se quita nada",
+      "free1": "Visor, medición, sección y varios modelos",
+      "free2": "Health Score, comprobación de reglas e IDS",
+      "free3": "Informe de entrega y BCF",
+      "free4": "Los archivos no salen de tu navegador",
+      "perMonth": "{{amount}} / mes",
+      "proNote": "Pago anual · {{amount}} mes a mes",
+      "pro1": "Certificados verificables con tu logo",
+      "pro2": "Historial de certificados en tu cuenta",
+      "pro3": "Proyectos con cada versión y su nota",
+      "pro4": "Enlace para el cliente con contraseña y caducidad",
+      "pro5": "Archivos de hasta 1 GB procesados en servidores de la UE",
+      "perEditor": "{{amount}} / editor / mes",
+      "teamNote": "Pago anual · {{amount}} mes a mes · desde {{min}} editores · revisores e invitados gratis",
+      "team1": "Todo lo de Pro para cada editor",
+      "team2": "Incidencias BCF compartidas con responsable y plazo",
+      "team3": "Comprobación automática en cada subida con las reglas de tu empresa",
+      "team4": "Estándar de la casa compartido entre proyectos",
+      "cta": "Pasar a Pro",
+      "compare": "Comparar todos los planes",
+      "forTeams": "Planes para equipos",
+      "call": "Hablar 15 minutos",
+      "waitlist": "El pago abre pronto. Te llevo a la lista de espera, sin compromiso."
+    },
+    "fb": {
+      "title": "¿Qué te ayudaría más?",
+      "body": "Con un toque me dices qué construir después. Leo y contesto cada respuesta.",
+      "cta": "Contármelo"
+    },
+    "team": {
+      "title": "Tu equipo",
+      "body": "Añade o quita editores y descarga facturas en el portal de facturación. Revisores e invitados son gratis.",
+      "cta": "Gestionar puestos",
+      "upsell": "¿Trabajáis {{min}} personas o más? Team añade incidencias BCF compartidas y una comprobación en cada subida.",
+      "upsellCta": "Ver Team"
+    },
+    "billing": {
+      "title": "Facturación",
+      "body": "Tarjeta, facturas y cambios de plan, en el portal de pago seguro.",
+      "cta": "Gestionar facturación"
+    },
+    "locked": {
+      "logoTitle": "Tu logo en cada certificado",
+      "logoBody": "Tu cliente verifica un certificado con el logo de tu estudio en la cabecera, en pantalla y en papel. Incluido en Pro.",
+      "apiTitle": "API de validación alojada",
+      "apiBody": "Valida desde tus scripts o tu CI con claves de API: 500 comprobaciones al mes en Pro, próximamente.",
+      "cta": "Ver Pro"
+    },
+    "settings": {
+      "later": "Disponible en cuanto se abra el almacenamiento en la nube de tu plan.",
+      "logoAlt": "Tu logo actual",
+      "profileTitle": "Perfil e inicio de sesión"
+    }
   }
 }

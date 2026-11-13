@@ -11,6 +11,8 @@ import Bimo from './mascot/Bimo'
 import { emotionForScore } from './mascot/bimo-face'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslation } from 'react-i18next'
+import { paidApi } from '../lib/cloud/paid-client'
+import { usePaidDataSource } from '../hooks/usePaidQuery'
 import type { TFunction } from 'i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore } from '../stores/validationStore'
@@ -404,6 +406,7 @@ function IssueRow({
               </svg>
             </button>
           )}
+          <IssueToTeam issue={issue} />
           {onMute && (
             <button
               onClick={() => onMute(issue)}
@@ -452,6 +455,39 @@ function IssueRow({
           </button>
         </div>
       )}
+    </>
+  )
+}
+
+/**
+ * Raise a validation result as a Team issue (rule + element GlobalId) when the
+ * workspace is on server data. Nothing in the public preview: there it is null.
+ * The server answers with the open issue already raised for the same rule and
+ * element instead of a duplicate.
+ */
+function IssueToTeam({ issue }: { issue: ValidationIssue }) {
+  const { t } = useTranslation('validation')
+  const live = usePaidDataSource() !== 'sample'
+  const [state, setState] = useState<{ busy: boolean; msg: string | null }>({ busy: false, msg: null })
+  if (!live) return null
+  const create = async (): Promise<void> => {
+    setState({ busy: true, msg: null })
+    const title = `${issue.ruleId}: ${issue.elementName || issue.ifcClass} — ${issue.message}`.slice(0, 200)
+    const res = await paidApi.createIssue({
+      title, rule_id: issue.ruleId, element_guids: issue.globalId ? [issue.globalId] : undefined,
+      priority: issue.severity === 'error' ? 'high' : 'normal',
+    })
+    setState({ busy: false, msg: res.ok
+      ? t(res.value.replayed ? 'issue.issueExists' : 'issue.issueCreated', { n: res.value.issue.number })
+      : t('issue.issueFailed', { error: res.error.code }) })
+  }
+  return (
+    <>
+      {state.msg && <span role="status" className="text-[10px] text-[var(--text-dim)] max-w-[140px] truncate" title={state.msg}>{state.msg}</span>}
+      <button type="button" disabled={state.busy} onClick={() => void create()} title={t('issue.createIssue')}
+        className="px-2 h-6 rounded text-[10px] font-medium border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-50">
+        {t('issue.createIssue')}
+      </button>
     </>
   )
 }

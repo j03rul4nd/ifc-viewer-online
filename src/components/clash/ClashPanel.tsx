@@ -32,6 +32,8 @@ import { TEMPLATE_IDS, templateMatrix, type TemplateId } from '../../lib/clash/t
 import { trendPoint, trendPolyline } from '../../lib/clash/trend'
 import { clashShot } from '../../lib/clash/frame'
 import { cloudSync, isClashCloudEnabled, localSync, projectKey } from '../../lib/clash/sync'
+import { getPaidToken, paidApi, paidApiBase } from '../../lib/cloud/paid-client'
+import { usePaidDataSource } from '../../hooks/usePaidQuery'
 import { downloadBcfBlob } from '../../lib/bcf'
 import * as THREE from 'three'
 
@@ -118,6 +120,7 @@ function ClashWorkspace({ viewerApiRef, team, t, lang }: { viewerApiRef: Props['
   const syncState = useClashStore((s) => s.syncState)
   const selectedKey = useClashStore((s) => s.selectedKey)
   const getToken = useCloudAccountStore((s) => s.getToken)
+  const paidSource = usePaidDataSource()
 
   const models = useMemo(() => sceneModels.map((m) => ({ ...m, discipline: disciplineOf(m, disciplineById) as string })), [sceneModels, disciplineById])
   const disciplines = useMemo(() => [...new Set(models.map((m) => m.discipline))].sort(), [models])
@@ -130,11 +133,13 @@ function ClashWorkspace({ viewerApiRef, team, t, lang }: { viewerApiRef: Props['
 
   // Where decisions live: the Team workspace when the (dark) cloud is on, else this browser.
   useEffect(() => {
-    const cloud = team && isClashCloudEnabled() && getToken
-      ? cloudSync({ baseUrl: (import.meta.env.VITE_API_URL as string | undefined) ?? '', getToken: async () => (await getToken?.()) ?? null })
+    // Shared in the Team workspace when the paid data layer is live (local/cloud) or the old flag is on.
+    const shared = team && (paidSource !== 'sample' || (isClashCloudEnabled() && getToken))
+    const cloud = shared
+      ? cloudSync({ baseUrl: paidApiBase(), getToken: getPaidToken })
       : localSync
     void useClashStore.getState().connectSync(cloud, pKey)
-  }, [team, getToken, pKey])
+  }, [team, getToken, pKey, paidSource])
 
   const [panel, setPanel] = useState<'none' | 'matrix' | 'rules'>('none')
   const [progress, setProgress] = useState<RunProgress | null>(null)
@@ -472,6 +477,7 @@ function Detail({ r, viewerApiRef, team, t, lang }: { r: ClashResult; viewerApiR
         {status !== 'approved' && <button type="button" className={btn} onClick={() => update(r.key, { status: 'approved' })}>{t('approve')}</button>}
         {status === 'approved' && <button type="button" className={btn} onClick={() => update(r.key, { status: 'active' })}>{t('reopen')}</button>}
       </div>
+      {team && <IssueFromClash r={r} t={t} />}
       {team ? (
         <div className="grid grid-cols-2 gap-1.5" key={r.key}>
           <input className={input} placeholder={t('assignee')} aria-label={t('assignee')} defaultValue={rec?.assignee ?? ''} onBlur={(e) => update(r.key, { assignee: e.target.value.trim() || undefined })} />
@@ -481,6 +487,24 @@ function Detail({ r, viewerApiRef, team, t, lang }: { r: ClashResult; viewerApiR
       ) : (
         <div className="text-[10px] text-[var(--text-faint)]">{t('teamOnly')}</div>
       )}
+    </div>
+  )
+}
+
+/** Team, workspace mode: turn a clash into a tracked issue with both GlobalIds. */
+function IssueFromClash({ r, t }: { r: ClashResult; t: T }) {
+  const live = usePaidDataSource() !== 'sample'
+  const [msg, setMsg] = useState<string | null>(null)
+  if (!live) return null
+  const create = async () => {
+    const guids = [r.a.guid, r.b.guid].filter((g): g is string => Boolean(g))
+    const res = await paidApi.createIssue({ title: clashTitle(r).slice(0, 200), element_guids: guids, priority: r.kind === 'hard' ? 'high' : 'normal' })
+    setMsg(res.ok ? t('issueCreated', { n: res.value.issue.number }) : t('issueFailed', { error: res.error.code }))
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <button type="button" className={btn} onClick={() => void create()}>{t('createIssue')}</button>
+      {msg && <span role="status" className="text-[10.5px] text-[var(--text-dim)]">{msg}</span>}
     </div>
   )
 }

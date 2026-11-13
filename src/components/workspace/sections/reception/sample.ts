@@ -11,6 +11,8 @@ export type Verdict = 'pending' | 'accepted' | 'returned'
 
 export interface RxProject {
   id: string
+  /** The server's short public token for the project (workspace mode); in the upload link. */
+  slug?: string
   name: string
   place: string
   code: string
@@ -55,6 +57,8 @@ export interface RxDelivery {
   note?: string
   decidedBy?: string
   decidedAt?: string
+  /** SHA-256 of the delivered file (server data); the sample has none. */
+  fileHash?: string
 }
 
 export const RECEIVER = 'Laura Méndez'

@@ -1211,3 +1211,13 @@ needs that building hidden by hand.
   Report what was found; never let the UI imply absence of data means absence
   of the thing. Roof shapes are the clearest case — in Paris only 20 of 1254
   buildings tag `roof:shape` at all.
+
+## Names, second pass (WP5)
+
+`basemap/screen-labels.ts`, `terrain-detail.ts`. Checked with `node scripts/geo/labels-check.mjs` (headed Chrome 1600×900, bench scene, Catalunya + El Carmel; results in `docs-planning/mapa-osm/bench/*-labels.json`).
+
+- **Horizon.** A name further from the eye than `HORIZON_FACTOR` (3) × the eye–focus distance is not placed (focus = where the view's centre ray meets the map, ray at least 3° below the horizontal). Measured at Catalunya with no limit the far names were Vic 61 km, Igualada 51 km, Terrassa 24 km (view `baja`). Farthest name kept per factor, `baja`: 6 → 4.0 km, 4 and 3 → 2.7 km, 2 → 1.6 km (drops Gràcia and Sagrada Família). 3 chosen: same names as 4 in `baja`, district names to 5.2 km in `amplia`.
+- **Model gap.** The keep-out is the convex hull of the model box's 8 projected corners, not its rectangle (`screenHullOf`, `boxHitsHull`). 40 random views (20 per site, 80–1 480 m, 15–75° pitch): 0 names overlapping the outline, checked by an independent point-in-polygon test.
+- **Hysteresis.** Names placed the frame before rank `KEEP_BONUS` (120) higher. 10 stops per site, names in the first still frame vs 1 s later: with hysteresis no name was removed in any of the 20 stops; without it, 3 removals at Catalunya stop 4. The share changed is still above 20 % in 2/10 Catalunya stops (12→19, 14→19): those are names ADDED as tiles finish loading after the stop, not swaps. El Carmel: 0 % in all stops.
+- **Street names on the ground.** The innermost detail square is painted without street names when the ground at the focus is seen at under 20° (`MIN_STREET_NAME_ANGLE_RAD`; the angle comes from `geo-system.ts` `updateViewDetail`). Quads per street (upright textured names) were NOT built: close to the ground the bench measures 2–3 fps panning and the cost is drawing (WP0), and a quad per street name adds a draw call and a texture each; the angle rule removes the unreadable case at no cost.
+- Not fixed: El Carmel `calle` (25 m on the hillside) still shows 8 names, because `STREET_LEVEL_M` is measured from the flat map plane, not from the ground.

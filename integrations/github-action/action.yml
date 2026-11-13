@@ -1,0 +1,46 @@
+name: Validate IFC models
+description: Validate the IFC files changed in a push or pull request against your profile; fails the job below the minimum score.
+inputs:
+  files:
+    description: Glob of IFC files to validate
+    default: '**/*.ifc'
+  profile:
+    description: Profile id (house standard, IDS, ISO 19650 naming)
+    required: false
+  min-score:
+    description: Fail below this Health Score (0-100)
+    default: '80'
+  api-url:
+    description: API base URL given to your account
+    required: true
+  api-key:
+    description: API key — pass it from a repository secret, never inline
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        IFCVO_API_URL: ${{ inputs.api-url }}
+        IFCVO_API_KEY: ${{ inputs.api-key }}
+        PROFILE: ${{ inputs.profile }}
+        MIN_SCORE: ${{ inputs.min-score }}
+        FILES: ${{ inputs.files }}
+      run: |
+        set -euo pipefail
+        shopt -s globstar nullglob
+        fail=0
+        for f in $FILES; do
+          id=$(curl -fsS -X POST "$IFCVO_API_URL/v1/validations" -H "Authorization: Bearer $IFCVO_API_KEY" \
+            -F "file=@$f" -F "min_score=$MIN_SCORE" ${PROFILE:+-F "profile=$PROFILE"} | jq -r .id)
+          while :; do
+            v=$(curl -fsS "$IFCVO_API_URL/v1/validations/$id" -H "Authorization: Bearer $IFCVO_API_KEY")
+            s=$(jq -r .status <<<"$v")
+            [[ "$s" == queued || "$s" == running ]] || break
+            sleep 5
+          done
+          score=$(jq -r .score <<<"$v")
+          echo "| \`$f\` | $s | $score | $(jq -r '.view_url // ""' <<<"$v") |" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$s" == passed ]] || { echo "::error file=$f::$s (score $score, minimum $MIN_SCORE)"; fail=1; }
+        done
+        exit $fail
