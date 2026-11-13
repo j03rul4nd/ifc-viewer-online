@@ -10,6 +10,8 @@ import type { BlogPost, ContentBlock } from './blog-posts'
 //   - Other vendors' prices only from their official page, with the date read.
 //   - Every picture is a capture of the design preview with sample data; the
 //     captions say which language the interface is in.
+//   - The live-* pictures (2026-11-13) are the workspace against our own
+//     server with the Hotel Vela test models (real IFC); their captions say so.
 //
 // One query, one page:
 //   "write / test custom BIM checking rules"   → write-test-custom-bim-rules
@@ -92,11 +94,11 @@ export const PREVIEW_FEATURE_POSTS2_EN: BlogPost[] = [
       { type: 'p', text: ['Underneath, the same rule appears as IDS 1.0 XML, ready to download. If you have not used IDS before, read ', { text: 'our guide to IDS', to: 'ids-information-delivery-specification-guide' }, ' first: this post is about writing and testing rules, not about the format. ', { cite: 'bsi-ids' }] },
       { type: 'h2', text: 'Test the rule before it reaches anyone' },
       { type: 'p', text: 'Programmers write tests before they ship code. Rules deserve the same. In the Tests tab you pick sample elements and say what should happen to each: this wall must pass, this one must fail, this table does not apply. One click runs them all with the real engine. Green means the rule does what you meant; red means it would have rejected the wrong thing.' },
-      shot('rule-tests-pass-fail', 1140, 1000, 'Rule tests: four sample elements with the expected result and all four matching', `${ES_UI}`),
+      shot('live-rule-tests-real-model', 1600, 678, 'Rule tests on a real model: four walls of the Hotel Vela IFC with the expected result, and all four matching', 'Local test of the workspace on our own server with the Hotel Vela test models (real IFC files), Spanish interface. Not open yet.'),
       { type: 'p', text: 'We have not found another checker that lets you test a rule against expected results before publishing it. It is cheap to do and it is what keeps one bad rule from stopping ten suppliers.' },
       { type: 'h2', text: 'What no rule checks' },
-      { type: 'p', text: 'Results tell you what failed. They do not tell you what was never checked. The coverage matrix crosses IFC classes with rules: in the sample, 46% of the elements are checked by at least one rule, and windows, slabs, spaces, pipe segments and proxies are checked by none.' },
-      shot('rule-coverage-matrix', 1140, 1000, 'Coverage matrix: IFC classes against rules, with the classes no rule checks highlighted', `${ES_UI}`),
+      { type: 'p', text: 'Results tell you what failed. They do not tell you what was never checked. The coverage matrix crosses IFC classes with rules: on the architecture model of Hotel Vela (1,470 elements), the ISO 19650 basics ruleset checks 36% of the elements, and curtain walls, roofs, stairs and slabs are checked by none.' },
+      shot('live-rule-coverage-real-model', 1600, 599, 'Coverage of one ruleset on a real IFC of 1,470 elements: 36% checked, and the classes no rule checks listed below', 'Local test of the workspace on our own server with the Hotel Vela test models (real IFC files), Spanish interface. Not open yet.'),
       { type: 'p', text: 'It is the quickest way to see that a ruleset written for architecture says nothing about MEP.' },
       { type: 'h2', text: 'Rules about relations and geometry' },
       { type: 'p', text: 'Data rules are half of the job. The other half are questions like "is every door hosted in a wall?" or "does every space belong to a zone?". These are relation rules, and IDS 1.0 can express them (partOf), so they travel in the standard as well.' },
@@ -246,6 +248,8 @@ export const PREVIEW_FEATURE_POSTS2_EN: BlogPost[] = [
       { type: 'h2', text: 'The camera is part of the issue' },
       { type: 'p', text: 'An issue without a view is a sentence. Created from the viewer, the issue arrives with its title, the element (GlobalId) and the camera already filled in. "Open in the viewer with this camera" takes anyone on the team to the same view.' },
       shot('team-issue-saved-camera', 1600, 1263, 'An issue with its saved camera, the element, state, assignee, due date and a comment from the contractor', `${ES_UI}`),
+      { type: 'p', text: 'An issue can also start from a clash. In this test on the Hotel Vela models, a curtain wall crosses a slab by 339 mm; one click creates the issue with both GlobalIds, and the same clash never opens two issues.' },
+      shot('live-clash-issue-detail', 800, 1560, 'A clash ready to become an issue: the curtain wall and the slab with their GlobalIds and files, a note and the Create issue button', 'Local test of the workspace on our own server with the Hotel Vela test models (real IFC files), Spanish interface. Not open yet.'),
       { type: 'p', text: ['How BCF stores that camera differs between versions 2.1 and 3.0; if it matters for your tools, read ', { text: 'BCF 2.1 vs 3.0 viewpoints', to: 'bcf-2-1-vs-3-0-viewpoints' }, '.'] },
       { type: 'h2', text: 'The issue says how to fix it' },
       { type: 'p', text: 'This is the part other trackers leave out. When an issue comes from a failed check, it carries the suggested fix for each authoring tool: what to do in Revit, Archicad, Tekla or Allplan. It is guidance written by our team for each rule, the same as in the free fix guides, not generated text.' },
@@ -291,8 +295,8 @@ export const PREVIEW_FEATURE_POSTS2_EN: BlogPost[] = [
     category: 'Validation',
     categorySlug: 'validation',
     readTimeMin: 6,
-    heroImage: 'blog/images/automation-runs-results.jpg',
-    heroAlt: 'Automatic checks: the latest deliveries with result, score, what happened, profile and time',
+    heroImage: 'blog/images/live-automation-queue-mail-runs.jpg',
+    heroAlt: 'Two automations on supplier deliveries and their latest runs: each one left an email for the site manager in the mail queue',
     heroCredit: 'IFC Viewer Online',
     keywords: ['automatic IFC validation', 'IFC validation API', 'IDS in CI', 'GitHub Action IFC', 'IFC webhook', 'watched folder IFC check', 'quality gate BIM'],
     references: [SPECKLE, PRICING],
@@ -325,11 +329,14 @@ export const PREVIEW_FEATURE_POSTS2_EN: BlogPost[] = [
       { type: 'h2', text: 'Every run, in one table' },
       { type: 'p', text: 'Each delivery shows the file, the source, the profile, the score, the result, what happened and how long it took. A failed run links to its issue. A file that could not be checked says why (in the example, 231 MB against a limit of 200 MB). On top, the week: checked, failed, issues opened by themselves, average time to the report.' },
       shot('automation-runs-results', 1600, 1263, 'Latest automatic runs with result, score, what happened, profile and time', `${ES_UI}`),
+      { type: 'p', text: 'Automations can also act on supplier deliveries. In a local test with real IFC files, a rule that watches for deliveries scoring under 95 placed an email for the site manager in the workspace mail queue each time it matched. Nothing is sent from the queue until sending is switched on.' },
+      shot('live-automation-queue-mail-runs', 1600, 757, 'Two automations on supplier deliveries and their latest runs: each one left an email for the site manager in the queue', 'Local test of the workspace on our own server with the Hotel Vela test models (real IFC files), Spanish interface. Not open yet.'),
       { type: 'h2', text: 'A gate before "Published"' },
       { type: 'p', text: 'Checking is useful; stopping is better. The publication gate keeps a model in "Shared" while its score is below a threshold (80 in the example) or while a mandatory rule fails, and the screen tells you how many of the last versions the threshold would have stopped. A reviewer can approve an exception, and the history records who published what and who allowed which exception, with the reason.' },
       shot('automation-publish-gate-history', 1600, 1263, 'Publication gate: minimum score, mandatory rules, reviewer approval and the history of published, stopped and excepted models', `${ES_UI}`),
       { type: 'h2', text: 'Webhooks for everything else' },
       { type: 'p', text: 'Results go wherever your team works: a Teams or Slack channel, your own system. Webhooks send validation.completed, validation.failed and issue.created, signed with a secret, with the HTTP code of each delivery and a manual retry. After three failed attempts a webhook pauses and tells you.' },
+      shot('live-webhooks-endpoint', 1600, 694, 'A signed webhook endpoint subscribed to delivery.received and validation.completed, and the list of events it can receive', 'Local test of the workspace on our own server with the Hotel Vela test models (real IFC files), Spanish interface. Not open yet.'),
       shot('automation-webhooks-phone', 468, 1013, 'Webhooks on a phone: a Teams channel subscribed to validation and issue events, with the latest deliveries', `${ES_UI}`),
       { type: 'h2', text: 'How it compares' },
       { type: 'p', text: ['Speckle Automate is the closest service. Its official pricing page, read on 12 November 2026, lists Automate only in the custom plans, with no public price; the free plan does not include it. ', { cite: 'speckle-pricing' }] },
