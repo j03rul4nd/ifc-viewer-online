@@ -416,8 +416,8 @@
       "z": "alçada"
     },
     "summary": {
-      "added": "{{class}} nou",
-      "removed": "{{class}} eliminat",
+      "added": "Nou: {{class}}",
+      "removed": "Eliminat: {{class}}",
       "unchanged": "Sense canvis",
       "moved_mm": "Mogut {{mm}} mm {{dir}}",
       "moved_mm_nodir": "Mogut {{mm}} mm",
@@ -491,6 +491,42 @@
     "demo": {
       "loading": "Carregant les revisions d'exemple…",
       "failed": "No s'han pogut carregar les revisions d'exemple: {{message}}"
+    },
+    "cls": {
+      "wall": "Mur",
+      "slab": "Forjat",
+      "column": "Pilar",
+      "beam": "Biga",
+      "door": "Porta",
+      "window": "Finestra",
+      "stair": "Escala",
+      "stair_flight": "Tram d'escala",
+      "roof": "Coberta",
+      "member": "Perfil",
+      "plate": "Placa",
+      "covering": "Revestiment",
+      "railing": "Barana",
+      "curtain_wall": "Mur cortina",
+      "footing": "Sabata",
+      "pile": "Pilot",
+      "space": "Espai",
+      "opening": "Obertura",
+      "furniture": "Mobiliari",
+      "building_element_proxy": "Element",
+      "pipe_segment": "Canonada",
+      "duct_segment": "Conducte",
+      "flow_segment": "Conducte o canonada",
+      "flow_terminal": "Terminal",
+      "flow_fitting": "Accessori",
+      "rebar": "Armadura"
+    },
+    "close": {
+      "title": "Tancar la comparació",
+      "body": "Les dues revisions continuen carregades al visor 3D. Què hi deixem?",
+      "removeBoth": "Treure A i B de l'escena",
+      "removeA": "Treure només A (revisió antiga)",
+      "keep": "Deixar-les totes dues a l'escena",
+      "cancel": "Cancel·lar"
     }
   }
 }

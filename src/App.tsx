@@ -1811,7 +1811,8 @@ export default function App() {
       if (counts.loaded + counts.failed === 0) return
       if (counts.failed > 0) {
         toast(tToasts('model.batchPartial', { name: batch.name, loaded: counts.loaded, failed: counts.failed }), 'warning')
-      } else {
+      } else if (!useRevisionStore.getState().active && useRevisionStore.getState().phase !== 'reading') {
+        // Revision compare shows its own progress; this toast covered its header on a phone.
         toast(tToasts('model.batchLoaded', { name: batch.name, count: counts.loaded }), 'success')
       }
     },
@@ -1873,6 +1874,7 @@ export default function App() {
   // Revision compare paints the overlay channel itself (five colours, old
   // revision ghosted); validation and IDS colours wait until it closes.
   const revisionActive   = useRevisionStore((s) => s.active)
+  const revisionBusy     = useRevisionStore((s) => s.active || s.phase === 'reading')
 
   useEffect(() => {
     const viewer = viewerApiRef.current
@@ -5259,7 +5261,7 @@ export default function App() {
 
                   {/* First load into an empty scene: the multiphase progress
                       card, centred and non-modal (renders nothing otherwise). */}
-                  {!clientMode && <FirstLoadCard />}
+                  {!clientMode && !revisionBusy && <FirstLoadCard />}
 
                   {mobileSidebarOpen && (
                     <div
@@ -5701,7 +5703,7 @@ export default function App() {
       {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
       {showCompareModal && (
         <React.Suspense fallback={null}>
-          <CompareModal onClose={() => { setShowCompareModal(false); setCompareEntry('ui') }} viewerApiRef={viewerApiRef} entry={compareEntry} revisionEnabled={rcFlag} />
+          <CompareModal onClose={() => { setShowCompareModal(false); setCompareEntry('ui') }} viewerApiRef={viewerApiRef} entry={compareEntry} revisionEnabled={rcFlag} onRemoveModels={async (ids) => { for (const id of ids) await handleRemoveModel(id) }} />
         </React.Suspense>
       )}
 

@@ -416,8 +416,8 @@
       "z": "altezza"
     },
     "summary": {
-      "added": "Nuovo {{class}}",
-      "removed": "{{class}} rimosso",
+      "added": "Nuovo: {{class}}",
+      "removed": "Rimosso: {{class}}",
       "unchanged": "Invariato",
       "moved_mm": "Spostato di {{mm}} mm {{dir}}",
       "moved_mm_nodir": "Spostato di {{mm}} mm",
@@ -491,6 +491,42 @@
     "demo": {
       "loading": "Caricamento delle revisioni di esempio…",
       "failed": "Impossibile caricare le revisioni di esempio: {{message}}"
+    },
+    "cls": {
+      "wall": "Muro",
+      "slab": "Solaio",
+      "column": "Pilastro",
+      "beam": "Trave",
+      "door": "Porta",
+      "window": "Finestra",
+      "stair": "Scala",
+      "stair_flight": "Rampa",
+      "roof": "Copertura",
+      "member": "Profilo",
+      "plate": "Piastra",
+      "covering": "Rivestimento",
+      "railing": "Parapetto",
+      "curtain_wall": "Facciata continua",
+      "footing": "Plinto",
+      "pile": "Palo",
+      "space": "Spazio",
+      "opening": "Foro",
+      "furniture": "Arredo",
+      "building_element_proxy": "Elemento",
+      "pipe_segment": "Tubo",
+      "duct_segment": "Condotto",
+      "flow_segment": "Condotto o tubo",
+      "flow_terminal": "Terminale",
+      "flow_fitting": "Raccordo",
+      "rebar": "Armatura"
+    },
+    "close": {
+      "title": "Chiudi il confronto",
+      "body": "Le due revisioni sono ancora caricate nella vista 3D. Cosa teniamo?",
+      "removeBoth": "Rimuovi A e B dalla scena",
+      "removeA": "Rimuovi solo A (revisione vecchia)",
+      "keep": "Tieni entrambe nella scena",
+      "cancel": "Annulla"
     }
   }
 }

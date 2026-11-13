@@ -416,8 +416,8 @@
       "z": "hauteur"
     },
     "summary": {
-      "added": "{{class}} ajouté",
-      "removed": "{{class}} supprimé",
+      "added": "Nouveau : {{class}}",
+      "removed": "Supprimé : {{class}}",
       "unchanged": "Inchangé",
       "moved_mm": "Déplacé de {{mm}} mm {{dir}}",
       "moved_mm_nodir": "Déplacé de {{mm}} mm",
@@ -491,6 +491,42 @@
     "demo": {
       "loading": "Chargement des révisions d'exemple…",
       "failed": "Impossible de charger les révisions d'exemple : {{message}}"
+    },
+    "cls": {
+      "wall": "Mur",
+      "slab": "Dalle",
+      "column": "Poteau",
+      "beam": "Poutre",
+      "door": "Porte",
+      "window": "Fenêtre",
+      "stair": "Escalier",
+      "stair_flight": "Volée d'escalier",
+      "roof": "Toiture",
+      "member": "Profilé",
+      "plate": "Plaque",
+      "covering": "Revêtement",
+      "railing": "Garde-corps",
+      "curtain_wall": "Mur-rideau",
+      "footing": "Semelle",
+      "pile": "Pieu",
+      "space": "Espace",
+      "opening": "Réservation",
+      "furniture": "Mobilier",
+      "building_element_proxy": "Élément",
+      "pipe_segment": "Tuyau",
+      "duct_segment": "Gaine",
+      "flow_segment": "Gaine ou tuyau",
+      "flow_terminal": "Terminal",
+      "flow_fitting": "Raccord",
+      "rebar": "Armature"
+    },
+    "close": {
+      "title": "Fermer la comparaison",
+      "body": "Les deux révisions sont toujours chargées dans la vue 3D. Que garder ?",
+      "removeBoth": "Retirer A et B de la scène",
+      "removeA": "Retirer seulement A (ancienne révision)",
+      "keep": "Garder les deux dans la scène",
+      "cancel": "Annuler"
     }
   }
 }

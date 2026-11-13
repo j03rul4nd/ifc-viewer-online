@@ -11,17 +11,18 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewerAPI } from '../../lib/viewer'
 import type { RevisionChange } from '../../lib/compare/revision-types'
 import {
-  colourTokens, facets, filterChanges, isInferredMatch, KIND_GROUP, kindColour, markIndex, readableClass,
+  colourTokens, facets, filterChanges, isInferredMatch, KIND_GROUP, kindColour, markIndex,
   reviewCounts, SHOWN_KINDS, sortByImpact, tableRows, GROUP_ICON, type ShownKind,
 } from '../../lib/compare/revision-view'
 import { locateRevision, planRevisionOverlay } from '../../lib/compare/overlay'
-import { applyRevisionColours, applyRevisionVisibility, clearRevisionPaint, showWholeSide } from '../../lib/compare/view-paint'
+import { clearRevisionPaint, paintRevision } from '../../lib/compare/view-paint'
 import { clearArrows, drawArrows } from '../../lib/compare/view-arrows'
 import { startCurtain, type CurtainHandle } from '../../lib/compare/view-split'
 import { MobileSheet } from '../mobile/MobileSheet'
 import { recomputeDiff, useRevisionStore, type ViewMode } from './revisionStore'
 import RevisionList, { KindBadge } from './RevisionList'
 import { useRevisionText } from './useRevisionText'
+import { useUIStore } from '../../stores/uiStore'
 import RevisionExports from './RevisionExports'
 import { HelpButton, RevisionTourHost, TourOffer } from './RevisionHelp'
 
@@ -83,7 +84,7 @@ function ChangeCard({ c, index, total, mark, onPrev, onNext, onFrame, table, onT
   onPrev: () => void; onNext: () => void; onFrame: () => void
   table: boolean; onTable?: () => void
 }) {
-  const { t, phrase } = useRevisionText()
+  const { t, phrase, className } = useRevisionText()
   const { reviews, setReview } = useRevisionStore()
   if (!c) return <p className="m-0 p-3 text-[12px] text-[var(--text-faint)]">{t('rc.none')}</p>
   const state = reviews.get(c.globalId) ?? 'pending'
@@ -95,8 +96,8 @@ function ChangeCard({ c, index, total, mark, onPrev, onNext, onFrame, table, onT
         <KindBadge kind={c.kind as ShownKind} size={28} />
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-semibold text-[var(--text)] truncate">
-            {mark ? `${mark} · ` : ''}{c.name || readableClass(c.ifcClass)}
-            <span className="font-normal text-[var(--text-faint)]"> · {readableClass(c.ifcClass)}{c.storey ? ` · ${c.storey}` : ''}</span>
+            {mark ? `${mark} · ` : ''}{c.name || className(c.ifcClass)}
+            <span className="font-normal text-[var(--text-faint)]"> · {className(c.ifcClass)}{c.storey ? ` · ${c.storey}` : ''}</span>
           </div>
           <div className="text-[12.5px]" style={{ color: kindColour(c.kind) }} data-testid="rc-phrase">{phrase(c)}</div>
           <div className="flex flex-wrap gap-x-2 text-[10.5px] text-[var(--text-faint)]">
@@ -124,7 +125,7 @@ function ChangeCard({ c, index, total, mark, onPrev, onNext, onFrame, table, onT
         >⚠ {t('rc.review.affects_site')}</button>
         <button type="button" className={nav} onClick={onNext} aria-label={t('rc.next')} title={`${t('rc.next')} (J)`}>›</button>
         <span className="flex-1" />
-        <button type="button" onClick={onFrame} title="F" className="h-9 px-3 rounded-full border border-[var(--border)] text-[11.5px] text-[var(--accent)]">{t('rc.frame')}</button>
+        <button type="button" onClick={onFrame} title="F" data-testid="rc-frame" className="h-11 sm:h-9 min-w-11 px-3 rounded-full border border-[var(--border)] text-[11.5px] text-[var(--accent)]">{t('rc.frame')}</button>
         {onTable && <button type="button" onClick={onTable} aria-expanded={table} className="h-9 px-3 rounded-full border border-[var(--border)] text-[11.5px] text-[var(--text-dim)]">{t('rc.table.toggle')} {table ? '▾' : '▴'}</button>}
       </div>
     </div>
@@ -134,7 +135,7 @@ function ChangeCard({ c, index, total, mark, onPrev, onNext, onFrame, table, onT
 // ── Filters (M3) ─────────────────────────────────────────────────────────────
 
 function Filters({ counts, storeys, files, classes }: { counts: Record<ShownKind, number>; storeys: string[]; files: string[]; classes: string[] }) {
-  const { t } = useRevisionText()
+  const { t, className } = useRevisionText()
   const { filter, setFilter } = useRevisionStore()
   const toggle = (k: ShownKind): void => {
     const s = new Set(filter.kinds)
@@ -167,7 +168,7 @@ function Filters({ counts, storeys, files, classes }: { counts: Record<ShownKind
         </select>
         <select className={sel} value={filter.cls} onChange={(e) => setFilter({ cls: e.target.value })} aria-label={t('rc.filter.class')}>
           <option value="">{t('rc.filter.anyClass')}</option>
-          {classes.map((s) => <option key={s} value={s}>{readableClass(s)}</option>)}
+          {classes.map((s) => <option key={s} value={s}>{className(s)}</option>)}
         </select>
         <select className={sel} value={filter.review} onChange={(e) => setFilter({ review: e.target.value as typeof filter.review })} aria-label={t('rc.filter.review')}>
           <option value="">{t('rc.filter.anyReview')}</option>
@@ -232,7 +233,8 @@ export interface RevisionExportSlot {
 /** Optional override of the export buttons; by default RevisionExports (PDF / XLSX / BCF). */
 export const revisionExportSlot: RevisionExportSlot = {}
 
-export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
+export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onBack, onRemoveModels }: {
+  onRemoveModels?: (modelIds: string[]) => Promise<void>
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   onClose: () => void
   onBack: () => void
@@ -241,6 +243,18 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
   const st = useRevisionStore()
   const { diff, a, b, filter, selected, reviews, view, blinkSide, curtain } = st
   const narrow = useNarrow()
+  // Closing asks whether A and B stay in the scene (verification #14).
+  const [closing, setClosing] = useState(false)
+  const onClose = (): void => { if (onRemoveModels && (idsRef.current.a.length || idsRef.current.b.length)) setClosing(true); else closeNow() }
+  const idsRef = useRef<{ a: string[]; b: string[] }>({ a: [], b: [] })
+  // The properties panel covers a third of the 3D and stays on "nothing
+  // selected" (we frame without selecting): fold it while comparing.
+  useEffect(() => {
+    const ui = useUIStore.getState()
+    const was = ui.sidebarExpanded
+    if (was) ui.setSidebarExpanded(false)
+    return () => { if (was) useUIStore.getState().setSidebarExpanded(true) }
+  }, [])
   const [showFilters, setShowFilters] = useState(!narrow)
   const [showTol, setShowTol] = useState(false)
   const [table, setTable] = useState(!narrow)
@@ -261,20 +275,21 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
 
   // ── 3D: overlay + colours + arrows, following the filters (05-ux §4) ──
   const plan = useMemo(() => planRevisionOverlay(rows, b.modelIds, a.modelIds), [rows, a.modelIds, b.modelIds])
+  const selectedAt = useMemo(() => (current ? locateRevision(current, b.modelIds, a.modelIds) : null), [current, a.modelIds, b.modelIds])
   const paintSeq = useRef(0)
   const repaint = useCallback(async (): Promise<void> => {
     const v = viewerApiRef.current
     if (!v) return
     const seq = ++paintSeq.current
-    v.setValidationHighlights(plan.issues, true, { ghostOpacity: 0.12, severities: { error: true, warning: true, info: true } })
-    await new Promise((r) => setTimeout(r, 30))
+    // Painted directly on the models, not through the shared overlay channel
+    // (that controller repaints on its own schedule and overwrote the colours).
+    await new Promise((r) => requestAnimationFrame(r))
     if (seq !== paintSeq.current) return
-    const mode = useRevisionStore.getState().view
-    if (mode === 'changes') await applyRevisionVisibility(v, plan)
-    else await showWholeSide(v, idsA)
-    await applyRevisionColours(v, plan)
-  }, [plan, idsA, viewerApiRef])
+    await paintRevision(v, plan, idsA, idsB, { mode: useRevisionStore.getState().view, selected: selectedAt })
+  }, [plan, idsA, idsB, selectedAt, viewerApiRef])
 
+  // Whatever was on the overlay channel before (validation, IDS) goes away while comparing.
+  useEffect(() => { viewerApiRef.current?.setValidationHighlights([], false) }, [viewerApiRef])
   useEffect(() => { void repaint() }, [repaint, view])
 
   useEffect(() => {
@@ -309,14 +324,18 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
   }, [view, idsA, idsB, viewerApiRef])
   useEffect(() => { split.current?.setCurtain(curtain) }, [curtain])
 
-  // Leaving: give the overlay channel back, show A whole, drop arrows / split.
+  // Leaving: models back to their own look, A visible, arrows and curtain gone.
+  // Read through a ref: the ids arrive after mount, a closure would see none.
+  const sceneIds = useRef<string[]>([])
+  sceneIds.current = [...idsA, ...idsB]
+  idsRef.current = { a: idsA, b: idsB }
   useEffect(() => () => {
     const v = viewerApiRef.current
     split.current?.dispose(); split.current = null
     if (!v) return
     clearArrows(v)
-    for (const id of [...idsA, ...idsB]) v.setModelVisible(id, true)
-    void clearRevisionPaint(v, idsA)
+    for (const id of sceneIds.current) v.setModelVisible(id, true)
+    void clearRevisionPaint(v, sceneIds.current)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Navigation ──
@@ -455,6 +474,28 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
     <span className="fixed z-[55] right-3 bottom-3 px-2 py-0.5 rounded-md text-[10.5px] tabular-nums text-[var(--text-faint)] bg-[var(--scrim)]" data-testid="rc-fps">{fps} FPS</span>
   )
 
+  const leave = async (ids: string[]): Promise<void> => {
+    setClosing(false)
+    // The unmount cleanup must not repaint models that are about to go.
+    sceneIds.current = sceneIds.current.filter((id) => !ids.includes(id))
+    closeNow()
+    if (!ids.length || !onRemoveModels) return
+    await new Promise((r) => setTimeout(r, 250))
+    await onRemoveModels(ids)
+  }
+  const closeDialog = closing && (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[var(--scrim)] p-4" role="dialog" aria-modal="true" aria-labelledby="rc-close-title" data-testid="rc-close-dialog">
+      <div className={`${panel} w-full max-w-[380px] rounded-2xl p-4 flex flex-col gap-2`}>
+        <h2 id="rc-close-title" className="m-0 text-[14px] font-semibold text-[var(--text)]">{t('rc.close.title')}</h2>
+        <p className="m-0 text-[12px] text-[var(--text-dim)]">{t('rc.close.body')}</p>
+        <button type="button" data-testid="rc-close-remove-both" onClick={() => void leave([...idsA, ...idsB])} className="min-h-11 px-3 rounded-lg bg-[var(--accent)] text-[var(--accent-contrast)] text-[13px] text-left">{t('rc.close.removeBoth')}</button>
+        <button type="button" data-testid="rc-close-remove-a" onClick={() => void leave(idsA)} className="min-h-11 px-3 rounded-lg border border-[var(--border)] text-[13px] text-[var(--text)] text-left">{t('rc.close.removeA')}</button>
+        <button type="button" data-testid="rc-close-keep" onClick={() => void leave([])} className="min-h-11 px-3 rounded-lg border border-[var(--border)] text-[13px] text-[var(--text-dim)] text-left">{t('rc.close.keep')}</button>
+        <button type="button" onClick={() => setClosing(false)} className="self-end h-9 px-3 text-[12px] text-[var(--text-faint)]">{t('rc.close.cancel')}</button>
+      </div>
+    </div>
+  )
+
   const header = (
     <div className={`${panel} fixed z-[60] top-2 left-2 right-2 rounded-2xl px-2 py-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.45)]`} style={colourTokens()} data-testid="rc-header">
       <button type="button" onClick={onBack} className="h-8 px-2 rounded-md text-[12px] text-[var(--text-dim)] hover:text-[var(--text)]" title={t('rc.back')}>◀ <span className="hidden sm:inline">{t('rc.back')}</span></button>
@@ -483,6 +524,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
     return (
       <div style={colourTokens()}>
         {header}
+        {closeDialog}
         <div className={`${panel} fixed z-[60] left-2 right-2 top-[calc(env(safe-area-inset-top)+96px)] rounded-xl px-2 py-1 flex items-center gap-2`}>
           <button type="button" onClick={() => step(-1)} className="h-11 w-14 rounded-lg border border-[var(--border)] text-[18px] text-[var(--text)]" aria-label={t('rc.prev')}>◀</button>
           <div className="flex-1 min-w-0 text-center">{counter}<div className="text-[11px] text-[var(--text-faint)] tabular-nums">{idx + 1} / {rows.length}</div></div>
@@ -513,6 +555,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
   return (
     <div style={colourTokens()}>
       {header}
+      {closeDialog}
       {blinkBadge}{curtainHandle}{fpsBadge}
       <aside className={`${panel} fixed z-[59] left-2 top-[64px] bottom-2 w-[348px] rounded-2xl flex flex-col overflow-hidden`} data-testid="rc-panel" data-tour="rc-list">
         <div className="p-3 flex flex-col gap-2 border-b border-[var(--border)]">

@@ -417,7 +417,7 @@
     },
     "summary": {
       "added": "Neu: {{class}}",
-      "removed": "{{class}} entfernt",
+      "removed": "Entfernt: {{class}}",
       "unchanged": "Unverändert",
       "moved_mm": "{{mm}} mm {{dir}} verschoben",
       "moved_mm_nodir": "{{mm}} mm verschoben",
@@ -491,6 +491,42 @@
     "demo": {
       "loading": "Beispielrevisionen werden geladen…",
       "failed": "Die Beispielrevisionen konnten nicht geladen werden: {{message}}"
+    },
+    "cls": {
+      "wall": "Wand",
+      "slab": "Decke",
+      "column": "Stütze",
+      "beam": "Träger",
+      "door": "Tür",
+      "window": "Fenster",
+      "stair": "Treppe",
+      "stair_flight": "Treppenlauf",
+      "roof": "Dach",
+      "member": "Profil",
+      "plate": "Platte",
+      "covering": "Bekleidung",
+      "railing": "Geländer",
+      "curtain_wall": "Vorhangfassade",
+      "footing": "Fundament",
+      "pile": "Pfahl",
+      "space": "Raum",
+      "opening": "Öffnung",
+      "furniture": "Möbel",
+      "building_element_proxy": "Element",
+      "pipe_segment": "Rohr",
+      "duct_segment": "Kanal",
+      "flow_segment": "Kanal oder Rohr",
+      "flow_terminal": "Endgerät",
+      "flow_fitting": "Formteil",
+      "rebar": "Bewehrung"
+    },
+    "close": {
+      "title": "Vergleich schließen",
+      "body": "Beide Revisionen sind noch in der 3D-Ansicht geladen. Was soll bleiben?",
+      "removeBoth": "A und B aus der Szene entfernen",
+      "removeA": "Nur A entfernen (alte Revision)",
+      "keep": "Beide in der Szene behalten",
+      "cancel": "Abbrechen"
     }
   }
 }
