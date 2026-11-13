@@ -22,6 +22,8 @@ import type { MailAdapter, MailPlan } from './model'
 import { usePaidDataSource } from '../../../../hooks/usePaidQuery'
 import { paidApi } from '../../../../lib/cloud/paid-client'
 import ContactsLive from './ContactsLive'
+import Studio from './editorial/Studio'
+import { factsFrom } from './editorial/templates'
 
 /**
  * Local / cloud workspace: an approved message is QUEUED in the workspace's
@@ -160,7 +162,7 @@ export default function ClientMail({ data }: SectionProps) {
       {tab === 'clients' && source !== 'sample' && <ContactsLive mx={mx} />}
       {tab === 'clients' && source === 'sample' && <ClientsTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} depts={depts} queue={queue} replies={replies} templates={templates}
         update={(c) => setContacts((all) => all.map((x) => (x.id === c.id ? c : x)))} add={(c) => setContacts((all) => [...all, c])} projectId={projectId} />}
-      {tab === 'templates' && <TemplatesTab mx={mx} templates={templates} setTemplates={setTemplates} depts={depts} project={project} />}
+      {tab === 'templates' && <TemplatesTab mx={mx} lang={lang} templates={templates} setTemplates={setTemplates} depts={depts} project={project} live={source !== 'sample'} onQueued={() => setNotice(mx('Built and kept for approval. Sending is off until the module is live.'))} />}
       {tab === 'send' && <SendTab mx={mx} plan={plan} project={project} contacts={contacts.filter((c) => c.projectId === projectId)} templates={templates}
         addTemplate={(t) => setTemplates((a) => [...a, t])} queueIt={(m) => { setQueue((q) => [m, ...q]); setNotice(mx('{{n}} new messages wait for approval.', { n: 1 })); setTab('approval') }} />}
       {tab === 'portal' && <PortalTab mx={mx} project={project} lang={lang} />}
@@ -303,7 +305,24 @@ function ClientsTab({ mx, lang, contacts, depts, queue, replies, templates, upda
 
 // ── Templates: block editor + preview ─────────────────────────────────────────
 
-function TemplatesTab({ mx, templates, setTemplates, depts, project }: { mx: Mx; templates: Template[]; setTemplates: (f: (t: Template[]) => Template[]) => void; depts: Department[]; project: ProjectSnapshot }) {
+function TemplatesTab(props: { mx: Mx; lang: string; templates: Template[]; setTemplates: (f: (t: Template[]) => Template[]) => void; depts: Department[]; project: ProjectSnapshot; live: boolean; onQueued: () => void }) {
+  const { mx, lang, project, live, onQueued } = props
+  const [mode, setMode] = useState<'gallery' | 'own'>('gallery')
+  const seg = (on: boolean) => `h-[30px] px-3 text-[12.5px] rounded-[6px] ${on ? 'bg-[var(--surface-2)] text-[var(--text)]' : 'text-[var(--text-faint)]'}`
+  return (
+    <div>
+      <div role="group" aria-label={mx('Templates')} className="inline-flex border border-[var(--border)] rounded-[8px] p-0.5 mb-3">
+        <button className={seg(mode === 'gallery')} aria-pressed={mode === 'gallery'} onClick={() => setMode('gallery')}>{mx('Gallery')}</button>
+        <button className={seg(mode === 'own')} aria-pressed={mode === 'own'} onClick={() => setMode('own')}>{mx('Your templates')}</button>
+      </div>
+      {mode === 'gallery'
+        ? <Studio lang={lang} facts={live ? factsFrom(project) : undefined} canSend sendPlanName="Pro" onQueue={onQueued} Preview={({ html }) => <EmailPreview mx={mx} html={html} />} />
+        : <OwnTemplates {...props} />}
+    </div>
+  )
+}
+
+function OwnTemplates({ mx, templates, setTemplates, depts, project }: { mx: Mx; templates: Template[]; setTemplates: (f: (t: Template[]) => Template[]) => void; depts: Department[]; project: ProjectSnapshot }) {
   const [id, setId] = useState(templates[0]?.id)
   const t = templates.find((x) => x.id === id) ?? templates[0]
   const set = (next: Template) => setTemplates((all) => all.map((x) => (x.id === next.id ? next : x)))

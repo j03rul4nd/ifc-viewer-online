@@ -291,5 +291,8 @@
  "Signed contract, form…": "已签合同、表单…",
  "Add contact": "添加联系人",
  "Yes": "是",
- "No consent": "未同意"
+ "No consent": "未同意",
+ "Gallery": "模板库",
+ "Your templates": "您的模板",
+ "Built and kept for approval. Sending is off until the module is live.": "已生成并保留待审批。模块上线前不会发送。"
 }
