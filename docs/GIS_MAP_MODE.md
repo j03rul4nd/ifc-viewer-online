@@ -836,6 +836,21 @@ Other numbers:
 - **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
   calls. Low-poly on purpose; at map scale a tree is a silhouette.
 
+**Which pass a ground layer is drawn in (2026-11).** The relief's material is
+`transparent` (its rim fades), so three.js draws it after every opaque mesh.
+Ground layers write no depth and rely on `renderOrder` (relief 1, greenery 2,
+water 3, roads 4); that only works if they are in the same, transparent, pass.
+The flat-map (`simple`, i.e. the City view) carriageway was opaque, so the
+relief painted over all of it: about 450 k triangles at Plaça de Catalunya built
+every time and never seen, roads read as the basemap's pale lines. It is now
+`transparent: true` with opacity 1 (still opaque on screen). A test pins it.
+Any new ground layer without depth writes must be transparent too.
+
+**Bridge decks on the flat map** (`osm-bridges`, simple path) are unlit, so
+their faces carry a baked shade (`DECK_FACE_SHADE`: top 1.12, edges 0.62,
+soffit 0.45 of the bridge grey). Before, top, edge and soffit were one flat
+grey and a deck read as a dark decal on the map.
+
 ### The ground the map corrects, the rim, and the air (2026-11)
 
 Four things changed together, because each one alone leaves a visible fault.
