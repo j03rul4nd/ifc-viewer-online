@@ -4,7 +4,9 @@
 // screen's state until a backend exists. The free EIR editor and IDS checks
 // in the viewer stay free; this is the authoring and governance layer.
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePaidDataSource } from '../../../../hooks/usePaidQuery'
+import { loadLibrary, saveSet, type Synced, type SyncMap } from './library-sync'
 import type { SectionProps } from '../../registry'
 import type { EirRule, EirSeverity, NumericOperator } from '../../../../lib/eir/eir-types'
 import { Head, Panel, Primary, Quiet, Banner, Dot, Tabs, inputClass, Field, useSubTab } from '../../ui'
@@ -12,9 +14,12 @@ import {
   SAMPLE_ELEMENTS, SAMPLE_MODEL_NAME, ENTITIES, SEVERITIES, RULE_KINDS, type RuleKind, ruleOfKind, DEFAULT_RULE, DEFAULT_TESTS,
   previewRule, ruleIdsXml, runTests, type RuleTest, type Expectation, coverage, prettyClass, TEMPLATES, templateScore,
   SAMPLE_LIBRARY, type RuleSet, latest, approved, diffRules, submitForReview, approveLatest, addComment, newVersion,
-  exportSetIds, importIds, newId,
+  exportSetIds, importIds, newId, outcomeFor,
 } from './rules-lib'
 import { useR } from './rules-i18n'
+import { modelElements, type ModelElements } from './model-elements'
+import { useModelStore } from '../../../../stores/modelStore'
+import type { IdsElement } from '../../../../lib/ids/ids-types'
 import { AdvancedTab, LibraryExtras } from './AdvancedRules'
 
 const TABS = [
@@ -37,8 +42,55 @@ export default function RulesStudio(_: SectionProps) {
   const r = useR()
   const [tab, setTab] = useSubTab<Tab>('rules', TABS)
   const [rule, setRule] = useState<EirRule>(DEFAULT_RULE)
-  const [library, setLibrary] = useState<RuleSet[]>(SAMPLE_LIBRARY)
+  const live = usePaidDataSource() !== 'sample'
+  // Preview: the sample library. Workspace (local/cloud): the server's, empty until loaded.
+  const [library, setLibrary] = useState<RuleSet[]>(live ? [] : SAMPLE_LIBRARY)
+  const [sync, setSync] = useState<SyncMap>({})
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+  const [conflict, setConflict] = useState<{ mine: RuleSet; theirs: RuleSet; synced: Synced } | null>(null)
+  const before = useRef<RuleSet[] | null>(null)
+  useEffect(() => {
+    if (!live) return
+    void loadLibrary().then((res) => {
+      if (!res.ok) { setSyncMsg(r('Could not load the library ({{error}}). Nothing was changed.', { error: res.error.code })); return }
+      before.current = res.sets
+      setLibrary(res.sets); setSync(res.sync)
+    })
+  }, [live]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Save every set that changed, one request each, with the version the screen loaded.
+  useEffect(() => {
+    if (!live || before.current === null) return
+    const prev = before.current
+    before.current = library
+    for (const set of library) {
+      if (prev.includes(set)) continue
+      void saveSet(set, sync[set.id]).then((res) => {
+        if (res.ok) { setSync((m) => ({ ...m, [set.id]: res.synced })); setSyncMsg(r('Saved in the workspace.')); return }
+        if ('conflict' in res) { setConflict({ mine: set, theirs: res.conflict, synced: res.synced }); return }
+        setSyncMsg(r('Not saved ({{error}}). Your change is still on screen; try again.', { error: res.error.code }))
+      })
+    }
+  }, [library]) // eslint-disable-line react-hooks/exhaustive-deps
+  const keepTheirs = () => {
+    if (!conflict) return
+    before.current = library.map((x) => (x.id === conflict.mine.id ? conflict.theirs : x))
+    setLibrary(before.current); setSync((m) => ({ ...m, [conflict.mine.id]: conflict.synced })); setConflict(null)
+  }
+  const keepMine = () => {
+    if (!conflict) return
+    const c = conflict
+    setConflict(null)
+    void saveSet(c.mine, c.synced).then((res) => {
+      if (res.ok) { setSync((m) => ({ ...m, [c.mine.id]: res.synced })); setSyncMsg(r('Saved in the workspace.')) }
+      else if ('conflict' in res) setConflict({ mine: c.mine, theirs: res.conflict, synced: res.synced })
+      else setSyncMsg(r('Not saved ({{error}}). Your change is still on screen; try again.', { error: res.error.code }))
+    })
+  }
   const useInEditor = (x: EirRule) => { setRule({ ...x, id: 'draft' }); setTab('editor') }
+  // Tests and Coverage: the sample in the preview; in the workspace, a model the person opens.
+  const [model, setModel] = useState<ModelElements | null>(null)
+  const elements = model?.elements ?? SAMPLE_ELEMENTS
+  const modelName = model?.name ?? SAMPLE_MODEL_NAME
 
   return (
     <>
@@ -46,11 +98,19 @@ export default function RulesStudio(_: SectionProps) {
       <Banner tone="info" title={r('Preview on a sample model · Pro and Team plans')}>
         {r('Checking against your rules stays free in the viewer. Writing, testing and governing rules here is part of Pro; the shared library with approval is Team.')}
       </Banner>
+      {syncMsg && <p role="status" className="text-[12.5px] text-[var(--text-dim)] mb-2">{syncMsg}</p>}
+      {conflict && (
+        <Banner tone="warn" title={r('Someone else saved “{{name}}” while you were editing it', { name: conflict.mine.name })}>
+          <p className="text-[12.5px]">{r('Yours: v{{a}} · Theirs: v{{b}}. Nothing was overwritten. Choose which one stays.', { a: latest(conflict.mine).version, b: latest(conflict.theirs).version })}</p>
+          <div className="flex gap-2 mt-2"><Primary onClick={keepTheirs}>{r('Keep theirs')}</Primary><Quiet onClick={keepMine}>{r('Keep mine')}</Quiet></div>
+        </Banner>
+      )}
       <Tabs tabs={TABS.map((t) => ({ id: t.id, label: t.id === 'library' ? `${r('Library')} · Team` : r(t.label) }))} value={tab} onChange={setTab} label={r('Rules')} />
       {tab === 'editor' && <Editor rule={rule} setRule={setRule} onSave={(set) => setLibrary((l) => l.map((s) => s.id === set ? newVersion(s, ME, TODAY, [...latest(s).rules.filter((x) => x.id !== rule.id), { ...rule, id: rule.id === 'draft' ? newId() : rule.id }], r('Rule added from the editor.')) : s))} library={library} />}
       {tab === 'advanced' && <AdvancedTab />}
-      {tab === 'tests' && <TestsTab rule={rule} />}
-      {tab === 'coverage' && <CoverageTab library={library} />}
+      {live && (tab === 'tests' || tab === 'coverage') && <ModelBar model={model} rules={tab === 'tests' ? [rule] : library.flatMap((s) => latest(s).rules)} onModel={setModel} />}
+      {tab === 'tests' && <TestsTab key={modelName} rule={rule} elements={elements} />}
+      {tab === 'coverage' && <CoverageTab library={library} elements={elements} modelName={modelName} />}
       {tab === 'templates' && <TemplatesTab onUse={useInEditor} onAdopt={(t) => { setLibrary((l) => [...l, { id: newId(), name: t.profile.name, discipline: t.discipline, versions: [{ version: 1, author: ME, date: TODAY, status: 'draft', note: r('From the template {{name}}.', { name: t.standard }), rules: t.profile.rules }], comments: [] }]); setTab('library') }} />}
       {tab === 'library' && <LibraryTab library={library} setLibrary={setLibrary} onUse={useInEditor} />}
     </>
@@ -172,24 +232,62 @@ function Stat({ label, value, color }: { label: string; value: number; color?: s
 
 // ── Tests: "this element must pass / fail / not apply" ───────────────────────
 
-function TestsTab({ rule }: { rule: EirRule }) {
+/** Which model Tests and Coverage run on (workspace only): the viewer's open model or a file. */
+function ModelBar({ model, rules, onModel }: { model: ModelElements | null; rules: EirRule[]; onModel: (m: ModelElements) => void }) {
   const r = useR()
-  const [tests, setTests] = useState<RuleTest[]>(DEFAULT_TESTS)
+  const [busy, setBusy] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const input = useRef<HTMLInputElement>(null)
+  const activeId = useModelStore((s) => s.activeModelId)
+  const entry = useModelStore((s) => (activeId ? s.models[activeId] : undefined))
+  const viewer = entry && entry.ifcBuffer.byteLength > 0 ? { name: entry.modelInfo.fileName, buffer: entry.ifcBuffer } : null
+  const read = async (name: string, buffer: ArrayBuffer) => {
+    setBusy(0); setError(null)
+    try { onModel(await modelElements(name, buffer, rules, (pct) => setBusy(Math.round(pct)))) }
+    catch (e) { setError(r('Could not read this IFC ({{error}}).', { error: (e as { code?: string }).code ?? 'unknown' })) }
+    finally { setBusy(null) }
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-3 text-[12.5px]">
+      <span className="text-[var(--text-dim)]">{model ? r('Model: {{name}} · {{n}} elements', { name: model.name, n: model.elements.length }) : r('Tests and coverage run on the sample model until you open one of yours. Nothing leaves your browser.')}</span>
+      {viewer && <Quiet disabled={busy !== null} onClick={() => void read(viewer.name, viewer.buffer)}>{r('Use the model open in the viewer ({{name}})', { name: viewer.name })}</Quiet>}
+      <Quiet disabled={busy !== null} onClick={() => input.current?.click()}>{r('Open an IFC…')}</Quiet>
+      <input ref={input} type="file" accept=".ifc" className="sr-only" aria-label={r('Open an IFC…')} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void f.arrayBuffer().then((b) => read(f.name, b)) }} />
+      {busy !== null && <span role="status" className="text-[var(--text-faint)]">{r('Reading the model… {{pct}}%', { pct: busy })}</span>}
+      {error && <span role="alert" className="text-[var(--danger)]">{error}</span>}
+    </div>
+  )
+}
+
+function TestsTab({ rule, elements }: { rule: EirRule; elements: IdsElement[] }) {
+  const r = useR()
+  const sample = elements === SAMPLE_ELEMENTS
+  // On a real model: start from up to three elements of the rule's class, expecting what they do now.
+  const [tests, setTests] = useState<RuleTest[]>(() => sample ? DEFAULT_TESTS
+    : previewRule(rule, elements).applicable.slice(0, 3).map((e) => ({ id: newId(), expressId: e.expressId, expect: outcomeFor(rule, e.expressId, elements) })))
   const [ran, setRan] = useState(false)
-  const outcomes = useMemo(() => runTests(rule, tests), [rule, tests])
+  const outcomes = useMemo(() => runTests(rule, tests, elements), [rule, tests, elements])
+  // A real model may hold 100 000 elements: offer the rule's class first, 400 at most.
+  const options = useMemo(() => {
+    const cls = rule.entity.toUpperCase()
+    const own = elements.filter((e) => e.ifcClass === cls)
+    const pick = (own.length ? own : elements).slice(0, 400)
+    for (const t of tests) if (!pick.some((e) => e.expressId === t.expressId)) { const e = elements.find((x) => x.expressId === t.expressId); if (e) pick.push(e) }
+    return pick
+  }, [rule.entity, elements, tests])
   const label = (x: Expectation) => x === 'pass' ? r('Passes') : x === 'fail' ? r('Fails') : r('Does not apply')
   const bad = outcomes.filter((o) => !o.ok).length
   return (
     <Panel className="p-4">
       <p className="text-[13px] font-semibold">{r('Test the rule before you publish it')}</p>
-      <p className="text-[12.5px] text-[var(--text-dim)] mt-1 max-w-[640px]">{r('Pick sample elements and say what should happen. A rule that publishes wrong blocks every supplier; a test catches it first.')}</p>
+      <p className="text-[12.5px] text-[var(--text-dim)] mt-1 max-w-[640px]">{sample ? r('Pick sample elements and say what should happen. A rule that publishes wrong blocks every supplier; a test catches it first.') : r('Pick elements of the model and say what should happen. A rule that publishes wrong blocks every supplier; a test catches it first.')}</p>
       <div className="overflow-x-auto mt-3">
         <table className="w-full text-[12.5px] min-w-[480px]">
           <thead><tr className="text-left text-[11px] text-[var(--text-faint)]"><th className="py-1.5 font-medium">{r('Element')}</th><th className="font-medium">{r('Expected')}</th><th className="font-medium">{r('Result')}</th><th /></tr></thead>
           <tbody className="divide-y divide-[var(--border)]">
             {outcomes.map(({ test, got, ok }) => (
               <tr key={test.id}>
-                <td className="py-1.5 pr-2"><select className={inputClass} value={test.expressId} onChange={(e) => setTests(tests.map((t) => t.id === test.id ? { ...t, expressId: Number(e.target.value) } : t))}>{SAMPLE_ELEMENTS.map((e) => <option key={e.expressId} value={e.expressId}>{prettyClass(e.ifcClass)} · {e.name}</option>)}</select></td>
+                <td className="py-1.5 pr-2"><select className={inputClass} value={test.expressId} onChange={(e) => setTests(tests.map((t) => t.id === test.id ? { ...t, expressId: Number(e.target.value) } : t))}>{options.map((e) => <option key={e.expressId} value={e.expressId}>{prettyClass(e.ifcClass)} · {e.name || e.globalId || `#${e.expressId}`}</option>)}</select></td>
                 <td className="pr-2"><select className={inputClass} value={test.expect} onChange={(e) => setTests(tests.map((t) => t.id === test.id ? { ...t, expect: e.target.value as Expectation } : t))}>{(['pass', 'fail', 'skip'] as const).map((x) => <option key={x} value={x}>{label(x)}</option>)}</select></td>
                 <td className="whitespace-nowrap pr-2">{ran ? <span className="inline-flex items-center gap-1.5" style={{ color: ok ? 'var(--ok)' : 'var(--danger)' }}><Dot color={ok ? 'var(--ok)' : 'var(--danger)'} />{ok ? r('OK') : r('Got: {{what}}', { what: label(got) })}</span> : <span className="text-[var(--text-faint)]">—</span>}</td>
                 <td className="text-right"><Quiet aria-label={r('Remove')} onClick={() => setTests(tests.filter((t) => t.id !== test.id))}>×</Quiet></td>
@@ -200,7 +298,7 @@ function TestsTab({ rule }: { rule: EirRule }) {
       </div>
       <div className="flex flex-wrap gap-2 mt-3 items-center">
         <Primary onClick={() => setRan(true)}>{r('Run {{n}} tests', { n: tests.length })}</Primary>
-        <Quiet onClick={() => setTests([...tests, { id: newId(), expressId: SAMPLE_ELEMENTS[0].expressId, expect: 'pass' }])}>{r('Add a case')}</Quiet>
+        <Quiet onClick={() => options[0] && setTests([...tests, { id: newId(), expressId: options[0].expressId, expect: 'pass' }])}>{r('Add a case')}</Quiet>
         {ran && <span role="status" className="text-[12.5px]" style={{ color: bad ? 'var(--danger)' : 'var(--ok)' }}>{bad ? r('{{n}} cases do not match. Fix the rule or the case.', { n: bad }) : r('All cases match. Safe to send for review.')}</span>}
       </div>
     </Panel>
@@ -209,17 +307,17 @@ function TestsTab({ rule }: { rule: EirRule }) {
 
 // ── Coverage: which rules check which classes, and what nobody checks ────────
 
-function CoverageTab({ library }: { library: RuleSet[] }) {
+function CoverageTab({ library, elements, modelName }: { library: RuleSet[]; elements: IdsElement[]; modelName: string }) {
   const r = useR()
   const sources = [...library.map((s) => ({ id: s.id, name: s.name, rules: latest(s).rules })), ...TEMPLATES.map((t) => ({ id: t.id, name: t.profile.name, rules: t.profile.rules }))]
   const [src, setSrc] = useState(sources[0].id)
   const chosen = sources.find((s) => s.id === src) ?? sources[0]
-  const c = useMemo(() => coverage(chosen.rules), [chosen])
+  const c = useMemo(() => coverage(chosen.rules, elements), [chosen, elements])
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
         <Field label={r('Rule set')} className="sm:w-[360px]"><select className={inputClass} value={src} onChange={(e) => setSrc(e.target.value)}>{sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
-        <p className="text-[12.5px] text-[var(--text-dim)]">{r('{{pct}}% of the elements of {{model}} are checked by at least one rule.', { pct: c.checkedShare, model: SAMPLE_MODEL_NAME })}</p>
+        <p className="text-[12.5px] text-[var(--text-dim)]">{r('{{pct}}% of the elements of {{model}} are checked by at least one rule.', { pct: c.checkedShare, model: modelName })}</p>
       </div>
       <Panel className="p-0 overflow-x-auto">
         <table className="text-[12px] min-w-full">

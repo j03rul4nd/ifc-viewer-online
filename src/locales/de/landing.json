@@ -386,9 +386,6 @@
     "solibri": "Solibri-Alternative"
   },
   "sdk": {
-    "label": "SDK · INTEGRATIONEN",
-    "title": "Binde den Viewer in dein CDE oder interne Tools ein",
-    "body": "Füge denselben Browser-Viewer in dein CDE, deinen digitalen Zwilling oder interne Projekt-Tools ein. Lade IFC-Daten direkt aus deiner eigenen Anwendung, während die Modellverarbeitung im Client bleibt.",
     "b1": "Kein Upload-Backend nötig",
     "b2": "Läuft direkt im Browser",
     "b3": "Bereit für IFC, BCF & IDS",

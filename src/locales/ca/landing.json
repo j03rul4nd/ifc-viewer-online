@@ -378,9 +378,6 @@
     "builtWith": "Construït amb @thatopen/components · three.js · web-ifc"
   },
   "sdk": {
-    "label": "SDK · INTEGRACIONS",
-    "title": "Integra el visor al teu CDE o eines internes",
-    "body": "Insereix el mateix visor del navegador al teu CDE, bessó digital o eines internes de projecte. Carrega dades IFC des de la teva pròpia aplicació mentre el processament del model es manté al client.",
     "b1": "Sense backend de pujada",
     "b2": "S'executa directament al navegador",
     "b3": "Preparat per a IFC, BCF i IDS",

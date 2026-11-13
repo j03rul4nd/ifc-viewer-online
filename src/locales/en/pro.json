@@ -464,5 +464,108 @@
     "cancel": "Cancel the call",
     "footer": "Rather write to me?",
     "eventTitle": "Call with Joel (IFC Viewer Online)"
+  },
+  "dash": {
+    "title": "Your account",
+    "signedInAs": "Signed in as {{email}}",
+    "openViewer": "Open the viewer",
+    "admin": "Admin console",
+    "navAria": "Account",
+    "tabsAria": "Account sections",
+    "loading": "Loading your account…",
+    "pastDueCta": "Update payment",
+    "tabs": {
+      "overview": "Overview",
+      "settings": "Settings"
+    },
+    "anon": {
+      "title": "Your IFC Viewer Online account",
+      "body": "Sign in to keep your verifiable certificates, sync your rule profiles across devices and get a reply to what you ask for.",
+      "cta": "Sign in",
+      "continue": "Continue without an account",
+      "p1": "Certificate history you can share with your client",
+      "p2": "Rule profiles on every device you use",
+      "p3": "Requests with a reply from the person who builds the tool",
+      "free": "The viewer and the validator stay free and need no account."
+    },
+    "start": {
+      "title": "Get started",
+      "sub": "Three steps to your first verifiable certificate.",
+      "s1t": "Open an IFC or load the demo model",
+      "s1d": "It runs in your browser: the file never leaves your computer.",
+      "s2t": "Validate it and read its Health Score",
+      "s2d": "44 rules and IDS, with a guide to fix each issue.",
+      "s3t": "Issue a verifiable certificate",
+      "s3d": "From the export dialog while signed in. It will appear here.",
+      "cta": "Open the viewer",
+      "private": "Free, no upload, no card."
+    },
+    "cont": {
+      "title": "Continue",
+      "last": "Last certificate",
+      "issued": "Issued {{date}}",
+      "view": "View certificate",
+      "validate": "Validate another model",
+      "recent": "Earlier certificates",
+      "viewAria": "View the certificate with score {{score}} from {{date}}"
+    },
+    "plan": {
+      "title": "Plans",
+      "sub": "What you keep for free, and what Pro and Team add.",
+      "current": "Your plan",
+      "soon": "Soon",
+      "freeNote": "Forever, nothing is taken away",
+      "free1": "Viewer, measure, section and multi-model",
+      "free2": "Health Score, rule checks and IDS",
+      "free3": "Delivery report and BCF",
+      "free4": "Files never leave your browser",
+      "perMonth": "{{amount}} / month",
+      "proNote": "Billed yearly · {{amount}} month to month",
+      "pro1": "Verifiable certificates with your logo",
+      "pro2": "Certificate history saved to your account",
+      "pro3": "Projects with every version and its score",
+      "pro4": "Client link with password and expiry",
+      "pro5": "Files up to 1 GB processed on EU servers",
+      "perEditor": "{{amount}} / editor / month",
+      "teamNote": "Billed yearly · {{amount}} month to month · from {{min}} editors · reviewers and guests free",
+      "team1": "Everything in Pro for each editor",
+      "team2": "Shared BCF issues with owners and due dates",
+      "team3": "Automatic check on every upload with your company's rules",
+      "team4": "House standard shared across projects",
+      "cta": "Upgrade to Pro",
+      "compare": "Compare all plans",
+      "forTeams": "Plans for teams",
+      "call": "Talk for 15 minutes",
+      "waitlist": "Payments open soon. Taking you to the waiting list — no commitment."
+    },
+    "fb": {
+      "title": "What would help you most?",
+      "body": "One tap tells me what to build next. I read every answer and reply.",
+      "cta": "Tell me"
+    },
+    "team": {
+      "title": "Your team",
+      "body": "Add or remove editors and download invoices in the billing portal. Reviewers and guests are free.",
+      "cta": "Manage seats",
+      "upsell": "Working with {{min}} or more people? Team adds shared BCF issues and a check on every upload.",
+      "upsellCta": "See Team"
+    },
+    "billing": {
+      "title": "Billing",
+      "body": "Card, invoices and plan changes, in the secure billing portal.",
+      "cta": "Manage billing"
+    },
+    "locked": {
+      "logoTitle": "Your logo on every certificate",
+      "logoBody": "Your client verifies a certificate with your studio's logo in the header, on screen and in print. Included in Pro.",
+      "apiTitle": "Hosted validation API",
+      "apiBody": "Validate from your scripts or CI with API keys: 500 checks a month in Pro, coming soon.",
+      "cta": "See Pro"
+    },
+    "settings": {
+      "later": "Available as soon as cloud storage opens on your plan.",
+      "logoAlt": "Your current logo",
+      "profileTitle": "Profile and sign-in"
+    }
   }
 }

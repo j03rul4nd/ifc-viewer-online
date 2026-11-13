@@ -378,9 +378,6 @@
     "builtWith": "使用 @thatopen/components · three.js · web-ifc 构建"
   },
   "sdk": {
-    "label": "SDK · 集成",
-    "title": "将查看器嵌入您的 CDE 或内部工具",
-    "body": "将同样的浏览器查看器嵌入您的 CDE、数字孪生或内部项目工具。直接从您自己的应用加载 IFC 数据，模型处理始终在客户端进行。",
     "b1": "无需上传后端",
     "b2": "直接在浏览器中运行",
     "b3": "支持 IFC、BCF 和 IDS",

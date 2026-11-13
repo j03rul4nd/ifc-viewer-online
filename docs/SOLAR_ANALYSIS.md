@@ -59,11 +59,18 @@ Findings export as BCF (warnings) and CSV (every window).
 ## Solar-climatic impact (SOLARCHVISION's active and passive views)
 
 Mojtaba Samimi's method, reimplemented from its published math (not from his
-code): *Intelligent Design using Solar-Climatic Vision* (Samimi & Nasrollahi,
-TU Berlin, 2014), the "Degree of Need to Shade/Shine" (Samimi & Tahbaz, 2007),
-and his open-source SOLARCHVISION-BIM
-(<https://github.com/archmoj/solarchvision_bim>). The Sun tab's
-"Solar-climatic impact" block switches between his two views:
+code). The "Degree of Need to Shade/Shine" originates in his M.Arch thesis
+*From the Sun to the Architect (AZ MEHR TA MEHRAZ)* (Faculty of Architecture
+and Urban Planning, Shahid Beheshti University, Tehran; research 2002–2007,
+supervised by Mansoureh Tahbaz, defended 2007, two national awards) — carried forward through two 2008 conference papers and named SOLARCHVISION
+at CISBAT 2009, then set out at length in *Intelligent Design using
+Solar-Climatic Vision* (Samimi & Nasrollahi, TU Berlin, 2014); and his
+open-source SOLARCHVISION-BIM
+(<https://github.com/archmoj/solarchvision_bim>). The project's own
+`CITATION.cff` lists the complete, citable reference chain from the 2007
+thesis onward; anyone citing this feature is encouraged to cite it alongside
+the sources below. The Sun tab's "Solar-climatic impact" block switches
+between his two views:
 
 - **Active** — the sun as energy to collect: the plain `irradiation` metric.
   More is more.
@@ -156,16 +163,26 @@ Numbers will not match his app to the decimal; the method is his. On purpose:
   isotropic value).
 - **Circumsolar** — Hay–Davies: circumsolar diffuse travels with the beam and
   is shadowed with it.
-- **Reflected light** — ground reflection with the chosen albedo (his albedo
-  is 0).
+- **Reflected light** — ground reflection with the chosen albedo (his default
+  albedo is 0, adjustable 0–100% per project, saved with it).
 - **Classification** — an hour is cold or warm by the sign of Tb − T, not of
   (Tb − T) · DNI: an hour with no beam but warm air is a warm hour, and its
   diffuse counts as unwanted.
 - **Period** — every day of the period (binned into sky patches), not 12
   representative days, one per ±15-day window; no first sunlit hour dropped.
 - **Statistic** — the mean over every real hour of every weather layer, each
-  with its own air, instead of the one day per window that comes closest to a
-  chosen statistic (his default: the median). Without the real hours the
+  with its own air, instead of one to three ensemble members matched to a
+  chosen statistic and combined by a fixed weighting rule — not a single
+  representative day, and not a median default. SOLARCHVISION-BIM keeps a
+  collection of ensemble members (or climate scenarios) and derives nine
+  statistics from their distribution for each time slot: Minimum and Maximum
+  (the single closest member), the 25th/50th/75th percentiles (the two
+  closest members, weighted 2:1), Average, and its own three rank-weighted
+  scenarios — **Leaning Low**, **Well-tempered** and **Leaning High** (the
+  three closest members, weighted equally); for the passive impact the
+  high/low scenario labels are remapped during member selection so they stay
+  intuitive (a "high" scenario still reads as the warm one). Its own default
+  is **Well-tempered**, not the median. Without the real hours the
   typical-hour means stand in, and the panel says so.
 - **Sun** — NOAA/Meeus with refraction at the site's longitude and time zone.
 - **Geometry** — the IFC's own openings are cut, and glazing casts shadows
@@ -196,13 +213,28 @@ panel stays closed (an embed, a tour), in a card over the view. If the hours
 fail while the daily climate comes, the card and the "Load the real hours"
 button say so instead of going quiet.
 
-Sources: M. Samimi, M. Nasrollahi, *Intelligent Design using Solar-Climatic
-Vision — Energy and Comfort Improvement in Architecture and Urban Planning
-using SOLARCHVISION*, Young Cities Research Paper Series 9, TU Berlin, 2014,
-DOI 10.14279/depositonce-3946 (ch. I.5–I.6, the base temperatures, the
-palette); *Weather Data and Solar Orientations*, Springer, 2015, DOI
+Sources: M. Samimi, *From the Sun to the Architect (AZ MEHR TA MEHRAZ):
+Calculation of General Patterns of Direct and Diffuse Solar Radiation for 16
+Cities of Iran, Analysis of the Sun's Positive and Negative Effects on
+Different Building Orientations and Inclinations and Design Optimization
+using the Perspectives from the Sun*, M.Arch thesis (supervisor M. Tahbaz),
+Faculty of Architecture and Urban Planning, Shahid Beheshti University,
+Tehran, research 2002–2007, defended 2007 — where the "Degree of Need to
+Shade/Shine" originates; M. Samimi, L. Parvizsedghy, M. Adib, *A New Approach
+For Solar Analysis Of Buildings*, SERP 2008; M. Samimi, L. Parvizsedghy, M.
+Adib, *Different Building Faces Against Different Faces of the Sun*, EUROSUN
+2008; M. Samimi, L. Parvizsedghy, M. Tahbaz, *SOLARCHVISION*, CISBAT 2009; M.
+Samimi, M. Nasrollahi, *Intelligent Design using Solar-Climatic Vision —
+Energy and Comfort Improvement in Architecture and Urban Planning using
+SOLARCHVISION*, Young Cities Research Paper Series 9, TU Berlin, 2014, DOI
+10.14279/depositonce-3946 (ch. I.5–I.6, the base temperatures, the palette);
+*Weather Data and Solar Orientations*, Springer, 2015, DOI
 10.1007/978-3-319-15030-7_12; SOLARCHVISION-BIM (GPL-2.0; read as
-documentation only, nothing copied).
+documentation only, nothing copied). The repository's
+[`CITATION.cff`](https://github.com/archmoj/solarchvision_bim/blob/main/CITATION.cff)
+collects this full chain in a citable form (2007 thesis through 2015) — if
+you build on or cite this feature, please cite it alongside the sources
+above.
 
 ## Weather: hour by hour (ERA5) and weather files (EPW)
 

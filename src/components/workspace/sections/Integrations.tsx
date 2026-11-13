@@ -9,6 +9,7 @@ import { usePaidQuery } from '../../../hooks/usePaidQuery'
 import { SAMPLE_ENDPOINTS } from '../api-samples'
 import { WEBHOOK_EVENTS } from '../plan-sample-data'
 import { useTx } from '../i18n'
+import IntegrationFlows from './IntegrationFlows'
 
 const STATUS: Record<FeatureStatus, string> = { live: 'Available', preview: 'Preview', soon: 'Soon', planned: 'Planned' }
 
@@ -32,6 +33,8 @@ export default function Integrations(_: SectionProps) {
           </Panel>
         ))}
       </div>
+      <IntegrationFlows />
+      <div className="h-8" />
       <SectionLabel>{tx('Your webhooks')}</SectionLabel>
       <DataList rows={endpoints.data.endpoints} rowKey={(e) => e.id} primaryHeader={tx('Endpoint')}
         primary={(e) => <code className="text-[12px] [overflow-wrap:anywhere]">{e.url}</code>}
@@ -41,7 +44,7 @@ export default function Integrations(_: SectionProps) {
       <DataList rows={WEBHOOK_EVENTS} rowKey={(e) => e.event} primaryHeader={tx('Event')}
         primary={(e) => <code className="text-[12.5px]">{e.event}</code>}
         columns={[{ key: 'when', header: tx('Sent when'), wide: true, cell: (e) => <span className="text-[12.5px] text-[var(--text-dim)]">{tx(e.when)}</span> }]} />
-      <p className="text-[12px] text-[var(--text-faint)] mt-3">{tx('Each request is signed with HMAC-SHA256 in the X-Signature header and retried for 24 hours.')}</p>
+      <p className="text-[12px] text-[var(--text-faint)] mt-3">{tx('Each request is signed with HMAC-SHA256 in the X-Signature header and retried for about 7 hours (30 s, 2 min, 10 min, 1 h, 6 h).')}</p>
     </>
   )
 }

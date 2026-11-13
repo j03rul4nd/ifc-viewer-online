@@ -48,6 +48,7 @@
   --text-muted: #5A5853;
   --accent: #00696A;
   --accent-strong: #005556;
+  --code-string: #8A5A12;
   --accent-contrast: #FFFFFF;
   --success: #206B38;
   --warning: #915C08;
@@ -71,6 +72,8 @@
   --accent-2: var(--accent-strong);
   --warn: var(--warning);
   --ok: var(--success);
+  /* Strings in code snippets (home integrations); dark default, light below. */
+  --code-string: #D8A657;
   /* Mobile floating nav (single source of truth for the pill height) */
   --mobile-nav-h: 56px;
   /* Height of the floating top capsules on phones (0 elsewhere): overlays
@@ -696,10 +699,18 @@ kbd {
   --ok:           #206B38;
   --danger:       #AF2B25;
   --warn:         #915C08;
+  --code-string:  #8A5A12;
   /* Text that sets no colour of its own inherits from here, not from the
      dark theme's :root/body colour (which left it near-white on white). */
   color:          var(--text);
 }
+
+/* Syntax colours for the home page's code snippets (landing/highlight.ts).
+   Two hues only: verdigris for structure, ochre for strings; AA in both themes. */
+.tok-tag, .tok-keyword { color: var(--accent-2); }
+.tok-string  { color: var(--code-string); }
+.tok-attr    { color: var(--text-dim); }
+.tok-comment { color: var(--text-faint); }
 
 /* Card grids with hairline dividers. Each cell draws its own right and bottom
    line, so an unfilled last row shows the surface — the old gap-px trick

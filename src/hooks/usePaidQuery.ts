@@ -7,14 +7,19 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { isPricingPreview } from '../lib/pricing/pricing-preview'
-import { devSession, paidApiBase, type PaidError, type PaidResult } from '../lib/cloud/paid-client'
+import { paidDataSource, type PaidDataSource, type PaidError, type PaidResult } from '../lib/cloud/paid-client'
 import { useCloudAccountStore } from '../stores/cloudAccountStore'
 
 export type PaidSource = 'sample' | 'loading' | 'live' | 'error'
 
-export function usePaidLive(): boolean {
+/** sample / local / cloud — see paidDataSource. The public preview is always sample. */
+export function usePaidDataSource(): PaidDataSource {
   const signedIn = useCloudAccountStore((s) => s.status === 'signed-in')
-  return isPricingPreview() && Boolean(paidApiBase()) && (signedIn || Boolean(devSession()))
+  return isPricingPreview() ? paidDataSource(signedIn) : 'sample'
+}
+
+export function usePaidLive(): boolean {
+  return usePaidDataSource() !== 'sample'
 }
 
 export interface PaidQuery<T> {

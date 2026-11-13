@@ -336,5 +336,108 @@
     "cancel": "Annuler l’appel",
     "footer": "Vous préférez m’écrire ?",
     "eventTitle": "Appel avec Joel (IFC Viewer Online)"
+  },
+  "dash": {
+    "title": "Votre compte",
+    "signedInAs": "Connecté en tant que {{email}}",
+    "openViewer": "Ouvrir la visionneuse",
+    "admin": "Console d'administration",
+    "navAria": "Compte",
+    "tabsAria": "Sections du compte",
+    "loading": "Chargement de votre compte…",
+    "pastDueCta": "Mettre à jour le paiement",
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "settings": "Réglages"
+    },
+    "anon": {
+      "title": "Votre compte IFC Viewer Online",
+      "body": "Connectez-vous pour conserver vos certificats vérifiables, retrouver vos profils de règles sur tous vos appareils et obtenir une réponse à vos demandes.",
+      "cta": "Se connecter",
+      "continue": "Continuer sans compte",
+      "p1": "Historique de certificats à partager avec votre client",
+      "p2": "Profils de règles sur tous vos appareils",
+      "p3": "Demandes avec réponse de la personne qui développe l'outil",
+      "free": "La visionneuse et le validateur restent gratuits et sans compte."
+    },
+    "start": {
+      "title": "Pour commencer",
+      "sub": "Trois étapes jusqu'à votre premier certificat vérifiable.",
+      "s1t": "Ouvrez un IFC ou chargez le modèle de démo",
+      "s1d": "Tout se passe dans le navigateur : le fichier ne quitte jamais votre ordinateur.",
+      "s2t": "Validez-le et lisez son Health Score",
+      "s2d": "44 règles et IDS, avec un guide pour corriger chaque erreur.",
+      "s3t": "Émettez un certificat vérifiable",
+      "s3d": "Depuis la fenêtre d'export, une fois connecté. Il apparaîtra ici.",
+      "cta": "Ouvrir la visionneuse",
+      "private": "Gratuit, sans envoi de fichier, sans carte."
+    },
+    "cont": {
+      "title": "Reprendre",
+      "last": "Dernier certificat",
+      "issued": "Émis le {{date}}",
+      "view": "Voir le certificat",
+      "validate": "Valider un autre modèle",
+      "recent": "Certificats précédents",
+      "viewAria": "Voir le certificat noté {{score}} du {{date}}"
+    },
+    "plan": {
+      "title": "Offres",
+      "sub": "Ce que vous gardez gratuitement, et ce qu'ajoutent Pro et Team.",
+      "current": "Votre offre",
+      "soon": "Bientôt",
+      "freeNote": "Pour toujours, rien n'est retiré",
+      "free1": "Visionneuse, mesure, coupe et multi-modèle",
+      "free2": "Health Score, contrôle de règles et IDS",
+      "free3": "Rapport de livraison et BCF",
+      "free4": "Les fichiers ne quittent pas votre navigateur",
+      "perMonth": "{{amount}} / mois",
+      "proNote": "Facturé à l'année · {{amount}} au mois",
+      "pro1": "Certificats vérifiables avec votre logo",
+      "pro2": "Historique des certificats dans votre compte",
+      "pro3": "Projets avec chaque version et sa note",
+      "pro4": "Lien client avec mot de passe et expiration",
+      "pro5": "Fichiers jusqu'à 1 Go traités sur des serveurs dans l'UE",
+      "perEditor": "{{amount}} / éditeur / mois",
+      "teamNote": "Facturé à l'année · {{amount}} au mois · à partir de {{min}} éditeurs · relecteurs et invités gratuits",
+      "team1": "Tout Pro pour chaque éditeur",
+      "team2": "Problèmes BCF partagés avec responsable et échéance",
+      "team3": "Contrôle automatique à chaque envoi avec les règles de votre entreprise",
+      "team4": "Standard maison partagé entre projets",
+      "cta": "Passer à Pro",
+      "compare": "Comparer toutes les offres",
+      "forTeams": "Offres pour les équipes",
+      "call": "Parler 15 minutes",
+      "waitlist": "Le paiement ouvre bientôt. Direction la liste d'attente, sans engagement."
+    },
+    "fb": {
+      "title": "Qu'est-ce qui vous aiderait le plus ?",
+      "body": "Un clic suffit pour me dire quoi construire ensuite. Je lis chaque réponse et j'y réponds.",
+      "cta": "Me le dire"
+    },
+    "team": {
+      "title": "Votre équipe",
+      "body": "Ajoutez ou retirez des éditeurs et téléchargez les factures dans le portail de facturation. Relecteurs et invités sont gratuits.",
+      "cta": "Gérer les postes",
+      "upsell": "Vous travaillez à {{min}} ou plus ? Team ajoute des problèmes BCF partagés et un contrôle à chaque envoi.",
+      "upsellCta": "Voir Team"
+    },
+    "billing": {
+      "title": "Facturation",
+      "body": "Carte, factures et changement d'offre, dans le portail de paiement sécurisé.",
+      "cta": "Gérer la facturation"
+    },
+    "locked": {
+      "logoTitle": "Votre logo sur chaque certificat",
+      "logoBody": "Votre client vérifie un certificat portant le logo de votre agence en en-tête, à l'écran comme à l'impression. Inclus dans Pro.",
+      "apiTitle": "API de validation hébergée",
+      "apiBody": "Validez depuis vos scripts ou votre CI avec des clés d'API : 500 contrôles par mois avec Pro, bientôt.",
+      "cta": "Voir Pro"
+    },
+    "settings": {
+      "later": "Disponible dès l'ouverture du stockage cloud de votre offre.",
+      "logoAlt": "Votre logo actuel",
+      "profileTitle": "Profil et connexion"
+    }
   }
 }
