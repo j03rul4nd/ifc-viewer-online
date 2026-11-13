@@ -316,5 +316,6 @@
   "Yes, revoke {{name}}": "ใช่ เพิกถอน {{name}}",
   "Revoke access": "เพิกถอนสิทธิ์",
   "Still being validated": "กำลังตรวจสอบ",
-  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "เซิร์ฟเวอร์ยังไม่ได้ตรวจไฟล์นี้ รับได้เมื่อมีคะแนนแล้ว หรือส่งคืนตอนนี้พร้อมเหตุผล"
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "เซิร์ฟเวอร์ยังไม่ได้ตรวจไฟล์นี้ รับได้เมื่อมีคะแนนแล้ว หรือส่งคืนตอนนี้พร้อมเหตุผล",
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "ผู้รับปฏิเสธชื่อไฟล์ เพราะไม่เป็นไปตามกฎการตั้งชื่อของโครงการ เปลี่ยนชื่อไฟล์ตามที่แสดงด้านบนแล้วส่งอีกครั้ง"
 }

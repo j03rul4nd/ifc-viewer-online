@@ -316,5 +316,6 @@
   "Yes, revoke {{name}}": "Sì, revoca {{name}}",
   "Revoke access": "Revoca accesso",
   "Still being validated": "Validazione in corso",
-  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "Il server non ha ancora controllato questo file. Potrai accettarlo quando avrà un punteggio, oppure restituirlo subito con un motivo."
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "Il server non ha ancora controllato questo file. Potrai accettarlo quando avrà un punteggio, oppure restituirlo subito con un motivo.",
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "Il destinatario ha rifiutato il nome del file: non segue la regola di denominazione del progetto. Rinomina il file come indicato sopra e consegnalo di nuovo."
 }

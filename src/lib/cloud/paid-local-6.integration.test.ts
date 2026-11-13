@@ -48,7 +48,7 @@ describe.skipIf(!API)('paid workspace on the local backend (part 6: security)', 
     const sup = ok(await call(B, 'POST', '/reception/suppliers', { name: `Rival sup ${run}` }), 'supplier')
     b.supplier = sup.supplier; b.token = sup.token
     const bytes = Buffer.concat([readFileSync(SMALL), Buffer.from(`\n/* rival ${run} */\n`)])
-    b.delivery = ok(await deliver(b.token, b.set.slug, `RIV-${run}.ifc`, bytes), 'delivery')
+    b.delivery = ok(await deliver(b.token, b.set.slug, 'RIV-RIVALS-ZZ-XX-M3-A-0001-S2-P01.ifc', bytes), 'delivery')
     b.issue = ok(await call(B, 'POST', '/issues', { title: `Rival secret issue ${run}` }), 'issue').issue
     b.automation = ok(await call(B, 'POST', '/automations', { name: `Rival auto ${run}`, enabled: false, trigger: 'delivery.validated', conditions: {}, actions: [{ type: 'notify', message: 'hello there' }], minutes_saved: 1 }), 'automation').automation
     b.contact = ok(await call(B, 'POST', '/mail/contacts', { email: `rival-${run}@example.com`, consent_source: 'test' }), 'contact').contact
@@ -195,6 +195,20 @@ describe.skipIf(!API)('paid workspace on the local backend (part 6: security)', 
     const sq = ok(await call(A, 'POST', '/issues', { title: `'; DROP TABLE issues; -- ${run}` }), 'sql').issue
     expect(sq.title).toContain('DROP TABLE')
     expect((await call(A, 'GET', '/issues')).status).toBe(200)
+  })
+
+  it('ISO 19650 names are checked by the server, not only by the upload page', async () => {
+    const set = ok(await call(A, 'POST', '/reception/requirements', { name: `Naming ${run}`, min_score: 10, content: JSON.stringify({ project: 'NAM' }) }), 'set').requirement_set
+    const sup = ok(await call(A, 'POST', '/reception/suppliers', { name: `Naming ${run}` }), 'sup')
+    const orig = `Naming${run}`.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()
+    const send = (name: string, salt: string) => deliver(sup.token, set.slug, name, Buffer.from(`ISO-10303-21; ${salt} ${run}`))
+    for (const [name, code] of [['Hotel Vela arquitectura final v2.ifc', 'fieldCount'], [`NAM-OTHER-ZZ-XX-M3-A-0001-S2-P01.ifc`, 'value'], [`XYZ-${orig}-ZZ-XX-M3-A-0001-S2-P01.ifc`, 'value'], [`NAM-${orig}-ZZ-XX-M3-A-0001-S2.ifc`, 'revisionMissing']] as const) {
+      const r = await send(name, name)
+      expect(r.status, name).toBe(422)
+      expect(r.body.error.code).toBe('naming')
+      expect(r.body.error.issues.map((i: { code: string }) => i.code), name).toContain(code)
+    }
+    expect((await send(`NAM-${orig}-ZZ-XX-M3-A-0001-S2-P01.ifc`, 'good')).status).toBe(201)
   })
 
   it('audit trail: every sensitive action leaves an entry with who and what', async () => {

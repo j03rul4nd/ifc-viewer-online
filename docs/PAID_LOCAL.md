@@ -127,7 +127,7 @@ automation can only be assigned to a member of the same company; supplier tokens
 once) and revoke (deliveries stay); 40 wrong tokens from one address end in 429 (`SUPPLIER_LIMITER`,
 30/min — wrangler simulates it locally); client links expire, revoke and refuse a wrong token; webhook
 secrets are shown once and `file://`, metadata and `gopher://` URLs are refused; hostile file names
-(`../`, back-slashes, control characters, no `.ifc`) are a 400; every sensitive action lands in
+(`../`, back-slashes, control characters, no `.ifc`) are a 400; a name that breaks the ISO 19650 rule of a set with a `project` code is a 422 `naming` with the issues (`"naming": false` switches it off); every sensitive action lands in
 `/quality/audit`. The last test trips the per-address limit for a minute.
 
 ## 5. Simulated pilot

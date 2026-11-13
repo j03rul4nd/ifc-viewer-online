@@ -316,5 +316,6 @@
   "Yes, revoke {{name}}": "Sí, revoca {{name}}",
   "Revoke access": "Revoca l'accés",
   "Still being validated": "Encara s'està validant",
-  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "El servidor encara no ha revisat aquest fitxer. El podràs acceptar quan tingui nota, o retornar-lo ara amb un motiu."
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "El servidor encara no ha revisat aquest fitxer. El podràs acceptar quan tingui nota, o retornar-lo ara amb un motiu.",
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "El receptor ha rebutjat el nom del fitxer: no segueix la regla de noms del projecte. Canvia-li el nom com s'indica a dalt i torna a lliurar-lo."
 }
