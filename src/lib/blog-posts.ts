@@ -267,6 +267,18 @@ export type ContentBlock =
       defaultFileName?: string
       defaultHeight?: number
     }
+  /**
+   * The guided paid-workspace demo inside a preview post (FeatureDemo.tsx),
+   * opened at `step`, with the free → demo → waitlist/talk ladder. Its labels
+   * live in blog-feature-demo-copy.ts (×10), so the block has no text.
+   */
+  | {
+      type: 'feature-demo'
+      step: 'drop' | 'naming' | 'rules' | 'clashes' | 'issues' | 'resolve' | 'mail' | 'value'
+      free: 'validator' | 'viewer'
+      role: 'solo' | 'team' | 'receive' | 'build'
+      talk: 'contractors' | 'engineering'
+    }
   | { type: 'stat-row'; stats: Array<{ value: number; suffix?: string; prefix?: string; label: string }> }
   | { type: 'feature-grid'; items: Array<{ icon: string; title: string; body: string }> }
   | { type: 'comparison'; left: { label: string; color: string; items: string[] }; right: { label: string; color: string; items: string[] } }

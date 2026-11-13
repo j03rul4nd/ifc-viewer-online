@@ -101,6 +101,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "5秒で読めること。何が起きたか、自分の担当は何か、いつまでか。",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "コーディネーターが編集者、プロジェクトが媒体" },
       {
         type: "p",
@@ -329,6 +330,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "バージョン履歴は最後に、必要な人のために。",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "セクションごとの順番" },
       {
         type: "steps",
@@ -519,6 +521,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "不合格の要件や期限の来るBCF指摘事項にも同じパターンを使う。",
         ],
       },
+      { type: "feature-demo", step: "resolve", free: "viewer", role: "team", talk: "contractors" },
       { type: "h2", text: "1つの工種向けに絞り込んだ新バージョン通知" },
       {
         type: "p",
@@ -710,6 +713,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "判定（承認または差し戻しと、その理由）は同じページに戻ってきます。",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "協力会社に見えるもの" },
       {
         type: "p",
@@ -916,6 +920,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "後から誰かが記録を編集したら、それはわかるか？",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "1. 協力会社のリンクに表示されるもの" },
       {
         type: "p",
@@ -1094,6 +1099,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "自動化は、手動の判定が妥当だと確認できてからオンにする。",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "ステップ1：要件" },
       {
         type: "p",
@@ -1308,6 +1314,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "データルールと関係ルールはIDS 1.0として書き出されるので、どのチェッカーでも使えます。",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "ルールは一文" },
       {
         type: "p",
@@ -1556,6 +1563,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "協力会社は、現在のステージで承認済みのバージョンに対して常にチェックします。",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "バージョン、作成者、レビュー" },
       {
         type: "p",
@@ -1755,6 +1763,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "クライアントと施工会社は、席を使わず無料で参加できます。",
         ],
       },
+      { type: "feature-demo", step: "issues", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "全員に同じ1つの一覧" },
       {
         type: "p",
@@ -2023,6 +2032,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "スコアが基準に満たないモデルは「公開済み」にならないようゲートで止め、例外はすべて履歴に残します。",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "build", talk: "engineering" },
       { type: "h2", text: "3ステップでソースを接続する" },
       {
         type: "p",
@@ -2283,6 +2293,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "同意の取得、ワンクリックの配信停止、追跡ピクセルなし。",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "白紙ではなく、フェーズから始める" },
       {
         type: "p",
@@ -2541,6 +2552,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "プレビュー段階：ここで紹介する機能はまだ提供開始前で、現在無料のものは今後も無料です。",
         ],
       },
+      { type: "feature-demo", step: "clashes", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "問題：4,827件の干渉、重要なものはほとんどない" },
       {
         type: "p",
@@ -2894,6 +2906,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
           "プレビュー版：プロジェクトごとの受信箱、1画面での判断、フィンガープリント付きの記録、週次レポート。",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "規格が受け取る側に求めること" },
       {
         type: "p",
@@ -3229,6 +3242,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         type: "p",
         text: "月末。手元には4社の顧客から届いた30個のIFCファイルが入ったフォルダーがあります。意匠、構造、設備、それぞれ複数のリビジョン。1つずつ開き、読み込みを待ち、スコアを見て、表計算ソフトに写し、次へ進む。これで午後がまるごと終わります。しかも結局、最悪のファイルは急いで開いた9番目でした。",
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "現在のやり方：1ファイルずつ（無料）" },
       {
         type: "p",

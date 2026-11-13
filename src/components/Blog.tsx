@@ -18,6 +18,7 @@ import EmbedViewer from './blog/EmbedViewer'
 import EmbedConfigurator from './blog/EmbedConfigurator'
 import SpatialMediaDemo from './blog/SpatialMediaDemo'
 import ToolDemo from './blog/ToolDemo'
+import FeatureDemo from './blog/FeatureDemo'
 import FloodHazard from './blog/FloodHazard'
 import FoldableCheck from './blog/FoldableCheck'
 import SketchDemoBlock from './blog/SketchDemoBlock'
@@ -358,6 +359,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'bars':
       return <Bars title={block.title} unit={block.unit} max={block.max} caption={block.caption} items={block.items} lang={lang} />
+
+    case 'feature-demo':
+      return <FeatureDemo step={block.step} free={block.free} role={block.role} talk={block.talk} lang={lang} />
 
     case 'sketch-demo':
       return <SketchDemoBlock {...block} lang={lang} />

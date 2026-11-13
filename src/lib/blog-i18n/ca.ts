@@ -110,6 +110,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Llegibles en cinc segons: què ha passat, què et toca, per a quan.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "El coordinador és l'editor; el projecte, la publicació" },
       {
         type: "p",
@@ -384,6 +385,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "El registre de versions al final, per a qui el necessiti.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "L'ordre, secció per secció" },
       {
         type: "steps",
@@ -583,6 +585,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Fes servir el mateix patró per als requisits que fallen i per a les incidències BCF pendents.",
         ],
       },
+      { type: "feature-demo", step: "resolve", free: "viewer", role: "team", talk: "contractors" },
       { type: "h2", text: "Una nova versió, filtrada per a un industrial" },
       {
         type: "p",
@@ -783,6 +786,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "La decisió (acceptat o retornat, amb el motiu) torna a la mateixa pàgina.",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Què veu el proveïdor" },
       {
         type: "p",
@@ -1018,6 +1022,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Si algú edita el registre després, es nota?",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "1. Què mostra un enllaç de proveïdor" },
       {
         type: "p",
@@ -1217,6 +1222,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Activa les automatitzacions només quan les decisions manuals siguin correctes.",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Pas 1: els requisits" },
       {
         type: "p",
@@ -1452,6 +1458,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Les regles de dades i de relacions s'escriuen en IDS 1.0, de manera que funcionen a qualsevol verificador.",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "Una regla és una frase" },
       {
         type: "p",
@@ -1748,6 +1755,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Els subcontractistes sempre comproven amb la versió aprovada per a l'estat actual.",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "Versions, autors i una revisió" },
       {
         type: "p",
@@ -1968,6 +1976,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Clients i contractistes entren gratis, sense llicència.",
         ],
       },
+      { type: "feature-demo", step: "issues", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Una llista, la mateixa per a tothom" },
       {
         type: "p",
@@ -2246,6 +2255,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Una porta impedeix que els models per sota d'una puntuació passin a «Publicat», amb l'historial de cada excepció.",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "build", talk: "engineering" },
       { type: "h2", text: "Connecta una font en tres passos" },
       {
         type: "p",
@@ -2523,6 +2533,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "Consentiment, baixa d'un sol clic i cap píxel de seguiment.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "Comença per una fase, no per una pàgina en blanc" },
       {
         type: "p",
@@ -2802,6 +2813,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "En vista prèvia: res d'això és obert encara, i el que és gratuït avui continua sent-ho.",
         ],
       },
+      { type: "feature-demo", step: "clashes", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "El problema: 4.827 col·lisions i quasi cap importa" },
       {
         type: "p",
@@ -3192,6 +3204,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           "En vista prèvia: una safata per projecte, decisions en una sola pantalla, un registre amb empremtes i un informe setmanal.",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Què demana la norma a qui rep" },
       {
         type: "p",
@@ -3561,6 +3574,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         type: "p",
         text: "Final de mes. Tens una carpeta amb 30 fitxers IFC de quatre clients: arquitectura, estructura, instal·lacions, diverses revisions de cadascun. Obrir-los un a un, esperar que es carregui cada fitxer, llegir la puntuació, copiar-la a un full de càlcul i passar al següent se't menja una tarda sencera. I al final resulta que el pitjor fitxer era el novè, el que vas obrir amb presses.",
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "Com es fa avui, fitxer per fitxer (gratuït)" },
       {
         type: "p",
