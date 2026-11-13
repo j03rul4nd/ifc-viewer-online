@@ -48,7 +48,7 @@ export default function RevisionExports({ viewerApiRef, rows, reviews, onDone }:
         changes: diff.changes.map((c) => ({
           ...c,
           ifcClass: className(c.ifcClass),
-          delta: c.delta?.direction ? { ...c.delta, direction: t(`rc.dir.${c.delta.direction}`) } : c.delta,
+          delta: c.delta?.direction ? { ...c.delta, direction: (t as unknown as (key: string) => string)(`rc.dir.${c.delta.direction}`) } : c.delta,
         })),
       }
       const name = `${stamp()}_revision`
