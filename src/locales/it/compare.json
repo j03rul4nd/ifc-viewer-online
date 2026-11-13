@@ -280,5 +280,159 @@
     "close": "Chiudi confronto",
     "start_one": "{{count}} modifica — tocca › per scorrerla",
     "start_other": "{{count}} modifiche — tocca › per scorrerle"
+  },
+  "rc": {
+    "title": "Confronta revisioni",
+    "subtitle": "Trascina la revisione vecchia e quella nuova. Il confronto parte da solo.",
+    "drop": {
+      "a": "Revisione vecchia (A)",
+      "b": "Revisione nuova (B)",
+      "hint": "Trascina qui gli IFC o tocca per scegliere",
+      "files_one": "{{count}} file",
+      "files_other": "{{count}} file",
+      "swap": "Scambia A e B"
+    },
+    "local": "Elaborato nel tuo browser: i file non lasciano mai questo dispositivo.",
+    "localShort": "Locale",
+    "reading": "Lettura delle revisioni…",
+    "advanced": "Consegne settimanali, baseline, IDS e BCF →",
+    "back": "Indietro",
+    "none": "Nessuna modifica corrisponde ai filtri.",
+    "prev": "Precedente",
+    "next": "Successiva",
+    "frame": "Inquadra",
+    "list_one": "{{count}} modifica",
+    "list_other": "{{count}} modifiche",
+    "keys": "J / K successiva · R verificata · S impatta il cantiere · F inquadra",
+    "paused": "I colori di validazione e IDS sono in pausa durante il confronto.",
+    "guidRegenerated": "Il progettista ha rigenerato gli ID degli elementi: sono stati abbinati per marca e posizione. Controlla l'affidabilità di ogni abbinamento.",
+    "originShift": "L'intero modello si è spostato di {{x}}, {{y}}, {{z}} mm (est, nord, alto). Lo spostamento è ignorato nella classificazione.",
+    "match": "Abbinato per {{method}} · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "marca",
+      "geometry": "posizione e forma",
+      "split": "divisione",
+      "merge": "unione",
+      "none": "—"
+    },
+    "kind": {
+      "added": "Aggiunto",
+      "removed": "Rimosso",
+      "moved": "Spostato",
+      "reshaped": "Forma cambiata",
+      "type_changed": "Tipo cambiato",
+      "relations_changed": "Relazioni cambiate",
+      "properties_changed": "Proprietà cambiate",
+      "unchanged": "Invariato"
+    },
+    "review": {
+      "pending": "Da verificare",
+      "reviewed": "Verificato",
+      "affects_site": "Impatta il cantiere"
+    },
+    "counter": {
+      "changes_one": "{{count}} modifica",
+      "changes_other": "{{count}} modifiche",
+      "reviewed_one": "{{count}} verificata",
+      "reviewed_other": "{{count}} verificate"
+    },
+    "view": {
+      "label": "Vista",
+      "changes": "Modifiche",
+      "curtain": "Tendina",
+      "split": "Affiancata",
+      "blink": "Alterna",
+      "blinkHint": "Spazio per cambiare"
+    },
+    "filter": {
+      "kind": "Tipo di modifica",
+      "storey": "Piano",
+      "anyStorey": "Tutti i piani",
+      "file": "Disciplina (file)",
+      "anyFile": "Tutti i file",
+      "class": "Classe",
+      "anyClass": "Tutte le classi",
+      "review": "Stato di verifica",
+      "anyReview": "Qualsiasi stato",
+      "marks": "Marche, nomi o ID (incolla un elenco)",
+      "toggle": "Filtri"
+    },
+    "tol": {
+      "title": "Tolleranze",
+      "move": "Spostamento",
+      "size": "Dimensione per asse",
+      "volume": "Volume",
+      "apply": "Ricalcola",
+      "close": "Chiudi",
+      "took": "{{ms}} ms",
+      "hint": "Ricalcolato dalle revisioni già lette; i file non vengono riletti."
+    },
+    "table": {
+      "toggle": "Prima / dopo",
+      "field": "Campo",
+      "before": "Prima (A)",
+      "after": "Dopo (B)",
+      "empty": "Nessun dettaglio per campo.",
+      "added": "Nuovo elemento in {{file}}.",
+      "removed": "L'elemento non è più in {{file}}."
+    },
+    "field": {
+      "positionX": "Posizione est–ovest",
+      "positionY": "Posizione nord–sud",
+      "positionZ": "Quota",
+      "distance": "Distanza spostata",
+      "sizeX": "Dimensione est–ovest",
+      "sizeY": "Dimensione nord–sud",
+      "height": "Altezza",
+      "volume": "Volume"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "Preparazione {{done}} / {{total}}…",
+      "failed": "Esportazione non riuscita: {{message}}",
+      "pdfHint": "Report con un'immagine per modifica",
+      "xlsxHint": "Foglio con ogni campo modificato",
+      "bcfHint": "Segnalazioni per il progettista, una per modifica"
+    },
+    "dir": {
+      "N": "a nord",
+      "NE": "a nord-est",
+      "E": "a est",
+      "SE": "a sud-est",
+      "S": "a sud",
+      "SW": "a sud-ovest",
+      "W": "a ovest",
+      "NW": "a nord-ovest",
+      "up": "in alto",
+      "down": "in basso"
+    },
+    "axis": {
+      "x": "est–ovest",
+      "y": "nord–sud",
+      "z": "altezza"
+    },
+    "summary": {
+      "added": "Nuovo {{class}}",
+      "removed": "{{class}} rimosso",
+      "unchanged": "Invariato",
+      "moved_mm": "Spostato di {{mm}} mm {{dir}}",
+      "moved_mm_nodir": "Spostato di {{mm}} mm",
+      "height_mm": "Altezza {{before}} → {{after}} mm",
+      "size_mm": "Dimensione {{axis}} {{before}} → {{after}} mm",
+      "volume_m3": "Volume {{before}} → {{after}} m³ ({{pct}} %)",
+      "reshaped": "Forma cambiata",
+      "type_changed": "Tipo {{before}} → {{after}}",
+      "storey_changed": "Piano {{before}} → {{after}}",
+      "file_changed": "Ora nel file {{after}} (prima {{before}})",
+      "relations_changed": "Relazioni cambiate",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_one": "{{count}} proprietà cambiata",
+      "properties_changed_other": "{{count}} proprietà cambiate",
+      "changed": "Cambiato"
+    }
   }
 }

@@ -278,5 +278,154 @@
     "close": "关闭比较",
     "start_one": "{{count}} 处变更 — 点 › 逐个查看",
     "start_other": "{{count}} 处变更 — 点 › 逐个查看"
+  },
+  "rc": {
+    "title": "修订对比",
+    "subtitle": "拖入旧修订和新修订，对比会自动开始。",
+    "drop": {
+      "a": "旧修订 (A)",
+      "b": "新修订 (B)",
+      "hint": "将 IFC 拖到这里，或点按选择",
+      "files_other": "{{count}} 个文件",
+      "swap": "交换 A 和 B"
+    },
+    "local": "在浏览器中处理：文件绝不会离开此设备。",
+    "localShort": "本地",
+    "reading": "正在读取修订…",
+    "advanced": "每周交付、基线、IDS 和 BCF →",
+    "back": "返回",
+    "none": "没有符合筛选条件的变更。",
+    "prev": "上一个",
+    "next": "下一个",
+    "frame": "定位",
+    "list_other": "{{count}} 处变更",
+    "keys": "J / K 下一个 · R 已审核 · S 影响现场 · F 定位",
+    "paused": "对比期间，校验和 IDS 着色已暂停。",
+    "guidRegenerated": "设计方重新生成了构件 ID：已按编号和位置匹配。请检查每个匹配的置信度。",
+    "originShift": "整个模型移动了 {{x}}, {{y}}, {{z}} mm（东、北、上）。分类时忽略此偏移。",
+    "match": "按{{method}}匹配 · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "编号",
+      "geometry": "位置和形状",
+      "split": "拆分",
+      "merge": "合并",
+      "none": "—"
+    },
+    "kind": {
+      "added": "新增",
+      "removed": "删除",
+      "moved": "移动",
+      "reshaped": "形状变化",
+      "type_changed": "类型变化",
+      "relations_changed": "关系变化",
+      "properties_changed": "属性变化",
+      "unchanged": "未变化"
+    },
+    "review": {
+      "pending": "待审核",
+      "reviewed": "已审核",
+      "affects_site": "影响现场"
+    },
+    "counter": {
+      "changes_other": "{{count}} 处变更",
+      "reviewed_other": "已审核 {{count}}"
+    },
+    "view": {
+      "label": "视图",
+      "changes": "变更",
+      "curtain": "滑块",
+      "split": "分屏",
+      "blink": "切换",
+      "blinkHint": "按空格切换"
+    },
+    "filter": {
+      "kind": "变更类型",
+      "storey": "楼层",
+      "anyStorey": "所有楼层",
+      "file": "专业（文件）",
+      "anyFile": "所有文件",
+      "class": "类别",
+      "anyClass": "所有类别",
+      "review": "审核状态",
+      "anyReview": "任意状态",
+      "marks": "编号、名称或 ID（可粘贴列表）",
+      "toggle": "筛选"
+    },
+    "tol": {
+      "title": "容差",
+      "move": "移动",
+      "size": "各轴尺寸",
+      "volume": "体积",
+      "apply": "重新计算",
+      "close": "关闭",
+      "took": "{{ms}} ms",
+      "hint": "基于已读取的修订重新计算，不会再次读取文件。"
+    },
+    "table": {
+      "toggle": "前 / 后",
+      "field": "字段",
+      "before": "之前 (A)",
+      "after": "之后 (B)",
+      "empty": "没有字段级详情。",
+      "added": "{{file}} 中的新构件。",
+      "removed": "该构件已不在 {{file}} 中。"
+    },
+    "field": {
+      "positionX": "东西向位置",
+      "positionY": "南北向位置",
+      "positionZ": "标高",
+      "distance": "移动距离",
+      "sizeX": "东西向尺寸",
+      "sizeY": "南北向尺寸",
+      "height": "高度",
+      "volume": "体积"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "正在准备 {{done}} / {{total}}…",
+      "failed": "导出失败：{{message}}",
+      "pdfHint": "每处变更附截图的报告",
+      "xlsxHint": "列出每个变更字段的表格",
+      "bcfHint": "给设计方的问题，每处变更一条"
+    },
+    "dir": {
+      "N": "向北",
+      "NE": "向东北",
+      "E": "向东",
+      "SE": "向东南",
+      "S": "向南",
+      "SW": "向西南",
+      "W": "向西",
+      "NW": "向西北",
+      "up": "向上",
+      "down": "向下"
+    },
+    "axis": {
+      "x": "东西向",
+      "y": "南北向",
+      "z": "高度"
+    },
+    "summary": {
+      "added": "新增{{class}}",
+      "removed": "已删除{{class}}",
+      "unchanged": "未变化",
+      "moved_mm": "{{dir}}移动 {{mm}} mm",
+      "moved_mm_nodir": "移动 {{mm}} mm",
+      "height_mm": "高度 {{before}} → {{after}} mm",
+      "size_mm": "尺寸（{{axis}}）{{before}} → {{after}} mm",
+      "volume_m3": "体积 {{before}} → {{after}} m³（{{pct}} %）",
+      "reshaped": "形状变化",
+      "type_changed": "类型 {{before}} → {{after}}",
+      "storey_changed": "楼层 {{before}} → {{after}}",
+      "file_changed": "现位于文件 {{after}}（原为 {{before}}）",
+      "relations_changed": "关系变化",
+      "property_changed": "{{key}}：{{before}} → {{after}}",
+      "properties_changed_other": "{{count}} 项属性变化",
+      "changed": "已变化"
+    }
   }
 }

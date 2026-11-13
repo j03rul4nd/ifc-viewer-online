@@ -280,5 +280,159 @@
     "close": "Tancar la comparació",
     "start_one": "{{count}} canvi — prem › per recórrer-lo",
     "start_other": "{{count}} canvis — prem › per recórrer-los"
+  },
+  "rc": {
+    "title": "Comparar revisions",
+    "subtitle": "Deixa anar la revisió antiga i la nova. La comparació comença sola.",
+    "drop": {
+      "a": "Revisió antiga (A)",
+      "b": "Revisió nova (B)",
+      "hint": "Deixa anar aquí els IFC o toca per triar",
+      "files_one": "{{count}} fitxer",
+      "files_other": "{{count}} fitxers",
+      "swap": "Intercanviar A i B"
+    },
+    "local": "Processat al teu navegador: els fitxers no surten mai d'aquest dispositiu.",
+    "localShort": "Local",
+    "reading": "Llegint les revisions…",
+    "advanced": "Lliuraments setmanals, línies base, IDS i BCF →",
+    "back": "Tornar",
+    "none": "Cap canvi no coincideix amb els filtres.",
+    "prev": "Anterior",
+    "next": "Següent",
+    "frame": "Enquadrar",
+    "list_one": "{{count}} canvi",
+    "list_other": "{{count}} canvis",
+    "keys": "J / K següent · R revisat · S afecta l'obra · F enquadrar",
+    "paused": "Els colors de validació i IDS es posen en pausa mentre compares.",
+    "guidRegenerated": "El projectista ha regenerat els IDs dels elements: s'han aparellat per marca i posició. Revisa la confiança de cada parella.",
+    "originShift": "Tot el model s'ha desplaçat {{x}}, {{y}}, {{z}} mm (est, nord, amunt). Aquest desplaçament no compta en classificar.",
+    "match": "Aparellat per {{method}} · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "marca",
+      "geometry": "posició i forma",
+      "split": "divisió",
+      "merge": "fusió",
+      "none": "—"
+    },
+    "kind": {
+      "added": "Afegit",
+      "removed": "Eliminat",
+      "moved": "Mogut",
+      "reshaped": "Forma canviada",
+      "type_changed": "Tipus canviat",
+      "relations_changed": "Relacions canviades",
+      "properties_changed": "Propietats canviades",
+      "unchanged": "Sense canvis"
+    },
+    "review": {
+      "pending": "Pendent",
+      "reviewed": "Revisat",
+      "affects_site": "Afecta l'obra"
+    },
+    "counter": {
+      "changes_one": "{{count}} canvi",
+      "changes_other": "{{count}} canvis",
+      "reviewed_one": "{{count}} revisat",
+      "reviewed_other": "{{count}} revisats"
+    },
+    "view": {
+      "label": "Vista",
+      "changes": "Canvis",
+      "curtain": "Cortina",
+      "split": "Dividida",
+      "blink": "Alternar",
+      "blinkHint": "Espai per canviar"
+    },
+    "filter": {
+      "kind": "Tipus de canvi",
+      "storey": "Planta",
+      "anyStorey": "Totes les plantes",
+      "file": "Disciplina (fitxer)",
+      "anyFile": "Tots els fitxers",
+      "class": "Classe",
+      "anyClass": "Totes les classes",
+      "review": "Estat de revisió",
+      "anyReview": "Qualsevol estat",
+      "marks": "Marques, noms o IDs (enganxa una llista)",
+      "toggle": "Filtres"
+    },
+    "tol": {
+      "title": "Toleràncies",
+      "move": "Moviment",
+      "size": "Mida per eix",
+      "volume": "Volum",
+      "apply": "Recalcular",
+      "close": "Tancar",
+      "took": "{{ms}} ms",
+      "hint": "Es recalcula amb les revisions ja llegides; els fitxers no es tornen a llegir."
+    },
+    "table": {
+      "toggle": "Abans / després",
+      "field": "Camp",
+      "before": "Abans (A)",
+      "after": "Després (B)",
+      "empty": "Sense detall per camp.",
+      "added": "Element nou a {{file}}.",
+      "removed": "L'element ja no és a {{file}}."
+    },
+    "field": {
+      "positionX": "Posició est–oest",
+      "positionY": "Posició nord–sud",
+      "positionZ": "Cota",
+      "distance": "Distància moguda",
+      "sizeX": "Mida est–oest",
+      "sizeY": "Mida nord–sud",
+      "height": "Alçada",
+      "volume": "Volum"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "Preparant {{done}} / {{total}}…",
+      "failed": "No s'ha pogut exportar: {{message}}",
+      "pdfHint": "Informe amb una captura per canvi",
+      "xlsxHint": "Full amb cada camp canviat",
+      "bcfHint": "Incidències per al projectista, una per canvi"
+    },
+    "dir": {
+      "N": "al nord",
+      "NE": "al nord-est",
+      "E": "a l'est",
+      "SE": "al sud-est",
+      "S": "al sud",
+      "SW": "al sud-oest",
+      "W": "a l'oest",
+      "NW": "al nord-oest",
+      "up": "amunt",
+      "down": "avall"
+    },
+    "axis": {
+      "x": "est–oest",
+      "y": "nord–sud",
+      "z": "alçada"
+    },
+    "summary": {
+      "added": "{{class}} nou",
+      "removed": "{{class}} eliminat",
+      "unchanged": "Sense canvis",
+      "moved_mm": "Mogut {{mm}} mm {{dir}}",
+      "moved_mm_nodir": "Mogut {{mm}} mm",
+      "height_mm": "Alçada {{before}} → {{after}} mm",
+      "size_mm": "Mida {{axis}} {{before}} → {{after}} mm",
+      "volume_m3": "Volum {{before}} → {{after}} m³ ({{pct}} %)",
+      "reshaped": "Forma canviada",
+      "type_changed": "Tipus {{before}} → {{after}}",
+      "storey_changed": "Planta {{before}} → {{after}}",
+      "file_changed": "Ara al fitxer {{after}} (abans {{before}})",
+      "relations_changed": "Relacions canviades",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_one": "{{count}} propietat canviada",
+      "properties_changed_other": "{{count}} propietats canviades",
+      "changed": "Canviat"
+    }
   }
 }

@@ -122,6 +122,7 @@ import BatchFolderDoor from './components/pricing/BatchFolderDoor'
 import { batchCountBucket, shouldOfferBatchFolder } from './lib/batch-folder-door'
 import { useCompareStore } from './stores/compareStore'
 import { planCompareOverlay } from './lib/compare/overlay'
+import { useRevisionStore } from './components/compare/revisionStore'
 import IdsPanel from './components/IdsPanel'
 import EirProfileEditor from './components/eir/EirProfileEditor'
 import { useEirStore } from './stores/eirStore'
@@ -1040,7 +1041,8 @@ export default function App() {
   const [showIdsModal, setShowIdsModal]       = useState(false)
   /** Fake door: files in the multi-IFC drop whose "Validate folder (Pro)" was clicked. */
   const [batchDoorCount, setBatchDoorCount]   = useState<number | null>(null)
-  const [showCompareModal, setShowCompareModal] = useState(false)
+  // `?compare` opens revision compare straight away (deep link, 05-ux §10.2).
+  const [showCompareModal, setShowCompareModal] = useState(() => new URLSearchParams(window.location.search).has('compare'))
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
   const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
@@ -1616,7 +1618,10 @@ export default function App() {
       // not reopened by later loads (the strip still shows the score and
       // counts). A panel that reappears on its own reads as a bug.
       const isPhone = window.matchMedia('(max-width: 767px)').matches
-      if (embedChrome.openPanel && !isPhone && firstInScene) {
+      // Revision compare loads A and B into the scene: no panel, no validation run.
+      const rc = useRevisionStore.getState()
+      const comparing = rc.active || rc.phase === 'reading'
+      if (embedChrome.openPanel && !isPhone && firstInScene && !comparing) {
         useIdsStore.getState().setPanelOpen(false) // bottom slot is exclusive with the IDS panel
         setValidationPanelOpen(true)
         trackValidationPanelOpened({ trigger: 'auto' })
@@ -1678,7 +1683,7 @@ export default function App() {
       // the first model and every member of a URL list or demo set. Now every
       // model is validated, once the queue is idle: validation parses the IFC
       // again in WASM, and doing that while other models convert slows both.
-      if (urlParams.autoValidate) pendingAutoValidateRef.current.add(modelId)
+      if (urlParams.autoValidate && !comparing) pendingAutoValidateRef.current.add(modelId)
     },
 
     onLoadFailed: (job, error) => {
@@ -1859,10 +1864,14 @@ export default function App() {
   const compareDiff      = useCompareStore((s) => s.diff)
   const compareHead      = useCompareStore((s) => s.head.modelIds)
   const compareBase      = useCompareStore((s) => s.base.modelIds)
+  // Revision compare paints the overlay channel itself (five colours, old
+  // revision ghosted); validation and IDS colours wait until it closes.
+  const revisionActive   = useRevisionStore((s) => s.active)
 
   useEffect(() => {
     const viewer = viewerApiRef.current
     if (!viewer) return
+    if (revisionActive) return
     const opts = { severities: ovSeverities, ghostOpacity: ovGhostOpacity, xray: ovXray }
     if (compareHighlight && compareDiff) {
       // Version diff on the shared overlay channel: removed=error, modified=warning, added=info.
@@ -1887,7 +1896,7 @@ export default function App() {
     } else {
       viewer.setValidationHighlights([], false) // clears the shared overlay channel
     }
-  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, ovRuleFocus, compareHighlight, compareDiff, compareHead, compareBase])
+  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray, ovRuleFocus, compareHighlight, compareDiff, compareHead, compareBase, revisionActive])
 
   // ── Validation for hosts: the queue, and what it tells them ───────────────
   // Auto-validation after a load and the SDK's validate() both go through

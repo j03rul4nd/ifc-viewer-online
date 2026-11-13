@@ -280,5 +280,159 @@
     "close": "Close comparison",
     "start_one": "{{count}} change — tap › to go through it",
     "start_other": "{{count}} changes — tap › to go through them"
+  },
+  "rc": {
+    "title": "Revision compare",
+    "subtitle": "Drop the old revision and the new one. The comparison starts by itself.",
+    "drop": {
+      "a": "Old revision (A)",
+      "b": "New revision (B)",
+      "hint": "Drop IFC files here or tap to choose",
+      "files_one": "{{count}} file",
+      "files_other": "{{count}} files",
+      "swap": "Swap A and B"
+    },
+    "local": "Processed in your browser: files never leave this device.",
+    "localShort": "Local",
+    "reading": "Reading the revisions…",
+    "advanced": "Weekly deliveries, baselines, IDS and BCF →",
+    "back": "Back",
+    "none": "No changes match the filters.",
+    "prev": "Previous",
+    "next": "Next",
+    "frame": "Frame",
+    "list_one": "{{count}} change",
+    "list_other": "{{count}} changes",
+    "keys": "J / K next · R reviewed · S affects site · F frame",
+    "paused": "Validation and IDS colours are paused while comparing.",
+    "guidRegenerated": "The designer regenerated the element IDs: elements were matched by mark and position. Check the confidence of each match.",
+    "originShift": "The whole model moved {{x}}, {{y}}, {{z}} mm (east, north, up). That shift is ignored when classifying.",
+    "match": "Matched by {{method}} · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "mark",
+      "geometry": "position and shape",
+      "split": "split",
+      "merge": "merge",
+      "none": "—"
+    },
+    "kind": {
+      "added": "Added",
+      "removed": "Removed",
+      "moved": "Moved",
+      "reshaped": "Reshaped",
+      "type_changed": "Type changed",
+      "relations_changed": "Relations changed",
+      "properties_changed": "Properties changed",
+      "unchanged": "Unchanged"
+    },
+    "review": {
+      "pending": "Pending",
+      "reviewed": "Reviewed",
+      "affects_site": "Affects site"
+    },
+    "counter": {
+      "changes_one": "{{count}} change",
+      "changes_other": "{{count}} changes",
+      "reviewed_one": "{{count}} reviewed",
+      "reviewed_other": "{{count}} reviewed"
+    },
+    "view": {
+      "label": "View",
+      "changes": "Changes",
+      "curtain": "Slider",
+      "split": "Split",
+      "blink": "Blink",
+      "blinkHint": "Space to switch"
+    },
+    "filter": {
+      "kind": "Change type",
+      "storey": "Storey",
+      "anyStorey": "All storeys",
+      "file": "Discipline (file)",
+      "anyFile": "All files",
+      "class": "Class",
+      "anyClass": "All classes",
+      "review": "Review state",
+      "anyReview": "Any state",
+      "marks": "Marks, names or IDs (paste a list)",
+      "toggle": "Filters"
+    },
+    "tol": {
+      "title": "Tolerances",
+      "move": "Movement",
+      "size": "Size per axis",
+      "volume": "Volume",
+      "apply": "Recalculate",
+      "close": "Close",
+      "took": "{{ms}} ms",
+      "hint": "Recalculated from the revisions already read; the files are not read again."
+    },
+    "table": {
+      "toggle": "Before / after",
+      "field": "Field",
+      "before": "Before (A)",
+      "after": "After (B)",
+      "empty": "No field-level detail.",
+      "added": "New element in {{file}}.",
+      "removed": "Element no longer in {{file}}."
+    },
+    "field": {
+      "positionX": "Position east–west",
+      "positionY": "Position north–south",
+      "positionZ": "Elevation",
+      "distance": "Distance moved",
+      "sizeX": "Size east–west",
+      "sizeY": "Size north–south",
+      "height": "Height",
+      "volume": "Volume"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "Preparing {{done}} / {{total}}…",
+      "failed": "Export failed: {{message}}",
+      "pdfHint": "Report with a capture per change",
+      "xlsxHint": "Spreadsheet of every changed field",
+      "bcfHint": "Issues for the designer, one per change"
+    },
+    "dir": {
+      "N": "north",
+      "NE": "north-east",
+      "E": "east",
+      "SE": "south-east",
+      "S": "south",
+      "SW": "south-west",
+      "W": "west",
+      "NW": "north-west",
+      "up": "up",
+      "down": "down"
+    },
+    "axis": {
+      "x": "east–west",
+      "y": "north–south",
+      "z": "height"
+    },
+    "summary": {
+      "added": "New {{class}}",
+      "removed": "{{class}} removed",
+      "unchanged": "No change",
+      "moved_mm": "Moved {{mm}} mm {{dir}}",
+      "moved_mm_nodir": "Moved {{mm}} mm",
+      "height_mm": "Height {{before}} → {{after}} mm",
+      "size_mm": "Size {{axis}} {{before}} → {{after}} mm",
+      "volume_m3": "Volume {{before}} → {{after}} m³ ({{pct}} %)",
+      "reshaped": "Shape changed",
+      "type_changed": "Type {{before}} → {{after}}",
+      "storey_changed": "Storey {{before}} → {{after}}",
+      "file_changed": "Now in file {{after}} (was {{before}})",
+      "relations_changed": "Relations changed",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_one": "{{count}} property changed",
+      "properties_changed_other": "{{count}} properties changed",
+      "changed": "Changed"
+    }
   }
 }
