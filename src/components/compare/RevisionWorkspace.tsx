@@ -14,7 +14,7 @@ import {
   colourTokens, facets, filterChanges, isInferredMatch, KIND_GROUP, kindColour, markIndex,
   reviewCounts, SHOWN_KINDS, sortByImpact, tableRows, GROUP_ICON, type ShownKind,
 } from '../../lib/compare/revision-view'
-import { locateRevision, planRevisionOverlay } from '../../lib/compare/overlay'
+import { locateRevision, planRevisionOverlay, type RevisionPaintGroup } from '../../lib/compare/overlay'
 import { clearRevisionPaint, paintRevision } from '../../lib/compare/view-paint'
 import { clearArrows, drawArrows } from '../../lib/compare/view-arrows'
 import { startCurtain, type CurtainHandle } from '../../lib/compare/view-split'
@@ -275,8 +275,24 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
 
   // ── 3D: overlay + colours + arrows, following the filters (05-ux §4) ──
   const plan = useMemo(() => planRevisionOverlay(rows, b.modelIds, a.modelIds), [rows, a.modelIds, b.modelIds])
-  const selectedAt = useMemo(() => (current ? locateRevision(current, b.modelIds, a.modelIds) : null), [current, a.modelIds, b.modelIds])
+  // The change on screen, on each side where it exists: B (new) unless removed,
+  // and its A copy (old) — seen in Split, Curtain and Blink, hidden in Changes
+  // except for removed / moved-from.
+  const selectedAt = useMemo(() => {
+    if (!current || current.kind === 'unchanged') return []
+    const g = KIND_GROUP[current.kind]
+    const out: Array<{ modelId: string; expressId: number; group: RevisionPaintGroup }> = []
+    const bm = current.headFile ? b.modelIds[current.headFile] : undefined
+    if (current.kind !== 'removed' && bm && current.headExpressId != null) out.push({ modelId: bm, expressId: current.headExpressId, group: g })
+    const am = current.baseFile ? a.modelIds[current.baseFile] : undefined
+    if (current.kind !== 'added' && am && current.baseExpressId != null) out.push({ modelId: am, expressId: current.baseExpressId, group: current.kind === 'moved' ? 'movedFrom' : g })
+    return out
+  }, [current, a.modelIds, b.modelIds])
   const paintSeq = useRef(0)
+  const aliveRef = useRef(true)
+  const paintChain = useRef<Promise<void>>(Promise.resolve())
+  // Set in the body too: StrictMode mounts, unmounts and mounts again in dev.
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false } }, [])
   const repaint = useCallback(async (): Promise<void> => {
     const v = viewerApiRef.current
     if (!v) return
@@ -284,8 +300,17 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
     // Painted directly on the models, not through the shared overlay channel
     // (that controller repaints on its own schedule and overwrote the colours).
     await new Promise((r) => requestAnimationFrame(r))
-    if (seq !== paintSeq.current) return
-    await paintRevision(v, plan, idsA, idsB, { mode: useRevisionStore.getState().view, selected: selectedAt })
+    // One pass at a time: two passes on the same model interleave (one hides A
+    // for Changes while the next shows it for Blink) and leave a mix of both.
+    const prev = paintChain.current
+    let done: () => void = () => {}
+    paintChain.current = new Promise<void>((r) => { done = r })
+    try {
+      await prev
+      // Gone (closed, maybe removing A/B), or a newer pass is queued: skip.
+      if (seq !== paintSeq.current || !aliveRef.current) return
+      await paintRevision(v, plan, idsA, idsB, { mode: useRevisionStore.getState().view, selected: selectedAt })
+    } finally { done() }
   }, [plan, idsA, idsB, selectedAt, viewerApiRef])
 
   // Whatever was on the overlay channel before (validation, IDS) goes away while comparing.
@@ -324,9 +349,25 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
   }, [view, idsA, idsB, viewerApiRef])
   useEffect(() => { split.current?.setCurtain(curtain) }, [curtain])
 
+  // Split: A | B side by side, one camera, one WebGL context (viewer.setSplitView).
+  useEffect(() => {
+    const v = viewerApiRef.current
+    if (!v || view !== 'split') return
+    // The list panel covers the left 364 px: the two halves share the rest.
+    v.setSplitView({ left: idsA, right: idsB, insetLeft: 364 })
+    let frames = 0, raf = 0, t0 = performance.now()
+    const tick = (): void => { frames++; raf = requestAnimationFrame(tick) }
+    raf = requestAnimationFrame(tick)
+    const iv = window.setInterval(() => { const now = performance.now(); setFps(Math.round((frames * 1000) / (now - t0))); frames = 0; t0 = now }, 1000)
+    return () => { cancelAnimationFrame(raf); window.clearInterval(iv); v.setSplitView(null) }
+  }, [view, idsA, idsB, viewerApiRef])
+  // Split is desktop / landscape tablet only: two half-width views on a phone are too small to read.
+  useEffect(() => { if (narrow && view === 'split') useRevisionStore.getState().setView('changes') }, [narrow, view])
+
   // Leaving: models back to their own look, A visible, arrows and curtain gone.
   // Read through a ref: the ids arrive after mount, a closure would see none.
   const sceneIds = useRef<string[]>([])
+  const cleanupDone = useRef<Promise<void>>(Promise.resolve())
   sceneIds.current = [...idsA, ...idsB]
   idsRef.current = { a: idsA, b: idsB }
   useEffect(() => () => {
@@ -335,7 +376,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
     if (!v) return
     clearArrows(v)
     for (const id of sceneIds.current) v.setModelVisible(id, true)
-    void clearRevisionPaint(v, sceneIds.current)
+    cleanupDone.current = clearRevisionPaint(v, sceneIds.current)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Navigation ──
@@ -408,7 +449,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
 
   if (!diff) return null
   const sideName = (files: File[]) => (files.length === 1 ? files[0].name : t('rc.drop.files', { count: files.length }))
-  const modes: ViewMode[] = ['changes', 'curtain', 'blink']
+  const modes: ViewMode[] = narrow ? ['changes', 'curtain', 'blink'] : ['changes', 'curtain', 'split', 'blink']
   const exportsNode = revisionExportSlot.render?.({ rows, reviews }) ?? (
     <RevisionExports viewerApiRef={viewerApiRef} rows={rows} reviews={reviews} onDone={() => { void repaint() }} />
   )
@@ -470,17 +511,29 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
     </div>
   )
 
-  const fpsBadge = view === 'curtain' && fps > 0 && (
+  const splitLabels = view === 'split' && !narrow && (
+    <>
+      <span className={`fixed z-[55] left-[364px] top-[68px] px-2 py-0.5 rounded-md text-[11px] font-semibold ${panel}`} data-testid="rc-split-a">A · {sideName(a.files)}</span>
+      <span className={`fixed z-[55] left-[calc(182px+50%+8px)] top-[68px] px-2 py-0.5 rounded-md text-[11px] font-semibold ${panel}`} data-testid="rc-split-b">B · {sideName(b.files)}</span>
+      <span aria-hidden className="fixed z-[54] top-0 bottom-0 left-[calc(182px+50%)] w-px bg-[var(--border-strong)] pointer-events-none" />
+    </>
+  )
+
+  const fpsBadge = (view === 'curtain' || view === 'split') && fps > 0 && (
     <span className="fixed z-[55] right-3 bottom-3 px-2 py-0.5 rounded-md text-[10.5px] tabular-nums text-[var(--text-faint)] bg-[var(--scrim)]" data-testid="rc-fps">{fps} FPS</span>
   )
 
   const leave = async (ids: string[]): Promise<void> => {
     setClosing(false)
+    aliveRef.current = false
     // The unmount cleanup must not repaint models that are about to go.
     sceneIds.current = sceneIds.current.filter((id) => !ids.includes(id))
     closeNow()
     if (!ids.length || !onRemoveModels) return
-    await new Promise((r) => setTimeout(r, 250))
+    // Wait for the unmount cleanup (palette back on every model) to finish:
+    // repainting a model while it is removed makes fragments throw.
+    await new Promise((r) => setTimeout(r, 0))
+    await cleanupDone.current
     await onRemoveModels(ids)
   }
   const closeDialog = closing && (
@@ -530,7 +583,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
           <div className="flex-1 min-w-0 text-center">{counter}<div className="text-[11px] text-[var(--text-faint)] tabular-nums">{idx + 1} / {rows.length}</div></div>
           <button type="button" onClick={() => step(1)} className="h-11 w-14 rounded-lg border border-[var(--border)] text-[18px] text-[var(--text)]" aria-label={t('rc.next')}>▶</button>
         </div>
-        {blinkBadge}{curtainHandle}{fpsBadge}
+        {blinkBadge}{curtainHandle}{splitLabels}{fpsBadge}
         <MobileSheet open onClose={onClose} snapPoints={[0.24, 0.55, 0.92]} detentIndex={detent} onDetentChange={setDetent} label={t('rc.title')}>
           <div className="flex flex-col gap-3 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] min-h-0 h-full">
             {card}
@@ -556,7 +609,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
     <div style={colourTokens()}>
       {header}
       {closeDialog}
-      {blinkBadge}{curtainHandle}{fpsBadge}
+      {blinkBadge}{curtainHandle}{splitLabels}{fpsBadge}
       <aside className={`${panel} fixed z-[59] left-2 top-[64px] bottom-2 w-[348px] rounded-2xl flex flex-col overflow-hidden`} data-testid="rc-panel" data-tour="rc-list">
         <div className="p-3 flex flex-col gap-2 border-b border-[var(--border)]">
           {notices}

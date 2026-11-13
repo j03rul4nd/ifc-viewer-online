@@ -471,8 +471,8 @@
         "body": "Filter by storey, discipline, element type or piece mark. Paste a list of marks to see only those."
       },
       "views": {
-        "title": "Slider A | B",
-        "body": "Drag the line across the model: old on the left, new on the right. Or flip between A and B in the same view."
+        "title": "Slider, split or flip",
+        "body": "Drag the line across the model (old left, new right), see A and B side by side with one camera, or flip between them in the same view."
       },
       "export": {
         "title": "Send it on",

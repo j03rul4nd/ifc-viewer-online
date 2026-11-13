@@ -471,8 +471,8 @@
         "body": "Filtre por piso, disciplina, tipo de elemento ou marca de peça. Cole uma lista de marcas para ver só essas."
       },
       "views": {
-        "title": "Cortina A | B",
-        "body": "Arraste a linha sobre o modelo: o antigo à esquerda, o novo à direita. Ou alterne entre A e B na mesma vista."
+        "title": "Cortina, dividida ou alternar",
+        "body": "Arraste a linha sobre o modelo (antigo à esquerda, novo à direita), veja A e B lado a lado com a mesma câmara ou alterne entre os dois na mesma vista."
       },
       "export": {
         "title": "Passe a quem precisa",

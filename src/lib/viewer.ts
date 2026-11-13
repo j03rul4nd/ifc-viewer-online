@@ -651,6 +651,15 @@ export interface ViewerAPI {
    */
   setModelVisible(modelId: string, visible: boolean): void
   /**
+   * Side-by-side view of two sets of models (revision compare A | B) with ONE
+   * camera and ONE WebGL context: each frame is drawn twice with scissor and
+   * viewport, the left half with only `left` visible, the right half with only
+   * `right`. Orbit, pan, zoom and framing act on the shared camera, so both
+   * halves stay in sync by construction and no geometry is duplicated. Picking
+   * still uses the whole canvas. null restores the normal single view.
+   */
+  setSplitView(split: { left: string[]; right: string[]; /** CSS px covered by UI on the left; the halves share the rest. */ insetLeft?: number } | null): void
+  /**
    * Set a uniform presentation opacity on one model or every loaded model.
    * Values are clamped to 0.02–1. Used by scan/BIM comparison modes; geometry
    * and model placements are not changed. Passing 1 restores source opacity.
@@ -1198,6 +1207,61 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.camera   = new OBC.OrthoPerspectiveCamera(components)
 
   const wr = world.renderer.three
+  // ── Split view (setSplitView) ──
+  // The renderer's own render() is wrapped once; with no split active it is a
+  // straight call. Kept here because fragments buffers live in THIS context
+  // only (a second renderer cannot draw them).
+  let splitView: { left: string[]; right: string[]; insetLeft: number } | null = null
+  const splitCam = new THREE.PerspectiveCamera()
+  const splitOrtho = new THREE.OrthographicCamera()
+  {
+    const baseRender = wr.render.bind(wr)
+    const half = (cam: THREE.Camera, aspect: number): THREE.Camera => {
+      if ((cam as THREE.PerspectiveCamera).isPerspectiveCamera) {
+        splitCam.copy(cam as THREE.PerspectiveCamera)
+        splitCam.aspect = aspect
+        splitCam.updateProjectionMatrix()
+        return splitCam
+      }
+      const o = cam as THREE.OrthographicCamera
+      splitOrtho.copy(o)
+      const h = (o.top - o.bottom) / 2, cx = (o.left + o.right) / 2
+      splitOrtho.left = cx - h * aspect; splitOrtho.right = cx + h * aspect
+      splitOrtho.updateProjectionMatrix()
+      return splitOrtho
+    }
+    wr.render = (scene: THREE.Object3D, camera: THREE.Camera): void => {
+      const sv = splitView
+      if (!sv || camera !== world.camera.three || wr.getRenderTarget() !== null) { baseRender(scene, camera); return }
+      const size = wr.getSize(new THREE.Vector2())
+      const x0 = Math.min(Math.max(0, Math.round(sv.insetLeft)), Math.floor(size.x / 2))
+      const w = Math.floor((size.x - x0) / 2), h = size.y
+      const objs = (ids: string[]) => ids.map((id) => modelObjects.get(id)?.object).filter((o): o is THREE.Object3D => !!o)
+      const left = objs(sv.left), right = objs(sv.right)
+      const was = new Map<THREE.Object3D, boolean>([...left, ...right].map((o) => [o, o.visible]))
+      const cam = half(camera, w / Math.max(1, h))
+      const autoClear = wr.autoClear
+      try {
+        wr.setScissorTest(true)
+        // Clear the strip under the UI too, so no stale single-view frame shows there.
+        wr.setViewport(0, 0, size.x, size.y); wr.setScissor(0, 0, size.x, size.y); wr.clear()
+        for (const [x, show, hide] of [[x0, left, right], [x0 + w, right, left]] as const) {
+          for (const o of show) o.visible = was.get(o) ?? true
+          for (const o of hide) o.visible = false
+          wr.setViewport(x, 0, w, h)
+          wr.setScissor(x, 0, w, h)
+          wr.autoClear = true
+          baseRender(scene, cam)
+        }
+      } finally {
+        for (const [o, v] of was) o.visible = v
+        wr.setScissorTest(false)
+        wr.setViewport(0, 0, size.x, size.y)
+        wr.setScissor(0, 0, size.x, size.y)
+        wr.autoClear = autoClear
+      }
+    }
+  }
   // ── Render density on touch devices ──
   // ThatOpen renders at min(devicePixelRatio, 2). On a phone that is 2x: four
   // times the pixels of 1x, on the weakest GPU the app runs on, for detail a
@@ -1727,6 +1791,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   // ─── Postproduction — start disabled; enable on demand ───────────────────────
   let postproductionReady = false
+  let splitPpWas = false
   try {
     const pp = world.renderer.postproduction
     pp.enabled = false
@@ -4274,6 +4339,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     getLoadedModelIds(): string[] {
       return [...modelObjects.keys()]
+    },
+
+    setSplitView(split) {
+      splitView = split && (split.left.length || split.right.length) ? { left: [...split.left], right: [...split.right], insetLeft: split.insetLeft ?? 0 } : null
+      // Postproduction renders through its own targets; the split draws straight to the canvas.
+      if (postproductionReady) {
+        const pp = world.renderer!.postproduction
+        if (splitView) { splitPpWas = pp.enabled; if (pp.enabled) pp.enabled = false }
+        else if (splitPpWas) { pp.enabled = true; splitPpWas = false }
+      }
+      if (world.renderer) world.renderer.needsUpdate = true
+      try { void fragmentsManager.core.update(true) } catch { /* not ready */ }
     },
 
     setModelVisible(modelId: string, visible: boolean) {
