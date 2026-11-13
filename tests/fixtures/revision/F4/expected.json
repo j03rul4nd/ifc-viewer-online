@@ -1,0 +1,15 @@
+{
+  "id": "F4",
+  "description": "One property value + a material changed on one element",
+  "changes": [
+    {
+      "globalIdA": "1B_9tdw69OyucBpAf2eq9T",
+      "globalIdB": "1B_9tdw69OyucBpAf2eq9T",
+      "kind": "properties_changed",
+      "method": "guid"
+    }
+  ],
+  "counts": {
+    "properties_changed": 1
+  }
+}

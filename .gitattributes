@@ -15,3 +15,6 @@ public/sdk/ifc-viewer.es.d.ts -text
 public/sdk/[0-9]*/** -text
 # Served byte-exact from the models Worker (npm run deploy:models).
 public/models/** -text
+
+# Revision compare golden fixtures: byte-stable on every checkout
+tests/fixtures/revision/**/*.ifc text eol=lf

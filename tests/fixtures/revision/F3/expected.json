@@ -1,0 +1,15 @@
+{
+  "id": "F3",
+  "description": "One wall 6.0 → 6.5 m high",
+  "changes": [
+    {
+      "globalIdA": "3CRjRC0nPVKgXvAR3Evmu0",
+      "globalIdB": "3CRjRC0nPVKgXvAR3Evmu0",
+      "kind": "reshaped",
+      "method": "guid"
+    }
+  ],
+  "counts": {
+    "reshaped": 1
+  }
+}
