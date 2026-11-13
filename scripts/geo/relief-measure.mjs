@@ -22,7 +22,7 @@ const b = await chromium.launch({ headless: false, channel: 'chrome', args: ['--
 const p = await b.newPage({ viewport: { width: 1600, height: 900 } })
 p.on('console', (m) => { if (/WP2|coarse|ICGC|dem/i.test(m.text())) console.log('[page]', m.text().slice(0, 200)) })
 await p.goto(`${args.url}/?model=${MODELS[site]}&map=terrain,buildings&validate=0&ui=client`, { waitUntil: 'domcontentloaded', timeout: 300000 })
-await p.getByRole('button', { name: /^(Activar mapa|Enable map)$/ }).first().click({ timeout: 240000 })
+await p.getByRole('button', { name: /^(Activar mapa|Enable map)$/ }).first().click({ timeout: 900000 })
 const ready = async () => {
   const st = () => p.evaluate(() => { const s = globalThis.__geoStore?.getState(); return s ? [s.terrainStatus, s.buildingsStatus] : [] }).catch(() => [])
   for (let i = 0; i < 600; i++) { if ((await st())[0] === 'ready') break; await sleep(500) }
@@ -93,15 +93,43 @@ const out = await p.evaluate(async () => {
   const c0 = W(cnx - half, cny - half), c1 = W(cnx + half, cny + half)
   const cx = (c0.x + c1.x) / 2, cz = (c0.z + c1.z) / 2, hx = Math.abs(c1.x - c0.x) / 2, hz = Math.abs(c1.z - c0.z) / 2
   res.groundUnderModelY = g.groundHeightAt(0, 0)
+  // The step, on the CPU (the library switches the tiles' raycast off): the
+  // finest loaded tile's displaced surface (tileSurfaceN) against the patch's
+  // own (effective ground minus the rim's dip), in the tiles' frame.
   const steps = []
-  for (let k = 0; k < 200; k++) {
-    const s = (k + 0.5) / 50, side = Math.floor(s), f = s - side
-    const [x, z] = side === 0 ? [cx - hx + 2 * hx * f, cz - hz] : side === 1 ? [cx + hx, cz - hz + 2 * hz * f] : side === 2 ? [cx + hx - 2 * hx * f, cz + hz] : [cx - hx, cz + hz - 2 * hz * f]
-    const a = hitY(t.group, x, z, false), m = hitY(tiles.group, x, z, true)
-    steps.push(a === null || m === null ? null : (m - a))
+  if (t.coarse) {
+    const TD = await import('/src/lib/geo/basemap/tile-displace.ts')
+    const GT = await import('/src/lib/geo/geo-terrain.ts')
+    const relief = { dem: t.coarse, anchorM: t.anchorElevation, metresToN: 1 / (40075016.686 * Math.cos(globalThis.__geoStore.getState().placement.lat * Math.PI / 180)) }
+    const flats = []
+    const diag = { meshes: 0, withSym: 0, visible: 0, sample: null }
+    let root = t.group; while (root.parent) root = root.parent
+    diag.tilesGroupChildren = tiles.group.children.length; diag.tilesStats = { loaded: tiles.stats?.loaded, visible: tiles.visibleTiles?.size }
+    root.traverse((o) => { if (!o.isMesh) return; diag.meshes++; const sy = Object.getOwnPropertySymbols(o).map(String); if (sy.length) diag.withSym++; if (vis(o)) diag.visible++; if (!diag.sample && sy.length) diag.sample = { sy, params: o.geometry?.parameters ?? null, pos: o.position.toArray(), parentType: o.parent?.type } })
+    res.tileDiag = diag
+    root.traverse((o) => { if (o.isMesh && vis(o)) { const sym = Object.getOwnPropertySymbols(o).find((k) => String(k) === 'Symbol(flatTile)'); const f = sym && o[sym]; if (f) flats.push({ cx: o.position.x, cy: o.position.y, w: f.w, h: f.h, seg: f.segments }) } })
+    flats.sort((a, b) => a.w - b.w)
+    res.tilesConsidered = flats.length
+    const patchN = 3 / n, tEdge = 0.12 // hole line, as a fraction of the half-width from the patch edge
+    for (let k = 0; k < 200; k++) {
+      const s = (k + 0.5) / 50, side = Math.floor(s), f = s - side
+      const [nx, ny] = side === 0 ? [cnx - half + 2 * half * f, cny - half] : side === 1 ? [cnx + half, cny - half + 2 * half * f] : side === 2 ? [cnx + half - 2 * half * f, cny + half] : [cnx - half, cny + half - 2 * half * f]
+      // Whatever tile covers the point, z13–z17: its displaced surface as
+      // displaceTileScene draws it (the loaded set depends on the camera).
+      const patchM = t.sampleGroundM(nx, ny) - GT.rimDipM(tEdge, GT.RIM_DIP_COARSE_M)
+      let worst = 0
+      for (let z = 13; z <= 17; z++) {
+        const m = 2 ** z, w = 1 / m
+        const cxT = (Math.floor((nx + 0.5) * m) + 0.5) / m - 0.5, cyT = 0.5 - (Math.floor((0.5 - ny) * m) + 0.5) / m
+        const tileM = TD.tileSurfaceN(relief, cxT, cyT, w, w, TD.tileGridSegments(w, relief.metresToN), nx, ny) / relief.metresToN + relief.anchorM
+        if (Math.abs(tileM - patchM) > Math.abs(worst)) worst = tileM - patchM
+      }
+      steps.push(worst)
+    }
+    void patchN
   }
   res.holeHalfWorld = [hx, hz]
-  const ok = steps.filter((s) => s !== null).map((s) => s * 100 / (y100 - y0))
+  const ok = steps.filter((s) => s !== null)
   const abs = ok.map(Math.abs).sort((a, b) => a - b)
   res.step = { n: ok.length, maxAbsM: abs.at(-1), p95M: abs[Math.floor(abs.length * 0.95)], medianM: abs[abs.length >> 1], meanSignedM: ok.reduce((a, b) => a + b, 0) / ok.length }
   return res

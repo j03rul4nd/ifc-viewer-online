@@ -79,8 +79,22 @@ const RIM_START = 0.42
 const RIM_CONTACT = TERRAIN_EDGE_FADE * 1.1
 /** How far under the flat tiles the outermost vertices sit, metres. */
 const RIM_DIP_M = 4
+/**
+ * The same dip when the flat map stands on the coarse relief (WP2). There the
+ * rim and the tiles follow one surface, so the dip only has to hide the two
+ * grids' interpolation, not tens of metres of relief; at 4 m it would itself
+ * be the visible step at the hole (≈1.2 m on the hole's line).
+ */
+export const RIM_DIP_COARSE_M = 4
 /** Fraction of the contact band over which that dip is reached. */
 const RIM_DIP_RAMP = 0.3
+/**
+ * How far under the flat tiles the patch sits at edge fraction `t` (0 at the
+ * patch edge), metres. Exported so the seam can be measured on the CPU.
+ */
+export function rimDipM(t: number, dipM = RIM_DIP_M): number {
+  return t < RIM_CONTACT ? dipM * Math.min(1, (RIM_CONTACT - t) / (RIM_CONTACT * RIM_DIP_RAMP)) : 0
+}
 /** The easing always has at least this much run, metres, however tight the patch. */
 const RIM_MIN_EASE_M = 150
 /** Half-side of the square around the anchor whose relief is never eased, metres. */
@@ -409,9 +423,7 @@ function assemblePatch(
         : outside <= 0 ? 1
         : Math.min(1, toContact / Math.min(toContact + outside, bandM))
       rimKeep[idx] = k * k * (3 - 2 * k)
-      rimDipN[idx] = t < RIM_CONTACT
-        ? RIM_DIP_M * Math.min(1, (RIM_CONTACT - t) / (RIM_CONTACT * RIM_DIP_RAMP)) * metresToNormalized
-        : 0
+      rimDipN[idx] = rimDipM(t, coarse ? RIM_DIP_COARSE_M : RIM_DIP_M) * metresToNormalized
       // The datum is read off the band the easing ends in: the ground that is
       // actually about to meet the map.
       if (t <= RIM_CONTACT * 2 && (i + j) % 3 === 0) rimSamples.push(heights[idx])

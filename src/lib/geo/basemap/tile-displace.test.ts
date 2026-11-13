@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { COARSE_DEM_PX, coarseBoundsN, sampleCoarseN, clampSea, type CoarseDem } from '../coarse-dem'
-import { createReliefBoundsPlugin, displaceTileScene, reliefHalfHeightN, tileGridSegments } from './tile-displace'
+import { createReliefBoundsPlugin, displaceTileScene, reliefHalfHeightN, tileGridSegments, tileSurfaceN } from './tile-displace'
 
 function rampDem(): CoarseDem {
   // Height grows west → east by 1 m per sample column.
@@ -84,5 +84,38 @@ describe('tile-displace', () => {
     const fresh = { boundingVolume: { box: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0] } }
     plugin.preprocessNode(fresh)
     expect(fresh.boundingVolume.box[11]).toBe(half)
+  })
+})
+
+describe('tileSurfaceN', () => {
+  it('matches the displaced mesh at vertices and is exact on a ramp between them', () => {
+    const dem = rampDem()
+    const b = coarseBoundsN(dem)
+    const relief = { dem, anchorM: 10, metresToN: 1e-6 }
+    const w = (b.maxNx - b.minNx) / 8, cx = (b.minNx + b.maxNx) / 2, cy = (b.minNy + b.maxNy) / 2
+    const seg = 5
+    // On a vertex: the DEM itself.
+    const vx = cx - w / 2 + (2 / seg) * w, vy = cy + w / 2 - (3 / seg) * w
+    expect(tileSurfaceN(relief, cx, cy, w, w, seg, vx, vy)).toBeCloseTo((sampleCoarseN(dem, vx, vy) - 10) * 1e-6, 12)
+    // A planar ramp is reproduced exactly anywhere inside, on both triangles.
+    for (const [fx, fy] of [[0.13, 0.71], [0.77, 0.21], [0.5, 0.5]]) {
+      const x = cx - w / 2 + fx * w, y = cy - w / 2 + fy * w
+      expect(tileSurfaceN(relief, cx, cy, w, w, seg, x, y)).toBeCloseTo((sampleCoarseN(dem, x, y) - 10) * 1e-6, 9)
+    }
+  })
+
+  it('interpolates linearly across a cell, not the DEM inside it', () => {
+    // A single bump between two vertices is missed by the triangle.
+    const heights = new Float32Array(COARSE_DEM_PX * COARSE_DEM_PX)
+    const mid = COARSE_DEM_PX >> 1
+    heights[mid * COARSE_DEM_PX + mid] = 100
+    const dem: CoarseDem = { zoom: 12, tileX0: 2070, tileY0: 1528, size: COARSE_DEM_PX, heights, minM: 0, maxM: 100 }
+    const b = coarseBoundsN(dem)
+    const relief = { dem, anchorM: 0, metresToN: 1 }
+    const cx = (b.minNx + b.maxNx) / 2, cy = (b.minNy + b.maxNy) / 2, w = (b.maxNx - b.minNx)
+    // 3 segments: the vertices fall far from the bump, so the surface stays at 0.
+    const px = b.minNx + (mid + 0.5) / COARSE_DEM_PX * w, py = b.maxNy - (mid + 0.5) / COARSE_DEM_PX * w
+    expect(sampleCoarseN(dem, px, py)).toBeGreaterThan(50)
+    expect(tileSurfaceN(relief, cx, cy, w, w, 3, px, py)).toBe(0)
   })
 })

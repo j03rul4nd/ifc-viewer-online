@@ -144,3 +144,28 @@ export function createReliefBoundsPlugin(): {
     },
   }
 }
+
+/**
+ * Height, normalized above the anchor plane, of the displaced tile surface at
+ * (nx, ny): exactly what displaceTileScene draws — the grid's vertices on the
+ * coarse DEM, linear across each of three's PlaneGeometry triangles (cells
+ * split along the bottom-left → top-right diagonal). `cx, cy` is the tile
+ * centre and `w, h` its size, normalized. For measuring the seam at the hole
+ * on the CPU (the library switches the tiles' raycast off).
+ */
+export function tileSurfaceN(
+  relief: TileRelief, cx: number, cy: number, w: number, h: number, segments: number, nx: number, ny: number,
+): number {
+  const z = (x: number, y: number) => (sampleCoarseN(relief.dem, x, y) - relief.anchorM) * relief.metresToN
+  // u east, v DOWN (three's PlaneGeometry builds rows from the top).
+  const fu = Math.min(segments, Math.max(0, ((nx - cx) / w + 0.5) * segments))
+  const fv = Math.min(segments, Math.max(0, (0.5 - (ny - cy) / h) * segments))
+  const i = Math.min(segments - 1, Math.floor(fu)), j = Math.min(segments - 1, Math.floor(fv))
+  const u = fu - i, v = fv - j
+  const X = (k: number) => cx - w / 2 + (k / segments) * w
+  const Y = (k: number) => cy + h / 2 - (k / segments) * h
+  const za = z(X(i), Y(j)), zb = z(X(i), Y(j + 1)), zc = z(X(i + 1), Y(j + 1)), zd = z(X(i + 1), Y(j))
+  return u + v <= 1
+    ? za + u * (zd - za) + v * (zb - za)
+    : zc + (1 - u) * (zb - zc) + (1 - v) * (zd - zc)
+}
