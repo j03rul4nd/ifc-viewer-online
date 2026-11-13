@@ -172,7 +172,7 @@ export interface ApiVersion { id: string; container: string; revision: number; f
 export interface ApiStandard { min_score: number; require_review: boolean; auto_issues: boolean; requirement_set_id: string | null }
 export interface ApiAuditEvent { type: string; actor_id: string | null; from: string | null; to: string | null; details: Record<string, unknown>; at: string }
 export interface ApiDelivery { id: string; file_name: string; file_hash?: string; size_bytes?: number; supplier_id?: string; requirement_set_id?: string; decided_at?: string | null; decided_by?: string | null; supplier: string; requirement_set: string; score: number | null; required_score: number; failed_specs: number | null; verdict: 'pending' | 'accepted' | 'rejected'; reason: string | null; received_at: string; sealed_at: string | null }
-export interface ApiSupplier { id: string; created_at?: string; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
+export interface ApiSupplier { id: string; created_at?: string; revoked_at?: string | null; name: string; discipline: string | null; deliveries: number; decided: number; firstTimeRate: number; avgScore: number | null; trend: number[] }
 export interface ApiCredits { plan: string; balances: { cloud: number; ai: number; api: number }; monthly: { cloud: number; ai: number; api: number } }
 export interface ApiRequirementVersion { version: number; note: string; created_by: string; created_at: string }
 export interface ApiRequirementSet { id: string; name: string; slug: string; min_score: number; content?: string }
@@ -250,6 +250,10 @@ export const paidApi = {
   requirementSets: () => get<{ requirement_sets: ApiRequirementSet[] }>('/reception/requirements'),
   createRequirementSet: (name: string, min_score: number, content: string) => send<{ requirement_set: ApiRequirementSet }>('POST', '/reception/requirements', { name, min_score, content }),
   updateRequirementSet: (id: string, patch: { name?: string; min_score?: number; content?: string }) => send<{ requirement_set: ApiRequirementSet }>('PATCH', `/reception/requirements/${id}`, patch),
+  /** New token, the old one dead at once (Owner/Admin/Editor with reception.manage). */
+  rotateSupplier: (id: string) => send<{ supplier: { id: string }; token: string }>('POST', `/reception/suppliers/${id}/rotate`),
+  /** The token is dead for good; past deliveries stay on the register. */
+  revokeSupplier: (id: string) => send<{ supplier: { id: string; revoked: true } }>('POST', `/reception/suppliers/${id}/revoke`),
   createSupplier: (name: string, discipline?: string) => send<{ supplier: { id: string; name: string }; token: string }>('POST', '/reception/suppliers', { name, ...(discipline ? { discipline } : {}) }),
 
   outbox: () => get<{ messages: ApiMail[] }>('/mail/outbox'),

@@ -143,6 +143,21 @@ export default function ReceptionWorkspace(_: SectionProps) {
       : rx('{{name}} invited with their own upload link. In this preview no e-mail is sent.', { name: s.name }))
   }
 
+  /** A leaked link: a new one, the old one dead at once. Leaving the project: the link is dead for good. */
+  async function supplierAccess(s: RxSupplier, action: 'rotate' | 'revoke') {
+    if (action === 'rotate') {
+      const r = await paidApi.rotateSupplier(s.id)
+      if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+      setOpen(null); reloadLive()
+      setNotice(rx('{{name}}: the old link stopped working. New upload link, shown only once: {{link}}', { name: s.name, link: supplierUploadUrl(window.location.origin, r.value.token, project.slug ?? '') }))
+      return
+    }
+    const r = await paidApi.revokeSupplier(s.id)
+    if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+    setOpen(null); reloadLive()
+    setNotice(rx('{{name}} can no longer deliver. Their past deliveries stay on the register.', { name: s.name }))
+  }
+
   async function saveProject(p: RxProject) {
     if (live) {
       const content = JSON.stringify({ project: p.code, profile: p.profile, profile_version: p.profileVersion, due_day: p.dueDay, due_hour: p.dueHour, client: p.client, place: p.place })
@@ -273,6 +288,7 @@ export default function ReceptionWorkspace(_: SectionProps) {
                 <p className="text-[11.5px] text-[var(--text-faint)]">{rx(s.discipline)} · <span className="font-mono">{s.originator}</span></p></>}
               columns={[
                 { key: 'state', header: rx('Status'), cell: ({ s, st }) => s.state === 'bounced' ? <span className="text-[12px] text-[var(--danger)]">{rx('E-mail bounced')}</span>
+                  : s.state === 'revoked' ? <span className="text-[12px] text-[var(--text-dim)]">{rx('Access revoked')}</span>
                   : s.state === 'invited' ? <span className="text-[12px] text-[var(--text-dim)]">{rx('Invited')}</span>
                   : st.daysLate > 0 ? <span className="text-[12px] text-[var(--warn)]">{rx('{{n}} days late', { n: st.daysLate })}</span>
                   : <span className="text-[12px] text-[var(--ok)]">{rx('On time')}</span> },
@@ -291,7 +307,7 @@ export default function ReceptionWorkspace(_: SectionProps) {
         : <Empty title={rx('No suppliers in this project yet')} body={rx('Invite one to see the page they get.')} />)}
 
       {openDelivery && <DeliveryReview key={openDelivery.id} deliveries={pDeliveries} queue={queue} project={project} delivery={openDelivery} supplier={suppliers.find((s) => s.id === openDelivery.supplierId)} entries={entriesFor(openDelivery)} rx={rx} lang={lang} onDecide={(d, dec) => void decide(d, dec)} onClose={() => setOpen(null)} />}
-      {openSupplier && <SupplierCard project={project} supplier={openSupplier} deliveries={pDeliveries} rx={rx} lang={lang} onOpenDelivery={(id) => setOpen({ kind: 'delivery', id })} onClose={() => setOpen(null)} />}
+      {openSupplier && <SupplierCard project={project} supplier={openSupplier} deliveries={pDeliveries} rx={rx} lang={lang} onAccess={live ? (a) => supplierAccess(openSupplier, a) : undefined} onOpenDelivery={(id) => setOpen({ kind: 'delivery', id })} onClose={() => setOpen(null)} />}
       {open?.kind === 'invite' && <InviteDialog project={project} taken={pSuppliers.map((s) => s.originator)} rx={rx} onInvite={(s) => void invite(s)} onClose={() => setOpen(null)} />}
       {open?.kind === 'report' && <ReportDialog project={project} suppliers={pSuppliers} deliveries={pDeliveries} rx={rx} lang={lang} onClose={() => setOpen(null)} />}
       {open?.kind === 'new-project' && <NewProjectDialog rx={rx} codes={projects.map((p) => p.code)} onCreate={(d) => void createProject(d)} onClose={() => setOpen(null)} />}

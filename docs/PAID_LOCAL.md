@@ -119,3 +119,25 @@ suppliers and deliveries (the register hash-chains the real file SHA-256 and the
 edits by role; clash statuses shared through `cloudSync` between two members (a late older copy never
 wins, a Viewer cannot write); an issue from a clash with both GlobalIds; the certificate logo set and
 removed only by Owner/Admin.
+
+Part 6 (`paid-local-6.integration.test.ts`, security): the seed adds a second company
+(`org_localrival`, `user_rivalowner`). Company B creates one of every paid object; company A lists,
+reads, changes and deletes each by id and gets nothing back and changes nothing. Also: an issue or
+automation can only be assigned to a member of the same company; supplier tokens rotate (old one dead at
+once) and revoke (deliveries stay); 40 wrong tokens from one address end in 429 (`SUPPLIER_LIMITER`,
+30/min — wrangler simulates it locally); client links expire, revoke and refuse a wrong token; webhook
+secrets are shown once and `file://`, metadata and `gopher://` URLs are refused; hostile file names
+(`../`, back-slashes, control characters, no `.ifc`) are a 400; every sensitive action lands in
+`/quality/audit`. The last test trips the per-address limit for a minute.
+
+## 5. Simulated pilot
+
+```bash
+PAID_LOCAL_PILOT=1 PILOT_OUT=pilot.json PAID_LOCAL_API=http://127.0.0.1:8787 RUNNER_TOKEN=<token> npx vitest run src/lib/cloud/pilot.integration.test.ts
+```
+
+A contractor (`org_localpilot`) opens a site, invites 5 suppliers; they deliver real public IFC files
+(Port de Barcelona library and the sample buildings) through the upload page's calls and a watched
+folder, good and bad (a renamed PDF, a file cut at 60 %, a double send, a misnamed file); the contractor
+accepts, returns, raises and resolves issues, shares 25 clash statuses and the mail queue fills. Every
+step is timed into `PILOT_OUT`. Results: docs-planning/32 «Piloto simulado».
