@@ -19,6 +19,8 @@ import type { ExtraMatcher, LocatedElement, MatchPair, MatcherContext } from './
 import { canonicalClass, type Vec3 } from './normalize'
 
 export const GEOMETRY_ACCEPT = 0.6
+/** Shape likeness (IoU once anchored) needed to judge a pair by its anchor instead of its centre. */
+export const ANCHOR_MIN_IOU = 0.75
 
 /** World AABB in the mesh frame, origin shift already removed. */
 export interface Box { min: Vec3; max: Vec3 }
@@ -62,6 +64,27 @@ export function iou(a: Box, b: Box): number {
   return i > 0 ? i / (volume(a) + volume(b) - i) : 0
 }
 
+/**
+ * Translation estimated between two boxes of the same piece whose shape may
+ * have changed: per axis, the delta of the side that stayed put (the smaller
+ * of min/max deltas). When both sides moved apart or together (grew or shrank
+ * around its middle), that axis did not move.
+ */
+export function anchoredMove(a: Box, b: Box): Vec3 {
+  const out: Vec3 = [0, 0, 0]
+  for (let k = 0; k < 3; k++) {
+    const dMin = b.min[k] - a.min[k], dMax = b.max[k] - a.max[k]
+    if (Math.sign(dMin) !== Math.sign(dMax) && Math.abs(dMin) > 1e-9 && Math.abs(dMax) > 1e-9) continue
+    out[k] = Math.abs(dMin) <= Math.abs(dMax) ? dMin : dMax
+  }
+  return out
+}
+
+/** IoU of the two boxes once `b` is moved back by `t`: how alike the shapes are. */
+function alignedIou(a: Box, b: Box, t: Vec3): number {
+  return iou(a, { min: [b.min[0] - t[0], b.min[1] - t[1], b.min[2] - t[2]], max: [b.max[0] - t[0], b.max[1] - t[1], b.max[2] - t[2]] })
+}
+
 /** Name, type, predefined type and every pset value, as one comparable set. */
 function propSignature(el: SnapElement): Set<string> {
   const out = new Set<string>()
@@ -98,8 +121,8 @@ class Grid {
   private cells = new Map<string, Item[]>()
   constructor(private size: number) {}
   private key(cls: string, i: number, j: number, k: number): string { return `${cls}|${i}|${j}|${k}` }
-  add(it: Item): void {
-    const [i, j, k] = it.c.map((v) => Math.floor(v / this.size))
+  add(it: Item, at: Vec3 = it.c): void {
+    const [i, j, k] = at.map((v) => Math.floor(v / this.size))
     const key = this.key(it.cls, i, j, k)
     const cell = this.cells.get(key)
     if (cell) cell.push(it); else this.cells.set(key, [it])
@@ -119,10 +142,32 @@ class Grid {
 export const matchByGeometry: ExtraMatcher = (unmatchedBase, unmatchedHead, ctx: MatcherContext): MatchPair[] => {
   const radius = ctx.options.matchRadius
   if (!(radius > 0) || !unmatchedBase.length || !unmatchedHead.length) return []
-  const bs = items(unmatchedBase, ctx.schema.base, null)
-  const hs = items(unmatchedHead, ctx.schema.head, ctx.originShift)
-  const grid = new Grid(radius)
-  for (const h of hs) grid.add(h)
+  let bs = items(unmatchedBase, ctx.schema.base, null)
+  let hs = items(unmatchedHead, ctx.schema.head, ctx.originShift)
+  const pairs: MatchPair[] = []
+
+  // Pre-pass: identical boxes (1 mm) of the same class pair off directly. Many
+  // coincident copies (a model federated twice, duplicated GlobalIds) would
+  // otherwise all land in one grid cell and make the candidate search quadratic.
+  const exactKey = (it: Item): string => `${it.cls}|${[...it.box.min, ...it.box.max].map((v) => Math.round(v * 1000)).join(',')}`
+  const byKey = new Map<string, Item[]>()
+  for (const h of hs) { const k = exactKey(h); const l = byKey.get(k); if (l) l.push(h); else byKey.set(k, [h]) }
+  const taken = new Set<Item>()
+  for (const b of bs) {
+    const l = byKey.get(exactKey(b))
+    const h = l?.pop()
+    if (!h) continue
+    taken.add(b); taken.add(h)
+    const score = 0.8 + 0.2 * jaccard(propSignature(b.l.el), propSignature(h.l.el))
+    pairs.push({ base: [b.l], head: [h.l], method: 'geometry', confidence: Math.round(score * 1000) / 1000 })
+  }
+  if (taken.size) { bs = bs.filter((x) => !taken.has(x)); hs = hs.filter((x) => !taken.has(x)) }
+
+  // Indexed by box centre and by box minimum (the anchor that stays put when
+  // a column gets longer or a wall taller): a piece moved and reshaped at once
+  // has its centre far off, its anchor close.
+  const grid = new Grid(radius), anchors = new Grid(radius)
+  for (const h of hs) { grid.add(h); anchors.add(h, h.box.min) }
 
   const sig = new Map<LocatedElement, Set<string>>()
   const sigOf = (l: LocatedElement): Set<string> => {
@@ -132,17 +177,29 @@ export const matchByGeometry: ExtraMatcher = (unmatchedBase, unmatchedHead, ctx:
   }
 
   const cands: Array<{ b: Item; h: Item; score: number }> = []
+  const seen = new Set<Item>()
   for (const b of bs) {
-    for (const h of grid.near(b.cls, b.c)) {
-      const d = Math.hypot(h.c[0] - b.c[0], h.c[1] - b.c[1], h.c[2] - b.c[2])
+    seen.clear()
+    for (const h of [...grid.near(b.cls, b.c), ...anchors.near(b.cls, b.box.min)]) {
+      if (seen.has(h)) continue
+      seen.add(h)
+      const dc = Math.hypot(h.c[0] - b.c[0], h.c[1] - b.c[1], h.c[2] - b.c[2])
+      const t = anchoredMove(b.box, h.box)
+      const da = Math.hypot(t[0], t[1], t[2])
+      const raw = iou(b.box, h.box)
+      // Anchor on anchor, a moved-and-reshaped piece (a column 25 % longer)
+      // still looks like itself; a piece cut in half does not (that is layer 4).
+      const aligned = da < dc ? alignedIou(b.box, h.box, t) : 0
+      const anchored = aligned >= ANCHOR_MIN_IOU
+      const d = anchored ? Math.min(dc, da) : dc
       if (d > radius) continue
-      const score = 0.5 * iou(b.box, h.box) + 0.3 * (1 - d / radius) + 0.2 * jaccard(sigOf(b.l), sigOf(h.l))
+      const shape = anchored ? Math.max(raw, aligned) : raw
+      const score = 0.5 * shape + 0.3 * (1 - d / radius) + 0.2 * jaccard(sigOf(b.l), sigOf(h.l))
       if (score >= GEOMETRY_ACCEPT) cands.push({ b, h, score })
     }
   }
   cands.sort((x, y) => y.score - x.score)
   const used = new Set<Item>()
-  const pairs: MatchPair[] = []
   for (const { b, h, score } of cands) {
     if (used.has(b) || used.has(h)) continue
     used.add(b); used.add(h)

@@ -210,3 +210,54 @@ describe('layers 3–4 scale', () => {
     expect(ms).toBeLessThan(10000) // 5 s target; headroom for a loaded full-suite run
   })
 })
+
+describe('moved and reshaped at once (A1, A3 — verification defects #5, #7)', () => {
+  for (const id of ['A1', 'A3']) {
+    it(`${id}: one reshaped change whose kinds include moved, with an estimated vector`, async () => {
+      const { a, b, exp } = await load(id)
+      const d = diffRevisions([a], [b])
+      expect(d.byKind.added + d.byKind.removed).toBe(0)
+      expect(d.changes).toHaveLength(1)
+      const c = d.changes[0], e = exp.changes[0]
+      expect(c.match).toMatchObject({ method: e.method, baseGlobalIds: [e.globalIdA], headGlobalIds: [e.globalIdB] })
+      expect(c.kind).toBe('reshaped')
+      expect(c.kinds).toContain('moved')
+      expect(c.delta?.direction).toBe('E')
+      expect(c.delta?.moveDistance).toBeCloseTo(exp.alsoMoved, 3)
+      expect(c.delta?.sizeBefore).toBeDefined()
+    })
+  }
+
+  it('growing around its middle is not a move', () => {
+    const base = col('A', [0, 0, 0])
+    const head = col('A', [0, 0, 0], { geo: { h: 'x', c: [0, 0, 0], m: [-0.25, 0, -0.25], s: [0.5, 3, 0.5], v: 0.75 } })
+    const c = diffRevisions([snap('S.ifc', [base])], [snap('S.ifc', [head])]).changes[0]
+    expect(c.kinds).toEqual(['reshaped'])
+  })
+})
+
+describe('a geometry-matched move carries a full delta for the before/after table (#12)', () => {
+  it('F9: move vector, distance, direction and sizes', async () => {
+    const { a, b } = await load('F9')
+    const c = diffRevisions([a], [b]).changes.find((x) => x.kind === 'moved')!
+    expect(c.match.method).toBe('geometry')
+    expect(c.delta?.move?.[0]).toBeCloseTo(0.12, 3)
+    expect(c.delta?.moveDistance).toBeCloseTo(0.12, 3)
+    expect(c.delta?.direction).toBe('E')
+    expect(c.delta?.sizeBefore).toEqual(c.delta?.sizeAfter)
+    expect(c.delta?.volumeBefore).toBeDefined()
+  })
+})
+
+describe('coincident copies do not make layers 3–4 quadratic (#6)', () => {
+  it('5 coincident copies of 10 000 elements, duplicated GlobalIds, well under 5 s', () => {
+    const n = 10000, copies = 5
+    const at = (i: number): [number, number, number] => [(i % 100) * 1.2, 0, -Math.floor(i / 100) * 1.2]
+    const mk = (): SnapElement[] => Array.from({ length: copies * n }, (_, j) => col(`G${j % n}`, at(j % n)))
+    const t = performance.now()
+    const d = diffRevisions([snap('S.ifc', mk())], [snap('S.ifc', mk())])
+    const ms = performance.now() - t
+    expect(d.byKind.added + d.byKind.removed).toBe(0)
+    expect(ms).toBeLessThan(10000) // seconds before; target < 5 s, headroom for a loaded run
+  })
+})
