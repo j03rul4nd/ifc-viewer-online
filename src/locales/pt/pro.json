@@ -336,5 +336,108 @@
     "cancel": "Cancelar a chamada",
     "footer": "Prefere escrever-me?",
     "eventTitle": "Chamada com o Joel (IFC Viewer Online)"
+  },
+  "dash": {
+    "title": "Sua conta",
+    "signedInAs": "Conectado como {{email}}",
+    "openViewer": "Abrir o visualizador",
+    "admin": "Console de administração",
+    "navAria": "Conta",
+    "tabsAria": "Seções da conta",
+    "loading": "Carregando sua conta…",
+    "pastDueCta": "Atualizar o pagamento",
+    "tabs": {
+      "overview": "Visão geral",
+      "settings": "Configurações"
+    },
+    "anon": {
+      "title": "Sua conta do IFC Viewer Online",
+      "body": "Entre para guardar seus certificados verificáveis, ter seus perfis de regras em todos os dispositivos e receber resposta ao que você pedir.",
+      "cta": "Entrar",
+      "continue": "Continuar sem conta",
+      "p1": "Histórico de certificados para compartilhar com seu cliente",
+      "p2": "Perfis de regras em todos os seus dispositivos",
+      "p3": "Pedidos com resposta de quem desenvolve a ferramenta",
+      "free": "O visualizador e o validador continuam gratuitos e sem conta."
+    },
+    "start": {
+      "title": "Primeiros passos",
+      "sub": "Três passos até seu primeiro certificado verificável.",
+      "s1t": "Abra um IFC ou carregue o modelo de demonstração",
+      "s1d": "Funciona no navegador: o arquivo nunca sai do seu computador.",
+      "s2t": "Valide e veja o Health Score",
+      "s2d": "44 regras e IDS, com um guia para corrigir cada erro.",
+      "s3t": "Emita um certificado verificável",
+      "s3d": "Pela janela de exportação, conectado. Ele aparecerá aqui.",
+      "cta": "Abrir o visualizador",
+      "private": "Grátis, sem upload, sem cartão."
+    },
+    "cont": {
+      "title": "Continuar",
+      "last": "Último certificado",
+      "issued": "Emitido em {{date}}",
+      "view": "Ver certificado",
+      "validate": "Validar outro modelo",
+      "recent": "Certificados anteriores",
+      "viewAria": "Ver o certificado com nota {{score}} de {{date}}"
+    },
+    "plan": {
+      "title": "Planos",
+      "sub": "O que você mantém de graça e o que Pro e Team acrescentam.",
+      "current": "Seu plano",
+      "soon": "Em breve",
+      "freeNote": "Para sempre, nada é retirado",
+      "free1": "Visualizador, medição, corte e vários modelos",
+      "free2": "Health Score, verificação de regras e IDS",
+      "free3": "Relatório de entrega e BCF",
+      "free4": "Os arquivos não saem do seu navegador",
+      "perMonth": "{{amount}} / mês",
+      "proNote": "Pagamento anual · {{amount}} mês a mês",
+      "pro1": "Certificados verificáveis com seu logo",
+      "pro2": "Histórico de certificados na sua conta",
+      "pro3": "Projetos com cada versão e sua nota",
+      "pro4": "Link para o cliente com senha e validade",
+      "pro5": "Arquivos de até 1 GB processados em servidores na UE",
+      "perEditor": "{{amount}} / editor / mês",
+      "teamNote": "Pagamento anual · {{amount}} mês a mês · a partir de {{min}} editores · revisores e convidados grátis",
+      "team1": "Tudo do Pro para cada editor",
+      "team2": "Ocorrências BCF compartilhadas com responsável e prazo",
+      "team3": "Verificação automática a cada envio com as regras da sua empresa",
+      "team4": "Padrão da empresa compartilhado entre projetos",
+      "cta": "Mudar para Pro",
+      "compare": "Comparar todos os planos",
+      "forTeams": "Planos para equipes",
+      "call": "Conversar 15 minutos",
+      "waitlist": "O pagamento abre em breve. Vou levar você à lista de espera, sem compromisso."
+    },
+    "fb": {
+      "title": "O que mais ajudaria você?",
+      "body": "Com um toque você me diz o que construir depois. Leio e respondo cada resposta.",
+      "cta": "Contar"
+    },
+    "team": {
+      "title": "Sua equipe",
+      "body": "Adicione ou remova editores e baixe faturas no portal de cobrança. Revisores e convidados são grátis.",
+      "cta": "Gerenciar assentos",
+      "upsell": "Vocês são {{min}} pessoas ou mais? O Team adiciona ocorrências BCF compartilhadas e uma verificação a cada envio.",
+      "upsellCta": "Ver Team"
+    },
+    "billing": {
+      "title": "Cobrança",
+      "body": "Cartão, faturas e mudanças de plano, no portal de pagamento seguro.",
+      "cta": "Gerenciar cobrança"
+    },
+    "locked": {
+      "logoTitle": "Seu logo em cada certificado",
+      "logoBody": "Seu cliente verifica um certificado com o logo do seu escritório no cabeçalho, na tela e impresso. Incluído no Pro.",
+      "apiTitle": "API de validação hospedada",
+      "apiBody": "Valide a partir dos seus scripts ou CI com chaves de API: 500 verificações por mês no Pro, em breve.",
+      "cta": "Ver Pro"
+    },
+    "settings": {
+      "later": "Disponível assim que o armazenamento em nuvem do seu plano abrir.",
+      "logoAlt": "Seu logo atual",
+      "profileTitle": "Perfil e login"
+    }
   }
 }

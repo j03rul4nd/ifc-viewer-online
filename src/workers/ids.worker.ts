@@ -132,7 +132,7 @@ async function runCheck(msg: IdsCheckMsg): Promise<void> {
     }
 
     const result = summarizeResults(doc.title, specs, modelSchema)
-    post({ type: 'result', id, result: { ...result, unreadableEntities: unreadable } })
+    post({ type: 'result', id, result: { ...result, unreadableEntities: unreadable }, ...(msg.options?.returnElements ? { elements: elements as unknown as Record<string, unknown>[] } : {}) })
   } catch (err) {
     if (err instanceof CancelledError) {
       post({ type: 'error', id, code: 'cancelled', message: 'Check cancelled' })

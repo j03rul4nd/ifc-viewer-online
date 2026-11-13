@@ -378,9 +378,6 @@
     "solibri": "Alternativa a Solibri"
   },
   "sdk": {
-    "label": "SDK · INTEGRAZIONI",
-    "title": "Integra il viewer nel tuo CDE o strumenti interni",
-    "body": "Inserisci lo stesso viewer del browser nel tuo CDE, digital twin o strumenti interni di progetto. Carica dati IFC direttamente dalla tua applicazione mentre l'elaborazione del modello resta nel client.",
     "b1": "Nessun backend di caricamento",
     "b2": "Funziona direttamente nel browser",
     "b3": "Pronto per IFC, BCF e IDS",

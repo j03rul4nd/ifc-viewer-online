@@ -15,7 +15,7 @@ import { generateLangShells } from '../../../scripts/seo/generate-lang-shells'
 
 const ROOT = path.resolve(__dirname, '..', '..', '..')
 const read = (p: string) => readFileSync(path.join(ROOT, p), 'utf8')
-const SOURCES = ['src/components/Landing.tsx', 'src/components/landing/ProfilePaths.tsx', 'src/components/landing/HomeShowcase.tsx', 'src/components/landing/HomeGuide.tsx'].map((p) => [p, read(p)] as const)
+const SOURCES = ['src/components/Landing.tsx', 'src/components/landing/ProfilePaths.tsx', 'src/components/landing/HomeShowcase.tsx', 'src/components/landing/HomeGuide.tsx', 'src/components/landing/IntegrationsHub.tsx'].map((p) => [p, read(p)] as const)
 
 describe('home page design', () => {
   it('uses no animated background or text-effect components', () => {
@@ -60,13 +60,23 @@ const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((
 
 describe('home page contrast', () => {
   const css = read('src/index.css')
-  const dark = tokens(css.slice(css.indexOf(':root {'), css.indexOf('}', css.indexOf(':root {'))))
+  // The dark theme is split in two blocks since the theme refactor: semantic
+  // hex values under `:root, [data-theme="dark"]` and short aliases such as
+  // `--surface: var(--bg-surface)` under `:root {`. Resolve the aliases.
+  const block = (start: string) => css.slice(css.indexOf(start), css.indexOf('}', css.indexOf(start)))
+  const semantic = tokens(block('[data-theme="dark"] {'))
+  const aliases = block(':root {')
+  const dark: Record<string, string> = { ...semantic, ...tokens(aliases) }
+  for (const m of aliases.matchAll(/--([\w-]+):\s*var\(--([\w-]+)\)/g)) if (semantic[m[2]]) dark[m[1]] = semantic[m[2]]
   const light = { ...dark, ...tokens(css.slice(css.indexOf('.lp-light {'), css.indexOf('}', css.indexOf('.lp-light {')))) }
 
   for (const [name, t] of [['dark', dark], ['light', light]] as const) {
     it(`${name}: text tokens clear 4.5:1 on bg and surface`, () => {
       for (const fg of ['text', 'text-dim', 'text-faint', 'accent-2'])
         for (const bg of ['bg', 'surface']) expect(ratio(t[fg], t[bg]), `${name} ${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+    })
+    it(`${name}: code-snippet strings clear 4.5:1 on surface`, () => {
+      expect(ratio(t['code-string'], t.surface), `${name} code-string`).toBeGreaterThanOrEqual(4.5)
     })
     it(`${name}: white on the accent button clears 4.5:1`, () => {
       expect(ratio('#FFFFFF', t.accent)).toBeGreaterThanOrEqual(4.5)

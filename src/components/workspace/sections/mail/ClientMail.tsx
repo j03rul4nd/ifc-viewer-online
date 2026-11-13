@@ -18,7 +18,26 @@ import { mxFor, useMx } from './strings'
 import { ANSWERS, SEGMENTS } from './sample'
 import { DomainWizard, Gate, PlanBar, PortalTab, SendTab, Thread } from './ClientMailV2'
 import { CAPS, PHASE_TEMPLATES, phaseTemplate, senderFor } from './v2'
-import type { MailPlan } from './model'
+import type { MailAdapter, MailPlan } from './model'
+import { usePaidDataSource } from '../../../../hooks/usePaidQuery'
+import { paidApi } from '../../../../lib/cloud/paid-client'
+import ContactsLive from './ContactsLive'
+
+/**
+ * Local / cloud workspace: an approved message is QUEUED in the workspace's
+ * outbox (kept, never sent from here). One key per message and recipient, so
+ * approving twice or retrying after a network error queues it once.
+ */
+export function outboxAdapter(messageId: string, kind: 'delivery_accepted' | 'other' = 'other'): MailAdapter {
+  return {
+    id: 'outbox',
+    async send(e) {
+      const r = await paidApi.queueMail({ to: e.to.replace(/^.*<|>.*$/g, ''), subject: e.subject, body: e.text, kind, ref_type: undefined }, `mail:${messageId}:${e.to}`.slice(0, 100))
+      if (!r.ok) throw new Error(r.error.code)
+      return { id: r.value.message.id }
+    },
+  }
+}
 
 export const TAB_LABELS = ['Approval', 'Clients', 'Templates', 'Automations', 'History', 'Results', 'Departments', 'Send', 'Client page'] as const
 const TABS = [
@@ -66,6 +85,7 @@ const UNSUB = 'https://ifcvieweronline.eu/u/unsubscribe'
 
 export default function ClientMail({ data }: SectionProps) {
   const { mx, lang } = useMx()
+  const source = usePaidDataSource()
   const [plan, setPlan] = useState<MailPlan>(data?.account?.plan === 'pro' ? 'pro' : 'team')
   const L = loc(mx)
   const [tab, setTab] = useSubTab<TabId>('mail', TABS)
@@ -94,9 +114,17 @@ export default function ClientMail({ data }: SectionProps) {
   const onDecide = async (m: Outgoing, verdict: 'approve' | 'reject', note?: string, when?: string) => {
     let next = decide(m, verdict, 'Marta Ferrer', note, when)
     if (next.status === 'approved') {
-      const r = await sendMessage(next, contacts, (c) => envelopeFor(build(next, c), c.email), dryRunAdapter(log), NOW)
-      next = r.message
-      setNotice(mx('Preview only: {{n}} emails were built and nothing was sent.', { n: r.sent }))
+      const queued = source !== 'sample'
+      try {
+        const r = await sendMessage(next, contacts, (c) => envelopeFor(build(next, c), c.email), queued ? outboxAdapter(next.id) : dryRunAdapter(log), NOW)
+        next = r.message
+        setNotice(queued
+          ? mx('{{n}} emails were queued in the workspace outbox. Nothing is sent until sending is switched on.', { n: r.sent })
+          : mx('Preview only: {{n}} emails were built and nothing was sent.', { n: r.sent }))
+      } catch {
+        setNotice(mx('The outbox could not be reached. Nothing was queued; try again.'))
+        return
+      }
     }
     setQueue((q) => q.map((x) => (x.id === m.id ? next : x)))
   }
@@ -129,7 +157,8 @@ export default function ClientMail({ data }: SectionProps) {
       <Tabs label={mx('Client updates')} tabs={TABS.map((t) => ({ ...t, label: mx(t.label), count: t.id === 'approval' ? awaiting.length : undefined }))} value={tab} onChange={setTab} />
 
       {tab === 'approval' && <ApprovalTab mx={mx} lang={lang} queue={queue} contacts={contacts} templates={templates} build={build} onDecide={onDecide} cause={L.cause} />}
-      {tab === 'clients' && <ClientsTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} depts={depts} queue={queue} replies={replies} templates={templates}
+      {tab === 'clients' && source !== 'sample' && <ContactsLive mx={mx} />}
+      {tab === 'clients' && source === 'sample' && <ClientsTab mx={mx} lang={lang} contacts={contacts.filter((c) => c.projectId === projectId)} depts={depts} queue={queue} replies={replies} templates={templates}
         update={(c) => setContacts((all) => all.map((x) => (x.id === c.id ? c : x)))} add={(c) => setContacts((all) => [...all, c])} projectId={projectId} />}
       {tab === 'templates' && <TemplatesTab mx={mx} templates={templates} setTemplates={setTemplates} depts={depts} project={project} />}
       {tab === 'send' && <SendTab mx={mx} plan={plan} project={project} contacts={contacts.filter((c) => c.projectId === projectId)} templates={templates}

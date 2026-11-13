@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   planDetailLevels, detailFrames, detailRectUv, detailTexelN, detailBudget,
-  DETAIL_MAX_ZOOM, DETAIL_DATA_MAX_Z,
+  DETAIL_MAX_ZOOM, DETAIL_DATA_MAX_Z, MIN_STREET_NAME_ANGLE_RAD,
 } from './terrain-detail'
 
 // A z15 3×3 patch around Plaça de Catalunya, as the app builds it.
@@ -116,5 +116,20 @@ describe('detailRectUv', () => {
     expect(r.v).toBeCloseTo(0.75, 9)
     // (uv − centre) × scale = ±1 at the square's edge.
     expect(0.1 * r.scale).toBeCloseTo(1, 9)
+  })
+})
+
+describe('street names on the ground (WP5)', () => {
+  it('leaves them out of the innermost square when the ground is seen at under 20°', () => {
+    const deg = (d: number) => (d * Math.PI) / 180
+    expect(MIN_STREET_NAME_ANGLE_RAD).toBeCloseTo(deg(20), 12)
+    const low = plan(baseTexelN / 8, { viewAngleRad: deg(15) })
+    const high = plan(baseTexelN / 8, { viewAngleRad: deg(30) })
+    expect(low.some((l) => l.labels)).toBe(false)
+    expect(high[0].labels).toBe(true)
+    // Different pixels, different identity: the square is repainted.
+    expect(low[0].key).not.toBe(high[0].key)
+    // Unknown angle keeps the old behaviour.
+    expect(plan(baseTexelN / 8)[0].labels).toBe(true)
   })
 })

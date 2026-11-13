@@ -86,3 +86,9 @@ export const Trash = (p: IconProps) => <Icon {...p}><path d="M4 7h16M10 7V5a1 1 
 export const Plus = (p: IconProps) => <Icon {...p} d="M12 5v14M5 12h14" />
 export const Transition = (p: IconProps) => <Icon {...p}><rect x="2.5" y="5" width="8" height="14" rx="1.5" /><rect x="13.5" y="5" width="8" height="14" rx="1.5" /><path d="M10.5 12h3" /></Icon>
 export const Sliders = (p: IconProps) => <Icon {...p}><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h8M16 18h4" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="14" cy="18" r="2" /></Icon>
+
+// Integration glyphs on the home page (generic shapes, never vendor logos).
+export const Terminal = (p: IconProps) => <Icon {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9l3 3-3 3M12 15h5" /></Icon>
+export const ShoppingBag = (p: IconProps) => <Icon {...p}><path d="M5 8h14l-1 12H6L5 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></Icon>
+export const Folder = (p: IconProps) => <Icon {...p} d="M3 6a1 1 0 011-1h5l2 2h9a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V6z" />
+export const GitBranch = (p: IconProps) => <Icon {...p}><circle cx="6" cy="5" r="2" /><circle cx="6" cy="19" r="2" /><circle cx="18" cy="7" r="2" /><path d="M6 7v10M18 9c0 5-12 3-12 8" /></Icon>

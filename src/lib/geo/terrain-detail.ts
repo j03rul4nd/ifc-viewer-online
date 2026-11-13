@@ -46,6 +46,13 @@ const SNAP_FRACTION = 4
  * zoom level = a texel of at most 1.23 device px where the camera looks.
  */
 const ZOOM_SLACK = 0.3
+/**
+ * Street names are painted into the ground, so they lie in perspective. Seen
+ * at less than this angle above the ground they are smeared slivers that
+ * read as noise, not names: below it the innermost square is painted without
+ * them (WP5, docs/GIS_MAP_MODE.md "Names, second pass").
+ */
+export const MIN_STREET_NAME_ANGLE_RAD = (20 * Math.PI) / 180
 
 /** Normalized mercator units (world = 1) per texel at a style zoom. */
 export function detailTexelN(z: number): number {
@@ -79,6 +86,8 @@ export interface DetailPlanInput {
   size: number
   /** Most squares alive at once. */
   maxLevels: number
+  /** Angle between the view ray at the focus and the ground, radians. Unknown = names on. */
+  viewAngleRad?: number
 }
 
 /**
@@ -101,10 +110,15 @@ export function planDetailLevels(i: DetailPlanInput): DetailLevel[] {
     const step = (half * 2) / SNAP_FRACTION
     const ix = Math.round(focus.nx / step)
     const iy = Math.round(focus.ny / step)
-    const labels = z === z0
+    const labels = z === z0 && streetNamesReadable(i.viewAngleRad)
     out.push({ z, cx: ix * step, cy: iy * step, half, labels, key: `${z}/${ix}/${iy}${labels ? '/n' : ''}` })
   }
   return out
+}
+
+/** Whether street names painted on the ground read at this view angle. */
+export function streetNamesReadable(viewAngleRad: number | undefined): boolean {
+  return viewAngleRad === undefined || !(viewAngleRad < MIN_STREET_NAME_ANGLE_RAD)
 }
 
 export interface DetailFrame {
