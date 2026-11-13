@@ -673,6 +673,26 @@ kbd {
 }
 
 /* ── B2B Light mode (landing + blog only) ───────────────────────────────────── */
+/* Dark landing inside a light app. The home keeps its own theme (lp-theme),
+   separate from the viewer's (ifc-theme → <html data-theme>). With the viewer
+   in light — the default for anyone whose system is light — the dark landing
+   inherited the light tokens and the toggle changed nothing. The wrapper gets
+   data-theme="dark" (the dark token values) and this class re-derives the
+   short aliases, which :root resolved against <html>'s theme. */
+.lp-dark {
+  --bg: var(--bg-app);
+  --surface: var(--bg-surface);
+  --surface-2: var(--bg-surface-raised);
+  --border: var(--border-subtle);
+  --text: var(--text-primary);
+  --text-dim: var(--text-secondary);
+  --text-faint: var(--text-tertiary);
+  --accent-2: var(--accent-strong);
+  --warn: var(--warning);
+  --ok: var(--success);
+  color: var(--text);
+}
+
 /* Applied via .lp-light wrapper — never touches the IFC viewer.                */
 
 /* Every token that carries TEXT clears WCAG AA (4.5:1) on both --bg and
