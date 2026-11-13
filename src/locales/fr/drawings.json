@@ -170,7 +170,36 @@
       "need": "Ouvrez deux feuilles à comparer.",
       "before": "Avant",
       "after": "Après",
-      "run": "Comparer"
+      "run": "Comparer",
+      "pdfTitle": "Comparer deux révisions PDF",
+      "pdfBlurb": "Ancien et nouveau jeu, à toute échelle ou position. Les feuilles sont appariées par numéro ; le cartouche est exclu.",
+      "oldPdf": "Ancienne révision (PDF)",
+      "newPdf": "Nouvelle révision (PDF)",
+      "pages_one": "{{count}} page",
+      "pages_other": "{{count}} pages",
+      "pdfError": "Impossible de lire ce PDF.",
+      "pdfDone": "{{clouds}} nuages de révision sur {{sheets}} feuilles en {{seconds}} s.",
+      "overlayName": "Modifications {{sheet}}",
+      "results": "Feuilles comparées",
+      "clouds_one": "{{count}} nuage",
+      "clouds_other": "{{count}} nuages",
+      "aligned": "{{method}}, échelle ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Nuage {{id}} : +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} zone changeait sur toutes les feuilles et a été exclue",
+      "autoExcluded_other": "{{count}} zones changeaient sur toutes les feuilles et ont été exclues",
+      "exportPdf": "Télécharger la nouvelle révision avec nuages (PDF)",
+      "cloudLayer": "Nuages de révision",
+      "status": {
+        "notVector": "Non vectoriel (scan) : non comparé",
+        "onlyA": "Seulement dans l'ancien jeu",
+        "onlyB": "Seulement dans le nouveau jeu",
+        "noAlignment": "Alignement impossible"
+      },
+      "method": {
+        "frame": "cadre",
+        "ransac": "dessin",
+        "identity": "aucun"
+      }
     },
     "beyond": "Afficher au-delà de la coupe (m)",
     "poche": "Remplir murs et structure coupés",

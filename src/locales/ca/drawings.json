@@ -170,7 +170,36 @@
       "need": "Obre dos fulls per comparar.",
       "before": "Abans",
       "after": "Després",
-      "run": "Compara"
+      "run": "Compara",
+      "pdfTitle": "Comparar dues revisions en PDF",
+      "pdfBlurb": "Joc antic i nou, a qualsevol escala o posició. Els fulls s'aparellen per número; el caixetí s'exclou.",
+      "oldPdf": "Revisió antiga (PDF)",
+      "newPdf": "Revisió nova (PDF)",
+      "pages_one": "{{count}} pàgina",
+      "pages_other": "{{count}} pàgines",
+      "pdfError": "No s'ha pogut llegir aquest PDF.",
+      "pdfDone": "{{clouds}} núvols de revisió en {{sheets}} fulls en {{seconds}} s.",
+      "overlayName": "Canvis {{sheet}}",
+      "results": "Fulls comparats",
+      "clouds_one": "{{count}} núvol",
+      "clouds_other": "{{count}} núvols",
+      "aligned": "{{method}}, escala ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Núvol {{id}}: +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} zona canviava a tots els fulls i s'ha exclòs",
+      "autoExcluded_other": "{{count}} zones canviaven a tots els fulls i s'han exclòs",
+      "exportPdf": "Baixar la revisió nova amb núvols (PDF)",
+      "cloudLayer": "Núvols de revisió",
+      "status": {
+        "notVector": "No vectorial (escanejat): sense comparar",
+        "onlyA": "Només al joc antic",
+        "onlyB": "Només al joc nou",
+        "noAlignment": "No s'ha pogut alinear"
+      },
+      "method": {
+        "frame": "marc",
+        "ransac": "dibuix",
+        "identity": "cap"
+      }
     },
     "beyond": "Mostra darrere el tall (m)",
     "poche": "Omple murs i estructura tallats",

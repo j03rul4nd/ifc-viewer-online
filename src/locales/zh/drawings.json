@@ -170,7 +170,36 @@
       "need": "请打开两张图纸进行比较。",
       "before": "之前",
       "after": "之后",
-      "run": "比较"
+      "run": "比较",
+      "pdfTitle": "比较两个 PDF 修订版",
+      "pdfBlurb": "旧版与新版，任意比例或位置。图纸按图号配对；图签不参与比较。",
+      "oldPdf": "旧修订版 (PDF)",
+      "newPdf": "新修订版 (PDF)",
+      "pages_one": "{{count}} 页",
+      "pages_other": "{{count}} 页",
+      "pdfError": "无法读取该 PDF。",
+      "pdfDone": "{{sheets}} 张图纸上有 {{clouds}} 个修订云线，用时 {{seconds}} 秒。",
+      "overlayName": "变更 {{sheet}}",
+      "results": "已比较的图纸",
+      "clouds_one": "{{count}} 个云线",
+      "clouds_other": "{{count}} 个云线",
+      "aligned": "{{method}}，比例 ×{{scale}}，RMS {{rms}} mm",
+      "cloudLine": "云线 {{id}}：+{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} 个区域在每张图纸上都变化，已排除",
+      "autoExcluded_other": "{{count}} 个区域在每张图纸上都变化，已排除",
+      "exportPdf": "下载带云线的新修订版 (PDF)",
+      "cloudLayer": "修订云线",
+      "status": {
+        "notVector": "非矢量（扫描件）：未比较",
+        "onlyA": "仅在旧版中",
+        "onlyB": "仅在新版中",
+        "noAlignment": "无法对齐"
+      },
+      "method": {
+        "frame": "图框",
+        "ransac": "图形",
+        "identity": "无"
+      }
     },
     "beyond": "显示剖切面之外(米)",
     "poche": "填充被剖切的墙和结构",

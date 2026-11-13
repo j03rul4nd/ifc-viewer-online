@@ -170,7 +170,36 @@
       "need": "Apri due fogli da confrontare.",
       "before": "Prima",
       "after": "Dopo",
-      "run": "Confronta"
+      "run": "Confronta",
+      "pdfTitle": "Confronta due revisioni PDF",
+      "pdfBlurb": "Set vecchio e nuovo, a qualsiasi scala o posizione. Le tavole si abbinano per numero; il cartiglio è escluso.",
+      "oldPdf": "Revisione vecchia (PDF)",
+      "newPdf": "Revisione nuova (PDF)",
+      "pages_one": "{{count}} pagina",
+      "pages_other": "{{count}} pagine",
+      "pdfError": "Impossibile leggere questo PDF.",
+      "pdfDone": "{{clouds}} nuvole di revisione su {{sheets}} tavole in {{seconds}} s.",
+      "overlayName": "Modifiche {{sheet}}",
+      "results": "Tavole confrontate",
+      "clouds_one": "{{count}} nuvola",
+      "clouds_other": "{{count}} nuvole",
+      "aligned": "{{method}}, scala ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Nuvola {{id}}: +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} zona cambiava in tutte le tavole ed è stata esclusa",
+      "autoExcluded_other": "{{count}} zone cambiavano in tutte le tavole e sono state escluse",
+      "exportPdf": "Scarica la nuova revisione con le nuvole (PDF)",
+      "cloudLayer": "Nuvole di revisione",
+      "status": {
+        "notVector": "Non vettoriale (scansione): non confrontata",
+        "onlyA": "Solo nel set vecchio",
+        "onlyB": "Solo nel set nuovo",
+        "noAlignment": "Allineamento impossibile"
+      },
+      "method": {
+        "frame": "cornice",
+        "ransac": "disegno",
+        "identity": "nessuno"
+      }
     },
     "beyond": "Mostra oltre il taglio (m)",
     "poche": "Riempi muri e struttura tagliati",

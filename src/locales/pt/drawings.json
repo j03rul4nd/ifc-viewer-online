@@ -170,7 +170,36 @@
       "need": "Abra duas folhas para comparar.",
       "before": "Antes",
       "after": "Depois",
-      "run": "Comparar"
+      "run": "Comparar",
+      "pdfTitle": "Comparar duas revisões em PDF",
+      "pdfBlurb": "Conjunto antigo e novo, em qualquer escala ou posição. As folhas emparelham-se pelo número; a legenda fica de fora.",
+      "oldPdf": "Revisão antiga (PDF)",
+      "newPdf": "Revisão nova (PDF)",
+      "pages_one": "{{count}} página",
+      "pages_other": "{{count}} páginas",
+      "pdfError": "Não foi possível ler esse PDF.",
+      "pdfDone": "{{clouds}} nuvens de revisão em {{sheets}} folhas em {{seconds}} s.",
+      "overlayName": "Alterações {{sheet}}",
+      "results": "Folhas comparadas",
+      "clouds_one": "{{count}} nuvem",
+      "clouds_other": "{{count}} nuvens",
+      "aligned": "{{method}}, escala ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Nuvem {{id}}: +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} zona mudava em todas as folhas e foi excluída",
+      "autoExcluded_other": "{{count}} zonas mudavam em todas as folhas e foram excluídas",
+      "exportPdf": "Transferir a revisão nova com nuvens (PDF)",
+      "cloudLayer": "Nuvens de revisão",
+      "status": {
+        "notVector": "Não vetorial (digitalizado): não comparado",
+        "onlyA": "Só no conjunto antigo",
+        "onlyB": "Só no conjunto novo",
+        "noAlignment": "Não foi possível alinhar"
+      },
+      "method": {
+        "frame": "moldura",
+        "ransac": "desenho",
+        "identity": "nenhum"
+      }
     },
     "beyond": "Mostrar além do corte (m)",
     "poche": "Preencher paredes e estrutura cortadas",
