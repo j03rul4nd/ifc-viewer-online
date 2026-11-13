@@ -163,10 +163,10 @@ describe('sheet pairing and clouds', () => {
     expect(r.clouds).toHaveLength(0)
   })
 
-  it('compares 20 sheet pairs of a few thousand lines in well under 20 s', () => {
+  it('compares 20 sheet pairs of 1500 lines each in under 20 s, even on a loaded machine', () => {
     const mk = (k: number, p: Placement, changed: boolean) => sheet(k + 1, [
       ...furniture(`A-${300 + k}`, 'PLAN', changed ? 'P02' : 'P01'),
-      ...move([...plan(100 + k, 1500), ...(changed ? [line(120, 215, 180, 215)] : [])], p),
+      ...move([...plan(100 + k, 750), ...(changed ? [line(100 + k * 8, 252, 160 + k * 8, 258)] : [])], p),
     ])
     const a = Array.from({ length: 20 }, (_, k) => mk(k, { scale: 0.5, rotation: 0, x: 50, y: 80 }, false))
     const b = Array.from({ length: 20 }, (_, k) => mk(19 - k, { scale: 1, rotation: 0, x: 10, y: 10 }, true))

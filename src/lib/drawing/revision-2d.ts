@@ -62,14 +62,19 @@ export interface CompareOptions {
 }
 
 export const CLOUD_LAYER = 'REVISION CLOUDS'
+// theme-allow-color: drawing ink (sheet data and exported PDF), not UI chrome
 export const CLOUD_COLOR = '#ff2d2d'
 /** Fewer vector lines than this and the page is a picture: a scan. */
 const MIN_VECTOR_SEGMENTS = 8
 
 export function revisionLayers(): Layer[] {
+  // theme-allow-color: layer inks travel with the sheet (DXF/SVG/PDF), not UI chrome
   return [
+    // theme-allow-color: grey ink
     { name: DIFF_LAYERS.same, color: '#8a909c', visible: true, locked: false },
+    // theme-allow-color: red ink, only in the old revision
     { name: DIFF_LAYERS.removed, color: '#ff5a5a', visible: true, locked: false },
+    // theme-allow-color: green ink, only in the new revision
     { name: DIFF_LAYERS.added, color: '#2fbf71', visible: true, locked: false },
     { name: CLOUD_LAYER, color: CLOUD_COLOR, visible: true, locked: false },
   ]

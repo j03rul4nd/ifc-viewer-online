@@ -7,6 +7,7 @@ import type { DrawingInput } from '../../stores/drawingStore'
 import { DxfError, dwgVersion, type parseDxf } from './dxf-parse'
 import { readOperators, vectorsToEntities, type Matrix, type PdfOps, type PdfTextItem, type PdfVectors } from './pdf-vectors'
 import { runDrawingJob } from './run-job'
+import { loadPdfJs } from './pdfjs'
 import { sheetsFromPdfDoc, type PdfDocLike } from './pdf-sheets'
 import type { RevisionSheet } from './revision-2d'
 import type { PageImage } from './types'
@@ -21,11 +22,7 @@ const MAX_PAGE_PIXELS = 4096
 const pdfSources = new Map<string, Uint8Array>()
 
 export async function renderPdfPage(bytes: Uint8Array, pageNumber: number): Promise<PageImage> {
-  const [pdfjs, worker] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ])
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  const pdfjs = await loadPdfJs()
   // A copy: pdf.js transfers the buffer it receives to its worker.
   const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
   try {
@@ -58,11 +55,7 @@ export async function renderPdfPage(bytes: Uint8Array, pageNumber: number): Prom
 
 /** The vectors and text of a page, in the page's own units (y up); empty for a scan. */
 export async function readPdfVectors(bytes: Uint8Array, pageNumber: number): Promise<PdfVectors> {
-  const [pdfjs, worker] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ])
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  const pdfjs = await loadPdfJs()
   const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
   try {
     const doc = await task.promise
@@ -81,11 +74,7 @@ export async function readPdfVectors(bytes: Uint8Array, pageNumber: number): Pro
 
 /** Every page of a PDF as a sheet with its vectors, for revision compare. A scan comes back with none. */
 export async function readPdfSheets(bytes: Uint8Array, onPage?: (done: number, total: number) => void): Promise<RevisionSheet[]> {
-  const [pdfjs, worker] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ])
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  const pdfjs = await loadPdfJs()
   const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
   try {
     const doc = await task.promise

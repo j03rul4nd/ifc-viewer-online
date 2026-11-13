@@ -34,9 +34,11 @@ function pageOps(s: SheetComparison, k: number): { ops: string; w: number; h: nu
     }
   }
   // B's lines print black, as on the issued sheet.
+  // theme-allow-color: printed ink on paper
   draw(b.entities, '#000000', 0.4)
   const clouds = s.entities.filter((e) => e.layer === CLOUD_LAYER)
   ops.push(`/OC /oc${k} BDC`)
+  // theme-allow-color: printed revision-cloud red
   draw(clouds, '#e00000', 1.2)
   ops.push('EMC')
   return { ops: ops.join('\n'), w: b.width * toPt, h: b.height * toPt }
