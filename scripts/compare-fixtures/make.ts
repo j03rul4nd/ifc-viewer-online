@@ -444,6 +444,26 @@ const walls = (s: Step) => s.ofClass('IFCWALL')
   s.close()
 }
 
+// A1 — one wall moved 300 mm +X AND 20 % taller (two kinds at once, GlobalId kept).
+{
+  const s = new Step(tunnel, 'A1')
+  const w = firstThat(walls(s), (c) => { moveElement(s, c.id, [0.3, 0, 0]); reshapeElement(s, c.id, 1.2) })
+  writeCase('A1', 'Wall moved 300 mm +X and 20 % taller', tunnel, s.toString(),
+    [{ globalIdA: w.gid, globalIdB: w.gid, kind: 'reshaped', method: 'guid', direction: 'E' }], { alsoMoved: 0.3 })
+  s.close()
+}
+
+// A3 — pavilion: GlobalIds regenerated + one column moved 200 mm +X AND 25 % longer.
+{
+  const pav = read(PAVILION)
+  const s = new Step(pav, 'A3')
+  const c = firstThat(s.ofClass('IFCCOLUMN'), (x) => { moveElement(s, x.id, [0.2, 0, 0]); reshapeElement(s, x.id, 1.25) })
+  const guidMap = regenerateGuids(s)
+  writeCase('A3', 'Pavilion, GlobalIds regenerated, one column moved 200 mm +X and 25 % longer', pav, s.toString(),
+    [{ globalIdA: c.gid, globalIdB: guidMap[c.gid], kind: 'reshaped', method: 'geometry', direction: 'E' }], { guidMap, alsoMoved: 0.2 })
+  s.close()
+}
+
 // F11 — re-tessellation of the Pavilion: same solids, denser profiles.
 {
   const pav = read(PAVILION)

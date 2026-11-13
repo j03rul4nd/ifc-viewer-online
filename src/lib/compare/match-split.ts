@@ -26,12 +26,43 @@ function items(pool: readonly LocatedElement[], schema: string | null, shift: Ma
 
 interface Group { whole: Item; parts: Item[]; coverage: number }
 
+/** Cell size (m) of the part index: parts are found by the cells a whole's box spans. */
+const CELL = 1
+const MAX_CELLS = 4096
+
+/** Parts by class + cell of their box centre. */
+function indexParts(parts: Item[]): Map<string, Item[]> {
+  const m = new Map<string, Item[]>()
+  for (const p of parts) {
+    const k = `${p.cls}|${[0, 1, 2].map((a) => Math.floor((p.box.min[a] + p.box.max[a]) / 2 / CELL)).join('|')}`
+    const cell = m.get(k)
+    if (cell) cell.push(p); else m.set(k, [p])
+  }
+  return m
+}
+
+/** Parts of the same class whose centre falls inside the whole's box (a part ≥ 85 % inside has it there). */
+function nearParts(w: Item, idx: Map<string, Item[]>, byClass: Map<string, Item[]>): Item[] {
+  const lo = w.box.min.map((v) => Math.floor(v / CELL)), hi = w.box.max.map((v) => Math.floor(v / CELL))
+  const cells = (hi[0] - lo[0] + 1) * (hi[1] - lo[1] + 1) * (hi[2] - lo[2] + 1)
+  if (cells > MAX_CELLS) return byClass.get(w.cls) ?? [] // a huge whole: scan its class
+  const out: Item[] = []
+  for (let i = lo[0]; i <= hi[0]; i++) for (let j = lo[1]; j <= hi[1]; j++) for (let k = lo[2]; k <= hi[2]; k++) {
+    const c = idx.get(`${w.cls}|${i}|${j}|${k}`)
+    if (c) out.push(...c)
+  }
+  return out
+}
+
 function groups(wholes: Item[], parts: Item[]): Group[] {
   const out: Group[] = []
+  const idx = indexParts(parts)
+  const byClass = new Map<string, Item[]>()
+  for (const p of parts) { const l = byClass.get(p.cls); if (l) l.push(p); else byClass.set(p.cls, [p]) }
   for (const w of wholes) {
     const inside: Item[] = []
     let covered = 0
-    for (const p of parts) {
+    for (const p of nearParts(w, idx, byClass)) {
       if (p.cls !== w.cls) continue
       const i = intersection(w.box, p.box)
       if (i <= 0 || i / p.vol < SPLIT_COVERAGE) continue

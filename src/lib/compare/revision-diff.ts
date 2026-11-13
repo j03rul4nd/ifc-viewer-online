@@ -27,7 +27,7 @@ import type {
 } from './revision-types'
 import { CHANGE_KIND_PRIORITY } from './revision-types'
 import type { ExtraMatcher } from './revision-types'
-import { matchByGeometry } from './match-geometry'
+import { anchoredMove, boxOf, matchByGeometry } from './match-geometry'
 import { matchSplitMerge } from './match-split'
 
 /** Layers 3 and 4, run when the caller does not pass its own `ctx.extraMatchers`. */
@@ -245,9 +245,22 @@ function classifyPair(
       const m = toIfcVector(d)
       delta = { move: m, moveDistance: dist, direction: cardinalDirection(m, o.moveTolerance) }
       if (rotated) delta.rotationDeg = rot!
+      // Sizes too, so the before/after table is complete (unchanged sizes add no row).
+      if (bg.s && hg.s) Object.assign(delta, { sizeBefore: toIfcSize(bg.s), sizeAfter: toIfcSize(hg.s) })
+      if (bg.v != null && hg.v != null) Object.assign(delta, { volumeBefore: bg.v, volumeAfter: hg.v })
       changes.push({ category: 'placement', key: '', before: bg.c.map((v) => v.toFixed(3)).join(','), after: hg.c.map((v) => v.toFixed(3)).join(',') })
     }
+    // Moved AND reshaped: web-ifc's origin follows the shape, so estimate the
+    // move from the box side that stayed put on each axis (anchoredMove).
     if (reshaped) {
+      const bb = boxOf(b.el), hb = boxOf(h.el, shift)
+      const est = bb && hb && bg.m && hg.m ? anchoredMove(bb, hb) : null
+      const estDist = est ? Math.hypot(est[0], est[1], est[2]) : 0
+      if (est && estDist > o.moveTolerance) {
+        kinds.add('moved')
+        const m = toIfcVector(est)
+        delta = { move: m, moveDistance: estDist, direction: cardinalDirection(m, o.moveTolerance) }
+      }
       kinds.add('reshaped')
       delta = { ...delta, sizeBefore: toIfcSize(bg.s), sizeAfter: toIfcSize(hg.s), volumeBefore: bg.v, volumeAfter: hg.v }
       changes.push({ category: 'geometry', key: '', before: bg.h, after: hg.h })

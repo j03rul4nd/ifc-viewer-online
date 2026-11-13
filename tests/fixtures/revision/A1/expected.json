@@ -1,0 +1,17 @@
+{
+  "id": "A1",
+  "description": "Wall moved 300 mm +X and 20 % taller",
+  "changes": [
+    {
+      "globalIdA": "3CRjRC0nPVKgXvAR3Evmu0",
+      "globalIdB": "3CRjRC0nPVKgXvAR3Evmu0",
+      "kind": "reshaped",
+      "method": "guid",
+      "direction": "E"
+    }
+  ],
+  "counts": {
+    "reshaped": 1
+  },
+  "alsoMoved": 0.3
+}
