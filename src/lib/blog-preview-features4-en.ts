@@ -81,6 +81,7 @@ export const PREVIEW_FEATURE_POSTS4_EN: BlogPost[] = [
           'Readable in five seconds: what happened, what is yours, by when.',
         ],
       },
+      { type: 'feature-demo', step: 'mail', free: 'viewer', role: 'team', talk: 'engineering' },
       { type: 'h2', text: 'The coordinator is the editor, the project is the publication' },
       { type: 'p', text: 'Good newsletters feel like a publication: a name, an issue number, a date, a voice. We borrowed that idea, not anyone\'s design. Each project gets its own masthead, every email carries its issue number, and the footer is a drawing title block with the project, phase, revision, author and the ISO 19650 code of the email itself, so it can be filed in the common data environment like any other container.' },
       shot('mail-desktop-phone-dark', 1640, 1060, 'The weekly coordination report on a desktop, on a phone and in dark mode', SAMPLE),
@@ -167,6 +168,7 @@ export const PREVIEW_FEATURE_POSTS4_EN: BlogPost[] = [
           'The version log last, for those who need it.',
         ],
       },
+      { type: 'feature-demo', step: 'mail', free: 'viewer', role: 'team', talk: 'engineering' },
       { type: 'h2', text: 'The order, section by section' },
       {
         type: 'steps',
@@ -234,6 +236,7 @@ export const PREVIEW_FEATURE_POSTS4_EN: BlogPost[] = [
           'Use the same pattern for failed requirements and for BCF issues due.',
         ],
       },
+      { type: 'feature-demo', step: 'resolve', free: 'viewer', role: 'team', talk: 'contractors' },
       { type: 'h2', text: 'A new version, filtered for one trade' },
       { type: 'p', text: 'The version email starts from the trade, not from the revision. "Of the 41 changes between P04 and P05, six cross your services. The rest do not affect you." Then each change with its place: level, grid, what moved and what it means for them ("check stacks BV-07 and BV-08"). Then what is theirs, with dates, and the name the next delivery must have in the CDE.' },
       shot('mail-trade-version-change', 1280, 2700, 'Version email for the MEP trade: six changes with level and grid, a model view of the new shaft and three actions with dates', SAMPLE),

@@ -101,6 +101,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "五秒读懂：发生了什么，哪些归你，截止到何时。",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "协调员是编辑，项目就是刊物" },
       {
         type: "p",
@@ -323,6 +324,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "版本记录放在最后，留给需要的人。",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "逐节说明顺序" },
       {
         type: "steps",
@@ -495,6 +497,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "未通过的要求和到期的 BCF 问题也用同样的格式。",
         ],
       },
+      { type: "feature-demo", step: "resolve", free: "viewer", role: "team", talk: "contractors" },
       { type: "h2", text: "新版本，只为一个专业筛选" },
       {
         type: "p",
@@ -686,6 +689,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "审核结论（接受或退回，附原因）返回到同一页面。",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "供应商看到的内容" },
       {
         type: "p",
@@ -877,6 +881,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "如果有人事后修改记录，能看出来吗？",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "1. 供应商链接显示什么" },
       { type: "p", text: "供应商链接带有一个对应单个供应商的令牌。单凭令牌什么也看不到。配合它所属的项目，它显示该项目的要求和该供应商的交付，绝不会显示其他供应商的。" },
       { type: "p", text: "我们直说，因为我们一开始就做错了：在开发上传页面时，测试发现仅凭令牌就能列出公司的所有项目。这个问题在页面合并之前已修复，现在每次运行都有一个测试检查它。" },
@@ -1035,6 +1040,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "只有在人工决定看起来合理之后，才开启自动化。",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "第 1 步：要求" },
       {
         type: "p",
@@ -1237,6 +1243,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "数据规则和关系规则会写成 IDS 1.0，因此在任何检查工具中都能使用。",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "一条规则就是一句话" },
       {
         type: "p",
@@ -1479,6 +1486,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "分包商始终按当前阶段已批准的版本检查。",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "版本、作者和审核" },
       {
         type: "p",
@@ -1669,6 +1677,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "客户和承包商免费加入，不占席位。",
         ],
       },
+      { type: "feature-demo", step: "issues", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "一份清单，人人相同" },
       {
         type: "p",
@@ -1928,6 +1937,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "闸门会把评分低于阈值的模型挡在“已发布”之外，并记录每一次例外。",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "build", talk: "engineering" },
       { type: "h2", text: "三步连接一个来源" },
       {
         type: "p",
@@ -2182,6 +2192,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "获得同意、一键退订、没有跟踪像素。",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "从项目阶段出发，而不是从空白页面开始" },
       {
         type: "p",
@@ -2425,6 +2436,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
           "预览版：这里的功能都尚未开放，现在免费的功能会继续免费。",
         ],
       },
+      { type: "feature-demo", step: "clashes", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "问题所在：4,827 个碰撞，几乎没有一个要紧" },
       {
         type: "p",
@@ -2752,6 +2764,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         type: "takeaways",
         items: ["ISO 19650 把审查和验收的责任交给接收模型的一方。", "现在免费：一个要求链接，供应商在发送前对照它自查。", "预览版：按项目划分的收件箱、一屏决策、带指纹的记录和每周报告。"],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "标准对接收方的要求" },
       {
         type: "p",
@@ -3075,6 +3088,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         type: "p",
         text: "月底了。你有一个文件夹，里面是来自四个客户的 30 个 IFC 文件：建筑、结构、机电，每个都有好几个修订版。逐个打开，等它加载，看分数，抄进电子表格，再打开下一个——整整一个下午就没了。到最后才发现最差的是第九个，就是你匆忙打开的那个。",
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "现在的做法：逐个文件检查（免费）" },
       {
         type: "p",

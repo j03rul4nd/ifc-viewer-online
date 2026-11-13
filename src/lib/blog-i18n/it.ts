@@ -110,6 +110,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Leggibili in cinque secondi: cosa è successo, cosa tocca a te, entro quando.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Il coordinatore è il redattore, il progetto è la testata" },
       {
         type: "p",
@@ -384,6 +385,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Il registro delle versioni per ultimo, per chi ne ha bisogno.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "L'ordine, sezione per sezione" },
       {
         type: "steps",
@@ -586,6 +588,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Usa lo stesso schema per i requisiti non soddisfatti e per le issue BCF in scadenza.",
         ],
       },
+      { type: "feature-demo", step: "resolve", free: "viewer", role: "team", talk: "contractors" },
       { type: "h2", text: "Una nuova versione, filtrata per una disciplina" },
       {
         type: "p",
@@ -786,6 +789,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "La decisione (accettato o respinto, con il motivo) torna sulla stessa pagina.",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Cosa vede il fornitore" },
       {
         type: "p",
@@ -1018,6 +1022,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Se qualcuno modifica il registro in seguito, si vede?",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "1. Cosa mostra un link fornitore" },
       {
         type: "p",
@@ -1214,6 +1219,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Attiva le automazioni solo quando le decisioni manuali sembrano corrette.",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Passo 1: i requisiti" },
       {
         type: "p",
@@ -1446,6 +1452,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Le regole sui dati e sulle relazioni vengono scritte come IDS 1.0, quindi funzionano in qualsiasi strumento di verifica.",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "Una regola è una frase" },
       {
         type: "p",
@@ -1739,6 +1746,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "I subappaltatori controllano sempre con la versione approvata per la fase corrente.",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "Versioni, autori e una revisione" },
       {
         type: "p",
@@ -1959,6 +1967,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Clienti e imprese entrano gratis, senza postazione.",
         ],
       },
+      { type: "feature-demo", step: "issues", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Un solo elenco, uguale per tutti" },
       {
         type: "p",
@@ -2235,6 +2244,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Un gate tiene fuori da «Pubblicato» i modelli sotto un certo punteggio, con lo storico di ogni eccezione.",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "build", talk: "engineering" },
       { type: "h2", text: "Collega una fonte in tre passaggi" },
       {
         type: "p",
@@ -2511,6 +2521,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "Consenso, disiscrizione in un clic e nessun pixel di tracciamento.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "Parti da una fase, non da una pagina bianca" },
       {
         type: "p",
@@ -2789,6 +2800,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "In anteprima: niente di tutto questo è ancora aperto, e ciò che oggi è gratuito resta gratuito.",
         ],
       },
+      { type: "feature-demo", step: "clashes", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Il problema: 4.827 interferenze e quasi nessuna conta" },
       {
         type: "p",
@@ -3185,6 +3197,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           "In anteprima: una casella per progetto, decisioni in una schermata, un registro con impronte e un report settimanale.",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Che cosa chiede la norma a chi riceve" },
       {
         type: "p",
@@ -3560,6 +3573,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         type: "p",
         text: "Fine mese. Hai una cartella con 30 file IFC di quattro clienti: architettura, strutture, impianti, ciascuno in più revisioni. Aprirli uno per uno, aspettare il caricamento, leggere il punteggio, copiarlo in un foglio di calcolo e passare al successivo richiede un intero pomeriggio. E alla fine il file peggiore era il nono, quello che hai aperto di fretta.",
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "Come si fa oggi, file per file (gratis)" },
       {
         type: "p",

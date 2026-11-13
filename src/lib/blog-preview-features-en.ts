@@ -80,6 +80,7 @@ export const PREVIEW_FEATURE_POSTS_EN: BlogPost[] = [
           'In preview: nothing here is open yet, and what is free today stays free.',
         ],
       },
+      { type: 'feature-demo', step: 'clashes', free: 'viewer', role: 'team', talk: 'engineering' },
       { type: 'h2', text: 'The problem: 4,827 clashes and hardly any matter' },
       { type: 'p', text: 'We tested a real 94 MB IFC (the Shanghai Tower: 2,134 elements and 1.44 million triangles), all against all. Result: 4,827 clashes in 1,069 groups. Almost all of them were the façade against its own mullions and transoms, which in that file come as separate elements and not as parts of the curtain wall.' },
       shot('clash-detection-4827-clashes-94mb-tower', 800, 491, 'Clash test on the Shanghai Tower IFC: 4,827 results in groups and the time each step took', 'Design preview with sample data, Spanish interface. Geometry read in 0.7 s and tests in about 8 s on a laptop, with no server.'),
@@ -208,6 +209,7 @@ export const PREVIEW_FEATURE_POSTS_EN: BlogPost[] = [
           'In preview: an inbox per project, one-screen decisions, a fingerprinted log and a weekly report.',
         ],
       },
+      { type: 'feature-demo', step: 'naming', free: 'validator', role: 'receive', talk: 'contractors' },
       { type: 'h2', text: 'What the standard asks of the receiving party' },
       { type: 'p', text: ['ISO 19650-2 puts the review and acceptance of the information model in the hands of whoever receives it: the appointing party checks that the delivery meets what was asked before accepting it. ', { cite: 'uk-bim-part-c' }, ' In practice that means three checks, in this order:'] },
       {
@@ -303,6 +305,7 @@ export const PREVIEW_FEATURE_POSTS_EN: BlogPost[] = [
     content: [
       { type: 'callout', variant: 'info', title: 'Preview', text: ['Checking a folder is built but not open yet. Checking one file, with its Health Score and its fixes, is free and will stay free. ', { text: 'Join the waitlist', href: `${SITE}/pricing/?role=solo` }, ' to try the batch when it opens.'] },
       { type: 'p', text: 'End of the month. You have a folder with 30 IFC files from four clients: architecture, structure, MEP, several revisions of each. Opening them one by one, waiting for each to load, reading the score, copying it into a spreadsheet and moving on takes a whole afternoon. And in the end the worst file was the ninth, the one you opened in a hurry.' },
+      { type: 'feature-demo', step: 'naming', free: 'validator', role: 'solo', talk: 'engineering' },
       { type: 'h2', text: 'How it is done today, file by file (free)' },
       { type: 'p', text: ['Today you open each IFC in the viewer and see its ', { text: 'Health Score', to: 'ifc-health-score' }, ' from 0 to 100, the list of failures and the automatic fixes (duplicate or empty names, GUIDs…), and you export the corrected model. All in your browser, with no account. If it is your first time, start with ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '.'] },
       { type: 'p', text: 'That works well for one file. For thirty, it does not.' },

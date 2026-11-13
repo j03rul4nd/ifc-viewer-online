@@ -110,6 +110,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "อ่านเข้าใจใน 5 วินาที: เกิดอะไรขึ้น อะไรเป็นงานของคุณ ต้องเสร็จเมื่อไร",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "ผู้ประสานงานคือบรรณาธิการ โครงการคือสิ่งพิมพ์" },
       {
         type: "p",
@@ -376,6 +377,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "บันทึกเวอร์ชันไว้ท้ายสุด สำหรับผู้ที่ต้องการ",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "ลำดับทีละส่วน" },
       {
         type: "steps",
@@ -572,6 +574,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "ใช้รูปแบบเดียวกันกับข้อกำหนดที่ไม่ผ่านและประเด็น BCF ที่ครบกำหนด",
         ],
       },
+      { type: "feature-demo", step: "resolve", free: "viewer", role: "team", talk: "contractors" },
       { type: "h2", text: "เวอร์ชันใหม่ กรองเฉพาะสาขาเดียว" },
       {
         type: "p",
@@ -770,6 +773,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "ผลการตัดสิน (ยอมรับหรือส่งกลับ พร้อมเหตุผล) กลับมาที่หน้าเดิม",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "สิ่งที่ซัพพลายเออร์เห็น" },
       {
         type: "p",
@@ -985,6 +989,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "ถ้ามีคนแก้ไขบันทึกภายหลัง จะเห็นได้หรือไม่",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "1. ลิงก์ของซัพพลายเออร์แสดงอะไร" },
       {
         type: "p",
@@ -1180,6 +1185,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "เปิดระบบอัตโนมัติเมื่อการตัดสินด้วยมือดูถูกต้องแล้วเท่านั้น",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "ขั้นที่ 1: ข้อกำหนด" },
       {
         type: "p",
@@ -1406,6 +1412,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "กฎข้อมูลและกฎความสัมพันธ์ถูกเขียนออกมาเป็น IDS 1.0 จึงใช้ได้กับเครื่องมือตรวจสอบทุกตัว",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "กฎคือหนึ่งประโยค" },
       {
         type: "p",
@@ -1688,6 +1695,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "ผู้รับเหมาช่วงตรวจกับเวอร์ชันที่อนุมัติแล้วสำหรับขั้นตอนปัจจุบันเสมอ",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "เวอร์ชัน ผู้เขียน และการตรวจทาน" },
       {
         type: "p",
@@ -1900,6 +1908,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "ลูกค้าและผู้รับเหมาเข้าร่วมได้ฟรี โดยไม่ใช้ที่นั่ง",
         ],
       },
+      { type: "feature-demo", step: "issues", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "รายการเดียว เหมือนกันสำหรับทุกคน" },
       {
         type: "p",
@@ -2175,6 +2184,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "ด่านควบคุมกันโมเดลที่คะแนนต่ำกว่าเกณฑ์ไม่ให้เข้าสถานะ \"Published\" พร้อมประวัติของข้อยกเว้นทุกรายการ",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "build", talk: "engineering" },
       { type: "h2", text: "เชื่อมต่อแหล่งข้อมูลในสามขั้นตอน" },
       {
         type: "p",
@@ -2455,6 +2465,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "มีการขอความยินยอม ยกเลิกการรับด้วยคลิกเดียว และไม่มีพิกเซลติดตาม",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "เริ่มจากช่วงของโครงการ ไม่ใช่หน้าว่าง" },
       {
         type: "p",
@@ -2725,6 +2736,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "เป็นเวอร์ชันพรีวิว: ทุกอย่างในบทความนี้ยังไม่เปิดให้ใช้ และสิ่งที่ฟรีวันนี้จะยังฟรีต่อไป",
         ],
       },
+      { type: "feature-demo", step: "clashes", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "ปัญหา: จุดชน 4,827 จุด แต่แทบไม่มีจุดไหนสำคัญ" },
       {
         type: "p",
@@ -3111,6 +3123,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
           "เวอร์ชันพรีวิว: กล่องรับงานต่อโครงการ การตัดสินใจในหน้าจอเดียว บันทึกพร้อมลายนิ้วมือ และรายงานประจำสัปดาห์",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "มาตรฐานกำหนดอะไรให้ฝ่ายผู้รับงาน" },
       {
         type: "p",
@@ -3463,6 +3476,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         type: "p",
         text: "สิ้นเดือน คุณมีโฟลเดอร์ที่มีไฟล์ IFC 30 ไฟล์จากลูกค้าสี่ราย: สถาปัตยกรรม โครงสร้าง งานระบบ แต่ละอย่างมีหลายรีวิชัน การเปิดทีละไฟล์ รอโหลด อ่านคะแนน คัดลอกลงสเปรดชีต แล้วไปไฟล์ถัดไปใช้เวลาทั้งบ่าย และสุดท้ายไฟล์ที่แย่ที่สุดคือไฟล์ที่เก้า ไฟล์ที่คุณเปิดดูอย่างรีบๆ",
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "วิธีที่ทำกันวันนี้ ทีละไฟล์ (ฟรี)" },
       {
         type: "p",

@@ -115,6 +115,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Lisibles en cinq secondes : ce qui s'est passé, ce qui vous revient, pour quand.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Le coordinateur est l'éditeur, le projet est la publication" },
       {
         type: "p",
@@ -395,6 +396,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "L'historique des versions en dernier, pour ceux qui en ont besoin.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "L'ordre, section par section" },
       {
         type: "steps",
@@ -600,6 +602,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Utilisez le même schéma pour les exigences non satisfaites et pour les sujets BCF à traiter.",
         ],
       },
+      { type: "feature-demo", step: "resolve", free: "viewer", role: "team", talk: "contractors" },
       { type: "h2", text: "Une nouvelle version, filtrée pour un lot" },
       {
         type: "p",
@@ -803,6 +806,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "La décision (acceptée ou renvoyée, avec le motif) revient sur la même page.",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Ce que voit le fournisseur" },
       {
         type: "p",
@@ -1033,6 +1037,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Si quelqu’un modifie le registre après coup, cela se voit-il ?",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "1. Ce qu’affiche un lien fournisseur" },
       {
         type: "p",
@@ -1232,6 +1237,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "N’activez les automatisations qu’une fois les décisions manuelles bien calées.",
         ],
       },
+      { type: "feature-demo", step: "drop", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Étape 1 : les exigences" },
       {
         type: "p",
@@ -1467,6 +1473,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Les règles de données et de relations sont écrites en IDS 1.0 et fonctionnent donc dans n'importe quel vérificateur.",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "Une règle est une phrase" },
       {
         type: "p",
@@ -1760,6 +1767,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Les sous-traitants contrôlent toujours avec la version approuvée pour la phase en cours.",
         ],
       },
+      { type: "feature-demo", step: "rules", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "Versions, auteurs et relecture" },
       {
         type: "p",
@@ -1988,6 +1996,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Les clients et les entreprises rejoignent gratuitement, sans licence.",
         ],
       },
+      { type: "feature-demo", step: "issues", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Une seule liste, la même pour tous" },
       {
         type: "p",
@@ -2266,6 +2275,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Une barrière empêche les maquettes sous un certain score de passer en « Publié », avec l'historique de chaque dérogation.",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "build", talk: "engineering" },
       { type: "h2", text: "Connecter une source en trois étapes" },
       {
         type: "p",
@@ -2550,6 +2560,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "Consentement, désabonnement en un clic et pas de pixel espion.",
         ],
       },
+      { type: "feature-demo", step: "mail", free: "validator", role: "team", talk: "contractors" },
       { type: "h2", text: "Partir d'une phase, pas d'une page blanche" },
       {
         type: "p",
@@ -2827,6 +2838,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "En aperçu : rien de tout cela n'est encore ouvert, et ce qui est gratuit aujourd'hui le reste.",
         ],
       },
+      { type: "feature-demo", step: "clashes", free: "viewer", role: "team", talk: "engineering" },
       { type: "h2", text: "Le problème : 4 827 conflits et presque aucun n'importe" },
       {
         type: "p",
@@ -3223,6 +3235,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           "En aperçu : une boîte de réception par projet, des décisions sur un seul écran, un journal à empreintes et un rapport hebdomadaire.",
         ],
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "receive", talk: "contractors" },
       { type: "h2", text: "Ce que la norme demande à la partie qui reçoit" },
       {
         type: "p",
@@ -3601,6 +3614,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         type: "p",
         text: "Fin de mois. Vous avez un dossier avec 30 fichiers IFC de quatre clients : architecture, structure, MEP, plusieurs révisions de chacun. Les ouvrir un par un, attendre le chargement, lire le score, le recopier dans un tableur et passer au suivant prend tout un après-midi. Et au final, le pire fichier était le neuvième, celui que vous avez ouvert en vitesse.",
       },
+      { type: "feature-demo", step: "naming", free: "validator", role: "solo", talk: "engineering" },
       { type: "h2", text: "Comment on fait aujourd'hui, fichier par fichier (gratuit)" },
       {
         type: "p",
