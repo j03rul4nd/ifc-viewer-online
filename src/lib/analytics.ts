@@ -855,6 +855,16 @@ export function trackProUpsellShown(props: {
   track('pro_upsell_shown', props)
 }
 
+/** A call to action on /dashboard. `state` is the page variant the user saw
+ *  (anonymous, free_empty, free_active, pro, team, past_due); no personal data. */
+export function trackDashboardCta(props: {
+  cta: 'sign_in' | 'open_viewer' | 'checkout' | 'compare_plans' | 'call' | 'feature_request' | 'billing_portal' | 'team_upsell' | 'locked_feature' | 'view_certificate'
+  state: 'anonymous' | 'free_empty' | 'free_active' | 'pro' | 'team' | 'past_due'
+}): void {
+  if (props.cta === 'checkout' || props.cta === 'locked_feature' || props.cta === 'team_upsell') lastProSource = 'dashboard'
+  track('dashboard_cta_clicked', props)
+}
+
 export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): void {
   track('checkout_started', { ...props, source: lastProSource ?? 'unknown' })
 }
