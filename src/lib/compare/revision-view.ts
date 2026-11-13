@@ -95,12 +95,12 @@ export function markIndex(snaps: readonly ModelSnapshot[], markProperties: reado
       if ((mark == null || mark === '') && markProperties.length) {
         const psets = (e as unknown as { psets?: Record<string, Record<string, unknown>> }).psets
         for (const mp of markProperties) {
-          const [p, k] = mp.split('.')
+          const [p = '', k = ''] = mp.split('.')
           const v = psets?.[p]?.[k]
           if (v != null && v !== '') { mark = v; break }
         }
       }
-      if (mark != null && mark !== '' && !out.has(e.globalId)) out.set(e.globalId, String(mark))
+      if (mark != null && mark !== '' && e.globalId != null && !out.has(e.globalId)) out.set(e.globalId, String(mark))
     }
   }
   return out

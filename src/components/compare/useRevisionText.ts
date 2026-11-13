@@ -18,9 +18,9 @@ export function useRevisionText() {
     if (typeof p.before === 'number') p.before = key === 'volume_m3' ? num(p.before, 3) : num(p.before)
     if (typeof p.after === 'number') p.after = key === 'volume_m3' ? num(p.after, 3) : num(p.after)
     if (typeof p.pct === 'number') p.pct = `${p.pct > 0 ? '+' : ''}${num(p.pct, 1)}`
-    if (typeof p.dir === 'string') p.dir = DIRS.has(p.dir) ? t(`rc.dir.${p.dir}`) : ''
+    if (typeof p.dir === 'string') p.dir = DIRS.has(p.dir) ? (t as unknown as (key: string) => string)(`rc.dir.${p.dir}`) : ''
     if (typeof p.class === 'string') p.class = readableClass(p.class)
-    if (typeof p.axis === 'string') p.axis = t(`rc.axis.${p.axis}`)
+    if (typeof p.axis === 'string') p.axis = (t as unknown as (key: string) => string)(`rc.axis.${p.axis}`)
     const k = key === 'moved_mm' && !p.dir ? 'moved_mm_nodir' : key
     return t(`rc.summary.${k}`, { ...p, defaultValue: t('rc.summary.changed') })
   }, [t, num])
