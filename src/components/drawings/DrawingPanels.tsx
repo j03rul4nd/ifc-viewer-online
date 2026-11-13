@@ -15,6 +15,7 @@ import { buildCut, SKIP_CATEGORIES, type BuildCutOptions, type CutPlane } from '
 import { runDrawingJob } from '../../lib/drawing/run-job'
 import { diffSheets } from '../../lib/drawing/diff'
 import type { ScanSlice } from '../../lib/drawing/scan-slice'
+import { RevisionComparePdf } from './RevisionComparePdf'
 import { PAPER, type PaperSize } from '../../lib/drawing/export'
 import { IDENTITY, LAYER_PALETTE, type Drawing, type NewEntity, type Pt } from '../../lib/drawing/types'
 
@@ -360,6 +361,7 @@ export function CreatePanel({ viewerApiRef, busy, run, fail, say }: PanelShared)
             </Row>
           ))}
           <button type="button" className={`${btn} w-full mt-1.5`} disabled={!before || !after || before === after || busy} onClick={() => void doCompare()}>{t('create.compare.run')}</button>
+          <RevisionComparePdf busy={busy} run={run} fail={fail} say={say} />
         </>}
       </div>
     </>

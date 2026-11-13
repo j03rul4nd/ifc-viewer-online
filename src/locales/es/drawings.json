@@ -170,7 +170,36 @@
       "need": "Abre dos hojas para comparar.",
       "before": "Antes",
       "after": "Después",
-      "run": "Comparar"
+      "run": "Comparar",
+      "pdfTitle": "Comparar dos revisiones en PDF",
+      "pdfBlurb": "Juego antiguo y nuevo, a cualquier escala o posición. Las hojas se emparejan por número; el cajetín se excluye.",
+      "oldPdf": "Revisión antigua (PDF)",
+      "newPdf": "Revisión nueva (PDF)",
+      "pages_one": "{{count}} página",
+      "pages_other": "{{count}} páginas",
+      "pdfError": "No se ha podido leer ese PDF.",
+      "pdfDone": "{{clouds}} nubes de revisión en {{sheets}} hojas en {{seconds}} s.",
+      "overlayName": "Cambios {{sheet}}",
+      "results": "Hojas comparadas",
+      "clouds_one": "{{count}} nube",
+      "clouds_other": "{{count}} nubes",
+      "aligned": "{{method}}, escala ×{{scale}}, RMS {{rms}} mm",
+      "cloudLine": "Nube {{id}}: +{{added}} / −{{removed}}",
+      "autoExcluded_one": "{{count}} zona cambiaba en todas las hojas y se ha excluido",
+      "autoExcluded_other": "{{count}} zonas cambiaban en todas las hojas y se han excluido",
+      "exportPdf": "Descargar la revisión nueva con nubes (PDF)",
+      "cloudLayer": "Nubes de revisión",
+      "status": {
+        "notVector": "No vectorial (escaneado): sin comparar",
+        "onlyA": "Solo en el juego antiguo",
+        "onlyB": "Solo en el juego nuevo",
+        "noAlignment": "No se pudo alinear"
+      },
+      "method": {
+        "frame": "marco",
+        "ransac": "dibujo",
+        "identity": "ninguna"
+      }
     },
     "beyond": "Mostrar tras el corte (m)",
     "poche": "Rellenar muros y estructura cortados",
