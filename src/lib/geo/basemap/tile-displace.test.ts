@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { COARSE_DEM_PX, coarseBoundsN, sampleCoarseN, clampSea, type CoarseDem } from '../coarse-dem'
+import { GeneratedSurfacePlugin } from '3d-tiles-renderer/plugins'
+// @ts-expect-error -- the plugin's internal tile keys ship without types
+import { TILE_LEVEL, TILE_X, TILE_Y } from '3d-tiles-renderer/src/three/plugins/images/ImageFormatPlugin.js'
 import { createReliefBoundsPlugin, displaceTileScene, reliefHalfHeightN, tileGridSegments, tileSurfaceN } from './tile-displace'
 
 function rampDem(): CoarseDem {
@@ -63,6 +66,30 @@ describe('tile-displace', () => {
     displaceTileScene(mesh, null)
     const p2 = (mesh.geometry as THREE.BufferGeometry).getAttribute('position') as THREE.BufferAttribute
     for (let i = 0; i < p2.count; i++) expect(p2.getZ(i)).toBe(0)
+  })
+
+  it('lifts the exact mesh GeneratedSurfacePlugin builds for a planar tile', () => {
+    // Guards the assumption readFlat makes: the plugin's planar tile is a
+    // PlaneGeometry with `parameters` (if that ever changes, nothing lifts).
+    const dem = rampDem()
+    const b = coarseBoundsN(dem)
+    const plugin = new GeneratedSurfacePlugin({ shape: 'planar', center: true }) as unknown as {
+      _tiling: unknown; _createPlanarMesh(tile: unknown): THREE.Mesh
+    }
+    plugin._tiling = { getTileContentUVBounds: () => [0.1, 0.2, 0.6, 0.7] }
+    const half = (b.maxNx - b.minNx) / 20
+    const tile = {
+      [TILE_X]: 1, [TILE_Y]: 2, [TILE_LEVEL]: 3,
+      boundingVolume: { box: [(b.minNx + b.maxNx) / 2, (b.minNy + b.maxNy) / 2, 0, half, 0, 0, 0, half, 0, 0, 0, 0] },
+    }
+    const mesh = plugin._createPlanarMesh(tile)
+    displaceTileScene(mesh, { dem, anchorM: 0, metresToN: mToN })
+    expect(Object.getOwnPropertySymbols(mesh).map(String)).toContain('Symbol(flatTile)')
+    const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute('position') as THREE.BufferAttribute
+    expect(pos.count).toBeGreaterThan(4)
+    let maxZ = 0
+    for (let i = 0; i < pos.count; i++) maxZ = Math.max(maxZ, pos.getZ(i))
+    expect(maxZ).toBeGreaterThan(0)
   })
 
   it('gives tile boxes the relief half-height, also to tiles already processed', () => {

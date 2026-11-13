@@ -892,6 +892,38 @@ Not verified: the looks other than Daylight were checked only for the sky and
 haze colours meeting, not re-tuned by eye under the corrected environment; and
 nothing here has been looked at on a phone.
 
+### The flat map on the city's relief (WP2, 2026-11)
+
+`coarse-dem.ts`, `basemap/tile-displace.ts`, `geo-terrain.ts` (rim),
+`geo-system.applyMapLevel`.
+
+- **What changed.** With terrain on, the worker also fetches a coarse DEM of the
+  whole city (z12 global mosaic, ≈38 m). Every flat-map tile is swapped on load
+  for a grid (`tileGridSegments`, ≈40 m, 4–32 per side) whose vertices are lifted
+  to that DEM, on the CPU, and its box is given the relief's half-height so it is
+  not culled. Outside the 3×3 patch, Montjuïc and Collserola now stand up:
+  ground at (41.3636, 2.1586) reads 120.5 m against 120.8 m in the DEM (main:
+  32.6 m, the patch's rim level, flat).
+- **The rim meets the tiles.** The patch's edge eases onto the coarse DEM at
+  each vertex (not onto one level), and dips only `RIM_DIP_COARSE_M` = 0.3 m
+  under the tiles (4 m without the coarse DEM). Measured on the hole's line,
+  200 points, against the worst tile z13–z17 (`tileSurfaceN`, the exact surface
+  the tile draws): median 0.53 m (Pl. Catalunya), 0.09 m (Hotel Vela), 0.80 m
+  (El Carmel); p95 2–3 m on steep streets. That residue is the two grids
+  interpolating the same DEM differently, not the dip (4 m gave a median 1.34 m).
+- **The patch stays on the global DEM.** Fixing the ICGC URL would have moved
+  the fine patch of Catalonia to ICGC: anchor 20.75 m instead of 28.62 m and the
+  ground under a model 0.40 m off main. Rule for the switch: ICGC for the patch
+  only with a step under 0.5 m AND the model within 1 cm of main. It failed the
+  second, so the URL fix is not in this change and ICGC stays as it is on main.
+- **Unchanged against main** (same Overpass answer): the ground under the
+  model (Catalunya +0.078 m, Vela −2.523 m, El Carmel −21.226 m) and the 64×64
+  grid of the graded streets (#501) over the measured box, identical to the
+  millimetre. Two runs of main alone can differ (up to 2.7 m in a few cells of
+  El Carmel) when Overpass returns a different street set; compare like runs.
+- **Measure it:** `node scripts/geo/relief-measure.mjs --url <dev server> --site
+  catalunya|vela|carmel --out x.json [--dem terrarium]`.
+
 ### How high a georeferenced IFC stands (2026-10)
 
 `vertical-frame.ts`, `dem-sources.ts`, `multi-placement.ts`, applied in

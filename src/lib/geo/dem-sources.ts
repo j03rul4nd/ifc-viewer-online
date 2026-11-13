@@ -69,7 +69,7 @@ export const TERRARIUM_SOURCE: DemSource = {
  */
 export const ICGC_MET5_SOURCE: DemSource = {
   id: 'icgc-met5',
-  url: 'https://tilemaps.icgc.cat/tileserver/tileserver.php/terreny-5m-30m-rgb-extent/{z}/{x}/{y}.png',
+  url: 'https://tilemaps.icgc.cat/tileserver/tileserver/terreny-5m-30m-rgb-extent/{z}/{x}/{y}.png',
   maxZoom: 14,
   bbox: [1.45, 41.01, 2.78, 42.0],
   // Mapbox terrain-RGB: h = −10000 + (R·65536 + G·256 + B) · 0.1.

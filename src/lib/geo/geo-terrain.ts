@@ -83,9 +83,13 @@ const RIM_DIP_M = 4
  * The same dip when the flat map stands on the coarse relief (WP2). There the
  * rim and the tiles follow one surface, so the dip only has to hide the two
  * grids' interpolation, not tens of metres of relief; at 4 m it would itself
- * be the visible step at the hole (≈1.2 m on the hole's line).
+ * be the visible step at the hole (≈1.2 m on the hole's line). Measured on
+ * Plaça de Catalunya, 200 points of the hole's line against the worst tile
+ * z13–z17 (scripts/geo/relief-measure.mjs, global DEM): 4 m → median
+ * 1.34 m; 0.3 m → median 0.53 m, mean signed +0.07 m. What remains is the
+ * two grids' interpolation on steep streets (p95 ≈2 m), not the dip.
  */
-export const RIM_DIP_COARSE_M = 4
+export const RIM_DIP_COARSE_M = 0.3
 /** Fraction of the contact band over which that dip is reached. */
 const RIM_DIP_RAMP = 0.3
 /**

@@ -22,6 +22,8 @@ const b = await chromium.launch({ headless: false, channel: 'chrome', args: ['--
 const p = await b.newPage({ viewport: { width: 1600, height: 900 } })
 p.on('console', (m) => { if (/WP2|coarse|ICGC|dem/i.test(m.text())) console.log('[page]', m.text().slice(0, 200)) })
 await p.goto(`${args.url}/?model=${MODELS[site]}&map=terrain,buildings&validate=0&ui=client`, { waitUntil: 'domcontentloaded', timeout: 300000 })
+// --dem terrarium: the fine patch from the global DEM too (as if the regional source were down).
+if (args.dem === 'terrarium') await p.evaluate(async () => { const m = await import('/src/lib/geo/dem-sources.ts'); m.markDemSourceFailed('icgc-met5') })
 await p.getByRole('button', { name: /^(Activar mapa|Enable map)$/ }).first().click({ timeout: 900000 })
 const ready = async () => {
   const st = () => p.evaluate(() => { const s = globalThis.__geoStore?.getState(); return s ? [s.terrainStatus, s.buildingsStatus] : [] }).catch(() => [])
@@ -131,11 +133,13 @@ const out = await p.evaluate(async () => {
   res.holeHalfWorld = [hx, hz]
   const ok = steps.filter((s) => s !== null)
   const abs = ok.map(Math.abs).sort((a, b) => a - b)
+  res.rimDipAtEdgeM = steps.length ? (await import('/src/lib/geo/geo-terrain.ts')).rimDipM(0.12, (await import('/src/lib/geo/geo-terrain.ts')).RIM_DIP_COARSE_M) : null
+  res.steps = steps
   res.step = { n: ok.length, maxAbsM: abs.at(-1), p95M: abs[Math.floor(abs.length * 0.95)], medianM: abs[abs.length >> 1], meanSignedM: ok.reduce((a, b) => a + b, 0) / ok.length }
   return res
 })
 out.status = statusFinal
 writeFileSync(args.out, JSON.stringify(out, null, 1))
-const { groundGrid, ...brief } = out
+const { groundGrid, steps: _s, ...brief } = out
 console.log(JSON.stringify(brief, null, 1))
 await b.close()
