@@ -1,0 +1,19 @@
+{
+  "id": "F10",
+  "description": "One slab split in two halves along its profile x (1 → 2)",
+  "changes": [
+    {
+      "globalIdA": "0n7M0eNCTK_uk5hj8Ig4hq",
+      "globalIdB": "0RevCmpF10000000000001",
+      "kind": "reshaped",
+      "method": "split"
+    }
+  ],
+  "counts": {
+    "reshaped": 1
+  },
+  "parts": [
+    "0RevCmpF10000000000001",
+    "0RevCmpF10000000000002"
+  ]
+}

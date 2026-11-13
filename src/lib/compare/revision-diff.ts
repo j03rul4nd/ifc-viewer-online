@@ -8,7 +8,8 @@
 //
 //   layer 1  GlobalId        (diffSnapshotSets)
 //   layer 2  Tag / piece mark, same canonical class, unique on both sides
-//   layer 3+ injected (`ctx.extraMatchers`, geometry and split/merge — T2)
+//   layer 3  geometry        (match-geometry.ts)  ┐ DEFAULT_EXTRA_MATCHERS,
+//   layer 4  split / merge   (match-split.ts)     ┘ replaceable via ctx.extraMatchers
 //
 // Then: origin correction, classification by kind, deltas and a summary key.
 
@@ -25,6 +26,26 @@ import type {
   RevisionDiff, RevisionOptions,
 } from './revision-types'
 import { CHANGE_KIND_PRIORITY } from './revision-types'
+import type { ExtraMatcher } from './revision-types'
+import { matchByGeometry } from './match-geometry'
+import { matchSplitMerge } from './match-split'
+
+/** Layers 3 and 4, run when the caller does not pass its own `ctx.extraMatchers`. */
+export const DEFAULT_EXTRA_MATCHERS: readonly ExtraMatcher[] = [matchByGeometry, matchSplitMerge]
+
+/**
+ * Signed rotation in plan (degrees, counter-clockwise seen from above) between
+ * two local X axes in the mesh frame (Y-up: plan is x, −z). Null without both
+ * axes or when an axis is vertical.
+ */
+export function planRotationDeg(a?: Vec3, b?: Vec3): number | null {
+  if (!a || !b) return null
+  if (Math.hypot(a[0], a[2]) < 1e-6 || Math.hypot(b[0], b[2]) < 1e-6) return null
+  let d = (Math.atan2(-b[2], b[0]) - Math.atan2(-a[2], a[0])) * 180 / Math.PI
+  while (d > 180) d -= 360
+  while (d <= -180) d += 360
+  return Math.round(d * 100) / 100
+}
 
 export const DEFAULT_REVISION_OPTIONS: Required<RevisionOptions> = {
   moveTolerance: 0.005,
@@ -125,11 +146,15 @@ function matchByMark(
   return pairs
 }
 
-function parentKeys(l: LocatedElement, side: Side): string[] {
+/** `translate`: base parent GlobalId → its head partner (layers 2+ pair parents whose GlobalId changed). */
+function parentKeys(l: LocatedElement, side: Side, translate?: Map<string, string>): string[] {
   const ids = side.gidOf.get(l.file)
   return (l.el.partOf ?? [])
     .filter((p) => p.relation !== 'IFCRELCONTAINEDINSPATIALSTRUCTURE') // compared as `container`
-    .map((p) => `${p.relation}:${ids?.get(p.parentExpressId) ?? p.parentClass}`)
+    .map((p) => {
+      const g = ids?.get(p.parentExpressId)
+      return `${p.relation}:${(g && translate?.get(g)) ?? g ?? p.parentClass}`
+    })
     .sort()
 }
 
@@ -157,7 +182,7 @@ interface Classified {
 
 function classifyPair(
   b: LocatedElement, h: LocatedElement, o: Required<RevisionOptions>, shift: Vec3 | null,
-  fileMoved: boolean, geometryCompared: boolean, ctx: { baseSide: Side; headSide: Side; schema: { base: string | null; head: string | null } },
+  fileMoved: boolean, geometryCompared: boolean, ctx: { baseSide: Side; headSide: Side; schema: { base: string | null; head: string | null }; renamed: Map<string, string> },
   ignore: (pset: string, prop?: string) => boolean,
 ): Classified {
   const kinds = new Set<ChangeKind>()
@@ -186,7 +211,7 @@ function classifyPair(
     kinds.add('type_changed')
     changes.push({ category: 'class', key: 'Type', before: b.el.typeName ?? null, after: h.el.typeName ?? null })
   }
-  const bp = parentKeys(b, ctx.baseSide), hp = parentKeys(h, ctx.headSide)
+  const bp = parentKeys(b, ctx.baseSide, ctx.renamed), hp = parentKeys(h, ctx.headSide)
   if (bp.join('|') !== hp.join('|')) {
     kinds.add('relations_changed')
     changes.push({ category: 'container', key: 'partOf', before: bp, after: hp })
@@ -198,12 +223,15 @@ function classifyPair(
   if (geometryCompared && bg && hg) {
     const d = sub(sub(hg.c, bg.c), shift ?? [0, 0, 0])
     const dist = Math.hypot(d[0], d[1], d[2])
-    const moved = dist > o.moveTolerance
+    const rot = planRotationDeg(bg.x, hg.x)
+    const rotated = rot != null && Math.abs(rot) > o.angleTolerance
+    const moved = dist > o.moveTolerance || rotated
     let reshaped: boolean
     if (bg.s && hg.s && bg.v != null && hg.v != null) {
       const sizeChanged = [0, 1, 2].some((k) => Math.abs(hg.s![k] - bg.s![k]) > o.sizeTolerance)
       const volChanged = Math.abs(hg.v - bg.v) > o.volumeTolerance * Math.max(bg.v, hg.v, 1e-9)
-      reshaped = sizeChanged || volChanged
+      // A turned piece has another world box but the same volume: the box change is the turn.
+      reshaped = volChanged || (sizeChanged && !rotated)
       // The hash covers tessellation + placement: changed with nothing else → re-tessellation.
       if (!reshaped && !moved && bg.h !== hg.h) noise = true
     } else {
@@ -216,6 +244,7 @@ function classifyPair(
       kinds.add('moved')
       const m = toIfcVector(d)
       delta = { move: m, moveDistance: dist, direction: cardinalDirection(m, o.moveTolerance) }
+      if (rotated) delta.rotationDeg = rot!
       changes.push({ category: 'placement', key: '', before: bg.c.map((v) => v.toFixed(3)).join(','), after: hg.c.map((v) => v.toFixed(3)).join(',') })
     }
     if (reshaped) {
@@ -233,6 +262,9 @@ function summarize(kind: ChangeKind, c: Omit<RevisionChange, 'summary'>): Revisi
       return { key: kind, params: { class: c.ifcClass } }
     case 'moved': {
       const d = c.delta!
+      // Turned (V2.5): new summary key `rotated_deg` {deg, mm, dir}.
+      // `mm`/`dir` are those of the mesh origin, which a turn carries along.
+      if (d.rotationDeg != null) return { key: 'rotated_deg', params: { deg: d.rotationDeg, mm: mm(d.moveDistance ?? 0), dir: d.direction ?? '' } }
       return { key: 'moved_mm', params: { mm: mm(d.moveDistance ?? 0), dir: d.direction ?? '' } }
     }
     case 'reshaped': {
@@ -318,7 +350,7 @@ export function diffRevisions(
   const spatial = (l: LocatedElement): boolean => SPATIAL.test(l.el.ifcClass.toUpperCase())
   const poolB = unB.filter((l) => !spatial(l)), poolH = unH.filter((l) => !spatial(l))
   pairs.push(...matchByMark(poolB, poolH, ['Tag', ...o.markProperties], schema))
-  for (const m of ctx.extraMatchers ?? []) {
+  for (const m of ctx.extraMatchers ?? DEFAULT_EXTRA_MATCHERS) {
     const found = m(poolB, poolH, { options: o, originShift: shiftViewer, schema })
     const used = new Set(found.flatMap((p) => [...p.base, ...p.head]))
     for (let i = poolB.length - 1; i >= 0; i--) if (used.has(poolB[i])) poolB.splice(i, 1)
@@ -327,8 +359,26 @@ export function diffRevisions(
   }
   // Spatial elements that lost their GlobalId stay outside the classification
   // pool on purpose: a renamed storey is reported, a re-created one is not an "add".
-  poolB.push(...unB.filter(spatial))
-  poolH.push(...unH.filter(spatial))
+  // Exception: with regenerated GlobalIds the whole spatial tree would read as
+  // re-created, so a site / building / storey keeps its pairing by class + name
+  // when that is unique on both sides (method 'tag', 0.9).
+  const spB = unB.filter(spatial), spH = unH.filter(spatial)
+  const spKey = (l: LocatedElement): string | null => (l.el.name ? `${l.el.ifcClass.toUpperCase()}|${l.el.name}` : null)
+  const uniq = (ls: LocatedElement[]): Map<string, LocatedElement | null> => {
+    const m = new Map<string, LocatedElement | null>()
+    for (const l of ls) { const k = spKey(l); if (k) m.set(k, m.has(k) ? null : l) }
+    return m
+  }
+  const ub = uniq(spB), uh = uniq(spH)
+  const spUsed = new Set<LocatedElement>()
+  for (const [k, b] of ub) {
+    const h = uh.get(k)
+    if (!b || !h) continue
+    pairs.push({ base: [b], head: [h], method: 'tag', confidence: 0.9 })
+    spUsed.add(b); spUsed.add(h)
+  }
+  poolB.push(...spB.filter((l) => !spUsed.has(l)))
+  poolH.push(...spH.filter((l) => !spUsed.has(l)))
 
   // Classification.
   const changes: RevisionChange[] = []
@@ -350,10 +400,18 @@ export function diffRevisions(
   const methodOf = (m: MatchMethod, conf: number, b: LocatedElement[], h: LocatedElement[]): RevisionChange['match'] =>
     ({ method: m, confidence: conf, baseGlobalIds: gids(b), headGlobalIds: gids(h) })
 
+  // GlobalIds that changed across a 1:1 pair, so a regenerated parent is still "the same parent".
+  const renamed = new Map<string, string>()
+  for (const p of pairs) {
+    if (p.method === 'guid' || p.base.length !== 1 || p.head.length !== 1) continue
+    const bg = p.base[0].el.globalId, hg = p.head[0].el.globalId
+    if (bg && hg && bg !== hg) renamed.set(bg, hg)
+  }
+
   for (const p of pairs) {
     const b = p.base[0], h = p.head[0]
     const fileMoved = pairedHead.get(b.file) !== h.file
-    const cl = classifyPair(b, h, o, shiftViewer, fileMoved, geometryCompared, { baseSide: bs, headSide: hs, schema }, ignore)
+    const cl = classifyPair(b, h, o, shiftViewer, fileMoved, geometryCompared, { baseSide: bs, headSide: hs, schema, renamed }, ignore)
     if (cl.noise) noise++
     // Split / merge (N:1, 1:N) are reshapes of the same piece of work by definition.
     let kinds = cl.kinds
