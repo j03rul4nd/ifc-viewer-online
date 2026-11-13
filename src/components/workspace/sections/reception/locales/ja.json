@@ -305,5 +305,16 @@
   "Validated, waiting for review": "検証済み、レビュー待ち",
   "Waiting for validation…": "検証待ち…",
   "Your deliveries": "あなたの納品",
-  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} を招待しました。アップロードリンク（一度だけ表示）: {{link}}"
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} を招待しました。アップロードリンク（一度だけ表示）: {{link}}",
+  "{{name}}: the old link stopped working. New upload link, shown only once: {{link}}": "{{name}}：以前のリンクは無効になりました。新しいアップロードリンク（表示は一度だけ）：{{link}}",
+  "{{name}} can no longer deliver. Their past deliveries stay on the register.": "{{name}} は今後納品できません。過去の納品は台帳に残ります。",
+  "Access revoked": "アクセス取り消し済み",
+  "This supplier can no longer deliver. Their past deliveries stay on the register.": "この協力会社は今後納品できません。過去の納品は台帳に残ります。",
+  "No link: access revoked.": "リンクなし：アクセスは取り消されています。",
+  "The link was shown once, when you invited them. If it leaked or got lost, make a new one: the old one stops working at once.": "リンクは招待時に一度だけ表示されました。漏れた・紛失した場合は新しいリンクを作成してください。以前のリンクはすぐに無効になります。",
+  "New upload link": "新しいアップロードリンク",
+  "Yes, revoke {{name}}": "はい、{{name}} のアクセスを取り消す",
+  "Revoke access": "アクセスを取り消す",
+  "Still being validated": "検証中",
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "サーバーはまだこのファイルを確認していません。スコアが出てから承認するか、理由を添えて今すぐ差し戻せます。"
 }

@@ -305,5 +305,16 @@
   "Validated, waiting for review": "Validat, pendent de revisió",
   "Waiting for validation…": "Esperant la validació…",
   "Your deliveries": "Els teus lliuraments",
-  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} convidat. El seu enllaç de pujada, que només es mostra una vegada: {{link}}"
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} convidat. El seu enllaç de pujada, que només es mostra una vegada: {{link}}",
+  "{{name}}: the old link stopped working. New upload link, shown only once: {{link}}": "{{name}}: l'enllaç anterior ha deixat de funcionar. Nou enllaç de pujada, només es mostra una vegada: {{link}}",
+  "{{name}} can no longer deliver. Their past deliveries stay on the register.": "{{name}} ja no pot lliurar. Els seus lliuraments anteriors continuen al registre.",
+  "Access revoked": "Accés revocat",
+  "This supplier can no longer deliver. Their past deliveries stay on the register.": "Aquest proveïdor ja no pot lliurar. Els seus lliuraments anteriors continuen al registre.",
+  "No link: access revoked.": "Sense enllaç: accés revocat.",
+  "The link was shown once, when you invited them. If it leaked or got lost, make a new one: the old one stops working at once.": "L'enllaç es va mostrar una sola vegada, en convidar-lo. Si s'ha filtrat o perdut, crea'n un de nou: l'anterior deixa de funcionar a l'instant.",
+  "New upload link": "Nou enllaç de pujada",
+  "Yes, revoke {{name}}": "Sí, revoca {{name}}",
+  "Revoke access": "Revoca l'accés",
+  "Still being validated": "Encara s'està validant",
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "El servidor encara no ha revisat aquest fitxer. El podràs acceptar quan tingui nota, o retornar-lo ara amb un motiu."
 }

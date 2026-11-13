@@ -6,7 +6,7 @@
 
 import { checkNaming, isoPreset, type NamingResult, type NamingRule } from '../../../../lib/requirements/iso-naming'
 
-export type SupplierState = 'active' | 'invited' | 'bounced'
+export type SupplierState = 'active' | 'invited' | 'bounced' | 'revoked'
 export type Verdict = 'pending' | 'accepted' | 'returned'
 
 export interface RxProject {

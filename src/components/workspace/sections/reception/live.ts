@@ -37,7 +37,7 @@ export function suppliersFromApi(suppliers: (ApiSupplier & { created_at?: string
       out.push({
         id: s.id, projectId, name: s.name, originator: originatorOf(s.name),
         discipline: s.discipline ?? 'Architecture', contact: s.name, email: '', invitedAt: (s.created_at ?? new Date().toISOString()).slice(0, 10),
-        state: s.deliveries > 0 ? 'active' : 'invited',
+        state: s.revoked_at ? 'revoked' : s.deliveries > 0 ? 'active' : 'invited',
       } as RxSupplier)
     }
   }

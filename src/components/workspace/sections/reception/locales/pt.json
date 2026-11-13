@@ -305,5 +305,16 @@
   "Validated, waiting for review": "Validada, a aguardar revisão",
   "Waiting for validation…": "A aguardar validação…",
   "Your deliveries": "As suas entregas",
-  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} convidado. O link de envio, mostrado só uma vez: {{link}}"
+  "{{name}} invited. Their upload link, shown only once: {{link}}": "{{name}} convidado. O link de envio, mostrado só uma vez: {{link}}",
+  "{{name}}: the old link stopped working. New upload link, shown only once: {{link}}": "{{name}}: o link antigo deixou de funcionar. Novo link de envio, mostrado apenas uma vez: {{link}}",
+  "{{name}} can no longer deliver. Their past deliveries stay on the register.": "{{name}} já não pode entregar. As entregas anteriores continuam no registo.",
+  "Access revoked": "Acesso revogado",
+  "This supplier can no longer deliver. Their past deliveries stay on the register.": "Este fornecedor já não pode entregar. As entregas anteriores continuam no registo.",
+  "No link: access revoked.": "Sem link: acesso revogado.",
+  "The link was shown once, when you invited them. If it leaked or got lost, make a new one: the old one stops working at once.": "O link foi mostrado uma única vez, no convite. Se foi divulgado ou se perdeu, crie um novo: o antigo deixa de funcionar de imediato.",
+  "New upload link": "Novo link de envio",
+  "Yes, revoke {{name}}": "Sim, revogar {{name}}",
+  "Revoke access": "Revogar acesso",
+  "Still being validated": "Ainda em validação",
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "O servidor ainda não verificou este ficheiro. Pode aceitá-lo quando tiver nota, ou devolvê-lo já com um motivo."
 }

@@ -6,15 +6,20 @@ import { fmtDate, VerdictChip } from './format'
 import { DISCIPLINES, supplierStats, uploadLink, type RxDelivery, type RxProject, type RxSupplier } from './sample'
 import type { Rx } from './strings'
 
-export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpenDelivery, onClose }: {
+export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpenDelivery, onAccess, onClose }: {
   project: RxProject; supplier: RxSupplier; deliveries: RxDelivery[]; rx: Rx; lang: string
-  onOpenDelivery: (id: string) => void; onClose: () => void
+  onOpenDelivery: (id: string) => void
+  /** Workspace mode only: replace the upload link, or cut the supplier off. */
+  onAccess?: (action: 'rotate' | 'revoke') => void
+  onClose: () => void
 }) {
+  const [confirmRevoke, setConfirmRevoke] = useState(false)
   const st = supplierStats(project, s, deliveries)
   const mine = deliveries.filter((d) => d.supplierId === s.id).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt))
   return (
     <Dialog title={s.name} onClose={onClose} size="lg" footer={<Quiet onClick={onClose}>{rx('Close')}</Quiet>}>
       <p className="text-[12.5px] text-[var(--text-dim)] -mt-2 mb-4 [overflow-wrap:anywhere]">{rx(s.discipline)} · {rx('author code {{code}}', { code: s.originator })} · {s.contact} · {s.email}</p>
+      {s.state === 'revoked' && <Banner tone="info" title={rx('Access revoked')}>{rx('This supplier can no longer deliver. Their past deliveries stay on the register.')}</Banner>}
       {s.state === 'bounced' && <Banner tone="danger" title={rx('The invitation bounced')}>{rx('{{email}} does not exist or rejected the message. Correct the address and invite again.', { email: s.email })}</Banner>}
       {s.state === 'invited' && <Banner tone="info" title={rx('Invited, no delivery yet')}>{rx('Invited on {{date}}. The link works without an account.', { date: fmtDate(s.invitedAt, lang, false) })}</Banner>}
       {st.daysLate > 0 && <Banner tone="warn" title={rx('{{n}} days late', { n: st.daysLate })}>{rx('No delivery since {{date}}. Deliveries are due every week.', { date: st.lastAt ? fmtDate(st.lastAt, lang, false) : '—' })}</Banner>}
@@ -44,8 +49,20 @@ export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpe
 
       <section className="mb-5">
         <h3 className="text-[13px] font-medium mb-1.5">{rx('Upload link for this supplier')}</h3>
-        <CopyField value={uploadLink(project, s)} label={rx('Upload link for this supplier')} />
-        <p className="text-[11.5px] text-[var(--text-faint)] mt-1">{rx('Sample link: uploads are not open yet.')}</p>
+        {onAccess ? (
+          s.state === 'revoked' ? <p className="text-[12.5px] text-[var(--text-dim)]">{rx('No link: access revoked.')}</p> : <>
+            <p className="text-[12.5px] text-[var(--text-dim)] mb-2">{rx('The link was shown once, when you invited them. If it leaked or got lost, make a new one: the old one stops working at once.')}</p>
+            <div className="flex flex-wrap gap-2">
+              <Quiet onClick={() => onAccess('rotate')}>{rx('New upload link')}</Quiet>
+              {confirmRevoke
+                ? <Quiet onClick={() => onAccess('revoke')}>{rx('Yes, revoke {{name}}', { name: s.name })}</Quiet>
+                : <Quiet onClick={() => setConfirmRevoke(true)}>{rx('Revoke access')}</Quiet>}
+            </div>
+          </>
+        ) : <>
+          <CopyField value={uploadLink(project, s)} label={rx('Upload link for this supplier')} />
+          <p className="text-[11.5px] text-[var(--text-faint)] mt-1">{rx('Sample link: uploads are not open yet.')}</p>
+        </>}
       </section>
 
       {mine.length > 0 && (
