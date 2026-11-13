@@ -87,3 +87,34 @@ export function coarseBoundsN(dem: CoarseDem): { minNx: number; maxNx: number; m
     minNy: 0.5 - (dem.tileY0 + COARSE_DEM_TILES) / n,
   }
 }
+
+/**
+ * Normalized size of one DEM sample (one Terrarium pixel at `dem.zoom`). The
+ * flat map's tiles put their grid vertices on these sample CORNERS (the lattice
+ * of tile-displace), so every tile from z13 to z17 draws the same surface.
+ */
+export function coarseTexelN(dem: CoarseDem): number {
+  return 1 / (2 ** dem.zoom * TILE_PX)
+}
+
+/**
+ * The surface the displaced flat map actually draws (WP2): the DEM read at the
+ * texel-corner lattice, linear across each lattice cell's two triangles, split
+ * along the south-west → north-east diagonal as three's PlaneGeometry splits
+ * them. A tile whose grid IS that lattice (tileGridSegments) draws exactly this
+ * whatever its zoom, so the fine patch's rim eases onto it and the two meshes
+ * share their values on the hole's line instead of interpolating the DEM two
+ * different ways (the ≈2 m p95 step on steep streets before).
+ */
+export function latticeSurfaceN(dem: CoarseDem, nx: number, ny: number): number {
+  const k = 2 ** dem.zoom * TILE_PX
+  const gx = (nx + 0.5) * k
+  const gy = (0.5 - ny) * k // rows DOWN, as the tile grid's v
+  const i = Math.floor(gx), j = Math.floor(gy)
+  const u = gx - i, v = gy - j
+  const at = (a: number, b: number) => sampleCoarseN(dem, a / k - 0.5, 0.5 - b / k)
+  const za = at(i, j), zb = at(i, j + 1), zc = at(i + 1, j + 1), zd = at(i + 1, j)
+  return u + v <= 1
+    ? za + u * (zd - za) + v * (zb - za)
+    : zc + (1 - u) * (zb - zc) + (1 - v) * (zd - zc)
+}

@@ -123,7 +123,7 @@ const out = await p.evaluate(async () => {
       for (let z = 13; z <= 17; z++) {
         const m = 2 ** z, w = 1 / m
         const cxT = (Math.floor((nx + 0.5) * m) + 0.5) / m - 0.5, cyT = 0.5 - (Math.floor((0.5 - ny) * m) + 0.5) / m
-        const tileM = TD.tileSurfaceN(relief, cxT, cyT, w, w, TD.tileGridSegments(w, relief.metresToN), nx, ny) / relief.metresToN + relief.anchorM
+        const tileM = TD.tileSurfaceN(relief, cxT, cyT, w, w, TD.tileGridSegments(w, relief.dem), nx, ny) / relief.metresToN + relief.anchorM
         if (Math.abs(tileM - patchM) > Math.abs(worst)) worst = tileM - patchM
       }
       steps.push(worst)

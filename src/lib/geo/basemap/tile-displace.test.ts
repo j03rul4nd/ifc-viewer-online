@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
-import { COARSE_DEM_PX, coarseBoundsN, sampleCoarseN, clampSea, type CoarseDem } from '../coarse-dem'
+import { COARSE_DEM_PX, coarseBoundsN, coarseTexelN, latticeSurfaceN, sampleCoarseN, clampSea, type CoarseDem } from '../coarse-dem'
 import { GeneratedSurfacePlugin } from '3d-tiles-renderer/plugins'
 // @ts-expect-error -- the plugin's internal tile keys ship without types
 import { TILE_LEVEL, TILE_X, TILE_Y } from '3d-tiles-renderer/src/three/plugins/images/ImageFormatPlugin.js'
@@ -34,10 +34,41 @@ describe('coarse-dem', () => {
 describe('tile-displace', () => {
   const mToN = 1 / 30_000_000
 
-  it('sizes the grid near the DEM spacing, bounded', () => {
-    expect(tileGridSegments(920 * mToN, mToN)).toBe(23)
-    expect(tileGridSegments(50 * mToN, mToN)).toBe(4)
-    expect(tileGridSegments(50_000 * mToN, mToN)).toBe(32)
+  it('puts one grid segment on every DEM sample, bounded', () => {
+    const dem = rampDem()
+    const texel = coarseTexelN(dem)
+    expect(tileGridSegments(8 * texel, dem)).toBe(8) // z17 at a z12 DEM
+    expect(tileGridSegments(128 * texel, dem)).toBe(128) // z13
+    expect(tileGridSegments(256 * texel, dem)).toBe(128) // z12: capped
+    expect(tileGridSegments(0.25 * texel, dem)).toBe(1)
+  })
+
+  it('draws the same lattice surface from every zoom z13–z17, the one the patch rim eases onto', () => {
+    // A bumpy DEM, so triangle interpolation differs from bilinear.
+    const dem = rampDem()
+    for (let j = 0; j < COARSE_DEM_PX; j++) for (let i = 0; i < COARSE_DEM_PX; i++) {
+      dem.heights[j * COARSE_DEM_PX + i] = 50 + 20 * Math.sin(i * 0.7) * Math.cos(j * 0.45) + 0.3 * i
+    }
+    const relief = { dem, anchorM: 40, metresToN: mToN }
+    const b = coarseBoundsN(dem)
+    let maxDiff = 0
+    for (let k = 0; k < 300; k++) {
+      const nx = b.minNx + (b.maxNx - b.minNx) * (0.35 + 0.3 * ((k * 0.618) % 1))
+      const ny = b.minNy + (b.maxNy - b.minNy) * (0.35 + 0.3 * ((k * 0.381) % 1))
+      const want = latticeSurfaceN(dem, nx, ny)
+      for (let z = 13; z <= 17; z++) {
+        const m = 2 ** z, w = 1 / m
+        const cx = (Math.floor((nx + 0.5) * m) + 0.5) / m - 0.5
+        const cy = 0.5 - (Math.floor((0.5 - ny) * m) + 0.5) / m
+        const got = tileSurfaceN(relief, cx, cy, w, w, tileGridSegments(w, dem), nx, ny) / mToN + 40
+        maxDiff = Math.max(maxDiff, Math.abs(got - want))
+      }
+    }
+    expect(maxDiff).toBeLessThan(1e-3)
+    // At lattice nodes it is the DEM itself.
+    const t = coarseTexelN(dem)
+    const nodeX = (Math.floor((b.minNx + 0.5) / t) + 300) * t - 0.5, nodeY = 0.5 - (Math.floor((0.5 - b.maxNy) / t) + 300) * t
+    expect(latticeSurfaceN(dem, nodeX, nodeY)).toBeCloseTo(sampleCoarseN(dem, nodeX, nodeY), 6)
   })
 
   it('lifts a quad tile onto the relief and keeps its UV range', () => {

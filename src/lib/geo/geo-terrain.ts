@@ -32,7 +32,7 @@ import { createTerrainMaterial } from './surface-shaders'
 import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
-import { sampleCoarseN, type CoarseDem } from './coarse-dem'
+import { latticeSurfaceN, type CoarseDem } from './coarse-dem'
 import type { TerrainWorkerIn, TerrainWorkerOut, VectorDrape } from '../../workers/geo-terrain.worker'
 import { createTerrainDetailLayer, type TerrainDetailView } from './terrain-detail-layer'
 import { isMemoryConstrained } from '../loading/device-profile'
@@ -86,8 +86,9 @@ const RIM_DIP_M = 4
  * be the visible step at the hole (≈1.2 m on the hole's line). Measured on
  * Plaça de Catalunya, 200 points of the hole's line against the worst tile
  * z13–z17 (scripts/geo/relief-measure.mjs, global DEM): 4 m → median
- * 1.34 m; 0.3 m → median 0.53 m, mean signed +0.07 m. What remains is the
- * two grids' interpolation on steep streets (p95 ≈2 m), not the dip.
+ * 1.34 m; 0.3 m → median 0.53 m. With the rim on the tiles' own lattice
+ * surface (latticeSurfaceN) the step is the dip alone: 0.09 m at all three
+ * sites, p95 0.09 m.
  */
 export const RIM_DIP_COARSE_M = 0.3
 /** Fraction of the contact band over which that dip is reached. */
@@ -437,14 +438,14 @@ function assemblePatch(
   const rimDatumM = rimSamples.length > 0 ? rimSamples[rimSamples.length >> 1] : anchorElevation
   /**
    * What the rim eases ONTO, per vertex: the city's coarse relief at that
-   * point when there is one (WP2 — the flat map is displaced by the same
-   * surface, so the two meet), else the single level of the edge.
+   * point when there is one, read as the tiles draw it (latticeSurfaceN, WP2 —
+   * the flat map is displaced by that same surface, so the two meet), else the single level of the edge.
    */
   const rimTarget = new Float32Array(verts * verts).fill(rimDatumM)
   if (coarse) {
     const x0 = centre.nx - patchSize / 2, y0 = centre.ny + patchSize / 2, step = patchSize / grid
     for (let idx = 0; idx < verts * verts; idx++) {
-      rimTarget[idx] = sampleCoarseN(coarse, x0 + (idx % verts) * step, y0 - Math.floor(idx / verts) * step)
+      rimTarget[idx] = latticeSurfaceN(coarse, x0 + (idx % verts) * step, y0 - Math.floor(idx / verts) * step)
     }
   }
 
@@ -742,7 +743,7 @@ function assemblePatch(
       // Sample the EFFECTIVE surface (measured + any synthetic blend) so a
       // building sits on the ground the user is actually looking at.
       // Beyond the patch, the city's coarse relief (WP2); without it the edge clamps.
-      if (coarse && !insidePatch(nx, ny)) return sampleCoarseN(coarse, nx, ny)
+      if (coarse && !insidePatch(nx, ny)) return latticeSurfaceN(coarse, nx, ny)
       return sampleField((idx) => effective[idx], nx, ny)
     },
 

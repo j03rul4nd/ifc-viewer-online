@@ -2,6 +2,7 @@
 // The flat map on the city's relief (WP2). Every basemap tile is a single quad
 // made by 3d-tiles-renderer's GeneratedSurfacePlugin; on load it is swapped for
 // a grid and its vertices lifted to the coarse DEM (coarse-dem), on the CPU.
+// The grid is the DEM's sample-corner lattice (see tileGridSegments).
 //
 // Why CPU and not a vertex shader: TilesFadePlugin already wraps each tile
 // material's onBeforeCompile, and the overlay plugin may too; a third wrapper
@@ -16,7 +17,7 @@
 // re-applies it to the tiles that already exist when the relief arrives.
 
 import * as THREE from 'three'
-import { sampleCoarseN, type CoarseDem } from '../coarse-dem'
+import { coarseTexelN, sampleCoarseN, type CoarseDem } from '../coarse-dem'
 
 export interface TileRelief {
   dem: CoarseDem
@@ -26,15 +27,21 @@ export interface TileRelief {
   metresToN: number
 }
 
-/** Spacing the tile grid aims at, metres: about the DEM's own (≈38 m at z12). */
-export const TILE_GRID_TARGET_M = 40
-export const TILE_GRID_MIN = 4
-export const TILE_GRID_MAX = 32
+/**
+ * Most grid segments per side. A tile at most this many DEM samples wide (z13
+ * and finer at z12's DEM: 128, 64, 32, 16, 8 samples) gets ONE segment per
+ * sample, its vertices on the sample-corner lattice (coarse-dem
+ * latticeSurfaceN): every such tile then draws the same surface, and the fine
+ * patch's rim eases onto it. Wider tiles (z12 and coarser, far away) are
+ * capped here and only approximate it.
+ */
+export const TILE_GRID_MAX = 128
+export const TILE_GRID_MIN = 1
 
 /** Grid segments per side for a tile `sizeN` normalized units wide. */
-export function tileGridSegments(sizeN: number, metresToN: number): number {
-  const sizeM = sizeN / Math.max(1e-30, metresToN)
-  return Math.min(TILE_GRID_MAX, Math.max(TILE_GRID_MIN, Math.round(sizeM / TILE_GRID_TARGET_M)))
+export function tileGridSegments(sizeN: number, dem: CoarseDem): number {
+  const texels = Math.round(sizeN / coarseTexelN(dem))
+  return Math.min(TILE_GRID_MAX, Math.max(TILE_GRID_MIN, texels))
 }
 
 /** Half-height, normalized, every tile box must have to hold the relief. */
@@ -81,7 +88,7 @@ export function displaceTileScene(scene: THREE.Object3D, relief: TileRelief | nu
     if (!(mesh as THREE.Mesh).isMesh) return
     const flat = readFlat(mesh)
     if (!flat) return
-    const segments = relief ? tileGridSegments(flat.w, relief.metresToN) : 1
+    const segments = relief ? tileGridSegments(flat.w, relief.dem) : 1
     let geometry = mesh.geometry as THREE.PlaneGeometry
     if (!mesh[FLAT] || mesh[FLAT].segments !== segments) {
       const next = new THREE.PlaneGeometry(flat.w, flat.h, segments, segments)

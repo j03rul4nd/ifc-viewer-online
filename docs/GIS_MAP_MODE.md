@@ -899,18 +899,24 @@ nothing here has been looked at on a phone.
 
 - **What changed.** With terrain on, the worker also fetches a coarse DEM of the
   whole city (z12 global mosaic, ≈38 m). Every flat-map tile is swapped on load
-  for a grid (`tileGridSegments`, ≈40 m, 4–32 per side) whose vertices are lifted
-  to that DEM, on the CPU, and its box is given the relief's half-height so it is
+  for a grid whose vertices sit on the DEM's sample-corner lattice
+  (`tileGridSegments`: one segment per DEM sample, 8 at z17 to 128 at z13,
+  capped at 128 for z12 and coarser) and are lifted to that DEM, on the CPU, and its box is given the relief's half-height so it is
   not culled. Outside the 3×3 patch, Montjuïc and Collserola now stand up:
   ground at (41.3636, 2.1586) reads 120.5 m against 120.8 m in the DEM (main:
   32.6 m, the patch's rim level, flat).
-- **The rim meets the tiles.** The patch's edge eases onto the coarse DEM at
-  each vertex (not onto one level), and dips only `RIM_DIP_COARSE_M` = 0.3 m
-  under the tiles (4 m without the coarse DEM). Measured on the hole's line,
-  200 points, against the worst tile z13–z17 (`tileSurfaceN`, the exact surface
-  the tile draws): median 0.53 m (Pl. Catalunya), 0.09 m (Hotel Vela), 0.80 m
-  (El Carmel); p95 2–3 m on steep streets. That residue is the two grids
-  interpolating the same DEM differently, not the dip (4 m gave a median 1.34 m).
+- **The rim meets the tiles.** Because every tile z13–z17 has its vertices on
+  the same lattice, they all draw one surface, `latticeSurfaceN` (coarse-dem:
+  the DEM at lattice nodes, linear over each cell's two triangles, split as
+  three's PlaneGeometry splits them). The patch's edge eases onto THAT surface
+  at each vertex, so both meshes share their values on the hole's line, and
+  dips only `RIM_DIP_COARSE_M` = 0.3 m under the tiles (4 m without the coarse
+  DEM). Measured on the hole's line, 200 points, against the worst tile z13–z17
+  (`tileSurfaceN`, the exact surface the tile draws), global DEM: median / p95
+  0.09 / 0.09 m at Pl. Catalunya, Hotel Vela and El Carmel (max 0.10 m) — the
+  dip itself on that line. Before the lattice (≈40 m grids of 4–32 segments,
+  rim on the bilinear DEM) it was 0.53 / 2.3 m at Catalunya and 0.80 m median
+  at El Carmel: two grids interpolating the same DEM differently.
 - **The patch stays on the global DEM.** Fixing the ICGC URL would have moved
   the fine patch of Catalonia to ICGC: anchor 20.75 m instead of 28.62 m and the
   ground under a model 0.40 m off main. Rule for the switch: ICGC for the patch
