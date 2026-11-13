@@ -28,6 +28,13 @@ export interface RasterSource {
   urlsFor(z: number, x: number, y: number): Array<{ url: string; fx: number; fy: number; fw: number; fh: number }>
   /** A source computed in the browser rather than fetched as-is. */
   load?(z: number, x: number, y: number, signal?: AbortSignal): Promise<LoadedRaster[]>
+  /**
+   * A cached WMTS pyramid (256 px tiles, GoogleMapsCompatible) behind the
+   * source: what lets a sharp square of any size be composed from it without
+   * a request per surface tile. Only sources with one are mixed into the
+   * relief's sharp squares (terrain-detail-layer).
+   */
+  wmts?: { maxLevel: number; url(level: number, col: number, row: number): string }
 }
 
 const SPAIN = { west: -18.4, south: 27.5, east: 4.6, north: 44.0 }
@@ -52,12 +59,25 @@ export function intersects(a: RasterSource['coverage'], b: RasterSource['coverag
   return a.west < b.east && a.east > b.west && a.south < b.north && a.north > b.south
 }
 
+function pnoaTileUrl(level: number, col: number, row: number): string {
+  return 'https://www.ign.es/wmts/pnoa-ma?request=GetTile&service=WMTS&version=1.0.0'
+    + '&layer=OI.OrthoimageCoverage&style=default&format=image/jpeg&tilematrixset=GoogleMapsCompatible'
+    + `&tilematrix=${level}&tilerow=${row}&tilecol=${col}`
+}
+
 export const PNOA: RasterSource = {
   id: 'pnoa',
   attribution: 'PNOA cedido por © Instituto Geográfico Nacional de España (CC-BY 4.0)',
   coverage: SPAIN,
   minzoom: 6,
   maxzoom: 20,
+  wmts: {
+    // PNOA-MA is a 25 cm photo (15 cm in places): level 19 is ≈ 0.22 m per
+    // pixel in Spain. Level 20 is the same photo resampled by the server —
+    // four times the tiles for no new detail — so squares stop at 19.
+    maxLevel: 19,
+    url: (level, col, row) => pnoaTileUrl(level, col, row),
+  },
   // WMTS 256 px tiles one level deeper fill a 512 px surface tile exactly —
   // and WMTS tiles are CDN-cached, which a WMS GetMap is not.
   urlsFor(z, x, y) {
@@ -66,12 +86,7 @@ export const PNOA: RasterSource = {
     for (let dy = 0; dy < 2; dy++) {
       for (let dx = 0; dx < 2; dx++) {
         const col = x * 2 + dx, row = y * 2 + dy
-        out.push({
-          url: 'https://www.ign.es/wmts/pnoa-ma?request=GetTile&service=WMTS&version=1.0.0'
-            + '&layer=OI.OrthoimageCoverage&style=default&format=image/jpeg&tilematrixset=GoogleMapsCompatible'
-            + `&tilematrix=${cz}&tilerow=${row}&tilecol=${col}`,
-          fx: dx / 2, fy: dy / 2, fw: 0.5, fh: 0.5,
-        })
+        out.push({ url: pnoaTileUrl(cz, col, row), fx: dx / 2, fy: dy / 2, fw: 0.5, fh: 0.5 })
       }
     }
     return out
@@ -246,4 +261,67 @@ export async function loadRaster(
     }
   }))
   return results.filter((r): r is LoadedRaster => r !== null)
+}
+
+// ── Sharp squares on the relief ───────────────────────────────────────────────
+// The relief's close-up squares (terrain-detail) are 2 048 px canvases at style
+// zoom 17–21, not surface tiles. A WMTS source fills one with its own 256 px
+// tiles at the level that matches the square's sharpness (style zoom z = WMTS
+// level z + 1, 256 px tiles being half a 512 px style tile), capped at the
+// source's deepest level and at a tile budget per square — over budget, one
+// level coarser, a quarter of the tiles, stretched.
+
+export interface SquareRasterPlan {
+  /** WMTS level used; -1 = nothing to fetch (no pyramid, out of coverage or range). */
+  level: number
+  /** Tiles to fetch, placed in fractions of the square's canvas (row 0 = north). */
+  pieces: Array<{ url: string; fx: number; fy: number; fw: number; fh: number }>
+}
+
+/** Centred-normalized mercator y (north positive) → latitude, degrees. */
+function latOfNy(ny: number): number {
+  return (Math.atan(Math.sinh(2 * Math.PI * ny)) * 180) / Math.PI
+}
+
+/**
+ * The WMTS tiles that cover a square (centre and half side in
+ * centred-normalized mercator, x east, y north) painted at style zoom `z`,
+ * at most `maxTiles` of them.
+ */
+export function squareRasterPlan(
+  src: RasterSource,
+  square: { cx: number; cy: number; half: number },
+  z: number,
+  maxTiles: number,
+): SquareRasterPlan {
+  const none: SquareRasterPlan = { level: -1, pieces: [] }
+  const w = src.wmts
+  if (!w || maxTiles < 1) return none
+  const rx0 = square.cx - square.half, rx1 = square.cx + square.half
+  const ry0 = square.cy - square.half, ry1 = square.cy + square.half
+  const box = { west: rx0 * 360, east: rx1 * 360, south: latOfNy(ry0), north: latOfNy(ry1) }
+  if (!intersects(src.coverage, box)) return none
+  const eps = 1e-12
+  // Surface tiles at style zoom z use WMTS level z + 1 (see urlsFor).
+  for (let level = Math.min(w.maxLevel, z + 1); level >= src.minzoom + 1; level--) {
+    const n = 2 ** level
+    const c0 = Math.max(0, Math.floor((rx0 + 0.5) * n)), c1 = Math.min(n - 1, Math.ceil((rx1 + 0.5) * n - eps) - 1)
+    const r0 = Math.max(0, Math.floor((0.5 - ry1) * n)), r1 = Math.min(n - 1, Math.ceil((0.5 - ry0) * n - eps) - 1)
+    if ((c1 - c0 + 1) * (r1 - r0 + 1) > maxTiles) continue
+    const side = 2 * square.half
+    const pieces: SquareRasterPlan['pieces'] = []
+    for (let row = r0; row <= r1; row++) {
+      for (let col = c0; col <= c1; col++) {
+        pieces.push({
+          url: w.url(level, col, row),
+          fx: (col / n - 0.5 - rx0) / side,
+          fy: (ry1 - (0.5 - row / n)) / side,
+          fw: 1 / n / side,
+          fh: 1 / n / side,
+        })
+      }
+    }
+    return { level, pieces }
+  }
+  return none
 }

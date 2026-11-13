@@ -3,15 +3,26 @@
 // them as textures and hands the relief's material the uniforms to mix them
 // over its own big texture. See terrain-detail.ts for why it exists.
 //
-// Nothing here costs a request the map was not already making: the squares are
-// painted by the basemap's own paint worker from the z14 vector tiles the
-// basemap has fetched (the browser cache serves them), so this only runs for a
-// vector provider. A raster provider keeps the single texture: sharper squares
-// there would mean more image tiles from someone else's server.
+// The vector part costs no request the map was not already making: the
+// squares are painted by the basemap's own paint worker from the z14 vector
+// tiles the basemap has fetched (the browser cache serves them), so this only
+// runs for a vector provider. A raster provider (tile.openstreetmap.org and
+// the other plain XYZ servers) keeps the single texture: sharper squares there
+// would mean more image tiles from a volunteer server whose usage policy asks
+// apps not to — zero new requests, by design.
+//
+// The one exception is a style that mixes in a WMTS imagery pyramid (Hybrid =
+// PNOA under the vectors): its squares are composed with that imagery at the
+// square's own sharpness, from IGN's CDN-cached tiles, at most
+// `IMAGERY_TILES_PER_SQUARE` per square and kept in a small blob cache, so
+// panning back and forth fetches nothing twice. PNOA is CC-BY 4.0 and the
+// style's attribution already credits it.
 
 import * as THREE from 'three'
 import { createPaintPool, canPaintOffThread, type PaintPool } from './basemap/paint-pool'
-import type { MapStyleId } from './basemap/map-styles'
+import { getMapStyle, type MapStyleId } from './basemap/map-styles'
+import { RASTER_SOURCES, squareRasterPlan } from './basemap/raster-sources'
+import type { RasterDraw } from './basemap/vector-painter'
 import {
   planDetailLevels, detailFrames, detailRectUv, detailBudget,
   type DetailLevel,
@@ -25,6 +36,69 @@ const MAX_IN_FLIGHT = 2
 const KEEP_MS = 8_000
 /** A new square fades in over this long instead of popping. */
 const FADE_MS = 240
+/**
+ * Imagery tiles one square may ask for (desktop / constrained). A 2 048 px
+ * square at its own sharpness is 8–9 tiles a side (≤ 81); a 1 024 px one 4–5
+ * (≤ 25). Over the cap it takes one level coarser, a quarter of the tiles.
+ */
+const IMAGERY_TILES_PER_SQUARE = { desktop: 81, constrained: 25 }
+/** Imagery tiles kept as compressed blobs (~20–40 KB each, ≈ 8 MB). */
+const IMAGERY_CACHE = 256
+
+const imageryBlobs = new Map<string, Promise<Blob | null>>()
+let imageryFetches = 0
+/** Squares composed with imagery, and the most tiles one of them asked for (bench). */
+let imagerySquares = 0
+let imageryMaxPerSquare = 0
+
+/** One imagery tile, fetched once per session while it stays in the cache. */
+function imageryBlob(url: string): Promise<Blob | null> {
+  const hit = imageryBlobs.get(url)
+  if (hit) { imageryBlobs.delete(url); imageryBlobs.set(url, hit); return hit }
+  imageryFetches++
+  const p = fetch(url, { mode: 'cors' })
+    .then(async (res) => {
+      if (!res.ok) return null
+      const b = await res.blob()
+      return b.type.startsWith('image/') ? b : null
+    })
+    .catch(() => null)
+    .then((b) => {
+      // A failure is not remembered: the next square asks again.
+      if (!b && imageryBlobs.get(url) === p) imageryBlobs.delete(url)
+      return b
+    })
+  imageryBlobs.set(url, p)
+  while (imageryBlobs.size > IMAGERY_CACHE) imageryBlobs.delete(imageryBlobs.keys().next().value as string)
+  return p
+}
+
+/**
+ * The style's imagery for one square, ready for the painter. Sources without
+ * a WMTS pyramid (Catastro WMS, the computed hillshade) are left out: the
+ * hillshade stops at z15 anyway, and Catastro is not asked for more requests.
+ */
+async function squareImagery(styleId: MapStyleId, level: DetailLevel, maxTiles: number): Promise<{ draws: RasterDraw[]; level: number | null }> {
+  const out: RasterDraw[] = []
+  let imageryLevel: number | null = null
+  for (const use of getMapStyle(styleId).rasters) {
+    const plan = squareRasterPlan(RASTER_SOURCES[use.source], level, level.z, maxTiles)
+    if (plan.pieces.length === 0) continue
+    imageryLevel = imageryLevel === null ? plan.level : Math.min(imageryLevel, plan.level)
+    imagerySquares++
+    imageryMaxPerSquare = Math.max(imageryMaxPerSquare, plan.pieces.length)
+    const pieces = await Promise.all(plan.pieces.map(async (p) => {
+      const blob = await imageryBlob(p.url)
+      if (!blob) return null
+      try { return { image: await createImageBitmap(blob), fx: p.fx, fy: p.fy, fw: p.fw, fh: p.fh } } catch { return null }
+    }))
+    out.push({
+      placement: use.placement, opacity: use.opacity, blend: use.blend,
+      pieces: pieces.filter((p): p is NonNullable<typeof p> => p !== null),
+    })
+  }
+  return { draws: out, level: imageryLevel }
+}
 
 export interface TerrainDetailSource {
   template: string
@@ -53,7 +127,7 @@ export interface TerrainDetailLayer {
   update(view: TerrainDetailView | null, nowMs: number): void
   dispose(): void
   /** Dev diagnosis. */
-  debug(): { slots: Array<{ key: string; opacity: number } | null>; inFlight: number; painted: number; lastPaintMs: number; wanted: string[]; source: boolean; lastError: string | null }
+  debug(): { slots: Array<{ key: string; opacity: number; imageryLevel: number | null } | null>; inFlight: number; painted: number; lastPaintMs: number; wanted: string[]; source: boolean; lastError: string | null; imageryFetches: number; imageryCached: number; imagerySquares: number; imageryMaxPerSquare: number }
 }
 
 interface Slot {
@@ -61,6 +135,8 @@ interface Slot {
   texture: THREE.Texture
   bornAt: number
   wantedAt: number
+  /** WMTS level of the imagery mixed in, null = none. */
+  imageryLevel: number | null
 }
 
 export function createTerrainDetailLayer(opts: {
@@ -118,24 +194,40 @@ export function createTerrainDetailLayer(opts: {
     const gen = generation
     const started = performance.now()
     const src = source
-    pool.paint({
-      template: src.template, styleId: src.styleId,
-      width: budget.size, height: budget.size,
-      zoom: level.z,
-      // One texel is about one device pixel where it is looked at, so a CSS
-      // pixel of line width or type is `dpr` texels — the same rule the flat
-      // tiles follow, which is what makes a street as wide on the relief as
-      // beside it.
-      pixelScale: styledDpr,
-      language: src.language,
-      frames: detailFrames(level, budget.size),
-      rasters: [],
-      // Point names belong to the screen-space layer; they are handed back
-      // and dropped here, never baked.
-      collect: true,
-      groundLabels: level.labels,
-      fontBase: new URL(`${import.meta.env.BASE_URL}fonts/`, location.href).href,
-    }, abort.signal).then((res) => {
+    const p = pool
+    void squareImagery(src.styleId, level, opts.constrained ? IMAGERY_TILES_PER_SQUARE.constrained : IMAGERY_TILES_PER_SQUARE.desktop).then(({ draws: rasters, level: imageryLevel }) => {
+      if (abort.signal.aborted) {
+        for (const r of rasters) for (const piece of r.pieces) (piece.image as ImageBitmap).close?.()
+        throw new DOMException('aborted', 'AbortError')
+      }
+      const closeRasters = (err: unknown): never => {
+        // Rejected before the worker took them (pool disposed, aborted).
+        for (const r of rasters) for (const piece of r.pieces) (piece.image as ImageBitmap).close?.()
+        throw err
+      }
+      let painting
+      try {
+        painting = p.paint({
+        template: src.template, styleId: src.styleId,
+        width: budget.size, height: budget.size,
+        zoom: level.z,
+        // One texel is about one device pixel where it is looked at, so a CSS
+        // pixel of line width or type is `dpr` texels — the same rule the flat
+        // tiles follow, which is what makes a street as wide on the relief as
+        // beside it.
+        pixelScale: styledDpr,
+        language: src.language,
+        frames: detailFrames(level, budget.size),
+        rasters,
+        // Point names belong to the screen-space layer; they are handed back
+        // and dropped here, never baked.
+        collect: true,
+        groundLabels: level.labels,
+        fontBase: new URL(`${import.meta.env.BASE_URL}fonts/`, location.href).href,
+      }, abort.signal)
+      } catch (err) { return closeRasters(err) }
+      return painting.then((res) => ({ res, imageryLevel }), closeRasters)
+    }).then(({ res, imageryLevel }) => {
       inFlight.delete(level.key)
       // Wanted still? A square for a zoom the view has left is dropped; one
       // for the same zoom a step away is kept — it is nearer than what it
@@ -155,7 +247,7 @@ export function createTerrainDetailLayer(opts: {
       // it swaps without a fade. A new zoom fades in.
       const bornAt = prev && prev.level.z === level.z ? prev.bornAt : performance.now()
       freeSlot(i)
-      slots[i] = { level, texture: tex, bornAt, wantedAt: nowMs }
+      slots[i] = { level, texture: tex, bornAt, wantedAt: nowMs, imageryLevel }
       painted++
       lastPaintMs = performance.now() - started
     }).catch((err: unknown) => {
@@ -259,9 +351,10 @@ ${Array.from({ length: SLOTS }, (_, i) => `	sampledDiffuseColor.rgb = mixDetail(
 
     debug() {
       return {
-        slots: slots.map((s) => s ? { key: s.level.key, opacity: Math.min(1, (performance.now() - s.bornAt) / FADE_MS) } : null),
+        slots: slots.map((s) => s ? { key: s.level.key, opacity: Math.min(1, (performance.now() - s.bornAt) / FADE_MS), imageryLevel: s.imageryLevel } : null),
         inFlight: inFlight.size, painted, lastPaintMs: Math.round(lastPaintMs),
         wanted: wanted.map((w) => w.key), source: source !== null, lastError,
+        imageryFetches, imageryCached: imageryBlobs.size, imagerySquares, imageryMaxPerSquare,
       }
     },
   }
