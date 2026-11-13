@@ -59,6 +59,8 @@ export interface RxDelivery {
   decidedAt?: string
   /** SHA-256 of the delivered file (server data); the sample has none. */
   fileHash?: string
+  /** Server data: the file is cut short or unclosed — damaged, not a weak model. */
+  damaged?: boolean
 }
 
 export const RECEIVER = 'Laura Méndez'

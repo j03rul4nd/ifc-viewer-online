@@ -317,5 +317,8 @@
   "Revoke access": "アクセスを取り消す",
   "Still being validated": "検証中",
   "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "サーバーはまだこのファイルを確認していません。スコアが出てから承認するか、理由を添えて今すぐ差し戻せます。",
-  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "受け取り側がファイル名を拒否しました。プロジェクトの命名規則に従っていません。上の表示どおりに名前を変更して、もう一度納品してください。"
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "受け取り側がファイル名を拒否しました。プロジェクトの命名規則に従っていません。上の表示どおりに名前を変更して、もう一度納品してください。",
+  "The file is damaged": "ファイルが破損しています",
+  "It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.": "途中で切れているか、正しく閉じられていません（書き出しやアップロードの中断）。そのためスコアは付けていません。差し戻して完全なファイルを依頼してください。",
+  "This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.": "このファイルは破損しています。途中で切れているか、正しく閉じられていません（書き出しやダウンロードの中断）。もう一度書き出して、完全なファイルを納品してください。"
 }

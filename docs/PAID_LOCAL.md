@@ -141,3 +141,30 @@ A contractor (`org_localpilot`) opens a site, invites 5 suppliers; they deliver 
 folder, good and bad (a renamed PDF, a file cut at 60 %, a double send, a misnamed file); the contractor
 accepts, returns, raises and resolves issues, shares 25 clash statuses and the mail queue fills. Every
 step is timed into `PILOT_OUT`. Results: docs-planning/32 «Piloto simulado».
+
+Part 7 (`paid-local-7.integration.test.ts`): a STEP file cut short comes back `file_status: damaged`
+with its reason, never a low score; `auto` (the server's verdict) and `review` (a person's) are separate
+fields while `verdict`/`reason` stay the effective values; an upload-page delivery is validated before
+an older folder drop (`source` → job priority; `RUNNER_PER_WORKSPACE`, default 3, caps one company's
+running jobs); public routes answer 429 after 60/min per address and paid routes after 600/min per
+caller, with `Retry-After`. With `PAID_LOCAL_DB_CONTAINER=ifc-cloud-api-db-1` it also proves row-level
+security on its own: as `ifc_api_local` (no superuser, no BYPASSRLS) bound to company A, not one row of
+company B is visible in 12 tenant tables and writing into B is refused by the database.
+
+**Row-level security locally:** run `DATABASE_URL=postgresql://ifc:ifc@localhost:54329/ifc_real node
+scripts/local-rls-role.mjs` once in the backend, then set `.dev.vars`
+`DATABASE_URL=postgresql://ifc_api_local:local@localhost:54329/ifc_real` (keep `DIRECT_URL` on the owner
+for migrations). All suites pass under it.
+
+The API contract for deliveries (file status, automatic verdict, review, errors, 429) is in the
+backend's `docs/openapi-reception.yaml`.
+
+## 6. Pilot at scale
+
+```bash
+PAID_LOCAL_PILOT_SCALE=1 PILOT_OUT=pilot-scale.json PAID_LOCAL_API=http://127.0.0.1:8787 RUNNER_TOKEN=<token> npx vitest run src/lib/cloud/pilot-scale.integration.test.ts
+```
+
+50 folder deliveries (3 damaged, 3 misnamed) handled 4 at a time by 3 runners, plus the 94 MB Shanghai
+Tower through the upload page; CPU load is sampled during the run. `PILOT_RUNNERS` and
+`PILOT_CONCURRENCY` change the set-up. Results: docs-planning/32 «Piloto a escala».

@@ -116,7 +116,10 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
       {validating && (
         <Banner tone="info" title={rx('Still being validated')}>{rx('The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.')}</Banner>
       )}
-      {d.score === null && !validating && (
+      {d.damaged && (
+        <Banner tone="danger" title={rx('The file is damaged')}>{rx('It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.')}</Banner>
+      )}
+      {d.score === null && !validating && !d.damaged && (
         <Banner tone="danger" title={rx('The file could not be read')}>{rx('It is not an IFC file or it is damaged. Nothing was checked; return it and ask for the .ifc file.')}</Banner>
       )}
 

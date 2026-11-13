@@ -317,5 +317,8 @@
   "Revoke access": "撤销访问",
   "Still being validated": "仍在验证中",
   "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "服务器尚未检查此文件。待有评分后可以接受，或现在附上原因退回。",
-  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "接收方拒绝了该文件名：不符合项目的命名规则。请按上方提示重命名后重新交付。"
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "接收方拒绝了该文件名：不符合项目的命名规则。请按上方提示重命名后重新交付。",
+  "The file is damaged": "文件已损坏",
+  "It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.": "文件被截断或未正确结束（导出或上传中断），因此未评分。请退回并要求提供完整文件。",
+  "This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.": "此文件已损坏：被截断或未正确结束（导出或下载中断）。请重新导出并交付完整文件。"
 }

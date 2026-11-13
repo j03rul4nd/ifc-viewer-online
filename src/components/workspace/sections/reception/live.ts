@@ -49,7 +49,7 @@ export function deliveryFromApi(d: ApiDelivery): RxDelivery {
     id: d.id, projectId: d.requirement_set_id ?? '', supplierId: d.supplier_id ?? d.supplier, fileName: d.file_name, receivedAt: d.received_at, score: d.score,
     sizeMb: d.size_bytes ? Math.round(d.size_bytes / 1e5) / 10 : 0, profileVersion: 1, failures: [],
     verdict: d.verdict === 'rejected' ? 'returned' : d.verdict, reasons: d.reason ? [d.reason] : [],
-    decidedBy: d.decided_by ?? undefined, decidedAt: d.decided_at ?? undefined, fileHash: d.file_hash,
+    decidedBy: d.decided_by ?? undefined, decidedAt: d.decided_at ?? undefined, fileHash: d.file_hash, damaged: d.file_status === 'damaged',
   }
 }
 

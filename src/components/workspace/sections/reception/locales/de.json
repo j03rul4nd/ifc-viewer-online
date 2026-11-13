@@ -317,5 +317,8 @@
   "Revoke access": "Zugang entziehen",
   "Still being validated": "Wird noch geprüft",
   "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "Der Server hat diese Datei noch nicht geprüft. Sie können sie annehmen, sobald sie eine Bewertung hat, oder sie jetzt mit Begründung zurückgeben.",
-  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "Der Empfänger hat den Dateinamen abgelehnt: Er entspricht nicht der Namensregel des Projekts. Benennen Sie die Datei wie oben gezeigt um und liefern Sie erneut."
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "Der Empfänger hat den Dateinamen abgelehnt: Er entspricht nicht der Namensregel des Projekts. Benennen Sie die Datei wie oben gezeigt um und liefern Sie erneut.",
+  "The file is damaged": "Die Datei ist beschädigt",
+  "It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.": "Sie ist abgeschnitten oder nicht korrekt abgeschlossen (abgebrochener Export oder Upload) und wurde daher nicht bewertet. Geben Sie sie zurück und fordern Sie die vollständige Datei an.",
+  "This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.": "Diese Datei ist beschädigt: Sie ist abgeschnitten oder nicht korrekt abgeschlossen (abgebrochener Export oder Download). Exportieren Sie sie erneut und liefern Sie die vollständige Datei."
 }
