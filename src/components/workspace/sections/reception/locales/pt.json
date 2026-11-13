@@ -317,5 +317,8 @@
   "Revoke access": "Revogar acesso",
   "Still being validated": "Ainda em validação",
   "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "O servidor ainda não verificou este ficheiro. Pode aceitá-lo quando tiver nota, ou devolvê-lo já com um motivo.",
-  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "O destinatário recusou o nome do ficheiro: não segue a regra de nomes do projeto. Mude o nome como indicado acima e entregue de novo."
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "O destinatário recusou o nome do ficheiro: não segue a regra de nomes do projeto. Mude o nome como indicado acima e entregue de novo.",
+  "The file is damaged": "O ficheiro está danificado",
+  "It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.": "Está cortado ou não fecha corretamente (exportação ou envio interrompido), por isso não foi avaliado. Devolva-o e peça o ficheiro completo.",
+  "This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.": "Este ficheiro está danificado: está cortado ou não fecha corretamente (exportação ou transferência interrompida). Exporte-o de novo e entregue o ficheiro completo."
 }

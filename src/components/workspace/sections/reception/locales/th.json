@@ -317,5 +317,8 @@
   "Revoke access": "เพิกถอนสิทธิ์",
   "Still being validated": "กำลังตรวจสอบ",
   "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "เซิร์ฟเวอร์ยังไม่ได้ตรวจไฟล์นี้ รับได้เมื่อมีคะแนนแล้ว หรือส่งคืนตอนนี้พร้อมเหตุผล",
-  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "ผู้รับปฏิเสธชื่อไฟล์ เพราะไม่เป็นไปตามกฎการตั้งชื่อของโครงการ เปลี่ยนชื่อไฟล์ตามที่แสดงด้านบนแล้วส่งอีกครั้ง"
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "ผู้รับปฏิเสธชื่อไฟล์ เพราะไม่เป็นไปตามกฎการตั้งชื่อของโครงการ เปลี่ยนชื่อไฟล์ตามที่แสดงด้านบนแล้วส่งอีกครั้ง",
+  "The file is damaged": "ไฟล์เสียหาย",
+  "It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.": "ไฟล์ถูกตัดหรือปิดไม่ถูกต้อง (การส่งออกหรืออัปโหลดถูกขัดจังหวะ) จึงไม่ได้ให้คะแนน ส่งคืนและขอไฟล์ฉบับสมบูรณ์",
+  "This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.": "ไฟล์นี้เสียหาย: ถูกตัดหรือปิดไม่ถูกต้อง (การส่งออกหรือดาวน์โหลดถูกขัดจังหวะ) ส่งออกใหม่แล้วส่งไฟล์ฉบับสมบูรณ์"
 }

@@ -317,5 +317,8 @@
   "Revoke access": "Revoca l'accés",
   "Still being validated": "Encara s'està validant",
   "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "El servidor encara no ha revisat aquest fitxer. El podràs acceptar quan tingui nota, o retornar-lo ara amb un motiu.",
-  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "El receptor ha rebutjat el nom del fitxer: no segueix la regla de noms del projecte. Canvia-li el nom com s'indica a dalt i torna a lliurar-lo."
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "El receptor ha rebutjat el nom del fitxer: no segueix la regla de noms del projecte. Canvia-li el nom com s'indica a dalt i torna a lliurar-lo.",
+  "The file is damaged": "El fitxer està malmès",
+  "It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.": "Està tallat o no es tanca bé (una exportació o pujada interrompuda), així que no s'ha puntuat. Retorna'l i demana el fitxer complet.",
+  "This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.": "Aquest fitxer està malmès: està tallat o no es tanca bé (una exportació o baixada interrompuda). Torna a exportar-lo i lliura el fitxer complet."
 }

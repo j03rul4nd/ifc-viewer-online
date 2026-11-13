@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Primary, Quiet, scoreColor } from '../../ui'
 import { fixGuidePath } from '../../../../lib/fix-guide-url'
+import { stepIntegrity } from '../../../../lib/step-integrity'
 import { runStandaloneValidation } from '../../../../lib/certify/deep-verify'
 import { calculateQualityScore, explainQualityScore } from '../../../../lib/quality-score'
 import { deliverFile, supplierHome, type ApiSupplierDelivery, type ApiSupplierHome } from '../../../../lib/cloud/paid-client'
@@ -18,7 +19,7 @@ import { originatorOf, supplierProjectFromApi } from './live'
 import { useRx } from './strings'
 
 type Load = { state: 'loading' } | { state: 'no_token' } | { state: 'invalid' } | { state: 'error' } | { state: 'ok'; home: ApiSupplierHome }
-type Check = { state: 'idle' } | { state: 'checking'; pct: number } | { state: 'not_ifc' } | { state: 'too_big' } | { state: 'done'; score: number; worst: { rule: string; count: number }[] }
+type Check = { state: 'idle' } | { state: 'checking'; pct: number } | { state: 'not_ifc' } | { state: 'damaged' } | { state: 'too_big' } | { state: 'done'; score: number; worst: { rule: string; count: number }[] }
 type Sent = { state: 'idle' } | { state: 'sending' } | { state: 'failed'; reason: string } | { state: 'sent'; id: string; hash: string; at: string; replayed: boolean }
 
 export function tokenFromHash(hash: string): string {
@@ -74,6 +75,11 @@ export default function SupplierUploadPage() {
     if (home.max_file_mb > 0 && f.size > home.max_file_mb * 1024 * 1024) { setFile(null); setCheck({ state: 'too_big' }); return }
     const bytes = await f.arrayBuffer()
     setFile({ name: f.name, bytes })
+    // A file cut short would still score: say it is damaged instead (the server refuses it too).
+    if (/\.ifc$/i.test(f.name)) {
+      const integrity = stepIntegrity(new Uint8Array(bytes))
+      if (!integrity.ok) { setCheck({ state: integrity.code === 'not_step' ? 'not_ifc' : 'damaged' }); return }
+    }
     setCheck({ state: 'checking', pct: 0 })
     try {
       const issues = await runStandaloneValidation(bytes, (pct) => { if (run.current === id) setCheck({ state: 'checking', pct }) })
@@ -89,7 +95,7 @@ export default function SupplierUploadPage() {
   async function send() {
     if (!file || !slug) return
     setSent({ state: 'sending' })
-    const r = await deliverFile(token, slug, file.name, file.bytes)
+    const r = await deliverFile(token, slug, file.name, file.bytes, 'page')
     if (!r.ok) { setSent({ state: 'failed', reason: r.error.code === 'file_too_large' ? rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home?.max_file_mb ?? 0 }) : r.error.code === 'naming' ? rx('The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.') : r.error.message ?? r.error.code }); return }
     setSent({ state: 'sent', id: r.value.deliveryId, hash: r.value.fileHash, at: new Date().toISOString(), replayed: r.value.replayed })
     void refresh()
@@ -158,6 +164,7 @@ export default function SupplierUploadPage() {
 
                 {check.state === 'checking' && <p className="text-[12.5px] text-[var(--text-dim)]" role="status">{rx('Checking your model in your browser…')} {check.pct}%</p>}
                 {check.state === 'too_big' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home.max_file_mb })}</p>}
+                {check.state === 'damaged' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('This file is damaged: it is cut short or not closed properly (an interrupted export or download). Export it again and deliver the complete file.')}</p>}
                 {check.state === 'not_ifc' && <p className="text-[12.5px] text-[var(--danger)]" role="alert">{rx('This file does not open as an IFC.')}</p>}
 
                 {check.state === 'done' && file && naming && (

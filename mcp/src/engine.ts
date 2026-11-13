@@ -11,6 +11,7 @@ import { DOMParser } from '@xmldom/xmldom'
 import { DEFAULT_RULES } from '../../src/types'
 import type { RulesConfig, ValidationResult } from '../../src/types'
 import { calculateQualityScore, explainQualityScore } from '../../src/lib/quality-score'
+import { stepIntegrity, type StepIntegrity } from '../../src/lib/step-integrity'
 import { parseIds } from '../../src/lib/ids/ids-parser'
 import type { IdsDocument, IdsResult } from '../../src/lib/ids/ids-types'
 
@@ -70,7 +71,14 @@ export interface ValidationReport {
 }
 
 /** Validate IFC bytes with the viewer's rule set and score them. */
+/** A damaged (truncated, unclosed) STEP file: never scored as if it were a weak model. */
+export class DamagedIfcError extends Error {
+  constructor(public integrity: Exclude<StepIntegrity, { ok: true }>) { super(integrity.reason); this.name = 'DamagedIfcError' }
+}
+
 export async function validateIfc(bytes: Uint8Array, rules: RulesConfig = DEFAULT_RULES): Promise<ValidationReport> {
+  const integrity = stepIntegrity(bytes)
+  if (!integrity.ok) throw new DamagedIfcError(integrity)
   const buffer = toArrayBuffer(bytes)
   const reply = await call('validator', { type: 'validate', buffer, rules, skipTree: true }, ['done', 'error'], 300_000)
   const result = reply.result as ValidationResult

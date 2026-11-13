@@ -226,3 +226,39 @@ describe('OpenAPI spec (docs/api)', async () => {
     expect(verifyFn(body, await signatureHeader('nope', body, 1_763_000_000), 1_763_000_010)).toBe(false)
   })
 })
+
+describe('pollFolder in parallel', () => {
+  it('handles files concurrently, keeps the folder order and never more than the limit at once', async () => {
+    const { pollFolder } = await import('./watch')
+    const files = Array.from({ length: 10 }, (_, i) => ({ id: `f${i}`, name: `f${i}.ifc`, size: 10, version: '1', modifiedAt: '2026-01-01', parentId: 'root' }))
+    let running = 0, peak = 0
+    const connector = {
+      id: 'sharepoint', name: 'Mock', oauth: {} as never,
+      startCursor: async () => 'c0', changes: async () => ({ files, cursor: 'c1' }),
+      download: async () => new ArrayBuffer(1), upload: async () => 'r',
+    } as never
+    const validate = async (f: { id: string }) => {
+      running++; peak = Math.max(peak, running)
+      await new Promise((r) => setTimeout(r, 20 + (Number(f.id.slice(1)) % 3) * 10))
+      running--
+      return { score: 90, passed: true, issues: 0, report: {} }
+    }
+    const t = Date.now()
+    const r = await pollFolder(connector, { connector: 'sharepoint', folderId: 'root', folderName: 'x', state: 'watching', seen: [], failures: 0 } as never, 't', validate as never, undefined, 4)
+    expect(r.results.map((x) => x.file.id)).toEqual(files.map((f) => f.id))
+    expect(r.results.every((x) => x.status === 'validated')).toBe(true)
+    expect(peak).toBe(4)
+    expect(Date.now() - t).toBeLessThan(10 * 30)
+  })
+})
+
+describe('pollFolder retries', () => {
+  it('a file that failed on the network is tried again next poll; a refused name is not', async () => {
+    const { pollFolder } = await import('./watch')
+    const files = [{ id: 'a', name: 'a.ifc', size: 1, version: '1', modifiedAt: 'x', parentId: 'root' }, { id: 'b', name: 'b.ifc', size: 1, version: '1', modifiedAt: 'x', parentId: 'root' }]
+    const connector = { id: 'sharepoint', name: 'M', oauth: {} as never, startCursor: async () => 'c0', changes: async () => ({ files, cursor: 'c1' }), download: async () => new ArrayBuffer(1), upload: async () => 'r' } as never
+    const validate = async (f: { id: string }) => { throw new Error(f.id === 'a' ? 'delivery refused: network' : 'delivery refused: naming') }
+    const r = await pollFolder(connector, { connector: 'sharepoint', folderId: 'root', folderName: 'x', state: 'watching', seen: [], failures: 0 } as never, 't', validate as never)
+    expect(r.folder.seen).toEqual(['b@1'])
+  })
+})
