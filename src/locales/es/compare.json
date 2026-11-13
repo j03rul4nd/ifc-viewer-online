@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} propiedad cambiada",
       "properties_changed_other": "{{count}} propiedades cambiadas",
       "changed": "Cambiado"
+    },
+    "tour": {
+      "title": "Tour de comparar revisiones",
+      "ui": {
+        "of": "{{title}} · {{n}} de {{total}}",
+        "skip": "Saltar",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "done": "Listo"
+      },
+      "offer": "¿Primera vez? Un tour de 2 minutos te enseña qué mirar.",
+      "start": "Empezar el tour",
+      "dismiss": "No, gracias",
+      "local": {
+        "title": "Antigua contra nueva, sin subir nada",
+        "body": "A es la revisión antigua y B la nueva. Las dos se leen en este navegador: los archivos no salen de tu ordenador."
+      },
+      "list": {
+        "title": "Todos los cambios, por impacto",
+        "body": "Primero lo movido y lo eliminado, luego la forma y después los datos. J / K o las flechas los recorren uno a uno."
+      },
+      "moved": {
+        "title": "Qué se movió y cuánto",
+        "body": "La flecha en 3D va de la posición antigua a la nueva, y la frase lo dice en lenguaje de obra, como «Movido 120 mm O»."
+      },
+      "table": {
+        "title": "Antes y después",
+        "body": "Posición, tamaño, altura y propiedades cambiadas, lado a lado y con la diferencia. Sin abrir los dos archivos."
+      },
+      "review": {
+        "title": "Marca lo que has revisado",
+        "body": "«Revisado» si está bien, «Afecta a obra» si cambia el trabajo en obra. El contador de arriba lleva la cuenta."
+      },
+      "filters": {
+        "title": "Solo tu planta, solo tus piezas",
+        "body": "Filtra por planta, disciplina, tipo de elemento o marca de pieza. Pega una lista de marcas para ver solo esas."
+      },
+      "views": {
+        "title": "Cortina A | B",
+        "body": "Arrastra la línea sobre el modelo: lo antiguo a la izquierda, lo nuevo a la derecha. O alterna entre A y B en la misma vista."
+      },
+      "export": {
+        "title": "Pásalo a quien toque",
+        "body": "Un PDF o una hoja de cálculo para obra, un BCF para el proyectista: cada cambio con su imagen."
+      },
+      "end": {
+        "title": "Pruébalo con tus archivos",
+        "body": "◀ Volver abre las dos zonas para soltar: revisión antigua y revisión nueva. Y cuéntanos qué te parece: Ayuda / Opinión está siempre aquí."
+      }
+    },
+    "help": {
+      "button": "Ayuda / Opinión",
+      "feedback": "Enviar opinión",
+      "tour": "Repetir el tour"
+    },
+    "demo": {
+      "loading": "Cargando las revisiones de ejemplo…",
+      "failed": "No se han podido cargar las revisiones de ejemplo: {{message}}"
     }
   }
 }

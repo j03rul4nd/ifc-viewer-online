@@ -11,6 +11,7 @@ import {
   type RevisionFilter, type ReviewState,
 } from '../../lib/compare/revision-view'
 import { loadReviews, saveReview } from './review-db'
+import { trackRcChangeReviewed, trackRcDiffCompleted } from '../../lib/analytics'
 
 export type RevisionPhase = 'idle' | 'reading' | 'ready' | 'error'
 /** Side-by-side split is pending (see T3-RESULTADO): fragments cannot be drawn by a second renderer. */
@@ -48,6 +49,12 @@ interface RevisionStore {
   blinkSide: 'a' | 'b'
   /** Curtain position, 0–1 of the viewport width. */
   curtain: number
+  /** Where the pair on screen came from: the guided demo or the user's own files. */
+  source: 'demo' | 'own' | null
+  /** The guided tour is on screen. */
+  tour: boolean
+  /** The demo pair was opened in this page (kept across reset): own files after it count as conversions. */
+  demoSeen: boolean
 
   setActive: (v: boolean) => void
   setPhase: (p: RevisionPhase, error?: string | null) => void
@@ -62,6 +69,8 @@ interface RevisionStore {
   setView: (v: ViewMode) => void
   setBlinkSide: (s: 'a' | 'b') => void
   setCurtain: (x: number) => void
+  setSource: (s: 'demo' | 'own' | null) => void
+  setTour: (v: boolean) => void
   reset: () => void
 }
 
@@ -81,6 +90,9 @@ export const useRevisionStore = create<RevisionStore>()((set, get) => ({
   view: 'changes',
   blinkSide: 'b',
   curtain: 0.5,
+  source: null,
+  tour: false,
+  demoSeen: false,
 
   setActive: (active) => set({ active }),
   setPhase: (phase, error = null) => set({ phase, error }),
@@ -95,15 +107,18 @@ export const useRevisionStore = create<RevisionStore>()((set, get) => ({
     const next = new Map(reviews)
     if (state === 'pending') next.delete(gid); else next.set(gid, state)
     set({ reviews: next })
+    trackRcChangeReviewed({ state })
     if (a.hash && b.hash) void saveReview(reviewKey(a.hash, b.hash, gid), state)
   },
   setReviews: (reviews) => set({ reviews }),
   setView: (view) => set({ view }),
   setBlinkSide: (blinkSide) => set({ blinkSide }),
   setCurtain: (curtain) => set({ curtain: Math.min(0.95, Math.max(0.05, curtain)) }),
+  setSource: (source) => set(source === 'demo' ? { source, demoSeen: true } : { source }),
+  setTour: (tour) => set({ tour }),
   reset: () => set({
     active: false, phase: 'idle', a: emptySide(), b: emptySide(), progress: {}, error: null,
-    diff: null, diffMs: 0, filter: EMPTY_FILTER, selected: null, reviews: new Map(), view: 'changes', blinkSide: 'b', curtain: 0.5,
+    diff: null, diffMs: 0, filter: EMPTY_FILTER, selected: null, reviews: new Map(), view: 'changes', blinkSide: 'b', curtain: 0.5, source: null, tour: false,
   }),
 }))
 
@@ -138,6 +153,7 @@ export async function runRevision(loadIntoScene: (files: File[], side: 'a' | 'b'
   const { a, b } = st
   if (!a.files.length || !b.files.length) return
   st.setPhase('reading')
+  const started = performance.now()
   useRevisionStore.setState({ progress: {}, diff: null, selected: null })
   try {
     const { snapshotMany } = await import('../../lib/compare/snapshot-runner')
@@ -163,6 +179,14 @@ export async function runRevision(loadIntoScene: (files: File[], side: 'a' | 'b'
     s.setReviews(await loadReviews(reviewPrefix(hashA, hashB)))
     await recomputeDiff()
     useRevisionStore.getState().setPhase('ready')
+    const done = useRevisionStore.getState()
+    if (done.diff) {
+      const shown = done.diff.changes.filter((c) => c.kind !== 'unchanged')
+      trackRcDiffCompleted({
+        elements: Math.max(...[done.a, done.b].map((x) => x.snapshots.reduce((n, sn) => n + sn.elements.length, 0))), changes: shown.length, kinds: shown.map((c) => c.kind),
+        guid_regenerated: !!done.diff.guidRegenerated, ms: Math.round(performance.now() - started),
+      })
+    }
     const [idsA, idsB] = await scene
     if (useRevisionStore.getState().a.hash !== hashA) return // another pair was dropped meanwhile
     useRevisionStore.getState().setSide('a', { modelIds: idsA })

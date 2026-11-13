@@ -5,6 +5,7 @@
 import React, { useRef, useState } from 'react'
 import { useRevisionStore } from './revisionStore'
 import { useRevisionText } from './useRevisionText'
+import { trackRcOwnFilesDropped } from '../../lib/analytics'
 
 function isIfc(f: File): boolean { return /\.ifc$/i.test(f.name) }
 
@@ -44,12 +45,17 @@ function Zone({ side, files, onFiles, busy }: { side: 'a' | 'b'; files: File[]; 
 
 export default function RevisionDrop({ onStart, onAdvanced }: { onStart: () => void; onAdvanced: () => void }) {
   const { t } = useRevisionText()
-  const { a, b, phase, progress, error, setSide } = useRevisionStore()
+  const { a, b, phase, progress, error, setSide, source } = useRevisionStore()
   const busy = phase === 'reading'
 
   const put = (side: 'a' | 'b', files: File[]): void => {
     const s = useRevisionStore.getState()
-    const other = side === 'a' ? s.b.files : s.a.files
+    // The user's own files from here on (the demo pair is replaced side by side).
+    if (s.source !== 'own') trackRcOwnFilesDropped({ after_demo: s.demoSeen })
+    if (s.source === 'demo') { setSide('a', { files: [] }); setSide('b', { files: [] }) }
+    s.setSource('own')
+    const fresh = useRevisionStore.getState()
+    const other = side === 'a' ? fresh.b.files : fresh.a.files
     // Both revisions dropped together on one zone: two files with the same
     // name, or an even set with names repeated → older ones are A.
     const names = files.map((f) => f.name)
@@ -99,11 +105,11 @@ export default function RevisionDrop({ onStart, onAdvanced }: { onStart: () => v
             <div className="h-full bg-[var(--accent)] transition-[width] duration-200" style={{ width: `${pct}%` }} />
           </div>
           <div className="flex flex-wrap gap-x-3 text-[10.5px] text-[var(--text-faint)]">
-            {list.length ? list.map(([name, v]) => <span key={name} className="truncate max-w-[260px]">{name} · {v}%</span>) : <span>{t('rc.reading')}</span>}
+            {list.length ? list.map(([name, v]) => <span key={name} className="truncate max-w-[260px]">{name} · {v}%</span>) : <span>{source === 'demo' ? t('rc.demo.loading') : t('rc.reading')}</span>}
           </div>
         </div>
       )}
-      {error && <p className="m-0 text-[11.5px] text-[var(--danger)]">{t('error', { message: error })}</p>}
+      {error && <p className="m-0 text-[11.5px] text-[var(--danger)]">{source === 'demo' ? t('rc.demo.failed', { message: error }) : t('error', { message: error })}</p>}
 
       <button type="button" onClick={onAdvanced} className="self-start text-[11.5px] text-[var(--text-faint)] underline underline-offset-2 hover:text-[var(--text)]">
         {t('rc.advanced')}

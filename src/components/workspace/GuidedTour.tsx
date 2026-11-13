@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { placeCard, type Placement, type Rect, type TourStep } from '../../lib/workspace-tours/tours'
-import { useTx } from './i18n'
+import { useTx, type Tx } from './i18n'
 
 const PAD = 6
 
@@ -21,8 +21,29 @@ function findTarget(id?: string): HTMLElement | null {
   return null
 }
 
-export default function GuidedTour({ title, steps, onClose }: { title: string; steps: TourStep[]; onClose: (finished: boolean) => void }) {
+interface TourProps {
+  title: string
+  steps: TourStep[]
+  onClose: (finished: boolean) => void
+  /** Each step shown (index among the live steps, the step itself). */
+  onStep?: (index: number, step: TourStep) => void
+  /** Stacking order; the default sits over the workspace pages. */
+  zIndex?: number
+}
+
+/** The workspace tour: texts through the workspace catalogue. */
+export default function GuidedTour(props: TourProps) {
   const tx = useTx()
+  return <GuidedTourView {...props} tx={tx} />
+}
+
+/**
+ * The overlay itself with the translator passed in, so a tour outside the
+ * workspace (revision compare) uses its own namespace and never loads the
+ * workspace one. `tx` also receives the card's own strings: "Skip", "Back",
+ * "Next", "Done" and "{{title}} · {{n}} of {{total}}".
+ */
+export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx }: TourProps & { tx: Tx }) {
   // Resolve once on open: only steps that point at something visible (or at nothing on purpose).
   const live = useMemo(() => steps.filter((s) => !s.target || findTarget(s.target)), [steps])
   const [i, setI] = useState(0)
@@ -60,6 +81,8 @@ export default function GuidedTour({ title, steps, onClose }: { title: string; s
     return () => { removeEventListener('resize', measure); removeEventListener('scroll', measure, true) }
   }, [measure])
 
+  useEffect(() => { if (step) onStep?.(i, step) }, [i, step]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const go = useCallback((d: number) => {
     if (d > 0 && last) return onClose(true)
     setI((x) => Math.max(0, Math.min(live.length - 1, x + d)))
@@ -79,7 +102,7 @@ export default function GuidedTour({ title, steps, onClose }: { title: string; s
 
   const floatStyle = place.mode === 'float' ? { top: place.top, left: place.left } : undefined
   return (
-    <div className="fixed inset-0 z-[60]" aria-live="polite">
+    <div className="fixed inset-0" style={{ zIndex }} aria-live="polite">
       {/* Click shield + dim. With a target, the dim is the spotlight's shadow instead. */}
       <div className="absolute inset-0" style={{ background: rect ? 'transparent' : 'color-mix(in srgb, var(--scrim) 55%, transparent)' }} onClick={(e) => e.stopPropagation()} />
       {rect && (

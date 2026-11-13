@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} proprietà cambiata",
       "properties_changed_other": "{{count}} proprietà cambiate",
       "changed": "Cambiato"
+    },
+    "tour": {
+      "title": "Tour del confronto revisioni",
+      "ui": {
+        "of": "{{title}} · {{n}} di {{total}}",
+        "skip": "Salta",
+        "back": "Indietro",
+        "next": "Avanti",
+        "done": "Fatto"
+      },
+      "offer": "Prima volta? Un tour di 2 minuti mostra cosa guardare.",
+      "start": "Inizia il tour",
+      "dismiss": "No, grazie",
+      "local": {
+        "title": "Vecchia contro nuova, senza caricare nulla",
+        "body": "A è la revisione vecchia, B la nuova. Entrambe vengono lette in questo browser: i file non lasciano il tuo computer."
+      },
+      "list": {
+        "title": "Tutte le modifiche, per impatto",
+        "body": "Prima ciò che è stato spostato o rimosso, poi la forma, poi i dati. J / K o le frecce le scorrono una per una."
+      },
+      "moved": {
+        "title": "Cosa si è spostato, e di quanto",
+        "body": "La freccia in 3D va dalla vecchia posizione alla nuova, e la frase lo dice in termini di cantiere, come «Spostato di 120 mm O»."
+      },
+      "table": {
+        "title": "Prima e dopo",
+        "body": "Posizione, dimensioni, altezza e proprietà cambiate affiancate, con la differenza. Senza aprire i due file."
+      },
+      "review": {
+        "title": "Segna ciò che hai controllato",
+        "body": "«Controllato» se va bene, «Riguarda il cantiere» se cambia il lavoro in cantiere. Il contatore in alto tiene il conto."
+      },
+      "filters": {
+        "title": "Solo il tuo piano, solo i tuoi pezzi",
+        "body": "Filtra per piano, disciplina, tipo di elemento o marca del pezzo. Incolla un elenco di marche per vedere solo quelle."
+      },
+      "views": {
+        "title": "Tendina A | B",
+        "body": "Trascina la linea sul modello: il vecchio a sinistra, il nuovo a destra. Oppure passa da A a B nella stessa vista."
+      },
+      "export": {
+        "title": "Inoltralo",
+        "body": "Un PDF o un foglio di calcolo per il cantiere, un file BCF per il progettista: ogni modifica con la sua immagine."
+      },
+      "end": {
+        "title": "Provalo con i tuoi file",
+        "body": "◀ Indietro apre le due zone di rilascio: revisione vecchia e revisione nuova. E dicci cosa ne pensi: Aiuto / Feedback è sempre qui."
+      }
+    },
+    "help": {
+      "button": "Aiuto / Feedback",
+      "feedback": "Invia feedback",
+      "tour": "Ripeti il tour"
+    },
+    "demo": {
+      "loading": "Caricamento delle revisioni di esempio…",
+      "failed": "Impossibile caricare le revisioni di esempio: {{message}}"
     }
   }
 }

@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} propriété modifiée",
       "properties_changed_other": "{{count}} propriétés modifiées",
       "changed": "Modifié"
+    },
+    "tour": {
+      "title": "Visite de la comparaison de révisions",
+      "ui": {
+        "of": "{{title}} · {{n}} sur {{total}}",
+        "skip": "Passer",
+        "back": "Retour",
+        "next": "Suivant",
+        "done": "Terminé"
+      },
+      "offer": "Première fois ? Une visite de 2 minutes montre quoi regarder.",
+      "start": "Lancer la visite",
+      "dismiss": "Non merci",
+      "local": {
+        "title": "Ancienne contre nouvelle, rien n'est envoyé",
+        "body": "A est l'ancienne révision, B la nouvelle. Les deux sont lues dans ce navigateur : les fichiers ne quittent pas votre ordinateur."
+      },
+      "list": {
+        "title": "Toutes les modifications, par impact",
+        "body": "D'abord ce qui a bougé ou disparu, puis la forme, puis les données. J / K ou les flèches les parcourent une à une."
+      },
+      "moved": {
+        "title": "Ce qui a bougé, et de combien",
+        "body": "La flèche en 3D va de l'ancienne position à la nouvelle, et la phrase le dit en termes de chantier, comme « Déplacé de 120 mm O »."
+      },
+      "table": {
+        "title": "Avant et après",
+        "body": "Position, dimensions, hauteur et propriétés modifiées côte à côte, avec l'écart. Inutile d'ouvrir les deux fichiers."
+      },
+      "review": {
+        "title": "Cochez ce que vous avez vérifié",
+        "body": "« Vérifié » si c'est bon, « Impacte le chantier » si cela change le travail sur site. Le compteur en haut tient le total."
+      },
+      "filters": {
+        "title": "Seulement votre niveau, seulement vos pièces",
+        "body": "Filtrez par niveau, discipline, type d'élément ou repère de pièce. Collez une liste de repères pour ne voir qu'eux."
+      },
+      "views": {
+        "title": "Rideau A | B",
+        "body": "Faites glisser la ligne sur la maquette : l'ancien à gauche, le nouveau à droite. Ou basculez entre A et B dans la même vue."
+      },
+      "export": {
+        "title": "Transmettez-le",
+        "body": "Un PDF ou un tableur pour le chantier, un fichier BCF pour le concepteur : chaque modification avec son image."
+      },
+      "end": {
+        "title": "Essayez avec vos fichiers",
+        "body": "◀ Retour ouvre les deux zones de dépôt : ancienne révision, nouvelle révision. Et dites-nous ce que vous en pensez : Aide / Avis est toujours là."
+      }
+    },
+    "help": {
+      "button": "Aide / Avis",
+      "feedback": "Envoyer un avis",
+      "tour": "Revoir la visite"
+    },
+    "demo": {
+      "loading": "Chargement des révisions d'exemple…",
+      "failed": "Impossible de charger les révisions d'exemple : {{message}}"
     }
   }
 }

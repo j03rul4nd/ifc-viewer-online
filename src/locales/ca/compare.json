@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} propietat canviada",
       "properties_changed_other": "{{count}} propietats canviades",
       "changed": "Canviat"
+    },
+    "tour": {
+      "title": "Tour de comparar revisions",
+      "ui": {
+        "of": "{{title}} · {{n}} de {{total}}",
+        "skip": "Omet",
+        "back": "Enrere",
+        "next": "Següent",
+        "done": "Fet"
+      },
+      "offer": "Primera vegada? Un tour de 2 minuts t'ensenya què mirar.",
+      "start": "Comença el tour",
+      "dismiss": "No, gràcies",
+      "local": {
+        "title": "Antiga contra nova, sense pujar res",
+        "body": "A és la revisió antiga i B la nova. Totes dues es llegeixen en aquest navegador: els fitxers no surten del teu ordinador."
+      },
+      "list": {
+        "title": "Tots els canvis, per impacte",
+        "body": "Primer el que s'ha mogut i eliminat, després la forma i després les dades. J / K o les fletxes els recorren un a un."
+      },
+      "moved": {
+        "title": "Què s'ha mogut i quant",
+        "body": "La fletxa en 3D va de la posició antiga a la nova, i la frase ho diu en llenguatge d'obra, com «Mogut 120 mm O»."
+      },
+      "table": {
+        "title": "Abans i després",
+        "body": "Posició, mida, alçada i propietats canviades, costat a costat i amb la diferència. Sense obrir els dos fitxers."
+      },
+      "review": {
+        "title": "Marca el que has revisat",
+        "body": "«Revisat» si està bé, «Afecta l'obra» si canvia la feina a l'obra. El comptador de dalt porta el compte."
+      },
+      "filters": {
+        "title": "Només la teva planta, només les teves peces",
+        "body": "Filtra per planta, disciplina, tipus d'element o marca de peça. Enganxa una llista de marques per veure només aquestes."
+      },
+      "views": {
+        "title": "Cortina A | B",
+        "body": "Arrossega la línia sobre el model: l'antic a l'esquerra, el nou a la dreta. O alterna entre A i B a la mateixa vista."
+      },
+      "export": {
+        "title": "Passa-ho a qui toqui",
+        "body": "Un PDF o un full de càlcul per a l'obra, un BCF per al projectista: cada canvi amb la seva imatge."
+      },
+      "end": {
+        "title": "Prova-ho amb els teus fitxers",
+        "body": "◀ Torna obre les dues zones per deixar anar: revisió antiga i revisió nova. I explica'ns què et sembla: Ajuda / Opinió és sempre aquí."
+      }
+    },
+    "help": {
+      "button": "Ajuda / Opinió",
+      "feedback": "Envia la teva opinió",
+      "tour": "Repeteix el tour"
+    },
+    "demo": {
+      "loading": "Carregant les revisions d'exemple…",
+      "failed": "No s'han pogut carregar les revisions d'exemple: {{message}}"
     }
   }
 }
