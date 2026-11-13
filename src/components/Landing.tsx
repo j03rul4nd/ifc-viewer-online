@@ -305,7 +305,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         div owns the vertical scroll so momentum / rubber-band works correctly.
         -webkit-overflow-scrolling is set here for older Safari compat.
       */}
-      <div className={`landing-scroll absolute inset-0 overflow-auto bg-[var(--bg)] text-[var(--text)]${landingTheme === 'light' ? ' lp-light' : ''}`}>
+      <div data-theme={landingTheme === 'dark' ? 'dark' : undefined} className={`landing-scroll absolute inset-0 overflow-auto bg-[var(--bg)] text-[var(--text)]${landingTheme === 'light' ? ' lp-light' : ' lp-dark'}`}>
 
         {/* ── Nav ── */}
         <nav
