@@ -17,6 +17,7 @@ import type { BcfComment, BcfTopic, BcfViewpoint, CameraViewpoint } from '../../
 import type { ElementDiff, SetDiff } from './types'
 import type { ChangeKind, RevisionChange, RevisionDiff } from './revision-types'
 import { buildBcfTextEntries } from '../bcf'
+import { REVISION_KIND_COLOUR, bcfColour } from './kind-colours'
 import type { IdsVersionDiff } from './ids-versions'
 
 export interface BcfSyncText {
@@ -190,10 +191,9 @@ export interface RevisionBcfText {
 }
 
 /** Colour of each kind in the viewpoint (RRGGBB, as BCF wants it). */
-export const CHANGE_KIND_BCF_COLOR: Record<ChangeKind, string> = {
-  removed: 'C62828', added: '2E7D32', type_changed: '6A1B9A', reshaped: 'EF6C00',
-  moved: '1565C0', relations_changed: '00838F', properties_changed: '8D6E00', unchanged: '757575',
-}
+export const CHANGE_KIND_BCF_COLOR = Object.fromEntries(
+  Object.keys(REVISION_KIND_COLOUR).map((k) => [k, bcfColour(k as ChangeKind)]),
+) as Record<ChangeKind, string>
 
 /** Label stamped on revision-change topics, plus the kind as its own label. */
 export const REVISION_CHANGE_LABEL = 'revision-change'
