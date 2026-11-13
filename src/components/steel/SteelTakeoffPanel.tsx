@@ -12,12 +12,14 @@ import { useSceneStore } from '../../stores/sceneStore'
 import { useSteelStore } from '../../stores/steelStore'
 import { useSteelT, type SteelTextKey } from '../../lib/steel/i18n'
 import {
-  collectSteelParts, steelRows, steelTotals, type SteelCollectModel, type SteelPartRef, type SteelRow,
+  collectSteelParts, steelRows, steelTotals, type CollectedPart, type SteelCollectModel, type SteelPartRef, type SteelRow,
 } from '../../lib/steel/collect'
+import { steelCsv, steelFileBase, steelXlsx } from '../../lib/steel/export'
+import { downloadBlob } from '../compare/ui'
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
-  /** T-105: isolate / export the parts of a row. Not wired yet. */
+  /** Extra hook on a row click (after the built-in isolate). */
   onRowAction?: (row: SteelRow, refs: SteelPartRef[]) => void
 }
 
@@ -30,7 +32,10 @@ export default function SteelTakeoffPanel({ viewerApiRef, onRowAction }: Props) 
   const { t, lang } = useSteelT()
   const open = useSteelStore((s) => s.open)
   const setOpen = useSteelStore((s) => s.setOpen)
-  const close = useCallback(() => setOpen(false), [setOpen])
+  const close = useCallback(() => {
+    setOpen(false)
+    try { viewerApiRef.current?.isolateElements([], false) } catch { /* viewer gone */ }
+  }, [setOpen, viewerApiRef])
   return (
     <ViewportPanel id="steel-takeoff" open={open} onClose={close} label={t('title')} mobile="sheet" widthPx={520} maxHeight="calc(100dvh - 120px)">
       <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-[var(--border)] flex items-start gap-2">
@@ -60,11 +65,14 @@ function Upsell({ t }: { t: T }) {
   )
 }
 
+const rowKey = (r: SteelRow): string => `${r.profile}\u0000${r.ifcClass ?? ''}`
 const cls = (c: string | null) => (c ?? '').replace(/^IFC/i, '').toLowerCase().replace(/^./, (x) => x.toUpperCase())
 
 function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: Props['viewerApiRef']; t: T; lang: string; onRowAction?: Props['onRowAction'] }) {
   const models = useSceneStore((s) => s.models)
   const [rows, setRows] = useState<SteelRow[] | null>(null)
+  const [parts, setParts] = useState<CollectedPart[]>([])
+  const [active, setActive] = useState<string | null>(null)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -85,6 +93,9 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
       })
       setProgress({ done: 0, total: 0 })
       const parts = await collectSteelParts(list, (done, total) => setProgress({ done, total }), ac.signal)
+      viewer.isolateElements([], false)
+      setActive(null)
+      setParts(parts)
       setRows(steelRows(parts))
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) setError(e instanceof Error ? e.message : String(e))
@@ -93,6 +104,27 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
       abortRef.current = null
     }
   }, [models, viewerApiRef])
+
+  const isolate = useCallback((r: SteelRow) => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return
+    const k = rowKey(r)
+    if (active === k) { viewer.isolateElements([], false); setActive(null); return }
+    viewer.isolateElements(r.refs.map((x) => ({ expressId: x.expressId, modelId: x.modelId })), true)
+    setActive(k)
+    onRowAction?.(r, r.refs)
+  }, [active, onRowAction, viewerApiRef])
+  const showAll = useCallback(() => { viewerApiRef.current?.isolateElements([], false); setActive(null) }, [viewerApiRef])
+  const fileBase = useMemo(() => steelFileBase(models.map((m) => m.fileName)), [models])
+  const modelName = useCallback((id: string) => models.find((m) => m.id === id)?.fileName ?? id, [models])
+  const exportCsv = useCallback(() => { if (rows) downloadBlob(new Blob([steelCsv(rows)], { type: 'text/csv;charset=utf-8' }), `${fileBase}.csv`) }, [rows, fileBase])
+  const exportXlsx = useCallback(async () => {
+    if (!rows) return
+    try {
+      const bytes = await steelXlsx(rows, parts, modelName)
+      downloadBlob(new Blob([bytes as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${fileBase}.xlsx`)
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)) }
+  }, [rows, parts, modelName, fileBase])
 
   if (models.length === 0) return <div className="p-3 text-[11.5px] text-[var(--text-dim)]">{t('needModel')}</div>
 
@@ -105,7 +137,13 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
             <button type="button" className={btn} onClick={() => abortRef.current?.abort()}>{t('cancel')}</button>
           </>
         ) : (
-          <button type="button" className={btnPrimary} onClick={() => void run()}>{rows ? t('rerun') : t('run')}</button>
+          <>
+            <button type="button" className={btnPrimary} onClick={() => void run()}>{rows ? t('rerun') : t('run')}</button>
+            <span className="flex-1" />
+            {active && <button type="button" className={btn} onClick={showAll}>{t('showAll')}</button>}
+            {rows && rows.length > 0 && <button type="button" className={btn} onClick={exportCsv}>{t('exportCsv')}</button>}
+            {rows && rows.length > 0 && <button type="button" className={btn} onClick={() => void exportXlsx()}>{t('exportXlsx')}</button>}
+          </>
         )}
       </div>
       {error && <div className="px-3 py-2 text-[11px] text-[var(--danger,#d9534f)]">{t('error', { error })}</div>}
@@ -119,6 +157,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
               {t('missingWarn', { n: totals.missingWeight })}
             </div>
           )}
+          <div className="px-3 pt-2 text-[10.5px] text-[var(--text-dim)]">{t('isolateHint')}</div>
           <div className="overflow-auto min-h-0 px-1 pb-2">
             <table className="w-full text-[11px] text-[var(--text)] tabular-nums">
               <thead className="text-[var(--text-dim)] text-left">
@@ -134,9 +173,9 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={`${r.profile}\u0000${r.ifcClass ?? ''}`} className="border-t border-[var(--border)]"
-                    onClick={onRowAction ? () => onRowAction(r, r.refs) : undefined}
-                    style={onRowAction ? { cursor: 'pointer' } : undefined}>
+                  <tr key={rowKey(r)} aria-selected={active === rowKey(r)}
+                    className={`border-t border-[var(--border)] cursor-pointer hover:bg-[var(--surface-2)] ${active === rowKey(r) ? 'bg-[var(--surface-2)] outline outline-1 outline-[var(--accent)]' : ''}`}
+                    onClick={() => isolate(r)}>
                     <td className="px-2 py-1 font-medium">{r.profile}</td>
                     <td className="px-2 py-1 text-[var(--text-dim)]">{cls(r.ifcClass)}</td>
                     <td className="px-2 py-1 text-right">{n0.format(r.count)}</td>
