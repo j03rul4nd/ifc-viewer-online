@@ -3563,6 +3563,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   function applyMapLevel(): void {
     if (!engine) return
     const t = terrain
+    // WP2: with the city's coarse relief the tiles are lifted point by point
+    // (tile-displace) around the anchor plane, and only scaled like the relief.
+    if (t?.coarse && placement) {
+      engine.group.position.z = 0
+      engine.group.scale.z = terrainExaggeration
+      engine.setRelief({ dem: t.coarse, anchorM: t.anchorElevation, metresToN: metresToNormalized(placement.lat) })
+      return
+    }
+    engine.setRelief(null)
+    engine.group.scale.z = 1
     engine.group.position.z = t && placement && Number.isFinite(t.rimDatumM)
       ? (t.rimDatumM - t.anchorElevation) * metresToNormalized(placement.lat) * terrainExaggeration
       : 0

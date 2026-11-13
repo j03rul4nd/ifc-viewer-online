@@ -32,6 +32,7 @@ import { createTerrainMaterial } from './surface-shaders'
 import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
+import { sampleCoarseN, type CoarseDem } from './coarse-dem'
 import type { TerrainWorkerIn, TerrainWorkerOut, VectorDrape } from '../../workers/geo-terrain.worker'
 import { createTerrainDetailLayer, type TerrainDetailView } from './terrain-detail-layer'
 import { isMemoryConstrained } from '../loading/device-profile'
@@ -162,6 +163,12 @@ export interface TerrainPatch {
    * while the patch is up (see RIM_START).
    */
   rimDatumM: number
+  /**
+   * The whole city's relief, coarse (coarse-dem, WP2), or null when it could
+   * not be fetched. When present the rim eases onto IT, point by point, instead
+   * of onto `rimDatumM`, and `sampleGroundM` answers from it beyond the patch.
+   */
+  coarse: CoarseDem | null
   /** Distance between neighbouring vertices of the patch mesh, metres. */
   spacingM: number
   /**
@@ -282,6 +289,7 @@ function assemblePatch(
   vector: VectorDrape | null = null,
 ): TerrainPatch {
   const { zoom, grid, centerTx, centerTy, anchorElevation, heights, normals, detail, sky } = data
+  const coarse = data.coarse ?? null
   const verts = grid + 1
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(anchorLat))
   const spacingM = vertexSpacingM(anchorLat, zoom, grid)
@@ -411,6 +419,18 @@ function assemblePatch(
   }
   rimSamples.sort((a, b) => a - b)
   const rimDatumM = rimSamples.length > 0 ? rimSamples[rimSamples.length >> 1] : anchorElevation
+  /**
+   * What the rim eases ONTO, per vertex: the city's coarse relief at that
+   * point when there is one (WP2 — the flat map is displaced by the same
+   * surface, so the two meet), else the single level of the edge.
+   */
+  const rimTarget = new Float32Array(verts * verts).fill(rimDatumM)
+  if (coarse) {
+    const x0 = centre.nx - patchSize / 2, y0 = centre.ny + patchSize / 2, step = patchSize / grid
+    for (let idx = 0; idx < verts * verts; idx++) {
+      rimTarget[idx] = sampleCoarseN(coarse, x0 + (idx % verts) * step, y0 - Math.floor(idx / verts) * step)
+    }
+  }
 
   /**
    * Re-displace the mesh from measured heights + the synthetic detail blend,
@@ -430,7 +450,8 @@ function assemblePatch(
         : measured
       // The rim eases onto the flat map's level — see RIM_START.
       const keep = rimKeep[idx]
-      const h = keep >= 1 ? corrected : rimDatumM + (corrected - rimDatumM) * keep
+      const target = rimTarget[idx]
+      const h = keep >= 1 ? corrected : target + (corrected - target) * keep
       effective[idx] = h
       if (h < minH) minH = h
       if (h > maxH) maxH = h
@@ -660,6 +681,11 @@ function assemblePatch(
   recolor()
   log.debug(`patch: z${zoom}, ${verts}×${verts} verts, anchor elev ${anchorElevation.toFixed(1)} m`)
 
+  function insidePatch(nx: number, ny: number): boolean {
+    const h = patchSize / 2
+    return Math.abs(nx - centre.nx) <= h && Math.abs(ny - centre.ny) <= h
+  }
+
   /** Bilinear read of a per-vertex field at a normalized position (edge-clamped). */
   function sampleField(at: (idx: number) => number, nx: number, ny: number): number {
     // Normalized position → fractional vertex index. The patch spans
@@ -684,6 +710,7 @@ function assemblePatch(
     group,
     anchorElevation,
     rimDatumM,
+    coarse,
     spacingM,
     measuredBox: {
       minNx: centre.nx + keepX0 * metresToNormalized,
@@ -698,6 +725,8 @@ function assemblePatch(
     sampleGroundM(nx, ny) {
       // Sample the EFFECTIVE surface (measured + any synthetic blend) so a
       // building sits on the ground the user is actually looking at.
+      // Beyond the patch, the city's coarse relief (WP2); without it the edge clamps.
+      if (coarse && !insidePatch(nx, ny)) return sampleCoarseN(coarse, nx, ny)
       return sampleField((idx) => effective[idx], nx, ny)
     },
 
