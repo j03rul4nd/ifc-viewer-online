@@ -212,6 +212,14 @@ function sampleScene({ H, lat }) {
     triangles: rs?.triangles ?? null, calls: rs?.calls ?? null,
     heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
     city: city ? { cells: city.cells, wanted: city.wanted, buildings: city.buildings, triangles: city.triangles, bytesMB: +(city.bytes / 1048576).toFixed(1) } : null,
+    // Photo actually on the relief (Hybrid): the square's own imagery when it
+    // has some, else the base patch's (main mixes no imagery into squares, so
+    // there the photo is the patch's even under a sharp vector square).
+    photo: (() => {
+      const baseM = terrain?.zoom ? (3 * C / 2 ** terrain.zoom) / 3072 : null
+      const m = imageryTexelM ?? baseM
+      return m ? { from: imageryTexelM ? 'square' : 'patch', texelM: +m.toFixed(3), pxPerTexel: +pxPerTexel(m).toFixed(2) } : null
+    })(),
     relief: { zoom: reliefZ, texelM: reliefTexelM && +reliefTexelM.toFixed(3), pxPerTexel: reliefTexelM && +pxPerTexel(reliefTexelM).toFixed(2), detail: dbg ? { painted: dbg.painted, lastPaintMs: dbg.lastPaintMs, wanted: dbg.wanted?.length, imageryFetches: dbg.imageryFetches ?? null, imageryLevel: top?.imageryLevel ?? null, imageryPxPerTexel: imageryTexelM && +pxPerTexel(imageryTexelM).toFixed(2), imageryCached: dbg.imageryCached ?? null, imagerySquares: dbg.imagerySquares ?? null, imageryMaxPerSquare: dbg.imageryMaxPerSquare ?? null, lastError: dbg.lastError ?? null } : null },
     flatMap: { quality: globalThis.__basemapQuality?.get?.() ?? null, errorTarget: tiles?.errorTarget ?? null, maxDepth: mapZ, texelM: mapTexelM && +mapTexelM.toFixed(3), pxPerTexel: mapTexelM && +pxPerTexel(mapTexelM).toFixed(2), visibleTiles: tiles?.visibleTiles?.size ?? null },
   }
@@ -279,6 +287,7 @@ async function measureView(page, site, name, autoDetail, hosts) {
   const means = pans.map((x) => x.fpsMean).sort((a, b) => a - b)
   const pan = { fpsMedianOfMeans: means[Math.floor(means.length / 2)], means: pans.map((x) => +x.fpsMean.toFixed(2)), seconds: PAN_MS / 1000, runs: pans }
   const requests = Object.fromEntries(Object.entries(hosts).map(([h, n]) => [h, n - (before[h] ?? 0)]).filter(([, n]) => n > 0))
+  if (args.shots) { try { await page.screenshot({ path: join(outDir, `shot-${COMMIT_ID}-${site.lat}-${PROVIDER ?? ''}-${name}-${autoDetail ? 'on' : 'off'}.png`) }) } catch {} }
   const sq = await imageryCounters(page)
   const ign = { total: requests[IGN] ?? 0, squares: sq.fetches - sqBefore.fetches, squaresComposed: sq.squares - sqBefore.squares }
   ign.flat = ign.total - ign.squares
@@ -348,7 +357,7 @@ function table(run) {
     'cells s': r.cellsReadyMs == null ? '-' : typeof r.cellsReadyMs === 'string' ? r.cellsReadyMs : (r.cellsReadyMs / 1000).toFixed(1),
     'M tris': r.triangles == null ? '-' : (r.triangles / 1e6).toFixed(2), calls: r.calls,
     'heap MB': r.heapMB, 'city MB': r.city?.bytesMB ?? '-',
-    'relief px/tx': r.relief.pxPerTexel ?? '-', 'img px/tx': r.relief.detail?.imageryPxPerTexel ?? '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-', 'ign sq': r.ign?.squares ?? '-', 'ign flat': r.ign?.flat ?? '-',
+    'relief px/tx': r.relief.pxPerTexel ?? '-', 'img px/tx': r.relief.detail?.imageryPxPerTexel ?? '-', 'photo px/tx': r.photo ? `${r.photo.pxPerTexel} ${r.photo.from}` : '-', 'map px/tx': r.flatMap.pxPerTexel ?? '-', 'ign sq': r.ign?.squares ?? '-', 'ign flat': r.ign?.flat ?? '-',
   }))
   console.log(`\n${run.site} @ ${run.commit}`)
   console.table(rows)
@@ -382,9 +391,11 @@ if (args.compare) {
   process.exit(compare(files[0], files[1]) ? 1 : 0)
 }
 
+let COMMIT_ID = ''
 const commit = execSync('git rev-parse --short=8 HEAD', { cwd: ROOT }).toString().trim()
 // Tracked changes would be filed under a commit that does not hold them.
 const dirty = execSync('git status --porcelain --untracked-files=no', { cwd: ROOT }).toString().trim() !== ''
+COMMIT_ID = commit
 if (dirty && !args.dirty) throw new Error('working tree has uncommitted changes; commit them or pass --dirty')
 const server = await startServer()
 let browser = null
