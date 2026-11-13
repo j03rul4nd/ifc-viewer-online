@@ -42,8 +42,10 @@ beforeAll(async () => {
   diff = diffRevisions(await side('a'), await side('b'), undefined, { labels: { base: 'Rev P01', head: 'Rev P02' } })
   const i18n = i18next.createInstance()
   await i18n.init({ lng: 'en', resources: { en: { compare: en }, th: { compare: th } }, defaultNS: 'compare', interpolation: { escapeValue: false } })
-  text = revisionReportText(i18n.getFixedT('en', 'compare'), 'en')
-  textTh = revisionReportText(i18n.getFixedT('th', 'compare'), 'th')
+  type ReportT = Parameters<typeof revisionReportText>[0]
+  const fixedT = (lng: string): ReportT => i18n.getFixedT(lng, 'compare') as unknown as ReportT
+  text = revisionReportText(fixedT('en'), 'en')
+  textTh = revisionReportText(fixedT('th'), 'th')
 }, 180_000)
 
 const expected = (): Array<{ kind: string; globalIdA?: string; globalIdB?: string }> =>

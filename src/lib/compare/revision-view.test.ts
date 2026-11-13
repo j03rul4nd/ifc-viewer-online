@@ -62,7 +62,7 @@ describe('revision view', () => {
     expect(tableRows(RESHAPED)).toEqual([{ field: 'height', before: '3 000 mm', after: '3 200 mm', delta: '+200 mm' }])
     const m = tableRows(MOVED)
     expect(m[0]).toMatchObject({ field: 'positionX', delta: '−120 mm' })
-    expect(m.at(-1)).toMatchObject({ field: 'distance', delta: '120 mm' })
+    expect(m[m.length - 1]).toMatchObject({ field: 'distance', delta: '120 mm' })
     expect(tableRows(PROPS)).toEqual([{ field: 'raw', label: 'Pset.FireRating', before: 'EI60', after: 'EI90', delta: '' }])
   })
 })
