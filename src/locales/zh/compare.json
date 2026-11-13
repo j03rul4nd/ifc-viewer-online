@@ -385,7 +385,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "即将推出"
+      "pro": "Pro",
+      "working": "正在准备 {{done}} / {{total}}…",
+      "failed": "导出失败：{{message}}",
+      "pdfHint": "每处变更附截图的报告",
+      "xlsxHint": "列出每个变更字段的表格",
+      "bcfHint": "给设计方的问题，每处变更一条"
     },
     "dir": {
       "N": "向北",

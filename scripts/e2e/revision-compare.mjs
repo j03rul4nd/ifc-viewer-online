@@ -82,6 +82,13 @@ for (const v of ['curtain']) {
 }
 await page.locator('[data-testid="rc-view-changes"]').click()
 await page.waitForTimeout(500)
+for (const k of ['xlsx', 'bcf', 'pdf']) {
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 180_000 }), page.locator(`[data-testid="rc-export-${k}"]`).click()])
+  const file = `${OUT}/export.${k === 'bcf' ? 'bcfzip' : k}`
+  await dl.saveAs(file)
+  ok(`${k} export downloads`, fs.statSync(file).size > 1000, `${fs.statSync(file).size} bytes`)
+}
+await page.waitForTimeout(500)
 await drop(page)
 await page.waitForTimeout(600)
 const kept = await page.locator(`[data-testid="rc-row"][data-gid="${gid}"]`).innerText()

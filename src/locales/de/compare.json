@@ -391,7 +391,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "Demnächst"
+      "pro": "Pro",
+      "working": "Wird vorbereitet {{done}} / {{total}}…",
+      "failed": "Export fehlgeschlagen: {{message}}",
+      "pdfHint": "Bericht mit einem Bild pro Änderung",
+      "xlsxHint": "Tabelle mit jedem geänderten Feld",
+      "bcfHint": "Themen für den Planer, eines pro Änderung"
     },
     "dir": {
       "N": "nach Norden",

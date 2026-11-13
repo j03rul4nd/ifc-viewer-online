@@ -391,7 +391,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "Bientôt"
+      "pro": "Pro",
+      "working": "Préparation {{done}} / {{total}}…",
+      "failed": "Échec de l'export : {{message}}",
+      "pdfHint": "Rapport avec une capture par modification",
+      "xlsxHint": "Tableur de chaque champ modifié",
+      "bcfHint": "Sujets pour le concepteur, un par modification"
     },
     "dir": {
       "N": "vers le nord",

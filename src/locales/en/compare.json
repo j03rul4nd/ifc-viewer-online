@@ -391,7 +391,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "Coming soon"
+      "pro": "Pro",
+      "working": "Preparing {{done}} / {{total}}…",
+      "failed": "Export failed: {{message}}",
+      "pdfHint": "Report with a capture per change",
+      "xlsxHint": "Spreadsheet of every changed field",
+      "bcfHint": "Issues for the designer, one per change"
     },
     "dir": {
       "N": "north",

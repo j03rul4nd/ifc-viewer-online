@@ -391,7 +391,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "Aviat"
+      "pro": "Pro",
+      "working": "Preparant {{done}} / {{total}}…",
+      "failed": "No s'ha pogut exportar: {{message}}",
+      "pdfHint": "Informe amb una captura per canvi",
+      "xlsxHint": "Full amb cada camp canviat",
+      "bcfHint": "Incidències per al projectista, una per canvi"
     },
     "dir": {
       "N": "al nord",

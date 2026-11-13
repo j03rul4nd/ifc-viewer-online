@@ -385,7 +385,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "近日公開"
+      "pro": "Pro",
+      "working": "準備中 {{done}} / {{total}}…",
+      "failed": "エクスポートに失敗しました: {{message}}",
+      "pdfHint": "変更ごとのキャプチャ付きレポート",
+      "xlsxHint": "変更されたすべての項目の表",
+      "bcfHint": "設計者向けの課題（変更ごとに1件）"
     },
     "dir": {
       "N": "北へ",

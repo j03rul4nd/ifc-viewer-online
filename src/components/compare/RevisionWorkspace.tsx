@@ -22,6 +22,7 @@ import { MobileSheet } from '../mobile/MobileSheet'
 import { recomputeDiff, useRevisionStore, type ViewMode } from './revisionStore'
 import RevisionList, { KindBadge } from './RevisionList'
 import { useRevisionText } from './useRevisionText'
+import RevisionExports from './RevisionExports'
 
 function useNarrow(): boolean {
   const q = '(max-width: 767px), (max-width: 1024px) and (orientation: portrait)'
@@ -227,7 +228,7 @@ export interface RevisionExportSlot {
   render?: (ctx: { rows: RevisionChange[]; reviews: ReadonlyMap<string, string> }) => React.ReactNode
 }
 
-/** Export buttons: T4 replaces this slot (PDF / XLSX / BCF). Kept disabled until then. */
+/** Optional override of the export buttons; by default RevisionExports (PDF / XLSX / BCF). */
 export const revisionExportSlot: RevisionExportSlot = {}
 
 export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
@@ -386,11 +387,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
   const sideName = (files: File[]) => (files.length === 1 ? files[0].name : t('rc.drop.files', { count: files.length }))
   const modes: ViewMode[] = ['changes', 'curtain', 'blink']
   const exportsNode = revisionExportSlot.render?.({ rows, reviews }) ?? (
-    <div className="flex items-center gap-1" data-testid="rc-export-slot">
-      {(['pdf', 'xlsx', 'bcf'] as const).map((k) => (
-        <button key={k} type="button" disabled title={t('rc.export.soon')} className="h-8 px-2.5 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-faint)] opacity-50 cursor-not-allowed">{t(`rc.export.${k}`)}</button>
-      ))}
-    </div>
+    <RevisionExports viewerApiRef={viewerApiRef} rows={rows} reviews={reviews} onDone={() => { void repaint() }} />
   )
 
   const notices = (

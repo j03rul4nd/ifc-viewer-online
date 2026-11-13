@@ -391,7 +391,12 @@
       "pdf": "PDF",
       "xlsx": "XLSX",
       "bcf": "BCF",
-      "soon": "Próximamente"
+      "pro": "Pro",
+      "working": "Preparando {{done}} / {{total}}…",
+      "failed": "No se pudo exportar: {{message}}",
+      "pdfHint": "Informe con una captura por cambio",
+      "xlsxHint": "Hoja con cada campo cambiado",
+      "bcfHint": "Incidencias para el proyectista, una por cambio"
     },
     "dir": {
       "N": "al norte",
