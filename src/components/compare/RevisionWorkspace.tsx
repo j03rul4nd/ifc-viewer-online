@@ -324,11 +324,10 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
     const at = locateRevision(c, b.modelIds, a.modelIds)
     if (!at) return
     const t0 = performance.now()
-    v.selectElement(at.expressId, at.modelId)
+    // Frame without selecting: a selection opens the properties panel over the
+    // model, and the kind colour already marks the element.
     v.focusElement(at.expressId, at.modelId)
     ;(window as unknown as { __rcFrameMs?: number }).__rcFrameMs = performance.now() - t0
-    // Selection resets the element's highlight to the overlay colour; put the kind colour back.
-    window.setTimeout(() => { void applyRevisionColours(v, plan) }, 60)
   }, [a.modelIds, b.modelIds, plan, viewerApiRef])
 
   const pick = useCallback((gid: string): void => {

@@ -1618,7 +1618,10 @@ export default function App() {
       // not reopened by later loads (the strip still shows the score and
       // counts). A panel that reappears on its own reads as a bug.
       const isPhone = window.matchMedia('(max-width: 767px)').matches
-      if (embedChrome.openPanel && !isPhone && firstInScene) {
+      // Revision compare loads A and B into the scene: no panel, no validation run.
+      const rc = useRevisionStore.getState()
+      const comparing = rc.active || rc.phase === 'reading'
+      if (embedChrome.openPanel && !isPhone && firstInScene && !comparing) {
         useIdsStore.getState().setPanelOpen(false) // bottom slot is exclusive with the IDS panel
         setValidationPanelOpen(true)
         trackValidationPanelOpened({ trigger: 'auto' })
@@ -1680,7 +1683,7 @@ export default function App() {
       // the first model and every member of a URL list or demo set. Now every
       // model is validated, once the queue is idle: validation parses the IFC
       // again in WASM, and doing that while other models convert slows both.
-      if (urlParams.autoValidate) pendingAutoValidateRef.current.add(modelId)
+      if (urlParams.autoValidate && !comparing) pendingAutoValidateRef.current.add(modelId)
     },
 
     onLoadFailed: (job, error) => {
