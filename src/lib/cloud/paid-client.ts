@@ -14,7 +14,7 @@ import type { Result } from '../result'
 export type PaidErrorCode =
   | 'network' | 'cloud_disabled' | 'unauthorized' | 'forbidden' | 'plan_required' | 'not_found'
   | 'invalid_payload' | 'service_disabled' | 'gate_blocked' | 'bad_transition' | 'no_seat' | 'last_owner'
-  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large' | 'naming'
+  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large' | 'naming' | 'rate_limited' | 'confirmation_required'
 
 export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[]; /** On a 409 edit conflict: the row as it is now on the server. */ current?: Record<string, unknown> }
 export type PaidResult<T> = Result<T, PaidError>
@@ -187,6 +187,17 @@ export interface ApiClientLink { id: string; label: string; project: string; ver
 export interface ApiOpenedLink { label: string; project: string; version: string; expires_at: string | null; allow_download: boolean; show_report: boolean }
 export interface ApiEndpoint { id: string; url: string; events: string[]; created_at: string }
 
+export type ApiOnboardingStep = 'project' | 'requirements' | 'suppliers' | 'connect' | 'first_delivery'
+export interface ApiOnboarding { steps: { key: ApiOnboardingStep; done: boolean; by: 'data' | 'mark' | null; manual: boolean }[]; done: number; total: number; dismissed: boolean }
+/** Everything of one project, as the server exports it (format ifcviewer.project-export/1). */
+export interface ApiProjectExport {
+  format: string; exported_at: string; exported_by: string
+  project: { id: string; slug: string; name: string; min_score: number; requirements: string; created_at: string; archived_at: string | null }
+  suppliers: { id: string; name: string; discipline: string | null; invited_at: string; revoked_at: string | null }[]
+  deliveries: (Pick<ApiDelivery, 'id' | 'file_name' | 'file_hash' | 'size_bytes' | 'supplier' | 'supplier_id' | 'score' | 'failed_specs' | 'file_status' | 'auto' | 'review' | 'verdict' | 'reason' | 'sealed_at'> & { source: string; received_at: string })[]
+  register: { type: string; actor: string | null; from: string | null; to: string | null; details: unknown; at: string }[]
+  issues: { number: number; title: string; status: string; priority: string; assignee: string | null; rule_id: string | null; delivery_id: string | null; element_guids: string[]; created_at: string; updated_at: string }[]
+}
 export interface ApiRolePolicy { role: ApiRole; paid: boolean; can: string[]; default: string[]; grantable: string[] }
 export interface ApiAutomationRun { id: string; automation_id: string; subject: string; results: Record<string, unknown>[] | null; minutes_saved: number; at: string }
 export interface ApiAutomation { id: string; name: string; enabled: boolean; trigger: 'version.validated' | 'delivery.validated' | 'issue.overdue'; conditions: Record<string, unknown>; actions: Record<string, unknown>[]; minutes_saved: number; runs_30d?: number }
@@ -259,6 +270,12 @@ export const paidApi = {
   revokeSupplier: (id: string) => send<{ supplier: { id: string; revoked: true } }>('POST', `/reception/suppliers/${id}/revoke`),
   createSupplier: (name: string, discipline?: string) => send<{ supplier: { id: string; name: string }; token: string }>('POST', '/reception/suppliers', { name, ...(discipline ? { discipline } : {}) }),
 
+  onboarding: () => get<ApiOnboarding>('/onboarding'),
+  markOnboarding: (step: ApiOnboardingStep, done: boolean) => send<unknown>('POST', '/onboarding/marks', { step, done }),
+  dismissOnboarding: (dismissed: boolean) => send<unknown>('POST', '/onboarding/dismiss', { dismissed }),
+  exportProject: (id: string) => get<ApiProjectExport>(`/reception/requirements/${id}/export`),
+  /** `confirm` must be the project's name, typed by the person. */
+  deleteProject: (id: string, confirm: string) => send<{ project: string; deliveries: number; issues: number; files_deleted: number; files_left: number }>('DELETE', `/reception/requirements/${id}`, { confirm }),
   outbox: () => get<{ messages: ApiMail[] }>('/mail/outbox'),
   /** Queues a message (never sent from here). Same key → same row. */
   queueMail: (m: { to: string; subject: string; body: string; kind?: ApiMailKind; ref_type?: 'delivery' | 'issue' | 'clash' | 'version'; ref_id?: string }, idempotencyKey: string) =>
