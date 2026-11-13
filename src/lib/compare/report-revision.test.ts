@@ -17,7 +17,8 @@ import {
   REVISION_REPORT_PLAN, buildRevisionReportModel, paginateRevisionReport, parseIso19650Name,
   revisionReportText, revisionToPdf, revisionToXlsx, orderedChanges, type ReportCanvas, type RevisionReportText,
 } from './report-revision'
-import { createChangeCapturer, resolverFromDiff, captureImages, type ChangeCaptureViewer } from './capture-change'
+import { createChangeCapturer, resolverFromDiff, captureImages, captureLook, CAPTURE_BACKGROUND, type ChangeCaptureViewer } from './capture-change'
+import { REVISION_KIND_COLOUR } from './kind-colours'
 import { CHANGE_KIND_BCF_COLOR, buildRevisionChangeTopics, revisionChangesToBcfZip } from './bcf-sync'
 
 const F8 = join(process.cwd(), 'tests', 'fixtures', 'revision', 'F8')
@@ -127,6 +128,21 @@ describe('PDF on F8', () => {
       expect(rec.texts).toContain(c.globalId)
     }
     expect(strFromU8(pdf).match(/\/Type \/Page /g)?.length).toBe(rec.pages())
+    // Invisible, searchable text layer: render mode 3 with a ToUnicode map.
+    const raw = strFromU8(pdf)
+    expect(raw).toContain('BT 3 Tr')
+    expect(raw).toContain('/ToUnicode')
+    const hex = [...model.cards[0].globalId].map((ch) => ch.charCodeAt(0).toString(16).padStart(4, '0')).join('').toUpperCase()
+    expect(raw).toContain(`<${hex}>`)
+  })
+
+  it('keeps long file names and the footer inside their boxes', async () => {
+    const rec = recorder()
+    const long = { ...diff, baseLabel: 'X'.repeat(300), headLabel: 'Y'.repeat(300),
+      files: diff.files.map((f) => ({ ...f, base: f.base ? `${'A'.repeat(200)}-${f.base}` : f.base })) }
+    await revisionToPdf(long, {}, text, { createCanvas: rec.make, loadImage: async () => null })
+    // measureText is 11 px per char: nothing drawn wider than the printable width (1240 − 2·80).
+    for (const s of rec.texts) expect(s.length * 11, s.slice(0, 40)).toBeLessThanOrEqual(1080)
   })
 
   it('draws a placeholder when a change has no capture, and renders Thai', async () => {
@@ -176,6 +192,38 @@ describe('captureChange', () => {
     expect(calls.slice(-3)).toEqual(['clear', 'isolate:false:0', 'restore'])
     expect(captureImages(all)[changes[0].globalId]).toBe(PNG)
     expect(await cap.captureChange('not-a-guid')).toBeNull()
+  })
+})
+
+describe('05-ux colours and capture look', () => {
+  it('uses the 05-ux palette: properties violet, not ochre', () => {
+    expect(REVISION_KIND_COLOUR).toMatchObject({ added: '#2E9E5B', removed: '#D64545', moved: '#2F6FDE', reshaped: '#E08A1E', properties_changed: '#8B5CF6' })
+    expect(CHANGE_KIND_BCF_COLOR.properties_changed).toBe('8B5CF6')
+  })
+
+  it('paints the element in its kind colour over a grey ghost, on a light background, and puts it all back', async () => {
+    expect(captureLook({ expressId: 7, modelId: 'm', kind: 'properties_changed' })).toMatchObject({
+      base: 'ghost', overrides: [{ modelId: 'm', ids: [7], color: '#8B5CF6' }],
+    })
+    const calls: string[] = []
+    const looks: unknown[] = []
+    const userBg = { preset: 'studio', mode: 'solid', top: '#100f0c', bottom: '#100f0c' } as const
+    const viewer: ChangeCaptureViewer = {
+      isolateElements: (_t, on) => { calls.push(`isolate:${on}`) },
+      frameElement: async () => true,
+      clearSelection: () => {},
+      getCameraViewpoint: () => null,
+      setCameraLookAt: () => {},
+      takeSnapshot: () => PNG,
+      setPresentationLook: async (l) => { looks.push(l); calls.push(l ? 'look' : 'look:null') },
+      setBackground: (b) => { calls.push(`bg:${b.preset}`) },
+    }
+    const ch = orderedChanges(diff)[0]
+    const cap = createChangeCapturer(viewer, resolverFromDiff(diff, (_f, side) => side), { wait: async () => {}, restoreBackground: userBg })
+    const out = await cap.captureAll([ch.globalId])
+    expect(out[ch.globalId]).toBeTruthy()
+    expect(calls).toEqual([`bg:${CAPTURE_BACKGROUND.preset}`, 'look', 'look:null', 'isolate:false', 'bg:studio'])
+    expect((looks[0] as { overrides: Array<{ color: string }> }).overrides[0].color).toBe(REVISION_KIND_COLOUR[ch.kind])
   })
 })
 

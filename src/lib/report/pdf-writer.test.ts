@@ -44,4 +44,17 @@ describe('pdf writer', () => {
     expect(pdfString('Año')).toBe('<FEFF0041006E006F>'.replace('006E', '00F1'))
     expect(pdfString('日')).toBe('<FEFF65E5>')
   })
+
+  it('adds an invisible text layer with a valid xref', () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9])
+    const pdf = buildImagePdf([{ jpeg, width: 100, height: 100, text: [{ s: 'Muro ไทย', x: 10, y: 10, size: 12, width: 50 }] }])
+    const s = new TextDecoder('latin1').decode(pdf)
+    expect(s).toContain('BT 3 Tr')
+    expect(s).toContain('/Encoding /Identity-H')
+    expect(s).toContain('/ToUnicode')
+    expect(s).toContain('<004D00750072006F00200E440E170E22>')
+    const startxref = Number(/startxref\n(\d+)/.exec(s)![1])
+    const offs = [...s.slice(startxref).matchAll(/^(\d{10}) 00000 n/gm)].map((m) => Number(m[1]))
+    offs.forEach((off, k) => expect(s.slice(off, off + `${k + 1} 0 obj`.length)).toBe(`${k + 1} 0 obj`))
+  })
 })

@@ -17,7 +17,8 @@
 
 import type { ChangeKind, RevisionChange, RevisionDiff } from './revision-types'
 import { CHANGE_KIND_PRIORITY } from './revision-types'
-import { buildImagePdf } from '../report/pdf-writer'
+import { buildImagePdf, type PdfTextRun } from '../report/pdf-writer'
+import { REVISION_KIND_COLOUR } from './kind-colours'
 
 // ── Plan gating (flag only: nothing is charged here) ─────────────────────────
 
@@ -326,11 +327,13 @@ export interface RevisionPdfOptions {
 
 // A4 at 150 dpi.
 const PW = 1240, PH = 1754, M = 80
-const INK = '#1a1d21', DIM = '#5b6570', RULE = '#d5dae0'
-const KIND_COLOR: Record<ChangeKind, string> = {
-  removed: '#c62828', added: '#2e7d32', type_changed: '#6a1b9a', reshaped: '#ef6c00',
-  moved: '#1565c0', relations_changed: '#00838f', properties_changed: '#8d6e00', unchanged: '#757575',
-}
+// A printed page: dark ink on white paper whatever the app theme is.
+const INK = '#1a1d21' // theme-allow-color: printed report ink (paper, not app theme)
+const DIM = '#5b6570' // theme-allow-color: printed report secondary ink
+const RULE = '#d5dae0' // theme-allow-color: printed report rules
+const PAPER = '#ffffff' // theme-allow-color: printed report paper
+const HOLE = '#f2f4f6' // theme-allow-color: printed report empty capture box
+const KIND_COLOR = REVISION_KIND_COLOUR
 const FONT = 'system-ui, -apple-system, "Segoe UI", "Noto Sans", "Noto Sans Thai", "Noto Sans CJK SC", sans-serif'
 
 function defaultCanvas(w: number, h: number): ReportCanvas {
@@ -376,33 +379,41 @@ function ellipsize(ctx: CanvasRenderingContext2D, s: string, max: number): strin
   return `${t}…`
 }
 
-function text(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, px: number, color = INK, weight = 400): void {
+/** Runs of the page being drawn, for the PDF's invisible text layer. */
+let pageRuns: PdfTextRun[] | null = null
+
+/** Draw text; with `max`, shorten it with an ellipsis measured in ITS font. */
+function text(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, px: number, color = INK, weight = 400, max?: number): void {
   ctx.font = `${weight} ${px}px ${FONT}`
+  const out = max != null ? ellipsize(ctx, s, max) : s
   ctx.fillStyle = color
   ctx.textBaseline = 'top'
-  ctx.fillText(s, x, y)
+  ctx.fillText(out, x, y)
+  // The layer carries the full string: search finds the whole file name.
+  pageRuns?.push({ s, x, y, size: px, width: ctx.measureText(out).width })
 }
 
 function footer(ctx: CanvasRenderingContext2D, model: RevisionReportModel, t: RevisionReportText, n: number, total: number): void {
   ctx.fillStyle = RULE; ctx.fillRect(M, PH - M + 10, PW - 2 * M, 2)
-  text(ctx, `${model.title} · ${model.labelA} → ${model.labelB}`, M, PH - M + 24, 18, DIM)
   ctx.font = `400 18px ${FONT}`
   const p = t.page(n, total)
-  text(ctx, p, PW - M - ctx.measureText(p).width, PH - M + 24, 18, DIM)
+  const pw = ctx.measureText(p).width
+  text(ctx, p, PW - M - pw, PH - M + 24, 18, DIM)
+  text(ctx, `${model.title} · ${model.labelA} → ${model.labelB}`, M, PH - M + 24, 18, DIM, 400, PW - 2 * M - pw - 40)
 }
 
 function drawCover(ctx: CanvasRenderingContext2D, model: RevisionReportModel, t: RevisionReportText): void {
   let y = M + 40
-  text(ctx, model.title, M, y, 56, INK, 700); y += 100
+  text(ctx, model.title, M, y, 56, INK, 700, PW - 2 * M); y += 100
   const date = new Intl.DateTimeFormat(t.locale, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(model.createdAt))
   text(ctx, `${t.generated}: ${date}`, M, y, 24, DIM); y += 80
   for (const [label, name, files] of [[t.versionA, model.labelA, model.filesA], [t.versionB, model.labelB, model.filesB]] as const) {
     text(ctx, label, M, y, 22, DIM, 600); y += 34
-    text(ctx, ellipsize(ctx, name, PW - 2 * M), M, y, 32, INK, 600); y += 52
+    text(ctx, name, M, y, 32, INK, 600, PW - 2 * M); y += 52
     for (const f of files.slice(0, 14)) {
       ctx.font = `400 22px ${FONT}`
       const meta = [f.iso?.status ? `${t.status} ${f.iso.status}` : '', f.iso?.revision ? `${t.revision} ${f.iso.revision}` : ''].filter(Boolean).join(' · ')
-      text(ctx, ellipsize(ctx, f.name, PW - 2 * M - 300), M + 20, y, 22)
+      text(ctx, f.name, M + 20, y, 22, INK, 400, PW - 2 * M - 300)
       if (meta) text(ctx, meta, PW - M - 280, y, 22, DIM)
       y += 34
     }
@@ -426,7 +437,7 @@ function drawCover(ctx: CanvasRenderingContext2D, model: RevisionReportModel, t:
 function drawTable(ctx: CanvasRenderingContext2D, rows: Array<[string, string]>, x: number, y: number, w: number, maxY: number): number {
   for (const [k, n] of rows) {
     if (y > maxY) break
-    text(ctx, ellipsize(ctx, k, w - 140), x, y, 24)
+    text(ctx, k, x, y, 24, INK, 400, w - 140)
     ctx.font = `600 24px ${FONT}`
     text(ctx, String(n), x + w - ctx.measureText(String(n)).width, y, 24, INK, 600)
     y += 36
@@ -468,7 +479,7 @@ function drawCard(ctx: CanvasRenderingContext2D, card: ReportCard, img: ImageLik
     const dw = img.width * s, dh = img.height * s
     ctx.drawImage(img, ix + (capW - dw) / 2, y + (capH - dh) / 2, dw, dh)
   } else {
-    ctx.fillStyle = '#f2f4f6'; ctx.fillRect(ix + 1, y + 1, capW - 2, capH - 2)
+    ctx.fillStyle = HOLE; ctx.fillRect(ix + 1, y + 1, capW - 2, capH - 2)
     text(ctx, t.noCapture, ix + 24, y + capH / 2 - 12, 22, DIM)
   }
   const rx = ix + capW + 30, rw = x + w - rx
@@ -477,7 +488,7 @@ function drawCard(ctx: CanvasRenderingContext2D, card: ReportCard, img: ImageLik
     ['GlobalId', card.globalId], [t.fileA, card.fileA || '—'], [t.fileB, card.fileB || '—']] as const) {
     text(ctx, label, rx, ry, 18, DIM); ry += 24
     ctx.font = `500 22px ${FONT}`
-    text(ctx, ellipsize(ctx, v, rw), rx, ry, 22, INK, 500); ry += 38
+    text(ctx, v, rx, ry, 22, INK, 500, rw); ry += 38
   }
   y += capH + 20
 
@@ -490,9 +501,9 @@ function drawCard(ctx: CanvasRenderingContext2D, card: ReportCard, img: ImageLik
   for (const r of card.rows) {
     if (y > maxY) break
     ctx.font = `400 20px ${FONT}`
-    text(ctx, ellipsize(ctx, r.field, 290), c1, y, 20)
-    text(ctx, ellipsize(ctx, r.a || '—', cw), c2, y, 20, DIM)
-    text(ctx, ellipsize(ctx, r.b || '—', cw), c3, y, 20)
+    text(ctx, r.field, c1, y, 20, INK, 400, 290)
+    text(ctx, r.a || '—', c2, y, 20, DIM, 400, cw)
+    text(ctx, r.b || '—', c3, y, 20, INK, 400, cw)
     y += 30; shown++
   }
   if (shown < card.rows.length) text(ctx, `+${card.rows.length - shown}`, c1, y, 18, DIM)
@@ -512,12 +523,13 @@ export async function revisionToPdf(
   const pages = paginateRevisionReport(model)
   const make = opts.createCanvas ?? defaultCanvas
   const load = opts.loadImage ?? defaultLoadImage
-  const out: Array<{ jpeg: Uint8Array; width: number; height: number }> = []
+  const out: Array<{ jpeg: Uint8Array; width: number; height: number; text: PdfTextRun[] }> = []
   const cardH = (PH - 2 * M - 20) / CARDS_PER_PAGE
 
   for (const [i, page] of pages.entries()) {
     const { ctx, toJpeg } = make(PW, PH)
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, PW, PH)
+    pageRuns = []
+    ctx.fillStyle = PAPER; ctx.fillRect(0, 0, PW, PH)
     if (page.type === 'cover') drawCover(ctx, model, t)
     else if (page.type === 'summary') drawSummary(ctx, model, t)
     else {
@@ -529,7 +541,9 @@ export async function revisionToPdf(
       }
     }
     footer(ctx, model, t, i + 1, pages.length)
-    out.push({ jpeg: await toJpeg(), width: PW, height: PH })
+    const runs = pageRuns
+    pageRuns = null
+    out.push({ jpeg: await toJpeg(), width: PW, height: PH, text: runs })
     opts.onProgress?.(i + 1, pages.length)
   }
   return buildImagePdf(out, { title: `${model.title} — ${model.labelA} → ${model.labelB}`, author: 'IFC Viewer Online', date: new Date(model.createdAt) })
