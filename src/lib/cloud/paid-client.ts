@@ -14,7 +14,7 @@ import type { Result } from '../result'
 export type PaidErrorCode =
   | 'network' | 'cloud_disabled' | 'unauthorized' | 'forbidden' | 'plan_required' | 'not_found'
   | 'invalid_payload' | 'service_disabled' | 'gate_blocked' | 'bad_transition' | 'no_seat' | 'last_owner'
-  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large'
+  | 'overage_confirmation' | 'already_requested' | 'consent_required' | 'not_allowed_for_role' | 'suspended' | 'own_version' | 'not_shared' | 'not_a_member' | 'org_unavailable' | 'quota_exceeded' | 'internal' | 'unsubscribed' | 'upgrade_required' | 'conflict' | 'gone' | 'password_required' | 'wrong_password' | 'file_too_large' | 'naming'
 
 export interface PaidError { code: PaidErrorCode; message?: string; reasons?: string[]; /** On a 409 edit conflict: the row as it is now on the server. */ current?: Record<string, unknown> }
 export type PaidResult<T> = Result<T, PaidError>

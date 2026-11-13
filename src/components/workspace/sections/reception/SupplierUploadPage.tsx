@@ -90,7 +90,7 @@ export default function SupplierUploadPage() {
     if (!file || !slug) return
     setSent({ state: 'sending' })
     const r = await deliverFile(token, slug, file.name, file.bytes)
-    if (!r.ok) { setSent({ state: 'failed', reason: r.error.code === 'file_too_large' ? rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home?.max_file_mb ?? 0 }) : r.error.message ?? r.error.code }); return }
+    if (!r.ok) { setSent({ state: 'failed', reason: r.error.code === 'file_too_large' ? rx('The file is larger than the {{mb}} MB the receiver accepts.', { mb: home?.max_file_mb ?? 0 }) : r.error.code === 'naming' ? rx('The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.') : r.error.message ?? r.error.code }); return }
     setSent({ state: 'sent', id: r.value.deliveryId, hash: r.value.fileHash, at: new Date().toISOString(), replayed: r.value.replayed })
     void refresh()
   }

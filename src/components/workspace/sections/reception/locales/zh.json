@@ -316,5 +316,6 @@
   "Yes, revoke {{name}}": "是，撤销 {{name}}",
   "Revoke access": "撤销访问",
   "Still being validated": "仍在验证中",
-  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "服务器尚未检查此文件。待有评分后可以接受，或现在附上原因退回。"
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "服务器尚未检查此文件。待有评分后可以接受，或现在附上原因退回。",
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "接收方拒绝了该文件名：不符合项目的命名规则。请按上方提示重命名后重新交付。"
 }

@@ -316,5 +316,6 @@
   "Yes, revoke {{name}}": "はい、{{name}} のアクセスを取り消す",
   "Revoke access": "アクセスを取り消す",
   "Still being validated": "検証中",
-  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "サーバーはまだこのファイルを確認していません。スコアが出てから承認するか、理由を添えて今すぐ差し戻せます。"
+  "The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.": "サーバーはまだこのファイルを確認していません。スコアが出てから承認するか、理由を添えて今すぐ差し戻せます。",
+  "The receiver refused the file name: it does not follow the project naming rule. Rename the file as shown above and deliver again.": "受け取り側がファイル名を拒否しました。プロジェクトの命名規則に従っていません。上の表示どおりに名前を変更して、もう一度納品してください。"
 }
