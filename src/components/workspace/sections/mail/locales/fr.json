@@ -291,5 +291,8 @@
  "Signed contract, form…": "Contrat signé, formulaire…",
  "Add contact": "Ajouter un contact",
  "Yes": "Oui",
- "No consent": "Sans consentement"
+ "No consent": "Sans consentement",
+ "Gallery": "Galerie",
+ "Your templates": "Vos modèles",
+ "Built and kept for approval. Sending is off until the module is live.": "Préparé et gardé pour validation. L’envoi reste coupé tant que le module n’est pas actif."
 }

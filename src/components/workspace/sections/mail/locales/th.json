@@ -291,5 +291,8 @@
  "Signed contract, form…": "สัญญาที่ลงนาม แบบฟอร์ม…",
  "Add contact": "เพิ่มผู้ติดต่อ",
  "Yes": "ใช่",
- "No consent": "ไม่มีความยินยอม"
+ "No consent": "ไม่มีความยินยอม",
+ "Gallery": "แกลเลอรี",
+ "Your templates": "เทมเพลตของคุณ",
+ "Built and kept for approval. Sending is off until the module is live.": "สร้างและเก็บไว้รออนุมัติแล้ว การส่งปิดอยู่จนกว่าโมดูลจะเปิดใช้งาน"
 }
