@@ -10,6 +10,7 @@ import type { ReviewState } from '../../lib/compare/revision-view'
 import { downloadBlob, stamp } from './ui'
 import { useRevisionStore } from './revisionStore'
 import { useRevisionText } from './useRevisionText'
+import { trackRcExport } from '../../lib/analytics'
 
 type Kind = 'pdf' | 'xlsx' | 'bcf'
 
@@ -29,6 +30,7 @@ export default function RevisionExports({ viewerApiRef, rows, reviews, onDone }:
     const s = useRevisionStore.getState()
     if (!s.diff || busy) return
     setBusy(kind)
+    trackRcExport({ format: kind })
     try {
       const [rr, cc, bcf] = await Promise.all([
         import('../../lib/compare/report-revision'),
@@ -68,7 +70,7 @@ export default function RevisionExports({ viewerApiRef, rows, reviews, onDone }:
   }
 
   return (
-    <div className="flex items-center gap-1" data-testid="rc-export-slot">
+    <div className="flex items-center gap-1" data-testid="rc-export-slot" data-tour="rc-exports">
       {(['pdf', 'xlsx', 'bcf'] as const).map((k) => (
         <button
           key={k} type="button" onClick={() => void run(k)} disabled={!!busy || !rows.length} data-testid={`rc-export-${k}`}

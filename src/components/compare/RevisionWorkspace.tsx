@@ -23,6 +23,7 @@ import { recomputeDiff, useRevisionStore, type ViewMode } from './revisionStore'
 import RevisionList, { KindBadge } from './RevisionList'
 import { useRevisionText } from './useRevisionText'
 import RevisionExports from './RevisionExports'
+import { HelpButton, RevisionTourHost, TourOffer } from './RevisionHelp'
 
 function useNarrow(): boolean {
   const q = '(max-width: 767px), (max-width: 1024px) and (orientation: portrait)'
@@ -50,7 +51,7 @@ function ChangeTable({ c }: { c: RevisionChange }) {
   }
   if (!rows.length) return <p className="m-0 text-[11.5px] text-[var(--text-faint)]">{t('rc.table.empty')}</p>
   return (
-    <div className="overflow-x-auto" data-testid="rc-table">
+    <div className="overflow-x-auto" data-testid="rc-table" data-tour="rc-table">
       <table className="w-full text-[11.5px] border-collapse">
         <thead>
           <tr className="text-left text-[10.5px] text-[var(--text-faint)]">
@@ -89,7 +90,7 @@ function ChangeCard({ c, index, total, mark, onPrev, onNext, onFrame, table, onT
   const others = c.kinds.filter((k) => k !== c.kind && k !== 'unchanged') as ShownKind[]
   const nav = 'h-11 min-w-11 px-3 rounded-xl border border-[var(--border)] text-[var(--text)] text-[15px] hover:bg-[var(--bg-hover)] disabled:opacity-30'
   return (
-    <div className="flex flex-col gap-2" data-testid="rc-card">
+    <div className="flex flex-col gap-2" data-testid="rc-card" data-tour="rc-card">
       <div className="flex items-start gap-2.5">
         <KindBadge kind={c.kind as ShownKind} size={28} />
         <div className="flex-1 min-w-0">
@@ -111,7 +112,7 @@ function ChangeCard({ c, index, total, mark, onPrev, onNext, onFrame, table, onT
         <span className="shrink-0 text-[11px] tabular-nums text-[var(--text-faint)]" data-testid="rc-position">{index + 1} / {total}</span>
       </div>
       {table && <ChangeTable c={c} />}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap" data-tour="rc-review">
         <button type="button" className={nav} onClick={onPrev} aria-label={t('rc.prev')} title={`${t('rc.prev')} (K)`}>‹</button>
         <button
           type="button" onClick={() => setReview(c.globalId, state === 'reviewed' ? 'pending' : 'reviewed')} aria-pressed={state === 'reviewed'} title="R"
@@ -141,7 +142,7 @@ function Filters({ counts, storeys, files, classes }: { counts: Record<ShownKind
     if (s.size) setFilter({ kinds: [...s] })
   }
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-tour="rc-filters">
       <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('rc.filter.kind')}>
         {SHOWN_KINDS.filter((k) => counts[k] > 0).map((k) => {
           const on = filter.kinds.includes(k)
@@ -347,8 +348,11 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
   useEffect(() => {
     if (opened.current || !rows.length) return
     opened.current = true
-    const gid = selected && rows.some((r) => r.globalId === selected) ? selected : rows[0].globalId
-    window.setTimeout(() => pick(gid), 250)
+    // Read the selection when the timer fires: the guided tour may pick a change meanwhile.
+    window.setTimeout(() => {
+      const cur = useRevisionStore.getState().selected
+      pick(cur && rows.some((r) => r.globalId === cur) ? cur : rows[0].globalId)
+    }, 250)
   }, [rows]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // The scene finishes loading after the list is up: frame the change on screen then.
@@ -392,6 +396,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
 
   const notices = (
     <>
+      <TourOffer />
       <div className="text-[10.5px] text-[var(--text-faint)]" data-testid="rc-paused">{t('rc.paused')}</div>
       {diff.guidRegenerated && <div className="px-3 py-2 rounded-lg text-[11.5px] border border-[var(--warning)] text-[var(--warning)] bg-[var(--warning)]/10" data-testid="rc-guid-warning" role="alert">{t('rc.guidRegenerated')}</div>}
       {diff.originShift && <div className="px-3 py-1.5 rounded-lg text-[11px] border border-[var(--border)] text-[var(--text-dim)]">{t('rc.originShift', { x: num(diff.originShift[0] * 1000), y: num(diff.originShift[1] * 1000), z: num(diff.originShift[2] * 1000) })}</div>}
@@ -407,7 +412,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
   )
 
   const modeBar = (
-    <div className="flex gap-0.5 p-0.5 rounded-lg border border-[var(--border)]" role="tablist" aria-label={t('rc.view.label')}>
+    <div className="flex gap-0.5 p-0.5 rounded-lg border border-[var(--border)]" role="tablist" aria-label={t('rc.view.label')} data-tour="rc-views">
       {modes.map((m) => (
         <button key={m} type="button" role="tab" aria-selected={view === m} onClick={() => st.setView(m)} data-testid={`rc-view-${m}`}
           className={`h-8 px-2.5 rounded-md text-[11.5px] whitespace-nowrap ${view === m ? 'bg-[var(--accent)] text-[var(--accent-contrast)]' : 'text-[var(--text-dim)] hover:text-[var(--text)]'}`}>
@@ -459,7 +464,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
         <span className="text-[var(--text-faint)]">→</span>
         <span className="truncate max-w-[22vw] text-[var(--text)]" title={b.files.map((f) => f.name).join('\n')}>B: {sideName(b.files)}</span>
       </span>
-      <span className="text-[10.5px] px-2 h-6 inline-flex items-center rounded-full border border-[var(--border)] text-[var(--text-dim)]" title={t('rc.local')}>🔒 <span className="hidden sm:inline ml-1">{t('rc.localShort')}</span></span>
+      <span className="text-[10.5px] px-2 h-6 inline-flex items-center rounded-full border border-[var(--border)] text-[var(--text-dim)]" title={t('rc.local')} data-tour="rc-local">🔒 <span className="hidden sm:inline ml-1">{t('rc.localShort')}</span></span>
       <span className="flex-1" />
       {!narrow && counter}
       {modeBar}
@@ -469,6 +474,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
         {showTol && <Tolerances onClose={() => setShowTol(false)} />}
       </div>
       {!narrow && exportsNode}
+      <HelpButton compact={narrow} />
       <button type="button" onClick={onClose} className="h-8 w-8 rounded-full text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)]" aria-label={t('dock.close')}>✕</button>
     </div>
   )
@@ -499,6 +505,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
             )}
           </div>
         </MobileSheet>
+        <RevisionTourHost />
       </div>
     )
   }
@@ -507,7 +514,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
     <div style={colourTokens()}>
       {header}
       {blinkBadge}{curtainHandle}{fpsBadge}
-      <aside className={`${panel} fixed z-[59] left-2 top-[64px] bottom-2 w-[348px] rounded-2xl flex flex-col overflow-hidden`} data-testid="rc-panel">
+      <aside className={`${panel} fixed z-[59] left-2 top-[64px] bottom-2 w-[348px] rounded-2xl flex flex-col overflow-hidden`} data-testid="rc-panel" data-tour="rc-list">
         <div className="p-3 flex flex-col gap-2 border-b border-[var(--border)]">
           {notices}
           <div className="flex items-center justify-between">
@@ -523,6 +530,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose, onBack }: {
         {card}
       </section>
       <span className="sr-only" aria-live="polite">{current ? phrase(current) : ''}</span>
+      <RevisionTourHost />
     </div>
   )
 }

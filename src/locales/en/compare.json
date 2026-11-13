@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} property changed",
       "properties_changed_other": "{{count}} properties changed",
       "changed": "Changed"
+    },
+    "tour": {
+      "title": "Revision compare tour",
+      "ui": {
+        "of": "{{title}} · {{n}} of {{total}}",
+        "skip": "Skip",
+        "back": "Back",
+        "next": "Next",
+        "done": "Done"
+      },
+      "offer": "New here? A 2-minute tour shows what to look at.",
+      "start": "Start the tour",
+      "dismiss": "No thanks",
+      "local": {
+        "title": "Old vs new, nothing uploaded",
+        "body": "A is the old revision, B the new one. Both are read in this browser: the files never leave your computer."
+      },
+      "list": {
+        "title": "Every change, ordered by impact",
+        "body": "Moved and removed elements first, then shape, then data. J / K or the arrows go through them one by one."
+      },
+      "moved": {
+        "title": "What moved, and how far",
+        "body": "The arrow in 3D goes from the old position to the new one, and the sentence says it in site terms, like “Moved 120 mm W”."
+      },
+      "table": {
+        "title": "Before and after",
+        "body": "Position, size, height and changed properties side by side, with the difference. No need to open both files."
+      },
+      "review": {
+        "title": "Mark what you checked",
+        "body": "“Reviewed” when it is fine, “Affects site” when it changes work on site. The counter at the top keeps the tally."
+      },
+      "filters": {
+        "title": "Only your floor, only your pieces",
+        "body": "Filter by storey, discipline, element type or piece mark. Paste a list of marks to see only those."
+      },
+      "views": {
+        "title": "Slider A | B",
+        "body": "Drag the line across the model: old on the left, new on the right. Or flip between A and B in the same view."
+      },
+      "export": {
+        "title": "Send it on",
+        "body": "A PDF or spreadsheet for the site team, a BCF file for the designer — every change with its picture."
+      },
+      "end": {
+        "title": "Try it with your own files",
+        "body": "◀ Back opens the two drop zones: old revision, new revision. And tell us what you think: Help / Feedback is always here."
+      }
+    },
+    "help": {
+      "button": "Help / Feedback",
+      "feedback": "Send feedback",
+      "tour": "Replay the tour"
+    },
+    "demo": {
+      "loading": "Loading the sample revisions…",
+      "failed": "The sample revisions could not be loaded: {{message}}"
     }
   }
 }

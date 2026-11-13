@@ -123,6 +123,7 @@ import { batchCountBucket, shouldOfferBatchFolder } from './lib/batch-folder-doo
 import { useCompareStore } from './stores/compareStore'
 import { planCompareOverlay } from './lib/compare/overlay'
 import { useRevisionStore } from './components/compare/revisionStore'
+import { isRevisionCompareEnabled, onRevisionCompareFlag } from './lib/analytics'
 import IdsPanel from './components/IdsPanel'
 import EirProfileEditor from './components/eir/EirProfileEditor'
 import { useEirStore } from './stores/eirStore'
@@ -1043,6 +1044,11 @@ export default function App() {
   const [batchDoorCount, setBatchDoorCount]   = useState<number | null>(null)
   // `?compare` opens revision compare straight away (deep link, 05-ux §10.2).
   const [showCompareModal, setShowCompareModal] = useState(() => new URLSearchParams(window.location.search).has('compare'))
+  // The first opening by link reads `?compare=demo&tour=revision`; later ones are the app's own button.
+  const [compareEntry, setCompareEntry] = useState<'ui' | 'link'>(() => (new URLSearchParams(window.location.search).has('compare') ? 'link' : 'ui'))
+  // PostHog flag `revision-compare` (false → the general entry opens the classic tools; links unaffected).
+  const [rcFlag, setRcFlag] = useState(isRevisionCompareEnabled)
+  useEffect(() => onRevisionCompareFlag(setRcFlag), [])
   const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
   const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
@@ -5695,7 +5701,7 @@ export default function App() {
       {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
       {showCompareModal && (
         <React.Suspense fallback={null}>
-          <CompareModal onClose={() => setShowCompareModal(false)} viewerApiRef={viewerApiRef} />
+          <CompareModal onClose={() => { setShowCompareModal(false); setCompareEntry('ui') }} viewerApiRef={viewerApiRef} entry={compareEntry} revisionEnabled={rcFlag} />
         </React.Suspense>
       )}
 

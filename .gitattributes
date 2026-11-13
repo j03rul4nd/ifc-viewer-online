@@ -20,3 +20,4 @@ public/models/** -text
 tests/fixtures/revision/**/*.ifc text eol=lf
 # 2D revision fixtures: PDFs with byte offsets, never line-converted
 tests/fixtures/revision-2d/*.pdf binary
+public/models/revision-demo/**/*.ifc text eol=lf

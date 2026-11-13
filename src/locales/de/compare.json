@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} Eigenschaft geändert",
       "properties_changed_other": "{{count}} Eigenschaften geändert",
       "changed": "Geändert"
+    },
+    "tour": {
+      "title": "Tour: Revisionen vergleichen",
+      "ui": {
+        "of": "{{title}} · {{n}} von {{total}}",
+        "skip": "Überspringen",
+        "back": "Zurück",
+        "next": "Weiter",
+        "done": "Fertig"
+      },
+      "offer": "Zum ersten Mal hier? Eine 2-Minuten-Tour zeigt, worauf es ankommt.",
+      "start": "Tour starten",
+      "dismiss": "Nein danke",
+      "local": {
+        "title": "Alt gegen neu, nichts wird hochgeladen",
+        "body": "A ist die alte Revision, B die neue. Beide werden in diesem Browser gelesen: Die Dateien verlassen Ihren Rechner nicht."
+      },
+      "list": {
+        "title": "Jede Änderung, nach Wirkung sortiert",
+        "body": "Zuerst Verschobenes und Entferntes, dann Form, dann Daten. J / K oder die Pfeile gehen sie einzeln durch."
+      },
+      "moved": {
+        "title": "Was sich bewegt hat, und wie weit",
+        "body": "Der Pfeil in 3D führt von der alten zur neuen Lage, und der Satz sagt es in Baustellensprache, etwa „120 mm nach W verschoben“."
+      },
+      "table": {
+        "title": "Vorher und nachher",
+        "body": "Lage, Abmessungen, Höhe und geänderte Eigenschaften nebeneinander, mit der Differenz. Ohne beide Dateien zu öffnen."
+      },
+      "review": {
+        "title": "Abhaken, was geprüft ist",
+        "body": "„Geprüft“, wenn es passt, „Betrifft Baustelle“, wenn sich die Arbeit vor Ort ändert. Der Zähler oben führt Buch."
+      },
+      "filters": {
+        "title": "Nur Ihr Geschoss, nur Ihre Bauteile",
+        "body": "Nach Geschoss, Gewerk, Elementtyp oder Positionsnummer filtern. Eine Liste von Positionen einfügen, um nur diese zu sehen."
+      },
+      "views": {
+        "title": "Vorhang A | B",
+        "body": "Ziehen Sie die Linie über das Modell: alt links, neu rechts. Oder wechseln Sie in derselben Ansicht zwischen A und B."
+      },
+      "export": {
+        "title": "Weitergeben",
+        "body": "Ein PDF oder eine Tabelle für die Baustelle, eine BCF-Datei für den Planer – jede Änderung mit ihrem Bild."
+      },
+      "end": {
+        "title": "Mit eigenen Dateien ausprobieren",
+        "body": "◀ Zurück öffnet die zwei Ablagefelder: alte Revision, neue Revision. Und sagen Sie uns Ihre Meinung: Hilfe / Feedback ist immer hier."
+      }
+    },
+    "help": {
+      "button": "Hilfe / Feedback",
+      "feedback": "Feedback senden",
+      "tour": "Tour wiederholen"
+    },
+    "demo": {
+      "loading": "Beispielrevisionen werden geladen…",
+      "failed": "Die Beispielrevisionen konnten nicht geladen werden: {{message}}"
     }
   }
 }

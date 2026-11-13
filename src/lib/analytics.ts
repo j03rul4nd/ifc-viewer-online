@@ -140,6 +140,12 @@ export function initAnalytics(): void {
 // ── Internal ──────────────────────────────────────────────────────────────────
 
 function track(event: string, properties?: Record<string, unknown>): void {
+  // Dev-only page mock for e2e scripts: `window.__phMock = []` collects what
+  // would be sent (local traffic never initialises PostHog).
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    const sink = (window as unknown as { __phMock?: unknown[] }).__phMock
+    if (Array.isArray(sink)) sink.push([event, properties ?? {}])
+  }
   if (!_initialized || _optedOut) return
   posthog.capture(event, properties)
 }
@@ -1083,4 +1089,86 @@ export function trackLandingIntegrationClick(props: {
   action: 'open' | 'notify' | 'tab' | 'cta'
 }): void {
   track('landing_integration_click', props)
+}
+
+// ── Revision compare (rc_*) ───────────────────────────────────────────────────
+// Funnel of the guided demo link (/?compare=demo&tour=revision&ref=<code>) and
+// of real use. Counts, buckets and enums only: never a file name, a GlobalId
+// or an element name. `ref` is the opaque invite tag (already stripped from
+// the URL and registered by attribution.ts).
+
+export type RcSource = 'demo' | 'own' | 'link'
+
+/** 0 · 1-10 · 11-50 · 51-200 · 201-1000 · 1001-10000 · 10000+ */
+export function countBucket(n: number): string {
+  if (n <= 0) return '0'
+  if (n <= 10) return '1-10'
+  if (n <= 50) return '11-50'
+  if (n <= 200) return '51-200'
+  if (n <= 1000) return '201-1000'
+  if (n <= 10000) return '1001-10000'
+  return '10000+'
+}
+
+/** <0.5s · 0.5-2s · 2-10s · 10-60s · 60s+ */
+export function msBucket(ms: number): string {
+  if (ms < 500) return '<0.5s'
+  if (ms < 2000) return '0.5-2s'
+  if (ms < 10000) return '2-10s'
+  if (ms < 60000) return '10-60s'
+  return '60s+'
+}
+
+/** The revision comparator was opened. */
+export function trackRcOpened(props: { source: RcSource; ref?: string }): void {
+  track('rc_opened', props.ref ? props : { source: props.source })
+}
+
+/** A diff finished: sizes as buckets, which change kinds appeared (sorted, comma-joined). */
+export function trackRcDiffCompleted(props: {
+  elements: number; changes: number; kinds: string[]; guid_regenerated: boolean; ms: number
+}): void {
+  track('rc_diff_completed', {
+    elements_bucket: countBucket(props.elements),
+    changes_bucket: countBucket(props.changes),
+    kinds: [...new Set(props.kinds)].sort().join(','),
+    guid_regenerated: props.guid_regenerated,
+    ms_bucket: msBucket(props.ms),
+  })
+}
+
+export function trackRcTourStarted(): void { track('rc_tour_started') }
+/** `step`: the step id (fixed catalogue), never content. */
+export function trackRcTourStep(props: { step: string }): void { track('rc_tour_step', props) }
+export function trackRcTourCompleted(): void { track('rc_tour_completed') }
+export function trackRcTourDismissed(props: { step: string }): void { track('rc_tour_dismissed', props) }
+export function trackRcChangeReviewed(props: { state: 'pending' | 'reviewed' | 'affects_site' }): void { track('rc_change_reviewed', props) }
+export function trackRcExport(props: { format: 'pdf' | 'xlsx' | 'bcf' }): void { track('rc_export', props) }
+export function trackRcHelpClicked(props: { option: 'feedback' | 'tour' }): void { track('rc_help_clicked', props) }
+export function trackRcFeedbackSent(): void { track('rc_feedback_sent') }
+export function trackRcOwnFilesDropped(props: { after_demo: boolean }): void { track('rc_own_files_dropped', props) }
+
+/**
+ * Feature flag `revision-compare`. Only an explicit `false` from PostHog hides
+ * the new comparator's general entry; no PostHog (blocked, opted out, local,
+ * flag missing or not loaded yet) means on. The direct link ignores it.
+ */
+export function isRevisionCompareEnabled(): boolean {
+  if (!_initialized || _optedOut) return true
+  try {
+    return posthog.isFeatureEnabled?.('revision-compare') !== false
+  } catch {
+    return true
+  }
+}
+
+/** Calls back when PostHog's flags arrive (never if PostHog does not run). Returns an unsubscribe. */
+export function onRevisionCompareFlag(cb: (enabled: boolean) => void): () => void {
+  if (!_initialized || _optedOut || typeof posthog.onFeatureFlags !== 'function') return () => {}
+  try {
+    const off = posthog.onFeatureFlags(() => cb(isRevisionCompareEnabled()))
+    return typeof off === 'function' ? off : () => {}
+  } catch {
+    return () => {}
+  }
 }

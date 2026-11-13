@@ -433,6 +433,64 @@
       "properties_changed_one": "{{count}} propriedade alterada",
       "properties_changed_other": "{{count}} propriedades alteradas",
       "changed": "Alterado"
+    },
+    "tour": {
+      "title": "Tour de comparar revisões",
+      "ui": {
+        "of": "{{title}} · {{n}} de {{total}}",
+        "skip": "Saltar",
+        "back": "Voltar",
+        "next": "Seguinte",
+        "done": "Concluir"
+      },
+      "offer": "Primeira vez? Um tour de 2 minutos mostra o que ver.",
+      "start": "Começar o tour",
+      "dismiss": "Não, obrigado",
+      "local": {
+        "title": "Antiga contra nova, sem enviar nada",
+        "body": "A é a revisão antiga e B a nova. As duas são lidas neste navegador: os ficheiros não saem do seu computador."
+      },
+      "list": {
+        "title": "Todas as alterações, por impacto",
+        "body": "Primeiro o que foi movido e removido, depois a forma e depois os dados. J / K ou as setas percorrem-nas uma a uma."
+      },
+      "moved": {
+        "title": "O que se moveu, e quanto",
+        "body": "A seta em 3D vai da posição antiga para a nova, e a frase di-lo em linguagem de obra, como «Movido 120 mm O»."
+      },
+      "table": {
+        "title": "Antes e depois",
+        "body": "Posição, dimensões, altura e propriedades alteradas lado a lado, com a diferença. Sem abrir os dois ficheiros."
+      },
+      "review": {
+        "title": "Marque o que verificou",
+        "body": "«Verificado» quando está bem, «Afeta a obra» quando muda o trabalho em obra. O contador no topo faz as contas."
+      },
+      "filters": {
+        "title": "Só o seu piso, só as suas peças",
+        "body": "Filtre por piso, disciplina, tipo de elemento ou marca de peça. Cole uma lista de marcas para ver só essas."
+      },
+      "views": {
+        "title": "Cortina A | B",
+        "body": "Arraste a linha sobre o modelo: o antigo à esquerda, o novo à direita. Ou alterne entre A e B na mesma vista."
+      },
+      "export": {
+        "title": "Passe a quem precisa",
+        "body": "Um PDF ou uma folha de cálculo para a obra, um ficheiro BCF para o projetista: cada alteração com a sua imagem."
+      },
+      "end": {
+        "title": "Experimente com os seus ficheiros",
+        "body": "◀ Voltar abre as duas zonas para largar: revisão antiga e revisão nova. E diga-nos o que acha: Ajuda / Opinião está sempre aqui."
+      }
+    },
+    "help": {
+      "button": "Ajuda / Opinião",
+      "feedback": "Enviar opinião",
+      "tour": "Repetir o tour"
+    },
+    "demo": {
+      "loading": "A carregar as revisões de exemplo…",
+      "failed": "Não foi possível carregar as revisões de exemplo: {{message}}"
     }
   }
 }
