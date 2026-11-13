@@ -131,3 +131,33 @@ describe('groupByProfile', () => {
     expect(ipe.ids).toHaveLength(3)
   })
 })
+
+describe('verifier fixes', () => {
+  it('Tekla length without explicit unit in a metre project is mm when > 100 m', () => {
+    const tekla = (v: string | number) => item({ psets: [pset('Tekla Quantity', [['Length', v, 'IFCLENGTHMEASURE', 'm']])] })
+    expect(extractSteelPart(tekla(6000), { LENGTHUNIT: 'm' }).length).toBeCloseTo(6)
+    expect(extractSteelPart(tekla('6000'), { LENGTHUNIT: 'm' }).length).toBeCloseTo(6)
+    expect(extractSteelPart(tekla(6), { LENGTHUNIT: 'm' }).length).toBeCloseTo(6)
+  })
+
+  it('Tekla length in a mm project stays as the project says', () => {
+    const p = extractSteelPart(item({ psets: [pset('Tekla Quantity', [['Length', 6, 'IFCLENGTHMEASURE', 'mm']])] }), { LENGTHUNIT: 'mm' })
+    expect(p.length).toBeCloseTo(0.006)
+  })
+
+  it('thousands separators', () => {
+    expect(parseNumeric('1,234 kg')).toEqual({ n: 1234, unit: 'kg' })
+    expect(parseNumeric('1,234.5')?.n).toBe(1234.5)
+    expect(parseNumeric('1.234,5')?.n).toBe(1234.5)
+    expect(parseNumeric('12,5')?.n).toBe(12.5)
+    expect(parseNumeric('1,25')?.n).toBe(1.25)
+    expect(parseNumeric('1,234,567')?.n).toBe(1234567)
+  })
+
+  it('Profile in an unrelated pset is ignored; typeName is used', () => {
+    const p = extractSteelPart(item({ typeName: 'HEA200', psets: [pset('Pset_Custom', [['Profile', 'nonsense']])] }))
+    expect(p.profile).toBe('HEA200')
+    const q = extractSteelPart(item({ typeName: 'HEA200', psets: [pset('Structural', [['Profile', 'IPE220']])] }))
+    expect(q.profile).toBe('IPE220')
+  })
+})

@@ -73,9 +73,7 @@ export function parseNumeric(value: IFCValue | undefined): { n: number; unit?: s
   if (typeof value !== 'string') return null
   const m = /^\s*([-+]?[\d.,]*\d(?:[eE][-+]?\d+)?)\s*([^\d\s].*)?$/.exec(value)
   if (!m) return null
-  let num = m[1]
-  if (num.includes(',') && !num.includes('.')) num = num.replace(',', '.')
-  else num = num.replace(/,/g, '')
+  const num = normaliseSeparators(m[1])
   const n = Number(num)
   if (!Number.isFinite(n)) return null
   const unit = m[2]?.trim()
@@ -83,18 +81,49 @@ export function parseNumeric(value: IFCValue | undefined): { n: number; unit?: s
 }
 
 /**
+ * Thousands vs decimal separators. Ambiguous by nature: "1,234" could be
+ * 1.234 (decimal comma) or 1234 (thousands). Rule: when both '.' and ',' are
+ * present, the last one is the decimal mark; a lone ',' followed by exactly 3
+ * digits is a thousands separator, otherwise decimal ("12,5" → 12.5).
+ */
+function normaliseSeparators(raw: string): string {
+  const dot = raw.lastIndexOf('.')
+  const comma = raw.lastIndexOf(',')
+  if (dot >= 0 && comma >= 0) {
+    return comma > dot ? raw.replace(/\./g, '').replace(',', '.') : raw.replace(/,/g, '')
+  }
+  if (comma >= 0) {
+    const commas = raw.split(',').length - 1
+    if (commas > 1 || /,\d{3}$/.test(raw)) return raw.replace(/,/g, '')
+    return raw.replace(',', '.')
+  }
+  return raw
+}
+
+/**
  * A value in SI base (m, kg, m³). Unit: in the text, else the property's,
- * else the project's. A Tekla length with no unit anywhere is millimetres
- * when it looks like it (> 100).
+ * else the project's. A Tekla length with no explicit unit that reads as
+ * more than 100 m is millimetres.
  */
 function toSI(kind: Kind, value: IFCValue | undefined, unit: string | undefined, units: ProjectUnits, teklaGuess = false): number | null {
   const p = parseNumeric(value)
   if (!p) return null
-  const u = p.unit ?? unit ?? units[UNIT_TYPE[kind]]
+  const projectUnit = units[UNIT_TYPE[kind]]
+  // parseItemData copies the project unit onto a property that names none, so
+  // a property unit equal to the project's is not an explicit one.
+  const explicit = p.unit ?? (unit && unit !== projectUnit ? unit : undefined)
+  const u = explicit ?? unit ?? projectUnit
   const f = factor(kind, u)
+  if (teklaGuess && kind === 'length' && !explicit) {
+    // Tekla writes lengths in mm whatever the project says: a part read as
+    // longer than 100 m is millimetres.
+    const asProject = f !== null ? p.n * f : p.n
+    if (asProject > 100) return p.n / 1000
+    if (f === null && u) return null
+    return asProject
+  }
   if (f !== null) return p.n * f
   if (u) return null // a unit we cannot read: better nothing than a wrong number
-  if (teklaGuess && kind === 'length') return p.n > 100 ? p.n / 1000 : p.n
   return p.n
 }
 
@@ -126,6 +155,8 @@ const TEKLA_SET = /^Tekla\b/i
 const REVIT_SET = /^(Structural|Dimensions|Pset_.*Common|Identity Data|Constraints|Other)$/i
 const ADVANCE_SET = /^(AS_|AdvanceSteel)/i
 const ANY_SET = /./
+/** Structural / steel psets where a profile name can be trusted. */
+const STEEL_SETS = /^(Tekla\b|Pset_.*Common$|Structural$|AS_|AdvanceSteel|Qto_)/i
 
 // ─── extract ────────────────────────────────────────────────────────────────
 
@@ -191,7 +222,7 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
   setP('override', opts.profileOverride)
   setP('tekla', find(props, TEKLA_SET, ['Profile'])?.value)
   setP('advance', find(props, ADVANCE_SET, ['Section', 'Profile', 'Section name'])?.value)
-  setP('revit', find(props, ANY_SET, ['Profile', 'Section Name Key', 'Section Shape'])?.value)
+  setP('revit', find(props, STEEL_SETS, ['Profile', 'Section Name Key', 'Section Shape'])?.value)
   setP('revit', find(props, /^Pset_.*Common$/i, ['Reference'])?.value)
   setP('type', item.typeName)
 
