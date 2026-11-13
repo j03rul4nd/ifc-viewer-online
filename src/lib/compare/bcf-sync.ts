@@ -12,8 +12,11 @@
 //
 // Pure: returns patches and topics; the caller applies them to bcfStore.
 
-import type { BcfComment, BcfTopic } from '../../types'
+import { strToU8, zipSync } from 'fflate'
+import type { BcfComment, BcfTopic, BcfViewpoint, CameraViewpoint } from '../../types'
 import type { ElementDiff, SetDiff } from './types'
+import type { ChangeKind, RevisionChange, RevisionDiff } from './revision-types'
+import { buildBcfTextEntries } from '../bcf'
 import type { IdsVersionDiff } from './ids-versions'
 
 export interface BcfSyncText {
@@ -169,4 +172,146 @@ export function buildNewTopics(
       status === 'removed' ? 'Warning' : 'Info', text.author, ['change-review', label], now))
   }
   return out
+}
+
+// ── Revision compare: one BCF 3.0 topic per change (spec 10 V2.3) ────────────
+// Title = the site sentence; the viewpoint selects and colours the element by
+// GlobalId (B side; A side for a removed one) and carries the capture's camera
+// and PNG snapshot, so the designer opens exactly what the site saw.
+
+export interface RevisionBcfText {
+  author: string
+  /** The site sentence of a change, used as the topic title. */
+  sentence: (c: RevisionChange) => string
+  /** Topic description; default lists element, class, storey, files and A/B fields. */
+  description?: (c: RevisionChange) => string
+  /** TopicType per kind; default 'Issue'. */
+  topicType?: (c: RevisionChange) => string
+}
+
+/** Colour of each kind in the viewpoint (RRGGBB, as BCF wants it). */
+export const CHANGE_KIND_BCF_COLOR: Record<ChangeKind, string> = {
+  removed: 'C62828', added: '2E7D32', type_changed: '6A1B9A', reshaped: 'EF6C00',
+  moved: '1565C0', relations_changed: '00838F', properties_changed: '8D6E00', unchanged: '757575',
+}
+
+/** Label stamped on revision-change topics, plus the kind as its own label. */
+export const REVISION_CHANGE_LABEL = 'revision-change'
+
+/** GlobalIds a change points at in the version where it can be seen. */
+export function changeComponentGuids(c: RevisionChange): string[] {
+  const ids = c.kind === 'removed' ? c.match.baseGlobalIds : c.match.headGlobalIds
+  return ids.length ? [...ids] : [c.globalId]
+}
+
+function defaultDescription(c: RevisionChange): string {
+  const lines = [`${c.name || c.ifcClass} — ${c.ifcClass}${c.storey ? ` — ${c.storey}` : ''}`, `GlobalId: ${c.globalId}`]
+  if (c.baseFile || c.headFile) lines.push(`A: ${c.baseFile ?? '—'}  B: ${c.headFile ?? '—'}`)
+  for (const ch of c.changes.slice(0, 20)) {
+    const f = (v: unknown) => (v == null ? '—' : Array.isArray(v) ? v.join(', ') : String(v))
+    lines.push(`• ${ch.key || ch.category}: ${f(ch.before)} → ${f(ch.after)}`)
+  }
+  return lines.join('\n')
+}
+
+// Used when a change has no capture: an isometric look at the scene origin.
+// The viewpoint stays valid (BCF 3.0 requires a camera) and the selection is
+// what a viewer frames on opening.
+const FALLBACK_CAMERA = {
+  cameraPosition: { x: 20, y: 20, z: 20 },
+  cameraDirection: { x: -0.5773503, y: -0.5773503, z: -0.5773503 },
+  cameraUp: { x: -0.4082483, y: 0.8164966, z: -0.4082483 },
+  fieldOfView: 60, aspectRatio: 1.5,
+}
+
+export interface RevisionChangeCapture {
+  snapshot?: string
+  camera?: CameraViewpoint | null
+}
+
+/** One topic per change (unchanged ones skipped). Pure apart from uuids. */
+export function buildRevisionChangeTopics(
+  diff: RevisionDiff,
+  text: RevisionBcfText,
+  captures: Readonly<Record<string, RevisionChangeCapture | undefined>> = {},
+  now: Date = new Date(),
+): BcfTopic[] {
+  const label = `version:${diff.headLabel}`
+  return diff.changes.filter((c) => c.kind !== 'unchanged').map((c) => {
+    const cap = captures[c.globalId]
+    const cam = cap?.camera
+    const vp: BcfViewpoint = {
+      guid: crypto.randomUUID(),
+      componentGuids: changeComponentGuids(c),
+      ...(cam
+        ? { cameraPosition: cam.position, cameraDirection: cam.direction, cameraUp: cam.up ?? { x: 0, y: 1, z: 0 }, fieldOfView: cam.fovDeg, aspectRatio: cam.aspect }
+        : FALLBACK_CAMERA),
+      ...(cap?.snapshot?.startsWith('data:image/png') ? { snapshotBase64: cap.snapshot } : {}),
+    }
+    return {
+      guid: crypto.randomUUID(),
+      title: text.sentence(c),
+      description: (text.description ?? defaultDescription)(c),
+      status: 'Open',
+      topicType: text.topicType?.(c) ?? 'Issue',
+      priority: c.review === 'affects_site' ? 'High' : 'Normal',
+      creationDate: now.toISOString(),
+      creationAuthor: text.author,
+      labels: [REVISION_CHANGE_LABEL, c.kind, label],
+      viewpoints: [vp],
+      comments: [],
+      source: 'generated',
+    } satisfies BcfTopic
+  })
+}
+
+/**
+ * Add `<Coloring>` to a viewpoint file written by bcf.ts (which only writes
+ * the selection). Schema order inside <Components>: Selection, Visibility, Coloring.
+ */
+export function addViewpointColoring(bcfv: string, color: string, guids: readonly string[]): string {
+  if (!guids.length || !bcfv.includes('</Components>')) return bcfv
+  const comps = guids.map((g) => `<Component IfcGuid="${g}" />`).join('\n          ')
+  const block = `  <Coloring>
+      <Color Color="${color}">
+        <Components>
+          ${comps}
+        </Components>
+      </Color>
+    </Coloring>
+  </Components>`
+  return bcfv.replace('</Components>', block)
+}
+
+/**
+ * The .bcfzip (BCF 3.0) of a revision diff: one topic per change with its
+ * selection, kind colour, camera and PNG snapshot. Built in memory — nothing
+ * leaves the browser.
+ */
+export function revisionChangesToBcfZip(
+  diff: RevisionDiff,
+  text: RevisionBcfText,
+  captures: Readonly<Record<string, RevisionChangeCapture | undefined>> = {},
+  now: Date = new Date(),
+): { bytes: Uint8Array; topics: BcfTopic[] } {
+  const topics = buildRevisionChangeTopics(diff, text, captures, now)
+  const kindOf = new Map(topics.map((t) => [t.guid, t.labels![1] as ChangeKind]))
+  const entries: Record<string, Uint8Array> = {}
+  for (const [path, xml] of Object.entries(buildBcfTextEntries(topics, '3.0'))) {
+    let out = xml
+    const m = /^([^/]+)\/viewpoint_(\d+)\.bcfv$/.exec(path)
+    if (m) {
+      const t = topics.find((x) => x.guid === m[1])!
+      const vp = t.viewpoints[Number(m[2])]
+      out = addViewpointColoring(xml, CHANGE_KIND_BCF_COLOR[kindOf.get(t.guid) ?? 'unchanged'], vp.componentGuids ?? [])
+    }
+    entries[path] = strToU8(out)
+  }
+  for (const t of topics) {
+    t.viewpoints.forEach((vp, i) => {
+      const b64 = vp.snapshotBase64?.split(',')[1]
+      if (b64) entries[`${t.guid}/snapshot_${i}.png`] = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0))
+    })
+  }
+  return { bytes: zipSync(entries, { level: 6 }), topics }
 }
