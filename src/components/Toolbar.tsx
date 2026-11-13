@@ -7,6 +7,8 @@ import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
 import { useDrawingStore } from '../stores/drawingStore'
 import { useClashStore } from '../stores/clashStore'
+import { useSteelStore } from '../stores/steelStore'
+import { steelText } from '../lib/steel/i18n'
 import { clashText } from '../lib/clash/i18n'
 import { useUIStore } from '../stores/uiStore'
 import { haptic } from '../lib/haptics'
@@ -289,6 +291,7 @@ export default function Toolbar({
 
   const drawingsOpen = useDrawingStore((s) => s.panelOpen)
   const clashOpen = useClashStore((s) => s.open)
+  const steelOpen = useSteelStore((s) => s.open)
   const setDrawingsOpen = useDrawingStore((s) => s.setPanelOpen)
   const {
     treeVisible, setTreeVisible, openSidebarLegend, scenePanelOpen, toggleScenePanel,
@@ -853,6 +856,8 @@ export default function Toolbar({
             onClick={() => { setDrawingsOpen(!drawingsOpen); setOpenMenu(null) }} />
           <MenuItem icon={SectionSVG} label={clashText(i18n.language, 'title')} active={clashOpen} disabled={content.models === 0}
             badge="Pro" onClick={() => { useClashStore.getState().setOpen(!clashOpen); setOpenMenu(null) }} />
+          <MenuItem icon={SectionSVG} label={steelText(i18n.language, 'title')} active={steelOpen} disabled={content.models === 0}
+            badge="Pro" onClick={() => { useSteelStore.getState().setOpen(!steelOpen); setOpenMenu(null) }} />
           {(isGisEnabled() || isSolarEnabled() || isFloodEnabled()) && (
             <>
               <MenuDivider />

@@ -168,6 +168,7 @@ import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
 import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
 import { useClashStore } from './stores/clashStore'
+import { useSteelStore } from './stores/steelStore'
 import { useDrawingStore } from './stores/drawingStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
@@ -207,6 +208,7 @@ const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
 const DrawingDock = React.lazy(() => import('./components/drawings/DrawingDock'))
 // Clash detection (Pro/Team): engine, worker and texts load on first open.
 const ClashPanel = React.lazy(() => import('./components/clash/ClashPanel'))
+const SteelTakeoffPanel = React.lazy(() => import('./components/steel/SteelTakeoffPanel'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel, type DemoSet } from './demo-models/models'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -2117,6 +2119,7 @@ export default function App() {
   const drawingsLink = useMemo(() => new URLSearchParams(window.location.search).has('drawings'), [])
   useEffect(() => { if (drawingsLink) useDrawingStore.getState().setPanelOpen(true) }, [drawingsLink])
   const clashPanelOpen = useClashStore((s) => s.open)
+  const steelPanelOpen = useSteelStore((s) => s.open)
   const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && (!embedChrome.embed || drawingsLink)
   const [drawingsWidth, setDrawingsWidth] = useState(() => Math.round((typeof window === 'undefined' ? 1200 : window.innerWidth) * 0.5))
   const drawingsStacked = !isDesktop
@@ -5370,6 +5373,12 @@ export default function App() {
                   {clashPanelOpen && sceneModels.length > 0 && !clientMode && (
                     <React.Suspense fallback={null}>
                       <ClashPanel viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
+                  )}
+
+                  {steelPanelOpen && sceneModels.length > 0 && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <SteelTakeoffPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>
                   )}
 
