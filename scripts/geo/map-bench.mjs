@@ -89,6 +89,8 @@ const FLAGS = [
   '--disable-renderer-backgrounding',
   '--disable-background-timer-throttling',
   '--enable-precise-memory-info',
+  // gc() in the page: the heap is read after a forced collection (median of 3), not as one noisy sample.
+  '--js-flags=--expose-gc',
 ]
 async function launch() {
   try {
@@ -171,6 +173,18 @@ function frameSampler({ ms, pan, pose, speed, amp }) {
   })
 }
 
+async function heapAfterGc() {
+  if (typeof globalThis.gc !== 'function' || !performance.memory) return null
+  const xs = []
+  for (let i = 0; i < 3; i++) {
+    globalThis.gc()
+    await new Promise((r) => setTimeout(r, 300))
+    xs.push(performance.memory.usedJSHeapSize / 1048576)
+  }
+  xs.sort((a, b) => a - b)
+  return +xs[1].toFixed(1)
+}
+
 function sampleScene({ H, lat }) {
   const geo = globalThis.__geoSystem, v = globalThis.__ifcViewer
   const C = 40075016.686 * Math.cos(lat * Math.PI / 180)
@@ -247,6 +261,8 @@ async function measureView(page, site, name, autoDetail, hosts) {
   await sleep(SETTLE_MS)
   const rest = await page.evaluate(frameSampler, { ms: REST_MS, pan: false })
   const scene = await page.evaluate(sampleScene, { H, lat: site.lat })
+  scene.heapRawMB = scene.heapMB
+  scene.heapMB = await page.evaluate(heapAfterGc)
   const toPose = () => page.evaluate(({ p }) => globalThis.__ifcViewer.setCameraLookAt(
     { x: p.pos[0], y: p.pos[1], z: p.pos[2] }, { x: p.target[0], y: p.target[1], z: p.target[2] }, false), { p })
   // Warm-up pan over the same ground, not counted.
