@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bindNavigation, type NavigableControls, type NavKeyTarget } from './camera-nav'
+import { bindNavigation, classifyWheel, PINCH_DELTA_SCALE, pushThroughStep, PUSH_THROUGH_DISTANCE_M, type NavigableControls, type NavKeyTarget } from './camera-nav'
 
 /** camera-controls' ACTION values are opaque numbers; only identity matters. */
 const ORBIT = 1
@@ -274,5 +274,42 @@ describe('zooming out must not lose the model', () => {
     expect(controls.infinityDolly).toBe(false)
     target.fire('pointerdown', undefined, { button: 0 })
     expect(controls.infinityDolly).toBe(true)
+  })
+})
+
+
+describe('classifyWheel', () => {
+  it('a mouse notch dollies', () => {
+    expect(classifyWheel({ deltaY: 100, deltaMode: 0, ctrlKey: false })).toEqual({ kind: 'dolly' })
+  })
+  it('a small touchpad two-finger scroll dollies', () => {
+    expect(classifyWheel({ deltaY: -3, deltaMode: 0, ctrlKey: false })).toEqual({ kind: 'dolly' })
+  })
+  it('a purely horizontal scroll does nothing', () => {
+    expect(classifyWheel({ deltaY: 0, deltaMode: 0, ctrlKey: false })).toEqual({ kind: 'none' })
+  })
+  it('a pinch (ctrlKey) is turned into a scaled dolly, never a field-of-view zoom', () => {
+    expect(classifyWheel({ deltaY: -2, deltaMode: 0, ctrlKey: true })).toEqual({ kind: 'pinch', deltaY: -2 * PINCH_DELTA_SCALE })
+  })
+  it('Ctrl + a line-mode wheel keeps its delta', () => {
+    expect(classifyWheel({ deltaY: 3, deltaMode: 1, ctrlKey: true })).toEqual({ kind: 'pinch', deltaY: 3 })
+  })
+})
+
+describe('pushThroughStep', () => {
+  it('leaves a far camera to the normal dolly', () => {
+    expect(pushThroughStep(20, -100, 0, 0)).toBe(0)
+  })
+  it('never walks on the way out', () => {
+    expect(pushThroughStep(0.2, 100, 0, 1)).toBe(0)
+  })
+  it('walks forward at the target, faster in a sustained gesture', () => {
+    const rest = pushThroughStep(0.2, -100, 0, 0)
+    expect(rest).toBeGreaterThan(0)
+    expect(pushThroughStep(0.2, -100, 0, 1)).toBeGreaterThan(rest)
+  })
+  it('gives a small touchpad delta a proportional step', () => {
+    expect(pushThroughStep(0.2, -10, 0, 0)).toBeCloseTo(pushThroughStep(0.2, -100, 0, 0) / 10)
+    expect(pushThroughStep(PUSH_THROUGH_DISTANCE_M - 0.01, -3, 1, 0)).toBeGreaterThan(0)
   })
 })
