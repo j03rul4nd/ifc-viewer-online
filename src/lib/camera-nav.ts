@@ -28,6 +28,10 @@ export interface NavigableControls<A> {
   restThreshold: number
   infinityDolly: boolean
   mouseButtons: { left: A; middle: A; right: A }
+  /** Current orbit distance (camera-controls). */
+  readonly distance?: number
+  /** Moves camera and target together along the view direction. */
+  forward?(distance: number, enableTransition?: boolean): unknown
 }
 
 type Listener = (event: Event) => void
@@ -80,6 +84,60 @@ const WHEEL_BURST_WINDOW_MS = 160
  * span over which people give up and decide the zoom is slow.
  */
 const WHEEL_BURST_STEP = 0.34
+
+/**
+ * Marks a wheel event this module re-raised from a trackpad pinch, so other
+ * capture listeners (the viewer's Ctrl-to-zoom embed gate) let it through.
+ */
+export const PINCH_DOLLY_MARK = '__ifcPinchDolly'
+
+/**
+ * A pinch arrives as small pixel deltas; a full pinch sums to well under one
+ * wheel notch. Scaled so a deliberate pinch moves about as far as a scroll.
+ */
+export const PINCH_DELTA_SCALE = 4
+
+/**
+ * What a wheel event should do to the camera.
+ *
+ * camera-controls maps a Ctrl+wheel to ACTION.ZOOM, and a trackpad PINCH
+ * arrives as exactly that (the browser sets ctrlKey). On a perspective camera
+ * ZOOM changes the field of view, not the position: the view widens and
+ * narrows, which reads as the angle changing while the camera stays put. So a
+ * pinch is re-raised as a plain wheel, which the controls DOLLY. A two-finger
+ * scroll (deltaMode 0, small deltaY, often some deltaX) is a plain wheel
+ * already and dollies as it is.
+ */
+/** Below this orbit distance (metres) an inward wheel walks the whole rig. */
+export const PUSH_THROUGH_DISTANCE_M = 1.5
+/** One wheel step's walk at rest, and at the end of a sustained gesture. */
+const PUSH_STEP_M = 0.6
+const PUSH_STEP_BURST_M = 2.4
+
+/**
+ * How far an inward wheel step should carry camera AND target forward, or 0
+ * to leave it to the normal dolly.
+ *
+ * The dolly is multiplicative: each step closes a fraction of the gap to the
+ * orbit target, so near the target it crawls in centimetres and the wheel
+ * feels dead — `infinityDolly` only pushes the target by the tiny excess past
+ * minDistance. Close to the target the wheel moves forward by a fixed step
+ * instead, so you can keep travelling through a scene for as long as you
+ * scroll. Small touchpad deltas get a proportional share of the step.
+ */
+export function pushThroughStep(distance: number, deltaY: number, deltaMode: number, burst: number): number {
+  if (!(deltaY < 0) || !(distance < PUSH_THROUGH_DISTANCE_M)) return 0
+  const notch = deltaMode === 0 ? Math.min(1, Math.abs(deltaY) / 100) : 1
+  const b = Math.min(1, Math.max(0, burst))
+  return notch * (PUSH_STEP_M + (PUSH_STEP_BURST_M - PUSH_STEP_M) * b)
+}
+
+export function classifyWheel(e: { deltaY: number; deltaMode: number; ctrlKey: boolean }):
+  { kind: 'none' } | { kind: 'dolly' } | { kind: 'pinch'; deltaY: number } {
+  if (!e.deltaY) return { kind: 'none' }
+  if (!e.ctrlKey) return { kind: 'dolly' }
+  return { kind: 'pinch', deltaY: e.deltaMode === 0 ? e.deltaY * PINCH_DELTA_SCALE : e.deltaY }
+}
 
 /**
  * Wire up panning, cursor-directed zoom and the Shift override.
@@ -181,6 +239,22 @@ export function bindNavigation<A>(
   let burst = 0
   const onWheel = (event: Event): void => {
     const wheel = event as WheelEvent
+    const kind = classifyWheel(wheel)
+    if (kind.kind === 'pinch' && typeof WheelEvent !== 'undefined' && event.target) {
+      // Re-raise as a plain wheel so camera-controls dollies instead of
+      // narrowing the field of view (see classifyWheel).
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const again = new WheelEvent('wheel', {
+        bubbles: true, cancelable: true, composed: true,
+        clientX: wheel.clientX, clientY: wheel.clientY, screenX: wheel.screenX, screenY: wheel.screenY,
+        deltaX: 0, deltaY: kind.deltaY, deltaZ: 0, deltaMode: wheel.deltaMode,
+        shiftKey: wheel.shiftKey, altKey: wheel.altKey, ctrlKey: false, metaKey: false,
+      })
+      ;(again as unknown as Record<string, boolean>)[PINCH_DOLLY_MARK] = true
+      event.target.dispatchEvent(again)
+      return
+    }
     const direction = Math.sign(wheel.deltaY)
     if (direction === 0) return
 
@@ -195,6 +269,17 @@ export function bindNavigation<A>(
 
     // deltaY > 0 is backing away. Let the target run ahead only on the way IN.
     controls.infinityDolly = direction < 0
+
+    // At the orbit target: walk forward instead of crawling (pushThroughStep).
+    const step = typeof controls.forward === 'function' && typeof controls.distance === 'number'
+      ? pushThroughStep(controls.distance, wheel.deltaY, wheel.deltaMode, burst)
+      : 0
+    if (step > 0) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      void controls.forward?.(step, true)
+      return
+    }
 
     const directionalBase = direction > 0 ? outwardDollySpeed : dollySpeed
     controls.dollySpeed = Math.min(
