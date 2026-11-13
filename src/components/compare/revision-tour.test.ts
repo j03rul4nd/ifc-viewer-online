@@ -77,8 +77,8 @@ describe('revision tour', () => {
   it('has the nine steps in site order, each with its texts in English', () => {
     expect(REVISION_TOUR_STEPS.map((s) => s.id)).toEqual(['local', 'list', 'moved', 'table', 'review', 'filters', 'views', 'export', 'end'])
     for (const s of REVISION_TOUR_STEPS) {
-      expect(i18n.t(s.title, { ns: 'compare', lng: 'en' })).not.toBe(s.title)
-      expect(i18n.t(s.body, { ns: 'compare', lng: 'en' })).not.toBe(s.body)
+      expect(i18n.getFixedT("en", "compare")(s.title as never)).not.toBe(s.title)
+      expect(i18n.getFixedT("en", "compare")(s.body as never)).not.toBe(s.body)
     }
   })
 
@@ -92,7 +92,7 @@ describe('revision tour', () => {
     const ev = events()
     expect(ev[0]).toEqual(['rc_tour_started', undefined])
     expect(ev.filter(([n]) => n === 'rc_tour_step').map(([, p]) => (p as { step: string }).step)).toEqual(REVISION_TOUR_STEPS.map((s) => s.id))
-    expect(ev.at(-1)).toEqual(['rc_tour_completed', undefined])
+    expect(ev[ev.length - 1]).toEqual(['rc_tour_completed', undefined])
     expect(useRevisionStore.getState().tour).toBe(false)
     expect(document.querySelector('[role="dialog"]')).toBeNull()
   })
@@ -105,7 +105,7 @@ describe('revision tour', () => {
     act(() => button('Skip')!.click())
     const steps = events().filter(([n]) => n === 'rc_tour_step').map(([, p]) => (p as { step: string }).step)
     expect(steps).toEqual(['local', 'moved'])
-    expect(events().at(-1)).toEqual(['rc_tour_dismissed', { step: 'moved' }])
+    expect(events().slice(-1)[0]).toEqual(['rc_tour_dismissed', { step: 'moved' }])
   })
 
   it('speaks Thai', async () => {
