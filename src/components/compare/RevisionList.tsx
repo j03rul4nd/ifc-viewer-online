@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { RevisionChange } from '../../lib/compare/revision-types'
-import { GROUP_ICON, GROUP_LETTER, KIND_GROUP, kindColour, readableClass, type ReviewState, type ShownKind } from '../../lib/compare/revision-view'
+import { GROUP_ICON, GROUP_LETTER, KIND_GROUP, kindColour, type ReviewState, type ShownKind } from '../../lib/compare/revision-view'
 import { useRevisionText } from './useRevisionText'
 
 const VIRTUAL_FROM = 500
@@ -31,8 +31,8 @@ export function ReviewMark({ state }: { state: ReviewState }) {
   return <span className="text-[var(--text-faint)] text-[10px]" title={t('rc.review.pending')}>●</span>
 }
 
-function Row({ c, on, state, mark, onPick }: { c: RevisionChange; on: boolean; state: ReviewState; mark?: string; onPick: () => void }) {
-  const { phrase } = useRevisionText()
+function Row({ c, on, state, mark, twin, onPick }: { c: RevisionChange; on: boolean; state: ReviewState; mark?: string; twin?: boolean; onPick: () => void }) {
+  const { phrase, className } = useRevisionText()
   return (
     <button
       type="button" onClick={onPick} data-testid="rc-row" data-gid={c.globalId} aria-current={on || undefined}
@@ -42,7 +42,9 @@ function Row({ c, on, state, mark, onPick }: { c: RevisionChange; on: boolean; s
       <KindBadge kind={c.kind as ShownKind} />
       <span className="flex-1 min-w-0">
         <span className="block truncate text-[12.5px] text-[var(--text)]">
-          {mark ? <b className="font-semibold mr-1">{mark}</b> : null}{c.name || readableClass(c.ifcClass)}
+          {mark ? <b className="font-semibold mr-1">{mark}</b> : null}{c.name || className(c.ifcClass)}
+          {/* Two elements with the same mark and name (Revit splits) would read as a duplicate row. */}
+          {twin && <span className="ml-1 font-mono text-[10px] text-[var(--text-faint)]">#{c.globalId.slice(-6)}</span>}
         </span>
         <span className="block truncate text-[11px] text-[var(--text-dim)]">{phrase(c)}</span>
       </span>
@@ -62,6 +64,12 @@ export default function RevisionList({ rows, selected, reviews, marks, onPick }:
   const virtual = rows.length > VIRTUAL_FROM
   const v = useVirtualizer({ count: virtual ? rows.length : 0, getScrollElement: () => ref.current, estimateSize: () => ROW_H, overscan: 12 })
   const idx = rows.findIndex((r) => r.globalId === selected)
+  const twins = React.useMemo(() => {
+    const seen = new Map<string, number>()
+    const key = (c: RevisionChange) => `${marks.get(c.globalId) ?? ''}|${c.name ?? c.ifcClass}`
+    for (const c of rows) seen.set(key(c), (seen.get(key(c)) ?? 0) + 1)
+    return new Set(rows.filter((c) => (seen.get(key(c)) ?? 0) > 1).map((c) => c.globalId))
+  }, [rows, marks])
 
   // Keep the selected row in view while stepping with J/K.
   useEffect(() => {
@@ -78,14 +86,14 @@ export default function RevisionList({ rows, selected, reviews, marks, onPick }:
             const c = rows[it.index]
             return (
               <div key={c.globalId} style={{ position: 'absolute', top: 0, left: 0, right: 0, transform: `translateY(${it.start}px)` }} role="listitem">
-                <Row c={c} on={c.globalId === selected} state={reviews.get(c.globalId) ?? 'pending'} mark={marks.get(c.globalId)} onPick={() => onPick(c.globalId)} />
+                <Row c={c} on={c.globalId === selected} state={reviews.get(c.globalId) ?? 'pending'} mark={marks.get(c.globalId)} twin={twins.has(c.globalId)} onPick={() => onPick(c.globalId)} />
               </div>
             )
           })}
         </div>
       ) : rows.map((c) => (
         <div key={c.globalId} role="listitem">
-          <Row c={c} on={c.globalId === selected} state={reviews.get(c.globalId) ?? 'pending'} mark={marks.get(c.globalId)} onPick={() => onPick(c.globalId)} />
+          <Row c={c} on={c.globalId === selected} state={reviews.get(c.globalId) ?? 'pending'} mark={marks.get(c.globalId)} twin={twins.has(c.globalId)} onPick={() => onPick(c.globalId)} />
         </div>
       ))}
     </div>

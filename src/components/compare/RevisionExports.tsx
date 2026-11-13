@@ -21,7 +21,7 @@ export default function RevisionExports({ viewerApiRef, rows, reviews, onDone }:
   /** Called after captures moved the camera / isolation, so the workspace repaints. */
   onDone: () => void
 }) {
-  const { t, phrase } = useRevisionText()
+  const { t, phrase, className } = useRevisionText()
   const { t: tc, i18n } = useTranslation('compare')
   const [busy, setBusy] = useState<Kind | null>(null)
   const [progress, setProgress] = useState('')
@@ -39,10 +39,21 @@ export default function RevisionExports({ viewerApiRef, rows, reviews, onDone }:
       ])
       const changes = rows.map((c) => ({ ...c, review: reviews.get(c.globalId) ?? 'pending' }))
       const diff: RevisionDiff = { ...s.diff, changes }
-      const text = rr.revisionReportText(tc as never, i18n.language)
+      const base = rr.revisionReportText(tc as never, i18n.language)
+      // One wording everywhere: the report says what the screen says
+      // ("Nuevo: Viga", "Movido 120 mm al oeste"), never "IFCBEAM" or "W".
+      const text = { ...base, sentence: phrase }
+      const shown: RevisionDiff = {
+        ...diff,
+        changes: diff.changes.map((c) => ({
+          ...c,
+          ifcClass: className(c.ifcClass),
+          delta: c.delta?.direction ? { ...c.delta, direction: t(`rc.dir.${c.delta.direction}`) } : c.delta,
+        })),
+      }
       const name = `${stamp()}_revision`
       if (kind === 'xlsx') {
-        downloadBlob(new Blob([await rr.revisionToXlsx(diff, text)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${name}.xlsx`)
+        downloadBlob(new Blob([await rr.revisionToXlsx(shown, text)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${name}.xlsx`)
         return
       }
       const v = viewerApiRef.current
@@ -56,7 +67,7 @@ export default function RevisionExports({ viewerApiRef, rows, reviews, onDone }:
         onDone()
       }
       if (kind === 'pdf') {
-        downloadBlob(new Blob([await rr.revisionToPdf(diff, cc.captureImages(caps), text)], { type: 'application/pdf' }), `${name}.pdf`)
+        downloadBlob(new Blob([await rr.revisionToPdf(shown, cc.captureImages(caps), text)], { type: 'application/pdf' }), `${name}.pdf`)
       } else {
         const { bytes } = bcf.revisionChangesToBcfZip(diff, { author: 'IFC Viewer Online', sentence: phrase }, caps)
         downloadBlob(new Blob([bytes], { type: 'application/zip' }), `${name}.bcfzip`)

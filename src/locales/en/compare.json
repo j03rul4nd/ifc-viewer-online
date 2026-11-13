@@ -491,6 +491,42 @@
     "demo": {
       "loading": "Loading the sample revisions…",
       "failed": "The sample revisions could not be loaded: {{message}}"
+    },
+    "cls": {
+      "wall": "Wall",
+      "slab": "Slab",
+      "column": "Column",
+      "beam": "Beam",
+      "door": "Door",
+      "window": "Window",
+      "stair": "Stair",
+      "stair_flight": "Stair flight",
+      "roof": "Roof",
+      "member": "Member",
+      "plate": "Plate",
+      "covering": "Covering",
+      "railing": "Railing",
+      "curtain_wall": "Curtain wall",
+      "footing": "Footing",
+      "pile": "Pile",
+      "space": "Space",
+      "opening": "Opening",
+      "furniture": "Furniture",
+      "building_element_proxy": "Element",
+      "pipe_segment": "Pipe",
+      "duct_segment": "Duct",
+      "flow_segment": "Duct or pipe",
+      "flow_terminal": "Terminal",
+      "flow_fitting": "Fitting",
+      "rebar": "Rebar"
+    },
+    "close": {
+      "title": "Close the comparison",
+      "body": "Both revisions are still loaded in the 3D view. What should stay?",
+      "removeBoth": "Remove A and B from the scene",
+      "removeA": "Remove only A (old revision)",
+      "keep": "Keep both in the scene",
+      "cancel": "Cancel"
     }
   }
 }

@@ -56,8 +56,10 @@ function weekLabel(d = new Date()): string {
   return `${x.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
 }
 
-export default function CompareModal({ onClose, viewerApiRef, entry = 'ui', revisionEnabled = true }: {
+export default function CompareModal({ onClose, viewerApiRef, entry = 'ui', revisionEnabled = true, onRemoveModels }: {
   onClose: () => void
+  /** Removes scene models through the app (stores, registry, viewer): offered when revision compare closes. */
+  onRemoveModels?: (modelIds: string[]) => Promise<void>
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   /** 'link' = opened by `/?compare…` on page load (the demo link reads its params). */
   entry?: 'ui' | 'link'
@@ -184,7 +186,7 @@ export default function CompareModal({ onClose, viewerApiRef, entry = 'ui', revi
   const ready = base.snapshots.length > 0 && head.snapshots.length > 0
 
   if (mode === 'revision' && rcPhase === 'ready' && rcDiff) {
-    return <RevisionWorkspace viewerApiRef={viewerApiRef} onClose={onClose} onBack={() => useRevisionStore.getState().setPhase('idle')} />
+    return <RevisionWorkspace viewerApiRef={viewerApiRef} onClose={onClose} onRemoveModels={onRemoveModels} onBack={() => useRevisionStore.getState().setPhase('idle')} />
   }
   if (mode === 'revision') {
     return (

@@ -484,6 +484,42 @@
     "demo": {
       "loading": "正在加载示例修订…",
       "failed": "无法加载示例修订：{{message}}"
+    },
+    "cls": {
+      "wall": "墙",
+      "slab": "楼板",
+      "column": "柱",
+      "beam": "梁",
+      "door": "门",
+      "window": "窗",
+      "stair": "楼梯",
+      "stair_flight": "梯段",
+      "roof": "屋顶",
+      "member": "构件",
+      "plate": "板件",
+      "covering": "饰面",
+      "railing": "栏杆",
+      "curtain_wall": "幕墙",
+      "footing": "基础",
+      "pile": "桩",
+      "space": "空间",
+      "opening": "洞口",
+      "furniture": "家具",
+      "building_element_proxy": "构件",
+      "pipe_segment": "管道",
+      "duct_segment": "风管",
+      "flow_segment": "风管或管道",
+      "flow_terminal": "末端",
+      "flow_fitting": "管件",
+      "rebar": "钢筋"
+    },
+    "close": {
+      "title": "关闭对比",
+      "body": "两个修订仍加载在 3D 视图中。保留哪些？",
+      "removeBoth": "从场景中移除 A 和 B",
+      "removeA": "仅移除 A（旧修订）",
+      "keep": "两者都保留在场景中",
+      "cancel": "取消"
     }
   }
 }

@@ -484,6 +484,42 @@
     "demo": {
       "loading": "サンプルのリビジョンを読み込み中…",
       "failed": "サンプルのリビジョンを読み込めませんでした：{{message}}"
+    },
+    "cls": {
+      "wall": "壁",
+      "slab": "スラブ",
+      "column": "柱",
+      "beam": "梁",
+      "door": "ドア",
+      "window": "窓",
+      "stair": "階段",
+      "stair_flight": "階段の段部",
+      "roof": "屋根",
+      "member": "部材",
+      "plate": "プレート",
+      "covering": "仕上げ",
+      "railing": "手すり",
+      "curtain_wall": "カーテンウォール",
+      "footing": "基礎",
+      "pile": "杭",
+      "space": "空間",
+      "opening": "開口",
+      "furniture": "家具",
+      "building_element_proxy": "要素",
+      "pipe_segment": "配管",
+      "duct_segment": "ダクト",
+      "flow_segment": "ダクト・配管",
+      "flow_terminal": "端末",
+      "flow_fitting": "継手",
+      "rebar": "鉄筋"
+    },
+    "close": {
+      "title": "比較を閉じる",
+      "body": "2つのリビジョンは3Dビューに読み込まれたままです。どれを残しますか？",
+      "removeBoth": "A と B をシーンから削除",
+      "removeA": "A（旧リビジョン）のみ削除",
+      "keep": "両方をシーンに残す",
+      "cancel": "キャンセル"
     }
   }
 }
