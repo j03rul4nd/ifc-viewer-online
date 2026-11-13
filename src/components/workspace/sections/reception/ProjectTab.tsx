@@ -55,7 +55,55 @@ function Form({ d, set, rx, errors, show }: { d: Draft; set: (d: Draft) => void;
   )
 }
 
-export default function ProjectTab({ project, rx, codes, onSave }: { project: RxProject; rx: Rx; codes: string[]; onSave: (p: RxProject) => void }) {
+/** Workspace mode: take everything out, or close the project for good. */
+export interface ProjectLifecycle {
+  onExport: (format: 'zip' | 'json') => Promise<string | null>
+  /** Resolves with an error message, or null when deleted. */
+  onDelete: (confirm: string) => Promise<string | null>
+  canDelete: boolean
+}
+
+function ExportAndClose({ project, rx, life }: { project: RxProject; rx: Rx; life: ProjectLifecycle }) {
+  const [busy, setBusy] = useState<'zip' | 'json' | 'delete' | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [asking, setAsking] = useState(false)
+  const [typed, setTyped] = useState('')
+  const run = async (k: 'zip' | 'json') => { setBusy(k); setMsg(await life.onExport(k)); setBusy(null) }
+  return (
+    <Panel className="p-4 sm:p-5 lg:col-span-2">
+      <SectionLabel>{rx('Export and close')}</SectionLabel>
+      <p className="text-[12.5px] text-[var(--text-dim)] mb-3">{rx('Everything of this project — deliveries with both verdicts, decisions, the register and the issues — in one ZIP (JSON plus CSV files a spreadsheet opens) or as JSON. Exporting is recorded in the audit log.')}</p>
+      <div className="flex flex-wrap gap-2 mb-2">
+        <Quiet disabled={busy !== null} onClick={() => void run('zip')}>{busy === 'zip' ? rx('Preparing…') : rx('Export ZIP (JSON + CSV)')}</Quiet>
+        <Quiet disabled={busy !== null} onClick={() => void run('json')}>{busy === 'json' ? rx('Preparing…') : rx('Export JSON')}</Quiet>
+      </div>
+      {msg && <p className="text-[12.5px] mb-2" role="status">{msg}</p>}
+      <div className="border-t border-[var(--border)] mt-4 pt-4">
+        <p className="text-[13px] font-medium text-[var(--danger)]">{rx('Delete this project')}</p>
+        <p className="text-[12.5px] text-[var(--text-dim)] mb-3">{life.canDelete
+          ? rx('Deletes its deliveries, their files, decisions and issues. It cannot be undone; export first. The audit log keeps a line saying who deleted it and when.')
+          : rx('Only an owner or an admin can delete a project.')}</p>
+        {life.canDelete && (!asking
+          ? <Quiet onClick={() => setAsking(true)}>{rx('Delete project…')}</Quiet>
+          : <div className="space-y-2">
+              <Field label={rx('Type the project name to confirm: {{name}}', { name: project.name })}>
+                <input className={inputClass} value={typed} onChange={(e) => setTyped(e.target.value)} aria-label={rx('Project name')} autoComplete="off" />
+              </Field>
+              <div className="flex flex-wrap gap-2">
+                <Quiet onClick={() => { setAsking(false); setTyped('') }}>{rx('Cancel')}</Quiet>
+                <button type="button" disabled={typed.trim() !== project.name.trim() || busy !== null}
+                  onClick={() => { setBusy('delete'); void life.onDelete(typed).then((e) => { setBusy(null); if (e) setMsg(e) }) }}
+                  className="h-[38px] sm:h-[34px] px-3 rounded-[8px] text-[13px] font-medium bg-[var(--danger)] text-white disabled:opacity-40">
+                  {busy === 'delete' ? rx('Deleting…') : rx('Delete for good')}
+                </button>
+              </div>
+            </div>)}
+      </div>
+    </Panel>
+  )
+}
+
+export default function ProjectTab({ project, rx, codes, onSave, life }: { project: RxProject; rx: Rx; codes: string[]; onSave: (p: RxProject) => void; life?: ProjectLifecycle }) {
   const [d, set] = useDraft(project)
   const [show, setShow] = useState(false)
   const errors = errorsOf(d, rx, codes.filter((c) => c !== project.code))
@@ -73,6 +121,7 @@ export default function ProjectTab({ project, rx, codes, onSave }: { project: Rx
         <p>{project.naming.f.map((f) => rx(f.c)).join(' · ')} · {rx('Status')} · {rx('Revision')}</p>
         <p>{rx('Status S0–S4 and revision P01/C01 are checked. The same rule runs free in the suppliers’ browser before they send.')}</p>
       </Panel>
+      {life && <ExportAndClose project={project} rx={rx} life={life} />}
     </div>
   )
 }

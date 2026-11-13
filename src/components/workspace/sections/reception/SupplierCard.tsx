@@ -5,6 +5,7 @@ import { Dialog, Primary, Quiet, Banner, CopyField, Field, Sparkline, inputClass
 import { fmtDate, VerdictChip } from './format'
 import { DISCIPLINES, supplierStats, uploadLink, type RxDelivery, type RxProject, type RxSupplier } from './sample'
 import type { Rx } from './strings'
+import { originatorOf } from './live'
 
 export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpenDelivery, onAccess, onClose }: {
   project: RxProject; supplier: RxSupplier; deliveries: RxDelivery[]; rx: Rx; lang: string
@@ -86,7 +87,9 @@ export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpe
   )
 }
 
-export function InviteDialog({ project, taken, rx, onInvite, onClose }: {
+export function InviteDialog({ project, taken, rx, onInvite, onClose, live = false }: {
+  /** Workspace mode: the server derives the author code from the company name, so it is shown, not typed. */
+  live?: boolean
   project: RxProject; taken: string[]; rx: Rx
   onInvite: (s: Omit<RxSupplier, 'id' | 'projectId' | 'invitedAt' | 'state'>) => void; onClose: () => void
 }) {
@@ -96,11 +99,11 @@ export function InviteDialog({ project, taken, rx, onInvite, onClose }: {
   const [discipline, setDiscipline] = useState<string>(DISCIPLINES[0])
   const [originator, setOriginator] = useState('')
   const [tried, setTried] = useState(false)
-  const code = originator.trim().toUpperCase()
+  const code = live ? originatorOf(name) : originator.trim().toUpperCase()
   const errors = {
     name: !name.trim() ? rx('Write the company name.') : null,
     email: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? rx('Write a valid e-mail address.') : null,
-    originator: !/^[A-Z0-9]{3,6}$/.test(code) ? rx('3 to 6 letters or digits, as in the file name.') : taken.includes(code) ? rx('Another supplier already uses {{code}}.', { code }) : null,
+    originator: live ? (name.trim() && taken.includes(code) ? rx('Another supplier already uses {{code}}.', { code }) : null) : !/^[A-Z0-9]{3,6}$/.test(code) ? rx('3 to 6 letters or digits, as in the file name.') : taken.includes(code) ? rx('Another supplier already uses {{code}}.', { code }) : null,
   }
   const ok = !errors.name && !errors.email && !errors.originator
   const err = (k: keyof typeof errors) => tried && errors[k] ? <span role="alert" className="block text-[var(--danger)] mt-1">{errors[k]}</span> : null
@@ -119,10 +122,14 @@ export function InviteDialog({ project, taken, rx, onInvite, onClose }: {
             <select className={inputClass} value={discipline} onChange={(e) => setDiscipline(e.target.value)}>{DISCIPLINES.map((x) => <option key={x} value={x}>{rx(x)}</option>)}</select>
           </Field>
           <Field label={rx('Author code (originator)')} hint={rx('Field 2 of the file name: {{example}}', { example: `${project.code}-${code || 'XXX'}-ZZ-XX-M3-A-0001` })}>
-            <input className={`${inputClass} font-mono uppercase`} value={originator} maxLength={6} onChange={(e) => setOriginator(e.target.value)} />{err('originator')}
+            {live
+              ? <input className={`${inputClass} font-mono uppercase`} value={name.trim() ? code : ''} readOnly aria-readonly placeholder={rx('From the company name')} />
+              : <input className={`${inputClass} font-mono uppercase`} value={originator} maxLength={6} onChange={(e) => setOriginator(e.target.value)} />}{err('originator')}
           </Field>
         </div>
-        <p className="text-[12px] text-[var(--text-dim)]">{rx('They get their own upload link and the requirements ({{profile}} v{{v}}, minimum {{min}}). No account needed. In this preview nothing is sent.', { profile: project.profile, v: project.profileVersion, min: project.minScore })}</p>
+        <p className="text-[12px] text-[var(--text-dim)]">{live
+          ? rx('They get their own upload link and the requirements ({{profile}} v{{v}}, minimum {{min}}). No account needed. We prepare the message; you send it.', { profile: project.profile, v: project.profileVersion, min: project.minScore })
+          : rx('They get their own upload link and the requirements ({{profile}} v{{v}}, minimum {{min}}). No account needed. In this preview nothing is sent.', { profile: project.profile, v: project.profileVersion, min: project.minScore })}</p>
       </div>
     </Dialog>
   )
