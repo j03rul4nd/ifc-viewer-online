@@ -1,0 +1,16 @@
+{
+  "id": "F2",
+  "description": "One wall moved 120 mm in +X",
+  "changes": [
+    {
+      "globalIdA": "3CRjRC0nPVKgXvAR3Evmu0",
+      "globalIdB": "3CRjRC0nPVKgXvAR3Evmu0",
+      "kind": "moved",
+      "method": "guid",
+      "direction": "E"
+    }
+  ],
+  "counts": {
+    "moved": 1
+  }
+}
