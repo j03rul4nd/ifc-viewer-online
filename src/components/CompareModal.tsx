@@ -23,6 +23,19 @@ import BcfTab from './compare/BcfTab'
 import HistoryTab from './compare/HistoryTab'
 import CompareDock from './compare/CompareDock'
 import { Button, Check, Hint, stamp } from './compare/ui'
+import RevisionDrop from './compare/RevisionDrop'
+import RevisionWorkspace from './compare/RevisionWorkspace'
+import { runRevision, useRevisionStore } from './compare/revisionStore'
+import { submitIfcFiles } from '../lib/loading'
+
+/** Load one revision into the scene through the LoadManager: fileName → model id. */
+async function loadRevisionIntoScene(files: File[], side: 'a' | 'b'): Promise<Record<string, string>> {
+  const handles = submitIfcFiles(files, { origin: 'upload', frame: side === 'b', batchName: `${side.toUpperCase()} · ${files.length === 1 ? files[0].name : files.length}` })
+  const out: Record<string, string> = {}
+  const done = await Promise.all(handles.map((h) => h.settled))
+  done.forEach((o, i) => { if (o.status === 'loaded') out[files[i].name] = o.resultId })
+  return out
+}
 
 type Tab = 'changes' | 'ids' | 'bcf' | 'history'
 
@@ -45,6 +58,11 @@ export default function CompareModal({ onClose, viewerApiRef }: {
   const { base, head, diff, busy, progress, error, ids } = store
   const models = useSceneStore((s) => s.models)
   const [tab, setTab] = useState<Tab>('changes')
+  // Revision compare (drop A, drop B) is the default; the weekly-delivery tools
+  // (baselines, IDS across versions, BCF) stay one click away.
+  const [mode, setMode] = useState<'revision' | 'advanced'>(() => (useCompareStore.getState().diff ? 'advanced' : 'revision'))
+  const rcPhase = useRevisionStore((s) => s.phase)
+  const rcDiff = useRevisionStore((s) => s.diff)
   const [geometry, setGeometry] = useState(true)
   const [baselines, setBaselines] = useState<BaselineSummary[]>([])
   // Once there is a result the pickers fold into one summary line, so on a phone
@@ -122,6 +140,19 @@ export default function CompareModal({ onClose, viewerApiRef }: {
   const tabs: Tab[] = ['changes', 'ids', 'bcf', 'history']
   const docked = useCompareStore((x) => x.docked)
   const ready = base.snapshots.length > 0 && head.snapshots.length > 0
+
+  if (mode === 'revision' && rcPhase === 'ready' && rcDiff) {
+    return <RevisionWorkspace viewerApiRef={viewerApiRef} onClose={onClose} onBack={() => useRevisionStore.getState().setPhase('idle')} />
+  }
+  if (mode === 'revision') {
+    return (
+      <Modal open onClose={onClose} title={t('rc.title')} description={t('rc.subtitle')} size="full" className="max-sm:!w-screen max-sm:!h-[100dvh] max-sm:!rounded-none">
+        <div className="p-3 sm:p-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+          <RevisionDrop onStart={() => void runRevision(loadRevisionIntoScene)} onAdvanced={() => setMode('advanced')} />
+        </div>
+      </Modal>
+    )
+  }
 
   if (docked) return <CompareDock viewerApiRef={viewerApiRef} onClose={onClose} />
 

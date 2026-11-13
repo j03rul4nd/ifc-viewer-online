@@ -280,5 +280,154 @@
     "close": "Cerrar comparación",
     "start_one": "{{count}} cambio — pulsa › para recorrerlo",
     "start_other": "{{count}} cambios — pulsa › para recorrerlos"
+  },
+  "rc": {
+    "title": "Comparar revisiones",
+    "subtitle": "Suelta la revisión antigua y la nueva. La comparación empieza sola.",
+    "drop": {
+      "a": "Revisión antigua (A)",
+      "b": "Revisión nueva (B)",
+      "hint": "Suelta aquí los IFC o toca para elegir",
+      "files_one": "{{count}} fichero",
+      "files_other": "{{count}} ficheros",
+      "swap": "Intercambiar A y B"
+    },
+    "local": "Procesado en tu navegador: los ficheros nunca salen de este dispositivo.",
+    "localShort": "Local",
+    "reading": "Leyendo las revisiones…",
+    "advanced": "Entregas semanales, líneas base, IDS y BCF →",
+    "back": "Volver",
+    "none": "Ningún cambio coincide con los filtros.",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "frame": "Encuadrar",
+    "list_one": "{{count}} cambio",
+    "list_other": "{{count}} cambios",
+    "keys": "J / K siguiente · R revisado · S afecta a obra · F encuadrar",
+    "paused": "Los colores de validación e IDS se pausan mientras comparas.",
+    "guidRegenerated": "El proyectista ha regenerado los IDs de los elementos: se han emparejado por marca y posición. Revisa la confianza de cada pareja.",
+    "originShift": "Todo el modelo se ha desplazado {{x}}, {{y}}, {{z}} mm (este, norte, arriba). Ese desplazamiento no cuenta al clasificar.",
+    "match": "Emparejado por {{method}} · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "marca",
+      "geometry": "posición y forma",
+      "split": "división",
+      "merge": "fusión",
+      "none": "—"
+    },
+    "kind": {
+      "added": "Añadido",
+      "removed": "Eliminado",
+      "moved": "Movido",
+      "reshaped": "Forma cambiada",
+      "type_changed": "Tipo cambiado",
+      "relations_changed": "Relaciones cambiadas",
+      "properties_changed": "Propiedades cambiadas",
+      "unchanged": "Sin cambios"
+    },
+    "review": {
+      "pending": "Pendiente",
+      "reviewed": "Revisado",
+      "affects_site": "Afecta a obra"
+    },
+    "counter": {
+      "changes_one": "{{count}} cambio",
+      "changes_other": "{{count}} cambios",
+      "reviewed_one": "{{count}} revisado",
+      "reviewed_other": "{{count}} revisados"
+    },
+    "view": {
+      "label": "Vista",
+      "changes": "Cambios",
+      "curtain": "Cortina",
+      "split": "Dividida",
+      "blink": "Alternar",
+      "blinkHint": "Espacio para cambiar"
+    },
+    "filter": {
+      "kind": "Tipo de cambio",
+      "storey": "Planta",
+      "anyStorey": "Todas las plantas",
+      "file": "Disciplina (fichero)",
+      "anyFile": "Todos los ficheros",
+      "class": "Clase",
+      "anyClass": "Todas las clases",
+      "review": "Estado de revisión",
+      "anyReview": "Cualquier estado",
+      "marks": "Marcas, nombres o IDs (pega una lista)",
+      "toggle": "Filtros"
+    },
+    "tol": {
+      "title": "Tolerancias",
+      "move": "Movimiento",
+      "size": "Tamaño por eje",
+      "volume": "Volumen",
+      "apply": "Recalcular",
+      "close": "Cerrar",
+      "took": "{{ms}} ms",
+      "hint": "Se recalcula con las revisiones ya leídas; los ficheros no se vuelven a leer."
+    },
+    "table": {
+      "toggle": "Antes / después",
+      "field": "Campo",
+      "before": "Antes (A)",
+      "after": "Después (B)",
+      "empty": "Sin detalle por campo.",
+      "added": "Elemento nuevo en {{file}}.",
+      "removed": "El elemento ya no está en {{file}}."
+    },
+    "field": {
+      "positionX": "Posición este–oeste",
+      "positionY": "Posición norte–sur",
+      "positionZ": "Cota",
+      "distance": "Distancia movida",
+      "sizeX": "Tamaño este–oeste",
+      "sizeY": "Tamaño norte–sur",
+      "height": "Altura",
+      "volume": "Volumen"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "soon": "Próximamente"
+    },
+    "dir": {
+      "N": "al norte",
+      "NE": "al noreste",
+      "E": "al este",
+      "SE": "al sureste",
+      "S": "al sur",
+      "SW": "al suroeste",
+      "W": "al oeste",
+      "NW": "al noroeste",
+      "up": "hacia arriba",
+      "down": "hacia abajo"
+    },
+    "axis": {
+      "x": "este–oeste",
+      "y": "norte–sur",
+      "z": "altura"
+    },
+    "summary": {
+      "added": "{{class}} nuevo",
+      "removed": "{{class}} eliminado",
+      "unchanged": "Sin cambios",
+      "moved_mm": "Movido {{mm}} mm {{dir}}",
+      "moved_mm_nodir": "Movido {{mm}} mm",
+      "height_mm": "Altura {{before}} → {{after}} mm",
+      "size_mm": "Tamaño {{axis}} {{before}} → {{after}} mm",
+      "volume_m3": "Volumen {{before}} → {{after}} m³ ({{pct}} %)",
+      "reshaped": "Forma cambiada",
+      "type_changed": "Tipo {{before}} → {{after}}",
+      "storey_changed": "Planta {{before}} → {{after}}",
+      "file_changed": "Ahora en el fichero {{after}} (antes {{before}})",
+      "relations_changed": "Relaciones cambiadas",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_one": "{{count}} propiedad cambiada",
+      "properties_changed_other": "{{count}} propiedades cambiadas",
+      "changed": "Cambiado"
+    }
   }
 }
