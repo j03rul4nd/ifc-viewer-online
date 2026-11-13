@@ -123,7 +123,7 @@ describe('revision-compare flag', () => {
   it('reports when the flags arrive', () => {
     const cb = vi.fn()
     onRevisionCompareFlag(cb)
-    const listener = vi.mocked(posthog.onFeatureFlags).mock.calls.at(-1)?.[0] as () => void
+    const listener = vi.mocked(posthog.onFeatureFlags).mock.calls.slice(-1)[0]?.[0] as () => void
     vi.mocked(posthog.isFeatureEnabled).mockReturnValueOnce(false)
     listener()
     expect(cb).toHaveBeenCalledWith(false)
