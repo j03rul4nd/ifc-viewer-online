@@ -32,6 +32,7 @@ import { createTerrainMaterial } from './surface-shaders'
 import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
+import { latticeSurfaceN, type CoarseDem } from './coarse-dem'
 import type { TerrainWorkerIn, TerrainWorkerOut, VectorDrape } from '../../workers/geo-terrain.worker'
 import { createTerrainDetailLayer, type TerrainDetailView } from './terrain-detail-layer'
 import { isMemoryConstrained } from '../loading/device-profile'
@@ -78,8 +79,27 @@ const RIM_START = 0.42
 const RIM_CONTACT = TERRAIN_EDGE_FADE * 1.1
 /** How far under the flat tiles the outermost vertices sit, metres. */
 const RIM_DIP_M = 4
+/**
+ * The same dip when the flat map stands on the coarse relief (WP2). There the
+ * rim and the tiles follow one surface, so the dip only has to hide the two
+ * grids' interpolation, not tens of metres of relief; at 4 m it would itself
+ * be the visible step at the hole (≈1.2 m on the hole's line). Measured on
+ * Plaça de Catalunya, 200 points of the hole's line against the worst tile
+ * z13–z17 (scripts/geo/relief-measure.mjs, global DEM): 4 m → median
+ * 1.34 m; 0.3 m → median 0.53 m. With the rim on the tiles' own lattice
+ * surface (latticeSurfaceN) the step is the dip alone: 0.09 m at all three
+ * sites, p95 0.09 m.
+ */
+export const RIM_DIP_COARSE_M = 0.3
 /** Fraction of the contact band over which that dip is reached. */
 const RIM_DIP_RAMP = 0.3
+/**
+ * How far under the flat tiles the patch sits at edge fraction `t` (0 at the
+ * patch edge), metres. Exported so the seam can be measured on the CPU.
+ */
+export function rimDipM(t: number, dipM = RIM_DIP_M): number {
+  return t < RIM_CONTACT ? dipM * Math.min(1, (RIM_CONTACT - t) / (RIM_CONTACT * RIM_DIP_RAMP)) : 0
+}
 /** The easing always has at least this much run, metres, however tight the patch. */
 const RIM_MIN_EASE_M = 150
 /** Half-side of the square around the anchor whose relief is never eased, metres. */
@@ -162,6 +182,12 @@ export interface TerrainPatch {
    * while the patch is up (see RIM_START).
    */
   rimDatumM: number
+  /**
+   * The whole city's relief, coarse (coarse-dem, WP2), or null when it could
+   * not be fetched. When present the rim eases onto IT, point by point, instead
+   * of onto `rimDatumM`, and `sampleGroundM` answers from it beyond the patch.
+   */
+  coarse: CoarseDem | null
   /** Distance between neighbouring vertices of the patch mesh, metres. */
   spacingM: number
   /**
@@ -282,6 +308,7 @@ function assemblePatch(
   vector: VectorDrape | null = null,
 ): TerrainPatch {
   const { zoom, grid, centerTx, centerTy, anchorElevation, heights, normals, detail, sky } = data
+  const coarse = data.coarse ?? null
   const verts = grid + 1
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(anchorLat))
   const spacingM = vertexSpacingM(anchorLat, zoom, grid)
@@ -401,9 +428,7 @@ function assemblePatch(
         : outside <= 0 ? 1
         : Math.min(1, toContact / Math.min(toContact + outside, bandM))
       rimKeep[idx] = k * k * (3 - 2 * k)
-      rimDipN[idx] = t < RIM_CONTACT
-        ? RIM_DIP_M * Math.min(1, (RIM_CONTACT - t) / (RIM_CONTACT * RIM_DIP_RAMP)) * metresToNormalized
-        : 0
+      rimDipN[idx] = rimDipM(t, coarse ? RIM_DIP_COARSE_M : RIM_DIP_M) * metresToNormalized
       // The datum is read off the band the easing ends in: the ground that is
       // actually about to meet the map.
       if (t <= RIM_CONTACT * 2 && (i + j) % 3 === 0) rimSamples.push(heights[idx])
@@ -411,6 +436,18 @@ function assemblePatch(
   }
   rimSamples.sort((a, b) => a - b)
   const rimDatumM = rimSamples.length > 0 ? rimSamples[rimSamples.length >> 1] : anchorElevation
+  /**
+   * What the rim eases ONTO, per vertex: the city's coarse relief at that
+   * point when there is one, read as the tiles draw it (latticeSurfaceN, WP2 —
+   * the flat map is displaced by that same surface, so the two meet), else the single level of the edge.
+   */
+  const rimTarget = new Float32Array(verts * verts).fill(rimDatumM)
+  if (coarse) {
+    const x0 = centre.nx - patchSize / 2, y0 = centre.ny + patchSize / 2, step = patchSize / grid
+    for (let idx = 0; idx < verts * verts; idx++) {
+      rimTarget[idx] = latticeSurfaceN(coarse, x0 + (idx % verts) * step, y0 - Math.floor(idx / verts) * step)
+    }
+  }
 
   /**
    * Re-displace the mesh from measured heights + the synthetic detail blend,
@@ -430,7 +467,8 @@ function assemblePatch(
         : measured
       // The rim eases onto the flat map's level — see RIM_START.
       const keep = rimKeep[idx]
-      const h = keep >= 1 ? corrected : rimDatumM + (corrected - rimDatumM) * keep
+      const target = rimTarget[idx]
+      const h = keep >= 1 ? corrected : target + (corrected - target) * keep
       effective[idx] = h
       if (h < minH) minH = h
       if (h > maxH) maxH = h
@@ -660,6 +698,11 @@ function assemblePatch(
   recolor()
   log.debug(`patch: z${zoom}, ${verts}×${verts} verts, anchor elev ${anchorElevation.toFixed(1)} m`)
 
+  function insidePatch(nx: number, ny: number): boolean {
+    const h = patchSize / 2
+    return Math.abs(nx - centre.nx) <= h && Math.abs(ny - centre.ny) <= h
+  }
+
   /** Bilinear read of a per-vertex field at a normalized position (edge-clamped). */
   function sampleField(at: (idx: number) => number, nx: number, ny: number): number {
     // Normalized position → fractional vertex index. The patch spans
@@ -684,6 +727,7 @@ function assemblePatch(
     group,
     anchorElevation,
     rimDatumM,
+    coarse,
     spacingM,
     measuredBox: {
       minNx: centre.nx + keepX0 * metresToNormalized,
@@ -698,6 +742,8 @@ function assemblePatch(
     sampleGroundM(nx, ny) {
       // Sample the EFFECTIVE surface (measured + any synthetic blend) so a
       // building sits on the ground the user is actually looking at.
+      // Beyond the patch, the city's coarse relief (WP2); without it the edge clamps.
+      if (coarse && !insidePatch(nx, ny)) return latticeSurfaceN(coarse, nx, ny)
       return sampleField((idx) => effective[idx], nx, ny)
     },
 

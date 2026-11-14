@@ -22,6 +22,7 @@ const fakeEngine = {
   setResolution: vi.fn(),
   update: vi.fn(),
   setHole: vi.fn(),
+  setRelief: vi.fn(),
   setQuality: vi.fn(),
   getQuality: vi.fn(() => 'balanced'),
   setLabelKeepOut: vi.fn(),
