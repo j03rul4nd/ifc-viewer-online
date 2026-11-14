@@ -4,6 +4,7 @@
 
 import { modelRegistry } from '../model-registry'
 import { cacheRepo } from '../cache-repository'
+import type { GeometryInfo } from './profiles'
 
 /** Same ceiling as the browser auto-fix: beyond this the text is too big. */
 const LIMIT_BYTES = 300 * 1024 * 1024
@@ -17,14 +18,14 @@ async function ifcBytesOf(modelId: string): Promise<ArrayBuffer | null> {
   return r.ok ? r.value : null
 }
 
-export async function geometryProfiles(modelId: string): Promise<Map<number, string> | null> {
+export async function geometryProfiles(modelId: string): Promise<Map<number, GeometryInfo> | null> {
   try {
     const buffer = await ifcBytesOf(modelId)
     if (!buffer || buffer.byteLength === 0 || buffer.byteLength > LIMIT_BYTES) return null
     const worker = new Worker(new URL('../../workers/steel-profiles.worker.ts', import.meta.url), { type: 'module' })
     const id = crypto.randomUUID()
     return await new Promise((resolve) => {
-      worker.onmessage = (e: MessageEvent<{ id: string; ok: boolean; entries?: Array<[number, string]> }>) => {
+      worker.onmessage = (e: MessageEvent<{ id: string; ok: boolean; entries?: Array<[number, GeometryInfo]> }>) => {
         if (e.data.id !== id) return
         worker.terminate()
         resolve(e.data.ok && e.data.entries ? new Map(e.data.entries) : null)

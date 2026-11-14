@@ -55,9 +55,12 @@ describe('collectSteelParts', () => {
     const rec = new Map<number, unknown>([[3, item('IFCCOLUMN', 3)], [4, item('IFCPLATE', 4, { ObjectType: v('PL20') })]])
     const m = fakeModel({ IFCCOLUMN: [3], IFCPLATE: [4] }, rec)
     const asked: string[] = []
-    const parts = await collectSteelParts([{ id: 'A', fragments: m }], undefined, undefined, async (id) => { asked.push(id); return new Map([[3, 'HEA200'], [4, 'PL10']]) })
+    const parts = await collectSteelParts([{ id: 'A', fragments: m }], undefined, undefined, async (id) => { asked.push(id); return new Map([[3, { profile: 'HEA200', length: 3, area: 0.005105 }], [4, { profile: 'PL10', length: null, area: null }]]) })
     expect(asked).toEqual(['A'])
     expect(parts.find((p) => p.localId === 3)).toMatchObject({ profile: 'HEA200', profileSource: 'geometry' })
+    // 0.005105 m2 x 3 m x 7850 kg/m3 = 120.22 kg
+    expect(parts.find((p) => p.localId === 3)).toMatchObject({ length: 3, lengthSource: 'geometry', weightSource: 'geometry' })
+    expect(parts.find((p) => p.localId === 3)!.weight).toBeCloseTo(120.22275, 4)
     expect(parts.find((p) => p.localId === 4)).toMatchObject({ profile: 'PL20', profileSource: 'objectType' })
   })
 

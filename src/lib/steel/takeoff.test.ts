@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { IFCItemData, IFCPropertySet, IFCQuantitySet } from '../ifc-item-data'
-import { extractSteelPart, groupByProfile, parseNumeric, NO_PROFILE } from './takeoff'
+import { extractSteelPart, groupByProfile, parseNumeric, revitTypeName, NO_PROFILE } from './takeoff'
 
 let nextId = 1
 function item(over: Partial<IFCItemData> & { psets?: IFCPropertySet[] } = {}): IFCItemData {
@@ -172,5 +172,34 @@ describe('profile resolution order', () => {
     const none = extractSteelPart(item({}))
     expect(none.profile).toBe(NO_PROFILE)
     expect(NO_PROFILE).not.toMatch(/sin perfil/)
+  })
+})
+
+describe('geometry fallback for length and weight', () => {
+  it('used only when no Qto or pset gives them', () => {
+    const g = { geometryLength: 6, geometryArea: 0.00518806 }
+    // 0.00518806 m2 x 6 m x 7850 = 244.3576 kg
+    const p = extractSteelPart(item({}), {}, g)
+    expect(p).toMatchObject({ length: 6, lengthSource: 'geometry', weightSource: 'geometry' })
+    expect(p.weight).toBeCloseTo(244.3576, 3)
+    const q = extractSteelPart(item({ quantitySets: [qset('Qto_BeamBaseQuantities', [['Length', 5, 'Length', 'm'], ['NetWeight', 200, 'Weight', 'kg']])] }), {}, g)
+    expect(q).toMatchObject({ length: 5, lengthSource: 'qto', weight: 200, weightSource: 'qto' })
+  })
+  it('length only when the area is unknown', () => {
+    expect(extractSteelPart(item({}), {}, { geometryLength: 7.4213, geometryArea: null })).toMatchObject({ length: 7.4213, lengthSource: 'geometry', weight: null, weightSource: 'none' })
+  })
+})
+
+describe('Revit Family:Type profiles', () => {
+  it('groups by the type part', () => {
+    expect(revitTypeName('M_W-Wide Flange:W310X60')).toBe('W310X60')
+    expect(revitTypeName('M_W-Wide Flange:W310X60:208816')).toBe('W310X60')
+    expect(revitTypeName('HEA200')).toBe('HEA200')
+    const rows = groupByProfile([
+      extractSteelPart(item({ objectType: 'M_W-Wide Flange:W310X60:208816' })),
+      extractSteelPart(item({ objectType: 'M_W-Wide Flange:W310X60:208817' })),
+    ])
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ profile: 'W310X60', count: 2 })
   })
 })

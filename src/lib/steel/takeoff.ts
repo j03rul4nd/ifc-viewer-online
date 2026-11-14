@@ -5,7 +5,7 @@
 
 import type { IFCItemData, IFCValue, ProjectUnits } from '../ifc-item-data'
 
-export type SteelSource = 'qto' | 'tekla' | 'revit' | 'advance' | 'volume' | 'none'
+export type SteelSource = 'qto' | 'tekla' | 'revit' | 'advance' | 'volume' | 'geometry' | 'none'
 
 export const STEEL_DENSITY_KG_M3 = 7850
 /** Sentinel for a part with no readable profile; UI and export translate it. */
@@ -19,7 +19,7 @@ export interface SteelPart {
   name: string | null
   mark: string | null
   profile: string
-  profileSource: SteelSource | 'objectType' | 'type' | 'geometry' | 'override'
+  profileSource: SteelSource | 'objectType' | 'type' | 'override'
   material: string | null
   /** metres */
   length: number | null
@@ -48,6 +48,10 @@ export interface ExtractOptions {
   profileOverride?: string | null
   /** IfcProfileDef.ProfileName of the body's swept solid: the last resort. */
   geometryProfile?: string | null
+  /** Extrusion length of the body, metres: used only when nothing else gives one. */
+  geometryLength?: number | null
+  /** Section area of the body's profile, m2: weight = area x length x density, last resort. */
+  geometryArea?: number | null
 }
 
 // ─── units ──────────────────────────────────────────────────────────────────
@@ -190,6 +194,7 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
   tryLen('revit', rl?.value, rl?.unit)
   const al = find(props, ADVANCE_SET, ['Length', 'Cut Length'])
   tryLen('advance', al?.value, al?.unit)
+  if (length === null && opts.geometryLength && opts.geometryLength > 0) { length = opts.geometryLength; lengthSource = 'geometry' }
 
   // Weight
   let weight: number | null = null
@@ -212,6 +217,11 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
     const tv = qv ? undefined : find(props, TEKLA_SET, ['Net volume', 'Volume', 'Gross volume'])
     const v = qv ? toSI('volume', qv.value, qv.unit, units) : tv ? toSI('volume', tv.value, tv.unit, units) : null
     if (v !== null && v > 0) { weight = v * STEEL_DENSITY_KG_M3; weightSource = 'volume' }
+  }
+  if (weight === null && opts.geometryArea && opts.geometryArea > 0) {
+    // The solid's own length: the area belongs to that extrusion.
+    const len = opts.geometryLength ?? length
+    if (len && len > 0) { weight = opts.geometryArea * len * STEEL_DENSITY_KG_M3; weightSource = 'geometry' }
   }
 
   // Profile
@@ -248,7 +258,7 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
     globalId: item.globalId,
     name: item.name,
     mark: mark === undefined || mark === null ? null : String(mark),
-    profile: profile ?? NO_PROFILE,
+    profile: profile ? revitTypeName(profile) : NO_PROFILE,
     profileSource,
     material: matValue === null ? null : String(matValue),
     length,
@@ -256,6 +266,18 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
     weight,
     weightSource,
   }
+}
+
+/**
+ * Revit writes "Family:Type" (often "Family:Type:ElementId"): keep the type.
+ * Trailing all-digit segments (element ids) are dropped first, then the last
+ * segment is the profile. "M_W-Wide Flange:W310X60:208816" → "W310X60".
+ */
+export function revitTypeName(profile: string): string {
+  if (!profile.includes(':')) return profile
+  const parts = profile.split(':').map((x) => x.trim()).filter(Boolean)
+  while (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) parts.pop()
+  return parts[parts.length - 1] ?? profile
 }
 
 // ─── group ──────────────────────────────────────────────────────────────────

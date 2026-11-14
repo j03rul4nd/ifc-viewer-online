@@ -7,6 +7,7 @@
 import {
   ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, parseItemData, parseProjectUnits, type ProjectUnits,
 } from '../ifc-item-data'
+import type { GeometryInfo } from './profiles'
 import { extractSteelPart, groupByProfile, type SteelPart, type SteelTakeoffRow } from './takeoff'
 
 export const STEEL_CATEGORIES: RegExp[] = [
@@ -37,14 +38,18 @@ async function unitsOf(f: SteelFragmentsLike): Promise<ProjectUnits> {
   } catch { return {} }
 }
 
+function geometryOptions(g: GeometryInfo | undefined) {
+  return { geometryProfile: g?.profile ?? null, geometryLength: g?.length ?? null, geometryArea: g?.area ?? null }
+}
+
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 export async function collectSteelParts(
   models: SteelCollectModel[],
   onProgress?: (done: number, total: number) => void,
   signal?: AbortSignal,
-  /** expressId → IfcProfileDef.ProfileName, read off the main thread; null when unavailable. */
-  geometryProfiles?: (modelId: string) => Promise<Map<number, string> | null>,
+  /** expressId → profile name, length and area of the body, read off the main thread; null when unavailable. */
+  geometryProfiles?: (modelId: string) => Promise<Map<number, GeometryInfo> | null>,
 ): Promise<CollectedPart[]> {
   const plan: Array<{ model: SteelCollectModel; ids: number[] }> = []
   let total = 0
@@ -70,7 +75,7 @@ export async function collectSteelParts(
       batch.forEach((localId, k) => {
         const raw = data[k]
         if (!raw || typeof raw !== 'object') return
-        const part = extractSteelPart(parseItemData(raw as Record<string, unknown>, units), units, { geometryProfile: fromGeometry?.get(localId) ?? null })
+        const part = extractSteelPart(parseItemData(raw as Record<string, unknown>, units), units, geometryOptions(fromGeometry?.get(localId)))
         out.push({ ...part, expressId: localId, modelId: model.id, localId })
       })
       done += batch.length

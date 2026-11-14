@@ -78,6 +78,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const n0 = useMemo(() => new Intl.NumberFormat(lang, { maximumFractionDigits: 0 }), [lang])
+  const n1 = useMemo(() => new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), [lang])
   const n2 = useMemo(() => new Intl.NumberFormat(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), [lang])
   const totals = useMemo(() => (rows ? steelTotals(rows) : null), [rows])
 
@@ -181,7 +182,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
                     <td className="px-2 py-1 text-[var(--text-dim)]">{steelClassLabel(lang, r.ifcClass)}</td>
                     <td className="px-2 py-1 text-right">{n0.format(r.count)}</td>
                     <td className="px-2 py-1 text-right">{n2.format(r.totalLength)}</td>
-                    <td className="px-2 py-1 text-right">{n0.format(r.totalWeight)}</td>
+                    <td className="px-2 py-1 text-right">{n1.format(r.totalWeight)}</td>
                     <td className="px-2 py-1 text-[var(--text-dim)] truncate max-w-[120px]" title={r.materials.join(', ')}>{r.materials.join(', ')}</td>
                     <td className="px-2 py-1 text-right">{r.missingWeight > 0 ? n0.format(r.missingWeight) : ''}</td>
                   </tr>
@@ -192,7 +193,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
                   <td className="px-2 py-1.5" colSpan={2}>{t('total')}</td>
                   <td className="px-2 py-1.5 text-right">{n0.format(totals.count)}</td>
                   <td className="px-2 py-1.5 text-right">{n2.format(totals.totalLength)}</td>
-                  <td className="px-2 py-1.5 text-right">{n0.format(totals.totalWeight)}</td>
+                  <td className="px-2 py-1.5 text-right">{n1.format(totals.totalWeight)}</td>
                   <td />
                   <td className="px-2 py-1.5 text-right">{totals.missingWeight > 0 ? n0.format(totals.missingWeight) : ''}</td>
                 </tr>
