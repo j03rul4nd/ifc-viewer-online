@@ -286,6 +286,7 @@
     "autoLowered": "Calidad bajada a {{level}} para mantener la fluidez.",
     "restore": "Restaurar",
     "contextLost": "La tarjeta gráfica se quedó sin memoria y se recuperó. La escena se reconstruyó con un límite de geometría menor.",
+    "districtBusy": "OpenStreetMap est� ocupado: esta zona sigue con menos detalle. Se reintenta en un minuto.",
     "scenery": "Escenografía"
   },
   "perf": {

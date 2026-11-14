@@ -86,6 +86,10 @@ import { buildSkyEnvironment } from './sky-environment'
 import { buildSkyDomePixels, hazeRangeFor, hazeRangeChanged, type HazeRange } from './atmosphere'
 import { createStreetGrading } from './terrain-grading'
 import { clipLineToBox } from './way-clip'
+import {
+  ERROR_BACKOFF_MS, blockBounds, blockKey, blockRequest, blockToFetch, boxAround, createFollowState,
+  doubledBuildings, inBox, mergeDistrict, touchLru, type BlockId,
+} from './district-blocks'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import {
@@ -585,6 +589,8 @@ export interface GeoSystemAPI {
    * full detail, as before.
    */
   setAutoDetail(on: boolean): void
+  /** The district blocks that follow the camera (dev handle, bench). */
+  getDistrictStats(): { blocks: string[]; fetches: number; inFlight: boolean; busy: boolean; features: number; doubled: number }
   /** What the far city is holding right now; null when it is off. */
   getCityStats(): CityLodStats | null
   /** Scene build progress and results, for the panel. Null to clear. */
@@ -864,6 +870,20 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   } | null = null
   /** When getOsmContext may ask Overpass again over a cached tiles fallback (ms epoch). */
   let osmRetryAt = 0
+  /**
+   * THE DISTRICT FOLLOWS THE CAMERA (district-blocks): extra full-detail blocks
+   * fetched where the camera rests, most recently looked-at last. They belong
+   * to one anchor (`extraAnchorKey`); a new anchor drops them.
+   */
+  const extraBlocks = new Map<string, { id: BlockId; features: OsmFeature[] }>()
+  let extraAnchorKey: string | null = null
+  /** Feature ids that came from extra blocks: their ways are not clipped to the fine patch. */
+  let extraIds = new Set<string>()
+  let followState = createFollowState()
+  /** A block fetch failed: the zone stays at the cells' level for a while (panel notice). */
+  let districtBusy = false
+  /** Worker requests made for extra blocks (dev handle, bench). */
+  let blockFetches = 0
   /** Crossings derived from the cached features, recomputed when they change. */
   let crossingsCache: { features: unknown; list: WaterCrossing[] } | null = null
   /** The current specks, and the live sea that drives them (marine-feed). */
@@ -1338,6 +1358,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       buildingsMesh = null
       osmFeatures = null
       buildingsEnabled = false
+      extraBlocks.clear()
+      extraAnchorKey = null
+      followState = createFollowState()
+      districtBusy = false
       stopLookAnim()
       staging?.dispose()
       staging = null
@@ -1707,7 +1731,23 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       await requestRebuild()
     },
 
-    setAutoDetail(on) { autoDetail = on },
+    setAutoDetail(on) {
+      if (on === autoDetail) return
+      autoDetail = on
+      // "Detail by distance" off = only the anchor's district.
+      if (extraBlocks.size > 0) refreshDistrict()
+    },
+
+    getDistrictStats() {
+      return {
+        blocks: [...extraBlocks.keys()],
+        fetches: blockFetches,
+        inFlight: followState.inFlight,
+        busy: districtBusy,
+        features: osmFeatures?.length ?? 0,
+        doubled: osmFeatures ? doubledBuildings(osmFeatures) : 0,
+      }
+    },
 
     getCityStats() { return cityLod && autoDetail ? cityLod.stats() : null },
 
@@ -2776,6 +2816,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       contextLosses,
       skipped: layers.filter((l) => l.status === 'skipped').map((l) => l.key),
       failed: layers.filter((l) => l.status === 'failed').map((l) => l.key),
+      districtBusy,
     })
   }
 
@@ -3149,15 +3190,108 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // (Features kept from another anchor do not count: nothing is drawn here.)
     const districtHere = !!osmFeatures && osmFeatures.length > 0
       && osmCache?.key === osmCacheKey(placement.lat, placement.lon)
-    cityLod.setExclude(districtHere
-      ? { minNx: anchorN.nx - halfN, maxNx: anchorN.nx + halfN, minNy: anchorN.ny - halfN, maxNy: anchorN.ny + halfN }
-      : null)
+    if (districtHere && on) followDistrict(focusNx, focusNy, distanceM)
+    const boxes = districtHere
+      ? [{ minNx: anchorN.nx - halfN, maxNx: anchorN.nx + halfN, minNy: anchorN.ny - halfN, maxNy: anchorN.ny + halfN }]
+      : []
+    if (districtHere && autoDetail) {
+      for (const b of extraBlocks.values()) {
+        const box = blockBounds(b.id)
+        const sw = latLonToNormalized(box.south, box.west)
+        const ne = latLonToNormalized(box.north, box.east)
+        boxes.push({
+          minNx: Math.min(sw.nx, ne.nx), maxNx: Math.max(sw.nx, ne.nx),
+          minNy: Math.min(sw.ny, ne.ny), maxNy: Math.max(sw.ny, ne.ny),
+        })
+      }
+    }
+    cityLod.setExclude(boxes.length > 0 ? boxes : null)
     const frame = bareGroundFrame()
     cityLod.update(
       on ? { focusNx, focusNy, distanceM, metresPerUnit: geoRoot.scale.x } : null,
       frame ? { key: frame, z: (nx, ny) => frame.groundZ(nx, ny) } : null,
       { lat: placement.lat, lon: placement.lon },
     )
+  }
+
+  /** The anchor's district box (the ±700 m of before), lat/lon. */
+  function anchorDistrictBox(): ReturnType<typeof boxAround> | null {
+    return placement ? boxAround(placement.lat, placement.lon, BUILDINGS_HALF_SIZE_M) : null
+  }
+
+  /**
+   * What the build draws: the anchor's features plus, with "Detail by
+   * distance" on, the extra blocks' — each building once (district-blocks).
+   */
+  function districtFeatures(): OsmFeature[] {
+    const anchor = osmCache?.features ?? []
+    const key = placement ? osmCacheKey(placement.lat, placement.lon) : null
+    if (extraAnchorKey !== key) { extraBlocks.clear(); extraAnchorKey = key }
+    const box = anchorDistrictBox()
+    if (!autoDetail || extraBlocks.size === 0 || !box) { extraIds = new Set(); return anchor }
+    const merged = mergeDistrict(anchor, box, [...extraBlocks.values()])
+    extraIds = new Set(merged.slice(anchor.length).map((f) => f.id))
+    return merged
+  }
+
+  /** Re-merge and rebuild after a block came or went. */
+  function refreshDistrict(): void {
+    if (!buildingsEnabled || !geoRoot || !osmCache || osmCache.features.length === 0) return
+    osmFeatures = districtFeatures()
+    void requestRebuild()
+  }
+
+  /**
+   * Per frame, from updateCity: when the camera has rested near the ground
+   * over a place no live block covers, fetch that block (one at a time, ≥ 10 s
+   * apart, cached per block — district-blocks).
+   */
+  function followDistrict(focusNx: number, focusNy: number, distanceM: number): void {
+    if (!placement) return
+    const focus = normalizedToLatLon(focusNx, focusNy)
+    const anchorBox = anchorDistrictBox()
+    const id = blockToFetch(followState, { focus, distanceM, now: performance.now() }, (p) => {
+      if (anchorBox && inBox(p, anchorBox)) return true
+      for (const b of extraBlocks.values()) if (inBox(p, blockBounds(b.id))) return true
+      return false
+    })
+    if (id) { void fetchBlock(id); return }
+    // Looking at a live block keeps it the most recent (no rebuild: same set).
+    const last = [...extraBlocks.keys()].pop()
+    for (const [k, b] of extraBlocks) {
+      if (k !== last && inBox(focus, blockBounds(b.id))) { touchLru(extraBlocks, k, b); break }
+    }
+  }
+
+  async function fetchBlock(id: BlockId): Promise<void> {
+    const state = followState
+    const anchorKey = extraAnchorKey
+    state.inFlight = true
+    state.lastRequestAt = performance.now()
+    blockFetches++
+    const req = blockRequest(id)
+    let reply: BuildingsResponse | null = null
+    try {
+      reply = await runBuildingsWorker({
+        type: 'fetch-buildings', id: crypto.randomUUID(),
+        lat: req.lat, lon: req.lon, halfSizeM: req.halfSizeM,
+        forceFallback: devForceFallback(),
+      })
+    } catch { reply = null }
+    state.inFlight = false
+    state.lastRequestAt = performance.now()
+    // Another anchor, or the map went away, while it ran: drop it.
+    if (state !== followState || anchorKey !== extraAnchorKey || !geoRoot) return
+    // Overpass busy or failing (the worker's tiles fallback counts too: it has
+    // no streets or props to add): wait a minute, the cells stay there.
+    if (!reply || reply.type === 'error' || reply.fallback) {
+      state.quietUntil = performance.now() + ERROR_BACKOFF_MS
+      if (!districtBusy) { districtBusy = true; emitReport() }
+      return
+    }
+    if (districtBusy) { districtBusy = false; emitReport() }
+    touchLru(extraBlocks, blockKey(id), { id, features: reply.features })
+    refreshDistrict()
   }
 
   let modelBoxCache: { at: number; boxes: THREE.Box3[] } | null = null
@@ -3277,7 +3411,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // responds in a frame and one that spins for several seconds (or fails).
     const key = osmCacheKey(placement.lat, placement.lon)
     if (osmCache?.key === key) {
-      osmFeatures = osmCache.features
+      osmFeatures = districtFeatures()
       if (osmFeatures.length === 0) return { status: 'empty' }
       const estimatedCount = await requestRebuild()
       if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
@@ -3327,7 +3461,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     }
     if (reply.features.length === 0) return { status: 'empty' }
 
-    osmFeatures = reply.features
+    osmFeatures = districtFeatures()
     const estimatedCount = await requestRebuild()
     if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
     return {
@@ -4060,7 +4194,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const box = { south: sw.lat, north: ne.lat, west: sw.lon, east: ne.lon }
     const out: OsmFeature[] = []
     for (const f of features) {
-      if ((f.kind !== 'road' && f.kind !== 'rail') || !f.ring || f.widthM === undefined) {
+      // A way from a block that follows the camera lies off the fine patch by
+      // design: it stands on the city relief (WP2), not on measured ground.
+      if ((f.kind !== 'road' && f.kind !== 'rail') || !f.ring || f.widthM === undefined || extraIds.has(f.id)) {
         out.push(f)
         continue
       }

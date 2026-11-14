@@ -59,7 +59,7 @@ export interface CityLod {
   readonly group: THREE.Group
   /** OpenMapTiles URL template, or null to draw nothing. */
   setSource(template: string | null): void
-  /** The full-detail district's box; its buildings are left out of the cells. */
+  /** The full-detail district's box(es); their buildings are left out of the cells. */
   setExclude(box: CellRequest['exclude']): void
   setTone(tone: ContextTone): void
   /** Triangles the planner may spend (city-cells cityAdmitTriangles). */
@@ -328,10 +328,8 @@ export function createCityLod(): CityLod {
     },
 
     setExclude(box) {
-      const same = (!box && !exclude) || (!!box && !!exclude
-        && box.minNx === exclude.minNx && box.maxNx === exclude.maxNx
-        && box.minNy === exclude.minNy && box.maxNy === exclude.maxNy)
-      if (same) return
+      // Compared by value: the caller builds fresh boxes every frame.
+      if (JSON.stringify(box) === JSON.stringify(exclude)) return
       exclude = box
       reset()
     },
