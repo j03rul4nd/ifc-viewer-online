@@ -88,7 +88,11 @@ text for every template in es/en, under 102 KB, presentation tables, alt and siz
 images, AA contrast, labels in ten languages). Screenshots: `node scripts/mail/capture-templates.mjs`
 (desktop, 375 px and dark into `docs/email-directions/templates/`).
 
-**Not done yet:** content in languages other than es/en (labels are translated, sample
-content falls back to English); the Studio's own UI words are es/en; real viewer captures
+**Languages:** labels, sample content and Studio words in all ten languages. Spanish and
+English are written inline as `x('es', 'en')`; the other eight are in `editorial/content/<lang>.json`,
+keyed by the English text (`node scripts/mail/extract-content.mjs <out.json>` lists the keys;
+the test fails when one is missing or a `{{placeholder}}` differs).
+
+**Not done yet:** real viewer captures
 need an image endpoint (today a sample image in `public/images/mail/`); nothing sends
 (`MAIL_LIVE` is false); not tested in real Outlook, Gmail or Apple Mail, only in Chromium.
