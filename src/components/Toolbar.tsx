@@ -854,10 +854,10 @@ export default function Toolbar({
             onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
           <MenuItem icon={PlansSVG} label={t('drawings')} active={drawingsOpen}
             onClick={() => { setDrawingsOpen(!drawingsOpen); setOpenMenu(null) }} />
+          <MenuItem icon={SectionSVG} label={steelText(i18n.language, 'title')} active={steelOpen} disabled={content.models === 0}
+            onClick={() => { useSteelStore.getState().setOpen(!steelOpen); setOpenMenu(null) }} />
           <MenuItem icon={SectionSVG} label={clashText(i18n.language, 'title')} active={clashOpen} disabled={content.models === 0}
             badge="Pro" onClick={() => { useClashStore.getState().setOpen(!clashOpen); setOpenMenu(null) }} />
-          <MenuItem icon={SectionSVG} label={steelText(i18n.language, 'title')} active={steelOpen} disabled={content.models === 0}
-            badge="Pro" onClick={() => { useSteelStore.getState().setOpen(!steelOpen); setOpenMenu(null) }} />
           {(isGisEnabled() || isSolarEnabled() || isFloodEnabled()) && (
             <>
               <MenuDivider />

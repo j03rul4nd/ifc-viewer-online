@@ -1,0 +1,156 @@
+// @vitest-environment jsdom
+// The steel demo under React StrictMode: the doubled effect must not turn the
+// tour off (the second run reads the URL after `tour` was stripped). And the
+// tour overlay: interactive steps let the click reach their target and move
+// on, and the highlight follows a target that moves without any event.
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { StrictMode, act, createElement, useEffect } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { bootSteelDemo, resetSteelDemoBoot } from '../../lib/steel/demo'
+import { useSteelStore } from '../../stores/steelStore'
+import { GuidedTourView } from '../workspace/GuidedTour'
+import type { TourStep } from '../../lib/workspace-tours/tours'
+
+declare global {
+  // eslint-disable-next-line no-var
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined
+}
+
+let root: Root
+let host: HTMLDivElement
+const rect = Element.prototype.getBoundingClientRect
+let targetTop = 10
+
+beforeAll(() => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    const top = (this as HTMLElement).dataset?.tour ? targetTop : 0
+    return { top, left: 10, width: 100, height: 40, right: 110, bottom: top + 40, x: 10, y: top, toJSON() {} } as DOMRect
+  }
+  Element.prototype.scrollIntoView = () => {}
+})
+afterAll(() => { Element.prototype.getBoundingClientRect = rect })
+
+beforeEach(() => {
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  root = createRoot(host)
+})
+afterEach(() => {
+  act(() => root.unmount())
+  host.remove()
+  vi.useRealTimers()
+})
+
+describe('steel demo boot under StrictMode', () => {
+  beforeEach(() => {
+    resetSteelDemoBoot()
+    useSteelStore.setState({ open: false, demo: false, autoRun: false, tour: false })
+    window.history.replaceState(null, '', '/?steel=demo&tour=steel&ref=noam')
+  })
+
+  it('starts the tour once and strips `tour` after starting', () => {
+    function Boot() {
+      useEffect(() => { bootSteelDemo((tour) => useSteelStore.getState().startDemo(tour)) }, [])
+      return null
+    }
+    act(() => root.render(createElement(StrictMode, null, createElement(Boot))))
+    expect(useSteelStore.getState()).toMatchObject({ open: true, demo: true, autoRun: true, tour: true })
+    expect(window.location.search).toBe('?steel=demo&ref=noam')
+  })
+
+  it('a reload (no `tour` left) opens the demo without the tour', () => {
+    window.history.replaceState(null, '', '/?steel=demo&ref=noam')
+    expect(bootSteelDemo((tour) => useSteelStore.getState().startDemo(tour))).toBe(true)
+    expect(useSteelStore.getState().tour).toBe(false)
+  })
+})
+
+/**
+ * jsdom has no hit testing: walk the overlay like a browser would. An element
+ * catches the point if its effective pointer-events (Tailwind classes, nearest
+ * ancestor) is not none and its box contains it. inset-0 = the whole window.
+ */
+function overlayCatches(overlay: HTMLElement, x: number, y: number): HTMLElement[] {
+  const W = 1400, H = 900
+  const pe = (el: HTMLElement): string => {
+    for (let e: HTMLElement | null = el; e && e !== document.body; e = e.parentElement) {
+      if (e.classList.contains('pointer-events-none')) return 'none'
+      if (e.classList.contains('pointer-events-auto')) return 'auto'
+    }
+    return 'auto'
+  }
+  const box = (el: HTMLElement): { l: number; t: number; r: number; b: number } | null => {
+    const st = el.style
+    if (el.classList.contains('inset-0')) return { l: 0, t: 0, r: W, b: H }
+    if (!st.top && !st.bottom) return null
+    const n = (v: string) => (v ? parseFloat(v) : NaN)
+    const t = n(st.top), l = isNaN(n(st.left)) ? 0 : n(st.left)
+    const r = !isNaN(n(st.width)) ? l + n(st.width) : W - (isNaN(n(st.right)) ? 0 : n(st.right))
+    const b = !isNaN(n(st.height)) ? t + n(st.height) : H - (isNaN(n(st.bottom)) ? 0 : n(st.bottom))
+    return { l, t, r, b }
+  }
+  return [overlay, ...overlay.querySelectorAll<HTMLElement>('*')].filter((el) => {
+    if (pe(el) === 'none' || el.getAttribute('role') === 'dialog' || el.closest('[role="dialog"]')) return false
+    const bx = box(el)
+    return !!bx && x >= bx.l && x < bx.r && y >= bx.t && y < bx.b
+  })
+}
+
+describe('tour overlay', () => {
+  const tx = (s: string) => s
+  const steps: TourStep[] = [
+    { target: 'a', title: 'A', body: 'click it', interactive: true },
+    { title: 'B', body: 'end' },
+  ]
+
+  it('an interactive step lets the click through to the target and moves on', () => {
+    vi.useFakeTimers()
+    const clicked = vi.fn()
+    const target = document.createElement('button')
+    target.dataset.tour = 'a'
+    target.addEventListener('click', clicked)
+    document.body.appendChild(target)
+    act(() => root.render(createElement(GuidedTourView, { title: 'T', steps, onClose: () => {}, tx })))
+    // No full-screen shield: four pieces around the target.
+    const overlay = document.body.querySelector<HTMLElement>('[aria-live="polite"]')!
+    expect(overlay.parentElement).toBe(document.body)
+    const shields = [...overlay.children].filter((c) => (c as HTMLElement).style.right === '0px' || (c as HTMLElement).style.left === '0px')
+    expect(shields.length).toBe(4)
+    expect(document.body.querySelector('h2')!.textContent).toBe('A')
+    // The centre of the target: nothing of the overlay catches it, the root included.
+    expect(overlay.classList.contains('pointer-events-none')).toBe(true)
+    expect(overlayCatches(overlay, 60, 30)).toEqual([])
+    // Outside the target the shields still block.
+    expect(overlayCatches(overlay, 600, 600).length).toBeGreaterThan(0)
+    act(() => { target.click() })
+    expect(clicked).toHaveBeenCalledTimes(1)
+    act(() => { vi.advanceTimersByTime(500) })
+    expect(document.body.querySelector('h2')!.textContent).toBe('B')
+    target.remove()
+  })
+
+  it('the highlight follows a target that moves', async () => {
+    targetTop = 10
+    const target = document.createElement('div')
+    target.dataset.tour = 'a'
+    document.body.appendChild(target)
+    act(() => root.render(createElement(GuidedTourView, { title: 'T', steps: [{ target: 'a', title: 'A', body: 'x' }, { title: 'B', body: 'y' }], onClose: () => {}, tx })))
+    const spot = () => [...document.body.querySelectorAll<HTMLElement>('[aria-hidden]')].find((e) => e.style.boxShadow)!
+    // The highlight is the target's own rect plus the 6 px padding, within 4 px.
+    const near = (): void => {
+      const t = target.getBoundingClientRect()
+      const s = spot().style
+      expect(Math.abs(parseFloat(s.top) + 6 - t.top)).toBeLessThanOrEqual(4)
+      expect(Math.abs(parseFloat(s.left) + 6 - t.left)).toBeLessThanOrEqual(4)
+      expect(Math.abs(parseFloat(s.width) - 12 - t.width)).toBeLessThanOrEqual(4)
+      expect(Math.abs(parseFloat(s.height) - 12 - t.height)).toBeLessThanOrEqual(4)
+    }
+    near()
+    targetTop = 200
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
+    near()
+    target.remove()
+    targetTop = 10
+  })
+})
