@@ -1,16 +1,16 @@
 // ─── SteelTakeoffPanel ────────────────────────────────────────────────────────
-// Steel takeoff (Pro): count, length and weight per profile across every
+// Steel takeoff (free, any model): count, length and weight per profile across every
 // loaded model. Reads in batches on the main thread with a yield between
-// them, so the viewer keeps rendering. Free plans see what it does and the
-// plans page; nothing that was free before is behind this.
+// them, so the viewer keeps rendering.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewerAPI } from '../../lib/viewer'
 import { ViewportPanel } from '../ViewportPanel'
-import RequirePlan from '../pro/RequirePlan'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useSteelStore } from '../../stores/steelStore'
-import { steelClassLabel, steelPlural, useSteelT, type SteelTextKey } from '../../lib/steel/i18n'
+import { steelClassLabel, steelPlural, steelText, useSteelT, type SteelTextKey } from '../../lib/steel/i18n'
+import { STEEL_TOUR_STEPS, STEEL_TOUR_UI } from '../../lib/steel/tour'
+import { GuidedTourView } from '../workspace/GuidedTour'
 import { NO_PROFILE } from '../../lib/steel/takeoff'
 import { geometryProfiles } from '../../lib/steel/profiles-run'
 import {
@@ -43,26 +43,13 @@ export default function SteelTakeoffPanel({ viewerApiRef, onRowAction }: Props) 
         <div className="flex-1 min-w-0">
           <div className="text-[12.5px] font-semibold text-[var(--text)] flex items-center gap-1.5">
             {t('title')}
-            <span className="text-[9.5px] font-mono uppercase tracking-[0.08em] px-1.5 py-[1px] rounded border border-[var(--border)] text-[var(--text-dim)]">Pro</span>
           </div>
           <div className="text-[10.5px] text-[var(--text-dim)] leading-snug">{t('subtitle')}</div>
         </div>
         <button type="button" onClick={close} aria-label={t('close')} className="text-[var(--text-dim)] hover:text-[var(--text)] text-[16px] leading-none px-1 max-md:hidden">×</button>
       </div>
-      <RequirePlan plan="pro" fallback={<Upsell t={t} />}>
-        <SteelWorkspace viewerApiRef={viewerApiRef} t={t} lang={lang} onRowAction={onRowAction} />
-      </RequirePlan>
+      <SteelWorkspace viewerApiRef={viewerApiRef} t={t} lang={lang} onRowAction={onRowAction} />
     </ViewportPanel>
-  )
-}
-
-function Upsell({ t }: { t: T }) {
-  return (
-    <div className="p-3 space-y-2.5">
-      <div className="text-[12px] font-semibold text-[var(--text)]">{t('upsellTitle')}</div>
-      <p className="text-[11.5px] leading-relaxed text-[var(--text-dim)]">{t('upsellBody')}</p>
-      <a href="/pricing/" className={`${btnPrimary} inline-flex items-center`}>{t('upsellCta')}</a>
-    </div>
   )
 }
 
@@ -158,11 +145,34 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
     } catch (e) { setError(e instanceof Error ? e.message : String(e)) }
   }, [rows, parts, modelName, fileBase])
 
+  // Demo link: calculate once, as soon as the hall's fragments are in the viewer.
+  const autoRun = useSteelStore((s) => s.autoRun)
+  useEffect(() => {
+    if (!autoRun || models.length === 0) return
+    let stopped = false
+    let tries = 0
+    const attempt = (): void => {
+      if (stopped) return
+      const viewer = viewerApiRef.current
+      if (viewer && models.every((m) => viewer.getFragmentsModel(m.id))) {
+        useSteelStore.getState().consumeAutoRun()
+        void run()
+        return
+      }
+      if (++tries < 200) window.setTimeout(attempt, 300)
+    }
+    attempt()
+    return () => { stopped = true }
+  }, [autoRun, models, run, viewerApiRef])
+  const tourOn = useSteelStore((s) => s.tour)
+  const tableReady = !!rows && rows.length > 0 && !progress
+
   if (models.length === 0) return <div className="p-3 text-[11.5px] text-[var(--text-dim)]">{t('needModel')}</div>
 
   return (
     <div className="flex flex-col min-h-0">
-      <div className="shrink-0 px-3 py-2 flex items-center gap-2 border-b border-[var(--border)]">
+      {tourOn && tableReady && <SteelTour lang={lang} />}
+      <div data-tour="steel-bar" className="shrink-0 px-3 py-2 flex items-center gap-2 border-b border-[var(--border)]">
         {progress ? (
           <>
             <span className="text-[11px] text-[var(--text-dim)] flex-1" aria-live="polite">{t('reading', { done: progress.done, total: progress.total })}</span>
@@ -174,7 +184,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
             <span className="flex-1" />
             {active && <button type="button" className={btn} onClick={showAll}>{t('showAll')}</button>}
             {rows && rows.length > 0 && <button type="button" className={btn} onClick={exportCsv}>{t('exportCsv')}</button>}
-            {rows && rows.length > 0 && <button type="button" className={btn} onClick={() => void exportXlsx()}>{t('exportXlsx')}</button>}
+            {rows && rows.length > 0 && <button type="button" data-tour="steel-xlsx" className={btn} onClick={() => void exportXlsx()}>{t('exportXlsx')}</button>}
           </>
         )}
       </div>
@@ -196,7 +206,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
           )}
           <div className="px-3 pt-2 text-[10.5px] text-[var(--text-dim)]">{t('isolateHint')}</div>
           <div className="overflow-auto min-h-0 px-1 pb-2">
-            <table className="w-full text-[11px] text-[var(--text)] tabular-nums">
+            <table data-tour="steel-table" className="w-full text-[11px] text-[var(--text)] tabular-nums">
               <thead className="text-[var(--text-dim)] text-left">
                 <tr>
                   <th className="px-2 py-1.5 font-medium">{t('profile')}</th>
@@ -209,8 +219,8 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={rowKey(r)} aria-selected={active === rowKey(r)}
+                {rows.map((r, i) => (
+                  <tr key={rowKey(r)} data-tour={i === 0 ? 'steel-row' : undefined} aria-selected={active === rowKey(r)}
                     className={`border-t border-[var(--border)] cursor-pointer hover:bg-[var(--surface-2)] ${active === rowKey(r) ? 'bg-[var(--surface-2)] outline outline-1 outline-[var(--accent)]' : ''}`}
                     onClick={() => isolate(r)}>
                     <td className={`px-2 py-1 font-medium ${r.profile === NO_PROFILE ? 'text-[var(--text-dim)] italic' : ''}`}>{r.profile === NO_PROFILE ? t('noProfile') : r.profile}</td>
@@ -239,4 +249,16 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
       )}
     </div>
   )
+}
+
+/** The demo's guided tour, once the table is on screen. Ends for good on close. */
+function SteelTour({ lang }: { lang: string }) {
+  const [ready, setReady] = useState(false)
+  // Let the table settle before the overlay picks its live steps.
+  useEffect(() => { const id = window.setTimeout(() => setReady(true), 500); return () => window.clearTimeout(id) }, [])
+  const tx = useCallback((text: string, vars?: Record<string, unknown>) =>
+    steelText(lang, (STEEL_TOUR_UI[text] ?? text) as SteelTextKey, vars as Record<string, string | number> | undefined), [lang])
+  const onClose = useCallback(() => useSteelStore.getState().setTour(false), [])
+  if (!ready) return null
+  return <GuidedTourView title="tourTitle" steps={STEEL_TOUR_STEPS} onClose={onClose} zIndex={70} tx={tx} />
 }
