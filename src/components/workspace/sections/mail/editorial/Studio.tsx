@@ -9,18 +9,20 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Image as ImageIcon, ShieldCheck } from
 import { Field, Panel, Primary, Quiet, SectionLabel, inputClass } from '../../../ui'
 import { renderIssue, type Audience, type EBlock, type Issue, type Publication } from './render'
 import { AUDIENCES, SAMPLE_FACTS, TEMPLATES_V3, nameOf, purposeOf, samplePublication, type Facts, type TemplateDef } from './templates'
-import { labels } from './labels'
+import { LANGS, asLang, labels } from './labels'
+import { makeX } from './content'
 import { PAIRINGS, isHex, type Pairing } from './tokens'
 
-// UI words: Spanish and English written by hand; other languages read English for now.
-const UI = {
+// UI words: Spanish and English here; the other eight in ./content (see content.ts).
+const LANG_NAMES: Record<string, string> = { en: 'English', es: 'Español', ca: 'Català', fr: 'Français', de: 'Deutsch', it: 'Italiano', pt: 'Português', ja: '日本語', zh: '中文', th: 'ไทย' }
+export const UI = {
   es: { all: 'Todas', for: 'Para', gallery: 'Plantillas', edit: 'Editar', back: 'Volver a la galería', blocks: 'Bloques', up: 'Subir', down: 'Bajar', hide: 'Ocultar', show: 'Mostrar', capture: 'Insertar captura del visor', report: 'Insertar informe de validación', brand: 'Marca y publicación', pubName: 'Nombre de la publicación', accent: 'Color de acento', type: 'Tipografía', lang: 'Idioma del correo', subject: 'Asunto', preheader: 'Preheader', text: 'Texto plano', html: 'Correo', queue: 'Enviar a aprobación', locked: 'Tu plan ve y prepara las plantillas; el envío está en {{plan}}.', headline: 'Titular', lede: 'Entradilla', note: 'Texto', label: 'Botón', title: 'Título de sección', weight: '{{kb}} KB · límite de Gmail 102 KB', liveData: 'Cifras del proyecto', sampleData: 'Cifras de ejemplo', captureCaption: 'Vista del visor · {{p}}', reportTitle: 'Informe de validación' },
   en: { all: 'All', for: 'For', gallery: 'Templates', edit: 'Edit', back: 'Back to the gallery', blocks: 'Blocks', up: 'Move up', down: 'Move down', hide: 'Hide', show: 'Show', capture: 'Insert a viewer capture', report: 'Insert a validation report', brand: 'Brand and publication', pubName: 'Publication name', accent: 'Accent colour', type: 'Typography', lang: 'Mail language', subject: 'Subject', preheader: 'Preheader', text: 'Plain text', html: 'Mail', queue: 'Send for approval', locked: 'Your plan sees and prepares templates; sending is in {{plan}}.', headline: 'Headline', lede: 'Standfirst', note: 'Text', label: 'Button', title: 'Section title', weight: '{{kb}} KB · Gmail limit 102 KB', liveData: 'Project figures', sampleData: 'Sample figures', captureCaption: 'Viewer capture · {{p}}', reportTitle: 'Validation report' },
 }
 type UiKey = keyof typeof UI.en
-const ui = (lang: string) => (k: UiKey, v?: Record<string, string>) => (UI[lang.startsWith('es') ? 'es' : 'en'][k]).replace(/\{\{(\w+)\}\}/g, (_, x) => v?.[x] ?? '')
+const ui = (lang: string) => { const x = makeX(lang); return (k: UiKey, v?: Record<string, string>) => x(UI.es[k], UI.en[k], v) }
 
-const BLOCK_NAMES: Record<EBlock['k'], { es: string; en: string }> = {
+export const BLOCK_NAMES: Record<EBlock['k'], { es: string; en: string }> = {
   editor: { es: 'Nota del editor', en: 'Editor’s note' }, kpis: { es: 'Cifras', en: 'Figures' }, stamp: { es: 'Sello Health Score', en: 'Health Score stamp' },
   clashes: { es: 'Colisiones por disciplina', en: 'Clashes by discipline' }, bcf: { es: 'Incidencias BCF', en: 'BCF issues' }, changes: { es: 'Cambios entre versiones', en: 'Changes between versions' },
   milestones: { es: 'Hitos', en: 'Milestones' }, capture: { es: 'Captura del modelo', en: 'Model capture' }, actions: { es: 'Qué te toca', en: 'What is yours' },
@@ -47,7 +49,7 @@ export default function Studio({ lang, facts, canSend, sendPlanName, onQueue, Pr
   const t = ui(lang)
   const L = labels(lang)
   const [aud, setAud] = useState<Audience | 'all'>('all')
-  const [mailLang, setMailLang] = useState(lang.startsWith('es') ? 'es' : 'en')
+  const [mailLang, setMailLang] = useState(asLang(lang))
   const [pub, setPub] = useState<Publication>(() => samplePublication(mailLang))
   const [sel, setSel] = useState<string | null>(null)
   const [issue, setIssue] = useState<Issue | null>(null)
@@ -68,8 +70,8 @@ export default function Studio({ lang, facts, canSend, sendPlanName, onQueue, Pr
           ))}
           <span className="flex-1" />
           <label className="text-[12px] text-[var(--text-faint)] flex items-center gap-2">{t('lang')}
-            <select className={`${inputClass} w-auto`} value={mailLang} onChange={(e) => { setMailLang(e.target.value); setPub((p) => ({ ...samplePublication(e.target.value), name: p.name, accent: p.accent, pairing: p.pairing })) }}>
-              <option value="es">Español</option><option value="en">English</option>
+            <select className={`${inputClass} w-auto`} value={mailLang} onChange={(e) => { setMailLang(e.target.value as typeof mailLang); setPub((p) => ({ ...samplePublication(e.target.value), name: p.name, accent: p.accent, pairing: p.pairing })) }}>
+              {LANGS.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}
             </select></label>
         </div>
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -99,7 +101,7 @@ export default function Studio({ lang, facts, canSend, sendPlanName, onQueue, Pr
   const render = (scheme: 'auto' | 'light' | 'dark') => renderIssue(issue, pub, { lang: mailLang, scheme, unsubscribeUrl: `${base}/u/preview` })
   const out = render('auto')
   const kb = (new TextEncoder().encode(out.html).length / 1024).toFixed(1)
-  const bn = (k: EBlock['k']) => (lang.startsWith('es') ? BLOCK_NAMES[k].es : BLOCK_NAMES[k].en)
+  const bn = (k: EBlock['k']) => makeX(lang)(BLOCK_NAMES[k].es, BLOCK_NAMES[k].en)
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
