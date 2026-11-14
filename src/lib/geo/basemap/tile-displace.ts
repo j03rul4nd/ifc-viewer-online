@@ -34,18 +34,18 @@ export interface TileRelief {
 }
 
 /**
- * Most grid segments per side. A tile at most this many DEM samples wide (z15
- * and finer at z12's DEM: 32, 16, 8 samples) gets ONE segment per sample, its
+ * Most grid segments per side. A tile at most this many DEM samples wide (z14
+ * and finer at z12's DEM: 64, 32, 16, 8 samples) gets ONE segment per sample, its
  * vertices on the sample-corner lattice (coarse-dem latticeSurfaceN): every
  * such tile then draws the same surface, and the fine patch's rim eases onto
  * it. Wider tiles get TILE_GRID_FAR and only approximate it.
  */
-export const TILE_GRID_MAX = 32
+export const TILE_GRID_MAX = 64
 export const TILE_GRID_MIN = 1
 /**
- * Segments of a tile wider than TILE_GRID_MAX samples (z14 and coarser). These
+ * Segments of a tile wider than TILE_GRID_MAX samples (z13 and coarser). These
  * are only drawn far from the camera, hence far from the hole: off the lattice,
- * and few. 129² vertices on each of them was ≈1 M triangles on the wide view
+ * and few. 129² vertices on each z13 tile was ≈1 M triangles on the wide view
  * (-12 fps) for hills seen from kilometres away.
  */
 export const TILE_GRID_FAR = 16

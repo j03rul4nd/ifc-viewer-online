@@ -900,8 +900,8 @@ nothing here has been looked at on a phone.
 - **What changed.** With terrain on, the worker also fetches a coarse DEM of the
   whole city (z12 global mosaic, ≈38 m). Every flat-map tile is swapped on load
   for a grid whose vertices sit on the DEM's sample-corner lattice
-  (`tileGridSegments`: one segment per DEM sample, 8 at z17 to 32 at z15;
-  z14 and coarser, only drawn far from the camera, get 16 segments off the
+  (`tileGridSegments`: one segment per DEM sample, 8 at z17 to 64 at z14;
+  z13 and coarser, only drawn far from the camera, get 16 segments off the
   lattice) and are lifted to that DEM, on the CPU, once per tile load. Outside the 3×3 patch, Montjuïc and Collserola now stand up:
   ground at (41.3636, 2.1586) reads 120.5 m against 120.8 m in the DEM (main:
   32.6 m, the patch's rim level, flat).
@@ -912,7 +912,7 @@ nothing here has been looked at on a phone.
   the renderer refined to z21 all round it; boxes now hold only the relief
   under their own tile (`reliefRangeM`, a min/max grid of 8×8 DEM samples).
   (2) z13 tiles at 129² vertices were ≈1 M extra triangles on the wide view;
-  the far tiles now have 16 segments. (3) With honest boxes the tiles on a
+  z13 and coarser tiles now have 16 segments. (3) With honest boxes the tiles on a
   hill near a low camera are genuinely closer, and refining them one level
   deeper still cost ≈15 fps at El Carmel with the same triangles and draw
   calls, even with the tiles hidden. So the level of detail is measured from
@@ -920,7 +920,7 @@ nothing here has been looked at on a phone.
   `adjustViewError`, wrapped around the renderer's `calculateTileViewError`),
   while culling keeps the relief box. A hillside close to a low camera is
   therefore as sharp as the flat map was there on main, not sharper.
-- **The rim meets the tiles.** Because every tile z15–z17 has its vertices on
+- **The rim meets the tiles.** Because every tile z14–z17 has its vertices on
   the same lattice, they all draw one surface, `latticeSurfaceN` (coarse-dem:
   the DEM at lattice nodes, linear over each cell's two triangles, split as
   three's PlaneGeometry splits them). The patch's edge eases onto THAT surface
