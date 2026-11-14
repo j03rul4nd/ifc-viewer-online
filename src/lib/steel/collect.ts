@@ -43,6 +43,8 @@ export async function collectSteelParts(
   models: SteelCollectModel[],
   onProgress?: (done: number, total: number) => void,
   signal?: AbortSignal,
+  /** expressId → IfcProfileDef.ProfileName, read off the main thread; null when unavailable. */
+  geometryProfiles?: (modelId: string) => Promise<Map<number, string> | null>,
 ): Promise<CollectedPart[]> {
   const plan: Array<{ model: SteelCollectModel; ids: number[] }> = []
   let total = 0
@@ -55,8 +57,11 @@ export async function collectSteelParts(
   onProgress?.(0, total)
   const out: CollectedPart[] = []
   let done = 0
-  for (const { model, ids } of plan) {
+  // Start every geometry read now: it runs in a worker while batches are read.
+  const geo = plan.map(({ model }) => (geometryProfiles ? geometryProfiles(model.id).catch(() => null) : Promise.resolve(null)))
+  for (const [pi, { model, ids }] of plan.entries()) {
     const units = await unitsOf(model.fragments)
+    const fromGeometry = await geo[pi]
     for (let b = 0; b < ids.length; b += STEEL_BATCH) {
       if (signal?.aborted) throw new DOMException('aborted', 'AbortError')
       const batch = ids.slice(b, b + STEEL_BATCH)
@@ -65,7 +70,7 @@ export async function collectSteelParts(
       batch.forEach((localId, k) => {
         const raw = data[k]
         if (!raw || typeof raw !== 'object') return
-        const part = extractSteelPart(parseItemData(raw as Record<string, unknown>, units), units)
+        const part = extractSteelPart(parseItemData(raw as Record<string, unknown>, units), units, { geometryProfile: fromGeometry?.get(localId) ?? null })
         out.push({ ...part, expressId: localId, modelId: model.id, localId })
       })
       done += batch.length

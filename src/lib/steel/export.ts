@@ -5,6 +5,11 @@
 
 import type { CollectedPart, SteelRow } from './collect'
 import { steelTotals } from './collect'
+import { NO_PROFILE } from './takeoff'
+
+/** The export is for purchasing tools: English, whatever the UI language. */
+export const NO_PROFILE_LABEL = '(no profile)'
+const prof = (p: string): string => (p === NO_PROFILE ? NO_PROFILE_LABEL : p)
 
 export const ROW_HEADERS = ['Profile', 'Class', 'Count', 'Length_m', 'Weight_kg', 'Material', 'MissingWeight'] as const
 export const PART_HEADERS = ['Model', 'Id', 'Name', 'Mark', 'Profile', 'Length_m', 'Weight_kg', 'LengthSource', 'WeightSource'] as const
@@ -20,7 +25,7 @@ const cls = (c: string | null): string => c ?? ''
 /** Table rows (values) for the profile sheet, totals last. */
 export function rowTable(rows: SteelRow[]): Array<Array<string | number>> {
   const out: Array<Array<string | number>> = rows.map((r) => [
-    r.profile, cls(r.ifcClass), r.count, Number(fixed(r.totalLength, 3)), Number(fixed(r.totalWeight, 1)), r.materials.join('; '), r.missingWeight,
+    prof(r.profile), cls(r.ifcClass), r.count, Number(fixed(r.totalLength, 3)), Number(fixed(r.totalWeight, 1)), r.materials.join('; '), r.missingWeight,
   ])
   const t = steelTotals(rows)
   out.push(['TOTAL', '', t.count, Number(fixed(t.totalLength, 3)), Number(fixed(t.totalWeight, 1)), '', t.missingWeight])
@@ -29,7 +34,7 @@ export function rowTable(rows: SteelRow[]): Array<Array<string | number>> {
 
 export function partTable(parts: CollectedPart[], modelName: (id: string) => string = (id) => id): Array<Array<string | number>> {
   return parts.map((p) => [
-    modelName(p.modelId), p.localId, p.name ?? '', p.mark ?? '', p.profile,
+    modelName(p.modelId), p.localId, p.name ?? '', p.mark ?? '', prof(p.profile),
     p.length === null ? '' : Number(fixed(p.length, 3)), p.weight === null ? '' : Number(fixed(p.weight, 1)),
     p.lengthSource, p.weightSource,
   ])

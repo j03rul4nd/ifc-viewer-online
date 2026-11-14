@@ -10,7 +10,9 @@ import { ViewportPanel } from '../ViewportPanel'
 import RequirePlan from '../pro/RequirePlan'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useSteelStore } from '../../stores/steelStore'
-import { useSteelT, type SteelTextKey } from '../../lib/steel/i18n'
+import { steelClassLabel, steelPlural, useSteelT, type SteelTextKey } from '../../lib/steel/i18n'
+import { NO_PROFILE } from '../../lib/steel/takeoff'
+import { geometryProfiles } from '../../lib/steel/profiles-run'
 import {
   collectSteelParts, steelRows, steelTotals, type CollectedPart, type SteelCollectModel, type SteelPartRef, type SteelRow,
 } from '../../lib/steel/collect'
@@ -66,7 +68,6 @@ function Upsell({ t }: { t: T }) {
 }
 
 const rowKey = (r: SteelRow): string => `${r.profile}\u0000${r.ifcClass ?? ''}`
-const cls = (c: string | null) => (c ?? '').replace(/^IFC/i, '').toLowerCase().replace(/^./, (x) => x.toUpperCase())
 
 function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: Props['viewerApiRef']; t: T; lang: string; onRowAction?: Props['onRowAction'] }) {
   const models = useSceneStore((s) => s.models)
@@ -92,7 +93,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
         return fragments ? [{ id: m.id, fragments }] : []
       })
       setProgress({ done: 0, total: 0 })
-      const parts = await collectSteelParts(list, (done, total) => setProgress({ done, total }), ac.signal)
+      const parts = await collectSteelParts(list, (done, total) => setProgress({ done, total }), ac.signal, geometryProfiles)
       viewer.isolateElements([], false)
       setActive(null)
       setParts(parts)
@@ -154,7 +155,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
         <>
           {totals.missingWeight > 0 && (
             <div role="status" className="mx-3 mt-2 px-2 py-1.5 rounded-[6px] border border-[var(--border)] text-[11px] text-[var(--warning,#e0a030)]">
-              {t('missingWarn', { n: totals.missingWeight })}
+              {steelPlural(lang, 'missingWarn', totals.missingWeight)}
             </div>
           )}
           <div className="px-3 pt-2 text-[10.5px] text-[var(--text-dim)]">{t('isolateHint')}</div>
@@ -176,8 +177,8 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
                   <tr key={rowKey(r)} aria-selected={active === rowKey(r)}
                     className={`border-t border-[var(--border)] cursor-pointer hover:bg-[var(--surface-2)] ${active === rowKey(r) ? 'bg-[var(--surface-2)] outline outline-1 outline-[var(--accent)]' : ''}`}
                     onClick={() => isolate(r)}>
-                    <td className="px-2 py-1 font-medium">{r.profile}</td>
-                    <td className="px-2 py-1 text-[var(--text-dim)]">{cls(r.ifcClass)}</td>
+                    <td className={`px-2 py-1 font-medium ${r.profile === NO_PROFILE ? 'text-[var(--text-dim)] italic' : ''}`}>{r.profile === NO_PROFILE ? t('noProfile') : r.profile}</td>
+                    <td className="px-2 py-1 text-[var(--text-dim)]">{steelClassLabel(lang, r.ifcClass)}</td>
                     <td className="px-2 py-1 text-right">{n0.format(r.count)}</td>
                     <td className="px-2 py-1 text-right">{n2.format(r.totalLength)}</td>
                     <td className="px-2 py-1 text-right">{n0.format(r.totalWeight)}</td>

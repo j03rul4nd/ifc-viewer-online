@@ -51,6 +51,22 @@ describe('collectSteelParts', () => {
     expect(steelTotals(rows)).toMatchObject({ count: 1202, totalWeight: 12020, missingWeight: 1 })
   })
 
+  it('geometry profiles fill parts with no other profile, per model', async () => {
+    const rec = new Map<number, unknown>([[3, item('IFCCOLUMN', 3)], [4, item('IFCPLATE', 4, { ObjectType: v('PL20') })]])
+    const m = fakeModel({ IFCCOLUMN: [3], IFCPLATE: [4] }, rec)
+    const asked: string[] = []
+    const parts = await collectSteelParts([{ id: 'A', fragments: m }], undefined, undefined, async (id) => { asked.push(id); return new Map([[3, 'HEA200'], [4, 'PL10']]) })
+    expect(asked).toEqual(['A'])
+    expect(parts.find((p) => p.localId === 3)).toMatchObject({ profile: 'HEA200', profileSource: 'geometry' })
+    expect(parts.find((p) => p.localId === 4)).toMatchObject({ profile: 'PL20', profileSource: 'objectType' })
+  })
+
+  it('a failing geometry read is skipped', async () => {
+    const m = fakeModel({ IFCCOLUMN: [3] }, new Map([[3, item('IFCCOLUMN', 3)]]))
+    const parts = await collectSteelParts([{ id: 'A', fragments: m }], undefined, undefined, async () => { throw new Error('no buffer') })
+    expect(parts).toHaveLength(1)
+  })
+
   it('empty when no model has steel', async () => {
     expect(await collectSteelParts([{ id: 'A', fragments: fakeModel({ IFCWALL: [1] }, new Map()) }])).toEqual([])
   })

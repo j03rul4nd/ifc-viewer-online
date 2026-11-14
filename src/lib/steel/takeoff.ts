@@ -8,7 +8,8 @@ import type { IFCItemData, IFCValue, ProjectUnits } from '../ifc-item-data'
 export type SteelSource = 'qto' | 'tekla' | 'revit' | 'advance' | 'volume' | 'none'
 
 export const STEEL_DENSITY_KG_M3 = 7850
-export const NO_PROFILE = '(sin perfil)'
+/** Sentinel for a part with no readable profile; UI and export translate it. */
+export const NO_PROFILE = '\u0000no-profile'
 
 export interface SteelPart {
   ifcClass: string | null
@@ -18,7 +19,7 @@ export interface SteelPart {
   name: string | null
   mark: string | null
   profile: string
-  profileSource: SteelSource | 'type' | 'override'
+  profileSource: SteelSource | 'objectType' | 'type' | 'geometry' | 'override'
   material: string | null
   /** metres */
   length: number | null
@@ -43,8 +44,10 @@ export interface SteelTakeoffRow {
 }
 
 export interface ExtractOptions {
-  /** Profile read from the geometry (IfcProfileDef.ProfileName), when known. */
+  /** Forces the profile, above every other source. */
   profileOverride?: string | null
+  /** IfcProfileDef.ProfileName of the body's swept solid: the last resort. */
+  geometryProfile?: string | null
 }
 
 // ─── units ──────────────────────────────────────────────────────────────────
@@ -224,7 +227,9 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
   setP('advance', find(props, ADVANCE_SET, ['Section', 'Profile', 'Section name'])?.value)
   setP('revit', find(props, STEEL_SETS, ['Profile', 'Section Name Key', 'Section Shape'])?.value)
   setP('revit', find(props, /^Pset_.*Common$/i, ['Reference'])?.value)
+  setP('objectType', item.objectType)
   setP('type', item.typeName)
+  setP('geometry', opts.geometryProfile)
 
   // Material
   const matValue = item.materials?.[0]?.name

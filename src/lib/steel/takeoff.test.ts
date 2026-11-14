@@ -161,3 +161,16 @@ describe('verifier fixes', () => {
     expect(q.profile).toBe('IPE220')
   })
 })
+
+describe('profile resolution order', () => {
+  it('steel pset > ObjectType > type name > geometry; sentinel when none', () => {
+    const tekla = pset('Tekla Common', [['Profile', 'HEA300']])
+    expect(extractSteelPart(item({ psets: [tekla], objectType: 'IPE300', typeName: 'T' }), {}, { geometryProfile: 'G' })).toMatchObject({ profile: 'HEA300', profileSource: 'tekla' })
+    expect(extractSteelPart(item({ objectType: 'IPE300', typeName: 'T' }), {}, { geometryProfile: 'G' })).toMatchObject({ profile: 'IPE300', profileSource: 'objectType' })
+    expect(extractSteelPart(item({ typeName: 'HEB100' }), {}, { geometryProfile: 'G' })).toMatchObject({ profile: 'HEB100', profileSource: 'type' })
+    expect(extractSteelPart(item({}), {}, { geometryProfile: 'PL10x200' })).toMatchObject({ profile: 'PL10x200', profileSource: 'geometry' })
+    const none = extractSteelPart(item({}))
+    expect(none.profile).toBe(NO_PROFILE)
+    expect(NO_PROFILE).not.toMatch(/sin perfil/)
+  })
+})
