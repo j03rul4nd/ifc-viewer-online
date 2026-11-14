@@ -471,8 +471,8 @@
         "body": "Nach Geschoss, Gewerk, Elementtyp oder Positionsnummer filtern. Eine Liste von Positionen einfügen, um nur diese zu sehen."
       },
       "views": {
-        "title": "Vorhang A | B",
-        "body": "Ziehen Sie die Linie über das Modell: alt links, neu rechts. Oder wechseln Sie in derselben Ansicht zwischen A und B."
+        "title": "Vorhang, geteilt oder umschalten",
+        "body": "Ziehen Sie die Linie über das Modell (alt links, neu rechts), sehen Sie A und B nebeneinander mit derselben Kamera oder schalten Sie in derselben Ansicht um."
       },
       "export": {
         "title": "Weitergeben",
