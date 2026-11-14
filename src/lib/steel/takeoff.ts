@@ -194,7 +194,9 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
   tryLen('revit', rl?.value, rl?.unit)
   const al = find(props, ADVANCE_SET, ['Length', 'Cut Length'])
   tryLen('advance', al?.value, al?.unit)
-  if (length === null && opts.geometryLength && opts.geometryLength > 0) { length = opts.geometryLength; lengthSource = 'geometry' }
+  // A plate's extrusion depth is its thickness, not a length.
+  const isPlate = /^IFCPLATE(STANDARDCASE)?$/i.test(item.ifcClass ?? '')
+  if (length === null && !isPlate && opts.geometryLength && opts.geometryLength > 0) { length = opts.geometryLength; lengthSource = 'geometry' }
 
   // Weight
   let weight: number | null = null
@@ -237,8 +239,8 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
   setP('advance', find(props, ADVANCE_SET, ['Section', 'Profile', 'Section name'])?.value)
   setP('revit', find(props, STEEL_SETS, ['Profile', 'Section Name Key', 'Section Shape'])?.value)
   setP('revit', find(props, /^Pset_.*Common$/i, ['Reference'])?.value)
-  setP('objectType', item.objectType)
-  setP('type', item.typeName)
+  setP('objectType', item.objectType === null ? null : revitTypeName(item.objectType))
+  setP('type', item.typeName === null ? null : revitTypeName(item.typeName))
   setP('geometry', opts.geometryProfile)
 
   // Material
@@ -258,7 +260,7 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
     globalId: item.globalId,
     name: item.name,
     mark: mark === undefined || mark === null ? null : String(mark),
-    profile: profile ? revitTypeName(profile) : NO_PROFILE,
+    profile: profile ?? NO_PROFILE,
     profileSource,
     material: matValue === null ? null : String(matValue),
     length,
@@ -269,15 +271,18 @@ export function extractSteelPart(item: IFCItemData, units: ProjectUnits = {}, op
 }
 
 /**
- * Revit writes "Family:Type" (often "Family:Type:ElementId"): keep the type.
- * Trailing all-digit segments (element ids) are dropped first, then the last
- * segment is the profile. "M_W-Wide Flange:W310X60:208816" → "W310X60".
+ * Revit type names read "Family:Type" or "Family:Type:ElementId": keep the
+ * type. "M_W-Wide Flange:W310X60:208816" → "W310X60". Only applied to type
+ * names (ObjectType, the type's Name) and only when the value has exactly that
+ * shape: two non-empty segments without '/', quotes or '(', plus an optional
+ * all-digit id. Anything else ("=HYPERLINK(\"http://x\")", "a:b:c") is returned untouched.
  */
-export function revitTypeName(profile: string): string {
-  if (!profile.includes(':')) return profile
-  const parts = profile.split(':').map((x) => x.trim()).filter(Boolean)
-  while (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) parts.pop()
-  return parts[parts.length - 1] ?? profile
+const REVIT_TYPE = /^([^:/"'(]+):([^:/"'(]+)(?::\d+)?$/
+export function revitTypeName(value: string): string {
+  const m = REVIT_TYPE.exec(value.trim())
+  if (!m) return value
+  const type = m[2].trim()
+  return m[1].trim() && type ? type : value
 }
 
 // ─── group ──────────────────────────────────────────────────────────────────

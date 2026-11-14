@@ -41,5 +41,9 @@ describe('steel fixture through the real converter', () => {
     expect(byId.get(102)).toMatchObject({ profile: 'HEA200', ifcClass: 'IFCCOLUMN' })
     expect(byId.get(103)).toMatchObject({ profile: 'PL10x200', ifcClass: 'IFCPLATE' })
     expect(byId.get(100)).toMatchObject({ profile: 'IPE300', length: 6 })
+    expect(byId.get(103)!.length).toBeNull()
+    // 6 + 6 (beams, Qto) + 3 (column, Tekla); the plate adds no length.
+    const total = parts.reduce((s, p) => s + (p.length ?? 0), 0)
+    expect(total.toFixed(2)).toBe('15.00')
   }, 60_000)
 })

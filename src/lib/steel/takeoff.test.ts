@@ -185,6 +185,13 @@ describe('geometry fallback for length and weight', () => {
     const q = extractSteelPart(item({ quantitySets: [qset('Qto_BeamBaseQuantities', [['Length', 5, 'Length', 'm'], ['NetWeight', 200, 'Weight', 'kg']])] }), {}, g)
     expect(q).toMatchObject({ length: 5, lengthSource: 'qto', weight: 200, weightSource: 'qto' })
   })
+  it('a plate gets no length from its extrusion depth (thickness), but keeps the weight', () => {
+    // 0.08 m2 x 0.01 m x 7850 = 6.28 kg
+    const p = extractSteelPart(item({ ifcClass: 'IFCPLATE' }), {}, { geometryLength: 0.01, geometryArea: 0.08 })
+    expect(p).toMatchObject({ length: null, lengthSource: 'none', weightSource: 'geometry' })
+    expect(p.weight).toBeCloseTo(6.28, 9)
+  })
+
   it('length only when the area is unknown', () => {
     expect(extractSteelPart(item({}), {}, { geometryLength: 7.4213, geometryArea: null })).toMatchObject({ length: 7.4213, lengthSource: 'geometry', weight: null, weightSource: 'none' })
   })
@@ -195,6 +202,12 @@ describe('Revit Family:Type profiles', () => {
     expect(revitTypeName('M_W-Wide Flange:W310X60')).toBe('W310X60')
     expect(revitTypeName('M_W-Wide Flange:W310X60:208816')).toBe('W310X60')
     expect(revitTypeName('HEA200')).toBe('HEA200')
+    expect(revitTypeName('=HYPERLINK("http://x")')).toBe('=HYPERLINK("http://x")')
+    expect(revitTypeName('Fam:Type:abc')).toBe('Fam:Type:abc')
+    expect(revitTypeName('a/b:c')).toBe('a/b:c')
+    // A steel pset profile with ':' is never cut.
+    expect(extractSteelPart(item({ psets: [pset('Tekla Common', [['Profile', 'PL10:200']])] })).profile).toBe('PL10:200')
+    expect(extractSteelPart(item({ objectType: '=HYPERLINK("http://x")' })).profile).toBe('=HYPERLINK("http://x")')
     const rows = groupByProfile([
       extractSteelPart(item({ objectType: 'M_W-Wide Flange:W310X60:208816' })),
       extractSteelPart(item({ objectType: 'M_W-Wide Flange:W310X60:208817' })),
