@@ -350,16 +350,54 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
   useEffect(() => { split.current?.setCurtain(curtain) }, [curtain])
 
   // Split: A | B side by side, one camera, one WebGL context (viewer.setSplitView).
+  // The halves share the part of the 3D canvas not covered by the list panel.
+  // Measured at run time — the canvas does not start at the page edge (model
+  // tree, sidebars) — and re-measured when anything resizes or folds.
+  const panelRef = useRef<HTMLElement | null>(null)
+  const [splitBox, setSplitBox] = useState<{ x0: number; mid: number } | null>(null)
   useEffect(() => {
     const v = viewerApiRef.current
-    if (!v || view !== 'split') return
-    // The list panel covers the left 364 px: the two halves share the rest.
-    v.setSplitView({ left: idsA, right: idsB, insetLeft: 364 })
+    if (!v || view !== 'split') { setSplitBox(null); return }
+    const canvasEl = (): HTMLCanvasElement | null => {
+      let best: HTMLCanvasElement | null = null, area = 0
+      for (const c of document.querySelectorAll('canvas')) {
+        const r = c.getBoundingClientRect()
+        if (r.width * r.height > area) { best = c; area = r.width * r.height }
+      }
+      return best
+    }
+    let last = ''
+    const measure = (): void => {
+      const c = canvasEl()
+      if (!c) return
+      const cr = c.getBoundingClientRect()
+      const panelRight = panelRef.current?.getBoundingClientRect().right ?? cr.left
+      const insetLeft = Math.max(0, Math.round(panelRight + 8 - cr.left))
+      const key = `${insetLeft}|${Math.round(cr.left)}|${Math.round(cr.width)}`
+      if (key === last) return
+      last = key
+      v.setSplitView({ left: idsA, right: idsB, insetLeft })
+      // Same arithmetic as viewer.setSplitView, in page coordinates.
+      const x0Page = cr.left + Math.min(insetLeft, Math.floor(cr.width / 2))
+      const w = Math.floor((cr.right - x0Page) / 2)
+      setSplitBox({ x0: x0Page, mid: x0Page + w })
+    }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    const c = canvasEl()
+    if (ro) { if (c) ro.observe(c); if (panelRef.current) ro.observe(panelRef.current); ro.observe(document.body) }
+    window.addEventListener('resize', measure)
+    // Panels that slide without resizing the canvas element move it: poll cheaply too.
+    const poll = window.setInterval(measure, 500)
     let frames = 0, raf = 0, t0 = performance.now()
     const tick = (): void => { frames++; raf = requestAnimationFrame(tick) }
     raf = requestAnimationFrame(tick)
     const iv = window.setInterval(() => { const now = performance.now(); setFps(Math.round((frames * 1000) / (now - t0))); frames = 0; t0 = now }, 1000)
-    return () => { cancelAnimationFrame(raf); window.clearInterval(iv); v.setSplitView(null) }
+    return () => {
+      cancelAnimationFrame(raf); window.clearInterval(iv); window.clearInterval(poll)
+      ro?.disconnect(); window.removeEventListener('resize', measure)
+      v.setSplitView(null)
+    }
   }, [view, idsA, idsB, viewerApiRef])
   // Split is desktop / landscape tablet only: two half-width views on a phone are too small to read.
   useEffect(() => { if (narrow && view === 'split') useRevisionStore.getState().setView('changes') }, [narrow, view])
@@ -511,11 +549,11 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
     </div>
   )
 
-  const splitLabels = view === 'split' && !narrow && (
+  const splitLabels = view === 'split' && !narrow && splitBox && (
     <>
-      <span className={`fixed z-[55] left-[364px] top-[68px] px-2 py-0.5 rounded-md text-[11px] font-semibold ${panel}`} data-testid="rc-split-a">A · {sideName(a.files)}</span>
-      <span className={`fixed z-[55] left-[calc(182px+50%+8px)] top-[68px] px-2 py-0.5 rounded-md text-[11px] font-semibold ${panel}`} data-testid="rc-split-b">B · {sideName(b.files)}</span>
-      <span aria-hidden className="fixed z-[54] top-0 bottom-0 left-[calc(182px+50%)] w-px bg-[var(--border-strong)] pointer-events-none" />
+      <span style={{ left: splitBox.x0 + 8 }} className={`fixed z-[55] top-[68px] px-2 py-0.5 rounded-md text-[11px] font-semibold ${panel}`} data-testid="rc-split-a">A · {sideName(a.files)}</span>
+      <span style={{ left: splitBox.mid + 8 }} className={`fixed z-[55] top-[68px] px-2 py-0.5 rounded-md text-[11px] font-semibold ${panel}`} data-testid="rc-split-b">B · {sideName(b.files)}</span>
+      <span aria-hidden style={{ left: splitBox.mid }} className="fixed z-[54] top-0 bottom-0 w-px bg-[var(--border-strong)] pointer-events-none" data-testid="rc-split-divider" />
     </>
   )
 
@@ -610,7 +648,7 @@ export default function RevisionWorkspace({ viewerApiRef, onClose: closeNow, onB
       {header}
       {closeDialog}
       {blinkBadge}{curtainHandle}{splitLabels}{fpsBadge}
-      <aside className={`${panel} fixed z-[59] left-2 top-[64px] bottom-2 w-[348px] rounded-2xl flex flex-col overflow-hidden`} data-testid="rc-panel" data-tour="rc-list">
+      <aside ref={panelRef} className={`${panel} fixed z-[59] left-2 top-[64px] bottom-2 w-[348px] rounded-2xl flex flex-col overflow-hidden`} data-testid="rc-panel" data-tour="rc-list">
         <div className="p-3 flex flex-col gap-2 border-b border-[var(--border)]">
           {notices}
           <div className="flex items-center justify-between">
