@@ -1,11 +1,11 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * WP3 check — the full-detail district follows the camera.
+ * WP3 check â€” the full-detail district follows the camera.
  * `node scripts/geo/district-follow-check.mjs --url http://localhost:3411`
  *
- * Headed Chrome, 1600×900 (as the map bench). Opens the test scene at Plaça de
+ * Headed Chrome, 1600Ã—900 (as the map bench). Opens the test scene at PlaÃ§a de
  * Catalunya with an EMPTY profile (so the anchor's own query counts too), then:
- *   1. flies to the Sagrada Família, stops at 300 m: time until the block is
+ *   1. flies to the Sagrada FamÃ­lia, stops at 300 m: time until the block is
  *      drawn, and Overpass/OSM requests for it;
  *   2. flies back and returns: requests (expected 0);
  *   3. reloads the page (same profile, IndexedDB kept) and repeats 1: requests (expected 0);
@@ -31,7 +31,7 @@ const OSM_HOSTS = /overpass|maps\.mail\.ru|api\.openstreetmap\.org/
 const SAGRADA = { lat: 41.4036, lon: 2.1744 }
 const CATALUNYA = { lat: 41.38740, lon: 2.16964 }
 const JUMPS = [
-  { lat: 41.3984, lon: 2.1600 }, // Gràcia
+  { lat: 41.3984, lon: 2.1600 }, // GrÃ cia
   { lat: 41.3800, lon: 2.1900 }, // Barceloneta
   { lat: 41.4100, lon: 2.1900 }, // Clot
   { lat: 41.3760, lon: 2.1480 }, // Sants
@@ -44,7 +44,7 @@ const FLAGS = [`--window-size=${W + 16},${H + 140}`, '--disable-backgrounding-oc
   '--disable-renderer-backgrounding', '--disable-background-timer-throttling']
 
 const requests = [] // { t, url }
-async function open(profile) {
+async function open(profile, first) {
   const ctx = await chromium.launchPersistentContext(profile, {
     headless: false, channel: 'chrome', args: FLAGS, viewport: { width: W, height: H }, deviceScaleFactor: 1,
   })
@@ -53,20 +53,21 @@ async function open(profile) {
   await page.goto(BASE + SCENE, { waitUntil: 'domcontentloaded', timeout: 240_000 })
   await page.bringToFront()
   const consent = page.getByRole('button', { name: /^(Activar mapa|Enable map)$/ })
-  if (await consent.first().isVisible({ timeout: 60_000 }).catch(() => false)) await consent.first().click()
-  for (let i = 0; i < 720; i++) {
+  await consent.first().click({ timeout: first ? 300_000 : 60_000 }).catch(() => log('no consent button'))
+  let ready = false
+  for (let i = 0; i < 2400 && !ready; i++) {
     const ok = await page.evaluate(() => {
       const s = globalThis.__geoStore?.getState()
       return s && s.buildingsStatus === 'ready' && s.terrainStatus === 'ready' && !!globalThis.__geoSystem
     }).catch(() => false)
-    if (ok) break
-    await sleep(250)
+    if (ok) ready = true; else await sleep(250)
   }
+  if (!ready) throw new Error('map never got ready')
   await page.evaluate(() => globalThis.__geoStore.getState().setAutoDetail(true))
   return { ctx, page }
 }
 
-/** Fly in 2 s to 300 m (45°) above a place, then stay still. */
+/** Fly in 2 s to 300 m (45Â°) above a place, then stay still. */
 async function flyTo(page, at, d = 300) {
   await page.evaluate(async ({ at, d }) => {
     const geo = globalThis.__geoSystem, v = globalThis.__ifcViewer
@@ -107,12 +108,12 @@ async function waitBlock(page, before, timeout = 60_000) {
 
 const out = {}
 const profile = mkdtempSync(join(tmpdir(), 'wp3-'))
-let { ctx, page } = await open(profile)
+let { ctx, page } = await open(profile, true)
 out.loadRequests = requests.length
 const y0 = await modelY(page)
 log('anchor ready, requests', requests.length)
 
-// 1. Catalunya → Sagrada Família
+// 1. Catalunya â†’ Sagrada FamÃ­lia
 let n0 = requests.length, f0 = (await stats(page)).fetches
 await flyTo(page, SAGRADA)
 const stopAt = Date.now()
