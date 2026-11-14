@@ -39,13 +39,12 @@ describe('tile-displace', () => {
     const texel = coarseTexelN(dem)
     expect(tileGridSegments(8 * texel, dem)).toBe(8) // z17 at a z12 DEM
     expect(tileGridSegments(32 * texel, dem)).toBe(32) // z15
-    expect(tileGridSegments(64 * texel, dem)).toBe(64) // z14
-    expect(tileGridSegments(128 * texel, dem)).toBe(16) // z13: far, coarse
-    expect(tileGridSegments(256 * texel, dem)).toBe(16) // z12
+    expect(tileGridSegments(64 * texel, dem)).toBe(8) // z14: far, coarse
+    expect(tileGridSegments(256 * texel, dem)).toBe(8) // z12
     expect(tileGridSegments(0.25 * texel, dem)).toBe(1)
   })
 
-  it('draws the same lattice surface from every zoom z14–z17, the one the patch rim eases onto', () => {
+  it('draws the same lattice surface from every zoom z15–z17, the one the patch rim eases onto', () => {
     // A bumpy DEM, so triangle interpolation differs from bilinear.
     const dem = rampDem()
     for (let j = 0; j < COARSE_DEM_PX; j++) for (let i = 0; i < COARSE_DEM_PX; i++) {
@@ -58,7 +57,7 @@ describe('tile-displace', () => {
       const nx = b.minNx + (b.maxNx - b.minNx) * (0.35 + 0.3 * ((k * 0.618) % 1))
       const ny = b.minNy + (b.maxNy - b.minNy) * (0.35 + 0.3 * ((k * 0.381) % 1))
       const want = latticeSurfaceN(dem, nx, ny)
-      for (let z = 14; z <= 17; z++) {
+      for (let z = 15; z <= 17; z++) {
         const m = 2 ** z, w = 1 / m
         const cx = (Math.floor((nx + 0.5) * m) + 0.5) / m - 0.5
         const cy = 0.5 - (Math.floor((0.5 - ny) * m) + 0.5) / m

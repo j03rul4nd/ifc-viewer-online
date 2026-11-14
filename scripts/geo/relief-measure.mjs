@@ -118,7 +118,7 @@ const out = await p.evaluate(async () => {
     for (let k = 0; k < 200; k++) {
       const s = (k + 0.5) / 50, side = Math.floor(s), f = s - side
       const [nx, ny] = side === 0 ? [cnx - half + 2 * half * f, cny - half] : side === 1 ? [cnx + half, cny - half + 2 * half * f] : side === 2 ? [cnx + half - 2 * half * f, cny + half] : [cnx - half, cny + half - 2 * half * f]
-      // Whatever tile covers the point, z13–z17 (z14–z17 sit on the lattice; z13 is coarse, far tiles): its displaced surface as
+      // Whatever tile covers the point, z13–z17 (z15–z17 sit on the lattice; z14 and coarser are coarse, far tiles): its displaced surface as
       // displaceTileScene draws it (the loaded set depends on the camera).
       const patchM = t.sampleGroundM(nx, ny) - GT.rimDipM(tEdge, GT.RIM_DIP_COARSE_M)
       let worst = 0, worstFine = 0
@@ -127,7 +127,7 @@ const out = await p.evaluate(async () => {
         const cxT = (Math.floor((nx + 0.5) * m) + 0.5) / m - 0.5, cyT = 0.5 - (Math.floor((0.5 - ny) * m) + 0.5) / m
         const tileM = TD.tileSurfaceN(relief, cxT, cyT, w, w, TD.tileGridSegments(w, relief.dem), nx, ny) / relief.metresToN + relief.anchorM
         if (Math.abs(tileM - patchM) > Math.abs(worst)) worst = tileM - patchM
-        if (z >= 14 && Math.abs(tileM - patchM) > Math.abs(worstFine)) worstFine = tileM - patchM
+        if (z >= 15 && Math.abs(tileM - patchM) > Math.abs(worstFine)) worstFine = tileM - patchM
       }
       steps.push(worst)
       fine.push(worstFine)
@@ -136,7 +136,7 @@ const out = await p.evaluate(async () => {
       drawn.push(cover ? TD.tileSurfaceN(relief, cover.cx, cover.cy, cover.w, cover.h, cover.seg, nx, ny) / relief.metresToN + relief.anchorM - patchM : null)
     }
     const fa = fine.map(Math.abs).sort((x, y) => x - y)
-    res.stepFine = { n: fa.length, maxAbsM: fa.at(-1), p95M: fa[Math.floor(fa.length * 0.95)], medianM: fa[fa.length >> 1], zooms: '14-17' }
+    res.stepFine = { n: fa.length, maxAbsM: fa.at(-1), p95M: fa[Math.floor(fa.length * 0.95)], medianM: fa[fa.length >> 1], zooms: '15-17' }
     const da = drawn.filter((s) => s !== null).map(Math.abs).sort((x, y) => x - y)
     res.stepDrawn = { n: da.length, maxAbsM: da.at(-1), p95M: da[Math.floor(da.length * 0.95)], medianM: da[da.length >> 1], zooms: [...new Set(flats.map((f) => Math.round(Math.log2(1 / f.w))))].sort() }
     void patchN
