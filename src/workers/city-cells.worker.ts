@@ -17,6 +17,9 @@ import {
   CELL_Z, CELL_DATA_Z, cellDataTile, groupRings, simplifyRing, ringArea2,
   FAR_TOLERANCE_M, FAR_MIN_AREA_M2, type CellLod, type Pt,
 } from '../lib/geo/city-cells'
+import {
+  cellLook, tileHeightPrior, seedTrees, LANDMARK_HEIGHT_M,
+} from '../lib/geo/city-cells-look'
 
 export interface CellRequest {
   type: 'build-cell'
@@ -67,7 +70,24 @@ interface TileBuilding {
   x0: number; y0: number; x1: number; y1: number
 }
 
-interface DecodedTile { extent: number; buildings: TileBuilding[] }
+interface GreenPoly { outer: Pt[]; holes: Pt[][] }
+
+interface DecodedTile {
+  extent: number
+  buildings: TileBuilding[]
+  /** Parks and woods of the same tile: where the mid level seeds canopies. */
+  green: GreenPoly[]
+  /** Median measured height of the tile, for its unmeasured buildings. */
+  prior: number | null
+}
+
+/** `landcover` classes that read as trees from above. */
+const TREE_COVER = new Set(['wood', 'forest', 'park', 'grass', 'scrub'])
+/** Canopies per mid cell, at most: ~25 mid cells keep the city under 8 000. */
+export const TREES_PER_CELL = 300
+/** Canopy grid spacing, m. */
+const TREE_SPACING_M = 14
+const TREE_GREENS = ['#4f6b3a', '#5a7440', '#45603a', '#62783f']
 
 /** Decoded data tiles: four cells share one, and neighbours are asked for next. */
 const TILE_CACHE = 6
@@ -80,13 +100,25 @@ function dataTile(template: string, z: number, x: number, y: number): Promise<De
   const p = (async (): Promise<DecodedTile | null> => {
     const res = await fetch(template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y)))
     // No tile is not an error: the sea has none.
-    if (res.status === 204 || res.status === 404) return { extent: 4096, buildings: [] }
+    if (res.status === 204 || res.status === 404) return { extent: 4096, buildings: [], green: [], prior: null }
     if (!res.ok) throw new Error(`data tile HTTP ${res.status}`)
     const buf = await res.arrayBuffer()
-    if (buf.byteLength === 0) return { extent: 4096, buildings: [] }
+    if (buf.byteLength === 0) return { extent: 4096, buildings: [], green: [], prior: null }
     const [{ VectorTile }, { default: Pbf }] = await Promise.all([import('@mapbox/vector-tile'), import('pbf')])
-    const layer = new VectorTile(new Pbf(buf)).layers.building
-    if (!layer) return { extent: 4096, buildings: [] }
+    const vt = new VectorTile(new Pbf(buf))
+    const layer = vt.layers.building
+    const green: GreenPoly[] = []
+    for (const name of ['park', 'landcover'] as const) {
+      const gl = vt.layers[name]
+      if (!gl) continue
+      for (let i = 0; i < gl.length; i++) {
+        const f = gl.feature(i)
+        if (f.type !== 3) continue
+        if (name === 'landcover' && !TREE_COVER.has(String(f.properties.class))) continue
+        for (const poly of groupRings(f.loadGeometry() as unknown as Pt[][])) green.push(poly)
+      }
+    }
+    if (!layer) return { extent: 4096, buildings: [], green, prior: null }
     const extent = layer.extent
     const buildings: TileBuilding[] = []
     for (let i = 0; i < layer.length; i++) {
@@ -115,7 +147,7 @@ function dataTile(template: string, z: number, x: number, y: number): Promise<De
         })
       }
     }
-    return { extent, buildings }
+    return { extent, buildings, green, prior: tileHeightPrior(buildings.map((b) => b.heightM)) }
   })()
   p.catch(() => { tiles.delete(key) })
   tiles.set(key, p)
@@ -148,6 +180,7 @@ async function build(req: CellRequest): Promise<void> {
     const metresPerUnit = (40_075_016.686 * Math.cos((req.anchorLat * Math.PI) / 180)) / n / E
     const toLatLon = (p: Pt): { lat: number; lon: number } => tilePointToLatLon(p.x, p.y, E, t.z, t.x, t.y)
 
+    const neutral = req.contextTone === 'neutral'
     const footprints: BuildingLike[] = []
     /** Footprint id → the quarter of the tile it is centred in. */
     const quarterById = new Map<string, number>()
@@ -160,7 +193,8 @@ async function build(req: CellRequest): Promise<void> {
       if (ex && b.x0 < ex.x1 && b.x1 > ex.x0 && b.y0 < ex.y1 && b.y1 > ex.y0) continue
       let outer = b.outer
       let holes = b.holes
-      if (req.lod === 'far') {
+      // A landmark is what the far city is recognised by: kept whole.
+      if (req.lod === 'far' && b.heightM < LANDMARK_HEIGHT_M) {
         if ((Math.abs(ringArea2(outer)) / 2) * metresPerUnit * metresPerUnit < FAR_MIN_AREA_M2) continue
         const simple = simplifyRing(outer, FAR_TOLERANCE_M / metresPerUnit)
         if (!simple) continue
@@ -169,16 +203,46 @@ async function build(req: CellRequest): Promise<void> {
       }
       const id = `omt/${t.x}/${t.y}/${i}`
       if (req.tile) quarterById.set(id, quarterOf(cx, cy))
+      const ring = outer.map(toLatLon)
+      const c = toLatLon({ x: cx, y: cy })
+      const look = cellLook(id, c.lat, c.lon, b.heightM, tile.prior)
       footprints.push({
         id,
-        ring: outer.map(toLatLon),
+        ring,
         holes: holes.length > 0 ? holes.map((h) => h.map(toLatLon)) : undefined,
         height: {
-          heightM: Math.max(3, b.heightM), minHeightM: b.minHeightM,
+          heightM: Math.max(3, look.heightM), minHeightM: b.minHeightM,
           // At or below 5 m OpenMapTiles is giving its own default, not data.
           estimated: b.heightM <= 5, basis: b.heightM <= 5 ? 'guess' : 'height',
         },
+        // A discreet context keeps the masses and drops the colour.
+        style: neutral ? undefined : { roofShape: 'flat', roofHeightM: 0, wallColor: look.wallColor, roofColor: look.roofColor },
       })
+    }
+    // Mid level: canopies in the tile's parks and woods, merged into the same
+    // mesh (no draw call of their own). A small raised crown with a pyramid top.
+    let trees = 0
+    if (req.lod === 'mid' && !neutral && tile.green.length > 0) {
+      const box = ex
+      const seeds = seedTrees(tile.green, TREE_SPACING_M / metresPerUnit, { x0: qx0, y0: qy0, x1: qx1, y1: qy1 }, TREES_PER_CELL)
+      const r = 3 / metresPerUnit
+      for (const [j, p] of seeds.entries()) {
+        if (box && p.x > box.x0 - r && p.x < box.x1 + r && p.y > box.y0 - r && p.y < box.y1 + r) continue
+        const ring = Array.from({ length: 6 }, (_, k) => toLatLon({
+          x: p.x + r * Math.cos((k * Math.PI) / 3), y: p.y - r * Math.sin((k * Math.PI) / 3),
+        }))
+        const colour = TREE_GREENS[j % TREE_GREENS.length]
+        footprints.push({
+          id: `tree/${t.x}/${t.y}/${req.x}/${req.y}/${j}`,
+          ring,
+          height: { heightM: 10, minHeightM: 3, estimated: true, basis: 'guess' },
+          style: {
+            roofShape: 'pyramidal', roofHeightM: 4, roofTagged: true, roofHeightTagged: true,
+            wallColor: colour, roofColor: colour,
+          },
+        })
+        trees++
+      }
     }
 
     const built = footprints.length > 0
@@ -195,6 +259,15 @@ async function build(req: CellRequest): Promise<void> {
       return
     }
     const g = built.geometry
+    // A canopy is not a wall: point its normals up, so the night pass never
+    // lays lit windows on a tree.
+    if (trees > 0) {
+      const n = g.attributes.normal.array as Float32Array
+      for (const r of built.ranges) {
+        if (!r.id.startsWith('tree/')) continue
+        for (let v = r.start; v < r.end; v++) { n[v * 3] = 0; n[v * 3 + 1] = 0; n[v * 3 + 2] = 1 }
+      }
+    }
     const attributes: CellAttribute[] = []
     const transfer: Transferable[] = []
     for (const [name, attr] of Object.entries(g.attributes)) {
@@ -219,7 +292,7 @@ async function build(req: CellRequest): Promise<void> {
     post({
       type: 'cell', id: req.id, attributes, index,
       origin: { x: built.origin?.x ?? 0, y: built.origin?.y ?? 0 },
-      ranges, triangles, buildings: built.count, quarters,
+      ranges, triangles, buildings: built.count - trees, quarters,
     }, transfer)
   } catch (err) {
     post({ type: 'error', id: req.id, message: err instanceof Error ? err.message : String(err) }, [])
