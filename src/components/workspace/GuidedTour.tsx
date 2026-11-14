@@ -18,6 +18,20 @@ const sameRect = (a: Rect | null, b: Rect | null): boolean =>
 const samePlace = (a: Placement, b: Placement): boolean =>
   a.mode === b.mode && (a.mode === 'docked' || (b.mode === 'float' && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5 && a.side === b.side))
 
+/** The part of `el` its scrolling ancestors actually show (a wide table in a narrow panel). */
+function visibleRect(el: HTMLElement): { top: number; left: number; width: number; height: number } {
+  const r = el.getBoundingClientRect()
+  let top = r.top, left = r.left, right = r.right, bottom = r.bottom
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    const cs = getComputedStyle(p)
+    if (!/(auto|scroll|hidden)/.test(cs.overflowX + cs.overflowY)) continue
+    const c = p.getBoundingClientRect()
+    if (c.width <= 0 || c.height <= 0) continue
+    top = Math.max(top, c.top); left = Math.max(left, c.left); right = Math.min(right, c.right); bottom = Math.min(bottom, c.bottom)
+  }
+  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) }
+}
+
 /** Click shields covering everything but `r`. */
 function shieldsAround(r: Rect): React.CSSProperties[] {
   const bottom = r.top + r.height
@@ -76,7 +90,7 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
 
   const measure = useCallback(() => {
     const el = findTarget(step?.target)
-    const r = el?.getBoundingClientRect()
+    const r = el ? visibleRect(el) : undefined
     const tr = r ? { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 } : null
     setRect((old) => (sameRect(old, tr) ? old : tr))
     const c = card.current?.getBoundingClientRect()
@@ -143,13 +157,13 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
   // Portalled to <body>: inside a panel with a transform, `position: fixed`
   // would be relative to that panel and every highlight would land off target.
   return createPortal(
-    <div className="fixed inset-0" style={{ zIndex }} aria-live="polite">
+    <div className="fixed inset-0 pointer-events-none" style={{ zIndex }} aria-live="polite">
       {/* Click shield + dim. With a target, the dim is the spotlight's shadow instead. */}
       {rect && step.interactive ? (
         // Four shields around the target: the click it asks for goes through.
-        shieldsAround(rect).map((st, k) => <div key={k} className="absolute" style={st} onClick={(e) => e.stopPropagation()} />)
+        shieldsAround(rect).map((st, k) => <div key={k} data-tour-shield className="absolute pointer-events-auto" style={st} onClick={(e) => e.stopPropagation()} />)
       ) : (
-        <div className="absolute inset-0" style={{ background: rect ? 'transparent' : 'color-mix(in srgb, var(--scrim) 55%, transparent)' }} onClick={(e) => e.stopPropagation()} />
+        <div data-tour-shield className="absolute inset-0 pointer-events-auto" style={{ background: rect ? 'transparent' : 'color-mix(in srgb, var(--scrim) 55%, transparent)' }} onClick={(e) => e.stopPropagation()} />
       )}
       {rect && (
         <div aria-hidden className="absolute rounded-[10px] pointer-events-none transition-[top,left,width,height] duration-200 motion-reduce:transition-none"
@@ -157,8 +171,8 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
       )}
       <div ref={card} role="dialog" aria-modal="true" aria-labelledby={titleId}
         className={place.mode === 'docked'
-          ? (dockTop ? 'absolute inset-x-3 top-[max(12px,env(safe-area-inset-top))] rounded-[14px]' : 'absolute inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-[14px]')
-          : 'absolute w-[340px] max-w-[calc(100vw-32px)] rounded-[12px]'}
+          ? (dockTop ? 'absolute pointer-events-auto inset-x-3 top-[max(12px,env(safe-area-inset-top))] rounded-[14px]' : 'absolute pointer-events-auto inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-[14px]')
+          : 'absolute pointer-events-auto w-[340px] max-w-[calc(100vw-32px)] rounded-[12px]'}
         style={floatStyle}>
         <div className="border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-2xl rounded-[inherit] p-4 max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-contain">
           <p className="text-[11px] text-[var(--text-faint)] tabular-nums">{tx('{{title}} · {{n}} of {{total}}', { title: tx(title), n: i + 1, total: live.length })}</p>

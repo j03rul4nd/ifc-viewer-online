@@ -66,6 +66,37 @@ describe('steel demo boot under StrictMode', () => {
   })
 })
 
+/**
+ * jsdom has no hit testing: walk the overlay like a browser would. An element
+ * catches the point if its effective pointer-events (Tailwind classes, nearest
+ * ancestor) is not none and its box contains it. inset-0 = the whole window.
+ */
+function overlayCatches(overlay: HTMLElement, x: number, y: number): HTMLElement[] {
+  const W = 1400, H = 900
+  const pe = (el: HTMLElement): string => {
+    for (let e: HTMLElement | null = el; e && e !== document.body; e = e.parentElement) {
+      if (e.classList.contains('pointer-events-none')) return 'none'
+      if (e.classList.contains('pointer-events-auto')) return 'auto'
+    }
+    return 'auto'
+  }
+  const box = (el: HTMLElement): { l: number; t: number; r: number; b: number } | null => {
+    const st = el.style
+    if (el.classList.contains('inset-0')) return { l: 0, t: 0, r: W, b: H }
+    if (!st.top && !st.bottom) return null
+    const n = (v: string) => (v ? parseFloat(v) : NaN)
+    const t = n(st.top), l = isNaN(n(st.left)) ? 0 : n(st.left)
+    const r = !isNaN(n(st.width)) ? l + n(st.width) : W - (isNaN(n(st.right)) ? 0 : n(st.right))
+    const b = !isNaN(n(st.height)) ? t + n(st.height) : H - (isNaN(n(st.bottom)) ? 0 : n(st.bottom))
+    return { l, t, r, b }
+  }
+  return [overlay, ...overlay.querySelectorAll<HTMLElement>('*')].filter((el) => {
+    if (pe(el) === 'none' || el.getAttribute('role') === 'dialog' || el.closest('[role="dialog"]')) return false
+    const bx = box(el)
+    return !!bx && x >= bx.l && x < bx.r && y >= bx.t && y < bx.b
+  })
+}
+
 describe('tour overlay', () => {
   const tx = (s: string) => s
   const steps: TourStep[] = [
@@ -87,6 +118,11 @@ describe('tour overlay', () => {
     const shields = [...overlay.children].filter((c) => (c as HTMLElement).style.right === '0px' || (c as HTMLElement).style.left === '0px')
     expect(shields.length).toBe(4)
     expect(document.body.querySelector('h2')!.textContent).toBe('A')
+    // The centre of the target: nothing of the overlay catches it, the root included.
+    expect(overlay.classList.contains('pointer-events-none')).toBe(true)
+    expect(overlayCatches(overlay, 60, 30)).toEqual([])
+    // Outside the target the shields still block.
+    expect(overlayCatches(overlay, 600, 600).length).toBeGreaterThan(0)
     act(() => { target.click() })
     expect(clicked).toHaveBeenCalledTimes(1)
     act(() => { vi.advanceTimersByTime(500) })
