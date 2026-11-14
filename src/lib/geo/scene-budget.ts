@@ -228,6 +228,11 @@ export interface SceneReport {
   contextLosses: number
   skipped: LayerKey[]
   failed: LayerKey[]
+  /**
+   * A district block that follows the camera could not be fetched (OpenStreetMap
+   * busy): that zone stays at the city cells' level for a minute.
+   */
+  districtBusy?: boolean
 }
 
 /** Count of triangles, readable at panel scale: 845, 12.4 k, 1.2 M. */
