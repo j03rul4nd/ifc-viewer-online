@@ -44,8 +44,8 @@ vi.mock('./city-lod', () => ({
   createCityLod: () => ({
     group: new THREE.Group(),
     setSource: vi.fn(), setExclude: vi.fn(), setTone: vi.fn(), setBudget: vi.fn(),
-    update: vi.fn(), dispose: vi.fn(),
-    stats: () => ({ cells: 0, mid: 0, far: 0, triangles: 0, buildings: 0, inFlight: 0, bytes: 0, wanted: 0, lastError: null }),
+    update: vi.fn(), dispose: vi.fn(), contextRestored: vi.fn(),
+    stats: () => ({ cells: 0, mid: 0, far: 0, farTiles: 0, triangles: 0, buildings: 0, inFlight: 0, bytes: 0, wanted: 0, lastError: null }),
   }),
 }))
 vi.mock('./basemap/tilejson', () => ({ loadTileJson: () => Promise.reject(new Error('offline in tests')) }))
