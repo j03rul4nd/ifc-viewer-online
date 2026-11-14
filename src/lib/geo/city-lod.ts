@@ -18,6 +18,7 @@ import {
   cellsInRange, admitCells, planUnits, quantizePositions, fadeLevel, FADE_LEVELS,
   type CellLod, type CityUnit, type CityView,
 } from './city-cells'
+import { seatBuilding } from './city-cells-look'
 import type { ContextTone } from './building-mesh'
 import type { CellRequest, CellResponse } from '../../workers/city-cells.worker'
 
@@ -179,23 +180,16 @@ export function createCityLod(): CityLod {
   }
 
   /**
-   * Seat each building on the ground under its own centre, then pack the
-   * positions. `pos` is local to `origin` (normalized units, z in scene units).
+   * Seat each building on the ground under its footprint (body on the highest
+   * ground, skirt down to the lowest — city-cells-look seatBuilding), then pack
+   * the positions. `pos` is local to `origin` (normalized units, z in scene units).
    */
   function seatAndPack(
     geometry: THREE.BufferGeometry, pos: Float32Array, ranges: Uint32Array, origin: { x: number; y: number },
   ): { centre: [number, number, number]; scale: number } {
     if (ground) {
-      for (let j = 0; j < ranges.length; j += 2) {
-        const a = ranges[j], b = ranges[j + 1]
-        if (b <= a) continue
-        let sx = 0, sy = 0
-        for (let v = a; v < b; v++) { sx += pos[v * 3]; sy += pos[v * 3 + 1] }
-        const n = b - a
-        const z = ground.z(origin.x + sx / n, origin.y + sy / n)
-        if (!Number.isFinite(z) || z === 0) continue
-        for (let v = a; v < b; v++) pos[v * 3 + 2] += z
-      }
+      const z = (nx: number, ny: number): number => ground!.z(nx, ny)
+      for (let j = 0; j < ranges.length; j += 2) seatBuilding(pos, ranges[j], ranges[j + 1], origin, z)
     }
     const q = quantizePositions(pos)
     geometry.setAttribute('position', new THREE.BufferAttribute(q.array, 3, true))
@@ -217,6 +211,11 @@ export function createCityLod(): CityLod {
       const done = other.cells.every((c) => !planDrawsCell(c) || (units.get(c)?.lod != null))
       if (done) disposeUnit(other)
     }
+  }
+
+  function drawnElsewhere(cell: string, except: Unit): boolean {
+    for (const u of units.values()) if (u !== except && u.cells.includes(cell)) return true
+    return false
   }
 
   function planDrawsCell(cell: string): boolean {
@@ -376,7 +375,12 @@ export function createCityLod(): CityLod {
         request(w)
       }
       for (const unit of [...units.values()]) {
-        if (now - unit.lastWanted > UNLOAD_AFTER_MS) disposeUnit(unit)
+        if (now - unit.lastWanted <= UNLOAD_AFTER_MS) continue
+        // Its replacement (the other level) has not arrived: unloading now
+        // would open a hole for the time the worker takes. retireUnder lets
+        // it go the moment the new mesh is up.
+        if (unit.mesh && unit.cells.some((c) => planDrawsCell(c) && !drawnElsewhere(c, unit))) continue
+        disposeUnit(unit)
       }
     },
 

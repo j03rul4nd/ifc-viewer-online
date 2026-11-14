@@ -336,7 +336,7 @@ manager, `city-cells.worker.ts` builder).
   22 bytes a vertex instead of 40.
 - **No building twice.** A cell leaves out every building whose box touches
   the district's box, once a district is loaded for the current anchor.
-- **Ground.** Each building is seated on the ground under its own centre, read
+- **Ground.** Each building is seated on the ground under its footprint (see WP4 below), read
   from the same ground frame as everything else: on the relief inside the
   3×3 patch, on the flat map's level outside it (the rim already eases one
   into the other). The relief itself is unchanged, so hills outside the patch
@@ -356,6 +356,52 @@ so moving the district means moving the relief with it — a change to the
 vertical frame, not to this layer. Cells are not pick targets, pop in without
 a fade, and the CPU copy of each cell's buffers is kept (re-seating needs the
 positions).
+
+#### How the cells look (WP4, 2026-11)
+
+Rules in `city-cells-look.ts` (pure, tested), applied by the cells worker and
+the cell manager on top of the same `buildBuildingsGeometry`:
+
+- **Tones.** In Barcelona each building takes a facade and a roof tone from its
+  barri's typology (`barcelona-barris` palettes: terrat, teula àrab, cement,
+  white membrane, dark slate…), ±6 % brightness by id. Elsewhere a roof palette
+  of five tones per region; walls keep `facadeColor`. `neutral` context keeps
+  the old monochrome masses. Before this the whole far city was one terracotta.
+- **Heights.** `render_height` ≤ 5 m is OpenMapTiles' default, not data: in
+  Barcelona it becomes the barri's storeys (`fabricHeightM`), elsewhere the
+  tile's median measured height ± one storey; never above 35 m
+  (`MAX_ASSUMED_HEIGHT_M`).
+- **Landmarks.** At `far`, a building of 30 m or more skips the 80 m² filter,
+  and one of 45 m or more also skips the 3 m simplification: Torre Glòries
+  keeps its round outline at 4 km. Not from 30 m: OpenMapTiles groups the
+  Eixample's blocks at about 30 m, and keeping those whole cost +45 % vertices
+  at `far` (8 481 polygons in six tiles around Catalunya; 263 from 45 m).
+  Hand-modelled landmarks are still drawn by the district only.
+- **Slopes.** Each building samples the ground at up to 12 base vertices; the
+  body stands on the highest sample and the skirt goes down to the lowest (or
+  the builder's 6 m, whichever is lower). Nothing floats, nothing is buried at
+  the sampled points (unit test: 300 random slopes within 1 m). The district
+  keeps its own rule (lowest ground + sized skirt in `building-mesh`).
+- **Greenery.** Mid cells seed small canopies (hexagonal crown 3–10 m, pyramid
+  top, four greens) on a 14 m jittered grid inside the same tile's `park` and
+  `landcover` (wood, forest, park, grass, scrub) polygons — no new request, at
+  most 300 per cell, merged into the cell mesh (no draw call of its own).
+  Their normals point up, so the night pass lays no windows on them.
+- **Level changes.** A cell is no longer unloaded while a cell it draws is
+  still in the plan and nothing else draws it: the old level stays until the
+  new one arrives (`retireUnder`), so a mid↔far switch leaves no hole.
+- **Night.** Cells use `createUnlitFacadeMaterial`, the district's Simple
+  material: same window grid and street wash in `night` and `golden`.
+
+Measured (bench, views amplia and baja, median of 3 runs a side, main 96bff2e8
+against this branch, interleaved, desktop): city buffers 87 / 89 MB at
+Catalunya / El Carmel amplia (main 91 / 88), 67 / 77 MB at baja (main 63 / 72);
+draw calls with cells 186 / 185 against 148 / 142 off (main 190 / 189). Pan FPS
+with cells: Catalunya amplia 23.0 (main 22.5), baja 7.1 (7.4); El Carmel the
+branch measured faster, but so did the cells-off runs, whose code is the same:
+the machine was busier during main's first run. Torre Glòries shows as the tall dark tower at the
+centre of a 4 km view (an extruded outline, not its dome). Not measured in the scene: the 300 seats on the El
+Carmel slope (unit-tested on 300 synthetic slopes) and the night look.
 
 ### OSM as data: the vector basemap (default for new users)
 
