@@ -1,0 +1,11 @@
+{
+  "id": "F7",
+  "description": "Whole model shifted 10 m in +X (site placement)",
+  "changes": [],
+  "counts": {},
+  "originShift": [
+    10,
+    0,
+    0
+  ]
+}

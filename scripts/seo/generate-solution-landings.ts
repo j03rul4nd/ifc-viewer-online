@@ -59,7 +59,7 @@ export function linkTarget(key: string, l: Lang, s: Solution): string | null {
     case 'viewer': return appPath(l)
     case 'pricing': return ctaHref(s, l)
     case 'contractors': case 'engineering': return pagePath(key, l)
-    case 'postReception': case 'postClash': case 'postBatch': return postPath(key, l)
+    case 'postReception': case 'postClash': case 'postBatch': case 'postSupplier': return postPath(key, l)
     case 'validator': return l === 'en' ? '/ifc-validator/' : `/${l}/${VALIDATOR_SLUG[l]}/`
     case 'fix': return `${pre(l)}/fix/`
     default: return null

@@ -29,7 +29,10 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
 }) {
   const naming = useMemo(() => namingOf(project, d), [project, d])
   const proposed = useMemo(() => proposedReasons(project, d), [project, d])
-  const [verdict, setVerdict] = useState<'accepted' | 'returned'>(() => suggestedVerdict(project, d))
+  // Server data, no score yet and no reason: the runner has not validated it. It can be
+  // returned early, never accepted (the server refuses that too).
+  const validating = d.score === null && d.verdict === 'pending' && d.reasons.length === 0 && Boolean(d.fileHash)
+  const [verdict, setVerdict] = useState<'accepted' | 'returned'>(() => validating ? 'returned' : suggestedVerdict(project, d))
   const [reasons, setReasons] = useState<string[]>(proposed)
   const [note, setNote] = useState('')
   const [tried, setTried] = useState(false)
@@ -51,13 +54,13 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
       if (k === 'j' && queue?.next) { e.preventDefault(); queue.next() }
       else if (k === 'k' && queue?.prev) { e.preventDefault(); queue.prev() }
       else if (!pending) return
-      else if (k === 'a') { e.preventDefault(); setVerdict('accepted') }
+      else if (k === 'a' && !validating) { e.preventDefault(); setVerdict('accepted') }
       else if (k === 'd') { e.preventDefault(); setVerdict('returned') }
       else if (k === 'enter' && t?.tagName !== 'BUTTON') { e.preventDefault(); confirmRef.current() }
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [queue, pending])
+  }, [queue, pending, validating])
 
   function confirm() {
     setTried(true)
@@ -110,7 +113,13 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
         </section>
       )}
 
-      {d.score === null && (
+      {validating && (
+        <Banner tone="info" title={rx('Still being validated')}>{rx('The server has not checked this file yet. You can accept it once it has a score, or return it now with a reason.')}</Banner>
+      )}
+      {d.damaged && (
+        <Banner tone="danger" title={rx('The file is damaged')}>{rx('It is cut short or not closed properly (an interrupted export or upload), so it was not scored. Return it and ask for the complete file.')}</Banner>
+      )}
+      {d.score === null && !validating && !d.damaged && (
         <Banner tone="danger" title={rx('The file could not be read')}>{rx('It is not an IFC file or it is damaged. Nothing was checked; return it and ask for the .ifc file.')}</Banner>
       )}
 
@@ -192,7 +201,7 @@ export default function DeliveryReview({ project, delivery: d, supplier, entries
           <h3 id="rx-dec" className="text-[13px] font-medium mb-2">{rx('Decision')}</h3>
           <div role="radiogroup" aria-label={rx('Decision')} className="grid grid-cols-2 gap-2 mb-3">
             {(['accepted', 'returned'] as const).map((v) => (
-              <button key={v} role="radio" aria-checked={verdict === v} onClick={() => setVerdict(v)}
+              <button key={v} role="radio" aria-checked={verdict === v} onClick={() => setVerdict(v)} disabled={validating && v === 'accepted'}
                 className={`h-[40px] rounded-[8px] border text-[13px] ${verdict === v ? 'border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] font-medium' : 'border-[var(--border)] text-[var(--text-dim)]'}`}>
                 {v === 'accepted' ? rx('Accept') : rx('Return')}
                 {suggestedVerdict(project, d) === v && <span className="ml-1.5 text-[11px] text-[var(--text-faint)] font-normal">{rx('suggested')}</span>}

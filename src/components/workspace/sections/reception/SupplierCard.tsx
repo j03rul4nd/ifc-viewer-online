@@ -5,16 +5,22 @@ import { Dialog, Primary, Quiet, Banner, CopyField, Field, Sparkline, inputClass
 import { fmtDate, VerdictChip } from './format'
 import { DISCIPLINES, supplierStats, uploadLink, type RxDelivery, type RxProject, type RxSupplier } from './sample'
 import type { Rx } from './strings'
+import { originatorOf } from './live'
 
-export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpenDelivery, onClose }: {
+export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpenDelivery, onAccess, onClose }: {
   project: RxProject; supplier: RxSupplier; deliveries: RxDelivery[]; rx: Rx; lang: string
-  onOpenDelivery: (id: string) => void; onClose: () => void
+  onOpenDelivery: (id: string) => void
+  /** Workspace mode only: replace the upload link, or cut the supplier off. */
+  onAccess?: (action: 'rotate' | 'revoke') => void
+  onClose: () => void
 }) {
+  const [confirmRevoke, setConfirmRevoke] = useState(false)
   const st = supplierStats(project, s, deliveries)
   const mine = deliveries.filter((d) => d.supplierId === s.id).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt))
   return (
     <Dialog title={s.name} onClose={onClose} size="lg" footer={<Quiet onClick={onClose}>{rx('Close')}</Quiet>}>
       <p className="text-[12.5px] text-[var(--text-dim)] -mt-2 mb-4 [overflow-wrap:anywhere]">{rx(s.discipline)} · {rx('author code {{code}}', { code: s.originator })} · {s.contact} · {s.email}</p>
+      {s.state === 'revoked' && <Banner tone="info" title={rx('Access revoked')}>{rx('This supplier can no longer deliver. Their past deliveries stay on the register.')}</Banner>}
       {s.state === 'bounced' && <Banner tone="danger" title={rx('The invitation bounced')}>{rx('{{email}} does not exist or rejected the message. Correct the address and invite again.', { email: s.email })}</Banner>}
       {s.state === 'invited' && <Banner tone="info" title={rx('Invited, no delivery yet')}>{rx('Invited on {{date}}. The link works without an account.', { date: fmtDate(s.invitedAt, lang, false) })}</Banner>}
       {st.daysLate > 0 && <Banner tone="warn" title={rx('{{n}} days late', { n: st.daysLate })}>{rx('No delivery since {{date}}. Deliveries are due every week.', { date: st.lastAt ? fmtDate(st.lastAt, lang, false) : '—' })}</Banner>}
@@ -44,8 +50,20 @@ export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpe
 
       <section className="mb-5">
         <h3 className="text-[13px] font-medium mb-1.5">{rx('Upload link for this supplier')}</h3>
-        <CopyField value={uploadLink(project, s)} label={rx('Upload link for this supplier')} />
-        <p className="text-[11.5px] text-[var(--text-faint)] mt-1">{rx('Sample link: uploads are not open yet.')}</p>
+        {onAccess ? (
+          s.state === 'revoked' ? <p className="text-[12.5px] text-[var(--text-dim)]">{rx('No link: access revoked.')}</p> : <>
+            <p className="text-[12.5px] text-[var(--text-dim)] mb-2">{rx('The link was shown once, when you invited them. If it leaked or got lost, make a new one: the old one stops working at once.')}</p>
+            <div className="flex flex-wrap gap-2">
+              <Quiet onClick={() => onAccess('rotate')}>{rx('New upload link')}</Quiet>
+              {confirmRevoke
+                ? <Quiet onClick={() => onAccess('revoke')}>{rx('Yes, revoke {{name}}', { name: s.name })}</Quiet>
+                : <Quiet onClick={() => setConfirmRevoke(true)}>{rx('Revoke access')}</Quiet>}
+            </div>
+          </>
+        ) : <>
+          <CopyField value={uploadLink(project, s)} label={rx('Upload link for this supplier')} />
+          <p className="text-[11.5px] text-[var(--text-faint)] mt-1">{rx('Sample link: uploads are not open yet.')}</p>
+        </>}
       </section>
 
       {mine.length > 0 && (
@@ -69,7 +87,9 @@ export function SupplierCard({ project, supplier: s, deliveries, rx, lang, onOpe
   )
 }
 
-export function InviteDialog({ project, taken, rx, onInvite, onClose }: {
+export function InviteDialog({ project, taken, rx, onInvite, onClose, live = false }: {
+  /** Workspace mode: the server derives the author code from the company name, so it is shown, not typed. */
+  live?: boolean
   project: RxProject; taken: string[]; rx: Rx
   onInvite: (s: Omit<RxSupplier, 'id' | 'projectId' | 'invitedAt' | 'state'>) => void; onClose: () => void
 }) {
@@ -79,11 +99,11 @@ export function InviteDialog({ project, taken, rx, onInvite, onClose }: {
   const [discipline, setDiscipline] = useState<string>(DISCIPLINES[0])
   const [originator, setOriginator] = useState('')
   const [tried, setTried] = useState(false)
-  const code = originator.trim().toUpperCase()
+  const code = live ? originatorOf(name) : originator.trim().toUpperCase()
   const errors = {
     name: !name.trim() ? rx('Write the company name.') : null,
     email: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? rx('Write a valid e-mail address.') : null,
-    originator: !/^[A-Z0-9]{3,6}$/.test(code) ? rx('3 to 6 letters or digits, as in the file name.') : taken.includes(code) ? rx('Another supplier already uses {{code}}.', { code }) : null,
+    originator: live ? (name.trim() && taken.includes(code) ? rx('Another supplier already uses {{code}}.', { code }) : null) : !/^[A-Z0-9]{3,6}$/.test(code) ? rx('3 to 6 letters or digits, as in the file name.') : taken.includes(code) ? rx('Another supplier already uses {{code}}.', { code }) : null,
   }
   const ok = !errors.name && !errors.email && !errors.originator
   const err = (k: keyof typeof errors) => tried && errors[k] ? <span role="alert" className="block text-[var(--danger)] mt-1">{errors[k]}</span> : null
@@ -102,10 +122,14 @@ export function InviteDialog({ project, taken, rx, onInvite, onClose }: {
             <select className={inputClass} value={discipline} onChange={(e) => setDiscipline(e.target.value)}>{DISCIPLINES.map((x) => <option key={x} value={x}>{rx(x)}</option>)}</select>
           </Field>
           <Field label={rx('Author code (originator)')} hint={rx('Field 2 of the file name: {{example}}', { example: `${project.code}-${code || 'XXX'}-ZZ-XX-M3-A-0001` })}>
-            <input className={`${inputClass} font-mono uppercase`} value={originator} maxLength={6} onChange={(e) => setOriginator(e.target.value)} />{err('originator')}
+            {live
+              ? <input className={`${inputClass} font-mono uppercase`} value={name.trim() ? code : ''} readOnly aria-readonly placeholder={rx('From the company name')} />
+              : <input className={`${inputClass} font-mono uppercase`} value={originator} maxLength={6} onChange={(e) => setOriginator(e.target.value)} />}{err('originator')}
           </Field>
         </div>
-        <p className="text-[12px] text-[var(--text-dim)]">{rx('They get their own upload link and the requirements ({{profile}} v{{v}}, minimum {{min}}). No account needed. In this preview nothing is sent.', { profile: project.profile, v: project.profileVersion, min: project.minScore })}</p>
+        <p className="text-[12px] text-[var(--text-dim)]">{live
+          ? rx('They get their own upload link and the requirements ({{profile}} v{{v}}, minimum {{min}}). No account needed. We prepare the message; you send it.', { profile: project.profile, v: project.profileVersion, min: project.minScore })
+          : rx('They get their own upload link and the requirements ({{profile}} v{{v}}, minimum {{min}}). No account needed. In this preview nothing is sent.', { profile: project.profile, v: project.profileVersion, min: project.minScore })}</p>
       </div>
     </Dialog>
   )

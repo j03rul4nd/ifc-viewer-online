@@ -36,6 +36,7 @@ import {
 import { EVERY_BLOG_POST } from '../../src/lib/blog-i18n'
 import { filterBlogPosts, getBlogHubCopy, sortBlogPosts } from '../../src/lib/blog-hub'
 import { editorialCopy } from '../../src/lib/blog-editorial-copy'
+import { featureDemoCopy, featureDemoLinks } from '../../src/lib/blog-feature-demo-copy'
 import { bimoCopy } from '../../src/components/mascot/bimo-copy'
 import { serpWidth } from '../../src/lib/serp-width'
 import { HERO_SIZES, heroSources } from '../../src/lib/blog-hero'
@@ -545,6 +546,13 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /><figcaption>${esc(block.readyLabel ?? block.title)}</figcaption></figure></section>`
     case 'sketch-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="500" loading="lazy" decoding="async" /></figure><p><a href="/sketch/">${esc(block.labels.open)}</a></p></section>`
+    case 'feature-demo': {
+      // No iframe for a crawler: what the demo shows, the sample-data note and the ladder.
+      const lang = langOf(prefix)
+      const c = featureDemoCopy(lang)
+      const l = featureDemoLinks({ ...block, lang })
+      return `<section><h3>${esc(c.steps[block.step])}</h3><p>${esc(c.body)} ${esc(c.sample)}</p><ol><li><a href="${esc(l.free)}">${esc(c.ladder.free)}</a></li><li><a href="${esc(l.demoStart)}">${esc(c.ladder.demo)}</a></li><li><a href="${esc(l.waitlist)}">${esc(c.ladder.waitlist)}</a> · <a href="${esc(l.talk)}">${esc(c.ladder.talk)}</a></li></ol></section>`
+    }
     case 'tool-demo':
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /></figure><p><a href="/${prefix}">${esc(editorialCopy(langOf(prefix)).post.openInteractiveViewer)}</a></p></section>`
     case 'video': {

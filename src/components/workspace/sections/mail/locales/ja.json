@@ -291,5 +291,8 @@
  "Signed contract, form…": "署名済み契約、フォーム…",
  "Add contact": "連絡先を追加",
  "Yes": "はい",
- "No consent": "同意なし"
+ "No consent": "同意なし",
+ "Gallery": "ギャラリー",
+ "Your templates": "自分のテンプレート",
+ "Built and kept for approval. Sending is off until the module is live.": "作成して承認待ちに保存しました。モジュールが有効になるまで送信はオフです。"
 }

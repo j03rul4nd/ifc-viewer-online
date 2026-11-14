@@ -7,6 +7,9 @@ import type { DrawingInput } from '../../stores/drawingStore'
 import { DxfError, dwgVersion, type parseDxf } from './dxf-parse'
 import { readOperators, vectorsToEntities, type Matrix, type PdfOps, type PdfTextItem, type PdfVectors } from './pdf-vectors'
 import { runDrawingJob } from './run-job'
+import { loadPdfJs } from './pdfjs'
+import { sheetsFromPdfDoc, type PdfDocLike } from './pdf-sheets'
+import type { RevisionSheet } from './revision-2d'
 import type { PageImage } from './types'
 
 export class DrawingImportError extends Error {
@@ -19,11 +22,7 @@ const MAX_PAGE_PIXELS = 4096
 const pdfSources = new Map<string, Uint8Array>()
 
 export async function renderPdfPage(bytes: Uint8Array, pageNumber: number): Promise<PageImage> {
-  const [pdfjs, worker] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ])
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  const pdfjs = await loadPdfJs()
   // A copy: pdf.js transfers the buffer it receives to its worker.
   const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
   try {
@@ -56,11 +55,7 @@ export async function renderPdfPage(bytes: Uint8Array, pageNumber: number): Prom
 
 /** The vectors and text of a page, in the page's own units (y up); empty for a scan. */
 export async function readPdfVectors(bytes: Uint8Array, pageNumber: number): Promise<PdfVectors> {
-  const [pdfjs, worker] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ])
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  const pdfjs = await loadPdfJs()
   const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
   try {
     const doc = await task.promise
@@ -72,6 +67,22 @@ export async function readPdfVectors(bytes: Uint8Array, pageNumber: number): Pro
     const [list, text] = await Promise.all([page.getOperatorList(), page.getTextContent()])
     const { polylines, truncated } = readOperators(list.fnArray, list.argsArray, pdfjs.OPS as unknown as PdfOps, base)
     return vectorsToEntities(polylines, text.items as PdfTextItem[], base, truncated)
+  } finally {
+    void task.destroy()
+  }
+}
+
+/** Every page of a PDF as a sheet with its vectors, for revision compare. A scan comes back with none. */
+export async function readPdfSheets(bytes: Uint8Array, onPage?: (done: number, total: number) => void): Promise<RevisionSheet[]> {
+  const pdfjs = await loadPdfJs()
+  const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: true })
+  try {
+    const doc = await task.promise
+    return await sheetsFromPdfDoc(doc as unknown as PdfDocLike, pdfjs.OPS as unknown as PdfOps, onPage)
+  } catch (err) {
+    if (err instanceof DrawingImportError) throw err
+    if ((err as { name?: string }).name === 'PasswordException') throw new DrawingImportError('pdfPassword')
+    throw new DrawingImportError('pdfBroken', err instanceof Error ? err.message : String(err))
   } finally {
     void task.destroy()
   }

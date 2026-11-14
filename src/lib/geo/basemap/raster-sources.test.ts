@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CADASTRE, HILLSHADE, PNOA, hillshadeAlpha, plannedRequests, terrariumHeight, tileBoundsMercator, tileLonLatBounds,
+  CADASTRE, HILLSHADE, PNOA, hillshadeAlpha, plannedRequests, squareRasterPlan, terrariumHeight, tileBoundsMercator, tileLonLatBounds,
 } from './raster-sources'
 import { regionToXyz } from './vector-overlay'
 import { getMapStyle } from './map-styles'
@@ -101,5 +101,49 @@ describe('hillshade', () => {
     expect(a).toBe(b)
     expect(a).toContain('/terrarium/13/4146/3056.png')
     expect(plannedRequests(HILLSHADE, 17, 0, 0)).toEqual([])
+  })
+})
+
+describe('squareRasterPlan', () => {
+  // A 2 048 px square at style zoom z around Plaça de Catalunya (41.3874, 2.1696).
+  const nx = 2.1696 / 360
+  const ny = Math.log(Math.tan(Math.PI / 4 + (41.3874 * Math.PI) / 360)) / (2 * Math.PI)
+  const square = (z: number) => ({ cx: nx, cy: ny, half: 2048 / (512 * 2 ** z) / 2 })
+
+  it('uses the square\'s own sharpness: style zoom z = WMTS level z + 1', () => {
+    const p = squareRasterPlan(PNOA, square(17), 17, 81)
+    expect(p.level).toBe(18)
+    expect(p.pieces.length).toBeGreaterThanOrEqual(64)
+    expect(p.pieces.length).toBeLessThanOrEqual(81)
+    expect(p.pieces[0].url).toContain('tilematrix=18&')
+    expect(p.pieces[0].url).toMatch(/^https:\/\/www\.ign\.es\//)
+  })
+
+  it('stops at the photo\'s own resolution (level 19)', () => {
+    const p = squareRasterPlan(PNOA, square(21), 21, 81)
+    expect(p.level).toBe(19)
+    expect(p.pieces.length).toBeLessThanOrEqual(4)
+  })
+
+  it('drops a level when the budget is short', () => {
+    const p = squareRasterPlan(PNOA, square(17), 17, 25)
+    expect(p.level).toBe(17)
+    expect(p.pieces.length).toBeLessThanOrEqual(25)
+  })
+
+  it('covers the whole square, tiles one tile apart', () => {
+    const p = squareRasterPlan(PNOA, square(18), 18, 81)
+    const minX = Math.min(...p.pieces.map((q) => q.fx)), minY = Math.min(...p.pieces.map((q) => q.fy))
+    const maxX = Math.max(...p.pieces.map((q) => q.fx + q.fw)), maxY = Math.max(...p.pieces.map((q) => q.fy + q.fh))
+    expect(minX).toBeLessThanOrEqual(0); expect(minY).toBeLessThanOrEqual(0)
+    expect(maxX).toBeGreaterThanOrEqual(1); expect(maxY).toBeGreaterThanOrEqual(1)
+    expect(p.pieces[0].fw).toBeCloseTo(1 / 8, 9) // 2 048 px / 256 px
+  })
+
+  it('asks nothing of sources without a pyramid, or outside coverage', () => {
+    expect(squareRasterPlan(CADASTRE, square(18), 18, 81).pieces).toEqual([])
+    expect(squareRasterPlan(HILLSHADE, square(18), 18, 81).pieces).toEqual([])
+    const paris = { cx: 2.35 / 360, cy: 0.1556, half: square(18).half }
+    expect(squareRasterPlan(PNOA, paris, 18, 81).pieces).toEqual([])
   })
 })

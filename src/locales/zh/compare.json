@@ -108,7 +108,86 @@
     "status": "状态",
     "element": "构件",
     "detail": "变更内容",
-    "truncated": "仅显示 {{total}} 个变更构件中的前 {{shown}} 个；CSV 导出包含全部。"
+    "truncated": "仅显示 {{total}} 个变更构件中的前 {{shown}} 个；CSV 导出包含全部。",
+    "revision": {
+      "title": "修订变更",
+      "versionA": "版本 A（之前）",
+      "versionB": "版本 B（之后）",
+      "files": "文件",
+      "date": "日期",
+      "revision": "修订",
+      "status": "状态",
+      "generated": "生成时间",
+      "summary": "摘要",
+      "byKind": "按变更类型",
+      "byStorey": "按楼层",
+      "total": "变更",
+      "noStorey": "无楼层",
+      "change": "变更",
+      "kindLabel": "类型",
+      "element": "构件",
+      "ifcClass": "类",
+      "storey": "楼层",
+      "fileA": "文件 A",
+      "fileB": "文件 B",
+      "field": "字段",
+      "a": "A",
+      "b": "B",
+      "reviewLabel": "审核",
+      "noCapture": "无截图（模型未加载）",
+      "page": "第 {{n}} 页，共 {{total}} 页",
+      "sheetSummary": "摘要",
+      "sheetChanges": "变更",
+      "kind": {
+        "removed": "已删除",
+        "added": "已新增",
+        "type_changed": "类型变更",
+        "reshaped": "形状变更",
+        "moved": "已移动",
+        "relations_changed": "关系变更",
+        "properties_changed": "属性变更",
+        "unchanged": "未变更"
+      },
+      "review": {
+        "pending": "待审核",
+        "reviewed": "已审核",
+        "affects_site": "影响现场"
+      },
+      "fields": {
+        "move": "位移",
+        "direction": "方向",
+        "size": "尺寸",
+        "volume": "体积"
+      },
+      "dir": {
+        "N": "向北",
+        "NE": "向东北",
+        "E": "向东",
+        "SE": "向东南",
+        "S": "向南",
+        "SW": "向西南",
+        "W": "向西",
+        "NW": "向西北",
+        "up": "向上",
+        "down": "向下"
+      },
+      "sentence": {
+        "added": "新增 {{class}}",
+        "removed": "删除 {{class}}",
+        "moved_mm": "{{dir}}移动 {{mm}} mm",
+        "height_mm": "高度 {{before}} → {{after}} mm",
+        "size_mm": "尺寸（{{axis}}）{{before}} → {{after}} mm",
+        "volume_m3": "体积 {{before}} → {{after}} m³（{{pct}} %）",
+        "reshaped": "形状已变更",
+        "type_changed": "类型 {{before}} → {{after}}",
+        "storey_changed": "楼层 {{before}} → {{after}}",
+        "file_changed": "文件 {{before}} → {{after}}",
+        "relations_changed": "关系已变更",
+        "property_changed": "{{key}}：{{before}} → {{after}}",
+        "properties_changed": "{{count}} 个属性已变更",
+        "unchanged": "未变更"
+      }
+    }
   },
   "ids": {
     "runTitle": "用 IDS 检查两个版本",
@@ -199,5 +278,248 @@
     "close": "关闭比较",
     "start_one": "{{count}} 处变更 — 点 › 逐个查看",
     "start_other": "{{count}} 处变更 — 点 › 逐个查看"
+  },
+  "rc": {
+    "title": "修订对比",
+    "subtitle": "拖入旧修订和新修订，对比会自动开始。",
+    "drop": {
+      "a": "旧修订 (A)",
+      "b": "新修订 (B)",
+      "hint": "将 IFC 拖到这里，或点按选择",
+      "files_other": "{{count}} 个文件",
+      "swap": "交换 A 和 B"
+    },
+    "local": "在浏览器中处理：文件绝不会离开此设备。",
+    "localShort": "本地",
+    "reading": "正在读取修订…",
+    "advanced": "每周交付、基线、IDS 和 BCF →",
+    "back": "返回",
+    "none": "没有符合筛选条件的变更。",
+    "prev": "上一个",
+    "next": "下一个",
+    "frame": "定位",
+    "list_other": "{{count}} 处变更",
+    "keys": "J / K 下一个 · R 已审核 · S 影响现场 · F 定位",
+    "paused": "对比期间，校验和 IDS 着色已暂停。",
+    "guidRegenerated": "设计方重新生成了构件 ID：已按编号和位置匹配。请检查每个匹配的置信度。",
+    "originShift": "整个模型移动了 {{x}}, {{y}}, {{z}} mm（东、北、上）。分类时忽略此偏移。",
+    "match": "按{{method}}匹配 · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "编号",
+      "geometry": "位置和形状",
+      "split": "拆分",
+      "merge": "合并",
+      "none": "—"
+    },
+    "kind": {
+      "added": "新增",
+      "removed": "删除",
+      "moved": "移动",
+      "reshaped": "形状变化",
+      "type_changed": "类型变化",
+      "relations_changed": "关系变化",
+      "properties_changed": "属性变化",
+      "unchanged": "未变化"
+    },
+    "review": {
+      "pending": "待审核",
+      "reviewed": "已审核",
+      "affects_site": "影响现场"
+    },
+    "counter": {
+      "changes_other": "{{count}} 处变更",
+      "reviewed_other": "已审核 {{count}}"
+    },
+    "view": {
+      "label": "视图",
+      "changes": "变更",
+      "curtain": "滑块",
+      "split": "分屏",
+      "blink": "切换",
+      "blinkHint": "按空格切换"
+    },
+    "filter": {
+      "kind": "变更类型",
+      "storey": "楼层",
+      "anyStorey": "所有楼层",
+      "file": "专业（文件）",
+      "anyFile": "所有文件",
+      "class": "类别",
+      "anyClass": "所有类别",
+      "review": "审核状态",
+      "anyReview": "任意状态",
+      "marks": "编号、名称或 ID（可粘贴列表）",
+      "toggle": "筛选"
+    },
+    "tol": {
+      "title": "容差",
+      "move": "移动",
+      "size": "各轴尺寸",
+      "volume": "体积",
+      "apply": "重新计算",
+      "close": "关闭",
+      "took": "{{ms}} ms",
+      "hint": "基于已读取的修订重新计算，不会再次读取文件。"
+    },
+    "table": {
+      "toggle": "前 / 后",
+      "field": "字段",
+      "before": "之前 (A)",
+      "after": "之后 (B)",
+      "empty": "没有字段级详情。",
+      "added": "{{file}} 中的新构件。",
+      "removed": "该构件已不在 {{file}} 中。"
+    },
+    "field": {
+      "positionX": "东西向位置",
+      "positionY": "南北向位置",
+      "positionZ": "标高",
+      "distance": "移动距离",
+      "sizeX": "东西向尺寸",
+      "sizeY": "南北向尺寸",
+      "height": "高度",
+      "volume": "体积"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "正在准备 {{done}} / {{total}}…",
+      "failed": "导出失败：{{message}}",
+      "pdfHint": "每处变更附截图的报告",
+      "xlsxHint": "列出每个变更字段的表格",
+      "bcfHint": "给设计方的问题，每处变更一条"
+    },
+    "dir": {
+      "N": "向北",
+      "NE": "向东北",
+      "E": "向东",
+      "SE": "向东南",
+      "S": "向南",
+      "SW": "向西南",
+      "W": "向西",
+      "NW": "向西北",
+      "up": "向上",
+      "down": "向下"
+    },
+    "axis": {
+      "x": "东西向",
+      "y": "南北向",
+      "z": "高度"
+    },
+    "summary": {
+      "added": "新增{{class}}",
+      "removed": "已删除{{class}}",
+      "unchanged": "未变化",
+      "moved_mm": "{{dir}}移动 {{mm}} mm",
+      "moved_mm_nodir": "移动 {{mm}} mm",
+      "height_mm": "高度 {{before}} → {{after}} mm",
+      "size_mm": "尺寸（{{axis}}）{{before}} → {{after}} mm",
+      "volume_m3": "体积 {{before}} → {{after}} m³（{{pct}} %）",
+      "reshaped": "形状变化",
+      "type_changed": "类型 {{before}} → {{after}}",
+      "storey_changed": "楼层 {{before}} → {{after}}",
+      "file_changed": "现位于文件 {{after}}（原为 {{before}}）",
+      "relations_changed": "关系变化",
+      "property_changed": "{{key}}：{{before}} → {{after}}",
+      "properties_changed_other": "{{count}} 项属性变化",
+      "changed": "已变化"
+    },
+    "tour": {
+      "title": "修订对比导览",
+      "ui": {
+        "of": "{{title}} · 第 {{n}} 步，共 {{total}} 步",
+        "skip": "跳过",
+        "back": "上一步",
+        "next": "下一步",
+        "done": "完成"
+      },
+      "offer": "第一次使用？2 分钟导览告诉你该看什么。",
+      "start": "开始导览",
+      "dismiss": "不用了",
+      "local": {
+        "title": "旧版对新版，无需上传",
+        "body": "A 是旧修订，B 是新修订。两者都在本浏览器中读取：文件不会离开你的电脑。"
+      },
+      "list": {
+        "title": "所有变更，按影响排序",
+        "body": "先是移动和删除的构件，然后是形状，最后是数据。用 J / K 或方向键逐条查看。"
+      },
+      "moved": {
+        "title": "移动了什么，移动了多少",
+        "body": "3D 中的箭头从旧位置指向新位置，文字用现场语言说明，例如“向西移动 120 mm”。"
+      },
+      "table": {
+        "title": "修改前与修改后",
+        "body": "位置、尺寸、高度和变更的属性并排显示，并附差值。无需打开两个文件。"
+      },
+      "review": {
+        "title": "标记已检查的内容",
+        "body": "没问题就标“已检查”，影响现场施工就标“影响现场”。顶部计数器会汇总。"
+      },
+      "filters": {
+        "title": "只看你的楼层、你的构件",
+        "body": "按楼层、专业、构件类型或构件编号筛选。粘贴一组编号即可只看这些。"
+      },
+      "views": {
+        "title": "滑块 A | B",
+        "body": "在模型上拖动分隔线：左边是旧版，右边是新版。也可以在同一视图中切换 A 和 B。"
+      },
+      "export": {
+        "title": "发给相关人员",
+        "body": "给现场的 PDF 或表格，给设计方的 BCF 文件：每项变更都附图片。"
+      },
+      "end": {
+        "title": "用你自己的文件试试",
+        "body": "◀ 返回 会打开两个拖放区：旧修订、新修订。也欢迎告诉我们你的想法：“帮助 / 反馈”一直在这里。"
+      }
+    },
+    "help": {
+      "button": "帮助 / 反馈",
+      "feedback": "发送反馈",
+      "tour": "重新导览"
+    },
+    "demo": {
+      "loading": "正在加载示例修订…",
+      "failed": "无法加载示例修订：{{message}}"
+    },
+    "cls": {
+      "wall": "墙",
+      "slab": "楼板",
+      "column": "柱",
+      "beam": "梁",
+      "door": "门",
+      "window": "窗",
+      "stair": "楼梯",
+      "stair_flight": "梯段",
+      "roof": "屋顶",
+      "member": "构件",
+      "plate": "板件",
+      "covering": "饰面",
+      "railing": "栏杆",
+      "curtain_wall": "幕墙",
+      "footing": "基础",
+      "pile": "桩",
+      "space": "空间",
+      "opening": "洞口",
+      "furniture": "家具",
+      "building_element_proxy": "构件",
+      "pipe_segment": "管道",
+      "duct_segment": "风管",
+      "flow_segment": "风管或管道",
+      "flow_terminal": "末端",
+      "flow_fitting": "管件",
+      "rebar": "钢筋"
+    },
+    "close": {
+      "title": "关闭对比",
+      "body": "两个修订仍加载在 3D 视图中。保留哪些？",
+      "removeBoth": "从场景中移除 A 和 B",
+      "removeA": "仅移除 A（旧修订）",
+      "keep": "两者都保留在场景中",
+      "cancel": "取消"
+    }
   }
 }

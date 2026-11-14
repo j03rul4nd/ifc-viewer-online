@@ -1,0 +1,20 @@
+{
+  "id": "F5",
+  "description": "One service proxy added, another removed",
+  "changes": [
+    {
+      "globalIdB": "0RevCmpF50000000000001",
+      "kind": "added",
+      "method": "none"
+    },
+    {
+      "globalIdA": "1nDsiZaNXTkAnyXSsI6QnC",
+      "kind": "removed",
+      "method": "none"
+    }
+  ],
+  "counts": {
+    "added": 1,
+    "removed": 1
+  }
+}

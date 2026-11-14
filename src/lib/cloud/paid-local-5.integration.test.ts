@@ -38,7 +38,7 @@ describe.skipIf(!API)('paid workspace on the local backend (part 5)', () => {
   beforeAll(async () => {
     vi.stubEnv('VITE_API_URL', API)
     as('owner')
-    const set = await paidApi.createRequirementSet(`Upload page ${run}`, 50, JSON.stringify({ project: 'UPL', due_day: 4, due_hour: 9, profile: 'EIR', profile_version: 2, client: 'Promotora Demo' }))
+    const set = await paidApi.createRequirementSet(`Upload page ${run}`, 50, JSON.stringify({ naming: false, project: 'UPL', due_day: 4, due_hour: 9, profile: 'EIR', profile_version: 2, client: 'Promotora Demo' }))
     const a = await paidApi.createSupplier(`Upload A ${run}`, 'ARC')
     const b = await paidApi.createSupplier(`Upload B ${run}`, 'MEP')
     if (!set.ok || !a.ok || !b.ok) throw new Error('setup failed')

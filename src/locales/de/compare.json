@@ -110,7 +110,86 @@
     "status": "Status",
     "element": "Element",
     "detail": "Was sich geändert hat",
-    "truncated": "Die ersten {{shown}} von {{total}} geänderten Elementen – der CSV-Export enthält alle."
+    "truncated": "Die ersten {{shown}} von {{total}} geänderten Elementen – der CSV-Export enthält alle.",
+    "revision": {
+      "title": "Revisionsänderungen",
+      "versionA": "Version A (vorher)",
+      "versionB": "Version B (nachher)",
+      "files": "Dateien",
+      "date": "Datum",
+      "revision": "Rev.",
+      "status": "Status",
+      "generated": "Erstellt",
+      "summary": "Zusammenfassung",
+      "byKind": "Nach Änderungsart",
+      "byStorey": "Nach Geschoss",
+      "total": "Änderungen",
+      "noStorey": "Ohne Geschoss",
+      "change": "Änderung",
+      "kindLabel": "Art",
+      "element": "Element",
+      "ifcClass": "Klasse",
+      "storey": "Geschoss",
+      "fileA": "Datei A",
+      "fileB": "Datei B",
+      "field": "Feld",
+      "a": "A",
+      "b": "B",
+      "reviewLabel": "Prüfung",
+      "noCapture": "Kein Bild (Modell nicht geladen)",
+      "page": "Seite {{n}} von {{total}}",
+      "sheetSummary": "Zusammenfassung",
+      "sheetChanges": "Änderungen",
+      "kind": {
+        "removed": "Entfernt",
+        "added": "Hinzugefügt",
+        "type_changed": "Typ geändert",
+        "reshaped": "Form geändert",
+        "moved": "Verschoben",
+        "relations_changed": "Beziehungen geändert",
+        "properties_changed": "Eigenschaften geändert",
+        "unchanged": "Unverändert"
+      },
+      "review": {
+        "pending": "Offen",
+        "reviewed": "Geprüft",
+        "affects_site": "Betrifft Baustelle"
+      },
+      "fields": {
+        "move": "Verschiebung",
+        "direction": "Richtung",
+        "size": "Abmessungen",
+        "volume": "Volumen"
+      },
+      "dir": {
+        "N": "nach Norden",
+        "NE": "nach Nordosten",
+        "E": "nach Osten",
+        "SE": "nach Südosten",
+        "S": "nach Süden",
+        "SW": "nach Südwesten",
+        "W": "nach Westen",
+        "NW": "nach Nordwesten",
+        "up": "nach oben",
+        "down": "nach unten"
+      },
+      "sentence": {
+        "added": "Neu: {{class}}",
+        "removed": "{{class}} entfernt",
+        "moved_mm": "{{mm}} mm {{dir}} verschoben",
+        "height_mm": "Höhe {{before}} → {{after}} mm",
+        "size_mm": "Maß ({{axis}}) {{before}} → {{after}} mm",
+        "volume_m3": "Volumen {{before}} → {{after}} m³ ({{pct}} %)",
+        "reshaped": "Form geändert",
+        "type_changed": "Typ {{before}} → {{after}}",
+        "storey_changed": "Geschoss {{before}} → {{after}}",
+        "file_changed": "Datei {{before}} → {{after}}",
+        "relations_changed": "Beziehungen geändert",
+        "property_changed": "{{key}}: {{before}} → {{after}}",
+        "properties_changed": "{{count}} Eigenschaften geändert",
+        "unchanged": "Unverändert"
+      }
+    }
   },
   "ids": {
     "runTitle": "Beide Versionen gegen eine IDS prüfen",
@@ -201,5 +280,253 @@
     "close": "Vergleich schließen",
     "start_one": "{{count}} Änderung — mit › durchgehen",
     "start_other": "{{count}} Änderungen — mit › durchgehen"
+  },
+  "rc": {
+    "title": "Revisionen vergleichen",
+    "subtitle": "Alte und neue Revision ablegen. Der Vergleich startet von selbst.",
+    "drop": {
+      "a": "Alte Revision (A)",
+      "b": "Neue Revision (B)",
+      "hint": "IFC-Dateien hier ablegen oder tippen zum Auswählen",
+      "files_one": "{{count}} Datei",
+      "files_other": "{{count}} Dateien",
+      "swap": "A und B tauschen"
+    },
+    "local": "Im Browser verarbeitet: Die Dateien verlassen dieses Gerät nie.",
+    "localShort": "Lokal",
+    "reading": "Revisionen werden gelesen…",
+    "advanced": "Wochenlieferungen, Baselines, IDS und BCF →",
+    "back": "Zurück",
+    "none": "Keine Änderung passt zu den Filtern.",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "frame": "Einpassen",
+    "list_one": "{{count}} Änderung",
+    "list_other": "{{count}} Änderungen",
+    "keys": "J / K weiter · R geprüft · S betrifft Baustelle · F einpassen",
+    "paused": "Prüf- und IDS-Farben sind während des Vergleichs pausiert.",
+    "guidRegenerated": "Der Planer hat die Element-IDs neu erzeugt: Elemente wurden über Positionsnummer und Lage zugeordnet. Prüfen Sie die Sicherheit jeder Zuordnung.",
+    "originShift": "Das ganze Modell wurde um {{x}}, {{y}}, {{z}} mm verschoben (Ost, Nord, oben). Diese Verschiebung wird beim Einordnen ignoriert.",
+    "match": "Zugeordnet über {{method}} · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "Positionsnummer",
+      "geometry": "Lage und Form",
+      "split": "Teilung",
+      "merge": "Zusammenführung",
+      "none": "—"
+    },
+    "kind": {
+      "added": "Hinzugefügt",
+      "removed": "Entfernt",
+      "moved": "Verschoben",
+      "reshaped": "Form geändert",
+      "type_changed": "Typ geändert",
+      "relations_changed": "Beziehungen geändert",
+      "properties_changed": "Eigenschaften geändert",
+      "unchanged": "Unverändert"
+    },
+    "review": {
+      "pending": "Offen",
+      "reviewed": "Geprüft",
+      "affects_site": "Betrifft Baustelle"
+    },
+    "counter": {
+      "changes_one": "{{count}} Änderung",
+      "changes_other": "{{count}} Änderungen",
+      "reviewed_one": "{{count}} geprüft",
+      "reviewed_other": "{{count}} geprüft"
+    },
+    "view": {
+      "label": "Ansicht",
+      "changes": "Änderungen",
+      "curtain": "Vorhang",
+      "split": "Geteilt",
+      "blink": "Umschalten",
+      "blinkHint": "Leertaste zum Wechseln"
+    },
+    "filter": {
+      "kind": "Änderungsart",
+      "storey": "Geschoss",
+      "anyStorey": "Alle Geschosse",
+      "file": "Gewerk (Datei)",
+      "anyFile": "Alle Dateien",
+      "class": "Klasse",
+      "anyClass": "Alle Klassen",
+      "review": "Prüfstatus",
+      "anyReview": "Jeder Status",
+      "marks": "Positionsnummern, Namen oder IDs (Liste einfügen)",
+      "toggle": "Filter"
+    },
+    "tol": {
+      "title": "Toleranzen",
+      "move": "Verschiebung",
+      "size": "Größe je Achse",
+      "volume": "Volumen",
+      "apply": "Neu berechnen",
+      "close": "Schließen",
+      "took": "{{ms}} ms",
+      "hint": "Aus den bereits gelesenen Revisionen neu berechnet; die Dateien werden nicht erneut gelesen."
+    },
+    "table": {
+      "toggle": "Vorher / nachher",
+      "field": "Feld",
+      "before": "Vorher (A)",
+      "after": "Nachher (B)",
+      "empty": "Keine Details pro Feld.",
+      "added": "Neues Element in {{file}}.",
+      "removed": "Element nicht mehr in {{file}}."
+    },
+    "field": {
+      "positionX": "Lage Ost–West",
+      "positionY": "Lage Nord–Süd",
+      "positionZ": "Höhenlage",
+      "distance": "Verschiebeweg",
+      "sizeX": "Größe Ost–West",
+      "sizeY": "Größe Nord–Süd",
+      "height": "Höhe",
+      "volume": "Volumen"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "Wird vorbereitet {{done}} / {{total}}…",
+      "failed": "Export fehlgeschlagen: {{message}}",
+      "pdfHint": "Bericht mit einem Bild pro Änderung",
+      "xlsxHint": "Tabelle mit jedem geänderten Feld",
+      "bcfHint": "Themen für den Planer, eines pro Änderung"
+    },
+    "dir": {
+      "N": "nach Norden",
+      "NE": "nach Nordosten",
+      "E": "nach Osten",
+      "SE": "nach Südosten",
+      "S": "nach Süden",
+      "SW": "nach Südwesten",
+      "W": "nach Westen",
+      "NW": "nach Nordwesten",
+      "up": "nach oben",
+      "down": "nach unten"
+    },
+    "axis": {
+      "x": "Ost–West",
+      "y": "Nord–Süd",
+      "z": "Höhe"
+    },
+    "summary": {
+      "added": "Neu: {{class}}",
+      "removed": "Entfernt: {{class}}",
+      "unchanged": "Unverändert",
+      "moved_mm": "{{mm}} mm {{dir}} verschoben",
+      "moved_mm_nodir": "{{mm}} mm verschoben",
+      "height_mm": "Höhe {{before}} → {{after}} mm",
+      "size_mm": "Größe {{axis}} {{before}} → {{after}} mm",
+      "volume_m3": "Volumen {{before}} → {{after}} m³ ({{pct}} %)",
+      "reshaped": "Form geändert",
+      "type_changed": "Typ {{before}} → {{after}}",
+      "storey_changed": "Geschoss {{before}} → {{after}}",
+      "file_changed": "Jetzt in Datei {{after}} (vorher {{before}})",
+      "relations_changed": "Beziehungen geändert",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_one": "{{count}} Eigenschaft geändert",
+      "properties_changed_other": "{{count}} Eigenschaften geändert",
+      "changed": "Geändert"
+    },
+    "tour": {
+      "title": "Tour: Revisionen vergleichen",
+      "ui": {
+        "of": "{{title}} · {{n}} von {{total}}",
+        "skip": "Überspringen",
+        "back": "Zurück",
+        "next": "Weiter",
+        "done": "Fertig"
+      },
+      "offer": "Zum ersten Mal hier? Eine 2-Minuten-Tour zeigt, worauf es ankommt.",
+      "start": "Tour starten",
+      "dismiss": "Nein danke",
+      "local": {
+        "title": "Alt gegen neu, nichts wird hochgeladen",
+        "body": "A ist die alte Revision, B die neue. Beide werden in diesem Browser gelesen: Die Dateien verlassen Ihren Rechner nicht."
+      },
+      "list": {
+        "title": "Jede Änderung, nach Wirkung sortiert",
+        "body": "Zuerst Verschobenes und Entferntes, dann Form, dann Daten. J / K oder die Pfeile gehen sie einzeln durch."
+      },
+      "moved": {
+        "title": "Was sich bewegt hat, und wie weit",
+        "body": "Der Pfeil in 3D führt von der alten zur neuen Lage, und der Satz sagt es in Baustellensprache, etwa „120 mm nach W verschoben“."
+      },
+      "table": {
+        "title": "Vorher und nachher",
+        "body": "Lage, Abmessungen, Höhe und geänderte Eigenschaften nebeneinander, mit der Differenz. Ohne beide Dateien zu öffnen."
+      },
+      "review": {
+        "title": "Abhaken, was geprüft ist",
+        "body": "„Geprüft“, wenn es passt, „Betrifft Baustelle“, wenn sich die Arbeit vor Ort ändert. Der Zähler oben führt Buch."
+      },
+      "filters": {
+        "title": "Nur Ihr Geschoss, nur Ihre Bauteile",
+        "body": "Nach Geschoss, Gewerk, Elementtyp oder Positionsnummer filtern. Eine Liste von Positionen einfügen, um nur diese zu sehen."
+      },
+      "views": {
+        "title": "Vorhang A | B",
+        "body": "Ziehen Sie die Linie über das Modell: alt links, neu rechts. Oder wechseln Sie in derselben Ansicht zwischen A und B."
+      },
+      "export": {
+        "title": "Weitergeben",
+        "body": "Ein PDF oder eine Tabelle für die Baustelle, eine BCF-Datei für den Planer – jede Änderung mit ihrem Bild."
+      },
+      "end": {
+        "title": "Mit eigenen Dateien ausprobieren",
+        "body": "◀ Zurück öffnet die zwei Ablagefelder: alte Revision, neue Revision. Und sagen Sie uns Ihre Meinung: Hilfe / Feedback ist immer hier."
+      }
+    },
+    "help": {
+      "button": "Hilfe / Feedback",
+      "feedback": "Feedback senden",
+      "tour": "Tour wiederholen"
+    },
+    "demo": {
+      "loading": "Beispielrevisionen werden geladen…",
+      "failed": "Die Beispielrevisionen konnten nicht geladen werden: {{message}}"
+    },
+    "cls": {
+      "wall": "Wand",
+      "slab": "Decke",
+      "column": "Stütze",
+      "beam": "Träger",
+      "door": "Tür",
+      "window": "Fenster",
+      "stair": "Treppe",
+      "stair_flight": "Treppenlauf",
+      "roof": "Dach",
+      "member": "Profil",
+      "plate": "Platte",
+      "covering": "Bekleidung",
+      "railing": "Geländer",
+      "curtain_wall": "Vorhangfassade",
+      "footing": "Fundament",
+      "pile": "Pfahl",
+      "space": "Raum",
+      "opening": "Öffnung",
+      "furniture": "Möbel",
+      "building_element_proxy": "Element",
+      "pipe_segment": "Rohr",
+      "duct_segment": "Kanal",
+      "flow_segment": "Kanal oder Rohr",
+      "flow_terminal": "Endgerät",
+      "flow_fitting": "Formteil",
+      "rebar": "Bewehrung"
+    },
+    "close": {
+      "title": "Vergleich schließen",
+      "body": "Beide Revisionen sind noch in der 3D-Ansicht geladen. Was soll bleiben?",
+      "removeBoth": "A und B aus der Szene entfernen",
+      "removeA": "Nur A entfernen (alte Revision)",
+      "keep": "Beide in der Szene behalten",
+      "cancel": "Abbrechen"
+    }
   }
 }

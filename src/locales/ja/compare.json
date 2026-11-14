@@ -108,7 +108,86 @@
     "status": "状態",
     "element": "要素",
     "detail": "変更内容",
-    "truncated": "変更された {{total}} 要素のうち最初の {{shown}} 件を表示しています。CSV にはすべて含まれます。"
+    "truncated": "変更された {{total}} 要素のうち最初の {{shown}} 件を表示しています。CSV にはすべて含まれます。",
+    "revision": {
+      "title": "改訂の変更点",
+      "versionA": "版 A（変更前）",
+      "versionB": "版 B（変更後）",
+      "files": "ファイル",
+      "date": "日付",
+      "revision": "改訂",
+      "status": "ステータス",
+      "generated": "作成日時",
+      "summary": "概要",
+      "byKind": "変更の種類別",
+      "byStorey": "階別",
+      "total": "変更数",
+      "noStorey": "階なし",
+      "change": "変更",
+      "kindLabel": "種類",
+      "element": "要素",
+      "ifcClass": "クラス",
+      "storey": "階",
+      "fileA": "ファイル A",
+      "fileB": "ファイル B",
+      "field": "項目",
+      "a": "A",
+      "b": "B",
+      "reviewLabel": "確認",
+      "noCapture": "画像なし（モデル未読込）",
+      "page": "{{n}} / {{total}} ページ",
+      "sheetSummary": "概要",
+      "sheetChanges": "変更",
+      "kind": {
+        "removed": "削除",
+        "added": "追加",
+        "type_changed": "タイプ変更",
+        "reshaped": "形状変更",
+        "moved": "移動",
+        "relations_changed": "関係の変更",
+        "properties_changed": "プロパティ変更",
+        "unchanged": "変更なし"
+      },
+      "review": {
+        "pending": "未確認",
+        "reviewed": "確認済み",
+        "affects_site": "現場に影響"
+      },
+      "fields": {
+        "move": "移動量",
+        "direction": "方向",
+        "size": "寸法",
+        "volume": "体積"
+      },
+      "dir": {
+        "N": "北へ",
+        "NE": "北東へ",
+        "E": "東へ",
+        "SE": "南東へ",
+        "S": "南へ",
+        "SW": "南西へ",
+        "W": "西へ",
+        "NW": "北西へ",
+        "up": "上へ",
+        "down": "下へ"
+      },
+      "sentence": {
+        "added": "{{class}} を追加",
+        "removed": "{{class}} を削除",
+        "moved_mm": "{{dir}} {{mm}} mm 移動",
+        "height_mm": "高さ {{before}} → {{after}} mm",
+        "size_mm": "寸法（{{axis}}）{{before}} → {{after}} mm",
+        "volume_m3": "体積 {{before}} → {{after}} m³（{{pct}} %）",
+        "reshaped": "形状が変更",
+        "type_changed": "タイプ {{before}} → {{after}}",
+        "storey_changed": "階 {{before}} → {{after}}",
+        "file_changed": "ファイル {{before}} → {{after}}",
+        "relations_changed": "関係が変更",
+        "property_changed": "{{key}}: {{before}} → {{after}}",
+        "properties_changed": "{{count}} 件のプロパティが変更",
+        "unchanged": "変更なし"
+      }
+    }
   },
   "ids": {
     "runTitle": "両バージョンを IDS で検証",
@@ -199,5 +278,248 @@
     "close": "比較を閉じる",
     "start_one": "{{count}} 件の変更 — › で順に表示",
     "start_other": "{{count}} 件の変更 — › で順に表示"
+  },
+  "rc": {
+    "title": "リビジョン比較",
+    "subtitle": "旧リビジョンと新リビジョンをドロップしてください。比較は自動で始まります。",
+    "drop": {
+      "a": "旧リビジョン (A)",
+      "b": "新リビジョン (B)",
+      "hint": "IFC をここにドロップ、またはタップして選択",
+      "files_other": "{{count}} ファイル",
+      "swap": "A と B を入れ替え"
+    },
+    "local": "ブラウザ内で処理：ファイルはこの端末から出ません。",
+    "localShort": "ローカル",
+    "reading": "リビジョンを読み込み中…",
+    "advanced": "週次納品・ベースライン・IDS・BCF →",
+    "back": "戻る",
+    "none": "フィルターに一致する変更はありません。",
+    "prev": "前へ",
+    "next": "次へ",
+    "frame": "フレーム",
+    "list_other": "{{count}} 件の変更",
+    "keys": "J / K 次へ · R 確認済み · S 現場に影響 · F フレーム",
+    "paused": "比較中は検証と IDS の色分けを一時停止しています。",
+    "guidRegenerated": "設計者が要素の ID を再生成しました。マークと位置で照合しています。各照合の信頼度を確認してください。",
+    "originShift": "モデル全体が {{x}}, {{y}}, {{z}} mm（東・北・上）移動しました。この移動は分類では無視します。",
+    "match": "{{method}} で照合 · {{pct}} %",
+    "method": {
+      "guid": "ID",
+      "tag": "マーク",
+      "geometry": "位置と形状",
+      "split": "分割",
+      "merge": "統合",
+      "none": "—"
+    },
+    "kind": {
+      "added": "追加",
+      "removed": "削除",
+      "moved": "移動",
+      "reshaped": "形状変更",
+      "type_changed": "タイプ変更",
+      "relations_changed": "関係変更",
+      "properties_changed": "プロパティ変更",
+      "unchanged": "変更なし"
+    },
+    "review": {
+      "pending": "未確認",
+      "reviewed": "確認済み",
+      "affects_site": "現場に影響"
+    },
+    "counter": {
+      "changes_other": "{{count}} 件の変更",
+      "reviewed_other": "{{count}} 件確認済み"
+    },
+    "view": {
+      "label": "表示",
+      "changes": "変更",
+      "curtain": "スライダー",
+      "split": "分割",
+      "blink": "切替",
+      "blinkHint": "スペースで切替"
+    },
+    "filter": {
+      "kind": "変更の種類",
+      "storey": "階",
+      "anyStorey": "すべての階",
+      "file": "分野（ファイル）",
+      "anyFile": "すべてのファイル",
+      "class": "クラス",
+      "anyClass": "すべてのクラス",
+      "review": "確認状態",
+      "anyReview": "すべての状態",
+      "marks": "マーク・名前・ID（リストを貼り付け）",
+      "toggle": "フィルター"
+    },
+    "tol": {
+      "title": "許容差",
+      "move": "移動",
+      "size": "軸ごとのサイズ",
+      "volume": "体積",
+      "apply": "再計算",
+      "close": "閉じる",
+      "took": "{{ms}} ms",
+      "hint": "読み込み済みのリビジョンから再計算します。ファイルは再読み込みしません。"
+    },
+    "table": {
+      "toggle": "変更前 / 変更後",
+      "field": "項目",
+      "before": "変更前 (A)",
+      "after": "変更後 (B)",
+      "empty": "項目ごとの詳細はありません。",
+      "added": "{{file}} に新しい要素。",
+      "removed": "{{file}} から要素がなくなりました。"
+    },
+    "field": {
+      "positionX": "位置（東西）",
+      "positionY": "位置（南北）",
+      "positionZ": "高さ位置",
+      "distance": "移動距離",
+      "sizeX": "サイズ（東西）",
+      "sizeY": "サイズ（南北）",
+      "height": "高さ",
+      "volume": "体積"
+    },
+    "export": {
+      "pdf": "PDF",
+      "xlsx": "XLSX",
+      "bcf": "BCF",
+      "pro": "Pro",
+      "working": "準備中 {{done}} / {{total}}…",
+      "failed": "エクスポートに失敗しました: {{message}}",
+      "pdfHint": "変更ごとのキャプチャ付きレポート",
+      "xlsxHint": "変更されたすべての項目の表",
+      "bcfHint": "設計者向けの課題（変更ごとに1件）"
+    },
+    "dir": {
+      "N": "北へ",
+      "NE": "北東へ",
+      "E": "東へ",
+      "SE": "南東へ",
+      "S": "南へ",
+      "SW": "南西へ",
+      "W": "西へ",
+      "NW": "北西へ",
+      "up": "上へ",
+      "down": "下へ"
+    },
+    "axis": {
+      "x": "東西",
+      "y": "南北",
+      "z": "高さ"
+    },
+    "summary": {
+      "added": "新しい{{class}}",
+      "removed": "{{class}} を削除",
+      "unchanged": "変更なし",
+      "moved_mm": "{{dir}} {{mm}} mm 移動",
+      "moved_mm_nodir": "{{mm}} mm 移動",
+      "height_mm": "高さ {{before}} → {{after}} mm",
+      "size_mm": "サイズ（{{axis}}）{{before}} → {{after}} mm",
+      "volume_m3": "体積 {{before}} → {{after}} m³（{{pct}} %）",
+      "reshaped": "形状変更",
+      "type_changed": "タイプ {{before}} → {{after}}",
+      "storey_changed": "階 {{before}} → {{after}}",
+      "file_changed": "ファイル {{after}} に移動（元 {{before}}）",
+      "relations_changed": "関係変更",
+      "property_changed": "{{key}}: {{before}} → {{after}}",
+      "properties_changed_other": "{{count}} 件のプロパティ変更",
+      "changed": "変更"
+    },
+    "tour": {
+      "title": "リビジョン比較ツアー",
+      "ui": {
+        "of": "{{title}} · {{n}} / {{total}}",
+        "skip": "スキップ",
+        "back": "戻る",
+        "next": "次へ",
+        "done": "完了"
+      },
+      "offer": "初めてですか？ 2 分のツアーで見るべき点を案内します。",
+      "start": "ツアーを開始",
+      "dismiss": "結構です",
+      "local": {
+        "title": "旧版と新版、アップロードなし",
+        "body": "A が旧リビジョン、B が新リビジョンです。どちらもこのブラウザ内で読み込まれ、ファイルがパソコンの外に出ることはありません。"
+      },
+      "list": {
+        "title": "すべての変更を影響順に",
+        "body": "移動・削除された要素が先、次に形状、最後にデータ。J / K または矢印で 1 件ずつ確認できます。"
+      },
+      "moved": {
+        "title": "何がどれだけ動いたか",
+        "body": "3D の矢印は旧位置から新位置へ向かい、文章は「西へ 120 mm 移動」のように現場の言葉で示します。"
+      },
+      "table": {
+        "title": "変更前と変更後",
+        "body": "位置・寸法・高さ・変更されたプロパティを差分付きで並べて表示。2 つのファイルを開く必要はありません。"
+      },
+      "review": {
+        "title": "確認したものに印を",
+        "body": "問題なければ「確認済み」、現場作業が変わるなら「現場に影響」。上部のカウンターが集計します。"
+      },
+      "filters": {
+        "title": "自分の階、自分の部材だけ",
+        "body": "階、分野、要素タイプ、部材番号で絞り込めます。部材番号の一覧を貼り付けると、それだけを表示します。"
+      },
+      "views": {
+        "title": "スライダー A | B",
+        "body": "モデル上の線をドラッグ：左が旧版、右が新版。同じ画面で A と B を切り替えることもできます。"
+      },
+      "export": {
+        "title": "関係者へ渡す",
+        "body": "現場向けに PDF や表計算、設計者向けに BCF ファイル。各変更に画像が付きます。"
+      },
+      "end": {
+        "title": "自分のファイルで試す",
+        "body": "◀ 戻る で 2 つのドロップ欄（旧リビジョン・新リビジョン）が開きます。ご意見もお聞かせください：「ヘルプ / フィードバック」はいつでもここにあります。"
+      }
+    },
+    "help": {
+      "button": "ヘルプ / フィードバック",
+      "feedback": "フィードバックを送る",
+      "tour": "ツアーをもう一度"
+    },
+    "demo": {
+      "loading": "サンプルのリビジョンを読み込み中…",
+      "failed": "サンプルのリビジョンを読み込めませんでした：{{message}}"
+    },
+    "cls": {
+      "wall": "壁",
+      "slab": "スラブ",
+      "column": "柱",
+      "beam": "梁",
+      "door": "ドア",
+      "window": "窓",
+      "stair": "階段",
+      "stair_flight": "階段の段部",
+      "roof": "屋根",
+      "member": "部材",
+      "plate": "プレート",
+      "covering": "仕上げ",
+      "railing": "手すり",
+      "curtain_wall": "カーテンウォール",
+      "footing": "基礎",
+      "pile": "杭",
+      "space": "空間",
+      "opening": "開口",
+      "furniture": "家具",
+      "building_element_proxy": "要素",
+      "pipe_segment": "配管",
+      "duct_segment": "ダクト",
+      "flow_segment": "ダクト・配管",
+      "flow_terminal": "端末",
+      "flow_fitting": "継手",
+      "rebar": "鉄筋"
+    },
+    "close": {
+      "title": "比較を閉じる",
+      "body": "2つのリビジョンは3Dビューに読み込まれたままです。どれを残しますか？",
+      "removeBoth": "A と B をシーンから削除",
+      "removeA": "A（旧リビジョン）のみ削除",
+      "keep": "両方をシーンに残す",
+      "cancel": "キャンセル"
+    }
   }
 }

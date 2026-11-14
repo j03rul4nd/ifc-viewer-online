@@ -15,7 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "runner:local": "node scripts/local-runner/build.mjs && node scripts/local-runner/dist/runner.mjs",
-    "test:paid-local": "node scripts/local-runner/build.mjs && vitest run --no-file-parallelism src/lib/cloud/paid-local.integration.test.ts src/lib/cloud/paid-local-2.integration.test.ts src/lib/cloud/paid-local-3.integration.test.ts src/lib/cloud/paid-local-4.integration.test.ts src/lib/cloud/paid-local-5.integration.test.ts",
+    "test:paid-local": "node scripts/local-runner/build.mjs && vitest run --no-file-parallelism src/lib/cloud/paid-local.integration.test.ts src/lib/cloud/paid-local-2.integration.test.ts src/lib/cloud/paid-local-3.integration.test.ts src/lib/cloud/paid-local-4.integration.test.ts src/lib/cloud/paid-local-5.integration.test.ts src/lib/cloud/paid-local-6.integration.test.ts src/lib/cloud/paid-local-7.integration.test.ts src/lib/cloud/paid-local-8.integration.test.ts",
     "theme:colour-baseline": "node scripts/colour-guard.mjs --write",
     "test:flood-gpu": "node scripts/flood/gpu-suite.mjs",
     "ebook": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/ebook/build-ebook.mjs",
@@ -48,7 +48,8 @@
     "seo:chrome": "tsx scripts/seo/landing-chrome.ts",
     "seo:core": "tsx scripts/seo/generate-core-landings.ts",
     "bench:map": "node scripts/geo/map-bench.mjs",
-    "seo:solutions": "tsx scripts/seo/generate-solution-landings.ts"
+    "seo:solutions": "tsx scripts/seo/generate-solution-landings.ts",
+    "seo:help": "tsx scripts/seo/generate-help-pages.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",

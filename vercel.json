@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build && find dist/models -mindepth 1 -maxdepth 1 ! -name video-demo -exec rm -rf {} +",
   "outputDirectory": "dist",
+  "git": { "deploymentEnabled": false },
   "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "redirects": [
     { "source": "/models/:path((?!video-demo/).*)", "destination": "https://ifc-viewer-models.joelbenitezdonari.workers.dev/models/:path", "permanent": false },

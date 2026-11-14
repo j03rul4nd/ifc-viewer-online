@@ -22,8 +22,12 @@ import {
 import { appendEntry, buildChain, draftsFrom, type RegisterEntry } from './register'
 import DeliveryReview, { type Decision } from './DeliveryReview'
 import { SupplierCard, InviteDialog } from './SupplierCard'
+import { InvitationDialog, Onboarding, invitationText } from './Onboarding'
+import { originatorOf } from './live'
+import { download, exportBaseName, exportZip } from './export'
+import { helpPath } from '../../../../lib/help-paths'
 import RegisterTab from './RegisterTab'
-import ProjectTab, { NewProjectDialog } from './ProjectTab'
+import ProjectTab, { NewProjectDialog, type ProjectLifecycle } from './ProjectTab'
 import SupplierView from './SupplierView'
 import OverviewTab from './OverviewTab'
 import { deliveryFromApi, projectsFromApi, suppliersFromApi } from './live'
@@ -41,7 +45,7 @@ export const FILTER_LABELS = FILTERS.map((f) => f[1])
 type Open = { kind: 'delivery'; id: string } | { kind: 'supplier'; id: string } | { kind: 'invite' } | { kind: 'new-project' } | { kind: 'report' } | null
 
 
-export default function ReceptionWorkspace(_: SectionProps) {
+export default function ReceptionWorkspace({ actions }: SectionProps) {
   const { rx, lang } = useRx()
   const plan = planDef('reception')
   const [tab, setTab] = useSubTab('reception', TABS)
@@ -57,6 +61,10 @@ export default function ReceptionWorkspace(_: SectionProps) {
   const [filter, setFilter] = useState<Filter>('pending')
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [invited, setInvited] = useState<{ supplier: string; link: string; text: string } | null>(null)
+  // The caller's role decides who may delete a project (Owner/Admin); the server checks it again.
+  const [role, setRole] = useState<string | null>(null)
+  useEffect(() => { if (live) void paidApi.me().then((r) => { if (r.ok) setRole(r.value.role) }) }, [live])
 
   // Workspace (local / cloud): projects and suppliers come from the server too,
   // so every tab reads the same real data. The preview keeps the sample.
@@ -76,6 +84,8 @@ export default function ReceptionWorkspace(_: SectionProps) {
     })
     return () => { alive = false }
   }, [live, liveTick, api.data]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Workspace with no project yet: nothing sample is shown, only the first step.
+  const noProject = live && projects.length === 0
   const project = projects.find((p) => p.id === projectId) ?? projects[0] ?? SAMPLE_PROJECTS[0]
   const deliveries = live ? api.data.deliveries.map(deliveryFromApi) : sampleDeliveries
   const pSuppliers = useMemo(() => suppliers.filter((s) => s.projectId === project.id), [suppliers, project.id])
@@ -128,9 +138,9 @@ export default function ReceptionWorkspace(_: SectionProps) {
       token = r.value.token
       setOpen(null); reloadLive()
       // The link carries the token and this project; the page shows only the projects it may deliver to.
-      setNotice(project.slug
-        ? rx('{{name}} invited. Their upload link, shown only once: {{link}}', { name: s.name, link: supplierUploadUrl(window.location.origin, token, project.slug) })
-        : rx('{{name}} invited. Their upload token, shown only once: {{token}}', { name: s.name, token }))
+      // While no e-mail is sent for real, the receiver copies a ready message (shown once).
+      const link = supplierUploadUrl(window.location.origin, token, project.slug ?? '')
+      setInvited({ supplier: s.name, link, text: invitationText(rx, { supplier: s.contact || s.name, project: project.name, company: project.client || rx('Your company'), link, minScore: project.minScore, code: `${project.code}-${originatorOf(s.name)}` }) })
       return
     }
     const id = `${s.originator.toLowerCase()}-${Date.now().toString(36)}`
@@ -141,6 +151,41 @@ export default function ReceptionWorkspace(_: SectionProps) {
     setNotice(token
       ? rx('{{name}} invited. Their upload token, shown only once: {{token}}', { name: s.name, token })
       : rx('{{name}} invited with their own upload link. In this preview no e-mail is sent.', { name: s.name }))
+  }
+
+  /** A leaked link: a new one, the old one dead at once. Leaving the project: the link is dead for good. */
+  async function supplierAccess(s: RxSupplier, action: 'rotate' | 'revoke') {
+    if (action === 'rotate') {
+      const r = await paidApi.rotateSupplier(s.id)
+      if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+      setOpen(null); reloadLive()
+      setNotice(rx('{{name}}: the old link stopped working. New upload link, shown only once: {{link}}', { name: s.name, link: supplierUploadUrl(window.location.origin, r.value.token, project.slug ?? '') }))
+      return
+    }
+    const r = await paidApi.revokeSupplier(s.id)
+    if (!r.ok) { setNotice(rx('Could not save: {{error}}. Nothing changed.', { error: r.error.code })); return }
+    setOpen(null); reloadLive()
+    setNotice(rx('{{name}} can no longer deliver. Their past deliveries stay on the register.', { name: s.name }))
+  }
+
+  // Export everything of the project (ZIP with JSON + CSV, or JSON), or delete it for good (Owner/Admin).
+  const lifecycle: ProjectLifecycle = {
+    canDelete: role === 'owner' || role === 'admin',
+    async onExport(format) {
+      const r = await paidApi.exportProject(project.id)
+      if (!r.ok) return rx('Could not export: {{error}}.', { error: r.error.code })
+      const base = exportBaseName(r.value)
+      if (format === 'json') download(`${base}.json`, JSON.stringify(r.value, null, 2), 'application/json')
+      else download(`${base}.zip`, exportZip(r.value, rx('Export of the project {{name}} ({{date}}). project.json has everything; the CSV files open in a spreadsheet. deliveries.csv keeps the automatic verdict and the person’s review apart.', { name: r.value.project.name, date: r.value.exported_at.slice(0, 10) })), 'application/zip')
+      return rx('Exported: {{n}} deliveries, {{m}} register entries, {{k}} issues.', { n: r.value.deliveries.length, m: r.value.register.length, k: r.value.issues.length })
+    },
+    async onDelete(confirm) {
+      const r = await paidApi.deleteProject(project.id, confirm)
+      if (!r.ok) return rx('Could not delete: {{error}}. Nothing changed.', { error: r.error.code })
+      setTab('overview'); reloadLive()
+      setNotice(rx('Project {{name}} deleted: {{n}} deliveries and {{f}} files removed.', { name: r.value.project, n: r.value.deliveries, f: r.value.files_deleted }))
+      return null
+    },
   }
 
   async function saveProject(p: RxProject) {
@@ -203,11 +248,20 @@ export default function ReceptionWorkspace(_: SectionProps) {
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <Quiet onClick={() => setOpen({ kind: 'new-project' })}>{rx('New project')}</Quiet>
+          <a className="text-[12.5px] text-[var(--text-dim)] underline self-center" href={helpPath(null, lang)} target="_blank" rel="noopener">{rx('Help')}</a>
         </>} />
       <SoonBanner section="reception" source={api.source} error={api.error} />
       {error && <Banner tone="danger" title={rx('The decision was not saved')}>{error}</Banner>}
       {notice && <Banner tone="ok" title={rx('Done')} action={<Quiet onClick={() => setNotice(null)}>{rx('Dismiss')}</Quiet>}>{notice}</Banner>}
 
+      {live && <Onboarding rx={rx} project={noProject ? null : project} tick={liveTick}
+        onCreateProject={() => setOpen({ kind: 'new-project' })} onRequirements={() => setTab('project')}
+        onInvite={() => setOpen({ kind: 'invite' })} onConnect={() => actions.go('integrations')} onDelivered={() => { setTab('inbox'); setFilter('all'); setTimeout(reloadLive, 4000) }} />}
+
+      {noProject ? (
+        <Empty title={rx('Start with a project')} body={rx('A project is one site or one contract: its suppliers deliver against its requirements and its register keeps every decision. Create it first; you can change everything later.')}
+          action={<Primary onClick={() => setOpen({ kind: 'new-project' })}>{rx('Create the project')}</Primary>} />
+      ) : <>
       <Tabs label={rx('Reception')} tabs={TABS.map((t) => ({ ...t, label: rx(t.label), count: t.id === 'inbox' ? pending.length : t.id === 'suppliers' ? pSuppliers.length : undefined }))} value={tab} onChange={setTab} />
 
       {tab === 'overview' && (pSuppliers.length === 0
@@ -243,7 +297,9 @@ export default function ReceptionWorkspace(_: SectionProps) {
             })}
           </div>
           {shown.length === 0 ? (
-            <Empty title={filter === 'pending' ? rx('Nothing to review') : rx('No deliveries here')} body={filter === 'pending' ? rx('Every delivery has a decision. New ones arrive here already checked.') : rx('Try another filter.')} />
+            pDeliveries.length === 0
+              ? <Empty title={rx('No deliveries yet')} body={rx('Deliveries arrive here already checked against your requirements. Send each supplier their link, or try it yourself with a test delivery from the getting-started list.')} />
+              : <Empty title={filter === 'pending' ? rx('Nothing to review') : rx('No deliveries here')} body={filter === 'pending' ? rx('Every delivery has a decision. New ones arrive here already checked.') : rx('Try another filter.')} />
           ) : (
             <DataList rows={shown} rowKey={(d) => d.id} primaryHeader={rx('Delivery')}
               primary={(d) => <><button onClick={() => setOpen({ kind: 'delivery', id: d.id })} className="font-medium font-mono text-[12.5px] text-left hover:underline [overflow-wrap:anywhere]">{d.fileName}</button>
@@ -273,6 +329,7 @@ export default function ReceptionWorkspace(_: SectionProps) {
                 <p className="text-[11.5px] text-[var(--text-faint)]">{rx(s.discipline)} · <span className="font-mono">{s.originator}</span></p></>}
               columns={[
                 { key: 'state', header: rx('Status'), cell: ({ s, st }) => s.state === 'bounced' ? <span className="text-[12px] text-[var(--danger)]">{rx('E-mail bounced')}</span>
+                  : s.state === 'revoked' ? <span className="text-[12px] text-[var(--text-dim)]">{rx('Access revoked')}</span>
                   : s.state === 'invited' ? <span className="text-[12px] text-[var(--text-dim)]">{rx('Invited')}</span>
                   : st.daysLate > 0 ? <span className="text-[12px] text-[var(--warn)]">{rx('{{n}} days late', { n: st.daysLate })}</span>
                   : <span className="text-[12px] text-[var(--ok)]">{rx('On time')}</span> },
@@ -285,14 +342,17 @@ export default function ReceptionWorkspace(_: SectionProps) {
       )}
 
       {tab === 'register' && <RegisterTab project={project} chain={chain} supplierName={supplierName} rx={rx} lang={lang} />}
-      {tab === 'project' && <ProjectTab key={project.id} project={project} rx={rx} codes={projects.map((p) => p.code)} onSave={(p) => void saveProject(p)} />}
+      {tab === 'project' && <ProjectTab key={project.id} project={project} rx={rx} codes={projects.map((p) => p.code)} onSave={(p) => void saveProject(p)} life={live ? lifecycle : undefined} />}
       {tab === 'supplier-view' && (pSuppliers[0]
         ? <SupplierView project={project} supplier={pSuppliers.find((s) => s.id === 'ins') ?? pSuppliers[0]} rx={rx} lang={lang} />
         : <Empty title={rx('No suppliers in this project yet')} body={rx('Invite one to see the page they get.')} />)}
 
+      </>}
+
+      {invited && <InvitationDialog rx={rx} supplier={invited.supplier} link={invited.link} text={invited.text} onClose={() => setInvited(null)} />}
       {openDelivery && <DeliveryReview key={openDelivery.id} deliveries={pDeliveries} queue={queue} project={project} delivery={openDelivery} supplier={suppliers.find((s) => s.id === openDelivery.supplierId)} entries={entriesFor(openDelivery)} rx={rx} lang={lang} onDecide={(d, dec) => void decide(d, dec)} onClose={() => setOpen(null)} />}
-      {openSupplier && <SupplierCard project={project} supplier={openSupplier} deliveries={pDeliveries} rx={rx} lang={lang} onOpenDelivery={(id) => setOpen({ kind: 'delivery', id })} onClose={() => setOpen(null)} />}
-      {open?.kind === 'invite' && <InviteDialog project={project} taken={pSuppliers.map((s) => s.originator)} rx={rx} onInvite={(s) => void invite(s)} onClose={() => setOpen(null)} />}
+      {openSupplier && <SupplierCard project={project} supplier={openSupplier} deliveries={pDeliveries} rx={rx} lang={lang} onAccess={live ? (a) => supplierAccess(openSupplier, a) : undefined} onOpenDelivery={(id) => setOpen({ kind: 'delivery', id })} onClose={() => setOpen(null)} />}
+      {open?.kind === 'invite' && <InviteDialog live={live} project={project} taken={pSuppliers.map((s) => s.originator)} rx={rx} onInvite={(s) => void invite(s)} onClose={() => setOpen(null)} />}
       {open?.kind === 'report' && <ReportDialog project={project} suppliers={pSuppliers} deliveries={pDeliveries} rx={rx} lang={lang} onClose={() => setOpen(null)} />}
       {open?.kind === 'new-project' && <NewProjectDialog rx={rx} codes={projects.map((p) => p.code)} onCreate={(d) => void createProject(d)} onClose={() => setOpen(null)} />}
     </>

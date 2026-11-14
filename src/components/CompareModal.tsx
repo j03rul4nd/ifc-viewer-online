@@ -23,8 +23,28 @@ import BcfTab from './compare/BcfTab'
 import HistoryTab from './compare/HistoryTab'
 import CompareDock from './compare/CompareDock'
 import { Button, Check, Hint, stamp } from './compare/ui'
+import RevisionDrop from './compare/RevisionDrop'
+import RevisionWorkspace from './compare/RevisionWorkspace'
+import { runRevision, useRevisionStore } from './compare/revisionStore'
+import { submitIfcFiles } from '../lib/loading'
+import { fetchDemoPair, readCompareParams, stripTourParam } from '../lib/compare/demo'
+import { trackRcOpened } from '../lib/analytics'
+import { getStoredEntrySource } from '../lib/attribution'
+import { startRevisionTour } from './compare/RevisionHelp'
+
+/** Load one revision into the scene through the LoadManager: fileName → model id. */
+async function loadRevisionIntoScene(files: File[], side: 'a' | 'b'): Promise<Record<string, string>> {
+  const handles = submitIfcFiles(files, { origin: 'upload', frame: side === 'b', batchName: `${side.toUpperCase()} · ${files.length === 1 ? files[0].name : files.length}` })
+  const out: Record<string, string> = {}
+  const done = await Promise.all(handles.map((h) => h.settled))
+  done.forEach((o, i) => { if (o.status === 'loaded') out[files[i].name] = o.resultId })
+  return out
+}
 
 type Tab = 'changes' | 'ids' | 'bcf' | 'history'
+
+/** The link (`?compare…`) is read once per page load, not once per effect run (StrictMode runs it twice). */
+let linkRead = false
 
 function weekLabel(d = new Date()): string {
   // ISO week number — how departments name their weekly deliveries.
@@ -36,16 +56,58 @@ function weekLabel(d = new Date()): string {
   return `${x.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
 }
 
-export default function CompareModal({ onClose, viewerApiRef }: {
+export default function CompareModal({ onClose, viewerApiRef, entry = 'ui', revisionEnabled = true, onRemoveModels }: {
   onClose: () => void
+  /** Removes scene models through the app (stores, registry, viewer): offered when revision compare closes. */
+  onRemoveModels?: (modelIds: string[]) => Promise<void>
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
+  /** 'link' = opened by `/?compare…` on page load (the demo link reads its params). */
+  entry?: 'ui' | 'link'
+  /** PostHog flag `revision-compare`; false hides the new comparator from the general entry only. */
+  revisionEnabled?: boolean
 }) {
   const { t } = useTranslation('compare')
   const store = useCompareStore()
   const { base, head, diff, busy, progress, error, ids } = store
   const models = useSceneStore((s) => s.models)
   const [tab, setTab] = useState<Tab>('changes')
+  // Revision compare (drop A, drop B) is the default; the weekly-delivery tools
+  // (baselines, IDS across versions, BCF) stay one click away.
+  const [mode, setMode] = useState<'revision' | 'advanced'>(() => (
+    entry === 'ui' && (!revisionEnabled || useCompareStore.getState().diff) ? 'advanced' : 'revision'
+  ))
+  const rcPhase = useRevisionStore((s) => s.phase)
+  const rcDiff = useRevisionStore((s) => s.diff)
   const [geometry, setGeometry] = useState(true)
+
+  // Opening: which door (demo link, other link, the app's own button), and the
+  // demo pair + tour when the link asks for them. Once per mount.
+  const pendingTour = React.useRef(false)
+  useEffect(() => {
+    if (entry === 'link' && linkRead) return
+    if (entry === 'link') linkRead = true
+    const p = readCompareParams(window.location.search)
+    const ref = getStoredEntrySource()?.source
+    const demo = entry === 'link' && p.demo
+    trackRcOpened({ source: demo ? 'demo' : entry === 'link' ? 'link' : 'own', ref })
+    if (!demo) return
+    pendingTour.current = p.tour
+    stripTourParam()
+    const rs = useRevisionStore.getState()
+    if (rs.source === 'demo' && rs.diff) { if (p.tour) startRevisionTour(); return }
+    rs.setSource('demo')
+    rs.setPhase('reading')
+    fetchDemoPair().then(({ a, b }) => {
+      const s = useRevisionStore.getState()
+      s.setSide('a', { files: a }); s.setSide('b', { files: b })
+      return runRevision(loadRevisionIntoScene)
+    }).catch((err) => {
+      useRevisionStore.getState().setPhase('error', err instanceof Error ? err.message : String(err))
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (rcPhase === 'ready' && rcDiff && pendingTour.current) { pendingTour.current = false; startRevisionTour() }
+  }, [rcPhase, rcDiff])
   const [baselines, setBaselines] = useState<BaselineSummary[]>([])
   // Once there is a result the pickers fold into one summary line, so on a phone
   // the results are what fills the screen, not the setup.
@@ -122,6 +184,19 @@ export default function CompareModal({ onClose, viewerApiRef }: {
   const tabs: Tab[] = ['changes', 'ids', 'bcf', 'history']
   const docked = useCompareStore((x) => x.docked)
   const ready = base.snapshots.length > 0 && head.snapshots.length > 0
+
+  if (mode === 'revision' && rcPhase === 'ready' && rcDiff) {
+    return <RevisionWorkspace viewerApiRef={viewerApiRef} onClose={onClose} onRemoveModels={onRemoveModels} onBack={() => useRevisionStore.getState().setPhase('idle')} />
+  }
+  if (mode === 'revision') {
+    return (
+      <Modal open onClose={onClose} title={t('rc.title')} description={t('rc.subtitle')} size="full" className="max-sm:!w-screen max-sm:!h-[100dvh] max-sm:!rounded-none">
+        <div className="p-3 sm:p-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+          <RevisionDrop onStart={() => void runRevision(loadRevisionIntoScene)} onAdvanced={() => setMode('advanced')} />
+        </div>
+      </Modal>
+    )
+  }
 
   if (docked) return <CompareDock viewerApiRef={viewerApiRef} onClose={onClose} />
 
