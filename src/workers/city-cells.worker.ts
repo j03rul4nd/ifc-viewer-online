@@ -18,7 +18,7 @@ import {
   FAR_TOLERANCE_M, FAR_MIN_AREA_M2, type CellLod, type Pt,
 } from '../lib/geo/city-cells'
 import {
-  cellLook, tileHeightPrior, seedTrees, LANDMARK_HEIGHT_M,
+  cellLook, tileHeightPrior, seedTrees, LANDMARK_HEIGHT_M, LANDMARK_FULL_RING_M,
 } from '../lib/geo/city-cells-look'
 
 export interface CellRequest {
@@ -193,9 +193,11 @@ async function build(req: CellRequest): Promise<void> {
       if (ex && b.x0 < ex.x1 && b.x1 > ex.x0 && b.y0 < ex.y1 && b.y1 > ex.y0) continue
       let outer = b.outer
       let holes = b.holes
-      // A landmark is what the far city is recognised by: kept whole.
-      if (req.lod === 'far' && b.heightM < LANDMARK_HEIGHT_M) {
-        if ((Math.abs(ringArea2(outer)) / 2) * metresPerUnit * metresPerUnit < FAR_MIN_AREA_M2) continue
+      // A landmark is what the far city is recognised by: never dropped for
+      // its area, and a tower keeps its whole outline (city-cells-look).
+      if (req.lod === 'far' && b.heightM < LANDMARK_FULL_RING_M) {
+        if (b.heightM < LANDMARK_HEIGHT_M
+          && (Math.abs(ringArea2(outer)) / 2) * metresPerUnit * metresPerUnit < FAR_MIN_AREA_M2) continue
         const simple = simplifyRing(outer, FAR_TOLERANCE_M / metresPerUnit)
         if (!simple) continue
         outer = simple

@@ -371,8 +371,11 @@ the cell manager on top of the same `buildBuildingsGeometry`:
   Barcelona it becomes the barri's storeys (`fabricHeightM`), elsewhere the
   tile's median measured height ± one storey; never above 35 m
   (`MAX_ASSUMED_HEIGHT_M`).
-- **Landmarks.** At `far`, a building of 30 m or more skips the 80 m² filter and
-  the 3 m simplification: Torre Glòries keeps its round outline at 4 km.
+- **Landmarks.** At `far`, a building of 30 m or more skips the 80 m² filter,
+  and one of 45 m or more also skips the 3 m simplification: Torre Glòries
+  keeps its round outline at 4 km. Not from 30 m: OpenMapTiles groups the
+  Eixample's blocks at about 30 m, and keeping those whole cost +45 % vertices
+  at `far` (8 481 polygons in six tiles around Catalunya; 263 from 45 m).
   Hand-modelled landmarks are still drawn by the district only.
 - **Slopes.** Each building samples the ground at up to 12 base vertices; the
   body stands on the highest sample and the skirt goes down to the lowest (or

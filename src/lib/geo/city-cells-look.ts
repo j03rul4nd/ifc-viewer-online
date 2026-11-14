@@ -9,7 +9,8 @@
 // - Heights: 5 m or less is OpenMapTiles' default, not a measurement. It gets
 //   the barri's storey count (Barcelona) or the tile's median measured height,
 //   capped at the 35 m a guess may never exceed (#502).
-// - Landmarks: a tall building is kept whole at the far level.
+// - Landmarks: a tall building is never dropped at the far level, and a
+//   tower keeps its whole outline.
 // - Seating: on a slope the body stands on the HIGHEST ground under it and its
 //   skirt reaches down to the LOWEST — nothing floats, nothing is buried.
 // - Greenery: cheap canopies seeded inside the tile's parks and woods.
@@ -22,8 +23,17 @@ import type { Pt } from './city-cells'
 
 /** At or below this, OpenMapTiles' `render_height` is its default, not data. */
 export const OMT_DEFAULT_HEIGHT_M = 5
-/** A building this tall is a landmark: never dropped, never simplified, far. */
+/** A building this tall is never dropped for its area at the far level. */
 export const LANDMARK_HEIGHT_M = 30
+/**
+ * ...and from this height it also keeps its whole outline. Not 30 m: in
+ * OpenMapTiles Barcelona's Eixample blocks come grouped at about 30 m, and
+ * keeping those whole was measured at 8 481 polygons and +71 000 vertices over
+ * six z14 tiles around Catalunya (+45 % of the far level), which the byte
+ * budget then took back as reach. From 45 m it is 263 polygons, +1 600 vertices:
+ * the actual towers (Torre Glòries, Hotel Arts, Mapfre, the Diagonal ones).
+ */
+export const LANDMARK_FULL_RING_M = 45
 
 const hex = (c: RGB): string =>
   '#' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')).join('')
