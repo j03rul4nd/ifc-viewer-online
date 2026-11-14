@@ -169,7 +169,7 @@ import { useMeshStore } from './stores/meshStore'
 import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
 import { useClashStore } from './stores/clashStore'
 import { useSteelStore } from './stores/steelStore'
-import { readSteelDemoParams, stripSteelTourParam } from './lib/steel/demo'
+import { bootSteelDemo } from './lib/steel/demo'
 import { useDrawingStore } from './stores/drawingStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
@@ -2123,12 +2123,7 @@ export default function App() {
   // `?steel=demo` (lib/steel/demo): the hall loads as a deep-linked model
   // (url-params); here the panel opens, calculates and, with `tour=steel`,
   // starts the tour once. The tour param is dropped so a reload does not replay it.
-  useEffect(() => {
-    const p = readSteelDemoParams(window.location.search)
-    if (!p.demo) return
-    useSteelStore.getState().startDemo(p.tour)
-    stripSteelTourParam()
-  }, [])
+  useEffect(() => { bootSteelDemo((tour) => useSteelStore.getState().startDemo(tour)) }, [])
   const steelPanelOpen = useSteelStore((s) => s.open)
   const drawingsOpen = useDrawingStore((s) => s.panelOpen) && !clientMode && (!embedChrome.embed || drawingsLink)
   const [drawingsWidth, setDrawingsWidth] = useState(() => Math.round((typeof window === 'undefined' ? 1200 : window.innerWidth) * 0.5))

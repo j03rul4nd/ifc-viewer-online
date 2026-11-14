@@ -5,11 +5,29 @@
 // Esc to leave. The page underneath is not clickable while the tour runs —
 // a tour explains, it doesn't act.
 
+import type React from 'react'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { placeCard, type Placement, type Rect, type TourStep } from '../../lib/workspace-tours/tours'
 import { useTx, type Tx } from './i18n'
 
 const PAD = 6
+
+const sameRect = (a: Rect | null, b: Rect | null): boolean =>
+  a === b || (!!a && !!b && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5)
+const samePlace = (a: Placement, b: Placement): boolean =>
+  a.mode === b.mode && (a.mode === 'docked' || (b.mode === 'float' && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5 && a.side === b.side))
+
+/** Click shields covering everything but `r`. */
+function shieldsAround(r: Rect): React.CSSProperties[] {
+  const bottom = r.top + r.height
+  const right = r.left + r.width
+  return [
+    { top: 0, left: 0, right: 0, height: Math.max(0, r.top) },
+    { top: bottom, left: 0, right: 0, bottom: 0 },
+    { top: r.top, left: 0, width: Math.max(0, r.left), height: r.height },
+    { top: r.top, left: right, right: 0, height: r.height },
+  ]
+}
 
 function findTarget(id?: string): HTMLElement | null {
   if (!id) return null
@@ -59,9 +77,10 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
     const el = findTarget(step?.target)
     const r = el?.getBoundingClientRect()
     const tr = r ? { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 } : null
-    setRect(tr)
+    setRect((old) => (sameRect(old, tr) ? old : tr))
     const c = card.current?.getBoundingClientRect()
-    setPlace(placeCard(tr, { width: c?.width ?? 340, height: c?.height ?? 180 }, { width: innerWidth, height: innerHeight }))
+    const p = placeCard(tr, { width: c?.width ?? 340, height: c?.height ?? 180 }, { width: innerWidth, height: innerHeight })
+    setPlace((old) => (samePlace(old, p) ? old : p))
   }, [step])
 
   // Bring the target into view, then measure once it has settled.
@@ -70,7 +89,11 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
     // Phones dock the card at the bottom, so the target goes to the top half.
     el?.scrollIntoView?.({ block: innerWidth < 640 ? 'start' : 'center', behavior: 'auto' })
     measure()
-    const raf = requestAnimationFrame(measure)
+    // Keep following the target: a panel that opens or slides (Properties,
+    // a sheet settling) moves it without any resize or scroll event.
+    let raf = 0
+    const loop = (): void => { measure(); raf = requestAnimationFrame(loop) }
+    raf = requestAnimationFrame(loop)
     next.current?.focus()
     return () => cancelAnimationFrame(raf)
   }, [step, measure])
@@ -83,10 +106,23 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
 
   useEffect(() => { if (step) onStep?.(i, step) }, [i, step]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // An interactive step moves on once its target was clicked.
+  const goRef = useRef<(d: number) => void>(() => {})
+  useEffect(() => {
+    if (!step?.interactive) return
+    const el = findTarget(step.target)
+    if (!el) return
+    let t = 0
+    const onClick = (): void => { t = window.setTimeout(() => goRef.current(1), 400) }
+    el.addEventListener('click', onClick)
+    return () => { el.removeEventListener('click', onClick); window.clearTimeout(t) }
+  }, [step])
+
   const go = useCallback((d: number) => {
     if (d > 0 && last) return onClose(true)
     setI((x) => Math.max(0, Math.min(live.length - 1, x + d)))
   }, [last, live.length, onClose])
+  goRef.current = go
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -100,19 +136,26 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
 
   if (!step) { queueMicrotask(() => onClose(false)); return null }
 
+  // Phone: a target in the lower half (a bottom sheet) gets the card on top.
+  const dockTop = place.mode === 'docked' && !!rect && rect.top + rect.height / 2 > innerHeight / 2
   const floatStyle = place.mode === 'float' ? { top: place.top, left: place.left } : undefined
   return (
     <div className="fixed inset-0" style={{ zIndex }} aria-live="polite">
       {/* Click shield + dim. With a target, the dim is the spotlight's shadow instead. */}
-      <div className="absolute inset-0" style={{ background: rect ? 'transparent' : 'color-mix(in srgb, var(--scrim) 55%, transparent)' }} onClick={(e) => e.stopPropagation()} />
+      {rect && step.interactive ? (
+        // Four shields around the target: the click it asks for goes through.
+        shieldsAround(rect).map((st, k) => <div key={k} className="absolute" style={st} onClick={(e) => e.stopPropagation()} />)
+      ) : (
+        <div className="absolute inset-0" style={{ background: rect ? 'transparent' : 'color-mix(in srgb, var(--scrim) 55%, transparent)' }} onClick={(e) => e.stopPropagation()} />
+      )}
       {rect && (
         <div aria-hidden className="absolute rounded-[10px] pointer-events-none transition-[top,left,width,height] duration-200 motion-reduce:transition-none"
           style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height, boxShadow: '0 0 0 9999px color-mix(in srgb, var(--scrim) 55%, transparent), 0 0 0 2px var(--accent)' }} />
       )}
       <div ref={card} role="dialog" aria-modal="true" aria-labelledby={titleId}
         className={place.mode === 'docked'
-          ? 'absolute inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-[14px]'
-          : 'absolute w-[340px] rounded-[12px]'}
+          ? (dockTop ? 'absolute inset-x-3 top-[max(12px,env(safe-area-inset-top))] rounded-[14px]' : 'absolute inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-[14px]')
+          : 'absolute w-[340px] max-w-[calc(100vw-32px)] rounded-[12px]'}
         style={floatStyle}>
         <div className="border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-2xl rounded-[inherit] p-4">
           <p className="text-[11px] text-[var(--text-faint)] tabular-nums">{tx('{{title}} · {{n}} of {{total}}', { title: tx(title), n: i + 1, total: live.length })}</p>

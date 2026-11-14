@@ -30,3 +30,23 @@ export function stripSteelTourParam(): void {
     window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
   } catch { /* no history: harmless */ }
 }
+
+let booted = false
+
+/**
+ * Start the demo from the page's own URL, once per page load. Idempotent:
+ * StrictMode runs effects twice, and the second run would read the URL with
+ * `tour` already stripped. `tour` is dropped only after the demo has started.
+ */
+export function bootSteelDemo(start: (tour: boolean) => void, search: string = window.location.search): boolean {
+  if (booted) return false
+  const p = readSteelDemoParams(search)
+  if (!p.demo) return false
+  booted = true
+  start(p.tour)
+  stripSteelTourParam()
+  return true
+}
+
+/** Tests only. */
+export function resetSteelDemoBoot(): void { booted = false }

@@ -37,9 +37,28 @@ export default function SteelTakeoffPanel({ viewerApiRef, onRowAction }: Props) 
   // Closing unmounts the workspace (App renders the panel only while open):
   // its cleanup aborts the run and restores the view if it isolated anything.
   const close = useCallback(() => setOpen(false), [setOpen])
+  // Phone: the bottom sheet covers the lower part of the canvas, so the view's
+  // centre moves into what is left (ViewerAPI bottom inset) and an untouched
+  // framing is redone there. Desktop panels float to the side: nothing to do.
+  const headRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open || !window.matchMedia('(max-width: 767px)').matches) return
+    let last = -1
+    const tick = (): void => {
+      const sheet = headRef.current?.closest<HTMLElement>('[role="dialog"]')
+      const top = sheet?.getBoundingClientRect().top
+      const inset = top === undefined ? 0 : Math.max(0, Math.round(window.innerHeight - top))
+      if (Math.abs(inset - last) < 8) return
+      last = inset
+      viewerApiRef.current?.setViewportInsets({ bottom: inset })
+    }
+    tick()
+    const id = window.setInterval(tick, 250)
+    return () => { window.clearInterval(id); viewerApiRef.current?.setViewportInsets({ bottom: 0 }) }
+  }, [open, viewerApiRef])
   return (
     <ViewportPanel id="steel-takeoff" open={open} onClose={close} label={t('title')} mobile="sheet" widthPx={520} maxHeight="calc(100dvh - 120px)">
-      <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-[var(--border)] flex items-start gap-2">
+      <div ref={headRef} className="shrink-0 px-3 pt-2.5 pb-2 border-b border-[var(--border)] flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="text-[12.5px] font-semibold text-[var(--text)] flex items-center gap-1.5">
             {t('title')}
@@ -116,6 +135,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
       setParts(parts)
       setRows(steelRows(parts))
       setNoGeometry(missing)
+      if (useSteelStore.getState().autoRun) useSteelStore.getState().consumeAutoRun()
     } catch (e) {
       if (mine() && !(e instanceof DOMException && e.name === 'AbortError')) setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -155,7 +175,8 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
       if (stopped) return
       const viewer = viewerApiRef.current
       if (viewer && models.every((m) => viewer.getFragmentsModel(m.id))) {
-        useSteelStore.getState().consumeAutoRun()
+        // Consumed only once a run finishes (in run): StrictMode's unmount
+        // aborts the first one and the remount must start it again.
         void run()
         return
       }
