@@ -35,6 +35,15 @@ describe('district blocks', () => {
     expect(doubledBuildings([...merged, sq('z', 41.3874, 2.16964)])).toBe(1)
   })
 
+  it('a building across the block edge, centred in no live box, is still the block\'s', () => {
+    const anchorBox = boxAround(41.3874, 2.16964, 700)
+    const b = blockOf(41.4036, 2.1744)
+    const box = blockBounds(b)
+    const across = sq('edge', (box.north + box.south) / 2, box.east - 0.0001, 0.0004)
+    const merged = mergeDistrict([], anchorBox, [{ id: b, features: [across] }])
+    expect(merged.map((f) => f.id)).toEqual(['edge'])
+  })
+
   it('fetches only after resting 1.5 s, near the ground, off live ground, one at a time, 10 s apart', () => {
     const s = createFollowState()
     const focus = { lat: 41.4036, lon: 2.1744 }

@@ -116,17 +116,37 @@ export function mergeDistrict(
   if (blocks.length === 0) return anchor as OsmFeature[]
   const out = anchor.slice()
   const seen = new Set(anchor.map((f) => f.id))
-  for (const b of blocks) {
-    const box = blockBounds(b.id)
-    for (const f of b.features) {
+  const boxes = blocks.map((b) => blockBounds(b.id))
+  for (let i = 0; i < blocks.length; i++) {
+    const box = boxes[i]
+    for (const f of blocks[i].features) {
       if (seen.has(f.id)) continue
       const c = featureCentre(f)
-      if (!c || !inBox(c, box) || inBox(c, anchorBox)) continue
+      if (!c || inBox(c, anchorBox)) continue
+      // Its centre in this block, or in no live box at all while its outline
+      // reaches into this one: the city cells leave out anything touching a
+      // live box, so nobody else would draw it.
+      const own = inBox(c, box)
+        || (!boxes.some((o) => inBox(c, o)) && touchesBox(f, box))
+      if (!own) continue
       seen.add(f.id)
       out.push(f)
     }
   }
   return out
+}
+
+function touchesBox(f: OsmFeature, box: LatLonBox): boolean {
+  const ring = f.ring
+  if (!ring) return false
+  let s = Infinity, n = -Infinity, w = Infinity, e = -Infinity
+  for (const p of ring) {
+    if (p.lat < s) s = p.lat
+    if (p.lat > n) n = p.lat
+    if (p.lon < w) w = p.lon
+    if (p.lon > e) e = p.lon
+  }
+  return s < box.north && n > box.south && w < box.east && e > box.west
 }
 
 /**

@@ -884,6 +884,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let districtBusy = false
   /** Worker requests made for extra blocks (dev handle, bench). */
   let blockFetches = 0
+  /** Extra blocks whose rebuild has landed: only these are left out of the city cells. */
+  let drawnBlocks = new Set<string>()
   /** Crossings derived from the cached features, recomputed when they change. */
   let crossingsCache: { features: unknown; list: WaterCrossing[] } | null = null
   /** The current specks, and the live sea that drives them (marine-feed). */
@@ -1360,6 +1362,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       buildingsEnabled = false
       extraBlocks.clear()
       extraAnchorKey = null
+      drawnBlocks = new Set()
       followState = createFollowState()
       districtBusy = false
       stopLookAnim()
@@ -3195,7 +3198,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ? [{ minNx: anchorN.nx - halfN, maxNx: anchorN.nx + halfN, minNy: anchorN.ny - halfN, maxNy: anchorN.ny + halfN }]
       : []
     if (districtHere && autoDetail) {
-      for (const b of extraBlocks.values()) {
+      // Only blocks already drawn (no hole while their rebuild runs), in a
+      // stable order (setExclude compares by value and resets on change).
+      for (const k of [...drawnBlocks].sort()) {
+        const b = extraBlocks.get(k)
+        if (!b) continue
         const box = blockBounds(b.id)
         const sw = latLonToNormalized(box.south, box.west)
         const ne = latLonToNormalized(box.north, box.east)
@@ -3238,7 +3245,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   function refreshDistrict(): void {
     if (!buildingsEnabled || !geoRoot || !osmCache || osmCache.features.length === 0) return
     osmFeatures = districtFeatures()
-    void requestRebuild()
+    const keys = autoDetail ? [...extraBlocks.keys()] : []
+    void requestRebuild().then(() => { drawnBlocks = new Set(keys) }, () => {})
   }
 
   /**
@@ -3248,6 +3256,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    */
   function followDistrict(focusNx: number, focusNy: number, distanceM: number): void {
     if (!placement) return
+    // The minute of quiet is over: the note goes, the next rest may retry.
+    if (districtBusy && performance.now() >= followState.quietUntil) { districtBusy = false; emitReport() }
     const focus = normalizedToLatLon(focusNx, focusNy)
     const anchorBox = anchorDistrictBox()
     const id = blockToFetch(followState, { focus, distanceM, now: performance.now() }, (p) => {
