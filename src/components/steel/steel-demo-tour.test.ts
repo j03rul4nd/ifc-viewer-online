@@ -82,14 +82,15 @@ describe('tour overlay', () => {
     document.body.appendChild(target)
     act(() => root.render(createElement(GuidedTourView, { title: 'T', steps, onClose: () => {}, tx })))
     // No full-screen shield: four pieces around the target.
-    const overlay = host.firstElementChild as HTMLElement
+    const overlay = document.body.querySelector<HTMLElement>('[aria-live="polite"]')!
+    expect(overlay.parentElement).toBe(document.body)
     const shields = [...overlay.children].filter((c) => (c as HTMLElement).style.right === '0px' || (c as HTMLElement).style.left === '0px')
     expect(shields.length).toBe(4)
-    expect(host.querySelector('h2')!.textContent).toBe('A')
+    expect(document.body.querySelector('h2')!.textContent).toBe('A')
     act(() => { target.click() })
     expect(clicked).toHaveBeenCalledTimes(1)
     act(() => { vi.advanceTimersByTime(500) })
-    expect(host.querySelector('h2')!.textContent).toBe('B')
+    expect(document.body.querySelector('h2')!.textContent).toBe('B')
     target.remove()
   })
 
@@ -99,11 +100,20 @@ describe('tour overlay', () => {
     target.dataset.tour = 'a'
     document.body.appendChild(target)
     act(() => root.render(createElement(GuidedTourView, { title: 'T', steps: [{ target: 'a', title: 'A', body: 'x' }, { title: 'B', body: 'y' }], onClose: () => {}, tx })))
-    const spot = () => [...host.querySelectorAll<HTMLElement>('[aria-hidden]')].find((e) => e.style.boxShadow)!
-    expect(spot().style.top).toBe('4px')
+    const spot = () => [...document.body.querySelectorAll<HTMLElement>('[aria-hidden]')].find((e) => e.style.boxShadow)!
+    // The highlight is the target's own rect plus the 6 px padding, within 4 px.
+    const near = (): void => {
+      const t = target.getBoundingClientRect()
+      const s = spot().style
+      expect(Math.abs(parseFloat(s.top) + 6 - t.top)).toBeLessThanOrEqual(4)
+      expect(Math.abs(parseFloat(s.left) + 6 - t.left)).toBeLessThanOrEqual(4)
+      expect(Math.abs(parseFloat(s.width) - 12 - t.width)).toBeLessThanOrEqual(4)
+      expect(Math.abs(parseFloat(s.height) - 12 - t.height)).toBeLessThanOrEqual(4)
+    }
+    near()
     targetTop = 200
     await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
-    expect(spot().style.top).toBe('194px')
+    near()
     target.remove()
     targetTop = 10
   })

@@ -8,6 +8,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { placeCard, type Placement, type Rect, type TourStep } from '../../lib/workspace-tours/tours'
+import { createPortal } from 'react-dom'
 import { useTx, type Tx } from './i18n'
 
 const PAD = 6
@@ -139,7 +140,9 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
   // Phone: a target in the lower half (a bottom sheet) gets the card on top.
   const dockTop = place.mode === 'docked' && !!rect && rect.top + rect.height / 2 > innerHeight / 2
   const floatStyle = place.mode === 'float' ? { top: place.top, left: place.left } : undefined
-  return (
+  // Portalled to <body>: inside a panel with a transform, `position: fixed`
+  // would be relative to that panel and every highlight would land off target.
+  return createPortal(
     <div className="fixed inset-0" style={{ zIndex }} aria-live="polite">
       {/* Click shield + dim. With a target, the dim is the spotlight's shadow instead. */}
       {rect && step.interactive ? (
@@ -157,7 +160,7 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
           ? (dockTop ? 'absolute inset-x-3 top-[max(12px,env(safe-area-inset-top))] rounded-[14px]' : 'absolute inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-[14px]')
           : 'absolute w-[340px] max-w-[calc(100vw-32px)] rounded-[12px]'}
         style={floatStyle}>
-        <div className="border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-2xl rounded-[inherit] p-4">
+        <div className="border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-2xl rounded-[inherit] p-4 max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-contain">
           <p className="text-[11px] text-[var(--text-faint)] tabular-nums">{tx('{{title}} · {{n}} of {{total}}', { title: tx(title), n: i + 1, total: live.length })}</p>
           <h2 id={titleId} className="mt-1 text-[14.5px] font-semibold [overflow-wrap:anywhere]">{tx(step.title)}</h2>
           <p className="mt-1 text-[13px] text-[var(--text-dim)] leading-[1.5] [overflow-wrap:anywhere]">{tx(step.body)}</p>
@@ -171,6 +174,7 @@ export function GuidedTourView({ title, steps, onClose, onStep, zIndex = 60, tx 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

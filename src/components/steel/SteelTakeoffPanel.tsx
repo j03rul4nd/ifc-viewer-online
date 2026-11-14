@@ -191,7 +191,7 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
   if (models.length === 0) return <div className="p-3 text-[11.5px] text-[var(--text-dim)]">{t('needModel')}</div>
 
   return (
-    <div className="flex flex-col min-h-0">
+    <div className="flex flex-col min-h-0 min-w-0 max-w-full overflow-x-hidden">
       {tourOn && tableReady && <SteelTour lang={lang} />}
       <div data-tour="steel-bar" className="shrink-0 px-3 py-2 flex items-center gap-2 border-b border-[var(--border)]">
         {progress ? (
@@ -226,8 +226,8 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
             </div>
           )}
           <div className="px-3 pt-2 text-[10.5px] text-[var(--text-dim)]">{t('isolateHint')}</div>
-          <div className="overflow-auto min-h-0 px-1 pb-2">
-            <table data-tour="steel-table" className="w-full text-[11px] text-[var(--text)] tabular-nums">
+          <div className="overflow-auto min-h-0 min-w-0 max-w-full overscroll-x-contain px-1 pb-2">
+            <table data-tour="steel-table" className="w-full min-w-[520px] text-[11px] text-[var(--text)] tabular-nums">
               <thead className="text-[var(--text-dim)] text-left">
                 <tr>
                   <th className="px-2 py-1.5 font-medium">{t('profile')}</th>
