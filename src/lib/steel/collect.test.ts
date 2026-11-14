@@ -70,6 +70,37 @@ describe('collectSteelParts', () => {
     expect(parts).toHaveLength(1)
   })
 
+  it('reads *StandardCase classes', async () => {
+    const m = fakeModel({ IFCBEAMSTANDARDCASE: [1], IFCCOLUMNSTANDARDCASE: [2], IFCMEMBERSTANDARDCASE: [3], IFCPLATESTANDARDCASE: [4] },
+      new Map([1, 2, 3, 4].map((i) => [i, item('IFCBEAMSTANDARDCASE', i)])))
+    expect(await collectSteelParts([{ id: 'A', fragments: m }])).toHaveLength(4)
+  })
+
+  it('geometry one model at a time, with the signal; missing geometry reported', async () => {
+    const mk = () => fakeModel({ IFCBEAM: [1] }, new Map([[1, item('IFCBEAM', 1)]]))
+    let live = 0; let peak = 0
+    const signals: Array<AbortSignal | undefined> = []
+    const ac = new AbortController()
+    const missing: string[] = []
+    await collectSteelParts([{ id: 'A', fragments: mk() }, { id: 'B', fragments: mk() }, { id: 'C', fragments: mk() }], undefined, ac.signal,
+      async (id, signal) => {
+        signals.push(signal); live++; peak = Math.max(peak, live)
+        await new Promise((r) => setTimeout(r, 5)); live--
+        return id === 'B' ? null : new Map()
+      }, (id) => missing.push(id))
+    expect(peak).toBe(1)
+    expect(signals.every((s) => s === ac.signal)).toBe(true)
+    expect(missing).toEqual(['B'])
+  })
+
+  it('abort while waiting for the geometry rejects at once', async () => {
+    const m = fakeModel({ IFCBEAM: [1] }, new Map([[1, item('IFCBEAM', 1)]]))
+    const ac = new AbortController()
+    const p = collectSteelParts([{ id: 'A', fragments: m }], undefined, ac.signal, () => new Promise(() => { /* never */ }))
+    setTimeout(() => ac.abort(), 5)
+    await expect(p).rejects.toMatchObject({ name: 'AbortError' })
+  })
+
   it('empty when no model has steel', async () => {
     expect(await collectSteelParts([{ id: 'A', fragments: fakeModel({ IFCWALL: [1] }, new Map()) }])).toEqual([])
   })

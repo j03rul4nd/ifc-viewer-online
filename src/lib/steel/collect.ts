@@ -11,7 +11,8 @@ import type { GeometryInfo } from './profiles'
 import { extractSteelPart, groupByProfile, type SteelPart, type SteelTakeoffRow } from './takeoff'
 
 export const STEEL_CATEGORIES: RegExp[] = [
-  /^IFCBEAM$/i, /^IFCCOLUMN$/i, /^IFCMEMBER$/i, /^IFCPLATE$/i, /^IFCMECHANICALFASTENER$/i, /^IFCELEMENTASSEMBLY$/i,
+  /^IFCBEAM(STANDARDCASE)?$/i, /^IFCCOLUMN(STANDARDCASE)?$/i, /^IFCMEMBER(STANDARDCASE)?$/i, /^IFCPLATE(STANDARDCASE)?$/i,
+  /^IFCMECHANICALFASTENER$/i, /^IFCELEMENTASSEMBLY$/i,
 ]
 export const STEEL_BATCH = 500
 
@@ -42,6 +43,22 @@ function geometryOptions(g: GeometryInfo | undefined) {
   return { geometryProfile: g?.profile ?? null, geometryLength: g?.length ?? null, geometryArea: g?.area ?? null }
 }
 
+const abortError = (): DOMException => new DOMException('aborted', 'AbortError')
+
+/** `p`, or an AbortError as soon as `signal` fires (the listener is removed either way). */
+export function raceAbort<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return p
+  if (signal.aborted) return Promise.reject(abortError())
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortError())
+    signal.addEventListener('abort', onAbort, { once: true })
+    p.then(
+      (v) => { signal.removeEventListener('abort', onAbort); resolve(v) },
+      (e) => { signal.removeEventListener('abort', onAbort); reject(e) },
+    )
+  })
+}
+
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 export async function collectSteelParts(
@@ -49,7 +66,9 @@ export async function collectSteelParts(
   onProgress?: (done: number, total: number) => void,
   signal?: AbortSignal,
   /** expressId → profile name, length and area of the body, read off the main thread; null when unavailable. */
-  geometryProfiles?: (modelId: string) => Promise<Map<number, GeometryInfo> | null>,
+  geometryProfiles?: (modelId: string, signal?: AbortSignal) => Promise<Map<number, GeometryInfo> | null>,
+  /** A model whose IFC geometry could not be read (e.g. loaded from .frag). */
+  onGeometryMissing?: (modelId: string) => void,
 ): Promise<CollectedPart[]> {
   const plan: Array<{ model: SteelCollectModel; ids: number[] }> = []
   let total = 0
@@ -62,13 +81,15 @@ export async function collectSteelParts(
   onProgress?.(0, total)
   const out: CollectedPart[] = []
   let done = 0
-  // Start every geometry read now: it runs in a worker while batches are read.
-  const geo = plan.map(({ model }) => (geometryProfiles ? geometryProfiles(model.id).catch(() => null) : Promise.resolve(null)))
-  for (const [pi, { model, ids }] of plan.entries()) {
+  // One model at a time: one worker and one copy of one IFC text alive at once.
+  for (const { model, ids } of plan) {
+    if (signal?.aborted) throw abortError()
+    const geo = geometryProfiles ? geometryProfiles(model.id, signal).catch(() => null) : Promise.resolve(null)
     const units = await unitsOf(model.fragments)
-    const fromGeometry = await geo[pi]
+    const fromGeometry = await raceAbort(geo, signal)
+    if (geometryProfiles && !fromGeometry) onGeometryMissing?.(model.id)
     for (let b = 0; b < ids.length; b += STEEL_BATCH) {
-      if (signal?.aborted) throw new DOMException('aborted', 'AbortError')
+      if (signal?.aborted) throw abortError()
       const batch = ids.slice(b, b + STEEL_BATCH)
       let data: unknown[] = []
       try { data = await model.fragments.getItemsData(batch, ITEM_DATA_CONFIG) } catch { data = [] }

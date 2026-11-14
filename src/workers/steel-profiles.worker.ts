@@ -1,14 +1,17 @@
-// Reads steel profile names from an IFC buffer off the main thread.
-// IN  { id, buffer: ArrayBuffer }
-// OUT { id, ok: true, entries: Array<[number, string]> } | { id, ok: false, message }
+// Reads steel geometry (profile name, length, area) from an IFC buffer off the
+// main thread.
+// IN  { id, buffer: ArrayBuffer }  (transferred)
+// OUT { id, ok: true, entries: Array<[number, GeometryInfo]> } | { id, ok: false, message }
 
 import { geometryFromStep } from '../lib/steel/profiles'
 
 self.onmessage = (e: MessageEvent<{ id: string; buffer: ArrayBuffer }>) => {
-  const { id, buffer } = e.data
+  const { id } = e.data
   try {
-    const text = new TextDecoder('latin1').decode(buffer)
-    ;(self as unknown as Worker).postMessage({ id, ok: true, entries: [...geometryFromStep(text)] })
+    let text: string | null = new TextDecoder('latin1').decode(e.data.buffer)
+    const entries = [...geometryFromStep(text)]
+    text = null // let the file text go before the reply is sent
+    ;(self as unknown as Worker).postMessage({ id, ok: true, entries })
   } catch (err) {
     ;(self as unknown as Worker).postMessage({ id, ok: false, message: err instanceof Error ? err.message : String(err) })
   }

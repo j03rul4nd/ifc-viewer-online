@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useCallback } from 'react'
 
 const en = {
+  noGeometry: 'The geometry of {{files}} could not be read (no IFC file kept, e.g. a .frag): lengths and weights come only from its properties.',
   missingWarn_one: '1 piece has no weight in the file: the total weight leaves it out.', noProfile: '(no profile)',
   class_beam: 'Beam', class_column: 'Column', class_member: 'Member', class_plate: 'Plate', class_fastener: 'Fastener', class_assembly: 'Assembly',
   showAll: 'Show all', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Click a row to show only those pieces.',
@@ -27,6 +28,7 @@ export type SteelTextKey = keyof typeof en
 type Dict = Partial<Record<SteelTextKey, string>>
 
 const es: Dict = {
+  noGeometry: 'No se pudo leer la geometría de {{files}} (no se guarda el IFC, p. ej. un .frag): longitudes y pesos salen solo de sus propiedades.',
   missingWarn_one: '1 pieza no tiene peso en el fichero: el peso total no la cuenta.', noProfile: '(sin perfil)',
   class_beam: 'Viga', class_column: 'Pilar', class_member: 'Barra', class_plate: 'Chapa', class_fastener: 'Tornillería', class_assembly: 'Conjunto',
   showAll: 'Mostrar todo', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Haz clic en una fila para ver solo esas piezas.',
@@ -41,6 +43,7 @@ const es: Dict = {
   upsellCta: 'Ver planes',
 }
 const ca: Dict = {
+  noGeometry: "No s'ha pogut llegir la geometria de {{files}} (no es conserva l'IFC, p. ex. un .frag): longituds i pesos surten només de les seves propietats.",
   missingWarn_one: '1 peça no té pes al fitxer: el pes total no la compta.', noProfile: '(sense perfil)',
   class_beam: 'Biga', class_column: 'Pilar', class_member: 'Barra', class_plate: 'Xapa', class_fastener: 'Cargoleria', class_assembly: 'Conjunt',
   showAll: 'Mostrar-ho tot', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Fes clic en una fila per veure només aquestes peces.',
@@ -55,6 +58,7 @@ const ca: Dict = {
   upsellCta: 'Veure plans',
 }
 const de: Dict = {
+  noGeometry: 'Die Geometrie von {{files}} konnte nicht gelesen werden (keine IFC-Datei vorhanden, z. B. .frag): Längen und Gewichte stammen nur aus den Eigenschaften.',
   missingWarn_one: '1 Teil hat im Modell kein Gewicht: das Gesamtgewicht enthält es nicht.', noProfile: '(kein Profil)',
   class_beam: 'Träger', class_column: 'Stütze', class_member: 'Stab', class_plate: 'Blech', class_fastener: 'Verbindungsmittel', class_assembly: 'Baugruppe',
   showAll: 'Alle anzeigen', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Klicke auf eine Zeile, um nur diese Teile zu zeigen.',
@@ -69,6 +73,7 @@ const de: Dict = {
   upsellCta: 'Pläne ansehen',
 }
 const fr: Dict = {
+  noGeometry: "La géométrie de {{files}} n'a pas pu être lue (pas de fichier IFC conservé, p. ex. un .frag) : longueurs et poids viennent seulement de ses propriétés.",
   missingWarn_one: "{{n}} pièce n'a pas de poids dans le fichier : le poids total ne la compte pas.", noProfile: '(sans profilé)',
   class_beam: 'Poutre', class_column: 'Poteau', class_member: 'Barre', class_plate: 'Platine', class_fastener: 'Boulonnerie', class_assembly: 'Assemblage',
   showAll: 'Tout afficher', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Cliquez sur une ligne pour ne voir que ces pièces.',
@@ -83,6 +88,7 @@ const fr: Dict = {
   upsellCta: 'Voir les offres',
 }
 const it: Dict = {
+  noGeometry: 'Non è stato possibile leggere la geometria di {{files}} (nessun IFC conservato, ad es. un .frag): lunghezze e pesi vengono solo dalle proprietà.',
   missingWarn_one: '1 pezzo non ha peso nel file: il peso totale non lo conta.', noProfile: '(senza profilo)',
   class_beam: 'Trave', class_column: 'Pilastro', class_member: 'Asta', class_plate: 'Piastra', class_fastener: 'Bulloneria', class_assembly: 'Assieme',
   showAll: 'Mostra tutto', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Clicca su una riga per vedere solo quei pezzi.',
@@ -97,6 +103,7 @@ const it: Dict = {
   upsellCta: 'Vedi i piani',
 }
 const pt: Dict = {
+  noGeometry: 'Não foi possível ler a geometria de {{files}} (o IFC não foi guardado, p. ex. um .frag): comprimentos e pesos vêm só das propriedades.',
   missingWarn_one: '1 peça não tem peso no ficheiro: o peso total não a conta.', noProfile: '(sem perfil)',
   class_beam: 'Viga', class_column: 'Pilar', class_member: 'Barra', class_plate: 'Chapa', class_fastener: 'Parafusaria', class_assembly: 'Conjunto',
   showAll: 'Mostrar tudo', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'Clique numa linha para ver só essas peças.',
@@ -111,6 +118,7 @@ const pt: Dict = {
   upsellCta: 'Ver planos',
 }
 const ja: Dict = {
+  noGeometry: '{{files}} のジオメトリを読み込めませんでした（IFC が保持されていません。例: .frag）。長さと重量はプロパティからのみ取得します。',
   noProfile: '(断面なし)',
   class_beam: '梁', class_column: '柱', class_member: '部材', class_plate: 'プレート', class_fastener: 'ボルト類', class_assembly: '組立',
   showAll: 'すべて表示', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: '行をクリックすると、その部材だけを表示します。',
@@ -125,6 +133,7 @@ const ja: Dict = {
   upsellCta: 'プランを見る',
 }
 const zh: Dict = {
+  noGeometry: '无法读取 {{files}} 的几何（未保留 IFC 文件，例如 .frag）：长度和重量仅来自其属性。',
   noProfile: '（无型材）',
   class_beam: '梁', class_column: '柱', class_member: '杆件', class_plate: '板', class_fastener: '紧固件', class_assembly: '组件',
   showAll: '显示全部', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: '点击一行，只显示这些构件。',
@@ -139,6 +148,7 @@ const zh: Dict = {
   upsellCta: '查看方案',
 }
 const th: Dict = {
+  noGeometry: 'อ่านรูปทรงของ {{files}} ไม่ได้ (ไม่มีไฟล์ IFC เก็บไว้ เช่น .frag): ความยาวและน้ำหนักมาจากคุณสมบัติเท่านั้น',
   noProfile: '(ไม่มีหน้าตัด)',
   class_beam: 'คาน', class_column: 'เสา', class_member: 'ชิ้นส่วน', class_plate: 'แผ่น', class_fastener: 'สลักเกลียว', class_assembly: 'ชุดประกอบ',
   showAll: 'แสดงทั้งหมด', exportCsv: 'CSV', exportXlsx: 'Excel', isolateHint: 'คลิกแถวเพื่อแสดงเฉพาะชิ้นส่วนเหล่านั้น',

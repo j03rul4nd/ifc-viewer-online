@@ -14,8 +14,12 @@ const prof = (p: string): string => (p === NO_PROFILE ? NO_PROFILE_LABEL : p)
 export const ROW_HEADERS = ['Profile', 'Class', 'Count', 'Length_m', 'Weight_kg', 'Material', 'MissingWeight'] as const
 export const PART_HEADERS = ['Model', 'Id', 'Name', 'Mark', 'Profile', 'Length_m', 'Weight_kg', 'LengthSource', 'WeightSource'] as const
 
+/** Text that a spreadsheet would run as a formula (CSV injection). */
+const FORMULA_START = /^[=+\-@\t\r]/
+
 export function csvCell(v: unknown): string {
-  const s = v === null || v === undefined ? '' : String(v)
+  let s = v === null || v === undefined ? '' : String(v)
+  if (typeof v === 'string' && FORMULA_START.test(s)) s = `'${s}`
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
@@ -69,7 +73,13 @@ export async function steelXlsx(rows: SteelRow[], parts: CollectedPart[], modelN
 
 /** "Hotel Vela.ifc" → "Hotel Vela-steel-takeoff"; several models → first + "+N". */
 export function steelFileBase(modelNames: string[]): string {
-  const clean = (s: string) => s.replace(/\.(ifc|ifczip|frag)$/i, '').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'model'
+  const clean = (s: string) => s
+    .replace(/\.(ifc|ifczip|frag)$/i, '')
+    .replace(/[\x00-\x1f]+/g, '')
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .trim()
+    .slice(0, 100)
+    .replace(/[. ]+$/, '') || 'model'
   const first = modelNames.length ? clean(modelNames[0]) : 'model'
   return `${first}${modelNames.length > 1 ? `+${modelNames.length - 1}` : ''}-steel-takeoff`
 }

@@ -4,7 +4,7 @@
 // them, so the viewer keeps rendering. Free plans see what it does and the
 // plans page; nothing that was free before is behind this.
 
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewerAPI } from '../../lib/viewer'
 import { ViewportPanel } from '../ViewportPanel'
 import RequirePlan from '../pro/RequirePlan'
@@ -34,10 +34,9 @@ export default function SteelTakeoffPanel({ viewerApiRef, onRowAction }: Props) 
   const { t, lang } = useSteelT()
   const open = useSteelStore((s) => s.open)
   const setOpen = useSteelStore((s) => s.setOpen)
-  const close = useCallback(() => {
-    setOpen(false)
-    try { viewerApiRef.current?.isolateElements([], false) } catch { /* viewer gone */ }
-  }, [setOpen, viewerApiRef])
+  // Closing unmounts the workspace (App renders the panel only while open):
+  // its cleanup aborts the run and restores the view if it isolated anything.
+  const close = useCallback(() => setOpen(false), [setOpen])
   return (
     <ViewportPanel id="steel-takeoff" open={open} onClose={close} label={t('title')} mobile="sheet" widthPx={520} maxHeight="calc(100dvh - 120px)">
       <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-[var(--border)] flex items-start gap-2">
@@ -77,6 +76,29 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const [noGeometry, setNoGeometry] = useState<string[]>([])
+  /** True only while this panel has something isolated: never restore a view it did not change. */
+  const isolatedRef = useRef(false)
+  const restore = useCallback(() => {
+    if (!isolatedRef.current) return
+    isolatedRef.current = false
+    try { viewerApiRef.current?.isolateElements([], false) } catch { /* viewer gone */ }
+  }, [viewerApiRef])
+  const panelOpen = useSteelStore((s) => s.open)
+
+  // Unmount: abort the run, restore the view.
+  useEffect(() => () => { abortRef.current?.abort(); abortRef.current = null; restore() }, [restore])
+  // Closed while still mounted: same.
+  useEffect(() => { if (!panelOpen) { abortRef.current?.abort(); abortRef.current = null; restore(); setActive(null) } }, [panelOpen, restore])
+  // Another set of models: the table no longer describes the scene.
+  const modelsKey = models.map((m) => m.id).join('|')
+  const firstModels = useRef(true)
+  useEffect(() => {
+    if (firstModels.current) { firstModels.current = false; return }
+    abortRef.current?.abort(); abortRef.current = null
+    restore()
+    setActive(null); setRows(null); setParts([]); setNoGeometry([]); setProgress(null)
+  }, [modelsKey, restore])
   const n0 = useMemo(() => new Intl.NumberFormat(lang, { maximumFractionDigits: 0 }), [lang])
   const n1 = useMemo(() => new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), [lang])
   const n2 = useMemo(() => new Intl.NumberFormat(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), [lang])
@@ -85,38 +107,46 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
   const run = useCallback(async () => {
     const viewer = viewerApiRef.current
     if (!viewer) return
+    abortRef.current?.abort()
     setError(null)
     const ac = new AbortController()
     abortRef.current = ac
+    const mine = () => abortRef.current === ac
+    const missing: string[] = []
     try {
       const list: SteelCollectModel[] = models.flatMap((m) => {
         const fragments = viewer.getFragmentsModel(m.id) as SteelCollectModel['fragments'] | null
         return fragments ? [{ id: m.id, fragments }] : []
       })
       setProgress({ done: 0, total: 0 })
-      const parts = await collectSteelParts(list, (done, total) => setProgress({ done, total }), ac.signal, geometryProfiles)
-      viewer.isolateElements([], false)
+      const parts = await collectSteelParts(
+        list, (done, total) => { if (mine()) setProgress({ done, total }) }, ac.signal, geometryProfiles,
+        (id) => missing.push(models.find((m) => m.id === id)?.fileName ?? id),
+      )
+      if (!mine()) return
+      restore()
       setActive(null)
       setParts(parts)
       setRows(steelRows(parts))
+      setNoGeometry(missing)
     } catch (e) {
-      if (!(e instanceof DOMException && e.name === 'AbortError')) setError(e instanceof Error ? e.message : String(e))
+      if (mine() && !(e instanceof DOMException && e.name === 'AbortError')) setError(e instanceof Error ? e.message : String(e))
     } finally {
-      setProgress(null)
-      abortRef.current = null
+      if (mine()) { setProgress(null); abortRef.current = null }
     }
-  }, [models, viewerApiRef])
+  }, [models, viewerApiRef, restore])
 
   const isolate = useCallback((r: SteelRow) => {
     const viewer = viewerApiRef.current
     if (!viewer) return
     const k = rowKey(r)
-    if (active === k) { viewer.isolateElements([], false); setActive(null); return }
+    if (active === k) { restore(); setActive(null); return }
     viewer.isolateElements(r.refs.map((x) => ({ expressId: x.expressId, modelId: x.modelId })), true)
+    isolatedRef.current = true
     setActive(k)
     onRowAction?.(r, r.refs)
-  }, [active, onRowAction, viewerApiRef])
-  const showAll = useCallback(() => { viewerApiRef.current?.isolateElements([], false); setActive(null) }, [viewerApiRef])
+  }, [active, onRowAction, viewerApiRef, restore])
+  const showAll = useCallback(() => { restore(); setActive(null) }, [restore])
   const fileBase = useMemo(() => steelFileBase(models.map((m) => m.fileName)), [models])
   const modelName = useCallback((id: string) => models.find((m) => m.id === id)?.fileName ?? id, [models])
   const exportCsv = useCallback(() => { if (rows) downloadBlob(new Blob([steelCsv(rows)], { type: 'text/csv;charset=utf-8' }), `${fileBase}.csv`) }, [rows, fileBase])
@@ -149,6 +179,11 @@ function SteelWorkspace({ viewerApiRef, t, lang, onRowAction }: { viewerApiRef: 
         )}
       </div>
       {error && <div className="px-3 py-2 text-[11px] text-[var(--danger,#d9534f)]">{t('error', { error })}</div>}
+      {rows && !progress && noGeometry.length > 0 && (
+        <div role="status" className="mx-3 mt-2 px-2 py-1.5 rounded-[6px] border border-[var(--border)] text-[11px] text-[var(--text-dim)]">
+          {t('noGeometry', { files: noGeometry.join(', ') })}
+        </div>
+      )}
       {rows && !progress && rows.length === 0 && (
         <div className="p-3 text-[11.5px] text-[var(--text-dim)]">{t('empty')}</div>
       )}
