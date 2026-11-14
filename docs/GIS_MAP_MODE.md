@@ -393,6 +393,16 @@ the cell manager on top of the same `buildBuildingsGeometry`:
 - **Night.** Cells use `createUnlitFacadeMaterial`, the district's Simple
   material: same window grid and street wash in `night` and `golden`.
 
+Measured (bench, views amplia and baja, median of 3 runs a side, main 96bff2e8
+against this branch, interleaved, desktop): city buffers 87 / 89 MB at
+Catalunya / El Carmel amplia (main 91 / 88), 67 / 77 MB at baja (main 63 / 72);
+draw calls with cells 186 / 185 against 148 / 142 off (main 190 / 189). Pan FPS
+with cells: Catalunya amplia 23.0 (main 22.5), baja 7.1 (7.4); El Carmel the
+branch measured faster, but so did the cells-off runs, whose code is the same:
+the machine was busier during main's first run. Torre Glòries shows as the tall dark tower at the
+centre of a 4 km view (an extruded outline, not its dome). Not measured in the scene: the 300 seats on the El
+Carmel slope (unit-tested on 300 synthetic slopes) and the night look.
+
 ### OSM as data: the vector basemap (default for new users)
 
 `vt-<style>` providers read OpenMapTiles vector tiles from **OpenFreeMap**
