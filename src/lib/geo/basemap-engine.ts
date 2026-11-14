@@ -42,7 +42,7 @@ import { createVectorOverlay, VECTOR_TILE_PX } from './basemap/vector-overlay'
 import { createScreenLabelLayer, setLabelHorizonFactor, setLabelKeepBonus, type ScreenLabelLayer } from './basemap/screen-labels'
 import { getMapStyle } from './basemap/map-styles'
 import { sampleCoarseN } from './coarse-dem'
-import { createReliefBoundsPlugin, displaceTileScene, reliefHalfHeightN, type TileRelief } from './basemap/tile-displace'
+import { createReliefBoundsPlugin, displaceTileScene, type TileRelief } from './basemap/tile-displace'
 
 const log = createLogger('Basemap')
 
@@ -264,7 +264,7 @@ export function createBasemapEngine(): BasemapEngine {
     setRelief(next) {
       relief = next
       if (!tiles) return
-      reliefBounds?.setHalfHeight(reliefHalfHeightN(relief), tiles as never)
+      reliefBounds?.setRelief(relief, tiles as never)
       tiles.forEachLoadedModel((scene) => displaceTileScene(scene, relief))
     },
 
@@ -331,8 +331,19 @@ export function createBasemapEngine(): BasemapEngine {
       useRecommendedSettings: false, // recommended sets errorTarget=1 — too aggressive
     }))
     reliefBounds = createReliefBoundsPlugin()
-    reliefBounds.setHalfHeight(reliefHalfHeightN(relief), null)
+    reliefBounds.setRelief(relief, null)
     t.registerPlugin(reliefBounds as never)
+    {
+      const bounds = reliefBounds
+      // Not in the library's typings; the renderer calls it per tile per update.
+      type Err = (tile: unknown, target: unknown) => void
+      const ti = t as unknown as { cameraInfo: Parameters<typeof bounds.adjustViewError>[2]; calculateTileViewError: Err }
+      const own = ti.calculateTileViewError.bind(t)
+      ti.calculateTileViewError = (tile, target) => {
+        own(tile, target)
+        bounds.adjustViewError(tile as never, target as never, ti.cameraInfo)
+      }
+    }
     t.registerPlugin(new UnloadTilesPlugin({ delay: UNLOAD_DELAY_MS, bytesTarget: BUDGET.unloadBytes }))
     // Cross-fade parent → children instead of popping. More fading tiles are
     // allowed than the default 50 now that a sharp view has more of them, or a

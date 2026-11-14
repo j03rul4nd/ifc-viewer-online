@@ -11,10 +11,10 @@
 // tile is a few hundred bilinear reads, once per tile load.
 //
 // The tile's bounding box has ZERO height in the plugin (a flat plane). A
-// lifted tile would leave it: culled at the frustum edge, its screen error
-// measured from too low. `createReliefBoundsPlugin` gives every box the
-// relief's half-height before three builds the OBB from it, and `refresh()`
-// re-applies it to the tiles that already exist when the relief arrives.
+// lifted tile would leave it and be culled at the frustum edge.
+// `createReliefBoundsPlugin` gives every box the height of the relief under it
+// before three builds the OBB from it, re-applies it to existing tiles when the
+// relief arrives, and keeps the level of detail measured from the old plane.
 
 import * as THREE from 'three'
 import { coarseTexelN, sampleCoarseN, type CoarseDem } from '../coarse-dem'
@@ -25,23 +25,35 @@ export interface TileRelief {
   anchorM: number
   /** Normalized units per metre at the anchor's latitude. */
   metresToN: number
+  /**
+   * Elevation, metres, of the plane the tiles' level of detail is measured
+   * from (see createReliefBoundsPlugin.adjustViewError): where the flat map
+   * stood before WP2, the patch rim's datum. Without it, the relief itself.
+   */
+  lodDatumM?: number
 }
 
 /**
- * Most grid segments per side. A tile at most this many DEM samples wide (z13
- * and finer at z12's DEM: 128, 64, 32, 16, 8 samples) gets ONE segment per
- * sample, its vertices on the sample-corner lattice (coarse-dem
- * latticeSurfaceN): every such tile then draws the same surface, and the fine
- * patch's rim eases onto it. Wider tiles (z12 and coarser, far away) are
- * capped here and only approximate it.
+ * Most grid segments per side. A tile at most this many DEM samples wide (z15
+ * and finer at z12's DEM: 32, 16, 8 samples) gets ONE segment per sample, its
+ * vertices on the sample-corner lattice (coarse-dem latticeSurfaceN): every
+ * such tile then draws the same surface, and the fine patch's rim eases onto
+ * it. Wider tiles get TILE_GRID_FAR and only approximate it.
  */
-export const TILE_GRID_MAX = 128
+export const TILE_GRID_MAX = 32
 export const TILE_GRID_MIN = 1
+/**
+ * Segments of a tile wider than TILE_GRID_MAX samples (z14 and coarser). These
+ * are only drawn far from the camera, hence far from the hole: off the lattice,
+ * and few. 129² vertices on each of them was ≈1 M triangles on the wide view
+ * (-12 fps) for hills seen from kilometres away.
+ */
+export const TILE_GRID_FAR = 16
 
 /** Grid segments per side for a tile `sizeN` normalized units wide. */
 export function tileGridSegments(sizeN: number, dem: CoarseDem): number {
   const texels = Math.round(sizeN / coarseTexelN(dem))
-  return Math.min(TILE_GRID_MAX, Math.max(TILE_GRID_MIN, texels))
+  return texels > TILE_GRID_MAX ? TILE_GRID_FAR : Math.max(TILE_GRID_MIN, texels)
 }
 
 /** Half-height, normalized, every tile box must have to hold the relief. */
@@ -104,11 +116,13 @@ export function displaceTileScene(scene: THREE.Object3D, relief: TileRelief | nu
       mesh[FLAT] = { ...flat, segments }
     }
     const pos = geometry.getAttribute('position') as THREE.BufferAttribute
-    const cx = mesh.position.x, cy = mesh.position.y
+    // The plugin stands the mesh at its box's centre z, which the bounds plugin
+    // below moves to the tile's own relief: vertices are relative to it.
+    const cx = mesh.position.x, cy = mesh.position.y, cz = mesh.position.z
     for (let i = 0; i < pos.count; i++) {
-      pos.setZ(i, relief
+      pos.setZ(i, (relief
         ? (sampleCoarseN(relief.dem, cx + pos.getX(i), cy + pos.getY(i)) - relief.anchorM) * relief.metresToN
-        : 0)
+        : 0) - cz)
     }
     pos.needsUpdate = true
     geometry.computeBoundingBox()
@@ -122,22 +136,93 @@ interface PlanarTile {
   engineData?: { boundingVolume?: { setObbData(box: number[], m: THREE.Matrix4): void }; transform?: THREE.Matrix4 }
 }
 
+/** DEM samples per side of one block of the min/max grid (reliefRangeM). */
+const RANGE_BLOCK = 8
+const rangeGrids = new WeakMap<CoarseDem, { n: number; min: Float32Array; max: Float32Array }>()
+
+function rangeGrid(dem: CoarseDem): { n: number; min: Float32Array; max: Float32Array } {
+  let g = rangeGrids.get(dem)
+  if (g) return g
+  const s = dem.size, n = Math.ceil(s / RANGE_BLOCK)
+  const min = new Float32Array(n * n).fill(Infinity), max = new Float32Array(n * n).fill(-Infinity)
+  for (let y = 0; y < s; y++) {
+    const by = ((y / RANGE_BLOCK) | 0) * n
+    for (let x = 0; x < s; x++) {
+      const h = dem.heights[y * s + x], k = by + ((x / RANGE_BLOCK) | 0)
+      if (h < min[k]) min[k] = h
+      if (h > max[k]) max[k] = h
+    }
+  }
+  g = { n, min, max }
+  rangeGrids.set(dem, g)
+  return g
+}
+
 /**
- * A 3d-tiles-renderer plugin that gives every planar tile box the relief's
- * height. Its preprocessNode runs (from the base class) BEFORE three builds the
- * tile's OBB from `boundingVolume.box`, so new tiles need nothing else.
+ * Lowest and highest DEM elevation, metres, over a normalized rectangle (plus a
+ * sample of margin: the lattice interpolates the neighbours). Conservative —
+ * read per block of RANGE_BLOCK² samples — and clamped like sampleCoarseN, so
+ * a tile beyond the mosaic gets its edge.
+ */
+export function reliefRangeM(dem: CoarseDem, minNx: number, minNy: number, maxNx: number, maxNy: number): { minM: number; maxM: number } {
+  const n = 2 ** dem.zoom, s = dem.size, px = 256
+  const cl = (v: number) => Math.min(s - 1, Math.max(0, Math.floor(v)))
+  const x0 = cl(((minNx + 0.5) * n - dem.tileX0) * px - 1.5), x1 = cl(((maxNx + 0.5) * n - dem.tileX0) * px + 1.5)
+  const y0 = cl(((0.5 - maxNy) * n - dem.tileY0) * px - 1.5), y1 = cl(((0.5 - minNy) * n - dem.tileY0) * px + 1.5)
+  const g = rangeGrid(dem)
+  let minM = Infinity, maxM = -Infinity
+  for (let by = (y0 / RANGE_BLOCK) | 0; by <= ((y1 / RANGE_BLOCK) | 0); by++) {
+    for (let bx = (x0 / RANGE_BLOCK) | 0; bx <= ((x1 / RANGE_BLOCK) | 0); bx++) {
+      const k = by * g.n + bx
+      if (g.min[k] < minM) minM = g.min[k]
+      if (g.max[k] > maxM) maxM = g.max[k]
+    }
+  }
+  return { minM, maxM }
+}
+
+/**
+ * A 3d-tiles-renderer plugin that gives every planar tile box the height of the
+ * relief UNDER THAT TILE (not the whole city's: a box ±500 m tall put a low
+ * camera inside every nearby box, its distance to them ≈ 0, and the renderer
+ * refined the flat map to z21 all round it — 5 fps). Its preprocessNode runs
+ * (from the base class) BEFORE three builds the tile's OBB from
+ * `boundingVolume.box`, so new tiles need nothing else.
  */
 export function createReliefBoundsPlugin(): {
   name: string
   preprocessNode(tile: PlanarTile): void
-  /** Set the half-height and re-apply it to every tile already processed. */
-  setHalfHeight(halfN: number, tiles: { traverse(cb: (t: PlanarTile) => boolean | void, after: null, ensure: boolean): void } | null): void
+  /** Set the relief and re-apply it to every tile already processed. */
+  setRelief(relief: TileRelief | null, tiles: { traverse(cb: (t: PlanarTile) => boolean | void, after: null, ensure: boolean): void } | null): void
+  /**
+   * Level of detail as if the tile lay flat at `lodDatumM`, as the flat map did
+   * before WP2. Called after the renderer's own calculateTileViewError, whose
+   * frustum test (on the relief box above) stands. Measuring the error from
+   * the relief instead refined the tiles on a hill near a low camera a level
+   * deeper, which cost ≈15 fps panning the low view at Carmel (49 → 33) with
+   * the same triangles and draw calls, even with the tiles hidden (the cost is
+   * in loading and preparing the extra level, not in drawing it).
+   */
+  adjustViewError(
+    tile: PlanarTile & { geometricError?: number },
+    target: { inView: boolean; error: number; distanceFromCamera: number },
+    cameras: readonly { isOrthographic?: boolean; position: THREE.Vector3; sseDenominator: number }[],
+  ): void
 } {
-  let halfN = 0
+  let relief: TileRelief | null = null
   const apply = (tile: PlanarTile): boolean => {
     const box = tile.boundingVolume?.box
-    if (!box || box.length < 12 || box[11] === halfN) return false
-    box[11] = halfN
+    if (!box || box.length < 12) return false
+    let cz = 0, hz = 0
+    if (relief) {
+      const { minM, maxM } = reliefRangeM(relief.dem, box[0] - box[3], box[1] - box[7], box[0] + box[3], box[1] + box[7])
+      // Half a metre of slack each way: the box is cheap, a culled hill is not.
+      cz = ((minM + maxM) / 2 - relief.anchorM) * relief.metresToN
+      hz = ((maxM - minM) / 2 + 0.5) * relief.metresToN
+    }
+    if (box[2] === cz && box[11] === hz) return false
+    box[2] = cz
+    box[11] = hz
     const ed = tile.engineData
     if (ed?.boundingVolume && ed.transform) ed.boundingVolume.setObbData(box, ed.transform)
     return false
@@ -145,9 +230,28 @@ export function createReliefBoundsPlugin(): {
   return {
     name: 'RELIEF_BOUNDS',
     preprocessNode(tile) { apply(tile) },
-    setHalfHeight(next, tiles) {
-      halfN = next
+    setRelief(next, tiles) {
+      relief = next
       tiles?.traverse((t) => apply(t), null, false)
+    },
+    adjustViewError(tile, target, cameras) {
+      if (!relief || relief.lodDatumM === undefined || !target.inView) return
+      const box = tile.boundingVolume?.box
+      if (!box || box.length < 12 || !(tile.geometricError! >= 0)) return
+      const z = (relief.lodDatumM - relief.anchorM) * relief.metresToN
+      let error = 0, distance = Infinity
+      for (const c of cameras) {
+        if (c.isOrthographic) return
+        const p = c.position
+        const d = Math.hypot(
+          Math.max(0, Math.abs(p.x - box[0]) - box[3]),
+          Math.max(0, Math.abs(p.y - box[1]) - box[7]),
+          p.z - z)
+        error = Math.max(error, d === 0 ? Infinity : tile.geometricError! / (d * c.sseDenominator))
+        distance = Math.min(distance, d)
+      }
+      target.error = error
+      target.distanceFromCamera = distance
     },
   }
 }

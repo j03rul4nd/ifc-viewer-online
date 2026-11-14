@@ -3574,7 +3574,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (t?.coarse && placement) {
       engine.group.position.z = 0
       engine.group.scale.z = terrainExaggeration
-      engine.setRelief({ dem: t.coarse, anchorM: t.anchorElevation, metresToN: metresToNormalized(placement.lat) })
+      engine.setRelief({
+        dem: t.coarse, anchorM: t.anchorElevation, metresToN: metresToNormalized(placement.lat),
+        lodDatumM: Number.isFinite(t.rimDatumM) ? t.rimDatumM : t.anchorElevation,
+      })
       return
     }
     engine.setRelief(null)

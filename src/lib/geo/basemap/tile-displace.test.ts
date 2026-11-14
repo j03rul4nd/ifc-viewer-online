@@ -38,12 +38,13 @@ describe('tile-displace', () => {
     const dem = rampDem()
     const texel = coarseTexelN(dem)
     expect(tileGridSegments(8 * texel, dem)).toBe(8) // z17 at a z12 DEM
-    expect(tileGridSegments(128 * texel, dem)).toBe(128) // z13
-    expect(tileGridSegments(256 * texel, dem)).toBe(128) // z12: capped
+    expect(tileGridSegments(32 * texel, dem)).toBe(32) // z15
+    expect(tileGridSegments(64 * texel, dem)).toBe(16) // z14: far, coarse
+    expect(tileGridSegments(256 * texel, dem)).toBe(16) // z12
     expect(tileGridSegments(0.25 * texel, dem)).toBe(1)
   })
 
-  it('draws the same lattice surface from every zoom z13–z17, the one the patch rim eases onto', () => {
+  it('draws the same lattice surface from every zoom z15–z17, the one the patch rim eases onto', () => {
     // A bumpy DEM, so triangle interpolation differs from bilinear.
     const dem = rampDem()
     for (let j = 0; j < COARSE_DEM_PX; j++) for (let i = 0; i < COARSE_DEM_PX; i++) {
@@ -56,7 +57,7 @@ describe('tile-displace', () => {
       const nx = b.minNx + (b.maxNx - b.minNx) * (0.35 + 0.3 * ((k * 0.618) % 1))
       const ny = b.minNy + (b.maxNy - b.minNy) * (0.35 + 0.3 * ((k * 0.381) % 1))
       const want = latticeSurfaceN(dem, nx, ny)
-      for (let z = 13; z <= 17; z++) {
+      for (let z = 15; z <= 17; z++) {
         const m = 2 ** z, w = 1 / m
         const cx = (Math.floor((nx + 0.5) * m) + 0.5) / m - 0.5
         const cy = 0.5 - (Math.floor((0.5 - ny) * m) + 0.5) / m
@@ -123,25 +124,74 @@ describe('tile-displace', () => {
     expect(maxZ).toBeGreaterThan(0)
   })
 
-  it('gives tile boxes the relief half-height, also to tiles already processed', () => {
+  it('gives tile boxes the relief half-height', () => {
     const relief = { dem: rampDem(), anchorM: 100, metresToN: mToN }
-    const half = reliefHalfHeightN(relief)
-    expect(half).toBeCloseTo((COARSE_DEM_PX - 1 - 100 + 1) * mToN, 15)
+    expect(reliefHalfHeightN(relief)).toBeCloseTo((COARSE_DEM_PX - 1 - 100 + 1) * mToN, 15)
+  })
+
+  it('sizes each tile box to the relief under that tile, also tiles already processed', () => {
+    const dem = rampDem()
+    const b = coarseBoundsN(dem)
+    const relief = { dem, anchorM: 100, metresToN: mToN }
+    const w = (b.maxNx - b.minNx) / COARSE_DEM_PX // one sample
+    // A tile 16 samples wide over columns 300..316: the ramp gives 300..316 m (± margin).
+    const cx = b.minNx + 308 * w, cy = (b.minNy + b.maxNy) / 2, half = 8 * w
+    const box = () => [cx, cy, 0, half, 0, 0, 0, half, 0, 0, 0, 0]
     const plugin = createReliefBoundsPlugin()
-    const old = { boundingVolume: { box: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0] } }
+    const old = { boundingVolume: { box: box() } }
     plugin.preprocessNode(old)
     expect(old.boundingVolume.box[11]).toBe(0)
     let rebuilt = 0
     const tile = {
-      boundingVolume: { box: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0] },
+      boundingVolume: { box: box() },
       engineData: { boundingVolume: { setObbData: () => { rebuilt++ } }, transform: new THREE.Matrix4() },
     }
-    plugin.setHalfHeight(half, { traverse: (cb) => { cb(tile) } })
-    expect(tile.boundingVolume.box[11]).toBe(half)
+    plugin.setRelief(relief, { traverse: (cb) => { cb(tile) } })
     expect(rebuilt).toBe(1)
-    const fresh = { boundingVolume: { box: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0] } }
+    const [, , cz, , , , , , , , , hz] = tile.boundingVolume.box
+    const lo = (cz - hz) / mToN + 100, hi = (cz + hz) / mToN + 100
+    // Holds the tile's own range, and is nowhere near the city's 0..767 m.
+    expect(lo).toBeLessThanOrEqual(300)
+    expect(hi).toBeGreaterThanOrEqual(316)
+    expect(hi - lo).toBeLessThan(40)
+    const fresh = { boundingVolume: { box: box() } }
     plugin.preprocessNode(fresh)
-    expect(fresh.boundingVolume.box[11]).toBe(half)
+    expect(fresh.boundingVolume.box).toEqual(tile.boundingVolume.box)
+  })
+
+  it('measures the level of detail from the LOD datum plane, not the relief', () => {
+    const plugin = createReliefBoundsPlugin()
+    const mToN1 = 1e-3
+    const tile = { geometricError: 2, boundingVolume: { box: [0, 0, 0.05, 1, 0, 0, 0, 1, 0, 0, 0, 0.01] } }
+    const cams = [{ position: new THREE.Vector3(0.5, 0, 0.1), sseDenominator: 0.01 }]
+    const target = { inView: true, error: 99, distanceFromCamera: 0 }
+    // No datum: the renderer's own numbers stand.
+    plugin.setRelief({ dem: rampDem(), anchorM: 0, metresToN: mToN1 }, null)
+    plugin.adjustViewError(tile, target, cams)
+    expect(target.error).toBe(99)
+    // Datum 20 m below the anchor: camera 0.1 + 0.02 above that plane, inside the footprint.
+    plugin.setRelief({ dem: rampDem(), anchorM: 0, metresToN: mToN1, lodDatumM: -20 }, null)
+    plugin.adjustViewError(tile, target, cams)
+    expect(target.distanceFromCamera).toBeCloseTo(0.12, 12)
+    expect(target.error).toBeCloseTo(2 / (0.12 * 0.01), 6)
+    // Out of view: untouched.
+    const out = { inView: false, error: 7, distanceFromCamera: 3 }
+    plugin.adjustViewError(tile, out, cams)
+    expect(out.error).toBe(7)
+  })
+
+  it('keeps vertices on the relief when the mesh stands at its box centre', () => {
+    const dem = rampDem()
+    const b = coarseBoundsN(dem)
+    const relief = { dem, anchorM: 0, metresToN: mToN }
+    const w = (b.maxNx - b.minNx) / 64
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, w), new THREE.MeshBasicMaterial())
+    mesh.position.set((b.minNx + b.maxNx) / 2, (b.minNy + b.maxNy) / 2, 123 * mToN)
+    displaceTileScene(mesh, relief)
+    const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute('position') as THREE.BufferAttribute
+    for (const i of [0, pos.count - 1]) {
+      expect(pos.getZ(i) + mesh.position.z).toBeCloseTo(sampleCoarseN(dem, mesh.position.x + pos.getX(i), mesh.position.y + pos.getY(i)) * mToN, 12)
+    }
   })
 })
 
