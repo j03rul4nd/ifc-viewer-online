@@ -34,11 +34,14 @@ export interface CellRequest {
   anchorLon: number
   contextTone: ContextTone
   /**
-   * The full-detail district's box, centred-normalized mercator. A building
-   * whose outline touches it is the district's to draw, never the cell's.
+   * The full-detail district's boxes (the anchor's, plus the blocks that
+   * follow the camera), centred-normalized mercator. A building whose outline
+   * touches one is the district's to draw, never the cell's.
    */
-  exclude: { minNx: number; maxNx: number; minNy: number; maxNy: number } | null
+  exclude: ExcludeBox | ExcludeBox[] | null
 }
+
+export interface ExcludeBox { minNx: number; maxNx: number; minNy: number; maxNy: number }
 
 export interface CellAttribute { name: string; array: Float32Array | Uint8Array | Int8Array | Uint16Array; itemSize: number; normalized: boolean }
 
@@ -140,11 +143,11 @@ async function build(req: CellRequest): Promise<void> {
     const quarterOf = (cx: number, cy: number): number =>
       Math.min(k - 1, Math.floor((cy / E) * k)) * k + Math.min(k - 1, Math.floor((cx / E) * k))
     const n = 2 ** CELL_DATA_Z
-    // The district's box in THIS tile's units (y down).
-    const ex = req.exclude && {
-      x0: ((req.exclude.minNx + 0.5) * n - t.x) * E, x1: ((req.exclude.maxNx + 0.5) * n - t.x) * E,
-      y0: ((0.5 - req.exclude.maxNy) * n - t.y) * E, y1: ((0.5 - req.exclude.minNy) * n - t.y) * E,
-    }
+    // The district's boxes in THIS tile's units (y down).
+    const exs = (req.exclude ? (Array.isArray(req.exclude) ? req.exclude : [req.exclude]) : []).map((x) => ({
+      x0: ((x.minNx + 0.5) * n - t.x) * E, x1: ((x.maxNx + 0.5) * n - t.x) * E,
+      y0: ((0.5 - x.maxNy) * n - t.y) * E, y1: ((0.5 - x.minNy) * n - t.y) * E,
+    }))
     const metresPerUnit = (40_075_016.686 * Math.cos((req.anchorLat * Math.PI) / 180)) / n / E
     const toLatLon = (p: Pt): { lat: number; lon: number } => tilePointToLatLon(p.x, p.y, E, t.z, t.x, t.y)
 
@@ -157,7 +160,7 @@ async function build(req: CellRequest): Promise<void> {
       const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2
       // A building belongs to the cell its box is centred in — exactly one.
       if (cx < qx0 || cx >= qx1 || cy < qy0 || cy >= qy1) continue
-      if (ex && b.x0 < ex.x1 && b.x1 > ex.x0 && b.y0 < ex.y1 && b.y1 > ex.y0) continue
+      if (exs.some((ex) => b.x0 < ex.x1 && b.x1 > ex.x0 && b.y0 < ex.y1 && b.y1 > ex.y0)) continue
       let outer = b.outer
       let holes = b.holes
       if (req.lod === 'far') {
