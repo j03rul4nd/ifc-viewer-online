@@ -471,8 +471,8 @@
         "body": "Filtrez par niveau, discipline, type d'élément ou repère de pièce. Collez une liste de repères pour ne voir qu'eux."
       },
       "views": {
-        "title": "Rideau A | B",
-        "body": "Faites glisser la ligne sur la maquette : l'ancien à gauche, le nouveau à droite. Ou basculez entre A et B dans la même vue."
+        "title": "Rideau, côte à côte ou alterner",
+        "body": "Faites glisser la ligne sur le modèle (ancien à gauche, nouveau à droite), voyez A et B côte à côte avec la même caméra, ou basculez de l'un à l'autre dans la même vue."
       },
       "export": {
         "title": "Transmettez-le",

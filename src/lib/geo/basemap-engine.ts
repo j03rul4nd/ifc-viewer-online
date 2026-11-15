@@ -41,6 +41,8 @@ import {
 import { createVectorOverlay, VECTOR_TILE_PX } from './basemap/vector-overlay'
 import { createScreenLabelLayer, setLabelHorizonFactor, setLabelKeepBonus, type ScreenLabelLayer } from './basemap/screen-labels'
 import { getMapStyle } from './basemap/map-styles'
+import { sampleCoarseN } from './coarse-dem'
+import { createReliefBoundsPlugin, displaceTileScene, type TileRelief } from './basemap/tile-displace'
 
 const log = createLogger('Basemap')
 
@@ -96,6 +98,12 @@ export interface BasemapEngine {
    * restore the full basemap. Survives provider swaps.
    */
   setHole(planes: THREE.Plane[] | null): void
+  /**
+   * Lift the tiles onto the city's coarse relief (tile-displace, WP2), or lay
+   * them flat again with null. Survives provider swaps. Vertical exaggeration
+   * is the caller's: scale `group` on z.
+   */
+  setRelief(relief: TileRelief | null): void
   /** License strings for everything currently displayed. */
   getAttributions(): string[]
   /** Rough texture memory estimate for the memory HUD. */
@@ -182,6 +190,9 @@ export function createBasemapEngine(): BasemapEngine {
 
   /** Active hole planes (applied to every current + future tile material). */
   let holePlanes: THREE.Plane[] | null = null
+  /** Relief the tiles stand on (WP2) and the plugin that sizes their boxes. */
+  let relief: TileRelief | null = null
+  let reliefBounds: ReturnType<typeof createReliefBoundsPlugin> | null = null
 
   // ── Degraded signal ───────────────────────────────────────────────────────────
   // Rolling window of recent tile outcomes (true = failed). 3d-tiles-renderer
@@ -250,6 +261,13 @@ export function createBasemapEngine(): BasemapEngine {
       tiles.forEachLoadedModel((scene) => applyHoleToScene(scene))
     },
 
+    setRelief(next) {
+      relief = next
+      if (!tiles) return
+      reliefBounds?.setRelief(relief, tiles as never)
+      tiles.forEachLoadedModel((scene) => displaceTileScene(scene, relief))
+    },
+
     getAttributions() {
       const out: string[] = []
       if (provider) out.push(provider.attribution)
@@ -312,6 +330,20 @@ export function createBasemapEngine(): BasemapEngine {
       applyOverlayTexture: true,
       useRecommendedSettings: false, // recommended sets errorTarget=1 — too aggressive
     }))
+    reliefBounds = createReliefBoundsPlugin()
+    reliefBounds.setRelief(relief, null)
+    t.registerPlugin(reliefBounds as never)
+    {
+      const bounds = reliefBounds
+      // Not in the library's typings; the renderer calls it per tile per update.
+      type Err = (tile: unknown, target: unknown) => void
+      const ti = t as unknown as { cameraInfo: Parameters<typeof bounds.adjustViewError>[2]; calculateTileViewError: Err }
+      const own = ti.calculateTileViewError.bind(t)
+      ti.calculateTileViewError = (tile, target) => {
+        own(tile, target)
+        bounds.adjustViewError(tile as never, target as never, ti.cameraInfo)
+      }
+    }
     t.registerPlugin(new UnloadTilesPlugin({ delay: UNLOAD_DELAY_MS, bytesTarget: BUDGET.unloadBytes }))
     // Cross-fade parent → children instead of popping. More fading tiles are
     // allowed than the default 50 now that a sharp view has more of them, or a
@@ -325,6 +357,7 @@ export function createBasemapEngine(): BasemapEngine {
     t.lruCache.maxBytesSize = BUDGET.maxBytes
 
     t.addEventListener('load-model', onTileSuccess)
+    t.addEventListener('load-model', onTileLoadedDisplace)
     t.addEventListener('load-model', onTileLoadedApplyHole)
     t.addEventListener('load-model', onTileLoadedTuneTextures)
     t.addEventListener('load-model', onTileLoadedTint)
@@ -356,6 +389,7 @@ export function createBasemapEngine(): BasemapEngine {
     }
     if (tiles) {
       tiles.removeEventListener('load-model', onTileSuccess)
+      tiles.removeEventListener('load-model', onTileLoadedDisplace)
       tiles.removeEventListener('load-model', onTileLoadedApplyHole)
       tiles.removeEventListener('load-model', onTileLoadedTuneTextures)
       tiles.removeEventListener('load-model', onTileLoadedTint)
@@ -394,7 +428,18 @@ export function createBasemapEngine(): BasemapEngine {
     renderer.getSize(viewportCss)
     tiles.group.updateMatrixWorld()
     labels.update(camera, { width: viewportCss.x, height: viewportCss.y }, keys,
-      Math.min(2, renderer.getPixelRatio()), tiles.group.matrixWorld, labelKeepOut?.())
+      Math.min(2, renderer.getPixelRatio()), tiles.group.matrixWorld, labelKeepOut?.(),
+      groundYUnderCamera(camera, tiles.group.matrixWorld))
+  }
+
+  const groundTmp = new THREE.Vector3()
+  const frameInv = new THREE.Matrix4()
+  /** World Y of the relief under the camera, or null on the flat map (WP2). */
+  function groundYUnderCamera(cam: THREE.Camera, frame: THREE.Matrix4): number | null {
+    if (!relief) return null
+    cam.getWorldPosition(groundTmp).applyMatrix4(frameInv.copy(frame).invert())
+    groundTmp.z = (sampleCoarseN(relief.dem, groundTmp.x, groundTmp.y) - relief.anchorM) * relief.metresToN
+    return groundTmp.applyMatrix4(frame).y
   }
 
   /** Region keys of the tiles on screen now, via their textures. */
@@ -424,6 +469,10 @@ export function createBasemapEngine(): BasemapEngine {
       for (const m of materials) (m as THREE.MeshBasicMaterial).color?.copy(tint)
     })
     ;(underlay.material as THREE.MeshBasicMaterial).color.copy(underlayBase).multiply(tint)
+  }
+
+  function onTileLoadedDisplace(e: { scene: THREE.Object3D }): void {
+    if (relief) displaceTileScene(e.scene, relief)
   }
 
   function onTileLoadedApplyHole(e: { scene: THREE.Object3D }): void {

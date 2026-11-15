@@ -19,6 +19,7 @@
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
 
+import { STEEL_DEMO_FILE, STEEL_DEMO_URL } from './steel/demo'
 import { parsePanelAllowlist, type PanelId } from './ui/panel-rail'
 import { parseBackgroundSpec, type BackgroundSettings } from './scene/background'
 import { MAP_LOOKS } from './geo/map-look'
@@ -402,6 +403,9 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
   const rawModels = splitList([...p.getAll('model'), ...p.getAll('src'), ...p.getAll('url')])
   const modelUrls = rawModels.filter(isLoadableUrl)
   const fileNames = splitList([...p.getAll('name'), ...p.getAll('file')])
+  // `?steel=demo`: the guided steel takeoff demo loads its static hall like any
+  // deep-linked model, and only that one (lib/steel/demo).
+  if (p.get('steel') === 'demo') { modelUrls.splice(0, modelUrls.length, STEEL_DEMO_URL); fileNames.splice(0, fileNames.length, STEEL_DEMO_FILE) }
 
   const uiParam = (p.get('ui') ?? '').trim().toLowerCase()
   const preset: EmbedUiPreset = (PRESETS as readonly string[]).includes(uiParam)

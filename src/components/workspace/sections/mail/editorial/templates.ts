@@ -8,6 +8,7 @@
 import type { Audience, EBlock, Issue, Publication, Register } from './render'
 import type { Lang } from './labels'
 import { DEFAULT_ACCENT } from './tokens'
+import { decimalComma, makeX } from './content'
 
 export interface Facts {
   health: number
@@ -61,14 +62,14 @@ export interface TemplateDef {
 }
 
 export function samplePublication(lang: string): Publication {
-  const es = lang.startsWith('es')
+  const x = makeX(lang)
   return {
     name: 'Llevant 84',
-    tagline: es ? 'Boletín de coordinación BIM' : 'BIM coordination bulletin',
-    project: es ? 'Residencial Llevant · 84 viviendas' : 'Llevant Residential · 84 homes',
-    phase: es ? 'Proyecto de ejecución' : 'Detailed design',
+    tagline: x('Boletín de coordinación BIM', 'BIM coordination bulletin'),
+    project: x('Residencial Llevant · 84 viviendas', 'Llevant Residential · 84 homes'),
+    phase: x('Proyecto de ejecución', 'Detailed design'),
     rev: 'P05', code: 'LLV-FER-ZZ-XX-RP-B-0023',
-    editor: { name: 'Marta Vidal', role: es ? 'BIM Coordinator · Ferrer Arquitectura' : 'BIM Coordinator · Ferrer Arquitectura' },
+    editor: { name: 'Marta Vidal', role: 'BIM Coordinator · Ferrer Arquitectura' },
     studio: { name: 'Ferrer Arquitectura' }, client: { name: 'Promocions Llevant SL' },
     accent: DEFAULT_ACCENT, pairing: 'editorial', address: 'C/ de Mar 41, 08911 Badalona',
   }
@@ -80,8 +81,7 @@ const pct = (n: number, es: boolean) => `${es ? String(n).replace('.', ',') : n}
 const sign = (n: number, es: boolean) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${es ? String(Math.abs(n)).replace('.', ',') : Math.abs(n)}`
 
 function frame(c: TemplateCtx, t: Omit<Issue, 'number' | 'date'> & { number?: number; date?: string }): Issue {
-  const es = String(c.lang).startsWith('es')
-  return { number: 23, date: es ? '13.11.2026' : '13 Nov 2026', ...t }
+  return { number: 23, date: makeX(c.lang)('13.11.2026', '13 Nov 2026'), ...t }
 }
 
 const T = (es: string, en: string) => ({ es, en })
@@ -93,16 +93,16 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Informe semanal de coordinación', 'Weekly coordination report'),
     purpose: T('Estado del federado, colisiones, versiones y acciones de la semana.', 'Federated model status, clashes, versions and the week’s actions.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), f = c.facts ?? SAMPLE_FACTS, x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), f = c.facts ?? SAMPLE_FACTS, x = makeX(c.lang)
       const down = f.clashesPrev - f.clashesOpen
       return frame(c, {
         templateId: 'weekly', audience: 'coordinators', register: 'technical', range: x('S46 · 9–13 nov 2026', 'W46 · 9–13 Nov 2026'),
         to: x('Coordinadores y BIM managers', 'Coordinators and BIM managers'), kicker: x('Informe semanal', 'Weekly report'),
-        subject: x(`Llevant 84 · S46: ${f.clashesOpen} colisiones abiertas (${sign(-down, true)}), Health Score ${f.health}`, `Llevant 84 · W46: ${f.clashesOpen} open clashes (${sign(-down, false)}), Health Score ${f.health}`),
+        subject: x('Llevant 84 · S46: {{open}} colisiones abiertas ({{delta}}), Health Score {{health}}', 'Llevant 84 · W46: {{open}} open clashes ({{delta}}), Health Score {{health}}', { open: f.clashesOpen, prev: f.clashesPrev, delta: sign(-down, es), health: f.health }),
         preheader: x('Saneamiento × vigas de PB sigue siendo crítico. Tres acciones antes del jueves 20.', 'Drainage × ground-floor beams is still critical. Three actions due by Thursday 20.'),
         blocks: [
-          { id: id(), k: 'editor', headline: x(`${f.clashesOpen} colisiones abiertas (${sign(-down, true)}). Saneamiento × vigas PB sigue crítico.`, `${f.clashesOpen} open clashes (${sign(-down, false)}). Drainage × ground-floor beams still critical.`),
-            lede: x(`La federación P05 baja de ${f.clashesPrev} a ${f.clashesOpen} colisiones abiertas. El cruce de la red de saneamiento con las vigas de planta baja sigue siendo el punto crítico antes del cierre de la revisión del lunes 23.`, `Federation P05 goes from ${f.clashesPrev} to ${f.clashesOpen} open clashes. The drainage network crossing the ground-floor beams is still the critical point before the revision closes on Monday 23.`) },
+          { id: id(), k: 'editor', headline: x('{{open}} colisiones abiertas ({{delta}}). Saneamiento × vigas PB sigue crítico.', '{{open}} open clashes ({{delta}}). Drainage × ground-floor beams still critical.', { open: f.clashesOpen, prev: f.clashesPrev, delta: sign(-down, es), health: f.health }),
+            lede: x('La federación P05 baja de {{prev}} a {{open}} colisiones abiertas. El cruce de la red de saneamiento con las vigas de planta baja sigue siendo el punto crítico antes del cierre de la revisión del lunes 23.', 'Federation P05 goes from {{prev}} to {{open}} open clashes. The drainage network crossing the ground-floor beams is still the critical point before the revision closes on Monday 23.', { open: f.clashesOpen, prev: f.clashesPrev, delta: sign(-down, es), health: f.health }) },
           { id: id(), k: 'stamp', title: x('Estado del federado P05', 'Federated model P05'), score: f.health, prev: f.healthPrev, against: f.ids, reqs: f.reqs, pass: pct(f.passPct, es) },
           { id: id(), k: 'kpis', items: [
             { label: x('Colisiones abiertas', 'Open clashes'), value: String(f.clashesOpen), delta: sign(-down, es) },
@@ -137,7 +137,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Nueva versión: qué cambia para ti', 'New version: what changes for you'),
     purpose: T('Una subcontrata ve solo lo que le afecta de la nueva revisión.', 'One trade sees only what the new revision changes for them.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), x = makeX(c.lang)
       return frame(c, {
         templateId: 'new-version', audience: 'trades', register: 'technical', to: 'Instal·lacions Garraf (MEP)', kicker: x('Nueva versión', 'New version'),
         subject: x('ARQ P05 publicada: 6 cambios te afectan, revisión antes del 20.11', 'ARQ P05 published: 6 changes affect you, review by 20 Nov'),
@@ -168,13 +168,13 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Resumen de colisiones y BCF', 'Clash and BCF summary'),
     purpose: T('Incidencias abiertas por disciplina, con captura, responsable y fecha.', 'Open issues by discipline, with view, owner and date.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), f = c.facts ?? SAMPLE_FACTS, x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), f = c.facts ?? SAMPLE_FACTS, x = makeX(c.lang)
       return frame(c, {
         templateId: 'clashes-bcf', audience: 'trades', register: 'technical', to: x('Subcontratas y coordinadores', 'Trades and coordinators'), kicker: x('Colisiones y BCF', 'Clashes and BCF'),
-        subject: x(`${f.clashesOpen} colisiones abiertas: 4 incidencias BCF vencen esta semana`, `${f.clashesOpen} open clashes: 4 BCF issues due this week`),
+        subject: x('{{open}} colisiones abiertas: 4 incidencias BCF vencen esta semana', '{{open}} open clashes: 4 BCF issues due this week', { open: f.clashesOpen }),
         preheader: x('EST × MEP concentra el 57 % de lo abierto. Cada incidencia lleva su vista.', 'STR × MEP holds 57 % of what is open. Each issue links to its view.'),
         blocks: [
-          { id: id(), k: 'editor', headline: x('Cuatro incidencias vencen esta semana', 'Four issues are due this week'), lede: x(`Quedan ${f.clashesOpen} colisiones abiertas tras la detección del miércoles (tolerancia 20 mm, duplicados agrupados). Estas son las que bloquean la revisión del 23.`, `${f.clashesOpen} clashes remain open after Wednesday’s run (20 mm tolerance, duplicates grouped). These are the ones blocking the review on the 23rd.`) },
+          { id: id(), k: 'editor', headline: x('Cuatro incidencias vencen esta semana', 'Four issues are due this week'), lede: x('Quedan {{open}} colisiones abiertas tras la detección del miércoles (tolerancia 20 mm, duplicados agrupados). Estas son las que bloquean la revisión del 23.', '{{open}} clashes remain open after Wednesday’s run (20 mm tolerance, duplicates grouped). These are the ones blocking the review on the 23rd.', { open: f.clashesOpen }) },
           { id: id(), k: 'clashes', title: x('Por pareja de disciplinas', 'By discipline pair'), rows: [
             { a: 'EST', b: 'MEP', prev: 27, open: 21, owner: 'Instal·lacions Garraf', due: '20.11' },
             { a: 'ARQ', b: 'EST', prev: 13, open: 9, owner: 'Ferrer Arquitectura', due: '18.11' },
@@ -197,11 +197,11 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Entrega de hito con certificado', 'Milestone delivery with certificate'),
     purpose: T('Al cliente: qué se entrega, que está validado y qué viene después.', 'For the client: what is delivered, that it is checked, and what comes next.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), f = c.facts ?? SAMPLE_FACTS, x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), f = c.facts ?? SAMPLE_FACTS, x = makeX(c.lang)
       return frame(c, {
         templateId: 'milestone-cert', audience: 'client', register: 'editorial', to: 'Promocions Llevant SL', kicker: x('Entrega de hito', 'Milestone delivery'),
         subject: x('Proyecto de ejecución entregado y validado', 'Detailed design delivered and checked'),
-        preheader: x(`Modelo federado con ${f.certificate.score} sobre 100 frente a los requisitos del contrato. Siguiente paso: licitación.`, `Federated model scoring ${f.certificate.score} out of 100 against the contract requirements. Next: tender.`),
+        preheader: x('Modelo federado con {{score}} sobre 100 frente a los requisitos del contrato. Siguiente paso: licitación.', 'Federated model scoring {{score}} out of 100 against the contract requirements. Next: tender.', { score: f.certificate.score }),
         blocks: [
           { id: id(), k: 'editor', headline: x('El proyecto de ejecución, entregado y comprobado', 'Detailed design, delivered and checked'),
             lede: x('Hoy cerramos el hito 3. Los modelos de arquitectura, estructura e instalaciones están federados, revisados entre sí y comprobados contra los requisitos de información del contrato. Ya pueden usarse para pedir precios.', 'Today we close milestone 3. The architecture, structure and services models are federated, checked against each other and against the information requirements in the contract. They are ready for pricing.') },
@@ -226,7 +226,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Newsletter mensual del proyecto', 'Monthly project newsletter'),
     purpose: T('El mes en una lectura: avance, decisiones, riesgos y próximos pasos.', 'The month in one read: progress, decisions, risks and next steps.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), f = c.facts ?? SAMPLE_FACTS, x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), f = c.facts ?? SAMPLE_FACTS, x = makeX(c.lang)
       return frame(c, {
         templateId: 'monthly', audience: 'client', register: 'editorial', number: 11, date: x('30.11.2026', '30 Nov 2026'), range: x('Noviembre 2026', 'November 2026'),
         to: x('Promotor y equipo de proyecto', 'Client and project team'), kicker: x('Edición mensual', 'Monthly edition'),
@@ -258,7 +258,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('RFI / decisión pendiente', 'RFI / pending decision'),
     purpose: T('Una pregunta, sus opciones con coste y plazo, y quién decide.', 'One question, its options with cost and time, and who decides.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), x = makeX(c.lang)
       return frame(c, {
         templateId: 'rfi', audience: 'internal', register: 'editorial', to: x('Compras y jefatura de obra', 'Procurement and site management'), kicker: 'RFI-031',
         subject: x('RFI-031: pasos en vigas de PB, decidir antes del martes 18', 'RFI-031: openings in ground-floor beams, decide by Tuesday 18'),
@@ -283,7 +283,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Requisitos EIR/IDS incumplidos', 'Failed EIR/IDS requirements'),
     purpose: T('A una subcontrata: qué requisitos fallan, en qué elementos y hasta cuándo.', 'To one trade: which requirements fail, on which elements, and by when.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), x = makeX(c.lang)
       return frame(c, {
         templateId: 'eir-reminder', audience: 'trades', register: 'technical', to: 'Fusteria Metàl·lica Besòs (FAC)', kicker: x('Requisitos', 'Requirements'),
         subject: x('Tu entrega FAC P02 no cumple 3 requisitos del EIR: 47 elementos', 'Your FAC P02 delivery fails 3 EIR requirements: 47 elements'),
@@ -312,7 +312,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Acta de reunión de coordinación', 'Coordination meeting minutes'),
     purpose: T('Acuerdos, responsables y fechas, en una página.', 'Agreements, owners and dates, on one page.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), x = makeX(c.lang)
       return frame(c, {
         templateId: 'minutes', audience: 'coordinators', register: 'technical', number: 14, date: x('16.11.2026', '16 Nov 2026'), to: x('Asistentes y agentes del proyecto', 'Attendees and project agents'), kicker: x('Acta', 'Minutes'),
         range: x('Reunión 14 · 16.11.2026', 'Meeting 14 · 16 Nov 2026'),
@@ -348,7 +348,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Bienvenida al proyecto', 'Welcome to the project'),
     purpose: T('Normas, nomenclatura ISO 19650 y enlaces para quien se incorpora.', 'Rules, ISO 19650 naming and links for whoever joins.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), x = makeX(c.lang)
       return frame(c, {
         templateId: 'welcome', audience: 'trades', register: 'editorial', number: 1, to: 'Fusteria Metàl·lica Besòs', kicker: x('Bienvenida', 'Welcome'),
         subject: x('Bienvenidos a Llevant 84: cómo entregar modelos en este proyecto', 'Welcome to Llevant 84: how to deliver models on this project'),
@@ -384,7 +384,7 @@ export const TEMPLATES_V3: TemplateDef[] = [
     name: T('Cierre de fase y lecciones aprendidas', 'Phase close and lessons learned'),
     purpose: T('Para dirección: qué salió, qué costó y qué cambiamos en el siguiente proyecto.', 'For management: what came out, what it cost, and what we change next time.'),
     build: (c) => {
-      const es = String(c.lang).startsWith('es'), f = c.facts ?? SAMPLE_FACTS, x = (a: string, b: string) => (es ? a : b)
+      const es = decimalComma(c.lang), f = c.facts ?? SAMPLE_FACTS, x = makeX(c.lang)
       return frame(c, {
         templateId: 'closeout', audience: 'internal', register: 'editorial', number: 24, date: x('05.12.2026', '5 Dec 2026'), to: x('Dirección', 'Management'), kicker: x('Cierre de fase', 'Phase close'),
         subject: x('Cierre del proyecto de ejecución: en plazo, 112 colisiones resueltas, 3 lecciones', 'Detailed design closed: on time, 112 clashes resolved, 3 lessons'),
@@ -412,6 +412,6 @@ export const TEMPLATES_V3: TemplateDef[] = [
 
 export const AUDIENCES: Audience[] = ['client', 'trades', 'coordinators', 'internal']
 export const templateById = (id: string) => TEMPLATES_V3.find((t) => t.id === id)
-export const nameOf = (t: TemplateDef, lang: string) => (lang.startsWith('es') ? t.name.es : t.name.en)
-export const purposeOf = (t: TemplateDef, lang: string) => (lang.startsWith('es') ? t.purpose.es : t.purpose.en)
+export const nameOf = (t: TemplateDef, lang: string) => makeX(lang)(t.name.es, t.name.en)
+export const purposeOf = (t: TemplateDef, lang: string) => makeX(lang)(t.purpose.es, t.purpose.en)
 export type { EBlock }

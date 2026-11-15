@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { renderIssue, withUtm } from './render'
-import { AUDIENCES, SAMPLE_FACTS, TEMPLATES_V3, factsFrom, samplePublication } from './templates'
+import { AUDIENCES, SAMPLE_FACTS, TEMPLATES_V3, factsFrom, nameOf, purposeOf, samplePublication } from './templates'
+import { CONTENT, RECORDER } from './content'
+import { BLOCK_NAMES, UI } from './Studio'
 import { LABELS, LABEL_KEYS, LANGS } from './labels'
 import { NEUTRALS, contrast, palette, readableOn } from './tokens'
 
@@ -112,4 +114,40 @@ describe('contrast (WCAG 2.2 AA)', () => {
     const p = palette('light', '#ffe066')
     expect(contrast(p.onFill, p.fill)).toBeGreaterThanOrEqual(4.5)
   })
+})
+
+describe('template content in ten languages', () => {
+  // Every English key the templates and the Studio use, collected the same way
+  // scripts/mail/extract-content.mjs does.
+  const collect = () => {
+    RECORDER.keys = new Map()
+    const pub = samplePublication('en')
+    for (const t of TEMPLATES_V3) { t.build({ lang: 'en', pub, base: BASE }); nameOf(t, 'en'); purposeOf(t, 'en') }
+    const keys = new Set(RECORDER.keys.keys())
+    RECORDER.keys = null
+    for (const k of Object.keys(UI.en) as (keyof typeof UI.en)[]) keys.add(UI.en[k])
+    for (const v of Object.values(BLOCK_NAMES)) keys.add(v.en)
+    return [...keys]
+  }
+  const keys = collect()
+  const ph = (s: string) => (s.match(/\{\{\w+\}\}/g) ?? []).sort().join()
+  it('finds the texts', () => expect(keys.length).toBeGreaterThan(200))
+  for (const [lang, dict] of Object.entries(CONTENT)) {
+    it(`${lang}: every text translated, same placeholders, nothing extra`, () => {
+      expect(Object.keys(dict).sort()).toEqual([...keys].sort())
+      for (const k of keys) {
+        expect(dict[k], `${lang}: ${k}`).toBeTruthy()
+        expect(ph(dict[k]), `${lang}: ${k}`).toBe(ph(k))
+      }
+    })
+    it(`${lang}: every template renders in its language`, () => {
+      for (const t of TEMPLATES_V3) {
+        const pub = samplePublication(lang)
+        const r = renderIssue(t.build({ lang, pub, base: BASE }), pub, { lang, unsubscribeUrl: 'u' })
+        expect(r.html).not.toMatch(/\{\{\w+\}\}/)
+        const enPub = samplePublication('en')
+        expect(r.subject, `${lang}: ${t.id}`).not.toBe(t.build({ lang: 'en', pub: enPub, base: BASE }).subject)
+      }
+    })
+  }
 })

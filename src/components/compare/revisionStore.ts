@@ -14,8 +14,8 @@ import { loadReviews, saveReview } from './review-db'
 import { trackRcChangeReviewed, trackRcDiffCompleted } from '../../lib/analytics'
 
 export type RevisionPhase = 'idle' | 'reading' | 'ready' | 'error'
-/** Side-by-side split is pending (see T3-RESULTADO): fragments cannot be drawn by a second renderer. */
-export type ViewMode = 'changes' | 'curtain' | 'blink'
+/** 'split' = A | B side by side with one camera (desktop / landscape only). */
+export type ViewMode = 'changes' | 'curtain' | 'split' | 'blink'
 
 export interface RevisionSide {
   files: File[]

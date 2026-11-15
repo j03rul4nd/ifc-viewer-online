@@ -53,6 +53,12 @@ export interface ScreenLabelLayer {
     visibleRegions: ReadonlySet<string>, dpr: number, tileFrame: THREE.Matrix4,
     /** World boxes no name may be drawn over: the models the map is there for. */
     keepOut?: readonly THREE.Box3[],
+    /**
+     * World Y of the GROUND under the camera when the map stands on relief
+     * (WP2). Without it the height is measured from the tile plane's origin,
+     * which on a hill left names showing near the ground.
+     */
+    groundY?: number | null,
   ): void
   dispose(): void
   /** Dev diagnosis: what the layer holds right now. */
@@ -266,7 +272,7 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
     setRegion(key, cands) { regions.set(key, cands); if (cands.length) regionsAt = performance.now() },
     removeRegion(key) { if (regions.delete(key)) regionsAt = performance.now() },
 
-    update(camera, viewport, visibleRegions, dpr, tileFrame, keepOut) {
+    update(camera, viewport, visibleRegions, dpr, tileFrame, keepOut, groundY) {
       const now = performance.now()
       const rawDt = (now - lastT) / 1000
       const dt = Math.min(0.1, rawDt)
@@ -278,7 +284,7 @@ export function createScreenLabelLayer(fontFamily = "Geist, 'Inter', system-ui, 
       camera.getWorldDirection(dir)
       const zoom = (camera as THREE.OrthographicCamera).zoom || 1
       v.set(0, 0, 0).applyMatrix4(tileFrame)
-      const heightM = eye.y - v.y
+      const heightM = eye.y - (groundY != null && Number.isFinite(groundY) ? groundY : v.y)
       if (seen && rawDt > 0) {
         const span = Math.max(10, Math.abs(heightM))
         const pan = eye.distanceTo(lastEye) / span / rawDt

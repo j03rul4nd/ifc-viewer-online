@@ -30,6 +30,9 @@ import { clampHeightGrid, despeckleHeightGrid } from '../lib/geo/height-grid-cla
 import { lowerEnvelope, isFlatGround, capFlatGround } from '../lib/geo/lower-envelope'
 import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
 import {
+  COARSE_DEM_PX, COARSE_DEM_TILES, COARSE_DEM_ZOOM, clampSea, coarseMosaicOrigin, heightRange, type CoarseDem,
+} from '../lib/geo/coarse-dem'
+import {
   TERRAIN_TILE_DIM,
   sampleHeightGridBicubic,
   computeNormals,
@@ -119,6 +122,11 @@ export type TerrainWorkerOut =
       /** (grid+1)² sky-view factor 0-1 (geometry-only → computed once here). */
       sky: Float32Array
       imagery: ImageBitmap | null
+      /**
+       * The whole city's relief, coarse (coarse-dem), or null when its tiles
+       * failed — the flat map then stays flat, as before WP2.
+       */
+      coarse: CoarseDem | null
     }
   | { type: 'drape-done'; id: string; imagery: ImageBitmap | null }
   | { type: 'error'; id: string; message: string }
@@ -270,20 +278,63 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
       (fy - (cy - 1)) * TERRAIN_TILE_DIM - 0.5,
     )
 
-    const imagery = await compositeImagery(cx, cy, req.zoom, req.imageryTemplate, req.imageryZoom, req.vector)
+    const [imagery, coarse] = await Promise.all([
+      compositeImagery(cx, cy, req.zoom, req.imageryTemplate, req.imageryZoom, req.vector),
+      buildCoarseDem(req.lat, req.lon).catch((err) => {
+        console.warn('[GeoTerrain] coarse city relief unavailable, the flat map stays flat:', err instanceof Error ? err.message : err)
+        return null
+      }),
+    ])
 
     const transfers: Transferable[] = [heights.buffer, normals.buffer, detail.buffer, sky.buffer]
     if (imagery) transfers.push(imagery)
+    if (coarse) transfers.push(coarse.heights.buffer)
     ;(self.postMessage as (msg: TerrainWorkerOut, transfer: Transferable[]) => void)(
       {
         type: 'done', id: req.id, zoom: req.zoom, grid: req.grid,
-        centerTx: cx, centerTy: cy, anchorElevation, heights, normals, detail, sky, imagery,
+        centerTx: cx, centerTy: cy, anchorElevation, heights, normals, detail, sky, imagery, coarse,
       },
       transfers,
     )
   } catch (err) {
     postError(req.id, err)
   }
+}
+
+// ── Coarse city relief (WP2) ────────────────────────────────────────────────────
+
+/**
+ * Terrarium z12, 3×3 around the anchor's tile — global, so every site gets one
+ * (a regional source only covers the fine patch). Speckle out and the sea at 0;
+ * no percentile clamp (over 30 km the sea and the mountains ARE the band) and no
+ * lower envelope (at ≈38 m a pixel the erosion would shave the ridges, and the
+ * fine patch eases onto this surface anyway).
+ */
+async function buildCoarseDem(lat: number, lon: number): Promise<CoarseDem> {
+  const zoom = COARSE_DEM_ZOOM
+  const { fx, fy } = latLonToTileFloat(lat, lon, zoom)
+  const { tileX0, tileY0 } = coarseMosaicOrigin(fx, fy, zoom)
+  const heights = new Float32Array(COARSE_DEM_PX * COARSE_DEM_PX)
+  const dem = demSourceById('terrarium')
+  await Promise.all(
+    Array.from({ length: COARSE_DEM_TILES * COARSE_DEM_TILES }, async (_, k) => {
+      const col = k % COARSE_DEM_TILES
+      const row = Math.floor(k / COARSE_DEM_TILES)
+      const data = await fetchTilePixels(demTileUrl(dem, zoom, tileX0 + col, tileY0 + row))
+      for (let y = 0; y < TERRAIN_TILE_DIM; y++) {
+        const src = y * TERRAIN_TILE_DIM * 4
+        const dst = (row * TERRAIN_TILE_DIM + y) * COARSE_DEM_PX + col * TERRAIN_TILE_DIM
+        for (let x = 0; x < TERRAIN_TILE_DIM; x++) {
+          const o = src + x * 4
+          heights[dst + x] = dem.decode(data[o], data[o + 1], data[o + 2], data[o + 3])
+        }
+      }
+    }),
+  )
+  despeckleHeightGrid(heights, COARSE_DEM_PX, COARSE_DEM_PX)
+  clampSea(heights)
+  const { minM, maxM } = heightRange(heights)
+  return { zoom, tileX0, tileY0, size: COARSE_DEM_PX, heights, minM, maxM }
 }
 
 // ── Drape only (provider switch — DEM untouched) ────────────────────────────────

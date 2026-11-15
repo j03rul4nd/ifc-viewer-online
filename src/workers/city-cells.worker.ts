@@ -5,9 +5,9 @@
 // builder the district uses at Simple — so a cell looks like the district, not
 // like a second product.
 //
-// IN  { type:'build-cell', id, template, x, y, lod, anchorLat, anchorLon,
+// IN  { type:'build-cell', id, template, x, y, tile, lod, anchorLat, anchorLon,
 //       contextTone, exclude }
-// OUT { type:'cell', id, attributes, index, origin, ranges, triangles, buildings }
+// OUT { type:'cell', id, attributes, index, origin, ranges, triangles, buildings, quarters }
 //     | { type:'error', id, message }
 
 import * as THREE from 'three'
@@ -23,9 +23,11 @@ export interface CellRequest {
   id: number
   /** OpenMapTiles URL template (from the TileJSON). */
   template: string
-  /** Cell address at CELL_Z. */
+  /** Address at CELL_Z — or, with `tile`, of the whole z14 data tile. */
   x: number
   y: number
+  /** One mesh for all four cells of the data tile (far level only). */
+  tile?: boolean
   lod: CellLod
   /** The scene's anchor: sets the metres → scene scale, as for the district. */
   anchorLat: number
@@ -38,7 +40,7 @@ export interface CellRequest {
   exclude: { minNx: number; maxNx: number; minNy: number; maxNy: number } | null
 }
 
-export interface CellAttribute { name: string; array: Float32Array | Uint8Array | Int8Array; itemSize: number; normalized: boolean }
+export interface CellAttribute { name: string; array: Float32Array | Uint8Array | Int8Array | Uint16Array; itemSize: number; normalized: boolean }
 
 export type CellResponse =
   | {
@@ -51,6 +53,8 @@ export type CellResponse =
     ranges: Uint32Array
     triangles: number
     buildings: number
+    /** With `tile`: triangles of each of its four cells, in tileCells order. */
+    quarters: number[] | null
   }
   | { type: 'error'; id: number; message: string }
 
@@ -125,14 +129,16 @@ self.onmessage = (e: MessageEvent<CellRequest>): void => {
 
 async function build(req: CellRequest): Promise<void> {
   try {
-    const t = cellDataTile(req)
+    const t = req.tile ? { z: CELL_DATA_Z, x: req.x, y: req.y } : cellDataTile(req)
     const tile = await dataTile(req.template, t.z, t.x, t.y)
     if (!tile) throw new Error('no data tile')
     const k = 2 ** (CELL_Z - CELL_DATA_Z)
     const E = tile.extent
-    // The cell's quarter of the tile, tile units.
-    const qx0 = ((req.x % k) * E) / k, qx1 = qx0 + E / k
-    const qy0 = ((req.y % k) * E) / k, qy1 = qy0 + E / k
+    // The cell's quarter of the tile (or the whole tile), tile units.
+    const qx0 = req.tile ? 0 : ((req.x % k) * E) / k, qx1 = req.tile ? E : qx0 + E / k
+    const qy0 = req.tile ? 0 : ((req.y % k) * E) / k, qy1 = req.tile ? E : qy0 + E / k
+    const quarterOf = (cx: number, cy: number): number =>
+      Math.min(k - 1, Math.floor((cy / E) * k)) * k + Math.min(k - 1, Math.floor((cx / E) * k))
     const n = 2 ** CELL_DATA_Z
     // The district's box in THIS tile's units (y down).
     const ex = req.exclude && {
@@ -143,6 +149,8 @@ async function build(req: CellRequest): Promise<void> {
     const toLatLon = (p: Pt): { lat: number; lon: number } => tilePointToLatLon(p.x, p.y, E, t.z, t.x, t.y)
 
     const footprints: BuildingLike[] = []
+    /** Footprint id → the quarter of the tile it is centred in. */
+    const quarterById = new Map<string, number>()
     let i = 0
     for (const b of tile.buildings) {
       i++
@@ -159,8 +167,10 @@ async function build(req: CellRequest): Promise<void> {
         outer = simple
         holes = []
       }
+      const id = `omt/${t.x}/${t.y}/${i}`
+      if (req.tile) quarterById.set(id, quarterOf(cx, cy))
       footprints.push({
-        id: `omt/${t.x}/${t.y}/${i}`,
+        id,
         ring: outer.map(toLatLon),
         holes: holes.length > 0 ? holes.map((h) => h.map(toLatLon)) : undefined,
         height: {
@@ -178,7 +188,10 @@ async function build(req: CellRequest): Promise<void> {
       })
       : null
     if (!built) {
-      post({ type: 'cell', id: req.id, attributes: [], index: null, origin: { x: 0, y: 0 }, ranges: new Uint32Array(0), triangles: 0, buildings: 0 }, [])
+      post({
+        type: 'cell', id: req.id, attributes: [], index: null, origin: { x: 0, y: 0 },
+        ranges: new Uint32Array(0), triangles: 0, buildings: 0, quarters: req.tile ? new Array<number>(k * k).fill(0) : null,
+      }, [])
       return
     }
     const g = built.geometry
@@ -196,10 +209,17 @@ async function build(req: CellRequest): Promise<void> {
     built.ranges.forEach((r, j) => { ranges[j * 2] = r.start; ranges[j * 2 + 1] = r.end })
     transfer.push(ranges.buffer)
     const vertices = g.attributes.position.count
+    const triangles = Math.round((index ? index.length : vertices) / 3)
+    let quarters: number[] | null = null
+    if (req.tile) {
+      quarters = new Array<number>(k * k).fill(0)
+      if (index) quarters.fill(Math.round(triangles / (k * k)))
+      else for (const r of built.ranges) quarters[quarterById.get(r.id) ?? 0] += (r.end - r.start) / 3
+    }
     post({
       type: 'cell', id: req.id, attributes, index,
       origin: { x: built.origin?.x ?? 0, y: built.origin?.y ?? 0 },
-      ranges, triangles: Math.round((index ? index.length : vertices) / 3), buildings: built.count,
+      ranges, triangles, buildings: built.count, quarters,
     }, transfer)
   } catch (err) {
     post({ type: 'error', id: req.id, message: err instanceof Error ? err.message : String(err) }, [])
@@ -210,7 +230,10 @@ async function build(req: CellRequest): Promise<void> {
  * A whole city of cells is held at once, so every byte per vertex counts —
  * measured: 277 cells were 266 MB as the builder emits them (40 bytes a
  * vertex). Colours and normals do not need 32-bit floats: a byte each is more
- * than a facade seen from a kilometre can show. 22 bytes a vertex.
+ * than a facade seen from a kilometre can show, and a building's top height
+ * in whole metres is all the night wash reads. Positions stay floats here: the
+ * main thread seats each building on the ground and then packs them to 16
+ * bits (city-cells quantizePositions). 14 bytes a vertex on the GPU.
  */
 function pack(name: string, src: Float32Array): { array: CellAttribute['array']; normalized: boolean } {
   if (name === 'color') {
@@ -222,6 +245,11 @@ function pack(name: string, src: Float32Array): { array: CellAttribute['array'];
     const out = new Int8Array(src.length)
     for (let i = 0; i < src.length; i++) out[i] = Math.round(Math.min(1, Math.max(-1, src[i])) * 127)
     return { array: out, normalized: true }
+  }
+  if (name === 'aTopH') {
+    const out = new Uint16Array(src.length)
+    for (let i = 0; i < src.length; i++) out[i] = Math.round(Math.min(65_535, Math.max(0, src[i])))
+    return { array: out, normalized: false }
   }
   return { array: src, normalized: false }
 }

@@ -471,8 +471,8 @@
         "body": "Filtra per piano, disciplina, tipo di elemento o marca del pezzo. Incolla un elenco di marche per vedere solo quelle."
       },
       "views": {
-        "title": "Tendina A | B",
-        "body": "Trascina la linea sul modello: il vecchio a sinistra, il nuovo a destra. Oppure passa da A a B nella stessa vista."
+        "title": "Tendina, affiancata o alterna",
+        "body": "Trascina la linea sul modello (vecchio a sinistra, nuovo a destra), guarda A e B affiancati con la stessa camera o alterna tra i due nella stessa vista."
       },
       "export": {
         "title": "Inoltralo",

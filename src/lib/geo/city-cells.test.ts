@@ -3,6 +3,8 @@ import {
   cellBounds, cellDataTile, cellKey, cellsInRange, admitCells, midRadiusM, farRadiusM,
   cityTriangleBudget, groupRings, simplifyRing, ringArea2, CELL_TRIANGLE_GUESS, CELL_Z,
   type CityView, type CellWant,
+  cityByteBudget, cityAdmitTriangles, quantizePositions, planUnits, tileCells, fadeLevel, FADE_MS, FADE_LEVELS,
+  CELL_BYTES_PER_VERTEX,
 } from './city-cells'
 
 // Plaça de Catalunya, where a z15 cell is ≈ 917 m.
@@ -130,5 +132,40 @@ describe('footprints', () => {
     expect(simplifyRing(sq(0, 0, 1), 5)).toBeNull()
     // A closing vertex repeated at the end is not a fourth corner.
     expect(simplifyRing([...sq(0, 0, 100), { x: 0, y: 0 }], 2)).toHaveLength(4)
+  })
+})
+
+describe('memory (WP1)', () => {
+  it('spends whichever of the triangle and byte budgets runs out first', () => {
+    const MB = 1_000_000
+    expect(cityByteBudget('high', false)).toBe(90 * MB)
+    expect(cityByteBudget('mid', false)).toBe(48 * MB)
+    expect(cityByteBudget('high', true)).toBe(20 * MB)
+    expect(cityAdmitTriangles(3_000_000, 90 * MB)).toBe(Math.floor((90 * MB) / (3 * CELL_BYTES_PER_VERTEX)))
+    expect(cityAdmitTriangles(100_000, 90 * MB)).toBe(100_000)
+  })
+
+  it('packs positions to 16 bits within 1.5 cm over a 917 m cell', () => {
+    const unit = 1 / METRES_PER_UNIT
+    const src = new Float32Array([0, 0, 0, 917 * unit, 917 * unit, 120 * unit, 300 * unit, 12 * unit, 7 * unit])
+    const q = quantizePositions(src)
+    for (let i = 0; i < src.length; i++) {
+      const back = q.centre[i % 3] + Math.max(q.array[i] / 32767, -1) * q.scale
+      expect(Math.abs(back - src[i]) * METRES_PER_UNIT).toBeLessThan(0.015)
+    }
+  })
+
+  it('draws a far tile as one mesh unless one of its cells is mid', () => {
+    const w = (x: number, y: number, lod: 'mid' | 'far'): CellWant => ({ x, y, lod, distM: 0 })
+    const units = planUnits([w(100, 100, 'mid'), w(101, 100, 'far'), w(102, 100, 'far'), w(103, 100, 'far'), w(102, 101, 'far')])
+    expect(units.map((u) => u.key)).toEqual(['100/100', '101/100', 't/51/50'])
+    expect(units[2].cells).toEqual(tileCells(51, 50))
+    expect(units[2].cells).toEqual(['102/100', '103/100', '102/101', '103/101'])
+  })
+
+  it('steps through the fade levels and then stops', () => {
+    expect(fadeLevel(0)).toBe(0)
+    expect(fadeLevel(FADE_MS - 1)).toBe(FADE_LEVELS - 1)
+    expect(fadeLevel(FADE_MS)).toBeNull()
   })
 })
