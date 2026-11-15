@@ -286,6 +286,7 @@
     "autoLowered": "Quality lowered to {{level}} to keep the view smooth.",
     "restore": "Restore",
     "contextLost": "The graphics card ran out of memory and recovered. The scene was rebuilt with a smaller geometry budget.",
+    "districtBusy": "OpenStreetMap is busy: this area stays at a lower detail. Retrying in a minute.",
     "scenery": "Scenery"
   },
   "perf": {

@@ -216,6 +216,9 @@ export function SceneStatus() {
   if (report && report.contextLosses > 0) {
     lines.push(<Notice key="lost" tone="info">{t('scene.contextLost')}</Notice>)
   }
+  if (report?.districtBusy) {
+    lines.push(<Notice key="district" tone="info">{t('scene.districtBusy')}</Notice>)
+  }
   if (s.autoDowngrade) {
     const level = s.autoDowngrade.to === 'simple' ? t('layers.detailSimple') : t('layers.detailRich')
     lines.push(

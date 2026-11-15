@@ -11,6 +11,11 @@ export interface TourStep {
   target?: string
   title: string
   body: string
+  /**
+   * The step asks for a click on its target: the click goes through to it
+   * (the rest of the page stays shielded) and doing it moves to the next step.
+   */
+  interactive?: boolean
 }
 
 export interface Tour {

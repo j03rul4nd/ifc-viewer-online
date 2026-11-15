@@ -651,6 +651,15 @@ export interface ViewerAPI {
    */
   setModelVisible(modelId: string, visible: boolean): void
   /**
+   * Side-by-side view of two sets of models (revision compare A | B) with ONE
+   * camera and ONE WebGL context: each frame is drawn twice with scissor and
+   * viewport, the left half with only `left` visible, the right half with only
+   * `right`. Orbit, pan, zoom and framing act on the shared camera, so both
+   * halves stay in sync by construction and no geometry is duplicated. Picking
+   * still uses the whole canvas. null restores the normal single view.
+   */
+  setSplitView(split: { left: string[]; right: string[]; /** CSS px covered by UI on the left; the halves share the rest. */ insetLeft?: number } | null): void
+  /**
    * Set a uniform presentation opacity on one model or every loaded model.
    * Values are clamped to 0.02–1. Used by scan/BIM comparison modes; geometry
    * and model placements are not changed. Passing 1 restores source opacity.
@@ -680,8 +689,9 @@ export interface ViewerAPI {
    * not a move of the camera, so orbiting still turns about the model — and
    * framing fits the uncovered width. When the visitor has not moved the
    * camera since the last framing, that framing is redone for the new space.
+   * A side left out keeps its last value; `bottom` is a phone's bottom sheet.
    */
-  setViewportInsets(insets: { left?: number; right?: number }, opts?: { animate?: boolean }): void
+  setViewportInsets(insets: { left?: number; right?: number; bottom?: number }, opts?: { animate?: boolean }): void
   /** Elements matching a class, GlobalId and/or name, across the loaded models (or one). */
   findElements(query: ElementQuery): Promise<IFCElementSummary[]>
   /** GlobalIds of elements, in order (null where unknown). */
@@ -1198,6 +1208,61 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.camera   = new OBC.OrthoPerspectiveCamera(components)
 
   const wr = world.renderer.three
+  // ── Split view (setSplitView) ──
+  // The renderer's own render() is wrapped once; with no split active it is a
+  // straight call. Kept here because fragments buffers live in THIS context
+  // only (a second renderer cannot draw them).
+  let splitView: { left: string[]; right: string[]; insetLeft: number } | null = null
+  const splitCam = new THREE.PerspectiveCamera()
+  const splitOrtho = new THREE.OrthographicCamera()
+  {
+    const baseRender = wr.render.bind(wr)
+    const half = (cam: THREE.Camera, aspect: number): THREE.Camera => {
+      if ((cam as THREE.PerspectiveCamera).isPerspectiveCamera) {
+        splitCam.copy(cam as THREE.PerspectiveCamera)
+        splitCam.aspect = aspect
+        splitCam.updateProjectionMatrix()
+        return splitCam
+      }
+      const o = cam as THREE.OrthographicCamera
+      splitOrtho.copy(o)
+      const h = (o.top - o.bottom) / 2, cx = (o.left + o.right) / 2
+      splitOrtho.left = cx - h * aspect; splitOrtho.right = cx + h * aspect
+      splitOrtho.updateProjectionMatrix()
+      return splitOrtho
+    }
+    wr.render = (scene: THREE.Object3D, camera: THREE.Camera): void => {
+      const sv = splitView
+      if (!sv || camera !== world.camera.three || wr.getRenderTarget() !== null) { baseRender(scene, camera); return }
+      const size = wr.getSize(new THREE.Vector2())
+      const x0 = Math.min(Math.max(0, Math.round(sv.insetLeft)), Math.floor(size.x / 2))
+      const w = Math.floor((size.x - x0) / 2), h = size.y
+      const objs = (ids: string[]) => ids.map((id) => modelObjects.get(id)?.object).filter((o): o is THREE.Object3D => !!o)
+      const left = objs(sv.left), right = objs(sv.right)
+      const was = new Map<THREE.Object3D, boolean>([...left, ...right].map((o) => [o, o.visible]))
+      const cam = half(camera, w / Math.max(1, h))
+      const autoClear = wr.autoClear
+      try {
+        wr.setScissorTest(true)
+        // Clear the strip under the UI too, so no stale single-view frame shows there.
+        wr.setViewport(0, 0, size.x, size.y); wr.setScissor(0, 0, size.x, size.y); wr.clear()
+        for (const [x, show, hide] of [[x0, left, right], [x0 + w, right, left]] as const) {
+          for (const o of show) o.visible = was.get(o) ?? true
+          for (const o of hide) o.visible = false
+          wr.setViewport(x, 0, w, h)
+          wr.setScissor(x, 0, w, h)
+          wr.autoClear = true
+          baseRender(scene, cam)
+        }
+      } finally {
+        for (const [o, v] of was) o.visible = v
+        wr.setScissorTest(false)
+        wr.setViewport(0, 0, size.x, size.y)
+        wr.setScissor(0, 0, size.x, size.y)
+        wr.autoClear = autoClear
+      }
+    }
+  }
   // ── Render density on touch devices ──
   // ThatOpen renders at min(devicePixelRatio, 2). On a phone that is 2x: four
   // times the pixels of 1x, on the weakest GPU the app runs on, for detail a
@@ -1437,8 +1502,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // moves into the uncovered part, the camera and its orbit target do not —
   // so picking, snapping and projected labels, which all go through the
   // projection matrix, stay exact.
-  let viewInsets = { left: 0, right: 0 }
+  let viewInsets = { left: 0, right: 0, bottom: 0 }
   let appliedShift = 0
+  // Vertical part of the shift (a bottom sheet on a phone): applied as is, no animation.
+  let viewShiftY = 0
   let insetRaf = 0
   // The last programmatic framing, and whether the visitor has moved the
   // camera since: if not, a change of free space redoes it.
@@ -1454,9 +1521,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // fragments engine is up, or after a dispose: neither is an error.
     let cams: Array<THREE.PerspectiveCamera | THREE.OrthographicCamera>
     try { cams = [world.camera.threePersp, world.camera.threeOrtho] } catch { return }
+    const none = Math.abs(shift) < 0.5 && Math.abs(viewShiftY) < 0.5
     for (const cam of cams) {
-      if (!w || !h || Math.abs(shift) < 0.5) cam.clearViewOffset()
-      else cam.setViewOffset(w, h, shift, 0, w, h)
+      if (!w || !h || none) cam.clearViewOffset()
+      else cam.setViewOffset(w, h, shift, viewShiftY, w, h)
     }
     appliedShift = Math.abs(shift) < 0.5 ? 0 : shift
     if (world.renderer) world.renderer.needsUpdate = true
@@ -1466,14 +1534,27 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   function framingAspect(base: number): number {
     const { w } = canvasCss()
     const free = w - viewInsets.left - viewInsets.right
-    return w > 0 && free >= w * 0.25 ? base * (free / w) : base
+    const wide = w > 0 && free >= w * 0.25 ? base * (free / w) : base
+    const k = freeHeightRatio()
+    return k < 1 ? wide / k : wide
+  }
+  /** Uncovered height over the canvas height (1 without a bottom inset). */
+  function freeHeightRatio(): number {
+    const { h } = canvasCss()
+    const free = h - viewInsets.bottom
+    return h > 0 && viewInsets.bottom > 0 && free >= h * 0.25 ? free / h : 1
+  }
+  /** The vertical field of view a framing should fit: the uncovered height's. */
+  function framingFov(fov: number): number {
+    const k = freeHeightRatio()
+    return k < 1 ? (2 * Math.atan(Math.tan((fov * Math.PI) / 360) * k) * 180) / Math.PI : fov
   }
   // 'control', not 'controlstart': a click that picks an element starts a
   // control without moving anything, and it is exactly the click that opens
   // the panel this redo is for.
   world.camera.controls.addEventListener('control', () => { movedSinceFrame = true })
   // A resize re-sets the projection; the shift is in pixels of the old size.
-  world.camera.onAspectUpdated.add(() => { if (appliedShift) applyLensShift(appliedShift) })
+  world.camera.onAspectUpdated.add(() => { if (appliedShift || viewShiftY) applyLensShift(appliedShift) })
 
   function currentView(): FitView {
     const pos = new THREE.Vector3()
@@ -1487,7 +1568,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const scene = combinedModelsBox()
     tuneSceneToBounds(scene.isEmpty() ? box : scene.clone().union(box))
     const cam = world.camera.three
-    const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
+    const fov = framingFov(cam instanceof THREE.PerspectiveCamera ? cam.fov : 45)
     const el = world.renderer?.three.domElement
     const aspect = framingAspect(cam instanceof THREE.PerspectiveCamera ? cam.aspect : (el?.clientWidth || 16) / (el?.clientHeight || 9))
     // The view is decided once: a redo after the free space changed keeps it.
@@ -1561,6 +1642,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   /** The lens shift a capture session took off, to put back after it. */
   let shotLensShift = 0
+  let shotShiftY = 0
   /** Everything beginShotRender changed, so endShotRender can put it back. */
   let shotSession: {
     width: number
@@ -1727,6 +1809,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   // ─── Postproduction — start disabled; enable on demand ───────────────────────
   let postproductionReady = false
+  let splitPpWas = false
   try {
     const pp = world.renderer.postproduction
     pp.enabled = false
@@ -3559,8 +3642,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     setViewportInsets(next, opts) {
       const prev = viewInsets
-      viewInsets = { left: Math.max(0, next.left ?? 0), right: Math.max(0, next.right ?? 0) }
-      if (prev.left === viewInsets.left && prev.right === viewInsets.right) return
+      viewInsets = { left: Math.max(0, next.left ?? prev.left), right: Math.max(0, next.right ?? prev.right), bottom: Math.max(0, next.bottom ?? prev.bottom) }
+      if (prev.left === viewInsets.left && prev.right === viewInsets.right && prev.bottom === viewInsets.bottom) return
+      viewShiftY = viewInsets.bottom / 2
       const to = (viewInsets.right - viewInsets.left) / 2
       const from = appliedShift
       if (insetRaf) cancelAnimationFrame(insetRaf)
@@ -4024,7 +4108,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (!framing) return null
 
       const cam = world.camera.three
-      const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
+      const fov = framingFov(cam instanceof THREE.PerspectiveCamera ? cam.fov : 45)
       const aspect = framingAspect(cam instanceof THREE.PerspectiveCamera
         ? cam.aspect
         : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9))
@@ -4274,6 +4358,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     getLoadedModelIds(): string[] {
       return [...modelObjects.keys()]
+    },
+
+    setSplitView(split) {
+      splitView = split && (split.left.length || split.right.length) ? { left: [...split.left], right: [...split.right], insetLeft: split.insetLeft ?? 0 } : null
+      // Postproduction renders through its own targets; the split draws straight to the canvas.
+      if (postproductionReady) {
+        const pp = world.renderer!.postproduction
+        if (splitView) { splitPpWas = pp.enabled; if (pp.enabled) pp.enabled = false }
+        else if (splitPpWas) { pp.enabled = true; splitPpWas = false }
+      }
+      if (world.renderer) world.renderer.needsUpdate = true
+      try { void fragmentsManager.core.update(true) } catch { /* not ready */ }
     },
 
     setModelVisible(modelId: string, visible: boolean) {
@@ -4732,7 +4828,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     async beginShotRender(width: number, height: number): Promise<void> {
       // A capture is the whole frame: no panel covers it, so no lens shift.
       shotLensShift = appliedShift
-      if (shotLensShift) applyLensShift(0)
+      shotShiftY = viewShiftY
+      viewShiftY = 0
+      if (shotLensShift || shotShiftY) applyLensShift(0)
       if (shotSession) return
       const controls = world.camera.controls
       const pos = new THREE.Vector3()
@@ -4802,7 +4900,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     setShotExplode(explode) { shotExplode = explode },
 
     async endShotRender(): Promise<void> {
-      if (shotLensShift) { const shift = shotLensShift; shotLensShift = 0; setTimeout(() => applyLensShift(shift), 0) }
+      if (shotLensShift || shotShiftY) {
+        const shift = shotLensShift; shotLensShift = 0
+        viewShiftY = shotShiftY; shotShiftY = 0
+        setTimeout(() => applyLensShift(shift), 0)
+      }
       const s = shotSession
       if (!s) return
       shotExplode = null

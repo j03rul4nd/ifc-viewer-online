@@ -882,6 +882,21 @@ Other numbers:
 - **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
   calls. Low-poly on purpose; at map scale a tree is a silhouette.
 
+**Which pass a ground layer is drawn in (2026-11).** The relief's material is
+`transparent` (its rim fades), so three.js draws it after every opaque mesh.
+Ground layers write no depth and rely on `renderOrder` (relief 1, greenery 2,
+water 3, roads 4); that only works if they are in the same, transparent, pass.
+The flat-map (`simple`, i.e. the City view) carriageway was opaque, so the
+relief painted over all of it: about 450 k triangles at Plaça de Catalunya built
+every time and never seen, roads read as the basemap's pale lines. It is now
+`transparent: true` with opacity 1 (still opaque on screen). A test pins it.
+Any new ground layer without depth writes must be transparent too.
+
+**Bridge decks on the flat map** (`osm-bridges`, simple path) are unlit, so
+their faces carry a baked shade (`DECK_FACE_SHADE`: top 1.12, edges 0.62,
+soffit 0.45 of the bridge grey). Before, top, edge and soffit were one flat
+grey and a deck read as a dark decal on the map.
+
 ### The ground the map corrects, the rim, and the air (2026-11)
 
 Four things changed together, because each one alone leaves a visible fault.
@@ -1125,8 +1140,26 @@ display; a tile proxy would be a second undocumented dependency that can change
 terms or vanish, for data available at the source. That choice only stays
 acceptable if the query pattern stays small and interactive:
 
-- ONE query per user toggle. Never per tile, never on camera movement.
-- bbox no wider than the terrain patch (±700 m), 6000-element cap, timeouts on
+- ONE query per user toggle for the model's own district. Never per tile, never
+  per frame.
+- **The district follows the camera, under a fixed budget** (`district-blocks.ts`,
+  2026-11 WP3). The map is cut into blocks of 3×3 z16 tiles (≈1.37 km in
+  Barcelona). One more block is asked for only when ALL hold: the view focus has
+  stayed still (within 15 m) for ≥ 1.5 s, the camera is ≤ 600 m from it, and no
+  live box covers it. At most one request in flight, ≥ 10 s between two, 60 s of
+  silence after an error, a 429 or a tiles fallback (the zone stays at the city
+  cells' level, with a quiet note in the panel). Each block's answer is cached in
+  IndexedDB, so going back asks nothing. Up to 2 extra blocks live besides the
+  anchor's (least recently looked at dropped first); "Detail by distance" off =
+  only the anchor's. The blocks' features are merged with the anchor's (a feature
+  is the anchor's if its centre is in the anchor box, else the block's its centre
+  is in; never the same id twice) and the scene is rebuilt with the one cascade,
+  so layers, detail level, look and suppression apply to all. The city cells leave
+  out every live box. Ways from extra blocks are not clipped to the fine patch:
+  they stand on the city relief (WP2). The model's height does not depend on them.
+  Dev handle: `__geoSystem.getDistrictStats()`; check script
+  `scripts/geo/district-follow-check.mjs`.
+- bbox no wider than the terrain patch (±700 m) per query, 6000-element cap, timeouts on
   both the server (`[timeout:25]`) and the client.
 - ONE query covers every layer. Results are cached per site, so toggling a
   layer — or terrain — re-extrudes locally instead of re-querying.

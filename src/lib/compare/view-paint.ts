@@ -100,10 +100,14 @@ async function flush(v: ViewerAPI): Promise<void> {
 const render = (v: ViewerAPI): void => { void flush(v) }
 
 export interface PaintTarget {
-  /** Element on screen, highlighted brighter than the rest. */
-  selected?: { modelId: string; expressId: number } | null
+  /**
+   * The change on screen, highlighted brighter than the rest. Up to one element
+   * per side (split view highlights it in A and in B); `group` paints a side
+   * that has no colour of its own in the plan (the A copy of a reshaped wall).
+   */
+  selected?: Array<{ modelId: string; expressId: number; group: RevisionPaintGroup }> | null
   /** 'changes' hides A except removed / moved-from; the others show A whole. */
-  mode: 'changes' | 'curtain' | 'blink'
+  mode: 'changes' | 'curtain' | 'blink' | 'split'
 }
 
 /**
@@ -113,32 +117,34 @@ export interface PaintTarget {
 export async function paintRevision(
   v: ViewerAPI, plan: RevisionOverlayPlan, idsA: string[], idsB: string[], target: PaintTarget,
 ): Promise<void> {
-  const sel = target.selected ?? null
+  const sels = target.selected ?? []
   const paintModel = async (id: string, isA: boolean): Promise<void> => {
     const m = model(v, id)
     if (!m) return
     try {
       const all = await idsOf(m)
       if (isA && target.mode === 'changes') {
-        const keep = plan.keepVisibleA[id] ?? []
-        await m.setVisible(undefined, false)
-        if (keep.length) await m.setVisible(keep, true)
-      } else if (isA) {
-        await m.resetVisible()
+        const keep = new Set(plan.keepVisibleA[id] ?? [])
+        const hide = all.filter((x) => !keep.has(x))
+        if (hide.length) await m.setVisible(hide, false)
+        if (keep.size) await m.setVisible([...keep], true)
+      } else if (isA && all.length) {
+        await m.setVisible(all, true)
       }
       const groups = plan.paint[id] ?? {}
       // A highlight does not replace one already on an item: paint each item
       // once — clay only on what did not change — after clearing the last pass.
-      const changed = new Set(Object.values(groups).flat())
+      const mine = sels.filter((x) => x.modelId === id)
+      const selIds = new Set(mine.map((x) => x.expressId))
+      const changed = new Set([...Object.values(groups).flat(), ...selIds])
       await m.resetHighlight()
       const base = changed.size ? all.filter((x) => !changed.has(x)) : all
       if (base.length) await m.highlight(base, CLAY)
       for (const [g, list] of Object.entries(groups) as Array<[RevisionPaintGroup, number[]]>) {
-        if (!list.length) continue
-        const others = sel && sel.modelId === id ? list.filter((x) => x !== sel.expressId) : list
-        if (others.length) await m.highlight(others, sel ? SOFT[g] : SOLID[g])
-        if (sel && sel.modelId === id && others.length !== list.length) await m.highlight([sel.expressId], XRAY[g])
+        const others = list.filter((x) => !selIds.has(x))
+        if (others.length) await m.highlight(others, sels.length ? SOFT[g] : SOLID[g])
       }
+      for (const x of mine) await m.highlight([x.expressId], XRAY[x.group])
     } catch { /* model mid-unload */ }
   }
   await Promise.all([...idsA.map((id) => paintModel(id, true)), ...idsB.map((id) => paintModel(id, false))])
