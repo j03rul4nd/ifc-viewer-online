@@ -228,11 +228,10 @@ async function build(req: CellRequest): Promise<void> {
     // mesh (no draw call of their own). A small raised crown with a pyramid top.
     let trees = 0
     if (req.lod === 'mid' && !neutral && tile.green.length > 0) {
-      const box = ex
       const seeds = seedTrees(tile.green, TREE_SPACING_M / metresPerUnit, { x0: qx0, y0: qy0, x1: qx1, y1: qy1 }, TREES_PER_CELL)
       const r = 3 / metresPerUnit
       for (const [j, p] of seeds.entries()) {
-        if (box && p.x > box.x0 - r && p.x < box.x1 + r && p.y > box.y0 - r && p.y < box.y1 + r) continue
+        if (exs.some((box) => p.x > box.x0 - r && p.x < box.x1 + r && p.y > box.y0 - r && p.y < box.y1 + r)) continue
         const ring = Array.from({ length: 6 }, (_, k) => toLatLon({
           x: p.x + r * Math.cos((k * Math.PI) / 3), y: p.y - r * Math.sin((k * Math.PI) / 3),
         }))
