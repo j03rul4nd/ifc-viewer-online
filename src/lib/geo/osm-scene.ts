@@ -1020,6 +1020,13 @@ export function bufferCentreline(
 const DECK_THICKNESS_M = 1.2
 
 /**
+ * Baked shade per deck face, against BRIDGE_COLOR. Top a touch lighter (it
+ * catches the sky), edges at the kerb-face shade the carriageway already uses,
+ * soffit darkest (it is in its own shadow).
+ */
+export const DECK_FACE_SHADE = { top: 1.12, side: 0.62, soffit: 0.45 } as const
+
+/**
  * Clearance for a bridge OUTLINE that carries nothing we solved.
  *
  * The last resort, and deliberately a constant. It used to be `height` when the
@@ -1113,6 +1120,9 @@ export function buildBridgeLayer(
   const mToN = frame.mToN
 
   const positions: number[] = []
+  /** One shade per vertex, see DECK_FACE_SHADE. */
+  const shades: number[] = []
+  const shade = (k: number, verts: number): void => { for (let i = 0; i < verts; i++) shades.push(k) }
   let count = 0
 
   const pushDeck = (poly: THREE.Vector2[], topZ: number, bottomZ: number, holes: THREE.Vector2[][] = []): void => {
@@ -1123,6 +1133,7 @@ export function buildBridgeLayer(
     if (!faces) return
     for (const [a, b, c] of faces) {
       for (const idx of [a, b, c]) positions.push(ring[idx].x, ring[idx].y, topZ)
+      shade(DECK_FACE_SHADE.top, 3)
     }
     // Soffit. `triangulate` leaves the ring CCW, so the top faces +z and the
     // same winding reversed faces −z. Without it the simple path — whose
@@ -1131,6 +1142,7 @@ export function buildBridgeLayer(
     // that makes a bridge read as a bridge.
     for (const [a, b, c] of faces) {
       for (const idx of [c, b, a]) positions.push(ring[idx].x, ring[idx].y, bottomZ)
+      shade(DECK_FACE_SHADE.soffit, 3)
     }
     // Sides, so the deck has visible thickness rather than being a decal.
     for (const edge of [poly, ...holes]) {
@@ -1139,6 +1151,7 @@ export function buildBridgeLayer(
         const p1 = edge[(i + 1) % edge.length]
         positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, bottomZ, p1.x, p1.y, topZ)
         positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, topZ, p0.x, p0.y, topZ)
+        shade(DECK_FACE_SHADE.side, 6)
       }
     }
   }
@@ -1204,11 +1217,18 @@ export function buildBridgeLayer(
   // view. It survived because the simple path uses a flat-coloured
   // MeshBasicMaterial that never needed the attribute, so nothing looked wrong
   // until the deck moved to PBR.
+  //
+  // Shaded per face (top / side / soffit). The simple path is UNLIT, and a deck
+  // whose top, edges and underside are one flat grey reads as a dark decal on
+  // the map — its 1.2 m of thickness, the one thing that says "this is above
+  // the street", was invisible. The detailed path is lit; the shade there only
+  // deepens the edge a little, which is what an overhang does anyway.
   const colors = new Float32Array(positions.length)
-  for (let i = 0; i < colors.length; i += 3) {
-    colors[i] = BRIDGE_COLOR.r
-    colors[i + 1] = BRIDGE_COLOR.g
-    colors[i + 2] = BRIDGE_COLOR.b
+  for (let i = 0, v = 0; i < colors.length; i += 3, v++) {
+    const k = shades[v] ?? 1
+    colors[i] = BRIDGE_COLOR.r * k
+    colors[i + 1] = BRIDGE_COLOR.g * k
+    colors[i + 2] = BRIDGE_COLOR.b * k
   }
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
   geometry.computeVertexNormals()
@@ -1226,7 +1246,7 @@ export function buildBridgeLayer(
     return { object: deck, count }
   }
 
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: BRIDGE_COLOR }))
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true }))
   mesh.name = 'osm-bridges'
   mesh.renderOrder = 4
   return { object: mesh, count }
@@ -2944,6 +2964,15 @@ function* linearLayerSteps(
     // basemap and with each other — a few centimetres cannot survive a depth
     // buffer at city scale, so the stack is ordered by renderOrder instead.
     depthWrite: false,
+    // In the TRANSPARENT pass although fully opaque (opacity stays 1). The
+    // relief's material is transparent (its rim fades), so three.js draws it
+    // after every opaque mesh — and a carriageway that writes no depth, drawn
+    // in the opaque pass, was simply painted over by the relief: the whole
+    // simple-path road layer (≈ 450 k triangles at Plaça de Catalunya) was
+    // built every time and never seen. In the transparent pass the order is
+    // renderOrder again: relief 1, greenery 2, water 3, roads 4. The detailed
+    // path's createSurfaceMaterial has always been transparent for this reason.
+    transparent: true,
     side: THREE.DoubleSide,
   })))
   surface.name = `osm-${kind}`

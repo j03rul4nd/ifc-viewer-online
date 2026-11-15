@@ -471,8 +471,8 @@
         "body": "Filtra por planta, disciplina, tipo de elemento o marca de pieza. Pega una lista de marcas para ver solo esas."
       },
       "views": {
-        "title": "Cortina A | B",
-        "body": "Arrastra la línea sobre el modelo: lo antiguo a la izquierda, lo nuevo a la derecha. O alterna entre A y B en la misma vista."
+        "title": "Cortina, dividida o alternar",
+        "body": "Arrastra la línea sobre el modelo (antigua a la izquierda, nueva a la derecha), mira A y B lado a lado con la misma cámara o alterna entre las dos en la misma vista."
       },
       "export": {
         "title": "Pásalo a quien toque",

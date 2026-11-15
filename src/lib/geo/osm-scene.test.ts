@@ -8,7 +8,7 @@ import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
   dashAlong, TUNNEL_TRACE_FRACTION, TUNNEL_TRACE_GAIN,
-  dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer,
+  dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer, DECK_FACE_SHADE,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import type { OsmFeature } from './osm-features'
@@ -271,6 +271,23 @@ describe('buildBridgeLayer', () => {
     expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(0)
   })
 
+  it('shades the deck per face, so an unlit deck still shows its edge and soffit', () => {
+    const built = buildBridgeLayer([area('bridge', 'b2')], OPTS)!
+    const mat = built.object.material as THREE.MeshBasicMaterial
+    expect(mat.vertexColors).toBe(true)
+    const c = built.object.geometry.getAttribute('color')
+    const p = built.object.geometry.getAttribute('position')
+    const zs = Array.from({ length: p.count }, (_, i) => p.getZ(i))
+    const top = Math.max(...zs)
+    let topR = 0, sideMin = Infinity
+    for (let i = 0; i < c.count; i++) {
+      if (p.getZ(i) === top) topR = Math.max(topR, c.getX(i))
+      else sideMin = Math.min(sideMin, c.getX(i))
+    }
+    // Edges and soffit at least a third darker than the top.
+    expect(sideMin / topR).toBeCloseTo(DECK_FACE_SHADE.soffit / DECK_FACE_SHADE.top, 3)
+  })
+
   it('returns null when there are no bridges', () => {
     expect(buildBridgeLayer([area('water', 'w1')], OPTS)).toBeNull()
   })
@@ -412,6 +429,16 @@ describe('buildLinearLayer', () => {
   it('returns null when the layer has nothing in it', () => {
     expect(buildLinearLayer([], 'road', OPTS)).toBeNull()
     expect(buildLinearLayer([linear('rail', 'r1')], 'road', OPTS)).toBeNull()
+  })
+
+  it('draws the flat-map carriageway in the transparent pass, after the relief', () => {
+    // The relief's material is transparent; an opaque road without depth
+    // writes is drawn before it and painted over (the whole layer vanished).
+    const built = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
+    const m = surfaceOf(built.object).material as THREE.Material
+    expect(m.transparent).toBe(true)
+    expect(m.opacity).toBe(1)
+    expect(m.depthWrite).toBe(false)
   })
 
   it('buffers a centreline into a ribbon with a colour per vertex', () => {
@@ -557,7 +584,8 @@ describe('buildLinearLayer — solidity', () => {
   it('is opaque — the map underneath must not show through the asphalt', () => {
     const built = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
     const mat = surfaceOf(built.object).material as THREE.MeshBasicMaterial
-    expect(mat.transparent).toBe(false)
+    // Opacity 1; the transparent FLAG only picks the pass (see the test above).
+    expect(mat.opacity).toBe(1)
     // Still no depth writing: these layers are coplanar and ordered by hand.
     expect(mat.depthWrite).toBe(false)
   })
