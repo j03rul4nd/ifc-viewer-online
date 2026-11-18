@@ -19,6 +19,7 @@ import {
   facetBuckets, usefulFacets, supersededIds, readSchema, parseContainerName,
   type FacetKind, type FacetInput,
 } from '../lib/federation-index'
+import FederationFileControls from './FederationFileControls'
 
 interface FederationBarProps {
   models: SceneModel[]
@@ -257,6 +258,8 @@ export default function FederationBar({ models, query, onQuery, layersOpen, onLa
           {t('scene.federation.views')}{views.length ? ` · ${views.length}` : ''}
         </button>
       </div>
+
+      <FederationFileControls variant="bar" models={models} chipClass={`${chip} ${chipOff}`} />
 
       {viewsOpen && (
         <div className="rounded-md border border-[var(--border)] p-1.5 space-y-1">

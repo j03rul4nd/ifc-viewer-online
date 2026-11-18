@@ -19,6 +19,7 @@
 // land anywhere on the backdrop, not just on the drop zone, which the shared
 // Modal does not offer.
 
+import FederationFileControls from './FederationFileControls'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { trackServerProcessingInterest, trackServerProcessingOffered } from '../lib/analytics'
 import { isEmbedded } from '../lib/url-params'
@@ -187,6 +188,13 @@ function IdleView({
           </button>
         </div>
       )}
+
+      {/* A saved federation: the way back in after a reload, scene empty. */}
+      <FederationFileControls
+        variant="link"
+        chipClass="h-8 px-3 rounded-[8px] border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)]"
+        onStarted={onClose}
+      />
 
       {/* This dialog takes IFC only; everything else has one door. */}
       {onOpenAddData && (

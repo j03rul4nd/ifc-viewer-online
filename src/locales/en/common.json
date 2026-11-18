@@ -359,5 +359,22 @@
     "resizePanelHint": "Drag or use the arrow keys to resize. Double-click to switch size.",
     "maximizePanel": "Maximize panel",
     "restorePanel": "Restore panel size"
+  },
+  "federationFile": {
+    "save": "Save federation",
+    "saveHint": "Download this set as a .ifcfed.json: placement, visibility, opacity and parked files. No model data is included.",
+    "open": "Open federation",
+    "openHint": "Open a .ifcfed.json and then choose its IFC files",
+    "namePrompt": "Name for this federation",
+    "defaultName": "My federation",
+    "saved": "Federation saved to your downloads",
+    "invalid": "That file is not a valid federation",
+    "pickFiles": "“{{name}}” lists {{count}} files. Choose them now; matching files load as they were saved.",
+    "chooseFiles": "Choose IFC files",
+    "missing_one": "{{count}} file missing — the rest were loaded",
+    "missing_other": "{{count}} files missing — the rest were loaded",
+    "dismiss": "Dismiss",
+    "openSaved": "Open a saved federation (.ifcfed.json)",
+    "download": "Download"
   }
 }

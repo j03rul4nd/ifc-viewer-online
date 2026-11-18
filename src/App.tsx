@@ -246,6 +246,7 @@ import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useFederationStore } from './stores/federationStore'
+import { setRestoreApplier } from './lib/federation-restore'
 import { useFederationLook } from './hooks/useFederationLook'
 import { useGeoStore } from './stores/geoStore'
 import { parseBackgroundSpec } from './lib/scene/background'
@@ -1375,6 +1376,24 @@ export default function App() {
     removeModel:        removeSceneModel,
     clearScene,
   } = useSceneStore()
+
+  // A model reopened from a saved federation (.ifcfed.json) gets its saved
+  // state back. Registered here, not in a panel, so it works from an empty
+  // scene. Not an undo step: it is the starting state, not an edit.
+  useEffect(() => setRestoreApplier((id, a) => {
+    const scene = useSceneStore.getState()
+    if (!scene.models.some((m) => m.id === id)) return
+    if (a.transform) {
+      scene.setModelTransform(id, a.transform)
+      viewerApiRef.current?.setModelTransform(a.transform, id)
+    }
+    if (a.placedByHand) scene.setPlacedByHand(id, true)
+    useFederationStore.getState().setOpacity(id, a.opacity)
+    if (!a.visible) {
+      scene.setModelVisible(id, false)
+      viewerApiRef.current?.setModelVisible(id, false)
+    }
+  }), [])
 
   // What used to be one flag is now a reading of the queue. 'loading' means
   // something is still loading — models already in the scene stay fully usable

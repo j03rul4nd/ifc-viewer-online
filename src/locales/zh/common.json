@@ -355,5 +355,22 @@
     "resizePanelHint": "拖动或使用方向键调整大小。双击切换尺寸。",
     "maximizePanel": "最大化面板",
     "restorePanel": "还原面板大小"
+  },
+  "federationFile": {
+    "save": "保存联合模型",
+    "saveHint": "将此组合下载为 .ifcfed.json：位置、可见性、不透明度和暂存的文件。不包含模型数据。",
+    "open": "打开联合模型",
+    "openHint": "打开一个 .ifcfed.json，然后选择其中的 IFC 文件",
+    "namePrompt": "此联合模型的名称",
+    "defaultName": "我的联合模型",
+    "saved": "联合模型已保存到下载文件夹",
+    "invalid": "该文件不是有效的联合模型",
+    "pickFiles": "“{{name}}”包含 {{count}} 个文件。现在选择它们；匹配的文件将按保存时的状态加载。",
+    "chooseFiles": "选择 IFC 文件",
+    "missing_one": "缺少 {{count}} 个文件，其余已加载",
+    "missing_other": "缺少 {{count}} 个文件，其余已加载",
+    "dismiss": "关闭",
+    "openSaved": "打开已保存的联合模型（.ifcfed.json）",
+    "download": "下载"
   }
 }
