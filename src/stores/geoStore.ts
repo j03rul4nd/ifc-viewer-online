@@ -19,6 +19,7 @@ import type { FrameVerdict, SceneReport } from '../lib/geo/scene-budget'
 import type { BuildingDetail, ContextTone } from '../lib/geo/building-mesh'
 import { clampLookTuning, DEFAULT_LOOK_TUNING, type LookTuning } from '../lib/geo/map-look'
 import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
+import { consumeMapCrashFlag, safeMapOverrides } from '../lib/geo/map-crash-guard'
 
 const log = createLogger('GeoStore')
 
@@ -472,6 +473,21 @@ interface GeoStore {
 
 // ── Store ───────────────────────────────────────────────────────────────────────
 
+/**
+ * Safe map mode: the previous map enable in this tab never disarmed the crash
+ * guard (iOS killed the page). Heavy layers start off for THIS session only —
+ * localStorage is not rewritten, so the user's choices come back next time.
+ */
+const SAFE_MAP = consumeMapCrashFlag()
+if (SAFE_MAP) {
+  setTimeout(() => {
+    void import('./toastStore').then((m) => m.useToastStore.getState().addToast({
+      message: 'The 3D map was too heavy for this device last time — heavy layers are off for this session.',
+      severity: 'warning',
+    })).catch(() => { /* best effort */ })
+  }, 0)
+}
+
 export const useGeoStore = create<GeoStore>()(
   devtools(
     (set, get) => ({
@@ -490,16 +506,16 @@ export const useGeoStore = create<GeoStore>()(
       subsurfaceMarkers: lsGet(LS_SUBSURFACE_MARKERS) !== '0',
       undergroundCounts: null,
       terrainLook:    readTerrainLook(),
-      buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
+      buildingsEnabled:   !SAFE_MAP && lsGet(LS_BUILDINGS) === '1',
       buildingsStatus:    'idle' as const,
       buildingsCounts:    NO_FEATURE_COUNTS,
       buildingsEstimated: 0,
-      featureLayers:      readFeatureLayers(),
-      contextDetail:      readContextDetail(),
+      featureLayers:      SAFE_MAP ? safeMapOverrides(readFeatureLayers()).featureLayers : readFeatureLayers(),
+      contextDetail:      SAFE_MAP ? 'simple' : readContextDetail(),
       contextTone:        readContextTone(),
       mapLook:            lsGet(LS_LOOK) ?? 'daylight',
       lookTuning:         readLookTuning(),
-      vehicles:           lsGet(LS_VEHICLES) === '1',
+      vehicles:           !SAFE_MAP && lsGet(LS_VEHICLES) === '1',
       suppressContext:    clearStoredSuppress(),
       hiddenFeatures:     readHiddenFeatures(),
       sceneHidden:        [],

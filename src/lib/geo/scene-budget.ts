@@ -32,6 +32,29 @@ import type { BuildingDetail } from './building-mesh'
 import type { DeviceTier } from './render-scheduler'
 
 export type { DeviceTier }
+import { isMemoryConstrained } from '../loading/device-profile'
+import { probeEnvironment } from '../loading/resource-policy'
+
+/**
+ * A phone or tablet whose tab iOS/Android kill on memory (silent reload, no
+ * JS error). Mobile AND memory-constrained — the same devices render-scheduler
+ * puts on the 'low' tier — so desktops, even weak ones, are never caught here.
+ */
+export function isLowMemoryDevice(
+  hints: { mobile: boolean; constrained: boolean } = { mobile: probeEnvironment().mobile, constrained: isMemoryConstrained() },
+): boolean {
+  return hints.mobile && hints.constrained
+}
+
+/** Tile LRU ceiling: 80 on low-memory mobile, 300 elsewhere (desktop unchanged). */
+export function tileLruMax(lowMemory: boolean = isLowMemoryDevice()): number {
+  return lowMemory ? 80 : 300
+}
+
+/** Multiplier for scatter caps (props, boats): ×0.25 on low-memory mobile. */
+export function propCapScale(lowMemory: boolean = isLowMemoryDevice()): number {
+  return lowMemory ? 0.25 : 1
+}
 
 /** A buildable slice of the scene: an OSM layer, or the invented scenery. */
 export type LayerKey = FeatureKind | 'scenery'

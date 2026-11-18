@@ -46,6 +46,7 @@ import {
   trackMapPlacementSaved, trackMapTerrainToggled, trackMapGeorefExtracted, trackMapError,
 } from '../../lib/analytics'
 import type { ViewerAPI } from '../../lib/viewer'
+import { armForMapEnable, disarmMapCrashGuard } from '../../lib/geo/map-crash-guard'
 import type { GeoSystemAPI } from '../../lib/geo/geo-system'
 import type { GeoPlacement, GeorefExtraction, MapProvider, TerrainStyle, TerrainLook } from '../../lib/geo/geo-types'
 
@@ -462,9 +463,12 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       })
       geo.setSubsurfaceMarkers(useGeoStore.getState().subsurfaceMarkers)
       geo.setUndergroundCallback((c) => useGeoStore.getState().setUndergroundCounts(c))
+      // Crash-loop guard: if iOS kills the page under this, the reload starts
+      // in safe map mode instead of restoring the same heavy layers.
+      const guard = armForMapEnable()
       await geo.enable(placement, provider)
       const s = useGeoStore.getState()
-      if (epoch !== s.epoch) { geo.disable(); return } // cancelled mid-flight
+      if (epoch !== s.epoch) { disarmMapCrashGuard(); geo.disable(); return } // cancelled mid-flight
       s.setPlacement(placement)
       s.confirmEnabled(epoch)
       enabledAtRef.current = Date.now()
@@ -476,7 +480,9 @@ export function useGeoController(viewerApiRef: React.MutableRefObject<ViewerAPI 
       // get the context back is to switch off and on again.
       if (useGeoStore.getState().terrainEnabled) void applyTerrain(true)
       if (useGeoStore.getState().buildingsEnabled) void toggleBuildings(true)
+      guard.markStable()
     } catch {
+      disarmMapCrashGuard()
       useGeoStore.getState().fail(epoch, 'errors.enableFailed')
       trackMapError({ stage: 'enable' })
     }

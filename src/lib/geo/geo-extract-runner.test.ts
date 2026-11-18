@@ -189,6 +189,19 @@ describe('ensureGeorefExtracted', () => {
     expect(g2.status).toBe('found')
   })
 
+  it('serializes different models: one worker at a time, terminated before the next', async () => {
+    registerModel('m1'); registerModel('m2')
+    const p1 = ensureGeorefExtracted('m1')
+    const p2 = ensureGeorefExtracted('m2')
+    expect(FakeWorker.instances).toHaveLength(1)
+    FakeWorker.instances[0].respondDone(foundExtraction())
+    await p1
+    expect(FakeWorker.instances[0].terminated).toBe(true)
+    await vi.waitFor(() => expect(FakeWorker.instances).toHaveLength(2))
+    FakeWorker.instances[1].respondDone(foundExtraction())
+    expect((await p2).status).toBe('found')
+  })
+
   it('returns the cached extraction without spawning a worker', async () => {
     registerModel('m1')
     useGeoStore.getState().setGeoref('m1', foundExtraction())

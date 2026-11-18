@@ -17,6 +17,7 @@
 import * as THREE from 'three'
 import { latLonToNormalized } from './geo-math'
 import { createGroundFrame } from './ground-frame'
+import { propCapScale } from './scene-budget'
 import { variate } from './feature-variation'
 import type { OsmFeature, LatLonPoint } from './osm-features'
 
@@ -36,7 +37,7 @@ const MIN_PONTOON_LENGTH_M = 12
 const DEFAULT_BERTH_M = 4.6
 /** Share of berths with a boat in them. */
 const OCCUPANCY = 0.82
-const MAX_BOATS = 900
+const MAX_BOATS = Math.round(900 * propCapScale())
 
 /** "Nr 40-67" → 28 berths. Undefined when the name says nothing of the kind. */
 export function berthCount(name: string | undefined): number | undefined {
