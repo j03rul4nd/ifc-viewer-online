@@ -591,6 +591,8 @@ export function trackFeatureUsed(props: {
     | 'federation_open'
   /** Bucketed model count only — never names, hashes or sizes. */
   models?: '2' | '3-5' | '6-10' | '11+'
+  /** federation_open only: which door opened it. */
+  source?: 'file' | 'drop' | 'library'
 }): void {
   const signal = FEATURE_SIGNAL[props.feature]
   if (signal) noteFeedbackSignal(signal)

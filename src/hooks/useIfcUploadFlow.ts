@@ -23,6 +23,8 @@ import { createLogger }           from '../lib/logger'
 import { loadingController, type DuplicateMatch } from '../lib/loading/controller'
 import { useLoadingStore }        from '../stores/loadingStore'
 import { isIfcFileName }          from '../lib/upload.utils'
+import { splitFederationDrop }    from '../lib/federation-drop'
+import { openFederationFile }     from '../lib/federation-restore'
 import type {
   SubmitScope,
   UploadEntry,
@@ -71,6 +73,17 @@ export function useIfcUploadFlow({
     if (current.id === 'submitting' || incoming.length === 0) return
 
     let candidates = Array.from(incoming)
+    // A saved federation is not an IFC: it opens as a federation, and any IFC
+    // dropped with it satisfies the restore without asking again.
+    const fed = splitFederationDrop(candidates)
+    if (fed.manifest) {
+      const manifestFile = fed.manifest
+      void openFederationFile(manifestFile, fed.ifcs, origin === 'drop' ? 'drop' : 'file').then((r) => {
+        if (r === 'restored') onClose()
+      })
+      if (fed.rest.length > 0) onNonIfcFiles?.(fed.rest)
+      return
+    }
     if (onNonIfcFiles) {
       const foreign = candidates.filter((f) => !isIfcFileName(f.name))
       if (foreign.length > 0) {
@@ -100,7 +113,7 @@ export function useIfcUploadFlow({
     log.debug(`${origin === 'drop' ? 'Dropped' : 'Picked'} ${entries.length} file(s)`)
     dispatch({ type: 'FILES_ADDED', entries })
     prepare(entries)
-  }, [dispatch, prepare, onNonIfcFiles])
+  }, [dispatch, prepare, onNonIfcFiles, onClose])
 
   // ── Files the dialog was opened with (global drop over the viewer) ───────
   // Guarded by a ref, not by effect cleanup: StrictMode runs this effect twice

@@ -246,7 +246,8 @@ import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useFederationStore } from './stores/federationStore'
-import { setRestoreApplier } from './lib/federation-restore'
+import { setRestoreApplier, openFederationFile } from './lib/federation-restore'
+import { splitFederationDrop } from './lib/federation-drop'
 import { useFederationLook } from './hooks/useFederationLook'
 import { useGeoStore } from './stores/geoStore'
 import { parseBackgroundSpec } from './lib/scene/background'
@@ -2296,6 +2297,16 @@ export default function App() {
   const routeDroppedFiles = useCallback((files: File[], opts: { via?: DataVia } = {}): void => {
     const via = opts.via ?? 'drop'
     setShowAddData(false)
+    // A saved federation opens as one (never as an IFC). IFCs dropped with it
+    // satisfy the restore; without them the upload dialog asks for the files.
+    const fedDrop = splitFederationDrop(files)
+    if (fedDrop.manifest) {
+      void openFederationFile(fedDrop.manifest, fedDrop.ifcs, via === 'drop' ? 'drop' : 'file').then((r) => {
+        if (r === 'pending' && !showUploadRef.current) { setUploadInitial(null); setShowUpload(true) }
+      })
+      if (fedDrop.rest.length === 0) return
+      files = fedDrop.rest
+    }
     // Computed here, not read from toolbarIsFull (declared further down).
     const interactive = effectiveChrome.showToolbar && effectiveChrome.toolbarVariant === 'full'
       && !clientMode && !effectiveChrome.quiet
