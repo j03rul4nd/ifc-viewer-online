@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   budgetGate, createFrameWatch, formatTriangles, lowerDetail, TRIANGLE_BUDGET,
+  isLowMemoryDevice, tileLruMax, propCapScale,
 } from './scene-budget'
 
 describe('scene-budget · budgetGate', () => {
@@ -107,5 +108,21 @@ describe('scene-budget · helpers', () => {
     expect(formatTriangles(1234)).toBe('1.2 k')
     expect(formatTriangles(56_789)).toBe('57 k')
     expect(formatTriangles(1_234_567)).toBe('1.2 M')
+  })
+})
+
+describe('low-memory mobile caps', () => {
+  it('only a constrained mobile device is low-memory', () => {
+    expect(isLowMemoryDevice({ mobile: true, constrained: true })).toBe(true)
+    expect(isLowMemoryDevice({ mobile: false, constrained: true })).toBe(false)
+    expect(isLowMemoryDevice({ mobile: true, constrained: false })).toBe(false)
+  })
+  it('tile LRU 80 on low-memory, 300 elsewhere', () => {
+    expect(tileLruMax(true)).toBe(80)
+    expect(tileLruMax(false)).toBe(300)
+  })
+  it('prop caps x0.25 on low-memory, unchanged elsewhere', () => {
+    expect(propCapScale(true)).toBe(0.25)
+    expect(propCapScale(false)).toBe(1)
   })
 })

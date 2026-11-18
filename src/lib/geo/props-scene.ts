@@ -23,6 +23,7 @@ import { sampleProfile, type SolvedProfile } from './vertical-network'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 import { hashId, variate } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
+import { propCapScale } from './scene-budget'
 
 /** The vertical frame these options describe — see ground-frame. */
 function groundFrameFor(opts: PropsOptions): ReturnType<typeof createGroundFrame> {
@@ -337,8 +338,10 @@ const MIN_ROAD_WIDTH_M = 4.5
 const MIN_BUS_ROAD_WIDTH_M = 7
 /** Spacing along a carriageway, metres. Sparse on purpose: a full road reads as a jam. */
 const CAR_SPACING_M = 85
-const MAX_CARS = 700
-const MAX_TRAINS = 40
+/** Scatter caps shrink ×0.25 on low-memory mobile (iOS tab-kill budget). */
+const CAP_SCALE = propCapScale()
+const MAX_CARS = Math.round(700 * CAP_SCALE)
+const MAX_TRAINS = Math.round(40 * CAP_SCALE)
 /** Carriages in a standing train. */
 const TRAIN_CARRIAGES = 4
 
@@ -354,7 +357,7 @@ const MIN_LAMP_ROAD_WIDTH_M = 6
  * than uniformly sparse. At 92 triangles in one instanced draw, headroom is
  * cheap. Trees, by comparison, are capped at 4000 and cost 3× each.
  */
-const MAX_LAMPS = 3000
+const MAX_LAMPS = Math.round(3000 * CAP_SCALE)
 
 /** The authored shelter's own footprint, metres — what we scale relative to. */
 const CANOPY_WIDTH_M = 6.8
@@ -362,7 +365,7 @@ const CANOPY_WIDTH_M = 6.8
 const MIN_PLATFORM_WIDTH_M = 3.2
 /** Platform length each shelter is taken to cover. */
 const CANOPY_EVERY_M = 34
-const MAX_CANOPIES = 60
+const MAX_CANOPIES = Math.round(60 * CAP_SCALE)
 
 /** How far a bench, bin or shelter stands from the edge of the carriageway. */
 const KERB_MARGIN_M = 1.1
@@ -382,9 +385,9 @@ const BOLLARD_SPACING_M = 9
  * the set (68 triangles) and the densest by design; benches and bins share
  * theirs, since they come off one cursor and compete for the same kerb.
  */
-const MAX_FURNITURE = 900
-const MAX_BOLLARDS = 2400
-const MAX_SHELTERS = 40
+const MAX_FURNITURE = Math.round(900 * CAP_SCALE)
+const MAX_BOLLARDS = Math.round(2400 * CAP_SCALE)
+const MAX_SHELTERS = Math.round(40 * CAP_SCALE)
 /**
  * A bus SHELTER needs more road than a parked bus does.
  *

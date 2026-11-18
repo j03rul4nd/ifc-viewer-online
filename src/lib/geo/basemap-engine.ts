@@ -33,6 +33,7 @@ import {
 } from '3d-tiles-renderer/plugins'
 import { createLogger } from '../logger'
 import { probeEnvironment } from '../loading/resource-policy'
+import { isLowMemoryDevice, tileLruMax } from './scene-budget'
 import type { MapProvider } from './geo-types'
 import {
   errorTargetFor, lodResolution, stylePixelScale,
@@ -68,6 +69,10 @@ export function basemapBudget(mobile: boolean): {
     : { minTiles: 50, maxTiles: 300, minBytes: 300 * MB, maxBytes: 400 * MB, unloadBytes: 256 * MB, fadeOutTiles: 120 }
 }
 const BUDGET = basemapBudget(probeEnvironment().mobile)
+/** Tile LRU ceiling: 80 on low-memory mobile (iOS tab-kill budget), else BUDGET. */
+const LRU_MAX_TILES = Math.min(BUDGET.maxTiles, tileLruMax())
+/** Tile LOD planned at DPR 1 on low-memory mobile. */
+const LOW_MEMORY = isLowMemoryDevice()
 const UNLOAD_DELAY_MS = 3_000
 /** Rolling tile-outcome window for the degraded signal. */
 const FAIL_WINDOW = 20
@@ -352,7 +357,7 @@ export function createBasemapEngine(): BasemapEngine {
 
     t.errorTarget = errorTarget()
     t.lruCache.minSize = BUDGET.minTiles
-    t.lruCache.maxSize = BUDGET.maxTiles
+    t.lruCache.maxSize = LRU_MAX_TILES
     t.lruCache.minBytesSize = BUDGET.minBytes
     t.lruCache.maxBytesSize = BUDGET.maxBytes
 
@@ -404,7 +409,7 @@ export function createBasemapEngine(): BasemapEngine {
   function syncResolution(): void {
     if (!tiles || !camera || !renderer) return
     renderer.getSize(cssSize)
-    const next = lodResolution(cssSize.x, cssSize.y, renderer.getPixelRatio())
+    const next = lodResolution(cssSize.x, cssSize.y, LOW_MEMORY ? Math.min(1, renderer.getPixelRatio()) : renderer.getPixelRatio())
     if (lod && lod.width === next.width && lod.height === next.height) return
     lod = next
     tiles.setResolution(camera, next.width, next.height)
