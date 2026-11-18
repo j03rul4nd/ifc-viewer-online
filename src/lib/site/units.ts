@@ -21,6 +21,8 @@ export interface Unit {
   status: UnitStatus
   buyer?: string
   notes?: string
+  /** Names of the IfcSpace children (rooms) when the unit is a zone. */
+  rooms?: string[]
 }
 
 /** A space as read from the model (already parsed). */
@@ -85,6 +87,7 @@ export function buildUnits(modelId: string, spaces: SpaceRecord[], zones: ZoneRe
       storey: storeys[0] ?? null,
       area: areas.every((a) => a === null) ? null : areas.reduce<number>((s, a) => s + (a ?? 0), 0),
       status: 'available',
+      rooms: members.map((m) => label(m.name, m.longName, `#${m.expressId}`)),
     })
   }
   for (const s of spaces) {
