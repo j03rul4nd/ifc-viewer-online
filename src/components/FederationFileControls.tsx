@@ -15,6 +15,7 @@ import { useFederationStore } from '../stores/federationStore'
 import { parseManifest } from '../lib/federation-manifest'
 import { saveToLibrary } from '../lib/federation-library'
 import FederationLibraryList, { downloadManifest } from './FederationLibraryList'
+import FederationComparePanel from './FederationComparePanel'
 import { manifestFromSession, modelCountBucket, FEDERATION_FILE_SUFFIX } from '../lib/federation-session'
 import { restoreAndReport } from '../lib/federation-restore'
 import { useFederationOpenStore } from '../stores/federationOpenStore'
@@ -35,6 +36,7 @@ export default function FederationFileControls({ variant, models = [], chipClass
   const { t } = useTranslation('common')
   const manifestInput = useRef<HTMLInputElement>(null)
   const ifcInput = useRef<HTMLInputElement>(null)
+  const compareInput = useRef<HTMLInputElement>(null)
   const pendingState = useFederationOpenStore((s) => s.pending)
   const pending = pendingState?.manifest ?? null
   const missing = useFederationOpenStore((s) => s.missing)
@@ -67,6 +69,15 @@ export default function FederationFileControls({ variant, models = [], chipClass
     setPendingState({ manifest: r.value, source: 'file' })
   }
 
+  const onCompareManifestPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const r = parseManifest(await file.text())
+    if (!r.ok) { toast(t('federationFile.invalid'), 'error'); return }
+    useFederationOpenStore.getState().setCompareBaseline(r.value)
+  }
+
   const onIfcPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
     e.target.value = ''
@@ -78,6 +89,7 @@ export default function FederationFileControls({ variant, models = [], chipClass
   const inputs = (
     <>
       <input ref={manifestInput} type="file" accept={`${FEDERATION_FILE_SUFFIX},.json,application/json`} className="hidden" onChange={(e) => { void onManifestPicked(e) }} data-testid="federation-manifest-input" />
+      <input ref={compareInput} type="file" accept={`${FEDERATION_FILE_SUFFIX},.json,application/json`} className="hidden" onChange={(e) => { void onCompareManifestPicked(e) }} data-testid="federation-compare-manifest-input" />
       <input ref={ifcInput} type="file" accept=".ifc" multiple className="hidden" onChange={(e) => { void onIfcPicked(e) }} data-testid="federation-ifc-input" />
     </>
   )
@@ -120,6 +132,7 @@ export default function FederationFileControls({ variant, models = [], chipClass
       <div className="flex items-center gap-1 flex-wrap">
         <button className={chipClass} onClick={() => setNaming(naming === null ? t('federationFile.defaultName') : null)} aria-expanded={naming !== null} title={t('federationFile.saveHint')}>{t('federationFile.save')}</button>
         <button className={chipClass} onClick={() => manifestInput.current?.click()} title={t('federationFile.openHint')}>{t('federationFile.open')}</button>
+        <button className={chipClass} onClick={() => compareInput.current?.click()} title={t('federationFile.compare.openHint')}>{t('federationFile.compare.open')}</button>
       </div>
       {naming !== null && (
         <div className="flex gap-1">
@@ -136,7 +149,8 @@ export default function FederationFileControls({ variant, models = [], chipClass
         </div>
       )}
       {pendingPanel}
-      {!pending && <FederationLibraryList chipClass={chipClass} />}
+      <FederationComparePanel models={models} chipClass={chipClass} />
+      {!pending && <FederationLibraryList chipClass={chipClass} canCompare />}
       {missing.length > 0 && (
         <div className="rounded-md border border-[var(--border)] p-1.5 space-y-0.5" data-testid="federation-missing">
           <div className="flex items-center gap-1">

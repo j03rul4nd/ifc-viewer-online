@@ -592,10 +592,15 @@ export function trackFeatureUsed(props: {
     | 'drawing_compare'
     | 'federation_save'
     | 'federation_open'
+    | 'federation_compare'
   /** Bucketed model count only — never names, hashes or sizes. */
   models?: '2' | '3-5' | '6-10' | '11+'
   /** federation_open only: which door opened it. */
   source?: 'file' | 'drop' | 'library'
+  /** federation_compare only: bucketed counts per status — never names. */
+  changed?: '0' | '1' | '2-5' | '6+'
+  added?: '0' | '1' | '2-5' | '6+'
+  removed?: '0' | '1' | '2-5' | '6+'
 }): void {
   const signal = FEATURE_SIGNAL[props.feature]
   if (signal) noteFeedbackSignal(signal)

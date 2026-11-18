@@ -386,6 +386,26 @@
       "confirmDelete": "Vols esborrar «{{name}}» d'aquest navegador?",
       "models_one": "{{count}} model",
       "models_other": "{{count}} models"
+    },
+    "compare": {
+      "open": "Comparar…",
+      "short": "Comparar",
+      "openHint": "Tria un .ifcfed.json desat com a base i compara-hi els models carregats ara. Res no surt d'aquest dispositiu.",
+      "title": "Comparat amb «{{name}}»",
+      "summary": "{{unchanged}} sense canvis · {{changed}} canviats · {{added}} afegits · {{removed}} trets",
+      "flags": "col·locació diferent: {{placement}} · visibilitat diferent: {{visibility}}",
+      "status": {
+        "unchanged": "Sense canvis",
+        "changed": "Canviat",
+        "added": "Afegit",
+        "removed": "Tret"
+      },
+      "placement": "col·locació diferent",
+      "visibility": "visibilitat diferent",
+      "elements": "Comparar elements…",
+      "elementsHint": "Tria els IFC antics d'aquesta federació per obrir-los a la comparació de revisions com a versió antiga; després deixa-hi els actuals com a nova.",
+      "noOldMatch": "Cap dels fitxers triats no pertany a aquesta federació.",
+      "sizeUnknown": "mida desconeguda"
     }
   }
 }

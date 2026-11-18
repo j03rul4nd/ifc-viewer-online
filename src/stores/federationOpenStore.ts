@@ -15,6 +15,12 @@ interface FederationOpenState {
   /** Bumped whenever the local library changes, so lists reload. */
   libraryRev: number
   bumpLibrary: () => void
+  /** Saved federation picked as the baseline to compare the loaded models against. */
+  compareBaseline: FederationManifestV1 | null
+  setCompareBaseline: (m: FederationManifestV1 | null) => void
+  /** Bumped to ask the app to open the revision compare (old files already set as side A). */
+  revisionRequest: number
+  requestRevision: () => void
 }
 
 export const useFederationOpenStore = create<FederationOpenState>((set) => ({
@@ -24,4 +30,8 @@ export const useFederationOpenStore = create<FederationOpenState>((set) => ({
   setMissing: (missing) => set({ missing }),
   libraryRev: 0,
   bumpLibrary: () => set((s) => ({ libraryRev: s.libraryRev + 1 })),
+  compareBaseline: null,
+  setCompareBaseline: (compareBaseline) => set({ compareBaseline }),
+  revisionRequest: 0,
+  requestRevision: () => set((s) => ({ revisionRequest: s.revisionRequest + 1 })),
 }))

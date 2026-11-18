@@ -386,6 +386,26 @@
       "confirmDelete": "Delete “{{name}}” from this browser?",
       "models_one": "{{count}} model",
       "models_other": "{{count}} models"
+    },
+    "compare": {
+      "open": "Compare…",
+      "short": "Compare",
+      "openHint": "Pick a saved .ifcfed.json as the baseline and compare the models loaded now against it. Nothing leaves this device.",
+      "title": "Compared with “{{name}}”",
+      "summary": "{{unchanged}} unchanged · {{changed}} changed · {{added}} added · {{removed}} removed",
+      "flags": "placement differs: {{placement}} · visibility differs: {{visibility}}",
+      "status": {
+        "unchanged": "Unchanged",
+        "changed": "Changed",
+        "added": "Added",
+        "removed": "Removed"
+      },
+      "placement": "placement differs",
+      "visibility": "visibility differs",
+      "elements": "Compare elements…",
+      "elementsHint": "Pick the old IFC files of this federation to open them in the revision compare as the old version; then drop the current files as the new one.",
+      "noOldMatch": "None of the chosen files belong to this federation.",
+      "sizeUnknown": "size unknown"
     }
   }
 }

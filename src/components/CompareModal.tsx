@@ -6,6 +6,7 @@
 // week's files at hand.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { useFederationOpenStore } from '../stores/federationOpenStore'
 import { useTranslation } from 'react-i18next'
 import { Modal } from './Modal'
 import type { ViewerAPI } from '../lib/viewer'
@@ -76,6 +77,10 @@ export default function CompareModal({ onClose, viewerApiRef, entry = 'ui', revi
   const [mode, setMode] = useState<'revision' | 'advanced'>(() => (
     entry === 'ui' && (!revisionEnabled || useCompareStore.getState().diff) ? 'advanced' : 'revision'
   ))
+  // "Compare elements" from a saved federation: old files are side A — show the revision compare, even if already open.
+  useEffect(() => useFederationOpenStore.subscribe((s, prev) => {
+    if (s.revisionRequest !== prev.revisionRequest) setMode('revision')
+  }), [])
   const rcPhase = useRevisionStore((s) => s.phase)
   const rcDiff = useRevisionStore((s) => s.diff)
   const [geometry, setGeometry] = useState(true)

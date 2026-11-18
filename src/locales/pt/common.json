@@ -386,6 +386,26 @@
       "confirmDelete": "Eliminar «{{name}}» deste navegador?",
       "models_one": "{{count}} modelo",
       "models_other": "{{count}} modelos"
+    },
+    "compare": {
+      "open": "Comparar…",
+      "short": "Comparar",
+      "openHint": "Escolha um .ifcfed.json guardado como base e compare com ele os modelos carregados agora. Nada sai deste dispositivo.",
+      "title": "Comparado com «{{name}}»",
+      "summary": "{{unchanged}} sem alterações · {{changed}} alterados · {{added}} adicionados · {{removed}} removidos",
+      "flags": "posicionamento diferente: {{placement}} · visibilidade diferente: {{visibility}}",
+      "status": {
+        "unchanged": "Sem alterações",
+        "changed": "Alterado",
+        "added": "Adicionado",
+        "removed": "Removido"
+      },
+      "placement": "posicionamento diferente",
+      "visibility": "visibilidade diferente",
+      "elements": "Comparar elementos…",
+      "elementsHint": "Escolha os IFC antigos desta federação para os abrir na comparação de revisões como versão antiga; depois largue os atuais como a nova.",
+      "noOldMatch": "Nenhum dos ficheiros escolhidos pertence a esta federação.",
+      "sizeUnknown": "tamanho desconhecido"
     }
   }
 }
