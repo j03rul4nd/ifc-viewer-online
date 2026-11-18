@@ -4,6 +4,7 @@
 // Pure data, no browser APIs. Labels are i18n keys resolved by the UI.
 
 import { createSnag, type Snag } from './snags'
+import { normalizeUnitId } from './units'
 
 export type HandoverResult = 'ok' | 'defect' | 'na'
 export type HandoverStatus = 'draft' | 'signed'
@@ -131,6 +132,7 @@ export function markItem(
       description: item.note ?? '',
       trade: snagText?.trade ?? CATEGORY_TRADE[item.category],
       unitId: h.unitId,
+      unitName: h.unitName,
       priority: 'medium',
     }, now)
     snagId = snag.id
@@ -210,7 +212,7 @@ export function sanitizeHandover(raw: unknown): Handover | null {
   const k = (r.keysDelivered ?? {}) as Partial<KeysDelivered>
   const sig = (r.signatures ?? {}) as Signatures
   return {
-    id: r.id, unitId: r.unitId, unitName: str(r.unitName), date: str(r.date), buyerName: str(r.buyerName),
+    id: r.id, unitId: normalizeUnitId(r.unitId), unitName: str(r.unitName), date: str(r.date), buyerName: str(r.buyerName),
     ...(typeof r.buyerIdOptional === 'string' && r.buyerIdOptional ? { buyerIdOptional: r.buyerIdOptional } : {}),
     attendees: Array.isArray(r.attendees) ? r.attendees.filter((a): a is string => typeof a === 'string') : [],
     checklist,

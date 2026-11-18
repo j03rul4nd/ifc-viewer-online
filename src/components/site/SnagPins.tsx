@@ -9,7 +9,8 @@ import { useTranslation } from '../../i18n'
 import type { ViewerAPI } from '../../lib/viewer'
 import { useSiteStore } from '../../stores/siteStore'
 import { useUIStore } from '../../stores/uiStore'
-import { pinnableSnags } from '../../lib/site/locate'
+import { locateTarget, pinnableSnags } from '../../lib/site/locate'
+import { useSceneStore } from '../../stores/sceneStore'
 import type { SnagPriority } from '../../lib/site/snags'
 
 interface Anchor { id: string; title: string; priority: SnagPriority; point: { x: number; y: number; z: number } }
@@ -22,6 +23,7 @@ export default function SnagPins({ viewerApiRef }: { viewerApiRef: React.Mutable
   const snags = useSiteStore((s) => s.snags)
   const pinnable = useMemo(() => (active ? pinnableSnags(snags) : []), [active, snags])
   const [anchors, setAnchors] = useState<Anchor[]>([])
+  const models = useSceneStore((s) => s.models)
   const refs = useRef(new Map<string, HTMLButtonElement>())
 
   useEffect(() => {
@@ -34,7 +36,9 @@ export default function SnagPins({ viewerApiRef }: { viewerApiRef: React.Mutable
         const loc = s.location
         let point = loc.point ? { x: loc.point[0], y: loc.point[1], z: loc.point[2] } : null
         if (!point && loc.expressId !== undefined) {
-          const box = await viewer.getElementsBox([loc.expressId], loc.modelId).catch(() => null)
+          // The stored model id is from the load the snag was made in; resolve to a live model.
+          const live = locateTarget(loc, useSiteStore.getState().elements, models.some((m) => m.id === loc.modelId) ? loc.modelId : models[0]?.id)
+          const box = live ? await viewer.getElementsBox([live.expressId], live.modelId).catch(() => null) : null
           if (box) point = { x: (box.min.x + box.max.x) / 2, y: box.max.y, z: (box.min.z + box.max.z) / 2 }
         }
         if (point) out.push({ id: s.id, title: s.title, priority: s.priority, point })
@@ -42,7 +46,7 @@ export default function SnagPins({ viewerApiRef }: { viewerApiRef: React.Mutable
       if (!cancelled) setAnchors(out)
     })()
     return () => { cancelled = true }
-  }, [pinnable, viewerApiRef])
+  }, [pinnable, viewerApiRef, models])
 
   useEffect(() => {
     if (anchors.length === 0) return

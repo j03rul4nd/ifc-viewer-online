@@ -40,8 +40,8 @@ describe('buildUnits', () => {
     const spaces = [sp(1, '1A', 'P1', 50), sp(2, '1A-b', 'P1', 20), sp(3, '1B', 'P1')]
     const units = buildUnits('m', spaces, [{ expressId: 9, globalId: 'Z9', name: 'Vivienda 1A', longName: null, memberIds: [1, 2, 99] }])
     expect(units).toHaveLength(2)
-    expect(units[0]).toMatchObject({ id: 'm:Z9', expressIds: [1, 2], area: 70, storey: 'P1', name: 'Vivienda 1A', status: 'available' })
-    expect(units[1]).toMatchObject({ id: 'm:G3', expressIds: [3], area: null })
+    expect(units[0]).toMatchObject({ id: 'Z9', expressIds: [1, 2], area: 70, storey: 'P1', name: 'Vivienda 1A', status: 'available' })
+    expect(units[1]).toMatchObject({ id: 'G3', expressIds: [3], area: null })
   })
   it('zone members found under any nested shape', () => {
     const raw = { IsGroupedBy: [{ RelatedObjects: [{ _localId: { value: 1 } }, { _localId: 2 }, { _localId: 7 }] }] }
@@ -97,7 +97,7 @@ describe('counts and persistence shape', () => {
     expect(m.get('P1')).toMatchObject({ sold: 1, available: 1 })
   })
   it('statesOf keeps only non-default units; sanitize drops junk', () => {
-    expect(Object.keys(statesOf(units))).toEqual(['m:G1', 'm:G3'])
+    expect(Object.keys(statesOf(units))).toEqual(['G1', 'G3'])
     expect(sanitizeStates({ a: { status: 'sold' }, b: { status: 'nope' }, c: null })).toEqual({ a: { status: 'sold' } })
   })
   it('colour batches by model and status', () => {

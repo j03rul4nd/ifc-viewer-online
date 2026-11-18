@@ -66,7 +66,7 @@ export function buildSnagReportPdf(
       const parts = [labels.status[s.status], labels.priority[s.priority]]
       if (s.assignee) parts.push(`${labels.assignee}: ${s.assignee}`)
       if (s.dueDate) parts.push(`${labels.due}: ${s.dueDate}${isOverdue(s, today) ? ` (${labels.overdue})` : ''}`)
-      if (s.unitId) parts.push(`${labels.unit}: ${s.unitId}`)
+      if (s.unitId) parts.push(`${labels.unit}: ${s.unitName ?? s.unitId}`)
       const loc = s.location.globalId ?? s.location.sheet ?? s.location.drawingId
       if (loc) parts.push(`${labels.location}: ${loc}`)
       text(parts.join(' | '), M + 4, 8.5, false, '0.3 0.3 0.3'); doc.y -= 12

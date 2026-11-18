@@ -40,6 +40,8 @@ export interface Snag {
   updatedAt: string
   location: SnagLocation
   unitId?: string
+  /** Display name of the unit (unitId is the stable key). */
+  unitName?: string
   photoIds: string[]
   history: SnagHistoryEntry[]
 }
@@ -85,6 +87,7 @@ export function createSnag(draft: SnagDraft, now: Date = new Date(), id = newSna
     updatedAt: at,
     location: { ...(draft.location ?? {}) },
     unitId: draft.unitId?.trim() || undefined,
+    ...(draft.unitName?.trim() ? { unitName: draft.unitName.trim() } : {}),
     photoIds: [...(draft.photoIds ?? [])],
     history: [{ at, to: 'open' }],
   }
@@ -157,6 +160,13 @@ export function distinctTrades(snags: readonly Snag[]): string[] {
 
 export function distinctUnits(snags: readonly Snag[]): string[] {
   return [...new Set(snags.map((s) => s.unitId ?? '').filter(Boolean))].sort((a, b) => a.localeCompare(b))
+}
+
+/** Unit key -> display name (the last name seen; the key itself when none). */
+export function unitLabels(snags: readonly Snag[]): Map<string, string> {
+  const m = new Map<string, string>()
+  for (const s of snags) if (s.unitId) m.set(s.unitId, s.unitName || m.get(s.unitId) || s.unitId)
+  return m
 }
 
 /** Groups by trade (empty trade last), each group sorted by priority then creation. */

@@ -3,6 +3,7 @@
 // snag-store so two sites never mix. Signed handovers can't be deleted here.
 
 import { sanitizeHandover, type Handover } from './handover'
+import { normalizeUnitId } from './units'
 
 const DB = 'ifc-site-handovers'
 const STORE = 'handovers'
@@ -37,7 +38,7 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
 export async function loadHandovers(project: string, unitId?: string): Promise<Handover[]> {
   const range = IDBKeyRange.bound(`${project}::`, `${project}::￿`)
   const rows = (await run<unknown[]>('readonly', (s) => s.getAll(range) as IDBRequest<unknown[]>)) ?? []
-  return rows.map(sanitizeHandover).filter((h): h is Handover => !!h && (!unitId || h.unitId === unitId))
+  return rows.map(sanitizeHandover).filter((h): h is Handover => !!h && (!unitId || h.unitId === normalizeUnitId(unitId)))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 

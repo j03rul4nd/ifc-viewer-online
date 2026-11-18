@@ -88,7 +88,7 @@ export default function SiteHub({ viewerApiRef, selected }: Props) {
   const focus = useCallback((loc: SnagLocation) => {
     const viewer = viewerApiRef.current
     if (!viewer) return
-    const target = locateTarget(loc, useSiteStore.getState().elements, models[0]?.id)
+    const target = locateTarget(loc, useSiteStore.getState().elements, models.some((m) => m.id === loc.modelId) ? loc.modelId : models[0]?.id)
     if (!target) return
     viewer.selectElement(target.expressId, target.modelId)
     void viewer.frameElement(target.expressId, target.modelId)

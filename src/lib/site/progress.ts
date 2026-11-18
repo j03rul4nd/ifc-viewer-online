@@ -42,8 +42,27 @@ export type ProgressState = Map<string, ProgressRecord>
 
 export const NO_GROUP = '\u0000none'
 
+/**
+ * Stable across reloads: the GlobalId alone (the runtime model id changes on
+ * every load). Only elements without a GlobalId fall back to model + express ID.
+ */
 export function progressKey(modelId: string, globalId: string | null, expressId: number): string {
-  return `${modelId}\u0000${globalId ?? `#${expressId}`}`
+  return globalId && !globalId.startsWith('#') ? globalId : `${modelId}\u0000#${expressId}`
+}
+
+/** Points stored records at the elements loaded now (model id / express ID by GlobalId). */
+export function rebindState(state: ProgressState, elements: readonly Pick<ProgressElement, 'modelId' | 'expressId' | 'globalId'>[]): ProgressState {
+  if (!state.size || !elements.length) return state
+  const byGid = new Map<string, Pick<ProgressElement, 'modelId' | 'expressId'>>()
+  for (const e of elements) if (e.globalId) byGid.set(e.globalId, e)
+  let changed = false
+  const next: ProgressState = new Map()
+  for (const [k, r] of state) {
+    const e = byGid.get(r.globalId)
+    if (e && (e.modelId !== r.modelId || e.expressId !== r.expressId)) { changed = true; next.set(k, { ...r, modelId: e.modelId, expressId: e.expressId }) }
+    else next.set(k, r)
+  }
+  return changed ? next : state
 }
 
 const clampPct = (n: number): number => Math.max(0, Math.min(100, n))

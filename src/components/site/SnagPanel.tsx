@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from '../../i18n'
 import {
-  SNAG_PRIORITIES, SNAG_STATUSES, createSnag, distinctTrades, distinctUnits, filterSnags, isOverdue,
+  SNAG_PRIORITIES, SNAG_STATUSES, createSnag, distinctTrades, distinctUnits, filterSnags, unitLabels, isOverdue,
   nextStatuses, snagStats, snagsToCsv, transitionSnag, updateSnag,
   type Snag, type SnagFilter, type SnagLocation, type SnagPriority, type SnagStatus,
 } from '../../lib/site/snags'
@@ -108,6 +108,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
   const stats = useMemo(() => snagStats(snags), [snags])
   const trades = useMemo(() => distinctTrades(snags), [snags])
   const units = useMemo(() => distinctUnits(snags), [snags])
+  const unitNames = useMemo(() => unitLabels(snags), [snags])
 
   const submit = async () => {
     if (!form) return
@@ -227,7 +228,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
         </select>
         <select className={input} value={filter.unitId ?? ''} onChange={(e) => setFilter({ ...filter, unitId: e.target.value || undefined })}>
           <option value="">{t('allUnits')}</option>
-          {units.map((u) => <option key={u} value={u}>{u}</option>)}
+          {units.map((u) => <option key={u} value={u}>{unitNames.get(u) ?? u}</option>)}
         </select>
         <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={!!filter.overdue} onChange={(e) => setFilter({ ...filter, overdue: e.target.checked })} />{t('overdueOnly')}</label>
       </div>
@@ -245,7 +246,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
               <span className="text-xs opacity-70">{t(`priority_${s.priority}`)}</span>
             </div>
             <div className="text-xs opacity-70">
-              {[t(`status_${s.status}`), s.trade, s.unitId, s.assignee, s.dueDate].filter(Boolean).join(' · ')}
+              {[t(`status_${s.status}`), s.trade, s.unitName ?? s.unitId, s.assignee, s.dueDate].filter(Boolean).join(' · ')}
               {isOverdue(s) && <span className="ml-1 text-red-400">{t('overdue')}</span>}
             </div>
             {s.photoIds.length > 0 && <div className="mt-1 flex gap-1">{s.photoIds.slice(0, 4).map((id) => <Thumb key={id} project={projectKey} id={id} />)}</div>}
