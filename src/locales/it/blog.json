@@ -38,5 +38,67 @@
       "imageLabel": "Immagine",
       "footer": "Questo articolo è di IFC Viewer Online — un visualizzatore IFC gratuito nel browser. I file non lasciano mai il tuo computer. Provalo su {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Verifica il tuo modello: apri il tuo IFC nel browser, non viene caricato nulla.",
+      "iso19650": "Verifica la tua consegna rispetto alla ISO 19650: apri il tuo IFC nel browser.",
+      "steel": "Guarda un computo dell'acciaio su un vero capannone, nel browser.",
+      "large": "Apri il tuo IFC pesante nel browser, non viene caricato nulla.",
+      "twin": "Apri il tuo IFC nel browser e guardalo come gemello.",
+      "open": "Apri il tuo IFC nel browser, non viene caricato nulla."
+    },
+    "midTitle": {
+      "validation": "Provalo sul tuo modello",
+      "iso19650": "Verifica la tua consegna, non un esempio",
+      "steel": "Prova il computo dell'acciaio su un capannone reale",
+      "large": "Provalo con il tuo modello più pesante",
+      "twin": "Parti dal tuo modello per il gemello",
+      "open": "Provalo con il tuo file"
+    },
+    "midBody": {
+      "validation": "Ho creato il visualizzatore perché tu possa aprire un IFC e vedere il suo Health Score in un minuto, in locale. Validation Pro aggiunge il set completo di regole e i report.",
+      "iso19650": "Apri il tuo IFC e guarda dove nomi e dati violano la ISO 19650. I controlli ISO 19650 di Team lo fanno a ogni consegna.",
+      "steel": "Profili, lunghezze e pesi raggruppati per profilo, isolati in 3D ed esportati. Steel Takeoff lo fa sui tuoi modelli.",
+      "large": "Il visualizzatore apre file grandi nel tuo browser. Per insiemi federati di più modelli sto costruendo la federazione di modelli grandi in Pro.",
+      "twin": "Il tuo modello è la base del gemello. Twin aggiunge dati in tempo reale, livelli e scene.",
+      "open": "Il visualizzatore funziona nel tuo browser; il tuo file non lascia mai il computer."
+    },
+    "primary": "Apri il tuo IFC nel visualizzatore",
+    "primarySteel": "Apri la demo del computo acciaio",
+    "secondary": "Vedi i piani {{feature}}",
+    "feature": {
+      "health_pro": "Health Score / validazione Pro",
+      "iso19650_team": "controlli ISO 19650 (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "modelli grandi e federazione (Pro)",
+      "twin": "gemello digitale",
+      "viewer": "il visualizzatore"
+    },
+    "lead": {
+      "title": "Vuoi sapere quando {{feature}} fa per il tuo lavoro?",
+      "body": "Lascia email e ruolo. Ti scrivo una volta, di persona, quando è pronto per te. Niente newsletter.",
+      "name": "Nome",
+      "email": "Email",
+      "role": "Il tuo ruolo",
+      "rolePlaceholder": "Scegli",
+      "consent": "Accetto di essere contattato via email riguardo a {{feature}}.",
+      "privacyLink": "Vedi l'informativa sulla privacy",
+      "submit": "Invia",
+      "sending": "Invio…",
+      "success": "Grazie. Ti scriverò riguardo a {{feature}}.",
+      "errorName": "Aggiungi il tuo nome.",
+      "errorEmail": "Questo indirizzo email non sembra corretto.",
+      "errorServer": "Qualcosa è andato storto da parte mia. Riprova.",
+      "errorNetwork": "Nessuna connessione. Non è stato inviato nulla. Riprova tra poco.",
+      "roles": {
+        "bim_coordinator": "Coordinatore BIM",
+        "engineer": "Ingegnere",
+        "steel_detailer": "Disegnatore carpenteria metallica",
+        "contractor": "Impresa",
+        "owner_operator": "Proprietario / gestore",
+        "other": "Altro"
+      }
+    }
   }
 }

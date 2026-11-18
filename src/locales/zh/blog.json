@@ -38,5 +38,67 @@
       "imageLabel": "图片",
       "footer": "本文来自 IFC Viewer Online — 一款免费的浏览器内 IFC 查看器。文件绝不会离开你的设备。立即试用：{{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "检查你自己的模型：在浏览器中打开你的 IFC，不会上传任何内容。",
+      "iso19650": "按 ISO 19650 检查你自己的交付：在浏览器中打开你的 IFC。",
+      "steel": "在浏览器中查看真实厂房的钢结构算量。",
+      "large": "在浏览器中打开你的大型 IFC，不会上传任何内容。",
+      "twin": "在浏览器中打开你的 IFC，并以数字孪生的方式查看。",
+      "open": "在浏览器中打开你自己的 IFC，不会上传任何内容。"
+    },
+    "midTitle": {
+      "validation": "用你自己的模型试试",
+      "iso19650": "检查你的交付，而不是示例",
+      "steel": "在真实厂房上试用钢结构算量",
+      "large": "用你最大的模型试试",
+      "twin": "从你自己的模型开始孪生",
+      "open": "用你自己的文件试试"
+    },
+    "midBody": {
+      "validation": "我做这个查看器，是为了让你打开 IFC 后一分钟内在本地看到它的 Health Score。Validation Pro 提供完整规则集和报告。",
+      "iso19650": "打开你的 IFC，看看哪些命名和数据不符合 ISO 19650。Team 中的 ISO 19650 检查会在每次交付时执行。",
+      "steel": "按截面汇总截面、长度和重量，在 3D 中隔离并导出。Steel Takeoff 可在你自己的模型上完成这些。",
+      "large": "查看器可在浏览器中打开大文件。针对多模型的联合集，我正在 Pro 中构建大型模型联合功能。",
+      "twin": "你的模型是孪生的基础。Twin 在其上添加实时数据、图层和场景。",
+      "open": "查看器在你的浏览器中运行；你的文件不会离开你的电脑。"
+    },
+    "primary": "在查看器中打开你的 IFC",
+    "primarySteel": "打开钢结构算量演示",
+    "secondary": "查看 {{feature}} 方案",
+    "feature": {
+      "health_pro": "Health Score / 验证 Pro",
+      "iso19650_team": "ISO 19650 检查 (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "大型模型与联合 (Pro)",
+      "twin": "数字孪生",
+      "viewer": "查看器"
+    },
+    "lead": {
+      "title": "想知道 {{feature}} 何时适合你的工作吗？",
+      "body": "留下你的邮箱和角色。准备好后，我会亲自给你写一封邮件。没有新闻简报。",
+      "name": "姓名",
+      "email": "邮箱",
+      "role": "你的角色",
+      "rolePlaceholder": "请选择",
+      "consent": "我同意你们就 {{feature}} 通过邮件联系我。",
+      "privacyLink": "查看隐私政策",
+      "submit": "发送",
+      "sending": "发送中…",
+      "success": "谢谢。我会就 {{feature}} 给你写信。",
+      "errorName": "请填写你的姓名。",
+      "errorEmail": "这个邮箱地址看起来不正确。",
+      "errorServer": "我这边出了问题，请重试。",
+      "errorNetwork": "没有网络连接，未发送任何内容。请稍后重试。",
+      "roles": {
+        "bim_coordinator": "BIM 协调员",
+        "engineer": "工程师",
+        "steel_detailer": "钢结构深化设计师",
+        "contractor": "承包商",
+        "owner_operator": "业主 / 运营方",
+        "other": "其他"
+      }
+    }
   }
 }

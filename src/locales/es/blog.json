@@ -38,5 +38,67 @@
       "imageLabel": "Imagen",
       "footer": "Este artículo es de IFC Viewer Online — visor IFC gratuito en el navegador. Los archivos nunca salen de tu máquina. Pruébalo en {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Comprueba tu propio modelo: abre tu IFC en el navegador, no se sube nada.",
+      "iso19650": "Comprueba tu entrega frente a ISO 19650: abre tu IFC en el navegador.",
+      "steel": "Mira una medición de acero sobre una nave real, en el navegador.",
+      "large": "Abre tu IFC grande en el navegador, no se sube nada.",
+      "twin": "Abre tu IFC en el navegador y míralo como gemelo.",
+      "open": "Abre tu propio IFC en el navegador, no se sube nada."
+    },
+    "midTitle": {
+      "validation": "Pruébalo con tu propio modelo",
+      "iso19650": "Revisa tu entrega, no un ejemplo",
+      "steel": "Prueba la medición de acero en una nave real",
+      "large": "Pruébalo con tu modelo más pesado",
+      "twin": "Empieza el gemelo desde tu modelo",
+      "open": "Pruébalo con tu propio archivo"
+    },
+    "midBody": {
+      "validation": "Hice el visor para que abras un IFC y veas su Health Score en un minuto, en local. Validation Pro añade el conjunto completo de reglas e informes.",
+      "iso19650": "Abre tu IFC y mira dónde los nombres y los datos rompen ISO 19650. Las comprobaciones ISO 19650 de Team lo hacen en cada entrega.",
+      "steel": "Perfiles, longitudes y pesos agrupados por perfil, aislados en 3D y exportados. Steel Takeoff lo hace con tus propios modelos.",
+      "large": "El visor abre archivos grandes en tu navegador. Para conjuntos federados de varios modelos estoy construyendo la federación de modelos grandes en Pro.",
+      "twin": "Tu modelo es la base del gemelo. Twin añade datos en vivo, capas y escenas encima.",
+      "open": "El visor funciona en tu navegador; tu archivo nunca sale de tu ordenador."
+    },
+    "primary": "Abre tu IFC en el visor",
+    "primarySteel": "Abre la demo de medición de acero",
+    "secondary": "Ver planes de {{feature}}",
+    "feature": {
+      "health_pro": "Health Score / validación Pro",
+      "iso19650_team": "comprobaciones ISO 19650 (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "modelos grandes y federación (Pro)",
+      "twin": "gemelo digital",
+      "viewer": "el visor"
+    },
+    "lead": {
+      "title": "¿Quieres saber cuándo {{feature}} encaja con tu trabajo?",
+      "body": "Deja tu email y tu rol. Te escribo una vez, en persona, cuando esté listo para ti. Sin newsletter.",
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Tu rol",
+      "rolePlaceholder": "Elige uno",
+      "consent": "Acepto que me contactéis por email sobre {{feature}}.",
+      "privacyLink": "Ver la política de privacidad",
+      "submit": "Enviar",
+      "sending": "Enviando…",
+      "success": "Gracias. Te escribiré sobre {{feature}}.",
+      "errorName": "Añade tu nombre.",
+      "errorEmail": "Ese email no parece correcto.",
+      "errorServer": "Algo ha fallado por mi parte. Inténtalo de nuevo.",
+      "errorNetwork": "Sin conexión. No se ha enviado nada. Inténtalo en un momento.",
+      "roles": {
+        "bim_coordinator": "Coordinador/a BIM",
+        "engineer": "Ingeniero/a",
+        "steel_detailer": "Detallista de acero",
+        "contractor": "Constructora",
+        "owner_operator": "Propiedad / explotación",
+        "other": "Otro"
+      }
+    }
   }
 }

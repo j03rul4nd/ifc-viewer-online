@@ -38,5 +38,67 @@
       "imageLabel": "Image",
       "footer": "This article is from IFC Viewer Online — a free in-browser IFC viewer. Files never leave your machine. Try it at {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Check your own model: open your IFC in the browser, nothing is uploaded.",
+      "iso19650": "Check your own delivery against ISO 19650: open your IFC in the browser.",
+      "steel": "See a steel takeoff on a real hall, in the browser.",
+      "large": "Open your large IFC in the browser, nothing is uploaded.",
+      "twin": "Open your IFC in the browser and see it as a twin.",
+      "open": "Open your own IFC in the browser, nothing is uploaded."
+    },
+    "midTitle": {
+      "validation": "Run this on your own model",
+      "iso19650": "Check your delivery, not an example",
+      "steel": "Try the steel takeoff on a real hall",
+      "large": "Try it with your heaviest model",
+      "twin": "Start the twin from your own model",
+      "open": "Try it with your own file"
+    },
+    "midBody": {
+      "validation": "I built the viewer so you can open an IFC and see its Health Score in a minute, locally. Validation Pro adds the full rule set and reports.",
+      "iso19650": "Open your IFC and see where names and data break ISO 19650. The ISO 19650 checks in Team run that on every delivery.",
+      "steel": "Profiles, lengths and weights grouped per profile, isolated in 3D and exported. Steel Takeoff does this on your own models.",
+      "large": "The viewer opens big files in your browser. For federated sets of several models, I am building large-model federation in Pro.",
+      "twin": "Your model is the base of the twin. Twin adds live data, layers and scenes on top of it.",
+      "open": "The viewer runs in your browser; your file never leaves your computer."
+    },
+    "primary": "Open your IFC in the viewer",
+    "primarySteel": "Open the steel takeoff demo",
+    "secondary": "See {{feature}} plans",
+    "feature": {
+      "health_pro": "Health Score / validation Pro",
+      "iso19650_team": "ISO 19650 checks (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "large models and federation (Pro)",
+      "twin": "Digital Twin",
+      "viewer": "the viewer"
+    },
+    "lead": {
+      "title": "Want to hear when {{feature}} fits your work?",
+      "body": "Leave your email and role. I write once, personally, when it is ready for you. No newsletter.",
+      "name": "Name",
+      "email": "Email",
+      "role": "Your role",
+      "rolePlaceholder": "Choose one",
+      "consent": "I agree that you contact me by email about {{feature}}.",
+      "privacyLink": "See privacy policy",
+      "submit": "Send",
+      "sending": "Sending…",
+      "success": "Thanks. I will write to you about {{feature}}.",
+      "errorName": "Please add your name.",
+      "errorEmail": "That email address does not look right.",
+      "errorServer": "Something went wrong on my side. Please try again.",
+      "errorNetwork": "No connection. Nothing was sent. Try again in a moment.",
+      "roles": {
+        "bim_coordinator": "BIM coordinator",
+        "engineer": "Engineer",
+        "steel_detailer": "Steel detailer",
+        "contractor": "Contractor",
+        "owner_operator": "Owner / operator",
+        "other": "Other"
+      }
+    }
   }
 }

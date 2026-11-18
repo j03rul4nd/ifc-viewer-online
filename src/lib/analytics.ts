@@ -557,6 +557,9 @@ export function trackExportClicked(props: {
  *   blog_topic_opened      → a topic hub page opened
  *   blog_search            → a search settled (debounced) with its result count
  *   blog_tool_clicked      → a tool CTA clicked from the blog
+ *   blog_cta_viewed        → a topic CTA on a post scrolled into view (topic, position)
+ *   blog_cta_clicked       → a topic CTA clicked (target: viewer | plans)
+ *   lead_submitted         → a blog lead form accepted (topic, role; never PII)
  *   foldable_report        → "did the split work?" answered in the foldable article
  *   dual_screen_active     → a split in use, once per page load
  */
@@ -1049,6 +1052,21 @@ export function trackBlogSearch(props: { query_length: number; results: number; 
 /** Reader's answer to "was this article useful?" (BimoFeedback). Same opt-out gate as every event. */
 export function trackBlogFeedback(props: { slug: string; lang: string; vote: 'yes' | 'meh' | 'no' }): void {
   track('blog_feedback', props)
+}
+
+/** A topic CTA on a blog post scrolled into view, once per position per page. */
+export function trackBlogCtaViewed(props: { topic: string; position: 'top' | 'mid' | 'end'; category: string }): void {
+  track('blog_cta_viewed', props)
+}
+
+/** A topic CTA clicked: `target` is 'viewer' or 'plans'. */
+export function trackBlogCtaClicked(props: { topic: string; position: 'top' | 'mid' | 'end'; category: string; target: 'viewer' | 'plans' }): void {
+  track('blog_cta_clicked', props)
+}
+
+/** A blog lead form accepted by the server. No name, no email. */
+export function trackLeadSubmitted(props: { topic: string; category: string; role: string; source: 'blog' }): void {
+  track('lead_submitted', props)
 }
 
 export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 'article'; lang: string }): void {
