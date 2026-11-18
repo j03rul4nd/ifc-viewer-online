@@ -10,6 +10,495 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_CA: BlogPost[] = [
   {
+    slug: "as-built-vs-bim-point-cloud-conformance",
+    title: "As-built vs BIM: comprovar un núvol de punts amb el model IFC, element per element",
+    seoTitle: "As-built vs BIM: núvol de punts contra el model IFC",
+    seoDescription: "Com comparar un escaneig làser o LiDAR del mòbil amb el model IFC: alineació, tolerància, cobertura i per què el que no s'ha vist no compta com a construït.",
+    excerpt: "Comparar un escaneig amb el model sembla senzill: mesurar la distància i pintar-la de colors. El difícil és ser honest amb el que l'escàner no ha vist. El mètode pas a pas i una vista prèvia de la comprovació as-built que estem construint.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Validació",
+    categorySlug: "validation",
+    readTimeMin: 8,
+    heroImage: "blog/images/ifc-point-cloud-browser-scan-to-bim-1600x900.jpg",
+    heroAlt: "Un escaneig làser d'un edifici carregat juntament amb el seu model IFC a IFC Viewer Online",
+    heroCredit: "IFC Viewer Online",
+    keywords: [
+      "as-built vs BIM",
+      "núvol de punts vs IFC",
+      "comprovació de conformitat d'obra",
+      "desviacions escaneig vs BIM",
+      "verificació as-built amb núvol de punts",
+      "comprovació as-built amb LiDAR",
+      "control de toleràncies d'obra",
+      "point cloud vs IFC",
+      "construction conformance check",
+      "scan vs BIM deviation",
+      "as-built verification point cloud",
+      "LiDAR as-built check",
+      "construction tolerance check",
+    ],
+    references: [
+      {
+        id: "pricing",
+        title: "Plans d'IFC Viewer Online",
+        source: "IFC Viewer Online",
+        year: "2026",
+        url: "https://www.ifcvieweronline.eu/pricing/",
+        note: "Preus previstos dels plans de pagament, que encara no estan oberts.",
+      },
+      {
+        id: "e57",
+        title: "ASTM E2807, Standard Specification for 3D Imaging Data Exchange (E57)",
+        source: "ASTM International",
+        year: "2019",
+        url: "https://www.astm.org/e2807-11r19e01.html",
+        note: "El format E57, al qual exporten la majoria d'escàners làser. Consultat el 18 de novembre de 2026.",
+      },
+      {
+        id: "las",
+        title: "LAS Specification 1.4",
+        source: "ASPRS",
+        year: "2019",
+        url: "https://www.asprs.org/divisions-committees/lidar-division/laser-las-file-format-exchange-activities",
+        note: "El format de núvol de punts LAS/LAZ i els seus codis de classificació. Consultat el 18 de novembre de 2026.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Puc fer la comprovació as-built avui?",
+        a: "La comprovació per element que es descriu aquí, no: és en vista prèvia. Avui pots carregar el teu IFC i el teu núvol de punts junts al visor gratuït i comparar un tall de l'escaneig amb la planta tallada del model.",
+      },
+      {
+        q: "Què serà gratuït i què serà de pagament?",
+        a: "Comparar el teu propi núvol de punts (E57, LAS/LAZ o una exportació de LiDAR del mòbil) amb l'IFC funcionarà al navegador, de franc. Convertir un vídeo del mòbil en núvol de punts necessita un servidor gràfic, així que aquesta part serà d'un pla de pagament.",
+      },
+      {
+        q: "Es puja el meu IFC?",
+        a: "No. La comparació s'executa al navegador. En el circuit de pagament amb vídeo només s'envia el vídeo per convertir-lo en núvol de punts; el model es queda al teu ordinador.",
+      },
+      {
+        q: "Un escaneig LiDAR amb el mòbil és prou precís?",
+        a: "Per trobar un mur que falta o una obertura mal situada, sovint sí. Per a una tolerància de pocs mil·límetres, no. La comprovació està feta per refusar un resultat quan la tolerància que demanes és més petita que l'error de l'escaneig i de la seva alineació.",
+      },
+    ],
+    content: [
+      {
+        type: "callout",
+        variant: "info",
+        title: "Vista prèvia",
+        text: [
+          "La comprovació as-built per element que es descriu en aquest article s'està construint i provant amb escenes sintètiques. Encara no està oberta. Carregar el teu propi escaneig al costat de l'IFC i comparar-ne un tall amb la planta és gratuït avui. Els plans previstos són a la ",
+          { text: "pàgina de preus", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: "Tens el model IFC d'un edifici i un escaneig del que realment s'ha construït. La pregunta a obra és clara: s'ha construït on estava dibuixat? La resposta habitual és un mapa de colors amb les distàncies entre tots dos. Fa molt el pes, i pot estar equivocat d'una manera que ningú no detecta: tot el que l'escàner no ha vist apareix com si estigués bé.",
+      },
+      {
+        type: "p",
+        text: "Aquest article explica com funciona una comprovació as-built quan es fa amb honestedat: primer l'alineació, després una tolerància que tingui sentit i una frontera clara entre «construït com al model», «construït en un altre lloc», «no construït» i «no vist».",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Alinea l'escaneig amb el model abans de mesurar res. Un escaneig mal alineat sembla exactament un edifici mal construït.",
+          "La tolerància ha de ser més gran que l'error de l'escaneig més l'error de l'alineació; si no, estàs mesurant el teu propi muntatge.",
+          "Cada element és conforme, desviat, absent o no observat. No observat no vol dir conforme.",
+          "Un resultat sempre va acompanyat de la seva cobertura: la part del model que l'escaneig ha pogut veure realment.",
+        ],
+      },
+      { type: "h2", text: "Pas 1: posar l'escaneig i el model al mateix lloc" },
+      {
+        type: "p",
+        text: [
+          "Un escàner làser exporta E57 o LAS/LAZ",
+          { cite: "e57" },
+          " ",
+          { cite: "las" },
+          ", normalment en les coordenades del topògraf. Un escaneig LiDAR amb el mòbil té el seu propi origen local. L'IFC té el seu propi posicionament i, de vegades, una georeferenciació. Perquè una distància signifiqui alguna cosa, cal portar els tres a un mateix sistema de coordenades.",
+        ],
+      },
+      {
+        type: "p",
+        text: "La manera robusta és triar com a mínim tres punts que puguis reconèixer en tots dos, com cantonades de pilars, vores de forjat o la cantonada d'una escala, i ajustar-hi la transformació. L'ajust deixa un error residual (l'RMSE de l'alineació). Apunta'l: limita tot el que ve després.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "El parany",
+        text: "Si l'escaneig està girat mig grau, qualsevol mur lluny de l'origen sembla desplaçat uns quants centímetres. Un mapa de desviacions fet abans d'una alineació acurada et mostra la teva alineació, no l'edifici.",
+      },
+      { type: "h2", text: "Pas 2: triar una tolerància que es pugui mesurar" },
+      {
+        type: "p",
+        text: "La tolerància té dues parts. Una és la tolerància constructiva amb què compares: per exemple 25 mm per a un element estructural, que és un punt de partida habitual, però ho decideix el contracte o el plec del projecte. L'altra és la incertesa de la mesura mateixa: la precisió de l'escàner i l'RMSE de l'alineació.",
+      },
+      {
+        type: "p",
+        text: "La regla que fem servir: si la tolerància no és clarament més gran que l'error d'alineació (exigim com a mínim el doble), la comprovació refusa donar un resultat i explica per què. Sense aquesta regla, una eina genera informes de desviacions molt segurs que en realitat són artefactes del registre.",
+      },
+      {
+        type: "table",
+        headers: ["Origen de l'escaneig", "Ús típic", "Per a què serveix"],
+        rows: [
+          [
+            "Escàner làser terrestre (E57, LAS)",
+            "Aixecaments, estructura, façanes",
+            "Toleràncies estretes, si el registre és bo",
+          ],
+          [
+            "LiDAR de mòbil o tauleta",
+            "Estances, comprovacions ràpides a obra",
+            "Trobar elements absents o mal situats, no mil·límetres",
+          ],
+          [
+            "Núvol de punts a partir d'un vídeo",
+            "Recorregut per l'obra",
+            "Comprovacions aproximades; la precisió depèn de la reconstrucció",
+          ],
+        ],
+        caption: "Una guia orientativa, no una especificació. Comprova la precisió que aconsegueixen el teu dispositiu i el teu flux de treball abans de fixar una tolerància.",
+      },
+      { type: "h2", text: "Pas 3: comparar element per element, no punt per punt" },
+      {
+        type: "p",
+        text: "Un mapa de colors de distàncies entre punts respon «a quina distància és aquest punt de la superfície més propera». Un equip d'obra necessita una altra resposta: «aquest mur és on ha de ser?». Per això la comparació parteix del model. La superfície de cada element IFC es mostreja en punts i, per a cada mostra, es busca el punt de l'escaneig més proper. Després, cada element rep un d'aquests cinc estats:",
+      },
+      {
+        type: "table",
+        headers: ["Estat", "Quan", "Què vol dir"],
+        rows: [
+          [
+            "Conforme",
+            "Coincideix, i el 95% de les mostres són dins la tolerància",
+            "Construït on diu el model",
+          ],
+          [
+            "Desviat",
+            "Coincideix, però fora de tolerància",
+            "Construït, però en un lloc equivocat o amb una mida equivocada",
+          ],
+          [
+            "Absent",
+            "L'escaneig l'ha vist, però en coincideix menys del 20%",
+            "Modelat i no construït (o encara no construït)",
+          ],
+          ["No observat", "Cap posició d'escaneig no el podia veure", "Desconegut: no es pot puntuar"],
+          [
+            "Ocult",
+            "Dins del camp de visió, però amagat darrere d'alguna cosa",
+            "Desconegut: no es pot puntuar",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: "També hi ha la direcció contrària: punts de l'escaneig sense cap element IFC a prop. Agrupats, són coses que s'han construït però no s'han modelat. Sovint és la troballa més útil a obra, i cap validador IFC no la pot produir, perquè necessita la realitat.",
+      },
+      { type: "h2", text: "Pas 4: informar de la cobertura al costat del resultat" },
+      {
+        type: "p",
+        text: "Aquesta és la part que la majoria d'eines se salten. Si escanejes una cantonada neta durant vint segons i comptes tota la resta com a correcta, obtens una puntuació perfecta d'un edifici que no has mirat mai. Per això un element no observat no és ni conforme ni no conforme. És desconegut, i es compta a part.",
+      },
+      {
+        type: "p",
+        text: "Per tant, el resultat sempre són dues xifres, mai una: fins a quin punt coincideix el que s'ha vist i quina part del model s'ha vist. Una bona coincidència sobre una part petita del model no és una conclusió. La nostra regla: per sota del 25% de cobertura no hi ha puntuació, només «captura insuficient».",
+      },
+      { type: "h3", text: "Per què un sol problema no ha de comptar cent vegades" },
+      {
+        type: "p",
+        text: [
+          "Si tot un forjat s'ha formigonat 4 cm més alt, és un sol problema a obra, no vuit-cents elements defectuosos. La puntuació fa servir la mateixa penalització logarítmica que el nostre ",
+          { text: "Health Score (puntuació de qualitat) per a models IFC", to: "ifc-health-score-explained" },
+          ": molts elements amb el mateix problema pesen més que un, però no proporcionalment. Si no, qualsevol captura real puntuaria zero i la xifra no serviria de res.",
+        ],
+      },
+      { type: "h2", text: "El que pots fer avui, de franc" },
+      {
+        type: "p",
+        text: [
+          "Carrega l'IFC i el teu escaneig junts al visor: E57, LAS/LAZ i altres formats habituals s'obren al navegador, sense pujar res. Com funciona en un cas real de scan-to-BIM ho expliquem a ",
+          { text: "IFC i núvols de punts al navegador", to: "ifc-point-cloud-browser-scan-to-bim" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Per a una primera resposta a «aquest mur és on estava dibuixat?», talla l'escaneig a una alçada i compara'l amb la planta tallada del model: ",
+          {
+            text: "comprovar un núvol de punts amb la planta IFC",
+            to: "check-point-cloud-against-ifc-floor-plan",
+          },
+          ". És una comprovació en 2D a una sola alçada, així que et diu on mirar, no certifica res. Per als paviments, ",
+          {
+            text: "la planor del forjat a partir d'un núvol de punts",
+            to: "point-cloud-floor-plan-slab-flatness",
+          },
+          " funciona igual.",
+        ],
+      },
+      { type: "h2", text: "Què hi afegirà la comprovació as-built i quant costarà" },
+      {
+        type: "table",
+        headers: ["", "Gratuït (al navegador)", "Pla de pagament (previst)"],
+        rows: [
+          [
+            "El teu propi núvol de punts (E57, LAS/LAZ, LiDAR del mòbil)",
+            "Sí: estats per element, cobertura i puntuació, calculats al teu ordinador",
+            "El mateix",
+          ],
+          [
+            "Un vídeo del mòbil convertit en núvol de punts",
+            "No",
+            "Sí: el vídeo es processa en un servidor gràfic",
+          ],
+          [
+            "El teu model IFC",
+            "No surt mai del navegador",
+            "No surt mai del navegador: només s'envia el vídeo",
+          ],
+        ],
+        caption: "Pla de la funcionalitat, no un compromís de dates. Els preus previstos són a la pàgina de preus.",
+      },
+      {
+        type: "p",
+        text: [
+          "La divisió segueix una regla: tot el que ens costa diners fer funcionar va al pla de pagament, i el pla gratuït té la versió que s'executa a la teva màquina. Processar vídeo necessita un servidor amb GPU; comparar un núvol de punts que ja tens, no.",
+          { cite: "pricing" },
+        ],
+      },
+      { type: "h3", text: "Què encara no fa" },
+      {
+        type: "ul",
+        items: [
+          "Encara no hi ha interfície: el motor de comparació (mostreig, veí més proper, visibilitat i puntuació) està construït i provat només amb escenes sintètiques.",
+          "L'alineació per tres punts no està construïda. Mentre no ho estigui, no es mostrarà cap puntuació als usuaris.",
+          "Cap client no l'ha provada en una obra real.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Si comproves obra executada amb models IFC i la vols provar en un projecte real quan s'obri, ",
+          { text: "digues-nos-ho a la pàgina de preus", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ". Per seguir l'avanç en el temps en lloc de la conformitat, mira ",
+          {
+            text: "l'avanç d'obra 4D amb IFC i núvols de punts",
+            to: "4d-construction-progress-ifc-temporal-point-cloud",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "check-point-cloud-against-ifc-floor-plan",
+        why: "La comprovació que pots fer avui: un tall de l'escaneig contra la planta IFC, amb percentatges i un PDF.",
+      },
+      { type: "tool", id: "viewer", why: "Obre el teu IFC i el teu escaneig junts, al navegador." },
+    ],
+    lang: "ca",
+    translationKey: "as-built-vs-bim-point-cloud-conformance",
+  },
+  {
+    slug: "city-digital-twin-on-phone-safari",
+    title: "Un bessó digital de ciutat al mòbil: la demo de Barcelona a Safari i Chrome",
+    seoTitle: "Bessó digital de ciutat al mòbil: IFC i mapa 3D a Safari",
+    seoDescription: "Obre un bessó digital de ciutat amb models IFC i mapa 3D en un iPhone o Android, per què Safari recarrega les pàgines pesades i com el visor estalvia memòria.",
+    excerpt: "Vuit models IFC de la plaça de Catalunya sobre un mapa 3D de Barcelona, oberts des d'un enllaç al mòbil. Què fa Safari per a mòbil quan una pàgina consumeix massa memòria, i què fa el visor perquè el bessó continuï obert.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Bessons digitals",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    heroImage: "blog/images/barcelona-digital-twin-open-data-1600x900.jpg",
+    heroAlt: "La plaça de Catalunya a IFC Viewer Online: models IFC sobre el mapa 3D de Barcelona amb dades de Bicing en directe",
+    heroCredit: "IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)",
+    keywords: [
+      "bessó digital al mòbil",
+      "bessó digital de ciutat mòbil",
+      "visor IFC iPhone",
+      "mapa 3D Safari iPhone",
+      "BIM GIS navegador mòbil",
+      "Safari recarrega la pàgina memòria",
+      "obrir IFC al mòbil",
+      "digital twin on mobile",
+      "city digital twin phone",
+      "IFC viewer iPhone",
+      "3D map Safari iPhone",
+      "BIM GIS mobile browser",
+      "Safari page reloaded memory",
+      "open IFC on phone",
+    ],
+    references: [
+      {
+        id: "webkit-memory",
+        title: "Device Memory API: compatibilitat amb navegadors",
+        source: "MDN Web Docs",
+        year: "2026",
+        url: "https://developer.mozilla.org/en-US/docs/Web/API/Device_Memory_API",
+        note: "navigator.deviceMemory no està disponible a Safari, de manera que una pàgina no pot preguntar a un iPhone quanta memòria té. Consultat el 18 de novembre de 2026.",
+      },
+      {
+        id: "opendata-bcn",
+        title: "Open Data BCN",
+        source: "Ajuntament de Barcelona",
+        url: "https://opendata-ajuntament.barcelona.cat/en/",
+        note: "Els fluxos de trànsit, recàrrega i qualitat de l'aire de la demo, CC BY 4.0.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Necessito una app per obrir el bessó al mòbil?",
+        a: "No. És una pàgina web. Obre l'enllaç a Safari en un iPhone o iPad, o a Chrome en Android.",
+      },
+      {
+        q: "Per què Safari ha recarregat la pàgina?",
+        a: "iOS tanca una pestanya que fa servir més memòria de la que permet, i Safari la recarrega amb un avís breu. La pàgina no rep cap advertència. Un mapa 3D amb relleu, edificis i diversos models IFC és el tipus de pàgina que pot arribar a aquest límit.",
+      },
+      {
+        q: "Què és el mode de mapa segur?",
+        a: "Si la pàgina s'ha tancat mentre es carregava el mapa 3D, la càrrega següent en aquella pestanya obre el mapa sense relleu, edificis 3D, vehicles ni capes addicionals, perquè no torni a petar. La teva configuració desada no canvia i pots tornar a activar les capes.",
+      },
+      {
+        q: "Les dades són reals?",
+        a: "Els fluxos en directe són dades obertes reals de Barcelona. Els models IFC són reconstruccions il·lustratives fetes a partir de fonts públiques.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Un bessó digital que només s'obre en una estació de treball és difícil de compartir. Qui l'ha de veure sovint és a obra, en una reunió o llegint un missatge al mòbil. Per això vam obrir la demo de Barcelona, vuit models IFC de la plaça de Catalunya sobre un mapa 3D amb dades de la ciutat en directe, en mòbils, i vam arreglar el que fallava.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "El bessó s'obre des d'un enllaç a Safari en iPhone i a Chrome en Android. No cal instal·lar res.",
+          "iOS tanca una pestanya que fa servir massa memòria sense avisar la pàgina. Llavors Safari la recarrega.",
+          "Als mòbils el visor dibuixa un mapa més lleuger: menys teseles de mapa en memòria, teseles a resolució normal i una quarta part dels objectes decoratius.",
+          "Si tot i així el mapa fa petar la pestanya, la càrrega següent l'obre en mode de mapa segur en lloc de tornar a petar.",
+        ],
+      },
+      {
+        type: "tool-demo",
+        demo: "twin-barcelona",
+        title: "Prova-ho al mòbil: plaça de Catalunya",
+        description: "Obre els vuit models IFC sobre el relleu de Barcelona amb les capes en directe. Funciona a Safari i Chrome per a mòbil.",
+        poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
+        posterAlt: "Bessó digital de la plaça de Catalunya a IFC Viewer Online, amb models IFC sobre el mapa 3D de Barcelona",
+        launchLabel: "Obre el bessó en directe",
+        hint: "Al mòbil, dona-li uns segons: el relleu i els models es carreguen l'un darrere l'altre. Open Data BCN pot trigar de 15 a 40 s a respondre.",
+      },
+      { type: "h2", text: "Què hi ha a la demo" },
+      {
+        type: "p",
+        text: [
+          "Vuit models IFC georeferenciats (una estació de Bicing, les fonts, un monument, accessos de metro, un carregador de vehicles elèctrics) se situen sobre el relleu de la plaça, envoltats de la ciutat d'OpenStreetMap. Bicing, recàrrega, trànsit i qualitat de l'aire arriben directament de les dades obertes de Barcelona",
+          { cite: "opendata-bcn" },
+          " al navegador del visitant. Com es construeix l'escena ho expliquem a ",
+          { text: "el bessó digital de Barcelona amb dades obertes", to: "barcelona-digital-twin-open-data" },
+          ".",
+        ],
+      },
+      { type: "h2", text: "El límit que no veus: la memòria a Safari per a mòbil" },
+      {
+        type: "p",
+        text: "En un ordinador, una pàgina pesada es torna lenta. En un iPhone, es tanca. iOS dona a cada pestanya un pressupost de memòria i, quan una pàgina el supera, el sistema tanca el procés de la pestanya. La pàgina no rep cap esdeveniment ni cap error. Safari mostra un avís breu que diu que la pàgina s'ha recarregat perquè hi ha hagut un problema, i la torna a començar des de dalt.",
+      },
+      {
+        type: "p",
+        text: [
+          "Apple no publica cap límit fix, i una pàgina web no ho pot preguntar: la Device Memory API que admet Chrome no està disponible a Safari.",
+          { cite: "webkit-memory" },
+          " Per això el visor no intenta endevinar la xifra. Tracta qualsevol iPhone i iPad, i qualsevol mòbil, com un dispositiu amb poca memòria.",
+        ],
+      },
+      {
+        type: "p",
+        text: "El que omple la memòria en un bessó de ciutat no és una sola cosa gran. Són les teseles de mapa que es guarden per si tornes enrere, el relleu, els edificis 3D al voltant dels models, els arbres i el mobiliari urbà, i la geometria IFC mateixa, tot alhora.",
+      },
+      { type: "h2", text: "Com s'adapta el visor al mòbil" },
+      {
+        type: "table",
+        headers: ["", "Ordinador", "Mòbil o tauleta"],
+        rows: [
+          ["Teseles de mapa en memòria", "Fins a 300", "Fins a 80"],
+          ["Resolució de les teseles", "Segueix la densitat de la pantalla", "Planificades a densitat normal"],
+          ["Objectes decoratius (arbres, mobiliari, barques)", "Tots", "Una quarta part"],
+          ["Georeferenciació dels models", "En paral·lel", "Un model cada vegada"],
+        ],
+        caption: "Què canvia als dispositius que el visor considera amb poca memòria: tots els mòbils i tauletes, i els ordinadors que declaren 4 GB o menys.",
+      },
+      {
+        type: "p",
+        text: "Res d'això no elimina els models ni les dades en directe. Els edificis, el relleu i l'IFC es mantenen; el que desapareix és la part de l'escena que només la decora.",
+      },
+      { type: "h3", text: "Mode de mapa segur, després d'un tancament" },
+      {
+        type: "p",
+        text: "Fins i tot amb un mapa més lleuger, un mòbil antic es pot quedar sense memòria. El resultat habitual és pitjor que el tancament mateix: la pàgina es recarrega, restaura les mateixes capes pesades de la teva configuració desada i es torna a tancar.",
+      },
+      {
+        type: "p",
+        text: "Per això, just abans que comencin les capes pesades, la pàgina deixa una nota per a aquella pestanya. Si el mapa es manté estable 20 segons, o surts de la pàgina amb normalitat, la nota s'esborra. Si la pàgina arrenca i la nota encara hi és, l'intent anterior va morir. Aquesta càrrega s'obre en mode de mapa segur: sense relleu, sense edificis 3D, sense vehicles, capes addicionals desactivades i un context simple. Només s'aplica a aquella pestanya i a aquella visita; la teva configuració desada no es toca i pots tornar a activar les capes una per una.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Fitxers IFC grans al mòbil",
+        text: "Convertir un IFC gran al mateix mòbil necessita diverses vegades la mida del fitxer en memòria. Per sobre de 80 MB, el visor t'avisa abans de començar. A la demo no passa: els seus models són petits.",
+      },
+      { type: "h2", text: "Consells per obrir un bessó al mòbil" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Tanca altres pestanyes pesades",
+            body: "Les pestanyes comparteixen la memòria del mòbil. Un mapa o un vídeo en una altra pestanya en deixa menys per al bessó.",
+          },
+          {
+            title: "Comença pels models i després afegeix capes",
+            body: "Obre l'escena, espera els models i després activa els edificis 3D o les capes addicionals si les necessites.",
+          },
+          {
+            title: "Fes servir l'horitzontal per al mapa",
+            body: "Hi cap més part de la plaça i els panells ocupen menys vista.",
+          },
+          {
+            title: "Si Safari recarrega, deixa que carregui el mode segur",
+            body: "Després activa només la capa que necessitis per al que vols mostrar.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Obrir el teu propi IFC al mòbil funciona igual, sense la ciutat al voltant. Als mòbils plegables, el model i les seves dades poden anar en pantalles separades: mira ",
+          { text: "un visor IFC per a mòbils plegables", to: "foldable-phone-ifc-viewer" },
+          ". Per saber què fa que un bessó de ciutat sigui més que un mapa 3D, llegeix ",
+          {
+            text: "què és un bessó digital urbà, amb exemples en directe",
+            to: "urban-digital-twin-live-examples",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "barcelona-digital-twin-open-data",
+        why: "Com es construeix l'escena de Barcelona: els models, els quatre fluxos oberts i les vinculacions que els donen color.",
+      },
+      { type: "tool", id: "viewer", why: "Obre el teu propi IFC al mòbil, al navegador." },
+    ],
+    lang: "ca",
+    translationKey: "city-digital-twin-on-phone-safari",
+  },
+  {
     slug: "bim-project-email-templates",
     title: "Deu plantilles de correu per a la coordinació BIM, cadascuna escrita per a un lector",
     seoTitle: "Plantilles de correu per a projectes BIM, per lector",
@@ -4314,6 +4803,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         ],
       },
       { type: "tool", id: "viewer", why: "Carrega un IFC i un núvol, i obre Plànols." },
+      { type: "related", to: "as-built-vs-bim-point-cloud-conformance" },
     ],
     lang: "ca",
     translationKey: "check-point-cloud-against-ifc-floor-plan",
@@ -9325,6 +9815,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
         why: "De què es compon un bessó digital urbà, i com es compara aquest amb els d'Hèlsinki i Tòquio.",
       },
       { type: "tool", id: "embed", why: "Genera el codi d'inserció per al teu propi model o escena." },
+      { type: "related", to: "city-digital-twin-on-phone-safari" },
     ],
     lang: "ca",
     translationKey: "barcelona-digital-twin-open-data",

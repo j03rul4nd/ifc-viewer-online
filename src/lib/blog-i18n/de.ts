@@ -12,6 +12,492 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_DE_PACK: BlogPost[] = [
   {
+    slug: "as-built-vs-bim-point-cloud-conformance",
+    title: "Soll-Ist-Vergleich: Punktwolke gegen IFC-Modell prüfen, Bauteil für Bauteil",
+    seoTitle: "Soll-Ist-Vergleich: Punktwolke gegen IFC-Modell prüfen",
+    seoDescription: "Laserscan oder Handy-LiDAR mit dem IFC-Modell vergleichen: Ausrichtung, Toleranz, Abdeckung und warum nicht erfasste Bauteile nicht als gebaut gelten.",
+    excerpt: "Einen Scan mit dem Modell zu vergleichen klingt einfach: Abstand messen, einfärben. Schwierig ist, ehrlich mit dem umzugehen, was der Scan nicht erfasst hat. Die Methode Schritt für Schritt und eine Vorschau auf die As-built-Prüfung, die wir gerade entwickeln.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Validierung",
+    categorySlug: "validation",
+    readTimeMin: 8,
+    heroImage: "blog/images/ifc-point-cloud-browser-scan-to-bim-1600x900.jpg",
+    heroAlt: "Ein Laserscan eines Gebäudes, zusammen mit seinem IFC-Modell in IFC Viewer Online geladen",
+    heroCredit: "IFC Viewer Online",
+    keywords: [
+      "Soll-Ist-Vergleich BIM",
+      "Punktwolke IFC Vergleich",
+      "Bauabnahme Punktwolke",
+      "Scan BIM Abweichungsanalyse",
+      "As-built Prüfung Punktwolke",
+      "LiDAR As-built Kontrolle",
+      "Bautoleranzen prüfen",
+      "as-built vs BIM",
+      "point cloud vs IFC",
+      "construction conformance check",
+      "scan vs BIM deviation",
+      "as-built verification point cloud",
+      "LiDAR as-built check",
+      "construction tolerance check",
+    ],
+    references: [
+      {
+        id: "pricing",
+        title: "Pläne von IFC Viewer Online",
+        source: "IFC Viewer Online",
+        year: "2026",
+        url: "https://www.ifcvieweronline.eu/pricing/",
+        note: "Geplante Preise der kostenpflichtigen Pläne, die noch nicht verfügbar sind.",
+      },
+      {
+        id: "e57",
+        title: "ASTM E2807, Standard Specification for 3D Imaging Data Exchange (E57)",
+        source: "ASTM International",
+        year: "2019",
+        url: "https://www.astm.org/e2807-11r19e01.html",
+        note: "Das E57-Format, in das die meisten Laserscanner exportieren. Gelesen am 18. November 2026.",
+      },
+      {
+        id: "las",
+        title: "LAS Specification 1.4",
+        source: "ASPRS",
+        year: "2019",
+        url: "https://www.asprs.org/divisions-committees/lidar-division/laser-las-file-format-exchange-activities",
+        note: "Das Punktwolkenformat LAS/LAZ und seine Klassifizierungscodes. Gelesen am 18. November 2026.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Kann ich die As-built-Prüfung heute schon nutzen?",
+        a: "Die hier beschriebene bauteilweise Prüfung noch nicht: Sie befindet sich in der Vorschau. Heute können Sie Ihre IFC-Datei und Ihre Punktwolke gemeinsam im kostenlosen Viewer laden und einen Schnitt durch den Scan mit dem aus dem Modell geschnittenen Grundriss vergleichen.",
+      },
+      {
+        q: "Was wird kostenlos sein und was kostenpflichtig?",
+        a: "Der Vergleich Ihrer eigenen Punktwolke (E57, LAS/LAZ oder ein Handy-LiDAR-Export) mit dem IFC-Modell läuft kostenlos in Ihrem Browser. Ein Handyvideo in eine Punktwolke umzuwandeln erfordert einen Grafikserver, daher wird dieser Teil in einem kostenpflichtigen Plan enthalten sein.",
+      },
+      {
+        q: "Wird meine IFC-Datei hochgeladen?",
+        a: "Nein. Der Vergleich läuft im Browser. Im kostenpflichtigen Videoweg wird nur das Video zur Umwandlung in eine Punktwolke gesendet; das Modell bleibt auf Ihrem Computer.",
+      },
+      {
+        q: "Ist ein Handy-LiDAR-Scan genau genug?",
+        a: "Um eine fehlende Wand oder eine falsch platzierte Öffnung zu finden, oft ja. Für eine Toleranz von wenigen Millimetern nein. Die Prüfung verweigert bewusst ein Ergebnis, wenn die geforderte Toleranz kleiner ist als der Fehler des Scans und seiner Ausrichtung.",
+      },
+    ],
+    content: [
+      {
+        type: "callout",
+        variant: "info",
+        title: "Vorschau",
+        text: [
+          "Die in diesem Artikel beschriebene bauteilweise As-built-Prüfung wird derzeit entwickelt und an synthetischen Szenen getestet. Sie ist noch nicht verfügbar. Ihren eigenen Scan neben der IFC-Datei zu laden und einen Schnitt davon mit dem Grundriss zu vergleichen, ist heute schon kostenlos. Die geplanten Pläne finden Sie auf der ",
+          { text: "Preisseite", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: "Sie haben das IFC-Modell eines Gebäudes und einen Scan dessen, was tatsächlich gebaut wurde. Die Frage auf der Baustelle ist schlicht: Wurde dort gebaut, wo geplant wurde? Die übliche Antwort ist eine farbige Abstandskarte zwischen beiden. Sie wirkt überzeugend und kann auf eine Weise falsch sein, die niemand bemerkt: Alles, was der Scanner nicht gesehen hat, erscheint, als wäre es in Ordnung.",
+      },
+      {
+        type: "p",
+        text: "Dieser Artikel erklärt, wie eine As-built-Prüfung funktioniert, wenn sie ehrlich durchgeführt wird: zuerst die Ausrichtung, eine Toleranz mit Aussagekraft und eine klare Trennung zwischen „wie modelliert gebaut“, „anderswo gebaut“, „nicht gebaut“ und „nicht erfasst“.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Richten Sie den Scan am Modell aus, bevor Sie irgendetwas messen. Ein falsch ausgerichteter Scan sieht genauso aus wie ein schlecht gebautes Gebäude.",
+          "Die Toleranz muss größer sein als der Fehler des Scans plus der Fehler der Ausrichtung, sonst messen Sie Ihren eigenen Aufbau.",
+          "Jedes Bauteil ist entweder konform, abweichend, fehlend oder nicht erfasst. Nicht erfasst ist nicht dasselbe wie konform.",
+          "Ein Ergebnis kommt immer mit seiner Abdeckung: dem Anteil des Modells, den der Scan tatsächlich sehen konnte.",
+        ],
+      },
+      { type: "h2", text: "Schritt 1: Scan und Modell an denselben Ort bringen" },
+      {
+        type: "p",
+        text: [
+          "Ein Laserscanner exportiert E57 oder LAS/LAZ",
+          { cite: "e57" },
+          " ",
+          { cite: "las" },
+          ", meist in den Koordinaten des Vermessers. Ein Handy-LiDAR-Scan hat seinen eigenen lokalen Ursprung. Die IFC-Datei hat ihre eigene Platzierung und manchmal eine Georeferenzierung. Bevor irgendein Abstand etwas bedeutet, müssen alle drei in ein gemeinsames Koordinatensystem gebracht werden.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Der robuste Weg: Wählen Sie mindestens drei Punkte, die Sie in beiden wiedererkennen, etwa Stützenecken, Deckenkanten oder die Ecke einer Treppe, und berechnen Sie daraus die Transformation. Die Anpassung hinterlässt einen Restfehler (den RMSE der Ausrichtung). Notieren Sie ihn: Er begrenzt alles, was folgt.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Die Falle",
+        text: "Ist der Scan um ein halbes Grad verdreht, erscheint jede Wand weit vom Ursprung um Zentimeter verschoben. Eine Abweichungskarte, die vor einer sorgfältigen Ausrichtung erstellt wird, zeigt Ihre Ausrichtung, nicht das Gebäude.",
+      },
+      { type: "h2", text: "Schritt 2: Eine messbare Toleranz wählen" },
+      {
+        type: "p",
+        text: "Die Toleranz besteht aus zwei Teilen. Der eine ist die Bautoleranz, gegen die Sie prüfen: zum Beispiel 25 mm für ein tragendes Bauteil, ein üblicher Ausgangswert, maßgeblich sind aber der Vertrag oder die Projektspezifikation. Der andere ist die Unsicherheit der Messung selbst: die Genauigkeit des Scanners und der RMSE der Ausrichtung.",
+      },
+      {
+        type: "p",
+        text: "Unsere Regel: Ist die Toleranz nicht deutlich größer als der Ausrichtungsfehler (wir verlangen mindestens das Doppelte), verweigert die Prüfung ein Ergebnis und nennt den Grund. Ohne diese Regel erzeugt ein Werkzeug selbstsichere Abweichungsberichte, die nur Artefakte der Registrierung sind.",
+      },
+      {
+        type: "table",
+        headers: ["Quelle des Scans", "Typischer Einsatz", "Wofür er taugt"],
+        rows: [
+          [
+            "Terrestrischer Laserscanner (E57, LAS)",
+            "Bestandsaufnahmen, Tragwerk, Fassaden",
+            "Enge Toleranzen, wenn die Registrierung gut ist",
+          ],
+          [
+            "LiDAR in Smartphone oder Tablet",
+            "Räume, schnelle Kontrollen auf der Baustelle",
+            "Fehlende oder falsch platzierte Bauteile finden, keine Millimeter",
+          ],
+          [
+            "Punktwolke aus einem Video",
+            "Rundgang über eine Baustelle",
+            "Grobe Kontrollen; die Genauigkeit hängt von der Rekonstruktion ab",
+          ],
+        ],
+        caption: "Eine grobe Orientierung, keine Spezifikation. Prüfen Sie die Genauigkeit, die Ihr eigenes Gerät und Ihr Workflow erreichen, bevor Sie eine Toleranz festlegen.",
+      },
+      { type: "h2", text: "Schritt 3: Bauteil für Bauteil vergleichen, nicht Punkt für Punkt" },
+      {
+        type: "p",
+        text: "Eine farbige Karte der Punktabstände beantwortet die Frage „Wie weit ist dieser Punkt von der nächsten Fläche entfernt?“. Ein Bauteam braucht eine andere Antwort: „Steht diese Wand dort, wo sie stehen soll?“. Deshalb geht der Vergleich vom Modell aus. Die Oberfläche jedes IFC-Bauteils wird in Punkte abgetastet, und für jeden Abtastpunkt wird der nächstgelegene Scanpunkt gesucht. Danach erhält jedes Bauteil einen von fünf Zuständen:",
+      },
+      {
+        type: "table",
+        headers: ["Zustand", "Wann", "Was es bedeutet"],
+        rows: [
+          [
+            "Konform",
+            "Zugeordnet, und 95 % der Abtastpunkte innerhalb der Toleranz",
+            "Dort gebaut, wo das Modell es vorsieht",
+          ],
+          [
+            "Abweichend",
+            "Zugeordnet, aber außerhalb der Toleranz",
+            "Gebaut, aber an falscher Stelle oder in falscher Größe",
+          ],
+          [
+            "Fehlend",
+            "Vom Scan erfasst, aber weniger als 20 % zugeordnet",
+            "Modelliert und nicht gebaut (oder noch nicht gebaut)",
+          ],
+          ["Nicht erfasst", "Von keiner Scanposition aus sichtbar", "Unbekannt: nicht bewertbar"],
+          ["Verdeckt", "Im Sichtfeld, aber hinter etwas verborgen", "Unbekannt: nicht bewertbar"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Es gibt auch die umgekehrte Richtung: Scanpunkte, in deren Nähe kein IFC-Bauteil liegt. Zusammengefasst sind das Dinge, die gebaut, aber nicht modelliert wurden. Das ist auf der Baustelle oft der nützlichste Befund, und kein IFC-Validator kann ihn liefern, weil dafür die Realität nötig ist.",
+      },
+      { type: "h2", text: "Schritt 4: Die Abdeckung neben dem Ergebnis angeben" },
+      {
+        type: "p",
+        text: "Diesen Teil lassen die meisten Werkzeuge aus. Wenn Sie zwanzig Sekunden lang eine saubere Ecke scannen und alles andere als in Ordnung zählen, erhalten Sie eine perfekte Bewertung für ein Gebäude, das Sie nie angesehen haben. Ein nicht erfasstes Bauteil ist daher weder konform noch nicht konform. Es ist unbekannt und wird gesondert gezählt.",
+      },
+      {
+        type: "p",
+        text: "Das Ergebnis besteht deshalb immer aus zwei Zahlen, nie aus einer: wie gut das Erfasste übereinstimmt und wie viel des Modells erfasst wurde. Eine gute Übereinstimmung auf einem kleinen Teil des Modells ist kein Befund. Unsere Regel: Unter 25 % Abdeckung gibt es gar keine Bewertung, nur „Erfassung unzureichend“.",
+      },
+      { type: "h3", text: "Warum ein Problem nicht hundertfach zählen darf" },
+      {
+        type: "p",
+        text: [
+          "Wurde eine ganze Decke 4 cm zu hoch betoniert, ist das auf der Baustelle ein Problem, nicht achthundert mangelhafte Bauteile. Die Bewertung nutzt dieselbe logarithmische Gewichtung wie unser ",
+          { text: "Health Score für IFC-Modelle", to: "ifc-health-score-explained" },
+          ": Viele Bauteile mit demselben Problem wiegen schwerer als eines, aber nicht proportional. Sonst käme jede reale Erfassung auf null, und die Zahl wäre nutzlos.",
+        ],
+      },
+      { type: "h2", text: "Was Sie heute kostenlos tun können" },
+      {
+        type: "p",
+        text: [
+          "Laden Sie die IFC-Datei und Ihren Scan gemeinsam in den Viewer: E57, LAS/LAZ und andere gängige Formate öffnen sich im Browser, ohne dass etwas hochgeladen wird. Wie das an einem realen Scan-to-BIM-Fall funktioniert, lesen Sie in ",
+          { text: "IFC und Punktwolken im Browser", to: "ifc-point-cloud-browser-scan-to-bim" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Für eine erste Antwort auf „Steht diese Wand dort, wo sie gezeichnet wurde?“ schneiden Sie den Scan auf einer Höhe und vergleichen ihn mit dem aus dem Modell geschnittenen Grundriss: ",
+          {
+            text: "Punktwolke gegen den IFC-Grundriss prüfen",
+            to: "check-point-cloud-against-ifc-floor-plan",
+          },
+          ". Das ist eine 2D-Prüfung auf einer Höhe; sie zeigt, wo man hinschauen sollte, statt etwas zu bescheinigen. Für Böden funktioniert ",
+          { text: "die Ebenheit von Decken aus einer Punktwolke", to: "point-cloud-floor-plan-slab-flatness" },
+          " genauso.",
+        ],
+      },
+      { type: "h2", text: "Was die As-built-Prüfung ergänzt und was sie kostet" },
+      {
+        type: "table",
+        headers: ["", "Kostenlos (im Browser)", "Kostenpflichtiger Plan (geplant)"],
+        rows: [
+          [
+            "Ihre eigene Punktwolke (E57, LAS/LAZ, Handy-LiDAR)",
+            "Ja: Zustände pro Bauteil, Abdeckung und Bewertung, berechnet auf Ihrem Computer",
+            "Gleich",
+          ],
+          [
+            "Ein Handyvideo, in eine Punktwolke umgewandelt",
+            "Nein",
+            "Ja: Das Video wird auf einem Grafikserver verarbeitet",
+          ],
+          [
+            "Ihr IFC-Modell",
+            "Verlässt nie den Browser",
+            "Verlässt nie den Browser: Nur das Video wird gesendet",
+          ],
+        ],
+        caption: "Planung der Funktion, keine Terminzusage. Die geplanten Preise stehen auf der Preisseite.",
+      },
+      {
+        type: "p",
+        text: [
+          "Die Aufteilung folgt einer Regel: Alles, dessen Betrieb uns Geld kostet, kommt in den kostenpflichtigen Plan, und der kostenlose Plan erhält die Version, die auf Ihrem eigenen Rechner läuft. Videoverarbeitung braucht einen GPU-Server; der Vergleich einer vorhandenen Punktwolke nicht.",
+          { cite: "pricing" },
+        ],
+      },
+      { type: "h3", text: "Was sie noch nicht kann" },
+      {
+        type: "ul",
+        items: [
+          "Es gibt noch keine Benutzeroberfläche: Die Vergleichs-Engine (Abtastung, nächster Nachbar, Sichtbarkeit und Bewertung) ist gebaut und nur an synthetischen Szenen getestet.",
+          "Die Drei-Punkt-Ausrichtung ist noch nicht gebaut. Bis dahin wird Nutzern keine Bewertung angezeigt.",
+          "Sie wurde noch von keinem Kunden auf einer realen Baustelle getestet.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Wenn Sie Bauausführungen gegen IFC-Modelle prüfen und die Funktion nach dem Start an einem realen Projekt testen möchten, ",
+          { text: "sagen Sie es uns auf der Preisseite", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ". Für den Baufortschritt über die Zeit statt Konformität lesen Sie ",
+          {
+            text: "4D-Baufortschritt mit IFC und Punktwolken",
+            to: "4d-construction-progress-ifc-temporal-point-cloud",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "check-point-cloud-against-ifc-floor-plan",
+        why: "Die Prüfung, die Sie heute nutzen können: ein Schnitt durch den Scan gegen den IFC-Grundriss, mit Prozentwerten und PDF.",
+      },
+      { type: "tool", id: "viewer", why: "Öffnen Sie Ihre IFC-Datei und Ihren Scan gemeinsam im Browser." },
+    ],
+    lang: "de",
+    translationKey: "as-built-vs-bim-point-cloud-conformance",
+  },
+  {
+    slug: "city-digital-twin-on-phone-safari",
+    title: "Ein digitaler Stadtzwilling auf dem Smartphone: die Barcelona-Demo in Safari und Chrome",
+    seoTitle: "Digitaler Stadtzwilling am Smartphone: IFC und 3D-Karte",
+    seoDescription: "Digitalen Stadtzwilling mit IFC-Modellen und 3D-Karte auf iPhone oder Android öffnen: warum Safari schwere Seiten neu lädt und wie der Viewer Speicher spart.",
+    excerpt: "Acht IFC-Modelle der Plaça de Catalunya auf einer 3D-Karte von Barcelona, per Link auf dem Smartphone geöffnet. Was mobiles Safari tut, wenn eine Seite zu viel Speicher belegt, und was der Viewer tut, damit der Zwilling geöffnet bleibt.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Digitale Zwillinge",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    heroImage: "blog/images/barcelona-digital-twin-open-data-1600x900.jpg",
+    heroAlt: "Plaça de Catalunya in IFC Viewer Online: IFC-Modelle auf der 3D-Karte von Barcelona mit Live-Daten von Bicing",
+    heroCredit: "IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)",
+    keywords: [
+      "digitaler Zwilling mobil",
+      "digitaler Stadtzwilling Smartphone",
+      "IFC-Viewer iPhone",
+      "3D-Karte Safari iPhone",
+      "BIM GIS mobiler Browser",
+      "Safari Seite neu geladen Speicher",
+      "IFC-Datei auf Handy öffnen",
+      "digital twin on mobile",
+      "city digital twin phone",
+      "IFC viewer iPhone",
+      "3D map Safari iPhone",
+      "BIM GIS mobile browser",
+      "Safari page reloaded memory",
+      "open IFC on phone",
+    ],
+    references: [
+      {
+        id: "webkit-memory",
+        title: "Device Memory API: Browserkompatibilität",
+        source: "MDN Web Docs",
+        year: "2026",
+        url: "https://developer.mozilla.org/en-US/docs/Web/API/Device_Memory_API",
+        note: "navigator.deviceMemory ist in Safari nicht verfügbar, daher kann eine Seite ein iPhone nicht fragen, wie viel Speicher es hat. Gelesen am 18. November 2026.",
+      },
+      {
+        id: "opendata-bcn",
+        title: "Open Data BCN",
+        source: "Ajuntament de Barcelona",
+        url: "https://opendata-ajuntament.barcelona.cat/en/",
+        note: "Die Feeds zu Verkehr, Ladestationen und Luftqualität in der Demo, CC BY 4.0.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Brauche ich eine App, um den Zwilling auf dem Smartphone zu öffnen?",
+        a: "Nein. Es ist eine Webseite. Öffnen Sie den Link in Safari auf einem iPhone oder iPad oder in Chrome auf Android.",
+      },
+      {
+        q: "Warum hat Safari die Seite neu geladen?",
+        a: "iOS beendet einen Tab, der mehr Speicher belegt als erlaubt, und Safari lädt ihn mit einem kurzen Hinweis neu. Die Seite erhält keine Warnung. Eine 3D-Karte mit Gelände, Gebäuden und mehreren IFC-Modellen ist genau die Art Seite, die diese Grenze erreichen kann.",
+      },
+      {
+        q: "Was ist der sichere Kartenmodus?",
+        a: "Wurde die Seite beendet, während die 3D-Karte lud, öffnet der nächste Ladevorgang in diesem Tab die Karte ohne Gelände, 3D-Gebäude, Fahrzeuge oder zusätzliche Ebenen, damit sie nicht erneut abstürzt. Ihre gespeicherten Einstellungen bleiben unverändert, und Sie können die Ebenen wieder einschalten.",
+      },
+      {
+        q: "Sind die Daten echt?",
+        a: "Die Live-Feeds sind echte offene Daten aus Barcelona. Die IFC-Modelle sind veranschaulichende Rekonstruktionen aus öffentlichen Quellen.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Ein digitaler Zwilling, der sich nur auf einer Workstation öffnen lässt, ist schwer zu teilen. Wer ihn sehen muss, ist oft auf der Baustelle, in einer Besprechung oder liest eine Nachricht auf dem Smartphone. Also haben wir die Barcelona-Demo, acht IFC-Modelle der Plaça de Catalunya auf einer 3D-Karte mit Live-Daten der Stadt, auf Smartphones geöffnet und behoben, was nicht funktionierte.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Der Zwilling öffnet sich per Link in Safari auf dem iPhone und in Chrome auf Android. Keine Installation nötig.",
+          "iOS beendet einen Tab, der zu viel Speicher belegt, ohne die Seite zu warnen. Safari lädt ihn dann neu.",
+          "Auf Smartphones zeichnet der Viewer eine leichtere Karte: weniger Kartenkacheln im Speicher, Kacheln in normaler Auflösung, ein Viertel der dekorativen Objekte.",
+          "Hat die Karte den Tab trotzdem zum Absturz gebracht, öffnet der nächste Ladevorgang sie im sicheren Kartenmodus, statt erneut abzustürzen.",
+        ],
+      },
+      {
+        type: "tool-demo",
+        demo: "twin-barcelona",
+        title: "Probieren Sie es auf dem Smartphone: Plaça de Catalunya",
+        description: "Öffnet die acht IFC-Modelle auf dem Gelände von Barcelona mit den Live-Ebenen. Funktioniert in mobilem Safari und Chrome.",
+        poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
+        posterAlt: "Digitaler Zwilling der Plaça de Catalunya in IFC Viewer Online, mit IFC-Modellen auf der 3D-Karte von Barcelona",
+        launchLabel: "Live-Zwilling öffnen",
+        hint: "Geben Sie ihm auf dem Smartphone ein paar Sekunden: Gelände und Modelle laden nacheinander. Open Data BCN kann 15 bis 40 s für eine Antwort brauchen.",
+      },
+      { type: "h2", text: "Was die Demo enthält" },
+      {
+        type: "p",
+        text: [
+          "Acht georeferenzierte IFC-Modelle (eine Bicing-Station, die Brunnen, ein Denkmal, U-Bahn-Eingänge, eine Ladesäule für E-Autos) stehen auf dem Gelände des Platzes, umgeben von der Stadt aus OpenStreetMap. Leihräder, Ladestationen, Verkehr und Luftqualität kommen direkt aus den offenen Daten Barcelonas",
+          { cite: "opendata-bcn" },
+          " in den Browser des Besuchers. Wie die Szene aufgebaut ist, lesen Sie in ",
+          {
+            text: "Der digitale Zwilling von Barcelona aus offenen Daten",
+            to: "barcelona-digital-twin-open-data",
+          },
+          ".",
+        ],
+      },
+      { type: "h2", text: "Die unsichtbare Grenze: Speicher in mobilem Safari" },
+      {
+        type: "p",
+        text: "Auf dem Desktop wird eine schwere Seite langsam. Auf dem iPhone wird sie beendet. iOS gibt jedem Tab ein Speicherbudget, und wenn eine Seite es überschreitet, schließt das System den Prozess des Tabs. Die Seite erhält weder ein Ereignis noch einen Fehler. Safari zeigt einen kurzen Hinweis, dass die Seite wegen eines Problems neu geladen wurde, und startet sie von vorn.",
+      },
+      {
+        type: "p",
+        text: [
+          "Apple veröffentlicht keine feste Grenze, und eine Webseite kann nicht nachfragen: Die Device Memory API, die Chrome unterstützt, ist in Safari nicht verfügbar.",
+          { cite: "webkit-memory" },
+          " Der Viewer versucht deshalb nicht, die Zahl zu erraten. Er behandelt jedes iPhone und iPad und jedes Smartphone als Gerät mit knappem Speicher.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Was in einem Stadtzwilling den Speicher füllt, ist nicht ein einzelnes großes Element. Es sind die Kartenkacheln, die für das Zurückschwenken vorgehalten werden, das Gelände, die 3D-Gebäude um die Modelle, die Bäume und das Stadtmobiliar und die IFC-Geometrie selbst, alles gleichzeitig.",
+      },
+      { type: "h2", text: "Wie sich der Viewer auf dem Smartphone anpasst" },
+      {
+        type: "table",
+        headers: ["", "Desktop", "Smartphone oder Tablet"],
+        rows: [
+          ["Kartenkacheln im Speicher", "Bis zu 300", "Bis zu 80"],
+          ["Kachelauflösung", "Folgt der Bildschirmdichte", "Für normale Dichte ausgelegt"],
+          ["Dekorative Objekte (Bäume, Mobiliar, Boote)", "Vollständig", "Ein Viertel"],
+          ["Georeferenzierung der Modelle", "Parallel", "Ein Modell nach dem anderen"],
+        ],
+        caption: "Was sich auf Geräten ändert, die der Viewer als speicherarm behandelt: alle Smartphones und Tablets sowie Computer, die 4 GB oder weniger melden.",
+      },
+      {
+        type: "p",
+        text: "Nichts davon entfernt die Modelle oder die Live-Daten. Gebäude, Gelände und IFC bleiben; weg fällt nur der Teil der Szene, der lediglich schmückt.",
+      },
+      { type: "h3", text: "Sicherer Kartenmodus nach einem Absturz" },
+      {
+        type: "p",
+        text: "Selbst mit einer leichteren Karte kann einem älteren Smartphone der Speicher ausgehen. Das übliche Ergebnis ist schlimmer als der Absturz selbst: Die Seite lädt neu, stellt aus Ihren gespeicherten Einstellungen dieselben schweren Ebenen wieder her und wird erneut beendet.",
+      },
+      {
+        type: "p",
+        text: "Deshalb hinterlässt die Seite kurz bevor die schweren Ebenen starten eine Notiz für diesen Tab. Bleibt die Karte 20 Sekunden lang stabil oder verlassen Sie die Seite normal, wird die Notiz entfernt. Startet die Seite und die Notiz ist noch da, ist der vorherige Versuch gescheitert. Dieser Ladevorgang öffnet sich im sicheren Kartenmodus: kein Gelände, keine 3D-Gebäude, keine Fahrzeuge, zusätzliche Ebenen aus, ein einfacher Kontext. Das gilt nur für diesen Tab und diesen Besuch; Ihre gespeicherten Einstellungen bleiben unberührt, und Sie können die Ebenen einzeln wieder einschalten.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Große IFC-Dateien auf dem Smartphone",
+        text: "Eine große IFC-Datei direkt auf dem Smartphone zu konvertieren, braucht ein Mehrfaches der Dateigröße an Speicher. Ab 80 MB warnt der Viewer Sie vor dem Start. Für die Demo gilt das nicht: Ihre Modelle sind klein.",
+      },
+      { type: "h2", text: "Tipps zum Öffnen eines Zwillings auf dem Smartphone" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Andere schwere Tabs schließen",
+            body: "Tabs teilen sich den Speicher des Smartphones. Eine Karte oder ein Video in einem anderen Tab lässt weniger für den Zwilling übrig.",
+          },
+          {
+            title: "Mit den Modellen beginnen, dann Ebenen hinzufügen",
+            body: "Öffnen Sie die Szene, warten Sie auf die Modelle und schalten Sie dann bei Bedarf 3D-Gebäude oder zusätzliche Ebenen ein.",
+          },
+          {
+            title: "Querformat für die Karte nutzen",
+            body: "Es passt mehr vom Platz ins Bild, und die Panels nehmen weniger Sicht weg.",
+          },
+          {
+            title: "Lädt Safari neu, den sicheren Modus laden lassen",
+            body: "Schalten Sie dann nur die Ebene ein, die Sie für das brauchen, was Sie zeigen wollen.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Ihre eigene IFC-Datei auf dem Smartphone zu öffnen funktioniert genauso, nur ohne die Stadt drumherum. Auf faltbaren Smartphones können Modell und Daten auf getrennten Bildschirmen liegen: siehe ",
+          { text: "IFC-Viewer für faltbare Smartphones", to: "foldable-phone-ifc-viewer" },
+          ". Was einen Stadtzwilling zu mehr als einer 3D-Karte macht, lesen Sie in ",
+          {
+            text: "Was ein urbaner digitaler Zwilling ist, mit Live-Beispielen",
+            to: "urban-digital-twin-live-examples",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "barcelona-digital-twin-open-data",
+        why: "Wie die Barcelona-Szene aufgebaut ist: die Modelle, die vier offenen Feeds und die Verknüpfungen, die sie einfärben.",
+      },
+      { type: "tool", id: "viewer", why: "Öffnen Sie Ihre eigene IFC-Datei auf dem Smartphone, im Browser." },
+    ],
+    lang: "de",
+    translationKey: "city-digital-twin-on-phone-safari",
+  },
+  {
     slug: "bim-project-email-templates",
     title: "Zehn E-Mail-Vorlagen für die BIM-Koordination, jede für genau einen Leser",
     seoTitle: "BIM E-Mail-Vorlagen für Projekte: je Leser eine",
@@ -4379,6 +4865,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         ],
       },
       { type: "tool", id: "viewer", why: "Laden Sie ein IFC und einen Scan und öffnen Sie Pläne." },
+      { type: "related", to: "as-built-vs-bim-point-cloud-conformance" },
     ],
     lang: "de",
     translationKey: "check-point-cloud-against-ifc-floor-plan",
@@ -9386,6 +9873,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
         id: "embed",
         why: "Erzeugen Sie den Embed-Code für Ihr eigenes Modell oder Ihre eigene Szene.",
       },
+      { type: "related", to: "city-digital-twin-on-phone-safari" },
     ],
     lang: "de",
     translationKey: "barcelona-digital-twin-open-data",
