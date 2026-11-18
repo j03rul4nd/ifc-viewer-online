@@ -45,7 +45,7 @@ export default function AuthPage({ kind, onNavigateHome, onNavigateWelcome, them
   const wide = kind === 'account' && status === 'signed-in'
 
   return (
-    <div className={`min-h-[100dvh] w-full ${light ? 'lp-light' : ''}`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className={`min-h-[100dvh] w-full ${light ? 'lp-light' : ''}`} data-theme={light ? 'light' : undefined} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <div className="min-h-[100dvh] w-full max-w-[1040px] mx-auto px-4 sm:px-6 py-6 flex flex-col">
         <button onClick={onNavigateHome} className="self-start min-h-[32px] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] cursor-pointer">← {t('backHome')}</button>
         <div className={`flex-1 py-8 grid gap-10 items-center ${wide ? '' : 'lg:grid-cols-[1fr_auto]'}`}>

@@ -21,7 +21,7 @@ const SIGNAL: Record<string, (r: FinanceReport) => string> = {
   cash_negative: (r) => `Caja negativa: salen ${eur(-r.cash.net_avg)} más de los que entran cada mes.`,
   gross_margin: (r) => `Margen bruto del año: ${pct(r.year.gross_margin)}.`,
 }
-const LEVEL = { ok: { label: 'Vamos bien', color: 'var(--ok, #30a46c)' }, warn: { label: 'Atención', color: 'var(--warn, #f5a524)' }, bad: { label: 'Mal', color: 'var(--danger, #e5484d)' } }
+const LEVEL = { ok: { label: 'Vamos bien', color: 'var(--ok)' }, warn: { label: 'Atención', color: 'var(--warn)' }, bad: { label: 'Mal', color: 'var(--danger)' } }
 
 const input = 'h-8 w-full rounded-lg border border-[var(--border-control)] px-2 text-[12px] bg-transparent'
 const button = 'h-8 px-3 rounded-lg border text-[12px] disabled:opacity-50'

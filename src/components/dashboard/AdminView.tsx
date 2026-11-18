@@ -123,7 +123,7 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
       : gate === 'offline' ? t('admin.offline')
       : t('admin.denied')
     return (
-      <div className={`${chrome} grid place-items-center`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      <div className={`${chrome} grid place-items-center`} data-theme={light ? 'light' : undefined} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <div className="rounded-2xl border p-8 text-center max-w-[380px]" style={card}>
           <p className="text-[14px] mb-4" style={{ color: 'var(--text-dim)' }}>{msg}</p>
           {gate !== 'loading' && (
@@ -148,7 +148,7 @@ export default function AdminView({ onBack, authorized, theme = 'dark' }: AdminV
   const shared = { call, card, ghost, busy, setBusy, setNotice, plans, openAudit }
 
   return (
-    <div className={chrome} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className={chrome} data-theme={light ? 'light' : undefined} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <div className="pointer-events-none fixed inset-0" aria-hidden style={{ background: light ? 'radial-gradient(90% 60% at 50% -10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%)' : 'radial-gradient(90% 60% at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%)' }} />
 
       <div className="relative z-10 mx-auto w-full max-w-[1100px] px-5 py-8 md:py-12">
