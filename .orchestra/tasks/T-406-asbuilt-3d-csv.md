@@ -16,3 +16,6 @@ BCF, shareable report (plan pieza 6).
 ## Formato de vuelta (obligatorio, ≤ 250 palabras)
 STATUS: done|partial|blocked · CAMBIOS · VERIFICADO (pasa/falla + cifra) · RIESGOS/DUDAS (≤3) · SIGUIENTE
 ## Informe
+
+STATUS: done. Paint via existing `viewer.setTwinPaint` (fragment material defs cached by viewer; cleared with null), isolate via `viewer.isolateElements`. `createAsBuiltView` tracks what was applied; clear() on Clear button, new run, and panel unmount. CSV: `results-csv.ts`, worst-first, all elements, labels (Name/GlobalId) read for all ids at export. Added optional `samples` to ElementDeviation (pipeline sets it) and exported ERROR_MULTIPLE (severe deviation = red). Strings `asBuilt.view.*` ×10. Tests: results-csv.test.ts (CSV, quoting, injection, colours, clear). tsc exit 0; 85 tests green (asbuilt + pointcloud parity).
+Risk: twin paint channel shared with the operational twin device runner; if both active, last writer wins.

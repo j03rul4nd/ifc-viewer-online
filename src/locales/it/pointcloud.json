@@ -662,6 +662,12 @@
       "missing": "Mancante",
       "occluded": "Nascosto",
       "unobserved": "Non scansionato"
+    },
+    "view": {
+      "colour": "Colora per stato",
+      "isolate": "Isola deviati + mancanti",
+      "clear": "Cancella",
+      "csv": "Scarica CSV"
     }
   }
 }

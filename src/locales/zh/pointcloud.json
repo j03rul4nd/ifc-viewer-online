@@ -662,6 +662,12 @@
       "missing": "缺失",
       "occluded": "被遮挡",
       "unobserved": "未扫描"
+    },
+    "view": {
+      "colour": "按状态着色",
+      "isolate": "隔离偏差 + 缺失",
+      "clear": "清除",
+      "csv": "下载 CSV"
     }
   }
 }

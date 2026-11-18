@@ -662,6 +662,12 @@
       "missing": "Absent",
       "occluded": "Ocult",
       "unobserved": "No escanejat"
+    },
+    "view": {
+      "colour": "Acolorir per estat",
+      "isolate": "Aïllar desviats + absents",
+      "clear": "Netejar",
+      "csv": "Descarregar CSV"
     }
   }
 }

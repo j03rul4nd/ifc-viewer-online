@@ -1,7 +1,8 @@
 // ─── As-Built panel (T-405) ───────────────────────────────────────────────────
 // Lazy chunk. One stepper: scan → align (point pairs) → tolerance → run →
 // results. Design: docs/AS_BUILT_PHASE3_DESIGN.md §4. Colouring/isolating and
-// CSV are T-406.
+// CSV (T-406) go through the viewer's own paint/isolate APIs and are undone
+// on Clear, on a new run and when the panel closes.
 //
 // Memory: the cloud sample and element triangles are transferred to the
 // worker (we keep no copy); the worker is terminated on result/abort. Pair
@@ -24,6 +25,9 @@ import { collectItemTriangles, type ItemGeometrySource } from '../../lib/scene/i
 import type { AsBuiltPipelineResult } from '../../lib/asbuilt/pipeline'
 import type { ElementDeviation, ElementState } from '../../lib/asbuilt/as-built-score'
 import type { ScoringGateState } from '../../stores/asBuiltStore'
+import { asBuiltCsv } from '../../lib/asbuilt/results-csv'
+import { asBuiltIsolateTargets, asBuiltPaintPlan, createAsBuiltView, type AsBuiltView } from '../../lib/asbuilt/results-colors'
+import { downloadFile } from '../../lib/share-file'
 import { Group, Hint, Note, PrimaryButton, Segmented, SmallButton, Stat, RowIcon } from '../pointcloud/pc-ui'
 
 // ── Pure helpers (tested) ─────────────────────────────────────────────────────
@@ -159,6 +163,9 @@ export default function AsBuiltPanel({ viewerApiRef, modelId, clouds }: {
   const [resultModelId, setResultModelId] = useState<string | null>(null)
   const controllerRef = useRef<PairController | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const viewRef = useRef<AsBuiltView | null>(null)
+  const [tolUsedM, setTolUsedM] = useState<number | null>(null)
+  const [, setViewTick] = useState(0)
 
   // Default to the first ready scan; drop a cloud that went away.
   useEffect(() => {
@@ -170,6 +177,8 @@ export default function AsBuiltPanel({ viewerApiRef, modelId, clouds }: {
     controllerRef.current?.stop()
     controllerRef.current = null
     abortRef.current?.abort()
+    viewRef.current?.clear()
+    viewRef.current = null
   }, [])
 
   const controller = (): PairController | null => {
@@ -219,6 +228,7 @@ export default function AsBuiltPanel({ viewerApiRef, modelId, clouds }: {
     const st = useAsBuiltStore.getState()
     if (!viewer || !st.fit || !st.cloudId || block) return
     controllerRef.current?.stop()
+    viewRef.current?.clear()
     const ac = new AbortController()
     abortRef.current = ac
     setMessage(null)
@@ -260,15 +270,17 @@ export default function AsBuiltPanel({ viewerApiRef, modelId, clouds }: {
       setStage('score')
       const s2 = useAsBuiltStore.getState()
       const fit = s2.fit!
+      const toleranceM = effectiveTolerance({ declaredM: s2.declaredMm / 1000, measurementM: s2.precisionMm / 1000, alignmentRmseM: fit.alignmentRmseM })
       const res = await runAsBuiltInWorker({
         elements,
         cloud,
-        toleranceM: effectiveTolerance({ declaredM: s2.declaredMm / 1000, measurementM: s2.precisionMm / 1000, alignmentRmseM: fit.alignmentRmseM }),
+        toleranceM,
         alignmentRmseM: fit.alignmentRmseM,
       }, { signal: ac.signal })
       const worst = sortWorstFirst(res.elements).slice(0, MAX_ROWS).map((e) => e.id)
       setLabels(await readLabels(model, worst))
       setResultModelId(modelId)
+      setTolUsedM(toleranceM)
       useAsBuiltStore.getState().setResult(res)
       useAsBuiltStore.getState().setPhase('done')
     } catch (e) {
@@ -290,6 +302,33 @@ export default function AsBuiltPanel({ viewerApiRef, modelId, clouds }: {
     viewer?.selectElement(id, mid)
     viewer?.focusElement(id, mid)
   }
+
+  const view = (): AsBuiltView | null => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return null
+    if (!viewRef.current) viewRef.current = createAsBuiltView(viewer)
+    return viewRef.current
+  }
+  const colourByState = (): void => {
+    if (!result) return
+    view()?.paint(asBuiltPaintPlan(resultModelId ?? modelId, result.elements, tolUsedM))
+    setViewTick((n) => n + 1)
+  }
+  const isolateProblems = (): void => {
+    if (!result) return
+    view()?.isolate(asBuiltIsolateTargets(resultModelId ?? modelId, result.elements))
+    setViewTick((n) => n + 1)
+  }
+  const clearView = (): void => { viewRef.current?.clear(); setViewTick((n) => n + 1) }
+  const downloadCsv = async (): Promise<void> => {
+    if (!result) return
+    const mid = resultModelId ?? modelId
+    const model = viewerApiRef.current?.getFragmentsModel(mid) as ItemsDataSource | null | undefined
+    const rows = sortWorstFirst(result.elements)
+    const all = model ? await readLabels(model, rows.map((r) => r.id)) : labels
+    downloadFile(new Blob([asBuiltCsv(rows, all)], { type: 'text/csv;charset=utf-8' }), 'as-built-results.csv')
+  }
+  const viewActive = !!viewRef.current && (viewRef.current.painted || viewRef.current.isolated)
 
   return (
     <div className="flex flex-col gap-4" data-testid="asbuilt-panel">
@@ -372,6 +411,12 @@ export default function AsBuiltPanel({ viewerApiRef, modelId, clouds }: {
 
       {result && (
         <Group title={t('asBuilt.step.results')}>
+          <div className="flex flex-wrap gap-1.5">
+            <SmallButton onClick={colourByState} testId="asbuilt-colour">{t('asBuilt.view.colour')}</SmallButton>
+            <SmallButton onClick={isolateProblems} testId="asbuilt-isolate">{t('asBuilt.view.isolate')}</SmallButton>
+            <SmallButton disabled={!viewActive} onClick={clearView} testId="asbuilt-clear">{t('asBuilt.view.clear')}</SmallButton>
+            <SmallButton onClick={() => { void downloadCsv() }} testId="asbuilt-csv">{t('asBuilt.view.csv')}</SmallButton>
+          </div>
           <AsBuiltResults result={result} labels={labels} onRowClick={onRow} />
         </Group>
       )}

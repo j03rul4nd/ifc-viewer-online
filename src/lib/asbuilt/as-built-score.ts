@@ -42,6 +42,8 @@ export interface ElementDeviation {
   deviationP95: number | null
   /** Fraction of the element's sampled surface that found any nearby point. */
   matchedFraction: number
+  /** Surface samples drawn on the element (the denominator of matchedFraction). */
+  samples?: number
 }
 
 /** Reconstructed geometry with no modelled element near it — built, not drawn. */
@@ -116,7 +118,7 @@ export const MIN_COVERAGE_FRACTION = 0.25
 export const ALIGNMENT_MARGIN = 2
 
 /** A deviation beyond this multiple of τ is an error, not a warning. */
-const ERROR_MULTIPLE = 2
+export const ERROR_MULTIPLE = 2
 
 // ── Coverage ──────────────────────────────────────────────────────────────────
 

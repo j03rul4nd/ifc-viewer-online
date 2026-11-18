@@ -662,6 +662,12 @@
       "missing": "Missing",
       "occluded": "Occluded",
       "unobserved": "Not scanned"
+    },
+    "view": {
+      "colour": "Colour by state",
+      "isolate": "Isolate deviated + missing",
+      "clear": "Clear",
+      "csv": "Download CSV"
     }
   }
 }

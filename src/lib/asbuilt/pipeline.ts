@@ -82,7 +82,7 @@ export function runAsBuilt(input: AsBuiltPipelineInput): AsBuiltPipelineResult {
       dev = p95(matched)
       state = dev > tol ? 'deviated' : 'conforming'
     }
-    deviations.push({ id: s.id, ifcClass: input.elements[e].ifcClass, state, deviationP95: dev, matchedFraction })
+    deviations.push({ id: s.id, ifcClass: input.elements[e].ifcClass, state, deviationP95: dev, matchedFraction, samples: n })
   }
 
   // The reverse pass needs the model surface WITHOUT holes, otherwise gaps in a

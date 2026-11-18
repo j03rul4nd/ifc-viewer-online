@@ -662,6 +662,12 @@
       "missing": "Fehlt",
       "occluded": "Verdeckt",
       "unobserved": "Nicht erfasst"
+    },
+    "view": {
+      "colour": "Nach Status einfärben",
+      "isolate": "Abweichende + fehlende isolieren",
+      "clear": "Zurücksetzen",
+      "csv": "CSV herunterladen"
     }
   }
 }

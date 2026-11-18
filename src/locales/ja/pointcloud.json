@@ -662,6 +662,12 @@
       "missing": "欠落",
       "occluded": "遮蔽",
       "unobserved": "未スキャン"
+    },
+    "view": {
+      "colour": "状態で色分け",
+      "isolate": "逸脱 + 欠落を分離表示",
+      "clear": "クリア",
+      "csv": "CSVをダウンロード"
     }
   }
 }
