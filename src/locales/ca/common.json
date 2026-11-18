@@ -375,6 +375,15 @@
     "missing_other": "Falten {{count}} fitxers; la resta s'ha carregat",
     "dismiss": "Tanca",
     "openSaved": "Obre una federació desada (.ifcfed.json)",
-    "download": "Descarrega"
+    "download": "Descarrega",
+    "library": {
+      "title": "Desades en aquest navegador",
+      "hint": "Només manifests, en aquest dispositiu. Obrir et demana els IFC.",
+      "open": "Obrir",
+      "delete": "Esborrar",
+      "confirmDelete": "Vols esborrar «{{name}}» d'aquest navegador?",
+      "models_one": "{{count}} model",
+      "models_other": "{{count}} models"
+    }
   }
 }

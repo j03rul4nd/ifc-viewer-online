@@ -371,6 +371,15 @@
     "missing_other": "{{count}} 個のファイルが見つかりません。残りは読み込みました",
     "dismiss": "閉じる",
     "openSaved": "保存したフェデレーションを開く（.ifcfed.json）",
-    "download": "ダウンロード"
+    "download": "ダウンロード",
+    "library": {
+      "title": "このブラウザに保存済み",
+      "hint": "マニフェストのみ、この端末に保存。開くとIFCファイルを選びます。",
+      "open": "開く",
+      "delete": "削除",
+      "confirmDelete": "「{{name}}」をこのブラウザから削除しますか？",
+      "models_one": "{{count}} モデル",
+      "models_other": "{{count}} モデル"
+    }
   }
 }

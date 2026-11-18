@@ -12,9 +12,12 @@ import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SceneModel } from '../types'
 import { useFederationStore } from '../stores/federationStore'
-import { parseManifest, serializeManifest, type FederationManifestV1 } from '../lib/federation-manifest'
-import { manifestFromSession, federationFileName, modelCountBucket, FEDERATION_FILE_SUFFIX } from '../lib/federation-session'
-import { runFederationRestore } from '../lib/federation-restore'
+import { parseManifest } from '../lib/federation-manifest'
+import { saveToLibrary } from '../lib/federation-library'
+import FederationLibraryList, { downloadManifest } from './FederationLibraryList'
+import { manifestFromSession, modelCountBucket, FEDERATION_FILE_SUFFIX } from '../lib/federation-session'
+import { restoreAndReport } from '../lib/federation-restore'
+import { useFederationOpenStore } from '../stores/federationOpenStore'
 import { trackFeatureUsed } from '../lib/analytics'
 import { toast } from '../stores/toastStore'
 
@@ -32,8 +35,11 @@ export default function FederationFileControls({ variant, models = [], chipClass
   const { t } = useTranslation('common')
   const manifestInput = useRef<HTMLInputElement>(null)
   const ifcInput = useRef<HTMLInputElement>(null)
-  const [pending, setPending] = useState<FederationManifestV1 | null>(null)
-  const [missing, setMissing] = useState<string[]>([])
+  const pendingState = useFederationOpenStore((s) => s.pending)
+  const pending = pendingState?.manifest ?? null
+  const missing = useFederationOpenStore((s) => s.missing)
+  const { setPending: setPendingState, setMissing } = useFederationOpenStore.getState()
+  const setPending = (m: null) => setPendingState(m)
   const [naming, setNaming] = useState<string | null>(null)
 
   const download = () => {
@@ -43,14 +49,8 @@ export default function FederationFileControls({ variant, models = [], chipClass
       id: newId(), name, models, parked: fed.parked,
       opacityById: fed.opacityById, disciplineById: fed.disciplineById, colorByDiscipline: fed.colorByDiscipline,
     })
-    const url = URL.createObjectURL(new Blob([serializeManifest(manifest)], { type: 'application/json' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = federationFileName(name)
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    downloadManifest(manifest)
+    void saveToLibrary(manifest).then(() => useFederationOpenStore.getState().bumpLibrary())
     setNaming(null)
     trackFeatureUsed({ feature: 'federation_save', models: modelCountBucket(manifest.models.length) })
     toast(t('federationFile.saved'), 'success')
@@ -63,18 +63,14 @@ export default function FederationFileControls({ variant, models = [], chipClass
     const r = parseManifest(await file.text())
     if (!r.ok) { toast(t('federationFile.invalid'), 'error'); return }
     setMissing([])
-    setPending(r.value)
+    setPendingState({ manifest: r.value, source: 'file' })
   }
 
   const onIfcPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
     e.target.value = ''
-    const manifest = pending
-    if (!manifest || files.length === 0) return
-    setPending(null)
-    const miss = await runFederationRestore(manifest, files)
-    setMissing(miss)
-    if (miss.length > 0) toast(`${t('federationFile.missing', { count: miss.length })}: ${miss.join(', ')}`, 'warning')
+    if (!pendingState || files.length === 0) return
+    await restoreAndReport(pendingState.manifest, files, pendingState.source)
     onStarted?.()
   }
 
@@ -112,6 +108,7 @@ export default function FederationFileControls({ variant, models = [], chipClass
           </button>
         )}
         {pendingPanel}
+        {!pending && <FederationLibraryList chipClass={chipClass} />}
       </div>
     )
   }
@@ -138,6 +135,7 @@ export default function FederationFileControls({ variant, models = [], chipClass
         </div>
       )}
       {pendingPanel}
+      {!pending && <FederationLibraryList chipClass={chipClass} />}
       {missing.length > 0 && (
         <div className="rounded-md border border-[var(--border)] p-1.5 space-y-0.5" data-testid="federation-missing">
           <div className="flex items-center gap-1">

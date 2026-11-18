@@ -375,6 +375,15 @@
     "missing_other": "Faltam {{count}} ficheiros; o resto foi carregado",
     "dismiss": "Fechar",
     "openSaved": "Abrir uma federação guardada (.ifcfed.json)",
-    "download": "Transferir"
+    "download": "Transferir",
+    "library": {
+      "title": "Guardadas neste navegador",
+      "hint": "Apenas manifestos, neste dispositivo. Abrir pede os ficheiros IFC.",
+      "open": "Abrir",
+      "delete": "Eliminar",
+      "confirmDelete": "Eliminar «{{name}}» deste navegador?",
+      "models_one": "{{count}} modelo",
+      "models_other": "{{count}} modelos"
+    }
   }
 }

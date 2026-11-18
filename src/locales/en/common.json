@@ -375,6 +375,15 @@
     "missing_other": "{{count}} files missing — the rest were loaded",
     "dismiss": "Dismiss",
     "openSaved": "Open a saved federation (.ifcfed.json)",
-    "download": "Download"
+    "download": "Download",
+    "library": {
+      "title": "Saved in this browser",
+      "hint": "Manifests only, kept on this device. Open asks for the IFC files.",
+      "open": "Open",
+      "delete": "Delete",
+      "confirmDelete": "Delete “{{name}}” from this browser?",
+      "models_one": "{{count}} model",
+      "models_other": "{{count}} models"
+    }
   }
 }
