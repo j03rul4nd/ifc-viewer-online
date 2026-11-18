@@ -371,6 +371,15 @@
     "missing_other": "缺少 {{count}} 个文件，其余已加载",
     "dismiss": "关闭",
     "openSaved": "打开已保存的联合模型（.ifcfed.json）",
-    "download": "下载"
+    "download": "下载",
+    "library": {
+      "title": "保存在此浏览器中",
+      "hint": "仅清单，保存在本设备。打开时需选择 IFC 文件。",
+      "open": "打开",
+      "delete": "删除",
+      "confirmDelete": "从此浏览器删除“{{name}}”？",
+      "models_one": "{{count}} 个模型",
+      "models_other": "{{count}} 个模型"
+    }
   }
 }

@@ -371,6 +371,15 @@
     "missing_other": "ขาด {{count}} ไฟล์ ไฟล์ที่เหลือโหลดแล้ว",
     "dismiss": "ปิด",
     "openSaved": "เปิดชุดโมเดลรวมที่บันทึกไว้ (.ifcfed.json)",
-    "download": "ดาวน์โหลด"
+    "download": "ดาวน์โหลด",
+    "library": {
+      "title": "บันทึกในเบราว์เซอร์นี้",
+      "hint": "เฉพาะแมนิเฟสต์ เก็บในอุปกรณ์นี้ การเปิดจะขอไฟล์ IFC",
+      "open": "เปิด",
+      "delete": "ลบ",
+      "confirmDelete": "ลบ “{{name}}” ออกจากเบราว์เซอร์นี้?",
+      "models_one": "{{count}} โมเดล",
+      "models_other": "{{count}} โมเดล"
+    }
   }
 }

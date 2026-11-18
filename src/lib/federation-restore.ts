@@ -11,6 +11,10 @@ import { DISCIPLINES, type Discipline } from './federation'
 import { submitIfcFiles } from './loading'
 import { trackFeatureUsed } from './analytics'
 import { useFederationStore } from '../stores/federationStore'
+import { useFederationOpenStore, type FederationOpenSource } from '../stores/federationOpenStore'
+import { parseManifest } from './federation-manifest'
+import { toast } from '../stores/toastStore'
+import i18n from '../i18n/config'
 
 export type RestoreApplier = (modelId: string, apply: RestoreApply) => void
 let applier: RestoreApplier | null = null
@@ -22,9 +26,9 @@ export function setRestoreApplier(fn: RestoreApplier): () => void {
 }
 
 /** Load `files` as `manifest` describes. Resolves with the missing file names once loads are submitted. */
-export async function runFederationRestore(manifest: FederationManifestV1, files: File[]): Promise<string[]> {
+export async function runFederationRestore(manifest: FederationManifestV1, files: File[], source: FederationOpenSource = 'file'): Promise<string[]> {
   const plan = planRestore(manifest, reconcile(manifest, files.map((f) => ({ name: f.name, size: f.size }))))
-  trackFeatureUsed({ feature: 'federation_open', models: modelCountBucket(manifest.models.length) })
+  trackFeatureUsed({ feature: 'federation_open', models: modelCountBucket(manifest.models.length), source })
 
   const fed = useFederationStore.getState()
   fed.setColorByDiscipline(plan.colorByDiscipline)
@@ -48,4 +52,29 @@ export async function runFederationRestore(manifest: FederationManifestV1, files
     })
   }
   return plan.missing.map((m) => m.fileName)
+}
+
+/** Restore with `files` and surface the missing names (toast + store). */
+export async function restoreAndReport(manifest: FederationManifestV1, files: File[], source: FederationOpenSource): Promise<void> {
+  const open = useFederationOpenStore.getState()
+  open.setPending(null)
+  const miss = await runFederationRestore(manifest, files, source)
+  open.setMissing(miss)
+  if (miss.length > 0) toast(`${i18n.t('common:federationFile.missing', { count: miss.length })}: ${miss.join(', ')}`, 'warning')
+}
+
+/**
+ * Open a `.ifcfed.json` the same way from every door. With IFC files at hand
+ * (dropped together) it restores at once; otherwise the manifest waits for
+ * the user to choose its files. Resolves with what happened.
+ */
+export async function openFederationFile(file: File, ifcs: File[], source: FederationOpenSource): Promise<'invalid' | 'pending' | 'restored'> {
+  let text: string
+  try { text = await file.text() } catch { text = '' }
+  const r = parseManifest(text)
+  if (!r.ok) { toast(i18n.t('common:federationFile.invalid'), 'error'); return 'invalid' }
+  if (ifcs.length > 0) { await restoreAndReport(r.value, ifcs, source); return 'restored' }
+  useFederationOpenStore.getState().setMissing([])
+  useFederationOpenStore.getState().setPending({ manifest: r.value, source })
+  return 'pending'
 }

@@ -375,6 +375,15 @@
     "missing_other": "{{count}} fichiers manquants — le reste a été chargé",
     "dismiss": "Fermer",
     "openSaved": "Ouvrir une fédération enregistrée (.ifcfed.json)",
-    "download": "Télécharger"
+    "download": "Télécharger",
+    "library": {
+      "title": "Enregistrées dans ce navigateur",
+      "hint": "Manifestes uniquement, sur cet appareil. Ouvrir demande les fichiers IFC.",
+      "open": "Ouvrir",
+      "delete": "Supprimer",
+      "confirmDelete": "Supprimer « {{name}} » de ce navigateur ?",
+      "models_one": "{{count}} modèle",
+      "models_other": "{{count}} modèles"
+    }
   }
 }

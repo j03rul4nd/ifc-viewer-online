@@ -375,6 +375,15 @@
     "missing_other": "{{count}} Dateien fehlen – der Rest wurde geladen",
     "dismiss": "Schließen",
     "openSaved": "Gespeicherte Föderation öffnen (.ifcfed.json)",
-    "download": "Herunterladen"
+    "download": "Herunterladen",
+    "library": {
+      "title": "In diesem Browser gespeichert",
+      "hint": "Nur Manifeste, auf diesem Gerät. Öffnen fragt nach den IFC-Dateien.",
+      "open": "Öffnen",
+      "delete": "Löschen",
+      "confirmDelete": "„{{name}}“ aus diesem Browser löschen?",
+      "models_one": "{{count}} Modell",
+      "models_other": "{{count}} Modelle"
+    }
   }
 }
