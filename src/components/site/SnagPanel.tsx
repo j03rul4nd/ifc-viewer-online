@@ -22,6 +22,11 @@ export interface SnagPanelProps {
   selection?: SnagSelection | null
   /** Called when the user clicks a snag that has a model location. */
   onFocusLocation?: (location: SnagLocation) => void
+  /** Every change of the list (e.g. to draw pins in 3D). */
+  onSnagsChange?: (snags: readonly Snag[]) => void
+  /** Opens this snag's form (e.g. a pin was clicked); `onOpened` acknowledges it. */
+  openSnagId?: string | null
+  onOpened?: () => void
 }
 
 interface FormState {
@@ -63,7 +68,9 @@ function Thumb({ project, id, onRemove }: { project: string; id: string; onRemov
   )
 }
 
-export function SnagPanel({ projectKey = 'default', selection, onFocusLocation }: SnagPanelProps) {
+const formOf = (s: Snag): FormState => ({ id: s.id, title: s.title, description: s.description, trade: s.trade, priority: s.priority, assignee: s.assignee, dueDate: s.dueDate, unitId: s.unitId ?? '', location: s.location, photoIds: s.photoIds })
+
+export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, onSnagsChange, openSnagId, onOpened }: SnagPanelProps) {
   const { t } = useTranslation('site')
   const [snags, setSnags] = useState<Snag[]>([])
   const [filter, setFilter] = useState<SnagFilter>({})
@@ -81,6 +88,14 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation }
     setSnags((list) => [s, ...list.filter((x) => x.id !== s.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
     try { await saveSnag(projectKey, s) } catch { setError(t('storageError')) }
   }, [projectKey, t])
+
+  useEffect(() => { onSnagsChange?.(snags) }, [snags, onSnagsChange])
+  useEffect(() => {
+    if (!openSnagId) return
+    const s = snags.find((x) => x.id === openSnagId)
+    if (!s) return
+    setForm(formOf(s)); onOpened?.()
+  }, [openSnagId, snags, onOpened])
 
   const visible = useMemo(() => filterSnags(snags, filter), [snags, filter])
   const stats = useMemo(() => snagStats(snags), [snags])
@@ -232,7 +247,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation }
                 <option value="">{t('moveTo')}</option>
                 {nextStatuses(s.status).map((n) => <option key={n} value={n}>{t(`status_${n}`)}</option>)}
               </select>
-              <button type="button" className="underline" onClick={() => setForm({ id: s.id, title: s.title, description: s.description, trade: s.trade, priority: s.priority, assignee: s.assignee, dueDate: s.dueDate, unitId: s.unitId ?? '', location: s.location, photoIds: s.photoIds })}>{t('edit')}</button>
+              <button type="button" className="underline" onClick={() => setForm(formOf(s))}>{t('edit')}</button>
               <button type="button" className="underline opacity-70" onClick={() => void remove(s)}>{t('delete')}</button>
             </div>
           </li>

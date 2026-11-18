@@ -42,5 +42,11 @@
   "storageError": "无法在此浏览器中保存（隐私窗口或磁盘已满）。",
   "titleRequired": "标题为必填项。",
   "confirmDelete": "删除此问题及其照片？",
-  "stats": "{{total}} 个问题 · {{open}} 个未处理 · {{overdue}} 个逾期"
+  "stats": "{{total}} 个问题 · {{open}} 个未处理 · {{overdue}} 个逾期",
+  "hubTab": "工地",
+  "tabSnags": "问题",
+  "tabUnits": "户型",
+  "tabProgress": "进度",
+  "collecting": "正在读取构件… {{done}} / {{total}}",
+  "openPin": "打开问题"
 }

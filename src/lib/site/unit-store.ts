@@ -22,6 +22,11 @@ export function projectKey(fileNames: readonly string[]): string {
   return [...fileNames].sort().join('|')
 }
 
+/** The one project key every site panel (snags, units, progress) stores under. */
+export function siteProjectKey(models: ReadonlyArray<{ id: string; fileName?: string | null }>): string {
+  return projectKey(models.map((m) => m.fileName || m.id))
+}
+
 /** Drops anything malformed from a stored record. */
 export function sanitizeStates(raw: unknown): Record<string, UnitState> {
   const out: Record<string, UnitState> = {}

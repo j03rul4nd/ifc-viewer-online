@@ -42,5 +42,11 @@
   "storageError": "Impossible d'enregistrer dans ce navigateur (fenêtre privée ou disque plein).",
   "titleRequired": "Le titre est obligatoire.",
   "confirmDelete": "Supprimer cette réserve et ses photos ?",
-  "stats": "{{total}} réserves · {{open}} ouvertes · {{overdue}} en retard"
+  "stats": "{{total}} réserves · {{open}} ouvertes · {{overdue}} en retard",
+  "hubTab": "Chantier",
+  "tabSnags": "Réserves",
+  "tabUnits": "Logements",
+  "tabProgress": "Avancement",
+  "collecting": "Lecture des éléments… {{done}} / {{total}}",
+  "openPin": "Ouvrir la réserve"
 }

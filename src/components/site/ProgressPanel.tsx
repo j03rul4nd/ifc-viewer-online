@@ -15,6 +15,7 @@ import {
 } from '../../lib/site/progress'
 import { loadProgress, saveProgress } from '../../lib/site/progress-store'
 import { applyProgressColors } from '../../lib/site/progress-colors'
+import { clearSiteColors, onSiteColorModeChange } from '../../lib/site/site-colors'
 import { useProgressT } from '../../lib/site/progress-i18n'
 import { downloadBlob } from '../compare/ui'
 
@@ -69,8 +70,11 @@ export default function ProgressPanel({ viewerApiRef, projectKey, elements, sele
     return () => ac.abort()
   }, [elements, state, by])
 
-  useEffect(() => { applyProgressColors(viewerApiRef.current, state, colour) }, [viewerApiRef, state, colour])
-  useEffect(() => () => { if (colour) applyProgressColors(viewerApiRef.current, new Map(), false) }, [colour, viewerApiRef])
+  useEffect(() => { void applyProgressColors(viewerApiRef.current, state, colour) }, [viewerApiRef, state, colour])
+  // Unit colouring took over: this toggle goes off. Unmount restores the palette.
+  useEffect(() => onSiteColorModeChange((m) => { if (m !== 'progress') setColour(false) }), [])
+  useEffect(() => () => { void clearSiteColors('progress') }, [])
+  useEffect(() => { setColour(false) }, [projectKey])
 
   const apply = useCallback(() => {
     if (selection.length === 0) return

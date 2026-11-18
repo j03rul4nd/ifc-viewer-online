@@ -11,9 +11,10 @@ import {
   UNIT_STATUSES, NO_STOREY, applyStates, collectUnits, countByStatus, groupByStorey, mergeCsv, statesOf, unitsCsv,
   type Unit, type UnitStatus, type UnitsFragmentsLike,
 } from '../../lib/site/units'
-import { loadUnitStates, projectKey, saveUnitStates } from '../../lib/site/unit-store'
+import { loadUnitStates, saveUnitStates, siteProjectKey } from '../../lib/site/unit-store'
 import { STATUS_COLORS, applyUnitColors, clearUnitColors, isolateUnits } from '../../lib/site/unit-colors'
 import { useUnitsT, type UnitsTextKey } from '../../lib/site/units-i18n'
+import { onSiteColorModeChange } from '../../lib/site/site-colors'
 
 interface Props { viewerApiRef: React.MutableRefObject<ViewerAPI | null> }
 
@@ -24,7 +25,7 @@ const input = 'h-7 max-md:h-9 px-2 rounded-[6px] border border-[var(--border)] b
 export default function UnitsPanel({ viewerApiRef }: Props) {
   const { t, lang } = useUnitsT()
   const models = useSceneStore((s) => s.models)
-  const project = useMemo(() => projectKey(models.map((m) => m.fileName ?? m.id)), [models])
+  const project = useMemo(() => siteProjectKey(models), [models])
   const [units, setUnits] = useState<Unit[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,16 +34,13 @@ export default function UnitsPanel({ viewerApiRef }: Props) {
   const [query, setQuery] = useState('')
   const [colorOn, setColorOn] = useState(false)
   const [isolated, setIsolated] = useState<string | null>(null)
-  const painted = useRef<Map<string, number[]>>(new Map())
   const fileRef = useRef<HTMLInputElement>(null)
   const sl = useCallback((s: UnitStatus) => t(`s_${s}` as UnitsTextKey), [t])
   const n1 = useMemo(() => new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), [lang])
 
-  const uncolor = useCallback(async () => {
-    const v = viewerApiRef.current
-    if (v && painted.current.size) await clearUnitColors(v, painted.current)
-    painted.current = new Map()
-  }, [viewerApiRef])
+  const uncolor = useCallback(() => clearUnitColors(), [])
+  // Another site colouring (progress) took over: this toggle goes off.
+  useEffect(() => onSiteColorModeChange((m) => { if (m !== 'units') setColorOn(false) }), [])
   const unisolate = useCallback(() => {
     const v = viewerApiRef.current
     if (v && isolated) { try { isolateUnits(v, [], false) } catch { /* viewer gone */ } }
@@ -73,7 +71,7 @@ export default function UnitsPanel({ viewerApiRef }: Props) {
   }, [models, project, viewerApiRef])
 
   // Models changed: the old list no longer applies.
-  useEffect(() => { setUnits(null); setIsolated(null); painted.current = new Map() }, [project])
+  useEffect(() => { setUnits(null); setIsolated(null); void clearUnitColors() }, [project])
 
   const commit = useCallback((next: Unit[]) => {
     setUnits(next)
@@ -85,13 +83,8 @@ export default function UnitsPanel({ viewerApiRef }: Props) {
   // Colour follows the statuses while the toggle is on.
   useEffect(() => {
     const v = viewerApiRef.current
-    if (!v || !units) return
-    let live = true
-    void (async () => {
-      await uncolor()
-      if (live && colorOn) painted.current = await applyUnitColors(v, units)
-    })()
-    return () => { live = false }
+    if (!v || !units || !colorOn) { void uncolor(); return }
+    void applyUnitColors(v, units)
   }, [colorOn, units, viewerApiRef, uncolor])
 
   const isolate = (u: Unit) => {

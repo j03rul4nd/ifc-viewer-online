@@ -42,5 +42,11 @@
   "storageError": "Konnte in diesem Browser nicht speichern (privates Fenster oder voller Speicher).",
   "titleRequired": "Ein Titel ist erforderlich.",
   "confirmDelete": "Diesen Mangel und seine Fotos löschen?",
-  "stats": "{{total}} Mängel · {{open}} offen · {{overdue}} überfällig"
+  "stats": "{{total}} Mängel · {{open}} offen · {{overdue}} überfällig",
+  "hubTab": "Baustelle",
+  "tabSnags": "Mängel",
+  "tabUnits": "Wohnungen",
+  "tabProgress": "Fortschritt",
+  "collecting": "Elemente werden gelesen… {{done}} / {{total}}",
+  "openPin": "Mangel öffnen"
 }

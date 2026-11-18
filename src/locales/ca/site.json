@@ -42,5 +42,11 @@
   "storageError": "No s'ha pogut desar en aquest navegador (finestra privada o disc ple).",
   "titleRequired": "El títol és obligatori.",
   "confirmDelete": "Eliminar aquesta incidència i les seves fotos?",
-  "stats": "{{total}} incidències · {{open}} obertes · {{overdue}} vençudes"
+  "stats": "{{total}} incidències · {{open}} obertes · {{overdue}} vençudes",
+  "hubTab": "Obra",
+  "tabSnags": "Incidències",
+  "tabUnits": "Habitatges",
+  "tabProgress": "Avanç",
+  "collecting": "Llegint elements… {{done}} / {{total}}",
+  "openPin": "Obrir incidència"
 }

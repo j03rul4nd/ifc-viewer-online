@@ -42,5 +42,11 @@
   "storageError": "このブラウザに保存できませんでした（プライベートウィンドウまたは容量不足）。",
   "titleRequired": "タイトルは必須です。",
   "confirmDelete": "この指摘と写真を削除しますか？",
-  "stats": "指摘 {{total}} 件 · 未対応 {{open}} 件 · 期限超過 {{overdue}} 件"
+  "stats": "指摘 {{total}} 件 · 未対応 {{open}} 件 · 期限超過 {{overdue}} 件",
+  "hubTab": "現場",
+  "tabSnags": "指摘事項",
+  "tabUnits": "住戸",
+  "tabProgress": "進捗",
+  "collecting": "要素を読み込み中… {{done}} / {{total}}",
+  "openPin": "指摘を開く"
 }

@@ -42,5 +42,11 @@
   "storageError": "Could not save in this browser (private window or full disk).",
   "titleRequired": "A title is required.",
   "confirmDelete": "Delete this snag and its photos?",
-  "stats": "{{total}} snags · {{open}} open · {{overdue}} overdue"
+  "stats": "{{total}} snags · {{open}} open · {{overdue}} overdue",
+  "hubTab": "Site",
+  "tabSnags": "Snags",
+  "tabUnits": "Units",
+  "tabProgress": "Progress",
+  "collecting": "Reading elements… {{done}} / {{total}}",
+  "openPin": "Open snag"
 }

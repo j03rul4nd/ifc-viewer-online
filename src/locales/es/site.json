@@ -42,5 +42,11 @@
   "storageError": "No se pudo guardar en este navegador (ventana privada o disco lleno).",
   "titleRequired": "El título es obligatorio.",
   "confirmDelete": "¿Eliminar esta incidencia y sus fotos?",
-  "stats": "{{total}} incidencias · {{open}} abiertas · {{overdue}} vencidas"
+  "stats": "{{total}} incidencias · {{open}} abiertas · {{overdue}} vencidas",
+  "hubTab": "Obra",
+  "tabSnags": "Incidencias",
+  "tabUnits": "Viviendas",
+  "tabProgress": "Avance",
+  "collecting": "Leyendo elementos… {{done}} / {{total}}",
+  "openPin": "Abrir incidencia"
 }

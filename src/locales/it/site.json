@@ -42,5 +42,11 @@
   "storageError": "Impossibile salvare in questo browser (finestra privata o disco pieno).",
   "titleRequired": "Il titolo è obbligatorio.",
   "confirmDelete": "Eliminare questo difetto e le sue foto?",
-  "stats": "{{total}} difetti · {{open}} aperti · {{overdue}} scaduti"
+  "stats": "{{total}} difetti · {{open}} aperti · {{overdue}} scaduti",
+  "hubTab": "Cantiere",
+  "tabSnags": "Difetti",
+  "tabUnits": "Unità",
+  "tabProgress": "Avanzamento",
+  "collecting": "Lettura degli elementi… {{done}} / {{total}}",
+  "openPin": "Apri difetto"
 }

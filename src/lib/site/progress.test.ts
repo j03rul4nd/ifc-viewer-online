@@ -4,7 +4,7 @@ import {
   aggregateProgress, aggregateProgressChunked, compareSnapshots, extractQuantities, NO_GROUP, progressCsv, progressKey,
   progressTotals, recordFraction, setProgress, stateFromRecords, takeSnapshot, targetsByStatus, type ProgressElement,
 } from './progress'
-import { progressOverlay } from './progress-colors'
+import { PROGRESS_COLORS, progressBatches } from './progress-colors'
 import { PROGRESS_TEXTS } from './progress-i18n'
 
 const el = (id: number, storey: string | null, cls = 'IFCWALL', volume?: number): ProgressElement =>
@@ -117,13 +117,16 @@ describe('extractQuantities', () => {
 })
 
 describe('colours and texts', () => {
-  it('maps statuses to overlay severities', () => {
+  it('maps statuses to colour batches', () => {
     const s = stateFromRecords([
       { modelId: 'm', globalId: 'a', expressId: 1, status: 'done' },
       { modelId: 'm', globalId: 'b', expressId: 2, status: 'in_progress', percent: 20 },
+      { modelId: 'm', globalId: 'c', expressId: 3, status: 'done' },
     ])
-    expect(progressOverlay(s).map((i) => i.severity)).toEqual(['info', 'warning'])
-    expect(targetsByStatus(s).done).toEqual([{ modelId: 'm', expressId: 1 }])
+    const b = progressBatches(s).get('m')!
+    expect(b.get(PROGRESS_COLORS.done)).toEqual([1, 3])
+    expect(b.get(PROGRESS_COLORS.in_progress)).toEqual([2])
+    expect(targetsByStatus(s).done).toEqual([{ modelId: 'm', expressId: 1 }, { modelId: 'm', expressId: 3 }])
   })
   it('has ten languages with the core keys', () => {
     expect(Object.keys(PROGRESS_TEXTS)).toHaveLength(10)

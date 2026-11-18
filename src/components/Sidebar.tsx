@@ -7,7 +7,9 @@ import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
 
-type SidebarTab = 'props' | 'cats' | 'qty'
+type SidebarTab = 'props' | 'cats' | 'qty' | 'site'
+// Site (snags / units / progress): its own chunk, loaded when the tab opens.
+const SiteHub = React.lazy(() => import('./site/SiteHub'))
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import { buildNameIndex, elementName, type NameIndex } from '../lib/spatial-tree'
 import { useEditorHistory } from '../hooks/useEditorHistory'
@@ -2170,7 +2172,10 @@ export default function Sidebar({
   }, [pendingTab, clearPendingTab])
 
   // Switch to Properties when a new element is selected
-  useEffect(() => { if (selected) setTab('props') }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
+  // — except on the site tab, where picking an element is how a snag or a
+  // progress status gets attached to it.
+  useEffect(() => { if (selected) setTab((cur) => (cur === 'site' ? cur : 'props')) }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
+  const { t: tSite } = useTranslation('site')
 
   // Issue counts per IFC type — aggregate across ALL validated models.
   // Subscribed at the Sidebar level (stable parent) to avoid StrictMode+Zustand loops in CategoryPanel.
@@ -2277,7 +2282,7 @@ export default function Sidebar({
 
       {/* Tabs */}
       <div className="flex items-center p-1.5 gap-0.5 border-b border-[var(--border)] shrink-0">
-        {([['props', t('tabs.properties')], ['cats', t('tabs.categories')], ['qty', t('tabs.takeoff')]] as const).map(([id, label]) => (
+        {([['props', t('tabs.properties')], ['cats', t('tabs.categories')], ['qty', t('tabs.takeoff')], ...(sceneModels.length > 0 ? [['site', tSite('hubTab')] as const] : [])] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -2337,6 +2342,13 @@ export default function Sidebar({
           {tab === 'qty' && (
             <motion.div key="qty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <TakeoffPanel />
+            </motion.div>
+          )}
+          {tab === 'site' && viewerApiRef && (
+            <motion.div key="site" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <React.Suspense fallback={null}>
+                <SiteHub viewerApiRef={viewerApiRef} selected={selected} />
+              </React.Suspense>
             </motion.div>
           )}
         </AnimatePresence>

@@ -42,5 +42,11 @@
   "storageError": "Não foi possível guardar neste navegador (janela privada ou disco cheio).",
   "titleRequired": "O título é obrigatório.",
   "confirmDelete": "Eliminar esta ocorrência e as suas fotos?",
-  "stats": "{{total}} ocorrências · {{open}} abertas · {{overdue}} em atraso"
+  "stats": "{{total}} ocorrências · {{open}} abertas · {{overdue}} em atraso",
+  "hubTab": "Obra",
+  "tabSnags": "Pendências",
+  "tabUnits": "Unidades",
+  "tabProgress": "Progresso",
+  "collecting": "A ler elementos… {{done}} / {{total}}",
+  "openPin": "Abrir pendência"
 }

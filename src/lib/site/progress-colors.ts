@@ -1,36 +1,29 @@
 // ─── Colour by progress ───────────────────────────────────────────────────────
-// The viewer has no free per-element colour channel; the steel panel isolates,
-// and the overlay channel paints three severities. Progress reuses both:
-//   done → info colour, in progress → warning colour, not started → error colour,
-//   untracked elements fall back to the ghost. Isolating a status uses
-//   isolateElements, exactly like the steel takeoff rows.
+// Same channel as the unit statuses (site-colors: fragments setColor, palette
+// restored on clear), so only one site colouring is on at a time. Untracked
+// elements keep the viewer's own colours. Isolating a status uses
+// isolateElements, exactly like the steel takeoff rows.
 
-import type { ValidationIssue } from '../../types'
 import type { ViewerAPI } from '../viewer'
 import type { ProgressState, ProgressStatus } from './progress'
+import { clearSiteColors, paintSiteColors, toBatches, type ColorBatches, type SiteColorViewer } from './site-colors'
 
-export const PROGRESS_RULE_ID = 'site-progress'
-
-export const PROGRESS_SEVERITY: Record<ProgressStatus, ValidationIssue['severity']> = {
-  done: 'info', in_progress: 'warning', not_started: 'error',
+export const PROGRESS_COLORS: Record<ProgressStatus, string> = {
+  done: '#3a9d5d', in_progress: '#d9a33a', not_started: '#d9534f',
 }
 
-/** Overlay entries for every tracked element (plain loop; called once per toggle). */
-export function progressOverlay(state: ProgressState): ValidationIssue[] {
-  const out: ValidationIssue[] = []
-  for (const r of state.values()) {
-    out.push({
-      id: `${PROGRESS_RULE_ID}:${r.modelId}:${r.expressId}`, ruleId: PROGRESS_RULE_ID, severity: PROGRESS_SEVERITY[r.status],
-      expressId: r.expressId, globalId: r.globalId, ifcClass: '', elementName: '', message: r.status,
-      path: [], autoFixable: false, modelId: r.modelId,
-    })
-  }
-  return out
+/** modelId → colour → express IDs for every tracked element. Pure, one pass. */
+export function progressBatches(state: ProgressState): ColorBatches {
+  const items: Array<{ modelId: string; color: string; ids: number[] }> = []
+  for (const r of state.values()) items.push({ modelId: r.modelId, color: PROGRESS_COLORS[r.status], ids: [r.expressId] })
+  return toBatches(items)
 }
 
-export function applyProgressColors(viewer: ViewerAPI | null, state: ProgressState, enabled: boolean): void {
-  if (!viewer) return
-  try { viewer.setValidationHighlights(enabled ? progressOverlay(state) : [], enabled) } catch { /* viewer gone */ }
+/** Paints (enabled) or clears progress colours; turning it on turns unit colours off. */
+export function applyProgressColors(viewer: SiteColorViewer | null, state: ProgressState, enabled: boolean): Promise<void> {
+  if (!enabled) return clearSiteColors('progress')
+  if (!viewer) return Promise.resolve()
+  return paintSiteColors(viewer, 'progress', progressBatches(state))
 }
 
 export function isolateStatus(viewer: ViewerAPI | null, state: ProgressState, status: ProgressStatus | null): void {
