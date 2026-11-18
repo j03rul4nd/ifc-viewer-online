@@ -140,15 +140,44 @@ export function buildTriangleIndex(elements: readonly ElementGeometry[], cellSiz
     const x0 = Math.floor(Math.min(tris[o], tris[o + 3], tris[o + 6]) / cs), x1 = Math.floor(Math.max(tris[o], tris[o + 3], tris[o + 6]) / cs)
     const y0 = Math.floor(Math.min(tris[o + 1], tris[o + 4], tris[o + 7]) / cs), y1 = Math.floor(Math.max(tris[o + 1], tris[o + 4], tris[o + 7]) / cs)
     const z0 = Math.floor(Math.min(tris[o + 2], tris[o + 5], tris[o + 8]) / cs), z1 = Math.floor(Math.max(tris[o + 2], tris[o + 5], tris[o + 8]) / cs)
-    const single = x0 === x1 && y0 === y1 && z0 === z1
-    for (let ix = x0; ix <= x1; ix++) for (let iy = y0; iy <= y1; iy++) for (let iz = z0; iz <= z1; iz++) {
-      if (!single) {
-        const cx = (ix + 0.5) * cs, cy = (iy + 0.5) * cs, cz = (iz + 0.5) * cs
+    if (x0 === x1 && y0 === y1 && z0 === z1) { add(cellKey(x0, y0, z0), i); continue }
+    // Bounded rasterisation: walk the columns of the projection onto the plane
+    // orthogonal to the dominant normal axis k, and per column only the k-cells
+    // the triangle's plane crosses. Work ~ projected area / cs², never the AABB
+    // volume (a tilted 100 m slab would otherwise be ~1e8 cells).
+    const ux = tris[o + 3] - tris[o], uy = tris[o + 4] - tris[o + 1], uz = tris[o + 5] - tris[o + 2]
+    const vx = tris[o + 6] - tris[o], vy = tris[o + 7] - tris[o + 1], vz = tris[o + 8] - tris[o + 2]
+    const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx]
+    const lo = [x0, y0, z0], hi = [x1, y1, z1]
+    const an = n.map(Math.abs)
+    const degenerate = !(an[0] + an[1] + an[2] > 0)
+    // Dominant normal axis; for a degenerate (sliver) triangle, the thinnest AABB axis.
+    let k = 0
+    if (degenerate) { for (let j = 1; j < 3; j++) if (hi[j] - lo[j] < hi[k] - lo[k]) k = j }
+    else { for (let j = 1; j < 3; j++) if (an[j] > an[k]) k = j }
+    const a1 = (k + 1) % 3, a2 = (k + 2) % 3
+    const planeD = n[0] * tris[o] + n[1] * tris[o + 1] + n[2] * tris[o + 2]
+    const c = [0, 0, 0]
+    for (let i1 = lo[a1]; i1 <= hi[a1]; i1++) for (let i2 = lo[a2]; i2 <= hi[a2]; i2++) {
+      let k0 = lo[k], k1 = hi[k]
+      if (!degenerate) {
+        // Plane height over the column's square (corners), padded by one cell.
+        let mn = Infinity, mx = -Infinity
+        for (const s1 of [i1, i1 + 1]) for (const s2 of [i2, i2 + 1]) {
+          const h = (planeD - n[a1] * s1 * cs - n[a2] * s2 * cs) / n[k]
+          if (h < mn) mn = h
+          if (h > mx) mx = h
+        }
+        k0 = Math.max(k0, Math.floor(mn / cs) - 1); k1 = Math.min(k1, Math.floor(mx / cs) + 1)
+      }
+      for (let ik = k0; ik <= k1; ik++) {
+        c[k] = ik; c[a1] = i1; c[a2] = i2
+        const cx = (c[0] + 0.5) * cs, cy = (c[1] + 0.5) * cs, cz = (c[2] + 0.5) * cs
         closestOnTri(cx, cy, cz, tris, o, tmp)
         // Any triangle point inside the cell lies within half a diagonal of its centre.
         if (Math.hypot(cx - tmp[0], cy - tmp[1], cz - tmp[2]) > halfDiag * 1.0001) continue
+        add(cellKey(c[0], c[1], c[2]), i)
       }
-      add(cellKey(ix, iy, iz), i)
     }
   }
   const starts = new Int32Array(counts.length), ends = new Int32Array(counts.length)

@@ -29,4 +29,14 @@ describe('triangle index', () => {
     nearestTriangle(idx, 15, 15, 0.5, 0.15, hit)
     expect(hit.tri).toBe(-1)
   })
+
+  it('builds a 100 m x 100 m tilted triangle in under a second', () => {
+    const g = { id: 9, ifcClass: 'T', positions: new Float32Array([0, 0, 0, 100, 0, 37, 0, 100, 61]), indices: new Uint32Array([0, 1, 2]) }
+    const t0 = performance.now()
+    const big = buildTriangleIndex([g], 0.15)
+    const ms = performance.now() - t0
+    expect(ms).toBeLessThan(1000)
+    nearestTriangle(big, 30, 30, 0.37 * 30 + 0.61 * 30 + 0.05, 0.15, hit)
+    expect(hit.tri).toBe(0)
+  })
 })

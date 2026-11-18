@@ -78,7 +78,9 @@ function quantile(sorted: Float32Array, q: number): number {
  * Known limitation: a point is owned by the NEAREST surface. If an element moved
  * by more than about half the gap to a neighbour, the part of it that landed
  * closer to the neighbour is credited to the neighbour (raising the neighbour's
- * deviation instead) and the moved element under-reports. Flush faces shared
+ * deviation instead) and the moved element under-reports.
+ * A slide WITHIN the plane of a face leaves those points on the surface, so p95
+ * only sees the faces normal to the move and under-reports in-plane slides. Flush faces shared
  * by two elements split their points arbitrarily; both still read near zero.
  */
 export function runAsBuilt(input: AsBuiltPipelineInput): AsBuiltPipelineResult {
