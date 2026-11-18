@@ -40,3 +40,8 @@ Pricing pageviews over the whole period: /pricing/ 20, /es/precios/ 11, /de/prei
 | P1 | Mobile activates at 22% vs 49% on desktop | Review the mobile CTA/upload flow |
 | P2 | Exports are 0.7% of sessions; pricing 1.4% | Too little volume for pricing A/B tests; focus on activation → value |
 | Decision for Joel | Retention cannot be measured | Keep cookieless (current) or use an opt-in persistent ID |
+
+## UPDATE — large-file failures (2026-11-18)
+- OOM was reported as parse@geometry: the worker's OOM_PATTERN was narrower than retry-policy's OOM_RE. scene@setup = any untyped error in viewer.ts setup (main thread, getItemsOfCategories over the whole model); the real message is lost.
+- PR #629 (not merged): wider OOM_PATTERN + `error_kind` (allowlisted token) in file_open_failed. tsc OK, 6154 tests OK.
+- Next (not done): warn before loading based on navigator.deviceMemory and lower the 2 GB limit (wasm32 cannot handle it) — upload.constants.ts / upload.utils.ts / UploadOverlay.tsx. After deploying #629, wait ~2 weeks and read error_kind for scene@setup.

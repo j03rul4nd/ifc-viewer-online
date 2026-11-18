@@ -365,7 +365,7 @@ export interface PointCloudInfo {
     /** The manual placement on top of the derived alignment. */
     placement: PointCloudPlacement;
     alignment: {
-        rung: 'map-conversion' | 'shared-crs' | 'geographic' | 'local' | 'manual';
+        rung: 'map-conversion' | 'shared-crs' | 'geographic' | 'scene-anchor' | 'local' | 'manual';
         confidence: 'exact' | 'high' | 'approximate' | 'manual';
     } | null;
 }

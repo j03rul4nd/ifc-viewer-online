@@ -57,6 +57,8 @@ const NOT_YET_MIGRATED = new Set([
   'blog/CopyForAI.tsx',
   'dashboard/AdminView.tsx',
   'dashboard/DashboardView.tsx',
+  // Phone-only consent bottom sheet portalled above the map sheet (z-75).
+  'geo/flows.tsx',
   'mobile/IdsFailurePager.tsx',
   'mobile/MobileActionSheet.tsx',
   'mobile/MobileSheet.tsx',
