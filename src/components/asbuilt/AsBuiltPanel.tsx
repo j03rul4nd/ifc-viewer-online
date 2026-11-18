@@ -83,7 +83,7 @@ export function AsBuiltResults({ result, labels, onRowClick }: {
 }) {
   const { t } = useTranslation('pointcloud')
   const rows = useMemo(() => sortWorstFirst(result.elements).slice(0, MAX_ROWS), [result])
-  const coverage = `${Math.round(result.coverage.observedFraction * 100)} %`
+  const coverage = `${Math.floor(result.coverage.observedFraction * 100)} %`
   return (
     <div className="flex flex-col gap-2" data-testid="asbuilt-results">
       {result.score === null
@@ -144,8 +144,8 @@ async function readLabels(model: ItemsDataSource, ids: number[]): Promise<Map<nu
   if (!model.getItemsData || ids.length === 0) return out
   try {
     const data = await model.getItemsData(ids, { attributesDefault: false, attributes: ['Name', 'GlobalId'], relationsDefault: { attributes: false, relations: false } })
-    const val = (v: unknown) => { const x = (v as { value?: unknown } | undefined)?.value; return x == null ? undefined : String(x) }
-    data.forEach((d, i) => out.set(ids[i], { name: val(d?.Name), globalId: val(d?.GlobalId) }))
+    const val = (v: unknown) => { const x = typeof v === 'string' ? v : (v as { value?: unknown } | undefined)?.value; return x == null || x === '' ? undefined : String(x) }
+    data.forEach((d, i) => out.set(ids[i], { name: val(d?.Name), globalId: val(d?.GlobalId) ?? val(d?._guid) }))
   } catch { /* labels are a nicety: fall back to class + id */ }
   return out
 }

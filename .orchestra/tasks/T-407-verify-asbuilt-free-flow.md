@@ -14,3 +14,6 @@ Independent verification (Verifier, no reading implementation) of phase 3 + free
 ## Formato de vuelta (obligatorio, ≤ 250 palabras)
 STATUS: pass|fail · evidencia por criterio · RIESGOS (≤3)
 ## Informe
+STATUS: partial (verifier 2026-11-18). tsc 0 errors; asbuilt vitest 82/82. E2E on cras model.ifc + pointcloud-deviation-web.ply (scripts/e2e/asbuilt-flow.mjs): flag gate OK, 5 screen-picked pairs fit RMSE 33.2 / LOO 41.9 mm, gate blocks Run at 25 mm with reason, Run at 100 mm -> score 64, coverage 100 %, 196 deviated / 4 conforming of 200 rows; cancel OK; colour/isolate/clear OK; CSV 202 rows, no console errors.
+BUG: CSV + table GlobalId empty for every row — AsBuiltPanel.tsx:146-148 reads attribute 'GlobalId' but fragments exposes `_guid` (see ifc-item-data.ts:270 guidOf).
+NOT VERIFIED: RMSE <= 10 mm on exact corners, moved-element detection (no synthetic PLY), reload persistence, npm run build.
