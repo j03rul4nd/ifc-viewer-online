@@ -115,8 +115,26 @@ export function isLargeFile(bytes: number): boolean {
   return bytes >= LARGE_FILE_BYTES
 }
 
-export function isVeryLargeFile(bytes: number): boolean {
-  return bytes >= VERY_LARGE_FILE_BYTES
+/**
+ * Size from which the dialog warns that THIS device may not load the file.
+ * Production failures (PostHog, Oct–Nov 2026) cluster around 300–370 MB, far
+ * below the 1 GB WASM-ceiling threshold, because the parsed model plus the
+ * main-thread scene setup need several times the file size. Scales with
+ * navigator.deviceMemory (Chromium only, capped at 8): 8 GB → 320 MB,
+ * 4 GB → 160 MB, floor 100 MB. Unknown (Safari/Firefox) → 320 MB. Never above 1 GB.
+ */
+export function veryLargeThresholdBytes(deviceMemoryGb?: number): number {
+  const mem = typeof deviceMemoryGb === 'number' && deviceMemoryGb > 0 ? Math.min(deviceMemoryGb, 8) : 8
+  return Math.min(VERY_LARGE_FILE_BYTES, Math.max(LARGE_FILE_BYTES / 2, mem * 40 * 1024 * 1024))
+}
+
+function deviceMemoryGb(): number | undefined {
+  const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { deviceMemory?: number }) : undefined
+  return nav?.deviceMemory
+}
+
+export function isVeryLargeFile(bytes: number, memGb: number | undefined = deviceMemoryGb()): boolean {
+  return bytes >= veryLargeThresholdBytes(memGb)
 }
 
 // ── Per-file checks ───────────────────────────────────────────────────────────
@@ -347,7 +365,7 @@ export function summarizeSelection(entries: readonly UploadEntry[]): SelectionSu
     if (inAll !== selected) selectionIsAll = false
     if (isSelectable(status)) {
       if (isLargeFile(e.file.size)) hasLarge = true
-      if (isVeryLargeFile(e.file.size)) hasVeryLarge = true
+      if (isVeryLargeFile(e.file.size)) { hasVeryLarge = true; hasLarge = true }
     }
   }
   return {

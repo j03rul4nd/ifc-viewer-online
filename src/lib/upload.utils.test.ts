@@ -19,6 +19,8 @@ import {
   suggestedBatchName,
   summarizeSelection,
   validateIfcFile,
+  isVeryLargeFile,
+  veryLargeThresholdBytes,
 } from './upload.utils'
 import { LARGE_FILE_BYTES, MAX_FILE_SIZE_BYTES, VERY_LARGE_FILE_BYTES } from './upload.constants'
 import { uploadReducer, INITIAL_UPLOAD_STATE } from '../hooks/useUploadStateMachine'
@@ -439,5 +441,21 @@ describe('upload state machine', () => {
     const over = run([{ type: 'DRAG_ENTER' }], review)
     expect(over).toMatchObject({ id: 'review', dragOver: true })
     expect(run([{ type: 'DRAG_LEAVE' }], over)).toMatchObject({ id: 'review', dragOver: false })
+  })
+})
+
+describe('veryLargeThresholdBytes / isVeryLargeFile (device memory)', () => {
+  const MB = 1024 * 1024
+  it('scales with device memory and stays within bounds', () => {
+    expect(veryLargeThresholdBytes(8)).toBe(320 * MB)
+    expect(veryLargeThresholdBytes(16)).toBe(320 * MB)
+    expect(veryLargeThresholdBytes(4)).toBe(160 * MB)
+    expect(veryLargeThresholdBytes(0.5)).toBe(100 * MB)
+    expect(veryLargeThresholdBytes(undefined)).toBe(320 * MB)
+  })
+  it('flags a 368 MB file (the median production failure) on any device', () => {
+    expect(isVeryLargeFile(368 * MB, 8)).toBe(true)
+    expect(isVeryLargeFile(368 * MB, undefined)).toBe(true)
+    expect(isVeryLargeFile(150 * MB, 8)).toBe(false)
   })
 })

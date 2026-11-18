@@ -126,7 +126,7 @@
       "closeAriaLabel": "关闭",
       "trust1": "WebAssembly — 在浏览器中运行",
       "trust2": "无需登录",
-      "trust3": "支持最大 2 GB",
+      "trust3": "支持最大 1.5 GB",
       "dropHintMulti": "将一个或多个 .ifc 文件拖放至此",
       "or": "或",
       "privacy": "隐私"
@@ -193,13 +193,13 @@
     "large": {
       "rowNote": "大文件 — 可能需要几分钟",
       "banner": "检测到大型 IFC。此模型可能需要几分钟才能处理完成。加载期间查看器仍可正常使用。",
-      "memoryWarning": "超大型 IFC 可能超出浏览器的 WebAssembly 内存上限（实际约为 2.5 GB 的 IFC）。如果加载失败，按专业或楼层拆分模型通常会有帮助。"
+      "memoryWarning": "此文件对本设备来说可能过大：浏览器可用于 3D 模型的内存有限，大多数加载失败的文件都超过 300 MB。如果失败，请按专业或楼层拆分模型，或在不加载 3D 的情况下进行验证。"
     },
     "errors": {
       "titleMany": "这些文件均无法加载",
       "INVALID_EXTENSION": "不是 IFC 文件（应为 .ifc）。",
       "INVALID_MIME": "无法将该文件类型识别为 IFC。",
-      "FILE_TOO_LARGE": "超出 2 GB 上限。",
+      "FILE_TOO_LARGE": "超出 1.5 GB 上限。",
       "FILE_EMPTY": "文件为空。",
       "UNSUPPORTED_IFC_VERSION": "不支持该 IFC 架构。支持：IFC2x3、IFC4、IFC4x3。",
       "CORRUPTED_FILE": "IFC 文件头无效 — 文件可能已损坏。",
