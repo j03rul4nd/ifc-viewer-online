@@ -305,6 +305,7 @@ import {
   trackViewerFirstInteraction,
   trackFeatureUsed,
   trackFileOpenFailed,
+  errorKindOf,
   trackRequirementsLinkOpened,
   trackServerProcessingInterest,
   trackServerProcessingOffered,
@@ -1703,6 +1704,7 @@ export default function App() {
       // file name, which must not leave the browser.
       trackFileOpenFailed({
         error_msg: `${error.code}@${error.phase ?? 'unknown'}`,
+        error_kind: errorKindOf(error.message),
         ...(job.sizeBytes > 0 ? { file_size_mb: Math.round((job.sizeBytes / 1_048_576) * 10) / 10 } : {}),
       })
       // Every failed load inside an iframe reaches the host, SDK-initiated or

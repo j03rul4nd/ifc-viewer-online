@@ -86,7 +86,7 @@ WEBIFC.IfcAPI.prototype.Init = function (
 // Everything else is the content's fault as far as anyone can tell: 'parse'.
 
 const OOM_PATTERN =
-  /out of memory|Cannot enlarge memory|memory access out of bounds|Array buffer allocation failed|Aborted\(OOM\)/i
+  /out of memory|Cannot enlarge memory|memory access out of bounds|Array buffer allocation failed|Aborted\(OOM\)|allocation failed|Invalid array length|Invalid typed array length/i
 const INIT_PATTERN =
   /failed to asynchronously prepare wasm|CompileError|both async and sync fetching of the wasm failed|WebAssembly\.instantiate/i
 
