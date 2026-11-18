@@ -369,6 +369,7 @@
     "chooseFiles": "选择 IFC 文件",
     "missing_one": "缺少 {{count}} 个文件，其余已加载",
     "missing_other": "缺少 {{count}} 个文件，其余已加载",
+    "viewsSkipped_other": "文件中的 {{count}} 个视图超出了已保存视图的上限",
     "dismiss": "关闭",
     "openSaved": "打开已保存的联合模型（.ifcfed.json）",
     "download": "下载",

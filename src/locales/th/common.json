@@ -369,6 +369,7 @@
     "chooseFiles": "เลือกไฟล์ IFC",
     "missing_one": "ขาด {{count}} ไฟล์ ไฟล์ที่เหลือโหลดแล้ว",
     "missing_other": "ขาด {{count}} ไฟล์ ไฟล์ที่เหลือโหลดแล้ว",
+    "viewsSkipped_other": "มุมมอง {{count}} รายการจากไฟล์ไม่พอที่ในมุมมองที่บันทึกไว้",
     "dismiss": "ปิด",
     "openSaved": "เปิดชุดโมเดลรวมที่บันทึกไว้ (.ifcfed.json)",
     "download": "ดาวน์โหลด",

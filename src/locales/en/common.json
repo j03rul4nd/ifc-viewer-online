@@ -373,6 +373,8 @@
     "chooseFiles": "Choose IFC files",
     "missing_one": "{{count}} file missing — the rest were loaded",
     "missing_other": "{{count}} files missing — the rest were loaded",
+    "viewsSkipped_one": "{{count}} view from the file did not fit in your saved views",
+    "viewsSkipped_other": "{{count}} views from the file did not fit in your saved views",
     "dismiss": "Dismiss",
     "openSaved": "Open a saved federation (.ifcfed.json)",
     "download": "Download",

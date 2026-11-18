@@ -246,8 +246,9 @@ import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useFederationStore } from './stores/federationStore'
-import { setRestoreApplier, openFederationFile } from './lib/federation-restore'
+import { setRestoreApplier, openFederationFile, setViewHooks } from './lib/federation-restore'
 import { splitFederationDrop, openDroppedFederation } from './lib/federation-drop'
+import { resolveView, clampOpacity, type ViewLook } from './lib/federation'
 import { useFederationLook } from './hooks/useFederationLook'
 import { useGeoStore } from './stores/geoStore'
 import { parseBackgroundSpec } from './lib/scene/background'
@@ -1394,6 +1395,52 @@ export default function App() {
       scene.setModelVisible(id, false)
       viewerApiRef.current?.setModelVisible(id, false)
     }
+  }), [])
+
+  // Saved views keep the camera and cuts too; this is how they read and put
+  // them back (federation bar and .ifcfed.json open share it).
+  useEffect(() => setViewHooks({
+    capture: () => {
+      const api = viewerApiRef.current
+      if (!api) return {}
+      const look: ViewLook = {}
+      const cam = api.getCameraViewpoint()
+      if (cam) {
+        look.camera = {
+          position: [cam.position.x, cam.position.y, cam.position.z],
+          target: [cam.target.x, cam.target.y, cam.target.z],
+          projection: cam.orthoWorldHeight !== undefined ? 'orthographic' : 'perspective',
+        }
+      }
+      const cuts = api.getSections().getActivePlanes()
+      look.sections = cuts.map((c) => ({ point: [c.point.x, c.point.y, c.point.z], normal: [c.normal.x, c.normal.y, c.normal.z] }))
+      return look
+    },
+    apply: (view) => {
+      const scene = useSceneStore.getState()
+      const fed = useFederationStore.getState()
+      const r = resolveView(view, scene.models)
+      for (const m of scene.models) {
+        if (!(m.id in r.visible) || r.visible[m.id] === m.visible) continue
+        scene.setModelVisible(m.id, r.visible[m.id])
+        viewerApiRef.current?.setModelVisible(m.id, r.visible[m.id])
+      }
+      for (const [mid, o] of Object.entries(r.opacity)) fed.setOpacity(mid, clampOpacity(o))
+      fed.setColorByDiscipline(view.colorByDiscipline)
+      const api = viewerApiRef.current
+      if (!api) return
+      if (view.camera) {
+        const [px, py, pz] = view.camera.position
+        const [tx, ty, tz] = view.camera.target
+        api.setCameraLookAt({ x: px, y: py, z: pz }, { x: tx, y: ty, z: tz }, true)
+      }
+      if (view.sections) {
+        api.getSections().applyPlanes(view.sections.map((c) => ({
+          point: { x: c.point[0], y: c.point[1], z: c.point[2] },
+          normal: { x: c.normal[0], y: c.normal[1], z: c.normal[2] },
+        })))
+      }
+    },
   }), [])
 
   // What used to be one flag is now a reading of the queue. 'loading' means

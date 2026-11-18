@@ -373,6 +373,8 @@
     "chooseFiles": "IFC-Dateien wählen",
     "missing_one": "{{count}} Datei fehlt – der Rest wurde geladen",
     "missing_other": "{{count}} Dateien fehlen – der Rest wurde geladen",
+    "viewsSkipped_one": "{{count}} Ansicht aus der Datei passt nicht mehr in deine gespeicherten Ansichten",
+    "viewsSkipped_other": "{{count}} Ansichten aus der Datei passen nicht mehr in deine gespeicherten Ansichten",
     "dismiss": "Schließen",
     "openSaved": "Gespeicherte Föderation öffnen (.ifcfed.json)",
     "download": "Herunterladen",

@@ -20,6 +20,7 @@ import {
   type FacetKind, type FacetInput,
 } from '../lib/federation-index'
 import FederationFileControls from './FederationFileControls'
+import { captureViewLook, applyFederationView } from '../lib/federation-restore'
 
 interface FederationBarProps {
   models: SceneModel[]
@@ -117,7 +118,7 @@ export default function FederationBar({ models, query, onQuery, layersOpen, onLa
 
   const onSave = () => {
     const name = viewName.trim() || t('scene.federation.viewDefault', { n: views.length + 1 })
-    saveView(captureView(name, models, opacityById, colorOn))
+    saveView(captureView(name, models, opacityById, colorOn, Date.now(), captureViewLook()))
     setViewName('')
     toast(t('scene.federation.viewSaved', { name }), 'success')
   }
@@ -128,6 +129,8 @@ export default function FederationBar({ models, query, onQuery, layersOpen, onLa
     apply(r.visible)
     for (const [mid, o] of Object.entries(r.opacity)) setOpacity(mid, clampOpacity(o))
     setColorOn(view.colorByDiscipline)
+    // Camera and cuts (views saved before they were kept have neither).
+    if (view.camera || view.sections) applyFederationView(view)
     if (r.matched < Object.keys(view.visible).length) {
       toast(t('scene.federation.viewPartial', { matched: r.matched, total: Object.keys(view.visible).length }), 'info')
     }

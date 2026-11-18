@@ -6,8 +6,8 @@
 
 import type { FederationManifestV1 } from './federation-manifest'
 import { reconcile } from './federation-reconcile'
-import { planRestore, modelCountBucket, type RestoreApply } from './federation-session'
-import { DISCIPLINES, type Discipline } from './federation'
+import { planRestore, modelCountBucket, viewsFromManifest, defaultView, type RestoreApply } from './federation-session'
+import { DISCIPLINES, type Discipline, type FederationView, type ViewLook } from './federation'
 import { submitIfcFiles } from './loading'
 import { trackFeatureUsed } from './analytics'
 import { useFederationStore } from '../stores/federationStore'
@@ -25,9 +25,44 @@ export function setRestoreApplier(fn: RestoreApplier): () => void {
   return () => { if (applier === fn) applier = null }
 }
 
+/**
+ * Camera/section access for saved views, registered by the app (it owns the
+ * viewer): `capture` reads the look now, `apply` puts a whole view back
+ * (visibility, opacity, colour, camera, cuts) on the models open.
+ */
+export interface ViewHooks {
+  capture: () => ViewLook
+  apply: (view: FederationView) => void
+}
+let viewHooks: ViewHooks | null = null
+
+export function setViewHooks(h: ViewHooks): () => void {
+  viewHooks = h
+  return () => { if (viewHooks === h) viewHooks = null }
+}
+
+/** Camera and cuts now, for a view being saved; {} when no viewer is up. */
+export function captureViewLook(): ViewLook {
+  try { return viewHooks?.capture() ?? {} } catch { return {} }
+}
+
+/** Apply a saved view through the app's viewer, if one is registered. */
+export function applyFederationView(view: FederationView): void {
+  viewHooks?.apply(view)
+}
+
 /** Load `files` as `manifest` describes. Resolves with the missing file names once loads are submitted. */
 export async function runFederationRestore(manifest: FederationManifestV1, files: File[], source: FederationOpenSource = 'file'): Promise<string[]> {
   const plan = planRestore(manifest, reconcile(manifest, files.map((f) => ({ name: f.name, size: f.size }))))
+  // The file's views join the saved-views list without touching local ones
+  // (clashing names get a suffix; what does not fit is skipped and counted).
+  // The default one is shown once every model of the file has settled.
+  const views = viewsFromManifest(manifest)
+  const shown = defaultView(manifest, views)
+  const { skipped } = useFederationStore.getState().importViews(views)
+  if (skipped > 0) {
+    toast(i18n.t('federationFile.viewsSkipped', { ns: 'common', count: skipped, defaultValue: '{{count}} views from the file did not fit in your saved views' }), 'warning')
+  }
   trackFeatureUsed({ feature: 'federation_open', models: modelCountBucket(manifest.models.length), source })
 
   const fed = useFederationStore.getState()
@@ -40,16 +75,19 @@ export async function runFederationRestore(manifest: FederationManifestV1, files
     const handles = submitIfcFiles(plan.loads.map((l) => files[l.fileIndex]), {
       origin: 'upload', batchName: manifest.name || null,
     })
-    handles.forEach((h, i) => {
-      void h.settled.then((out) => {
-        if (out.status !== 'loaded') return
-        const apply = plan.loads[i].apply
-        if (apply.discipline && (DISCIPLINES as string[]).includes(apply.discipline)) {
-          useFederationStore.getState().setDiscipline(out.resultId, apply.discipline as Discipline)
-        }
-        applier?.(out.resultId, apply)
-      })
-    })
+    const settled = handles.map((h, i) => h.settled.then((out) => {
+      if (out.status !== 'loaded') return
+      const apply = plan.loads[i].apply
+      if (apply.discipline && (DISCIPLINES as string[]).includes(apply.discipline)) {
+        useFederationStore.getState().setDiscipline(out.resultId, apply.discipline as Discipline)
+      }
+      applier?.(out.resultId, apply)
+    }))
+    if (shown) void Promise.allSettled(settled).then(() => applyFederationView(shown))
+  } else if (shown) {
+    // Every model parked or missing: nothing to wait for — the camera and
+    // cuts still apply, visibility resolves against whatever is open.
+    applyFederationView(shown)
   }
   return plan.missing.map((m) => m.fileName)
 }

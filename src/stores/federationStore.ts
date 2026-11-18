@@ -5,16 +5,20 @@
 // file name (see lib/federation).
 
 import { create } from 'zustand'
-import { DISCIPLINE_COLORS, detectDiscipline, type Discipline, type FederationView } from '../lib/federation'
+import {
+  DISCIPLINE_COLORS, detectDiscipline, sanitizeStoredView, mergeImportedViews,
+  type Discipline, type FederationView,
+} from '../lib/federation'
 
 const VIEWS_KEY = 'ifc-federation-views-v1'
-const MAX_VIEWS = 30
+export const MAX_VIEWS = 30
 
 function readViews(): FederationView[] {
   try {
     const raw = localStorage.getItem(VIEWS_KEY)
     const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((v) => v && typeof v.name === 'string' && v.visible) : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(sanitizeStoredView).filter((v): v is FederationView => v !== null).slice(0, MAX_VIEWS)
   } catch { return [] }
 }
 
@@ -56,12 +60,14 @@ interface FederationStore {
   setDiscipline: (id: string, d: Discipline) => void
   setColorByDiscipline: (on: boolean) => void
   saveView: (view: FederationView) => void
+  /** Views from a federation file: never replace or push out local ones (see mergeImportedViews). */
+  importViews: (views: FederationView[]) => { imported: FederationView[]; skipped: number }
   deleteView: (id: string) => void
   forgetModel: (id: string) => void
   reset: () => void
 }
 
-export const useFederationStore = create<FederationStore>()((set) => ({
+export const useFederationStore = create<FederationStore>()((set, get) => ({
   opacityById: {},
   disciplineById: {},
   colorByDiscipline: false,
@@ -87,6 +93,11 @@ export const useFederationStore = create<FederationStore>()((set) => ({
     writeViews(views)
     return { views }
   }),
+  importViews: (incoming) => {
+    const r = mergeImportedViews(get().views, incoming, MAX_VIEWS)
+    if (r.imported.length > 0) { writeViews(r.views); set({ views: r.views }) }
+    return { imported: r.imported, skipped: r.skipped }
+  },
   deleteView: (id) => set((s) => {
     const views = s.views.filter((v) => v.id !== id)
     writeViews(views)
