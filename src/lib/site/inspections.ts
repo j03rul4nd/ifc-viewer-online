@@ -5,6 +5,7 @@
 // browser APIs. Records are keyed by stable ids only: a unit id or an element
 // GlobalId, never the per-load model id.
 
+import { localDate } from './local-date'
 import { createSnag, type Snag } from './snags'
 import { normalizeUnitId } from './units'
 
@@ -228,7 +229,7 @@ export function normalizeTarget(t: InspectionTarget | undefined): InspectionTarg
 export function createInspection(tpl: InspectionTemplate, target: InspectionTarget = {}, now: Date = new Date(), id = newInspectionId(now.getTime())): Inspection {
   const at = now.toISOString()
   return {
-    id, templateId: tpl.id, templateName: tpl.name, trade: tpl.trade, date: at.slice(0, 10), inspector: '',
+    id, templateId: tpl.id, templateName: tpl.name, trade: tpl.trade, date: localDate(now), inspector: '',
     target: normalizeTarget(target),
     items: tpl.items.map((i) => ({ id: i.id, text: i.text, ...(i.section ? { section: i.section } : {}), photoIds: [] })),
     status: 'draft', createdAt: at, updatedAt: at,

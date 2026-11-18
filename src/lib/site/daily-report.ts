@@ -6,6 +6,7 @@
 // Pure data, no browser APIs.
 
 import { csvCell } from '../steel/export'
+import { localDayOf } from './local-date'
 import type { ProgressRecord, ProgressStatus } from './progress'
 import type { Snag } from './snags'
 
@@ -48,11 +49,7 @@ export interface DailyReport {
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 export const isIsoDate = (s: unknown): s is string => typeof s === 'string' && ISO_DATE.test(s) && !Number.isNaN(Date.parse(s))
 
-/** Local calendar date (the site's day, not UTC). */
-export function localDate(d: Date = new Date()): string {
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
+export { localDate } from './local-date'
 
 export function createDailyReport(date: string, now: Date = new Date()): DailyReport {
   if (!isIsoDate(date)) throw new Error(`Invalid date ${date}`)
@@ -116,19 +113,14 @@ export function progressOfDay(records: readonly ProgressRecord[], date: string):
 
 export interface SnagDay { opened: Snag[]; resolved: Snag[] }
 
-/** Day part of an ISO timestamp, in local time (the site's day). */
-function dayOf(iso: string): string {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '' : localDate(d)
-}
 
 /** Snags created on `date`, and snags moved to resolved/closed on `date`. */
 export function snagsOfDay(snags: readonly Snag[], date: string): SnagDay {
   const opened: Snag[] = []
   const resolved: Snag[] = []
   for (const s of snags) {
-    if (dayOf(s.createdAt) === date) opened.push(s)
-    if (s.history.some((h) => (h.to === 'resolved' || h.to === 'closed') && dayOf(h.at) === date)) resolved.push(s)
+    if (localDayOf(s.createdAt) === date) opened.push(s)
+    if (s.history.some((h) => (h.to === 'resolved' || h.to === 'closed') && localDayOf(h.at) === date)) resolved.push(s)
   }
   return { opened, resolved }
 }

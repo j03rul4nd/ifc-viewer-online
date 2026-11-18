@@ -3,6 +3,8 @@
 // each snag is a defect tied to a trade, a place (an element in the model, a
 // point, or a spot on a drawing) and photos. Pure data, no browser APIs.
 
+import { localDate } from './local-date'
+
 export type SnagStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type SnagPriority = 'low' | 'medium' | 'high' | 'critical'
 
@@ -109,7 +111,7 @@ export function transitionSnag(snag: Snag, to: SnagStatus, note?: string, now: D
 /** Overdue = has a due date before today and is not resolved/closed yet. */
 export function isOverdue(snag: Snag, today: Date = new Date()): boolean {
   if (!snag.dueDate || snag.status === 'resolved' || snag.status === 'closed') return false
-  return snag.dueDate < today.toISOString().slice(0, 10)
+  return snag.dueDate < localDate(today)
 }
 
 export interface SnagFilter {
