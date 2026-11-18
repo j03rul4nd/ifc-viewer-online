@@ -581,5 +581,87 @@
     "apply": "应用",
     "resetMany": "重置扫描的位置（{{count}}）",
     "oneAtATime": "向上轴、单位和坐标系需逐个扫描设置——请只选择一个扫描来更改。"
+  },
+  "asBuilt": {
+    "title": "与模型对比",
+    "preview": "Preview",
+    "note": "结果仅供参考，取决于您的对齐精度。",
+    "step": {
+      "cloud": "扫描",
+      "align": "对齐",
+      "tolerance": "公差",
+      "run": "运行",
+      "results": "结果"
+    },
+    "mode": {
+      "label": "拟合",
+      "level": "水平扫描（4 自由度）",
+      "free": "非水平扫描（6 自由度）"
+    },
+    "pairs": {
+      "add": "添加点对",
+      "stop": "完成",
+      "pickModel": "点击模型上的一个角点。",
+      "pickCloud": "再点击扫描中的同一角点。按 Esc 取消。",
+      "hint": "至少选择 {{need}} 个对应角点，并分散在整个模型上。",
+      "item": "点对 {{n}}",
+      "pending": "待选扫描点",
+      "remove": "删除点对 {{n}}",
+      "suspicious": "请检查此点对"
+    },
+    "fit": {
+      "rmse": "拟合 RMSE",
+      "loo": "留一法 RMSE",
+      "tau": "公差 τ",
+      "apply": "应用对齐",
+      "applied": "已将对齐应用到扫描。",
+      "tiltOut": "此拟合会使扫描倾斜超出允许范围，请检查点对。",
+      "applyFailed": "无法应用对齐。"
+    },
+    "tol": {
+      "declared": "施工公差（mm）",
+      "precision": "扫描仪精度（mm）"
+    },
+    "block": {
+      "needPairs": "已选 {{have}}/{{need}} 个点对。",
+      "degenerate": "点之间太近或在一条直线上，请分散选点。",
+      "tooFewToScore": "评分至少需要 {{need}} 个点对。",
+      "tooCoarse": "对齐误差（{{rmse}} mm）相对 {{tol}} mm 公差过大。请添加或修正点对，或放宽公差。"
+    },
+    "run": {
+      "start": "对比",
+      "cancel": "取消",
+      "stage": {
+        "model": "正在读取模型几何…",
+        "cloud": "正在采样扫描…",
+        "score": "正在对比…"
+      },
+      "noModel": "无法读取模型几何。",
+      "noCloud": "扫描尚无已载入内存的点。",
+      "failed": "对比失败。"
+    },
+    "result": {
+      "score": "得分",
+      "coverage": "覆盖率",
+      "more": "显示 {{total}} 个中最差的 {{shown}} 个。",
+      "col": {
+        "element": "构件",
+        "state": "状态",
+        "p95": "p95（mm）",
+        "matched": "匹配率"
+      },
+      "inconclusive": {
+        "low-coverage": "无得分：扫描覆盖模型的范围太小，无法判断。",
+        "tolerance-below-alignment": "无得分：公差比对齐精度允许的更严格。",
+        "nothing-scoreable": "无得分：没有可判断的构件。"
+      }
+    },
+    "state": {
+      "conforming": "符合",
+      "deviated": "偏差",
+      "missing": "缺失",
+      "occluded": "被遮挡",
+      "unobserved": "未扫描"
+    }
   }
 }

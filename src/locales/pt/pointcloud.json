@@ -581,5 +581,87 @@
     "apply": "Aplicar",
     "resetMany": "Repor a posição dos varrimentos ({{count}})",
     "oneAtATime": "O eixo vertical, as unidades e o SRC definem-se um varrimento de cada vez — selecione um só para os alterar."
+  },
+  "asBuilt": {
+    "title": "Comparar com o modelo",
+    "preview": "Preview",
+    "note": "Resultado indicativo; depende do seu alinhamento.",
+    "step": {
+      "cloud": "Digitalização",
+      "align": "Alinhar",
+      "tolerance": "Tolerância",
+      "run": "Executar",
+      "results": "Resultados"
+    },
+    "mode": {
+      "label": "Ajuste",
+      "level": "Digitalização nivelada (4 GL)",
+      "free": "Digitalização não nivelada (6 GL)"
+    },
+    "pairs": {
+      "add": "Adicionar pares de pontos",
+      "stop": "Concluir",
+      "pickModel": "Clique num canto do modelo.",
+      "pickCloud": "Agora clique no mesmo canto da digitalização. Esc cancela.",
+      "hint": "Marque pelo menos {{need}} cantos correspondentes, espalhados pelo modelo.",
+      "item": "Par {{n}}",
+      "pending": "falta o ponto da digitalização",
+      "remove": "Remover o par {{n}}",
+      "suspicious": "Verifique este par"
+    },
+    "fit": {
+      "rmse": "RMSE do ajuste",
+      "loo": "RMSE deixando um de fora",
+      "tau": "Tolerância τ",
+      "apply": "Aplicar alinhamento",
+      "applied": "Alinhamento aplicado à digitalização.",
+      "tiltOut": "Este ajuste inclinaria a digitalização além do permitido. Verifique os pares.",
+      "applyFailed": "Não foi possível aplicar o alinhamento."
+    },
+    "tol": {
+      "declared": "Tolerância de obra (mm)",
+      "precision": "Precisão do scanner (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} de {{need}} pares marcados.",
+      "degenerate": "Os pontos estão demasiado juntos ou em linha. Espalhe-os mais.",
+      "tooFewToScore": "Para pontuar são precisos pelo menos {{need}} pares.",
+      "tooCoarse": "O erro de alinhamento ({{rmse}} mm) é grande demais para uma tolerância de {{tol}} mm. Adicione ou corrija pares, ou aumente a tolerância."
+    },
+    "run": {
+      "start": "Comparar",
+      "cancel": "Cancelar",
+      "stage": {
+        "model": "A ler a geometria do modelo…",
+        "cloud": "A amostrar a digitalização…",
+        "score": "A comparar…"
+      },
+      "noModel": "Não foi possível ler a geometria do modelo.",
+      "noCloud": "A digitalização ainda não tem pontos em memória.",
+      "failed": "A comparação falhou."
+    },
+    "result": {
+      "score": "Pontuação",
+      "coverage": "Cobertura",
+      "more": "A mostrar os {{shown}} piores de {{total}}.",
+      "col": {
+        "element": "Elemento",
+        "state": "Estado",
+        "p95": "p95 (mm)",
+        "matched": "Correspondência"
+      },
+      "inconclusive": {
+        "low-coverage": "Sem pontuação: a digitalização cobre muito pouco do modelo para o avaliar.",
+        "tolerance-below-alignment": "Sem pontuação: a tolerância é mais apertada do que o alinhamento permite.",
+        "nothing-scoreable": "Sem pontuação: nenhum elemento pôde ser avaliado."
+      }
+    },
+    "state": {
+      "conforming": "Conforme",
+      "deviated": "Desviado",
+      "missing": "Em falta",
+      "occluded": "Oculto",
+      "unobserved": "Não digitalizado"
+    }
   }
 }

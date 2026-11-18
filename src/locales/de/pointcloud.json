@@ -581,5 +581,87 @@
     "apply": "Anwenden",
     "resetMany": "Platzierung der Scans zurücksetzen ({{count}})",
     "oneAtATime": "Hochachse, Einheiten und KBS werden je Scan festgelegt — wähle einen einzelnen Scan, um sie zu ändern."
+  },
+  "asBuilt": {
+    "title": "Mit dem Modell vergleichen",
+    "preview": "Preview",
+    "note": "Richtwert; hängt von Ihrer Ausrichtung ab.",
+    "step": {
+      "cloud": "Scan",
+      "align": "Ausrichten",
+      "tolerance": "Toleranz",
+      "run": "Ausführen",
+      "results": "Ergebnisse"
+    },
+    "mode": {
+      "label": "Einpassung",
+      "level": "Horizontierter Scan (4 FG)",
+      "free": "Nicht horizontierter Scan (6 FG)"
+    },
+    "pairs": {
+      "add": "Punktpaare hinzufügen",
+      "stop": "Fertig",
+      "pickModel": "Klicken Sie auf eine Ecke im Modell.",
+      "pickCloud": "Klicken Sie jetzt auf dieselbe Ecke im Scan. Esc bricht ab.",
+      "hint": "Wählen Sie mindestens {{need}} passende Ecken, verteilt über das Modell.",
+      "item": "Paar {{n}}",
+      "pending": "Scanpunkt fehlt noch",
+      "remove": "Paar {{n}} entfernen",
+      "suspicious": "Paar prüfen"
+    },
+    "fit": {
+      "rmse": "RMSE der Einpassung",
+      "loo": "Leave-one-out-RMSE",
+      "tau": "Toleranz τ",
+      "apply": "Ausrichtung übernehmen",
+      "applied": "Ausrichtung auf den Scan angewendet.",
+      "tiltOut": "Diese Einpassung würde den Scan stärker neigen als zulässig. Prüfen Sie die Paare.",
+      "applyFailed": "Die Ausrichtung konnte nicht angewendet werden."
+    },
+    "tol": {
+      "declared": "Bautoleranz (mm)",
+      "precision": "Scannergenauigkeit (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} von {{need}} Paaren gewählt.",
+      "degenerate": "Die Punkte liegen zu dicht beieinander oder auf einer Linie. Verteilen Sie sie weiter.",
+      "tooFewToScore": "Für eine Bewertung sind mindestens {{need}} Paare nötig.",
+      "tooCoarse": "Der Ausrichtungsfehler ({{rmse}} mm) ist für eine Toleranz von {{tol}} mm zu groß. Paare ergänzen oder korrigieren oder die Toleranz erhöhen."
+    },
+    "run": {
+      "start": "Vergleichen",
+      "cancel": "Abbrechen",
+      "stage": {
+        "model": "Modellgeometrie wird gelesen…",
+        "cloud": "Scan wird abgetastet…",
+        "score": "Vergleich läuft…"
+      },
+      "noModel": "Die Modellgeometrie konnte nicht gelesen werden.",
+      "noCloud": "Der Scan hat noch keine Punkte im Speicher.",
+      "failed": "Der Vergleich ist fehlgeschlagen."
+    },
+    "result": {
+      "score": "Bewertung",
+      "coverage": "Abdeckung",
+      "more": "Die {{shown}} schlechtesten von {{total}} werden angezeigt.",
+      "col": {
+        "element": "Element",
+        "state": "Status",
+        "p95": "p95 (mm)",
+        "matched": "Treffer"
+      },
+      "inconclusive": {
+        "low-coverage": "Keine Bewertung: Der Scan deckt zu wenig vom Modell ab.",
+        "tolerance-below-alignment": "Keine Bewertung: Die Toleranz ist enger, als die Ausrichtung zulässt.",
+        "nothing-scoreable": "Keine Bewertung: Kein Element konnte beurteilt werden."
+      }
+    },
+    "state": {
+      "conforming": "Konform",
+      "deviated": "Abweichend",
+      "missing": "Fehlt",
+      "occluded": "Verdeckt",
+      "unobserved": "Nicht erfasst"
+    }
   }
 }

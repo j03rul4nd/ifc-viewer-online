@@ -581,5 +581,87 @@
     "apply": "Aplicar",
     "resetMany": "Restablecer la posición de los escaneos ({{count}})",
     "oneAtATime": "El eje vertical, las unidades y el SRC se configuran de uno en uno: selecciona un solo escaneo para cambiarlos."
+  },
+  "asBuilt": {
+    "title": "Comparar con el modelo",
+    "preview": "Preview",
+    "note": "Resultado orientativo; depende de tu alineación.",
+    "step": {
+      "cloud": "Escaneo",
+      "align": "Alinear",
+      "tolerance": "Tolerancia",
+      "run": "Ejecutar",
+      "results": "Resultados"
+    },
+    "mode": {
+      "label": "Ajuste",
+      "level": "Escaneo nivelado (4 GDL)",
+      "free": "Escaneo no nivelado (6 GDL)"
+    },
+    "pairs": {
+      "add": "Añadir pares de puntos",
+      "stop": "Terminar",
+      "pickModel": "Haz clic en una esquina del modelo.",
+      "pickCloud": "Ahora haz clic en la misma esquina del escaneo. Esc cancela.",
+      "hint": "Marca al menos {{need}} esquinas equivalentes, repartidas por el modelo.",
+      "item": "Par {{n}}",
+      "pending": "falta el punto del escaneo",
+      "remove": "Quitar par {{n}}",
+      "suspicious": "Revisa este par"
+    },
+    "fit": {
+      "rmse": "RMSE del ajuste",
+      "loo": "RMSE dejando uno fuera",
+      "tau": "Tolerancia τ",
+      "apply": "Aplicar alineación",
+      "applied": "Alineación aplicada al escaneo.",
+      "tiltOut": "Este ajuste inclinaría el escaneo más de lo permitido. Revisa los pares.",
+      "applyFailed": "No se ha podido aplicar la alineación."
+    },
+    "tol": {
+      "declared": "Tolerancia de obra (mm)",
+      "precision": "Precisión del escáner (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} de {{need}} pares marcados.",
+      "degenerate": "Los puntos están demasiado juntos o en línea. Repártelos más.",
+      "tooFewToScore": "Para puntuar hacen falta al menos {{need}} pares.",
+      "tooCoarse": "El error de alineación ({{rmse}} mm) es demasiado grande para una tolerancia de {{tol}} mm. Añade o corrige pares, o sube la tolerancia."
+    },
+    "run": {
+      "start": "Comparar",
+      "cancel": "Cancelar",
+      "stage": {
+        "model": "Leyendo la geometría del modelo…",
+        "cloud": "Muestreando el escaneo…",
+        "score": "Comparando…"
+      },
+      "noModel": "No se ha podido leer la geometría del modelo.",
+      "noCloud": "El escaneo aún no tiene puntos en memoria.",
+      "failed": "La comparación ha fallado."
+    },
+    "result": {
+      "score": "Puntuación",
+      "coverage": "Cobertura",
+      "more": "Se muestran los {{shown}} peores de {{total}}.",
+      "col": {
+        "element": "Elemento",
+        "state": "Estado",
+        "p95": "p95 (mm)",
+        "matched": "Coincidencia"
+      },
+      "inconclusive": {
+        "low-coverage": "Sin puntuación: el escaneo cubre demasiado poco del modelo para juzgarlo.",
+        "tolerance-below-alignment": "Sin puntuación: la tolerancia es más estricta de lo que permite la alineación.",
+        "nothing-scoreable": "Sin puntuación: no se ha podido juzgar ningún elemento."
+      }
+    },
+    "state": {
+      "conforming": "Conforme",
+      "deviated": "Desviado",
+      "missing": "Ausente",
+      "occluded": "Oculto",
+      "unobserved": "No escaneado"
+    }
   }
 }

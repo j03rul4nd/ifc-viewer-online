@@ -581,5 +581,87 @@
     "apply": "適用",
     "resetMany": "スキャン ({{count}}) の配置をリセット",
     "oneAtATime": "上方向の軸・単位・CRS はスキャンごとに設定します。変更するには1つのスキャンを選択してください。"
+  },
+  "asBuilt": {
+    "title": "モデルと比較",
+    "preview": "Preview",
+    "note": "参考値です。位置合わせの精度に左右されます。",
+    "step": {
+      "cloud": "スキャン",
+      "align": "位置合わせ",
+      "tolerance": "許容差",
+      "run": "実行",
+      "results": "結果"
+    },
+    "mode": {
+      "label": "フィット",
+      "level": "水平なスキャン（4自由度）",
+      "free": "水平でないスキャン（6自由度）"
+    },
+    "pairs": {
+      "add": "対応点を追加",
+      "stop": "完了",
+      "pickModel": "モデル上の角をクリックしてください。",
+      "pickCloud": "次にスキャン上の同じ角をクリックしてください。Escで取り消し。",
+      "hint": "モデル全体に散らばった対応する角を{{need}}点以上選んでください。",
+      "item": "ペア {{n}}",
+      "pending": "スキャン側の点が未選択",
+      "remove": "ペア {{n}} を削除",
+      "suspicious": "このペアを確認"
+    },
+    "fit": {
+      "rmse": "フィットRMSE",
+      "loo": "一つ抜き交差検証RMSE",
+      "tau": "許容差 τ",
+      "apply": "位置合わせを適用",
+      "applied": "スキャンに位置合わせを適用しました。",
+      "tiltOut": "このフィットではスキャンの傾きが許容範囲を超えます。ペアを確認してください。",
+      "applyFailed": "位置合わせを適用できませんでした。"
+    },
+    "tol": {
+      "declared": "施工許容差（mm）",
+      "precision": "スキャナー精度（mm）"
+    },
+    "block": {
+      "needPairs": "{{need}}組中{{have}}組を選択済み。",
+      "degenerate": "点が近すぎるか一直線上にあります。もっと離してください。",
+      "tooFewToScore": "スコアには{{need}}組以上のペアが必要です。",
+      "tooCoarse": "位置合わせ誤差（{{rmse}} mm）が許容差 {{tol}} mm に対して大きすぎます。ペアを追加・修正するか、許容差を上げてください。"
+    },
+    "run": {
+      "start": "比較",
+      "cancel": "キャンセル",
+      "stage": {
+        "model": "モデルの形状を読み込み中…",
+        "cloud": "スキャンをサンプリング中…",
+        "score": "比較中…"
+      },
+      "noModel": "モデルの形状を読み込めませんでした。",
+      "noCloud": "スキャンの点がまだメモリにありません。",
+      "failed": "比較に失敗しました。"
+    },
+    "result": {
+      "score": "スコア",
+      "coverage": "カバー率",
+      "more": "{{total}}件中ワースト{{shown}}件を表示。",
+      "col": {
+        "element": "要素",
+        "state": "状態",
+        "p95": "p95（mm）",
+        "matched": "一致率"
+      },
+      "inconclusive": {
+        "low-coverage": "スコアなし：スキャンがモデルをほとんどカバーしていないため判定できません。",
+        "tolerance-below-alignment": "スコアなし：許容差が位置合わせの精度より厳しすぎます。",
+        "nothing-scoreable": "スコアなし：判定できる要素がありません。"
+      }
+    },
+    "state": {
+      "conforming": "適合",
+      "deviated": "ずれあり",
+      "missing": "欠落",
+      "occluded": "遮蔽",
+      "unobserved": "未スキャン"
+    }
   }
 }

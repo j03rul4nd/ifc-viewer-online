@@ -581,5 +581,87 @@
     "apply": "Aplica",
     "resetMany": "Restableix la posició dels escanejos ({{count}})",
     "oneAtATime": "L'eix vertical, les unitats i el SRC es configuren d'un en un: selecciona un sol escaneig per canviar-los."
+  },
+  "asBuilt": {
+    "title": "Comparar amb el model",
+    "preview": "Preview",
+    "note": "Resultat orientatiu; depèn de la teva alineació.",
+    "step": {
+      "cloud": "Escaneig",
+      "align": "Alinear",
+      "tolerance": "Tolerància",
+      "run": "Executar",
+      "results": "Resultats"
+    },
+    "mode": {
+      "label": "Ajust",
+      "level": "Escaneig anivellat (4 GDL)",
+      "free": "Escaneig no anivellat (6 GDL)"
+    },
+    "pairs": {
+      "add": "Afegir parells de punts",
+      "stop": "Acabar",
+      "pickModel": "Fes clic en una cantonada del model.",
+      "pickCloud": "Ara fes clic a la mateixa cantonada de l’escaneig. Esc cancel·la.",
+      "hint": "Marca com a mínim {{need}} cantonades equivalents, repartides pel model.",
+      "item": "Parell {{n}}",
+      "pending": "falta el punt de l’escaneig",
+      "remove": "Treure el parell {{n}}",
+      "suspicious": "Revisa aquest parell"
+    },
+    "fit": {
+      "rmse": "RMSE de l’ajust",
+      "loo": "RMSE deixant-ne un fora",
+      "tau": "Tolerància τ",
+      "apply": "Aplicar l’alineació",
+      "applied": "Alineació aplicada a l’escaneig.",
+      "tiltOut": "Aquest ajust inclinaria l’escaneig més del permès. Revisa els parells.",
+      "applyFailed": "No s’ha pogut aplicar l’alineació."
+    },
+    "tol": {
+      "declared": "Tolerància d’obra (mm)",
+      "precision": "Precisió de l’escàner (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} de {{need}} parells marcats.",
+      "degenerate": "Els punts són massa junts o en línia. Reparteix-los més.",
+      "tooFewToScore": "Per puntuar calen com a mínim {{need}} parells.",
+      "tooCoarse": "L’error d’alineació ({{rmse}} mm) és massa gran per a una tolerància de {{tol}} mm. Afegeix o corregeix parells, o apuja la tolerància."
+    },
+    "run": {
+      "start": "Comparar",
+      "cancel": "Cancel·lar",
+      "stage": {
+        "model": "Llegint la geometria del model…",
+        "cloud": "Mostrejant l’escaneig…",
+        "score": "Comparant…"
+      },
+      "noModel": "No s’ha pogut llegir la geometria del model.",
+      "noCloud": "L’escaneig encara no té punts en memòria.",
+      "failed": "La comparació ha fallat."
+    },
+    "result": {
+      "score": "Puntuació",
+      "coverage": "Cobertura",
+      "more": "Es mostren els {{shown}} pitjors de {{total}}.",
+      "col": {
+        "element": "Element",
+        "state": "Estat",
+        "p95": "p95 (mm)",
+        "matched": "Coincidència"
+      },
+      "inconclusive": {
+        "low-coverage": "Sense puntuació: l’escaneig cobreix massa poc del model per jutjar-lo.",
+        "tolerance-below-alignment": "Sense puntuació: la tolerància és més estricta del que permet l’alineació.",
+        "nothing-scoreable": "Sense puntuació: no s’ha pogut jutjar cap element."
+      }
+    },
+    "state": {
+      "conforming": "Conforme",
+      "deviated": "Desviat",
+      "missing": "Absent",
+      "occluded": "Ocult",
+      "unobserved": "No escanejat"
+    }
   }
 }

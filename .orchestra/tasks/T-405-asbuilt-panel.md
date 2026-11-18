@@ -19,3 +19,12 @@ Colouring/isolating, CSV (T-406).
 ## Formato de vuelta (obligatorio, ≤ 250 palabras)
 STATUS: done|partial|blocked · CAMBIOS · VERIFICADO (pasa/falla + cifra) · RIESGOS/DUDAS (≤3) · SIGUIENTE
 ## Informe
+STATUS: done — tsc exit 0; 71 asbuilt tests green; npm run build exit 0 (AsBuiltPanel in its own lazy chunk)
+- New `src/components/asbuilt/AsBuiltSection.tsx`: eager gate (`asBuiltFlag` reads `?asbuilt=1`, `asBuiltVisible` = flag && >=1 IFC && >=1 ready scan) + `React.lazy(() => import('./AsBuiltPanel'))` inside a Disclosure with a "Preview" badge and the "Indicative result" note.
+- New `src/components/asbuilt/AsBuiltPanel.tsx`: scan selector, 4/6-DOF toggle, pair picking via `createPairController` (markers disposed on stop/unmount), per-pair residual + suspicious flag, fit RMSE / LOO RMSE / tau, Apply, tolerance + precision inputs, Run disabled with text reason (`runBlock`), staged progress + Cancel (AbortController -> worker terminate), results (`AsBuiltResults`): score or refusal text, coverage %, worst-first table (max 200 rows; Name/GlobalId via getItemsData), row click = selectElement + focusElement.
+- Input: `collectItemTriangles` per localId (skip spaces/openings/annotations/grids/site) -> model-space soups transformed in place by the model object's matrixWorld -> `trianglesToElements`; `samplePoints(cloudId, MAX_CLOUD_POINTS)` -> `chunkCloud`.
+- `src/lib/viewer.ts`: added `getScenePicker()` to ViewerAPI (the picker was not exposed; the pair controller needs it for vertex snap).
+- Mounted at the end of the Analyze tab in PointCloudPanel.
+- i18n: `asBuilt.*` in all 10 `pointcloud.json`.
+- Tests: `src/components/asbuilt/AsBuiltPanel.test.tsx` (visibility, gate reasons, sort, results/refusal markup, row cap, locale key parity, no AI wording).
+Notes: the engine output has no per-element sample count, so the table shows "Matched %" (matchedFraction) instead of "samples". Single-model scope (active model). colour-guard / modal-migration fail identically on the base branch (pre-existing, not from this change).

@@ -30,6 +30,7 @@ import {
 import { ScanList } from './pointcloud/ScanList'
 import { TopicBar } from './pointcloud/TopicBar'
 import { ScopeBar } from './pointcloud/ScopeBar'
+import AsBuiltSection from './asbuilt/AsBuiltSection'
 import {
   SectionTitle, Group, Hint, Note, Badge, DemoChip, Chip, Field, Stat, IconButton, PrimaryButton,
   SmallButton, Switch, Segmented, Disclosure, Slider, PlacementField, ScopeTag, formatCount, formatUnit,
@@ -2419,6 +2420,14 @@ export default function PointCloudPanel({
                     </div>
                     <Hint>{t('analyze.measure.hint')}</Hint>
                   </Group>
+
+                  {/* ── As-Built Preview (?asbuilt=1); the panel itself is lazy ── */}
+                  <AsBuiltSection
+                    viewerApiRef={viewerApiRef}
+                    modelIds={sceneModels.map((m) => m.id)}
+                    activeModelId={activeModelId}
+                    clouds={clouds.map((c) => ({ id: c.id, name: c.fileName, status: c.status }))}
+                  />
                 </>
               )}
 
