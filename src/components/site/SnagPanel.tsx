@@ -10,7 +10,8 @@ import {
   nextStatuses, snagStats, snagsToCsv, transitionSnag, updateSnag,
   type Snag, type SnagFilter, type SnagLocation, type SnagPriority, type SnagStatus,
 } from '../../lib/site/snags'
-import { deleteSnag, loadPhoto, loadSnags, newPhotoId, savePhoto, saveSnag } from '../../lib/site/snag-store'
+import { deleteSnag, loadPhoto, loadSnags, newPhotoId, onSnagSaved, savePhoto, saveSnag } from '../../lib/site/snag-store'
+import { canvasTextRasterizer } from '../../lib/site/pdf-text-raster'
 import { compressPhoto } from '../../lib/site/photo'
 import { buildSnagReportPdf, type ReportLabels, type ReportPhoto } from '../../lib/site/snag-report'
 
@@ -84,6 +85,12 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
     return () => { alive = false }
   }, [projectKey, t])
 
+  // Snags saved elsewhere (handover defects) show up without a reload.
+  useEffect(() => onSnagSaved((project, s) => {
+    if (project !== projectKey) return
+    setSnags((list) => [s, ...list.filter((x) => x.id !== s.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+  }), [projectKey])
+
   const persist = useCallback(async (s: Snag) => {
     setSnags((list) => [s, ...list.filter((x) => x.id !== s.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
     try { await saveSnag(projectKey, s) } catch { setError(t('storageError')) }
@@ -151,7 +158,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
         status: { open: t('status_open'), in_progress: t('status_in_progress'), resolved: t('status_resolved'), closed: t('status_closed') },
         priority: { low: t('priority_low'), medium: t('priority_medium'), high: t('priority_high'), critical: t('priority_critical') },
       }
-      const pdf = buildSnagReportPdf(visible, labels, photos, { project: projectKey === 'default' ? undefined : projectKey })
+      const pdf = buildSnagReportPdf(visible, labels, photos, { project: projectKey === 'default' ? undefined : projectKey, rasterize: canvasTextRasterizer() })
       download(pdf, 'application/pdf', `snags-${projectKey}.pdf`)
     } catch { setError(t('storageError')) } finally { setBusy(false) }
   }
