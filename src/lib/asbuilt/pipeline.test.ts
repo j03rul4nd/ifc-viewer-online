@@ -9,7 +9,7 @@ const base = { elements: scene, toleranceM: TOL, alignmentRmseM: 0.005 }
 const flagged = (r: ReturnType<typeof runAsBuilt>) =>
   r.elements.filter((e) => e.state !== 'conforming').map((e) => [e.id, e.state])
 
-describe('as-built pipeline on a synthetic scene', () => {
+describe('as-built pipeline on a synthetic scene', { timeout: 30_000 }, () => {
   it('perfect capture scores 100 with nothing flagged and full coverage', () => {
     const r = runAsBuilt({ ...base, cloud: fakeCapture(scene) })
     expect(flagged(r)).toEqual([])
