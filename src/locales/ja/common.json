@@ -381,6 +381,25 @@
       "confirmDelete": "「{{name}}」をこのブラウザから削除しますか？",
       "models_one": "{{count}} モデル",
       "models_other": "{{count}} モデル"
+    },
+    "compare": {
+      "open": "比較…",
+      "short": "比較",
+      "openHint": "保存済みの .ifcfed.json を基準に選び、現在読み込んでいるモデルと比較します。データはこの端末から出ません。",
+      "title": "「{{name}}」と比較",
+      "summary": "変更なし {{unchanged}} · 変更 {{changed}} · 追加 {{added}} · 削除 {{removed}}",
+      "flags": "配置の違い: {{placement}} · 表示の違い: {{visibility}}",
+      "status": {
+        "unchanged": "変更なし",
+        "changed": "変更",
+        "added": "追加",
+        "removed": "削除"
+      },
+      "placement": "配置が異なる",
+      "visibility": "表示が異なる",
+      "elements": "要素を比較…",
+      "elementsHint": "このフェデレーションの旧 IFC ファイルを選ぶと、リビジョン比較で旧版として開きます。その後、現在のファイルを新版としてドロップしてください。",
+      "noOldMatch": "選んだファイルはどれもこのフェデレーションに含まれていません。"
     }
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useFederationOpenStore } from './stores/federationOpenStore'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
 import Viewer from './components/Viewer'
@@ -1054,6 +1055,10 @@ export default function App() {
   const [showCompareModal, setShowCompareModal] = useState(() => new URLSearchParams(window.location.search).has('compare'))
   // The first opening by link reads `?compare=demo&tour=revision`; later ones are the app's own button.
   const [compareEntry, setCompareEntry] = useState<'ui' | 'link'>(() => (new URLSearchParams(window.location.search).has('compare') ? 'link' : 'ui'))
+  // "Compare against a saved federation" → element level: old files are already side A.
+  useEffect(() => useFederationOpenStore.subscribe((s, prev) => {
+    if (s.revisionRequest !== prev.revisionRequest) { setCompareEntry('ui'); setShowCompareModal(true) }
+  }), [])
   // PostHog flag `revision-compare` (false → the general entry opens the classic tools; links unaffected).
   const [rcFlag, setRcFlag] = useState(isRevisionCompareEnabled)
   useEffect(() => onRevisionCompareFlag(setRcFlag), [])

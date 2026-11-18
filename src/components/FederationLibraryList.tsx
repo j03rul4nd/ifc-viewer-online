@@ -21,7 +21,7 @@ export function downloadManifest(manifest: FederationManifestV1): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export default function FederationLibraryList({ chipClass = '' }: { chipClass?: string }) {
+export default function FederationLibraryList({ chipClass = '', canCompare = false }: { chipClass?: string; canCompare?: boolean }) {
   const { t, i18n } = useTranslation('common')
   const rev = useFederationOpenStore((s) => s.libraryRev)
   const [entries, setEntries] = useState<LibraryEntry[]>([])
@@ -60,6 +60,7 @@ export default function FederationLibraryList({ chipClass = '' }: { chipClass?: 
             </div>
           </div>
           <button className={chipClass} onClick={() => open(e)}>{t('federationFile.library.open')}</button>
+          {canCompare && <button className={chipClass} onClick={() => useFederationOpenStore.getState().setCompareBaseline(e.manifest)} title={t('federationFile.compare.openHint')}>{t('federationFile.compare.short')}</button>}
           <button className={chipClass} onClick={() => downloadManifest(e.manifest)}>{t('federationFile.download')}</button>
           <button className={chipClass} onClick={() => { void remove(e) }} aria-label={t('federationFile.library.delete')}>{t('federationFile.library.delete')}</button>
         </div>
