@@ -19673,7 +19673,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           ["Reporting a livello organizzativo", "⚠️ Non aggregato", "✅ Dashboard tra progetti"],
           ["Sicurezza (dati)", "✅ Nessun rischio di transito/server", "⚠️ Esposizione di transito + server"],
           ["Sicurezza (violazione)", "✅ Nessun server da compromettere", "⚠️ Dipende dal provider cloud"],
-          ["File molto grandi >2 GB", "⚠️ Limitata dalla RAM del dispositivo", "✅ Il server ha più RAM"],
+          ["File molto grandi >1,5 GB", "⚠️ Limitata dalla RAM del dispositivo", "✅ Il server ha più RAM"],
           ["Costo", "✅ Gratuito o a basso costo", "⚠️ A consumo o in abbonamento"],
           ["Onere infrastrutturale", "✅ Zero — gira nel browser", "✅ Gestito dal provider"],
           ["Complessità di setup", "✅ Apri l'URL, trascina il file", "⚠️ Richiede account/chiave API"],
@@ -20578,7 +20578,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
           [
             "Modelli di grandi dimensioni",
             "Non indicato per i piani desktop; WebChecker accetta fino a 5 GB per file IFC",
-            "⚠️ Limite di 2 GB per file; in pratica, la memoria del dispositivo",
+            "⚠️ Limite di 1,5 GB per file; in pratica, la memoria del dispositivo",
           ],
           [
             "Multi-modello",
@@ -20797,7 +20797,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
             "Nessuna inbox BCF — esporta BCF ma non gestisce il ciclo di vita dei problemi in entrata",
             "Nessun controllo COBie né validazione della completezza delle proprietà FM",
             "Nessun clash detection geometrico tra le discipline dei modelli federati",
-            "Limite di 2 GB per file e, in pratica, la memoria del dispositivo",
+            "Limite di 1,5 GB per file e, in pratica, la memoria del dispositivo",
             "Nessun livello di governance enterprise — nessuna distribuzione centralizzata delle regole nell'organizzazione",
             "Nessuna modalità offline: la pagina deve essere caricata da internet ogni volta",
           ],

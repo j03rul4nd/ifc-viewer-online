@@ -19671,7 +19671,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           ["Sécurité (données)", "✅ Aucun risque de transit / serveur", "⚠️ Exposition transit + serveur"],
           ["Sécurité (compromission)", "✅ Aucun serveur à compromettre", "⚠️ Dépend du fournisseur cloud"],
           [
-            "Fichiers très volumineux >2 Go",
+            "Fichiers très volumineux >1,5 Go",
             "⚠️ Limité par la RAM de l'appareil",
             "✅ Le serveur a plus de RAM",
           ],
@@ -20586,7 +20586,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
           [
             "Grandes maquettes",
             "Non précisé pour les formules de bureau ; WebChecker accepte jusqu'à 5 Go par fichier IFC",
-            "⚠️ Limite de 2 Go par fichier ; en pratique, la mémoire de l'appareil",
+            "⚠️ Limite de 1,5 Go par fichier ; en pratique, la mémoire de l'appareil",
           ],
           [
             "Multi-maquettes",
@@ -20805,7 +20805,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
             "Pas de boîte de réception BCF — exporte le BCF mais ne gère pas le cycle de vie des problèmes entrants",
             "Pas de vérification COBie ni de validation de l'exhaustivité des propriétés FM",
             "Pas de détection géométrique des conflits entre les métiers d'une maquette fédérée",
-            "Limite de 2 Go par fichier, et en pratique la mémoire de l'appareil",
+            "Limite de 1,5 Go par fichier, et en pratique la mémoire de l'appareil",
             "Pas de couche de gouvernance d'entreprise — pas de déploiement centralisé de règles dans une organisation",
             "Pas de mode hors ligne : la page doit se charger depuis internet à chaque fois",
           ],

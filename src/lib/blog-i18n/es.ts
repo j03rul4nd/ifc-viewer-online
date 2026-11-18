@@ -18564,7 +18564,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
           ],
           ["Seguridad (brechas)", "✅ No hay servidor que comprometer", "⚠️ Depende del proveedor cloud"],
           [
-            "Archivos muy grandes >2 GB",
+            "Archivos muy grandes >1,5 GB",
             "⚠️ Limitado por la RAM del dispositivo",
             "✅ El servidor tiene más RAM",
           ],
@@ -19487,7 +19487,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
           [
             "Modelos grandes",
             "No se indica para los planes de escritorio; WebChecker acepta hasta 5 GB por archivo IFC",
-            "⚠️ Límite de 2 GB por archivo; en la práctica, la memoria del dispositivo",
+            "⚠️ Límite de 1,5 GB por archivo; en la práctica, la memoria del dispositivo",
           ],
           [
             "Multimodelo",
@@ -19706,7 +19706,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
             "Sin bandeja de entrada de BCF: exporta BCF pero no gestiona el ciclo de vida de incidencias entrantes",
             "Sin comprobación de COBie ni validación de propiedades completas para FM",
             "Sin detección de colisiones geométricas entre disciplinas de un modelo federado",
-            "Límite de 2 GB por archivo y, en la práctica, la memoria del dispositivo",
+            "Límite de 1,5 GB por archivo y, en la práctica, la memoria del dispositivo",
             "Sin capa de gobernanza corporativa: no permite desplegar reglas de forma centralizada en una organización",
             "Sin modo sin conexión: la página tiene que cargarse desde internet cada vez",
           ],
