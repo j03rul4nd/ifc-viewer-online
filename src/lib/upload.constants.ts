@@ -2,7 +2,13 @@
 
 import type { UploadErrorCode } from '../types/upload.types'
 
-export const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024 // 2 GB
+/**
+ * Hard limit. web-ifc parses inside one 32-bit WASM heap (4 GB at most) that
+ * must hold the file's bytes AND the parsed model; in production (PostHog,
+ * Oct–Nov 2026) the largest IFCs (up to 2 GB) all failed in geometry, so accepting
+ * them only produced a long wait and an error. Refusing up front is kinder.
+ */
+export const MAX_FILE_SIZE_BYTES = 1536 * 1024 * 1024 // 1.5 GB
 
 /**
  * From here a file is "large" in the dialog: no fast path (the user confirms
@@ -18,7 +24,7 @@ export const LARGE_FILE_BYTES = 200 * 1024 * 1024 // 200 MB
  * parses inside a single 32-bit WASM heap (4 GB at most), and the file's bytes
  * and the parsed model have to fit in it together — so past a point the load
  * fails however much RAM the machine has (around 2.5 GB of IFC in practice).
- * The 2 GB hard limit sits below that; this threshold is where the risk starts
+ * The 1.5 GB hard limit sits below that; this threshold is where the risk starts
  * being worth a sentence.
  */
 export const VERY_LARGE_FILE_BYTES = 1024 * 1024 * 1024 // 1 GB
@@ -43,7 +49,7 @@ export const SUPPORTED_IFC_VERSIONS = ['IFC2X3', 'IFC4', 'IFC4X1', 'IFC4X3'] as 
 export const ERROR_MESSAGES: Record<UploadErrorCode, string> = {
   INVALID_EXTENSION:       'File must have a .ifc extension.',
   INVALID_MIME:            'File type not recognised as IFC.',
-  FILE_TOO_LARGE:          'File exceeds the 2 GB limit.',
+  FILE_TOO_LARGE:          'File exceeds the 1.5 GB limit.',
   FILE_EMPTY:              'File appears to be empty.',
   UNSUPPORTED_IFC_VERSION: 'IFC version not supported. Accepted: IFC2x3, IFC4, IFC4x3.',
   CORRUPTED_FILE:          'File header is invalid — the file may be corrupted.',

@@ -19,7 +19,9 @@
 // land anywhere on the backdrop, not just on the drop zone, which the shared
 // Modal does not offer.
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { trackServerProcessingInterest, trackServerProcessingOffered } from '../lib/analytics'
+import { isEmbedded } from '../lib/url-params'
 import { SheetGrip } from './mobile/SheetGrip'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -418,6 +420,7 @@ function ReviewView({
             {summary.hasVeryLarge && (
               <p className="mt-1 text-[var(--text-dim)]">{t('upload.large.memoryWarning')}</p>
             )}
+            {summary.hasVeryLarge && !isEmbedded() && <ServerProcessingDoor entries={entries} />}
           </div>
         </div>
       )}
@@ -763,5 +766,33 @@ export default function UploadOverlay(props: UploadOverlayProps) {
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  )
+}
+
+/**
+ * Fake door before the load (docs-planning/12 §7): the dialog already warns
+ * that this device may not hold the file; server processing does not exist,
+ * the click only counts demand. Exposure is tracked once per dialog so zero
+ * clicks can be told apart from zero chances to click. Size only, never names.
+ */
+function ServerProcessingDoor({ entries }: { entries: readonly { file: File }[] }): React.JSX.Element {
+  const { t } = useTranslation('toasts')
+  const [noted, setNoted] = useState(false)
+  const sizeMb = Math.round(Math.max(0, ...entries.map((e) => e.file.size)) / 1_048_576)
+  const offered = useRef(false)
+  useEffect(() => {
+    if (offered.current) return
+    offered.current = true
+    trackServerProcessingOffered({ file_size_mb: sizeMb, source: 'precheck' })
+  }, [sizeMb])
+  if (noted) return <p className="mt-1 text-[var(--text-dim)]" role="status">{t('model.serverProcessingNoted')}</p>
+  return (
+    <button
+      type="button"
+      className="mt-1.5 text-[12px] font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+      onClick={() => { trackServerProcessingInterest({ file_size_mb: sizeMb, source: 'precheck' }); setNoted(true) }}
+    >
+      {t('model.serverProcessingAction')}
+    </button>
   )
 }

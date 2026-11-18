@@ -19,6 +19,7 @@ import { useSceneContent } from './hooks/useSceneContent'
 import { isHostPanel, type RailId } from './lib/ui/panel-rail'
 import { expandArchives, isArchiveName, captureDropEntries, filesFromEntries, UNSUPPORTED_ARCHIVE_EXT } from './lib/loading/expand-drop'
 import { fileExtensionOf as extOfFile } from './lib/loading/drop-routing'
+import { setupStepOf } from './lib/loading/setup-step'
 import { planDrop, followUp, holdsForReview, listNames, plannedCount, type DropPlan, type FollowUpKind } from './lib/loading/drop-plan'
 import type { AddDataKind } from './lib/loading/add-data-catalogue'
 import { openDataPanel, openDataSamples } from './lib/ui/data-panels'
@@ -1705,6 +1706,7 @@ export default function App() {
       trackFileOpenFailed({
         error_msg: `${error.code}@${error.phase ?? 'unknown'}`,
         error_kind: errorKindOf(error.message),
+        ...(setupStepOf(error.message) ? { setup_step: setupStepOf(error.message) } : {}),
         ...(job.sizeBytes > 0 ? { file_size_mb: Math.round((job.sizeBytes / 1_048_576) * 10) / 10 } : {}),
       })
       // Every failed load inside an iframe reaches the host, SDK-initiated or
@@ -1727,7 +1729,7 @@ export default function App() {
         ? {
             label: tToasts('model.serverProcessingAction'),
             run: () => {
-              trackServerProcessingInterest({ file_size_mb: sizeMb })
+              trackServerProcessingInterest({ file_size_mb: sizeMb, source: 'failure' })
               // Ask the one who just hit the wall what they need it for: the
               // form starts on "large files" and records the size as context.
               toast(tToasts('model.serverProcessingNoted'), 'info', isAccountEnabled()
@@ -1737,7 +1739,7 @@ export default function App() {
           }
         : undefined
       // Exposure, so zero clicks can be told apart from zero chances to click.
-      if (serverProcessingDoor) trackServerProcessingOffered({ file_size_mb: sizeMb })
+      if (serverProcessingDoor) trackServerProcessingOffered({ file_size_mb: sizeMb, source: 'failure' })
       // The geometry did not fit (a 300–400 MB model, typically) but the file is
       // readable IFC: offer the Health Score without the 3D instead of a dead end.
       const source = getLoadManager().failedSource(job.id)

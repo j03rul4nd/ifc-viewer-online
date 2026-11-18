@@ -126,7 +126,7 @@
       "closeAriaLabel": "Tanca",
       "trust1": "WebAssembly — s'executa al navegador",
       "trust2": "Sense inici de sessió",
-      "trust3": "Fins a 2 GB",
+      "trust3": "Fins a 1,5 GB",
       "dropHintMulti": "Deixa anar aquí un o més fitxers .ifc",
       "or": "o",
       "privacy": "Privadesa"
@@ -196,13 +196,13 @@
     "large": {
       "rowNote": "Gran — pot trigar uns quants minuts",
       "banner": "S'ha detectat un IFC gran. Aquest model pot trigar uns quants minuts a processar-se. El visualitzador continuarà sent utilitzable mentre es carrega.",
-      "memoryWarning": "Els IFC molt grans poden superar el límit de memòria de WebAssembly del navegador (a la pràctica, uns 2,5 GB d'IFC). Si una càrrega falla, dividir el model per disciplina o per planta sol ajudar."
+      "memoryWarning": "Aquest fitxer pot ser massa gran per a aquest dispositiu: el navegador té memòria limitada per a models 3D i la majoria de càrregues fallides són fitxers de més de 300 MB. Si falla, divideix el model per disciplina o planta, o valida'l sense 3D."
     },
     "errors": {
       "titleMany": "Cap d'aquests fitxers no es pot carregar",
       "INVALID_EXTENSION": "No és un fitxer IFC (s'esperava .ifc).",
       "INVALID_MIME": "El tipus de fitxer no es reconeix com a IFC.",
-      "FILE_TOO_LARGE": "Supera el límit de 2 GB.",
+      "FILE_TOO_LARGE": "Supera el límit de 1,5 GB.",
       "FILE_EMPTY": "El fitxer és buit.",
       "UNSUPPORTED_IFC_VERSION": "Esquema IFC no compatible. S'accepten: IFC2x3, IFC4, IFC4x3.",
       "CORRUPTED_FILE": "La capçalera IFC no és vàlida — potser el fitxer està malmès.",

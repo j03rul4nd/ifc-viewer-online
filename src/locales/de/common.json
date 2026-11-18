@@ -126,7 +126,7 @@
       "closeAriaLabel": "Schließen",
       "trust1": "WebAssembly — läuft im Browser",
       "trust2": "Keine Anmeldung erforderlich",
-      "trust3": "Bis zu 2 GB",
+      "trust3": "Bis zu 1,5 GB",
       "dropHintMulti": "Legen Sie hier eine oder mehrere .ifc-Dateien ab",
       "or": "oder",
       "privacy": "Datenschutz"
@@ -196,13 +196,13 @@
     "large": {
       "rowNote": "Groß — kann einige Minuten dauern",
       "banner": "Große IFC-Datei erkannt. Die Verarbeitung dieses Modells kann einige Minuten dauern. Der Viewer bleibt währenddessen nutzbar.",
-      "memoryWarning": "Sehr große IFC-Dateien können das WebAssembly-Speicherlimit des Browsers überschreiten (in der Praxis rund 2,5 GB IFC). Wenn ein Ladevorgang fehlschlägt, hilft es meist, das Modell nach Gewerk oder Geschoss aufzuteilen."
+      "memoryWarning": "Diese Datei ist für dieses Gerät möglicherweise zu groß: Der Browser hat nur begrenzten Speicher für 3D-Modelle, und die meisten fehlgeschlagenen Ladevorgänge betreffen Dateien über 300 MB. Wenn es fehlschlägt, teilen Sie das Modell nach Gewerk oder Geschoss auf oder prüfen Sie es ohne 3D."
     },
     "errors": {
       "titleMany": "Keine dieser Dateien kann geladen werden",
       "INVALID_EXTENSION": "Keine IFC-Datei (.ifc erwartet).",
       "INVALID_MIME": "Der Dateityp wird nicht als IFC erkannt.",
-      "FILE_TOO_LARGE": "Überschreitet das Limit von 2 GB.",
+      "FILE_TOO_LARGE": "Überschreitet das Limit von 1,5 GB.",
       "FILE_EMPTY": "Die Datei ist leer.",
       "UNSUPPORTED_IFC_VERSION": "IFC-Schema nicht unterstützt. Akzeptiert: IFC2x3, IFC4, IFC4x3.",
       "CORRUPTED_FILE": "Kein gültiger IFC-Header — die Datei ist möglicherweise beschädigt.",

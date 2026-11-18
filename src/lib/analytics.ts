@@ -803,6 +803,8 @@ export function trackFileOpenFailed(props: {
   file_size_mb?: number
   /** Allowlisted failure token from errorKindOf — never the raw message. */
   error_kind?:   string
+  /** Scene-setup step that failed (setupStepOf), when the failure was in setup. */
+  setup_step?:   string
 }): void {
   track('file_open_failed', props)
 }
@@ -904,13 +906,15 @@ export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): voi
  * Fake door: a large file failed in the browser and the user asked for server
  * processing, which does not exist yet. Size only — never the file name.
  */
-export function trackServerProcessingInterest(props: { file_size_mb: number }): void {
+export type ServerProcessingSource = 'failure' | 'precheck'
+
+export function trackServerProcessingInterest(props: { file_size_mb: number; source?: ServerProcessingSource }): void {
   noteFeedbackSignal('large_file')
   track('server_processing_interest', props)
 }
 
 /** The server-processing door was shown (exposure; no file name). */
-export function trackServerProcessingOffered(props: { file_size_mb: number }): void {
+export function trackServerProcessingOffered(props: { file_size_mb: number; source?: ServerProcessingSource }): void {
   track('server_processing_offered', props)
 }
 

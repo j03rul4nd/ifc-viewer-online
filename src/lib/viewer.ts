@@ -27,6 +27,7 @@ import { clearInspectorTarget } from './inspector'
 import { resolveFraming, presetPose, fitPose, viewFromDirection, PRESET_VIEW, type FitView, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
+import { tagSetupError, type SetupStep } from './loading/setup-step'
 import {
   ITEM_DATA_CONFIG, PROJECT_UNITS_CONFIG, ELEMENT_SUMMARY_CONFIG, parseItemData, parseProjectUnits, summarizeItem,
   type IFCItemData, type IFCElementSummary, type ProjectUnits,
@@ -3129,96 +3130,113 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     opts.onStage?.('setup', null)
 
-    const categoryNames = await model.getCategories()
-    checkpoint()
-    const regexes    = categoryNames.map((c) => new RegExp(`^${c}$`, 'i'))
-    const byCategory = await model.getItemsOfCategories(regexes)
-    checkpoint()
+    // Which step a setup failure happened in travels with the error as a
+    // `[setup:<step>]` tag (an allowlisted token for analytics, never data):
+    // `scene@setup` alone hid 20 production failures of 300+ MB models. The
+    // first call (categories) also absorbs the fragments worker finishing the
+    // model — 7 s of a 383 MB model's 7.6 s setup — so its time is logged.
+    const setupStart = performance.now()
+    let setupStep: SetupStep = 'categories'
+    try {
+      const categoryNames = await model.getCategories()
+      checkpoint()
+      log.info(`setup: categories ready after ${Math.round(performance.now() - setupStart)} ms`)
+      setupStep = 'items'
+      const regexes    = categoryNames.map((c) => new RegExp(`^${c}$`, 'i'))
+      const byCategory = await model.getItemsOfCategories(regexes)
+      checkpoint()
+      setupStep = 'types'
 
-    // Build a fresh per-model type map (never mutates a map from another model)
-    const modelTypeMap = new Map<number, string>()
+      // Build a fresh per-model type map (never mutates a map from another model)
+      const modelTypeMap = new Map<number, string>()
 
-    const categoryAccum    = new Map<string, number>()
-    const categoryElements = new Map<string, number[]>()
+      const categoryAccum    = new Map<string, number>()
+      const categoryElements = new Map<string, number[]>()
 
-    for (const [rawKey, ids] of Object.entries(byCategory)) {
-      const upperType = rawKey.replace(/[\^$]/g, '').toUpperCase()
-      const canon     = canonicalType(upperType)
-      categoryAccum.set(canon, (categoryAccum.get(canon) ?? 0) + ids.length)
-      const arr = categoryElements.get(canon) ?? []
-      for (const id of ids) {
-        modelTypeMap.set(id, upperType)
-        arr.push(id)
+      for (const [rawKey, ids] of Object.entries(byCategory)) {
+        const upperType = rawKey.replace(/[\^$]/g, '').toUpperCase()
+        const canon     = canonicalType(upperType)
+        categoryAccum.set(canon, (categoryAccum.get(canon) ?? 0) + ids.length)
+        const arr = categoryElements.get(canon) ?? []
+        for (const id of ids) {
+          modelTypeMap.set(id, upperType)
+          arr.push(id)
+        }
+        categoryElements.set(canon, arr)
       }
-      categoryElements.set(canon, arr)
-    }
 
-    // Register per-model map and update the current alias — but only while this
-    // model is still the active one. The alias must describe `currentModel`:
-    // if another load or setActiveModel took the focus during the awaits above,
-    // pointing the alias here would pair that model with this one's types.
-    typeMapByModel.set(modelId, modelTypeMap)
-    if (currentModelId === modelId) expressIDToType = modelTypeMap
+      // Register per-model map and update the current alias — but only while this
+      // model is still the active one. The alias must describe `currentModel`:
+      // if another load or setActiveModel took the focus during the awaits above,
+      // pointing the alias here would pair that model with this one's types.
+      typeMapByModel.set(modelId, modelTypeMap)
+      if (currentModelId === modelId) expressIDToType = modelTypeMap
 
-    onProgress?.(80)
+      onProgress?.(80)
 
-    // From here on read the LOCAL map, never the alias: every await lets a
-    // concurrent load reassign `expressIDToType`, and this model would then be
-    // painted, counted and labelled with another model's types.
-    // Batched by palette entry (≤25 calls instead of one per element); shared
-    // with setPresentationLook(null), which has to put exactly this back.
-    await paintPalette(model, modelTypeMap)
-    checkpoint()
+      // From here on read the LOCAL map, never the alias: every await lets a
+      // concurrent load reassign `expressIDToType`, and this model would then be
+      // painted, counted and labelled with another model's types.
+      // Batched by palette entry (≤25 calls instead of one per element); shared
+      // with setPresentationLook(null), which has to put exactly this back.
+      setupStep = 'paint'
+      await paintPalette(model, modelTypeMap)
+      checkpoint()
+      setupStep = 'frame'
 
-    onProgress?.(90)
+      onProgress?.(90)
 
-    if (opts.frame !== false) {
-      const box = model.box
-      if (!box.isEmpty()) {
-        tuneSceneToBounds(box)
-        void world.camera.controls.fitToBox(box, true)
+      if (opts.frame !== false) {
+        const box = model.box
+        if (!box.isEmpty()) {
+          tuneSceneToBounds(box)
+          void world.camera.controls.fitToBox(box, true)
+        }
+      } else {
+        // Unframed (a federated member landing behind the one being looked at):
+        // leave the camera where the user put it, but size near/far/fog to the
+        // whole scene — tuned to the previous models alone, a model that lands
+        // beyond them would be clipped by `far` or buried in fog.
+        const all = combinedModelsBox()
+        if (!all.isEmpty()) tuneSceneToBounds(all)
       }
-    } else {
-      // Unframed (a federated member landing behind the one being looked at):
-      // leave the camera where the user put it, but size near/far/fog to the
-      // whole scene — tuned to the previous models alone, a model that lands
-      // beyond them would be clipped by `far` or buried in fog.
-      const all = combinedModelsBox()
-      if (!all.isEmpty()) tuneSceneToBounds(all)
+
+      void fragmentsManager.core.update()
+
+      onProgress?.(100)
+
+      const categories: Category[] = Array.from(categoryAccum.entries())
+        .map(([id, count]) => ({
+          id,
+          label:      IFC_DISPLAY_NAMES[id] ?? prettyType(id),
+          count,
+          color:      IFC_PALETTE[id]?.color ?? 0x888888,
+          elementIds: categoryElements.get(id) ?? [],
+        }))
+        .sort((a, b) => b.count - a.count)
+
+      const modelInfo: ModelInfo = {
+        fileName,
+        fileSize,
+        elementCount: modelTypeMap.size,
+        categories,
+      }
+
+      // Closes over THIS model's map: the alias would answer for whichever model
+      // is active when a caller asks, which is not necessarily this one.
+      const getElementInfo = (id: string): SelectedInfo | null => {
+        const localId = parseInt(id, 10)
+        const rawType = modelTypeMap.get(localId) ?? 'IFCELEMENT'
+        const canon   = canonicalType(rawType)
+        const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${localId}`
+        return { id, name, type: rawType, storey: '', modelId }
+      }
+
+      log.info(`setup: done in ${Math.round(performance.now() - setupStart)} ms`)
+      return { modelInfo, modelObject: model, getElementInfo }
+    } catch (err) {
+      throw tagSetupError(err, setupStep)
     }
-
-    void fragmentsManager.core.update()
-
-    onProgress?.(100)
-
-    const categories: Category[] = Array.from(categoryAccum.entries())
-      .map(([id, count]) => ({
-        id,
-        label:      IFC_DISPLAY_NAMES[id] ?? prettyType(id),
-        count,
-        color:      IFC_PALETTE[id]?.color ?? 0x888888,
-        elementIds: categoryElements.get(id) ?? [],
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    const modelInfo: ModelInfo = {
-      fileName,
-      fileSize,
-      elementCount: modelTypeMap.size,
-      categories,
-    }
-
-    // Closes over THIS model's map: the alias would answer for whichever model
-    // is active when a caller asks, which is not necessarily this one.
-    const getElementInfo = (id: string): SelectedInfo | null => {
-      const localId = parseInt(id, 10)
-      const rawType = modelTypeMap.get(localId) ?? 'IFCELEMENT'
-      const canon   = canonicalType(rawType)
-      const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${localId}`
-      return { id, name, type: rawType, storey: '', modelId }
-    }
-
-    return { modelInfo, modelObject: model, getElementInfo }
   }
 
   /**

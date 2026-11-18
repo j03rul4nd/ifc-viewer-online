@@ -126,7 +126,7 @@
       "closeAriaLabel": "Cerrar",
       "trust1": "WebAssembly — ejecutado en el navegador",
       "trust2": "Sin registro requerido",
-      "trust3": "Hasta 2 GB",
+      "trust3": "Hasta 1,5 GB",
       "dropHintMulti": "Suelta aquí uno o varios archivos .ifc",
       "or": "o",
       "privacy": "Privacidad"
@@ -196,13 +196,13 @@
     "large": {
       "rowNote": "Grande — puede tardar varios minutos",
       "banner": "IFC grande detectado. Este modelo puede tardar varios minutos en procesarse. El visor seguirá siendo utilizable mientras se carga.",
-      "memoryWarning": "Los IFC muy grandes pueden superar el límite de memoria de WebAssembly del navegador (en la práctica, unos 2,5 GB de IFC). Si una carga falla, dividir el modelo por disciplina o por planta suele ayudar."
+      "memoryWarning": "Este archivo puede ser demasiado grande para este dispositivo: el navegador tiene memoria limitada para modelos 3D y la mayoría de cargas fallidas son archivos de más de 300 MB. Si falla, divide el modelo por disciplina o planta, o valídalo sin 3D."
     },
     "errors": {
       "titleMany": "Ninguno de estos archivos se puede cargar",
       "INVALID_EXTENSION": "No es un archivo IFC (se esperaba .ifc).",
       "INVALID_MIME": "El tipo de archivo no se reconoce como IFC.",
-      "FILE_TOO_LARGE": "Supera el límite de 2 GB.",
+      "FILE_TOO_LARGE": "Supera el límite de 1,5 GB.",
       "FILE_EMPTY": "El archivo está vacío.",
       "UNSUPPORTED_IFC_VERSION": "Esquema IFC no compatible. Se aceptan: IFC2x3, IFC4, IFC4x3.",
       "CORRUPTED_FILE": "La cabecera IFC no es válida — puede que el archivo esté dañado.",
