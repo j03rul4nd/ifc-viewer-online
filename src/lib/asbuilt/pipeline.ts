@@ -3,7 +3,8 @@
 //
 // Normative reference: docs/AS_BUILT_SCORE_PLAN.md §3–§5.
 //
-//   sampleSurface → classifyObservability → voxel NN → per-element state
+//   sampleSurface → classifyObservability → cloud→nearest model triangle (owner)
+//                 → per-element stats over its own points → per-element state
 //                 → reverse pass (unmodelled clusters) → scoreAsBuilt
 //
 // The cloud is a GENERIC chunked Float32Array list. It does not care whether it
@@ -15,6 +16,7 @@
 import { scoreAsBuilt, type AsBuiltResult, type ElementDeviation, type ElementState, type UnmodelledCluster } from './as-built-score'
 import { classifyObservability, type DepthFrame, type ObservabilityOptions, type ObservationState } from './observability'
 import { sampleSurface, type ElementGeometry, type SamplingOptions } from './surface-sampling'
+import { buildTriangleIndex, nearestTriangle, triSignedDistance, type NearestTriangle } from './triangle-index'
 import { buildVoxelGrid, cellKey, nearestDistance } from './voxel-nn'
 
 export interface AsBuiltPipelineInput {
@@ -30,10 +32,21 @@ export interface AsBuiltPipelineInput {
   frames?: DepthFrame[]
   toleranceM: number
   alignmentRmseM: number
-  /** Search radius for sample→cloud matching. Default max(4τ, 0.15 m). */
+  /**
+   * Capture radius: a cloud point farther than this from every model surface is
+   * attributed to no element.
+   * Default max(4τ, 0.15 m).
+   */
   matchRadiusM?: number
   /** Below this matched fraction an observed element is `missing`. Default 0.2 (§3.1). */
   minMatchedFraction?: number
+  /**
+   * Without cameras: fraction of an element's surface samples that must have one
+   * of its own cloud points nearby for it to count as observed. Default 0.1.
+   */
+  minObservedFraction?: number
+  /** Sample→own-point radius for coverage (matchedFraction). Default max(2.5τ, 0.05 m). */
+  coverageRadiusM?: number
   /** Unmatched cloud points needed to report an unmodelled cluster. Default 50. */
   minClusterPoints?: number
   sampling?: SamplingOptions
@@ -45,15 +58,37 @@ export interface AsBuiltPipelineResult extends AsBuiltResult {
   unmodelled: UnmodelledCluster[]
 }
 
-function p95(values: number[]): number {
-  const s = values.slice().sort((a, b) => a - b)
-  return s[Math.min(s.length - 1, Math.floor(0.95 * (s.length - 1) + 0.5))]
+function quantile(sorted: Float32Array, q: number): number {
+  return sorted[Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1) + 0.5))]
 }
 
+/**
+ * Per-element deviation, measured CLOUD → OWN SURFACE:
+ *
+ *  1. Every cloud point is attributed to the element owning the nearest model
+ *     triangle within the capture radius; points farther than that from every
+ *     modelled surface are unattributed (clutter, or unmodelled geometry).
+ *  2. An element's deviation is p95 of its attributed points' distances to its
+ *     own surface — independent of cloud density, and an element cannot be
+ *     rescued or condemned by its neighbours' points.
+ *  3. Without cameras, observability = fraction of the element's surface samples
+ *     with one of its OWN, unambiguous points within the coverage radius, so an element that
+ *     was never scanned stays unobserved even when its neighbours were.
+ *
+ * Known limitation: a point is owned by the NEAREST surface. If an element moved
+ * by more than about half the gap to a neighbour, the part of it that landed
+ * closer to the neighbour is credited to the neighbour (raising the neighbour's
+ * deviation instead) and the moved element under-reports.
+ * A slide WITHIN the plane of a face leaves those points on the surface, so p95
+ * only sees the faces normal to the move and under-reports in-plane slides. Flush faces shared
+ * by two elements split their points arbitrarily; both still read near zero.
+ */
 export function runAsBuilt(input: AsBuiltPipelineInput): AsBuiltPipelineResult {
   const tol = input.toleranceM
   const radius = input.matchRadiusM ?? Math.max(4 * tol, 0.15)
   const minMatched = input.minMatchedFraction ?? 0.2
+  const minObserved = input.minObservedFraction ?? 0.1
+  const coverR = input.coverageRadiusM ?? Math.max(2.5 * tol, 0.05)
   const samples = input.elements.map((g) => sampleSurface(g, input.sampling))
 
   const observation = new Map<number, ObservationState>()
@@ -61,52 +96,108 @@ export function runAsBuilt(input: AsBuiltPipelineInput): AsBuiltPipelineResult {
     for (const o of classifyObservability(samples, input.frames, input.observability)) observation.set(o.id, o.state)
   }
 
-  const grid = buildVoxelGrid(input.cloud, radius)
+  // 1. Attribute each cloud point to its nearest model triangle's element.
+  const index = buildTriangleIndex(input.elements, radius)
+  const chunkStarts: number[] = []
+  let total = 0
+  for (const c of input.cloud) { chunkStarts.push(total); total += Math.floor(c.length / 3) }
+  const owner = new Int32Array(total)
+  const signed = new Float32Array(total)
+  const counts = new Int32Array(input.elements.length)
+  // A point about as close to another element's surface (flush faces, joints)
+  // says nothing about WHICH of them was scanned: it still feeds the owner's
+  // deviation, but not its coverage.
+  const shared = new Uint8Array(total)
+  const ambiguity = 0.5 * tol
+  const hit: NearestTriangle = { tri: -1, distance: Infinity, otherDistance: Infinity }
+  let p = 0
+  for (const c of input.cloud) {
+    const n = Math.floor(c.length / 3)
+    for (let i = 0; i < n; i++, p++) {
+      const x = c[i * 3], y = c[i * 3 + 1], z = c[i * 3 + 2]
+      nearestTriangle(index, x, y, z, radius, hit)
+      if (hit.tri < 0) { owner[p] = -1; continue }
+      const e = index.triElement[hit.tri]
+      owner[p] = e
+      counts[e]++
+      if (hit.otherDistance - hit.distance < ambiguity) shared[p] = 1
+      signed[p] = triSignedDistance(index, hit.tri, x, y, z)
+    }
+  }
+
+  // 2. Group point ids by owner (CSR); ids ascend within each element.
+  const start = new Int32Array(counts.length + 1)
+  for (let e = 0; e < counts.length; e++) start[e + 1] = start[e] + counts[e]
+  const fill = start.slice(0, counts.length)
+  const order = new Int32Array(start[counts.length])
+  for (let id = 0; id < total; id++) if (owner[id] >= 0) order[fill[owner[id]]++] = id
+
   const deviations: ElementDeviation[] = []
   for (let e = 0; e < samples.length; e++) {
     const s = samples[e]
     const n = s.positions.length / 3
-    const matched: number[] = []
-    for (let i = 0; i < n; i++) {
-      const d = nearestDistance(grid, s.positions[i * 3], s.positions[i * 3 + 1], s.positions[i * 3 + 2], radius)
-      if (d <= radius) matched.push(d)
+    const own = counts[e]
+    let matchedFraction = 0
+    let p50: number | null = null, p95: number | null = null, mean: number | null = null
+    if (own > 0) {
+      let firm = 0
+      for (let j = 0; j < own; j++) if (!shared[order[start[e] + j]]) firm++
+      const xyz = new Float32Array(firm * 3)
+      const abs = new Float32Array(own)
+      let sum = 0, chunk = 0, f = 0
+      for (let j = 0; j < own; j++) {
+        const id = order[start[e] + j]
+        while (chunk + 1 < chunkStarts.length && chunkStarts[chunk + 1] <= id) chunk++
+        const c = input.cloud[chunk], o = (id - chunkStarts[chunk]) * 3
+        if (!shared[id]) { xyz[f * 3] = c[o]; xyz[f * 3 + 1] = c[o + 1]; xyz[f * 3 + 2] = c[o + 2]; f++ }
+        abs[j] = Math.abs(signed[id]); sum += signed[id]
+      }
+      abs.sort()
+      p50 = quantile(abs, 0.5); p95 = quantile(abs, 0.95); mean = sum / own
+      // 3. Coverage: surface samples with one of this element's own points nearby.
+      const grid = buildVoxelGrid([xyz], coverR)
+      let matched = 0
+      for (let i = 0; i < n; i++) {
+        if (nearestDistance(grid, s.positions[i * 3], s.positions[i * 3 + 1], s.positions[i * 3 + 2], coverR) <= coverR) matched++
+      }
+      matchedFraction = n > 0 ? matched / n : 0
     }
-    const matchedFraction = n > 0 ? matched.length / n : 0
     let obs = observation.get(s.id)
-    if (obs === undefined) obs = matchedFraction > 0 ? 'observed' : 'unobserved'
+    if (obs === undefined) obs = own > 0 && matchedFraction >= minObserved ? 'observed' : 'unobserved'
     let state: ElementState
     let dev: number | null = null
     if (obs !== 'observed') state = obs
-    else if (matchedFraction < minMatched) state = 'missing'
+    else if (matchedFraction < minMatched || p95 === null) state = 'missing'
     else {
-      dev = p95(matched)
+      dev = p95
       state = dev > tol ? 'deviated' : 'conforming'
     }
-    deviations.push({ id: s.id, ifcClass: input.elements[e].ifcClass, state, deviationP95: dev, matchedFraction, samples: n })
+    const judged = dev !== null
+    deviations.push({
+      id: s.id, ifcClass: input.elements[e].ifcClass, state, deviationP95: dev, matchedFraction, samples: n,
+      deviationP50: judged ? p50 : null, deviationMeanSigned: judged ? mean : null, pointCount: own,
+    })
   }
 
-  // The reverse pass needs the model surface WITHOUT holes, otherwise gaps in a
-  // sparse sampling read as unmodelled geometry. Resample at ~radius/3 spacing.
-  const reverseDensity = (3 / radius) ** 2
-  const dense = input.elements.map((g) => sampleSurface(g, { density: reverseDensity, minCount: 0, maxCount: Infinity }).positions)
-  const unmodelled = findUnmodelled(input.cloud, dense, radius, input.minClusterPoints ?? 50)
+  const unmodelled = findUnmodelled(input.cloud, owner, radius, input.minClusterPoints ?? 50)
   const result = scoreAsBuilt({ elements: deviations, unmodelled, toleranceM: tol, alignmentRmseM: input.alignmentRmseM })
   return { ...result, elements: deviations, unmodelled }
 }
 
 /**
- * Reverse pass: cloud points with no modelled surface within `radius`, grouped
- * into 26-connected voxel clusters. Small clusters are noise, not findings.
+ * Reverse pass: cloud points attributed to no modelled surface (owner −1),
+ * grouped into 26-connected voxel clusters. Small clusters are noise, not findings.
  */
-function findUnmodelled(cloud: Float32Array[], sampleSets: Float32Array[], radius: number,
+function findUnmodelled(cloud: Float32Array[], owner: Int32Array, radius: number,
                         minPoints: number): UnmodelledCluster[] {
-  const model = buildVoxelGrid(sampleSets, radius)
   const cellCounts = new Map<number, number>()
   const cellCoords = new Map<number, [number, number, number]>()
+  let p = 0
   for (const c of cloud) {
-    for (let i = 0; i + 2 < c.length; i += 3) {
-      const x = c[i], y = c[i + 1], z = c[i + 2]
-      if (nearestDistance(model, x, y, z, radius) <= radius) continue
+    const n = Math.floor(c.length / 3)
+    for (let i = 0; i < n; i++, p++) {
+      if (owner[p] >= 0) continue
+      const x = c[i * 3], y = c[i * 3 + 1], z = c[i * 3 + 2]
       const ix = Math.floor(x / radius), iy = Math.floor(y / radius), iz = Math.floor(z / radius)
       const k = cellKey(ix, iy, iz)
       cellCounts.set(k, (cellCounts.get(k) ?? 0) + 1)

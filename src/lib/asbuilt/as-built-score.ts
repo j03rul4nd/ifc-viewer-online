@@ -35,15 +35,22 @@ export interface ElementDeviation {
   ifcClass: string
   state: ElementState
   /**
-   * p95 of sample→nearest-point distance in metres, over matched samples.
+   * p95 of |cloud point → own model surface| distance in metres, over the cloud
+   * points attributed to this element (nearest model triangle is this element's).
    * null whenever the state is not scoreable, and for `missing` (there is no
    * matched surface to measure a distance against).
    */
   deviationP95: number | null
-  /** Fraction of the element's sampled surface that found any nearby point. */
+  /** Fraction of the element's sampled surface with one of ITS OWN cloud points nearby. */
   matchedFraction: number
   /** Surface samples drawn on the element (the denominator of matchedFraction). */
   samples?: number
+  /** Median |point → own surface| distance, metres. Same nullability as deviationP95. */
+  deviationP50?: number | null
+  /** Mean signed distance, metres (+ = outside the modelled surface). Same nullability. */
+  deviationMeanSigned?: number | null
+  /** Cloud points attributed to this element. */
+  pointCount?: number
 }
 
 /** Reconstructed geometry with no modelled element near it — built, not drawn. */
