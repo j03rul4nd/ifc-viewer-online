@@ -19595,7 +19595,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Processament local al navegador (WebAssembly, estació de treball moderna, primera anàlisi): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. Càrrega repetida des d'OPFS (sense tornar a analitzar): ~2–5 segons, sigui quina sigui la mida del fitxer.",
+        text: "Processament local al navegador (WebAssembly, estació de treball moderna, primera anàlisi): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s. Càrrega repetida des d'OPFS (sense tornar a analitzar): ~2–5 segons, sigui quina sigui la mida del fitxer.",
       },
       {
         type: "p",
@@ -19636,7 +19636,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           ["Informes a escala d'organització", "⚠️ No agregats", "✅ Tauler entre projectes"],
           ["Seguretat (dades)", "✅ Sense risc de trànsit o servidor", "⚠️ Exposició en trànsit i al servidor"],
           ["Seguretat (bretxes)", "✅ Cap servidor a comprometre", "⚠️ Depèn del proveïdor de núvol"],
-          ["Fitxers molt grans >2 GB", "⚠️ Limitat per la RAM del dispositiu", "✅ El servidor té més RAM"],
+          ["Fitxers molt grans >1,5 GB", "⚠️ Limitat per la RAM del dispositiu", "✅ El servidor té més RAM"],
           ["Cost", "✅ Gratuït o de cost baix", "⚠️ Per ús o per subscripció"],
           ["Càrrega d'infraestructura", "✅ Zero: s'executa al navegador", "✅ Gestionada pel proveïdor"],
           ["Complexitat de configuració", "✅ Obrir l'URL, arrossegar el fitxer", "⚠️ Cal compte o clau d'API"],
@@ -20538,7 +20538,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
           [
             "Models grans",
             "No s'indica per als plans d'escriptori; WebChecker accepta fins a 5 GB per fitxer IFC",
-            "⚠️ Límit de 2 GB per fitxer; a la pràctica, la memòria del dispositiu",
+            "⚠️ Límit d'1,5 GB per fitxer; a la pràctica, la memòria del dispositiu",
           ],
           [
             "Multimodel",
@@ -20757,7 +20757,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
             "Sense bústia de BCF: exporta BCF però no gestiona un cicle de vida d'incidències entrants",
             "Sense comprovació de COBie ni validació d'integritat de propietats de gestió d'actius",
             "Sense detecció geomètrica de col·lisions entre disciplines de models federats",
-            "Límit de 2 GB per fitxer i, a la pràctica, la memòria del dispositiu",
+            "Límit d'1,5 GB per fitxer i, a la pràctica, la memòria del dispositiu",
             "Sense capa de governança empresarial: sense desplegament centralitzat de regles per tota una organització",
             "Sense mode fora de línia: la pàgina s'ha de carregar des d'internet cada vegada",
           ],

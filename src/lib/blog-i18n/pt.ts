@@ -19606,7 +19606,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Processamento local no navegador (WebAssembly, workstation moderna, primeiro processamento): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. Recarga do OPFS (sem reprocessamento): ~2–5 segundos em qualquer tamanho de arquivo.",
+        text: "Processamento local no navegador (WebAssembly, workstation moderna, primeiro processamento): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s. Recarga do OPFS (sem reprocessamento): ~2–5 segundos em qualquer tamanho de arquivo.",
       },
       {
         type: "p",
@@ -19647,7 +19647,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           ["Relatórios em toda a organização", "⚠️ Não agregados", "✅ Painel entre projetos"],
           ["Segurança (dados)", "✅ Sem risco de trânsito / servidor", "⚠️ Exposição em trânsito + servidor"],
           ["Segurança (violação)", "✅ Nenhum servidor a comprometer", "⚠️ Depende do provedor de nuvem"],
-          ["Arquivos muito grandes >2 GB", "⚠️ Limitado pela RAM do dispositivo", "✅ O servidor tem mais RAM"],
+          ["Arquivos muito grandes >1,5 GB", "⚠️ Limitado pela RAM do dispositivo", "✅ O servidor tem mais RAM"],
           ["Custo", "✅ Gratuito a baixo custo", "⚠️ Por uso ou assinatura"],
           ["Peso de infraestrutura", "✅ Zero — roda no navegador", "✅ Gerenciado pelo provedor"],
           [
@@ -20560,7 +20560,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
           [
             "Modelos grandes",
             "Não informado para os planos de desktop; o WebChecker aceita até 5 GB por arquivo IFC",
-            "⚠️ Limite de 2 GB por arquivo; na prática, a memória do dispositivo",
+            "⚠️ Limite de 1,5 GB por arquivo; na prática, a memória do dispositivo",
           ],
           [
             "Multimodelo",
@@ -20779,7 +20779,7 @@ export const BLOG_POSTS_PT: BlogPost[] = [
             "Sem caixa de entrada de BCF — exporta BCF, mas não gerencia o ciclo de vida de problemas recebidos",
             "Sem verificação de COBie nem validação de integralidade de propriedades de FM",
             "Sem detecção geométrica de conflitos entre disciplinas de modelos federados",
-            "Limite de 2 GB por arquivo e, na prática, a memória do dispositivo",
+            "Limite de 1,5 GB por arquivo e, na prática, a memória do dispositivo",
             "Sem camada de governança corporativa — sem implantação centralizada de regras em toda a organização",
             "Sem modo offline: a página precisa ser carregada pela internet todas as vezes",
           ],

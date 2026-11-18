@@ -19462,7 +19462,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Lokale Browser-Verarbeitung (WebAssembly, aktuelle Workstation, erstes Parsen): 50 MB ~5–10 Sek. · 250 MB ~20–40 Sek. · 1 GB ~90–180 Sek. · 2 GB ~3–6 Min. Wiederholtes Laden aus OPFS (ohne erneutes Parsen): ~2–5 Sekunden, unabhängig von der Dateigröße.",
+        text: "Lokale Browser-Verarbeitung (WebAssembly, aktuelle Workstation, erstes Parsen): 50 MB ~5–10 Sek. · 250 MB ~20–40 Sek. · 1 GB ~90–180 Sek.. Wiederholtes Laden aus OPFS (ohne erneutes Parsen): ~2–5 Sekunden, unabhängig von der Dateigröße.",
       },
       {
         type: "p",
@@ -19503,7 +19503,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
             "✅ Kein Server, der kompromittiert werden kann",
             "⚠️ Abhängig vom Cloud-Anbieter",
           ],
-          ["Sehr große Dateien >2 GB", "⚠️ Begrenzt durch Geräte-RAM", "✅ Server verfügt über mehr RAM"],
+          ["Sehr große Dateien >1,5 GB", "⚠️ Begrenzt durch Geräte-RAM", "✅ Server verfügt über mehr RAM"],
           ["Kosten", "✅ Kostenlos bis günstig", "⚠️ Nutzungsbasiert oder Abonnement"],
           ["Infrastrukturaufwand", "✅ Keiner – läuft im Browser", "✅ Vom Anbieter verwaltet"],
           ["Einrichtungsaufwand", "✅ URL öffnen, Datei ziehen", "⚠️ Konto/API-Schlüssel erforderlich"],
@@ -20409,7 +20409,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
           [
             "Große Modelle",
             "Für die Desktop-Pläne nicht angegeben; WebChecker akzeptiert bis zu 5 GB pro IFC-Datei",
-            "⚠️ Grenze von 2 GB pro Datei; in der Praxis der Arbeitsspeicher des Geräts",
+            "⚠️ Grenze von 1,5 GB pro Datei; in der Praxis der Arbeitsspeicher des Geräts",
           ],
           [
             "Multi-Modell",
@@ -20632,7 +20632,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
             "Kein BCF-Postfach – exportiert BCF, verwaltet aber keinen eingehenden Issue-Lifecycle",
             "Keine COBie-Prüfung und keine Validierung der FM-Eigenschaftsvollständigkeit",
             "Keine geometrische Kollisionsprüfung zwischen den Gewerken eines föderierten Modells",
-            "Grenze von 2 GB pro Datei und in der Praxis der Arbeitsspeicher des Geräts",
+            "Grenze von 1,5 GB pro Datei und in der Praxis der Arbeitsspeicher des Geräts",
             "Keine unternehmensweite Governance-Ebene – kein zentralisiertes Ausrollen von Regeln in der Organisation",
             "Kein Offline-Modus: Die Seite muss jedes Mal aus dem Internet geladen werden",
           ],
