@@ -198,8 +198,14 @@ export function effectiveTolerance(o: { declaredM: number; measurementM: number;
   return Math.sqrt(o.declaredM ** 2 + o.measurementM ** 2 + o.alignmentRmseM ** 2);
 }
 
-/** Scoring allowed iff declared tolerance >= 2 * alignment RMSE. */
-export function scoringGate(o: { declaredM: number; alignmentRmseM: number }): { ok: boolean; reason?: 'alignment-too-coarse' } {
+/** Pairs needed before a fit may be used to SCORE (D-AB3: 3 pairs may align, >= 4 to score — LOO needs them). */
+export const MIN_SCORING_PAIRS = 4;
+
+/** Scoring allowed iff pairs >= 4 and declared tolerance >= 2 * alignment RMSE. */
+export function scoringGate(o: { declaredM: number; alignmentRmseM: number; pairs: number }): {
+  ok: boolean; reason?: 'alignment-too-coarse' | 'too-few-pairs-to-score';
+} {
+  if (o.pairs < MIN_SCORING_PAIRS) return { ok: false, reason: 'too-few-pairs-to-score' };
   return o.declaredM >= 2 * o.alignmentRmseM ? { ok: true } : { ok: false, reason: 'alignment-too-coarse' };
 }
 

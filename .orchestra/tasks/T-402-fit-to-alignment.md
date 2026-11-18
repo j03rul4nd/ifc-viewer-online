@@ -18,3 +18,4 @@ Persistir (`saveOffset`), aplicar al sistema (T-404).
 ## Formato de vuelta (obligatorio, ≤ 250 palabras)
 STATUS: done|partial|blocked · CAMBIOS · VERIFICADO (pasa/falla + cifra) · RIESGOS/DUDAS (≤3) · SIGUIENTE
 ## Informe
+STATUS: done. `src/lib/asbuilt/fit-to-alignment.ts`: composes Rf·Ry(yaw)Rx(pitch)Rz(roll) (the same Euler 'YXZ' order as point-cloud-system.ts) and decomposes it back to YXZ. It writes the result into the offset (yaw wrapped to ±180), with position = Rf·(origin+offset)+tf. If pitch or roll is above MAX_LEVEL_DEG it returns `tilt-out-of-range`. Extra (D-AB3): `scoringGate` now needs `pairs` and refuses below 4 (`too-few-pairs-to-score`, `MIN_SCORING_PAIRS`). Tests: property test with 300 alignments × 8 points (z/y up), placed with three.js just as the system does, max error < 1e-6. tsc is clean.

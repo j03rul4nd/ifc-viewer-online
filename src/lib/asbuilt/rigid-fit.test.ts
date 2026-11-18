@@ -141,8 +141,13 @@ describe('tolerance helpers', () => {
   });
 
   it('scoringGate: 25 mm vs 13 mm fails, vs 12 mm passes', () => {
-    expect(scoringGate({ declaredM: 0.025, alignmentRmseM: 0.013 })).toEqual({ ok: false, reason: 'alignment-too-coarse' });
-    expect(scoringGate({ declaredM: 0.025, alignmentRmseM: 0.012 }).ok).toBe(true);
+    expect(scoringGate({ declaredM: 0.025, alignmentRmseM: 0.013, pairs: 4 })).toEqual({ ok: false, reason: 'alignment-too-coarse' });
+    expect(scoringGate({ declaredM: 0.025, alignmentRmseM: 0.012, pairs: 4 }).ok).toBe(true);
+  });
+
+  it('scoringGate: 3 pairs may align but never score (D-AB3)', () => {
+    expect(scoringGate({ declaredM: 1, alignmentRmseM: 0, pairs: 3 })).toEqual({ ok: false, reason: 'too-few-pairs-to-score' });
+    expect(scoringGate({ declaredM: 1, alignmentRmseM: 0, pairs: 4 }).ok).toBe(true);
   });
 
   it('suspiciousPairs flags residuals > 3 rmse', () => {
