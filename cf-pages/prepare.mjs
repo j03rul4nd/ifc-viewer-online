@@ -27,6 +27,20 @@ function expand(source) {
 }
 const fill = (dest, params) => dest.replace(/:(\w+)/g, (all, k) => (k in params ? params[k] : all))
 
+// 0. Analytics guard. A build made without VITE_POSTHOG_KEY (a worktree with
+// no .env.production.local) ships an app that silently tracks nothing: on
+// 2026-11-13..16 several production deploys did, and PostHog fell from ~460 to
+// ~10 users a day while Search Console stayed flat. Refuse to deploy it.
+// Set ALLOW_NO_ANALYTICS=1 to deploy such a build on purpose.
+{
+  const assets = join(dist, 'assets')
+  const entries = existsSync(assets) ? readdirSync(assets).filter((f) => /^index-.*\.js$/.test(f)) : []
+  const hasKey = entries.some((f) => /phc_[A-Za-z0-9]{20,}/.test(readFileSync(join(assets, f), 'utf8')))
+  if (!hasKey && process.env.ALLOW_NO_ANALYTICS !== '1') {
+    throw new Error('dist/ has no PostHog key: build with VITE_POSTHOG_KEY set (.env.production.local), or set ALLOW_NO_ANALYTICS=1')
+  }
+}
+
 // 1. Models: only video-demo ships with the site.
 const models = join(dist, 'models')
 const modelDirs = existsSync(models) ? readdirSync(models).filter((d) => d !== 'video-demo') : []
