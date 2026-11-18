@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { manifestFromSession, viewsFromManifest, defaultView, type SessionInput } from './federation-session'
 import { parseManifest, serializeManifest, MAX_MANIFEST_VIEWS, type FederationManifestV1 } from './federation-manifest'
-import { captureView, type FederationView } from './federation'
+import { captureView, mergeImportedViews, sanitizeStoredView, type FederationView } from './federation'
 
 const view = (over: Partial<FederationView> = {}): FederationView => ({
   id: 'v1', name: 'MEP over structure', createdAt: 1,
@@ -103,6 +103,40 @@ describe('federation file — saved views', () => {
     const r = parseManifest(many)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.path).toBe('presentation.views')
+  })
+
+  it('merge: local views are never replaced; clashing names get a suffix', () => {
+    const local = [view({ id: 'a', name: 'Plan' }), view({ id: 'b', name: 'Plan (2)' })]
+    const r = mergeImportedViews(local, [view({ id: 'a', name: 'Plan' }), view({ id: 'z', name: 'New' })], 30)
+    expect(r.skipped).toBe(0)
+    expect(r.imported.map((v) => v.name)).toEqual(['Plan (3)', 'New'])
+    expect(r.imported[0].id).not.toBe('a')
+    expect(r.views.slice(2)).toEqual(local)
+  })
+
+  it('merge: only what fits under the limit comes in; local views stay', () => {
+    const local = Array.from({ length: 29 }, (_, i) => view({ id: `l${i}`, name: `L${i}` }))
+    const r = mergeImportedViews(local, [view({ id: 'x', name: 'X' }), view({ id: 'y', name: 'Y' }), view({ id: 'w', name: 'W' })], 30)
+    expect(r.imported.map((v) => v.name)).toEqual(['X'])
+    expect(r.skipped).toBe(2)
+    expect(r.views).toHaveLength(30)
+    expect(r.views.slice(1)).toEqual(local)
+    expect(mergeImportedViews(Array.from({ length: 30 }, (_, i) => view({ id: `${i}`, name: `${i}` })), [view()], 30).skipped).toBe(1)
+  })
+
+  it('stored views: invalid camera or cuts are dropped, the rest kept; junk is dropped', () => {
+    const s = sanitizeStoredView({ ...view(), camera: { position: [1, 2], target: [0, 0, 0], projection: 'perspective' }, sections: [{ point: [0, 0, 0] }] })
+    expect(s).not.toBeNull()
+    expect(s?.camera).toBeUndefined()
+    expect(s?.sections).toBeUndefined()
+    expect(s?.visible).toEqual(view().visible)
+    const ok = sanitizeStoredView(view())
+    expect(ok?.camera).toEqual(view().camera)
+    expect(ok?.sections).toEqual(view().sections)
+    expect(sanitizeStoredView({ ...view(), camera: { position: [NaN, 0, 0], target: [0, 0, 0], projection: 'perspective' } })?.camera).toBeUndefined()
+    expect(sanitizeStoredView({ ...view(), camera: { ...view().camera, projection: 'fisheye' } })?.camera).toBeUndefined()
+    expect(sanitizeStoredView(null)).toBeNull()
+    expect(sanitizeStoredView({ name: 'x' })).toBeNull()
   })
 
   it('captureView keeps the look it is given', () => {

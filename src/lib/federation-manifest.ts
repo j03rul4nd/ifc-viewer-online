@@ -6,6 +6,7 @@
 import type { ModelTransform } from '../types'
 import { ok, err, type Result } from './result'
 import { parseContainerName } from './federation-index'
+import { isViewCamera, isViewSections, MAX_VIEW_SECTIONS } from './federation'
 
 export const MANIFEST_KIND = 'ifcv.federation' as const
 export const MANIFEST_VERSION = 1 as const
@@ -52,7 +53,7 @@ export type Vec3 = [number, number, number]
 export const MAX_MANIFEST_VIEWS = 50
 export const MAX_VIEW_NAME = 120
 export const MAX_VIEW_ID = 64
-export const MAX_VIEW_SECTIONS = 12
+export { MAX_VIEW_SECTIONS }
 export const MAX_VIEW_ENTRIES = 2000
 
 export interface FederationManifestV1 {
@@ -259,15 +260,9 @@ function checkV1(o: Record<string, unknown>): void {
       Object.values(vo.visible).every((b) => typeof b === 'boolean'), `${p}.visible`)
     need(isObj(vo.opacity) && Object.keys(vo.opacity).length <= MAX_VIEW_ENTRIES &&
       Object.values(vo.opacity).every(isNum), `${p}.opacity`)
-    if (vo.camera !== undefined) {
-      const c = vo.camera
-      need(isObj(c) && isVec3(c.position) && isVec3(c.target) &&
-        (c.projection === 'perspective' || c.projection === 'orthographic'), `${p}.camera`)
-    }
-    if (vo.sections !== undefined) {
-      need(Array.isArray(vo.sections) && vo.sections.length <= MAX_VIEW_SECTIONS &&
-        vo.sections.every((s) => isObj(s) && isVec3(s.point) && isVec3(s.normal)), `${p}.sections`)
-    }
+    // Same checks readViews applies to views from device storage.
+    if (vo.camera !== undefined) need(isViewCamera(vo.camera), `${p}.camera`)
+    if (vo.sections !== undefined) need(isViewSections(vo.sections), `${p}.sections`)
     if (vo.colorByDiscipline !== undefined) need(typeof vo.colorByDiscipline === 'boolean', `${p}.colorByDiscipline`)
   })
   optStr(pr, 'activeViewId', 'presentation')

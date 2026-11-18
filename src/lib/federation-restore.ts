@@ -54,11 +54,15 @@ export function applyFederationView(view: FederationView): void {
 /** Load `files` as `manifest` describes. Resolves with the missing file names once loads are submitted. */
 export async function runFederationRestore(manifest: FederationManifestV1, files: File[], source: FederationOpenSource = 'file'): Promise<string[]> {
   const plan = planRestore(manifest, reconcile(manifest, files.map((f) => ({ name: f.name, size: f.size }))))
-  // The file's views join the saved-views list (same name replaces); the
-  // default one is shown once every model of the file has settled.
+  // The file's views join the saved-views list without touching local ones
+  // (clashing names get a suffix; what does not fit is skipped and counted).
+  // The default one is shown once every model of the file has settled.
   const views = viewsFromManifest(manifest)
-  for (const v of [...views].reverse()) useFederationStore.getState().saveView(v)
   const shown = defaultView(manifest, views)
+  const { skipped } = useFederationStore.getState().importViews(views)
+  if (skipped > 0) {
+    toast(i18n.t('federationFile.viewsSkipped', { ns: 'common', count: skipped, defaultValue: '{{count}} views from the file did not fit in your saved views' }), 'warning')
+  }
   trackFeatureUsed({ feature: 'federation_open', models: modelCountBucket(manifest.models.length), source })
 
   const fed = useFederationStore.getState()
@@ -80,6 +84,10 @@ export async function runFederationRestore(manifest: FederationManifestV1, files
       applier?.(out.resultId, apply)
     }))
     if (shown) void Promise.allSettled(settled).then(() => applyFederationView(shown))
+  } else if (shown) {
+    // Every model parked or missing: nothing to wait for — the camera and
+    // cuts still apply, visibility resolves against whatever is open.
+    applyFederationView(shown)
   }
   return plan.missing.map((m) => m.fileName)
 }

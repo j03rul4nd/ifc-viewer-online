@@ -99,6 +99,74 @@ export interface ViewSection { point: Vec3Tuple; normal: Vec3Tuple }
 /** Camera and cuts of the viewer right now, as a view keeps them. */
 export interface ViewLook { camera?: ViewCamera; sections?: ViewSection[] }
 
+/** Same bound the .ifcfed.json parser applies to a view's section planes. */
+export const MAX_VIEW_SECTIONS = 12
+const finite = (v: unknown): boolean => typeof v === 'number' && Number.isFinite(v)
+const isVec3T = (v: unknown): v is Vec3Tuple => Array.isArray(v) && v.length === 3 && v.every(finite)
+const isRec = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+export function isViewCamera(c: unknown): c is ViewCamera {
+  return isRec(c) && isVec3T(c.position) && isVec3T(c.target) &&
+    (c.projection === 'perspective' || c.projection === 'orthographic')
+}
+export function isViewSections(s: unknown): s is ViewSection[] {
+  return Array.isArray(s) && s.length <= MAX_VIEW_SECTIONS &&
+    s.every((x) => isRec(x) && isVec3T(x.point) && isVec3T(x.normal))
+}
+
+/**
+ * A view read back from device storage: null when its core is unusable;
+ * otherwise a copy with an invalid camera or cuts dropped (the rest still applies).
+ */
+export function sanitizeStoredView(v: unknown): FederationView | null {
+  if (!isRec(v) || typeof v.name !== 'string' || typeof v.id !== 'string' || !isRec(v.visible)) return null
+  const visible: Record<string, boolean> = {}
+  for (const [k, b] of Object.entries(v.visible)) if (typeof b === 'boolean') visible[k] = b
+  const opacity: Record<string, number> = {}
+  if (isRec(v.opacity)) for (const [k, o] of Object.entries(v.opacity)) if (finite(o)) opacity[k] = o as number
+  const out: FederationView = {
+    id: v.id, name: v.name, visible, opacity,
+    colorByDiscipline: v.colorByDiscipline === true,
+    createdAt: finite(v.createdAt) ? (v.createdAt as number) : 0,
+  }
+  if (isViewCamera(v.camera)) out.camera = v.camera
+  if (isViewSections(v.sections)) out.sections = v.sections
+  return out
+}
+
+/** "Name", or "Name (2)", "Name (3)"… — the first not in `taken`. */
+export function freeViewName(name: string, taken: ReadonlySet<string>): string {
+  if (!taken.has(name)) return name
+  for (let n = 2; ; n++) {
+    const candidate = `${name} (${n})`
+    if (!taken.has(candidate)) return candidate
+  }
+}
+
+/**
+ * Views from a file joining the local list. Local views are never replaced or
+ * pushed out: a clashing name gets a suffix, and only as many as fit under
+ * `max` come in (in file order). Returns the new list, what came in (as
+ * stored — renamed, fresh ids) and how many did not fit.
+ */
+export function mergeImportedViews(local: FederationView[], incoming: FederationView[], max: number): {
+  views: FederationView[]; imported: FederationView[]; skipped: number
+} {
+  const room = Math.max(0, max - local.length)
+  const names = new Set(local.map((v) => v.name))
+  const ids = new Set(local.map((v) => v.id))
+  const imported: FederationView[] = []
+  for (const v of incoming.slice(0, room)) {
+    const name = freeViewName(v.name, names)
+    names.add(name)
+    let id = v.id
+    for (let n = 2; ids.has(id); n++) id = `${v.id}-${n}`
+    ids.add(id)
+    imported.push({ ...v, id, name })
+  }
+  return { views: [...imported, ...local], imported, skipped: incoming.length - imported.length }
+}
+
 export interface ModelLike { id: string; fileName: string; visible: boolean }
 
 export function captureView(
