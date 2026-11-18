@@ -23,7 +23,8 @@ import { createLogger }           from '../lib/logger'
 import { loadingController, type DuplicateMatch } from '../lib/loading/controller'
 import { useLoadingStore }        from '../stores/loadingStore'
 import { isIfcFileName }          from '../lib/upload.utils'
-import { splitFederationDrop }    from '../lib/federation-drop'
+import { splitFederationDrop, openDroppedFederation } from '../lib/federation-drop'
+import { useFederationOpenStore } from '../stores/federationOpenStore'
 import { openFederationFile }     from '../lib/federation-restore'
 import type {
   SubmitScope,
@@ -68,6 +69,7 @@ export function useIfcUploadFlow({
   }
 
   // ── Add files (pick, drop, initial) ───────────────────────────────────────
+  const addFilesRef = useRef<((files: readonly File[], origin: UploadOrigin) => void) | null>(null)
   const addFiles = useCallback((incoming: readonly File[], origin: UploadOrigin): void => {
     const current = stateRef.current
     if (current.id === 'submitting' || incoming.length === 0) return
@@ -77,12 +79,15 @@ export function useIfcUploadFlow({
     // dropped with it satisfies the restore without asking again.
     const fed = splitFederationDrop(candidates)
     if (fed.manifest) {
-      const manifestFile = fed.manifest
-      void openFederationFile(manifestFile, fed.ifcs, origin === 'drop' ? 'drop' : 'file').then((r) => {
-        if (r === 'restored') onClose()
-      })
-      if (fed.rest.length > 0) onNonIfcFiles?.(fed.rest)
-      return
+      // An unreadable manifest still lets its IFCs load the normal way.
+      void openDroppedFederation(
+        fed,
+        (m, ifcs) => openFederationFile(m, ifcs, origin === 'drop' ? 'drop' : 'file'),
+        (ifcs) => addFilesRef.current?.(ifcs, origin),
+      ).then((r) => { if (r === 'restored') onClose() })
+      // Everything else goes the way it would without the manifest.
+      candidates = fed.rest
+      if (candidates.length === 0) return
     }
     if (onNonIfcFiles) {
       const foreign = candidates.filter((f) => !isIfcFileName(f.name))
@@ -114,6 +119,7 @@ export function useIfcUploadFlow({
     dispatch({ type: 'FILES_ADDED', entries })
     prepare(entries)
   }, [dispatch, prepare, onNonIfcFiles, onClose])
+  addFilesRef.current = addFiles
 
   // ── Files the dialog was opened with (global drop over the viewer) ───────
   // Guarded by a ref, not by effect cleanup: StrictMode runs this effect twice
@@ -170,6 +176,8 @@ export function useIfcUploadFlow({
   const handleClose = useCallback(() => {
     if (!canClose) return
     abort()
+    // A manifest still waiting for its files must not come back next time.
+    useFederationOpenStore.getState().setPending(null)
     onClose()
   }, [canClose, abort, onClose])
 

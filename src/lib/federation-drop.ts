@@ -30,3 +30,20 @@ export function splitFederationDrop<F extends { name: string }>(files: readonly 
   }
   return { manifest, ifcs, rest }
 }
+
+export type FederationOpenResult = 'invalid' | 'pending' | 'restored'
+
+/**
+ * Open the dropped manifest with its IFCs. When the manifest does not parse
+ * (the opener already showed the error), the IFCs still load the normal way.
+ */
+export async function openDroppedFederation<F extends { name: string }>(
+  split: FederationDropSplit<F>,
+  open: (manifest: F, ifcs: F[]) => Promise<FederationOpenResult>,
+  loadIfcs: (ifcs: F[]) => void,
+): Promise<FederationOpenResult> {
+  if (!split.manifest) return 'invalid'
+  const r = await open(split.manifest, split.ifcs)
+  if (r === 'invalid' && split.ifcs.length > 0) loadIfcs(split.ifcs)
+  return r
+}

@@ -247,7 +247,7 @@ import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useFederationStore } from './stores/federationStore'
 import { setRestoreApplier, openFederationFile } from './lib/federation-restore'
-import { splitFederationDrop } from './lib/federation-drop'
+import { splitFederationDrop, openDroppedFederation } from './lib/federation-drop'
 import { useFederationLook } from './hooks/useFederationLook'
 import { useGeoStore } from './stores/geoStore'
 import { parseBackgroundSpec } from './lib/scene/background'
@@ -2301,7 +2301,13 @@ export default function App() {
     // satisfy the restore; without them the upload dialog asks for the files.
     const fedDrop = splitFederationDrop(files)
     if (fedDrop.manifest) {
-      void openFederationFile(fedDrop.manifest, fedDrop.ifcs, via === 'drop' ? 'drop' : 'file').then((r) => {
+      // An unreadable manifest (error toast shown) still lets its IFCs load
+      // the way a plain IFC drop does: through the upload dialog.
+      void openDroppedFederation(
+        fedDrop,
+        (m, ifcs) => openFederationFile(m, ifcs, via === 'drop' ? 'drop' : 'file'),
+        (ifcs) => { setUploadInitial(ifcs); setShowUpload(true) },
+      ).then((r) => {
         if (r === 'pending' && !showUploadRef.current) { setUploadInitial(null); setShowUpload(true) }
       })
       if (fedDrop.rest.length === 0) return

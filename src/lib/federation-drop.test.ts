@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest'
-import { isFederationFileName, splitFederationDrop } from './federation-drop'
+import { isFederationFileName, splitFederationDrop, openDroppedFederation } from './federation-drop'
+
+describe('openDroppedFederation', () => {
+  const f = (name: string) => ({ name })
+  it('an invalid manifest still loads the IFCs dropped with it', async () => {
+    const loaded: string[] = []
+    const split = splitFederationDrop([f('bad.ifcfed.json'), f('a.ifc'), f('b.ifc')])
+    const r = await openDroppedFederation(split, async () => 'invalid', (ifcs) => { loaded.push(...ifcs.map((x) => x.name)) })
+    expect(r).toBe('invalid')
+    expect(loaded).toEqual(['a.ifc', 'b.ifc'])
+  })
+
+  it('a valid manifest takes the IFCs for the restore and loads nothing else', async () => {
+    const loaded: string[] = []
+    const seen: string[] = []
+    const split = splitFederationDrop([f('ok.ifcfed.json'), f('a.ifc')])
+    const r = await openDroppedFederation(split, async (_m, ifcs) => { seen.push(...ifcs.map((x) => x.name)); return 'restored' }, (ifcs) => { loaded.push(...ifcs.map((x) => x.name)) })
+    expect(r).toBe('restored')
+    expect(seen).toEqual(['a.ifc'])
+    expect(loaded).toEqual([])
+  })
+})
 
 const f = (name: string) => ({ name })
 
