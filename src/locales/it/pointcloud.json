@@ -159,6 +159,7 @@
       "unitFeet": "L'estensione suggerisce piedi — scalata di 0,3048.",
       "unitAssumed": "Unità non dichiarata; presunti metri.",
       "noCommonReference": "Nulla collega i due file, quindi la scansione è stata centrata sul modello. Usa gli scostamenti qui sotto per posizionarla.",
+      "pointPairs": "Posizionato adattando le coppie di punti che hai segnato sulla scansione e sul modello.",
       "cloudCrsUnknown": "La scansione nomina un sistema di coordinate di cui questa build non ha la definizione, quindi la sua georeferenziazione non è stata utilizzabile. Incolla qui sotto una definizione proj4 per sbloccarla.",
       "sceneAnchorSameGrid": "Posizionato tramite il suo CRS rispetto alla prima scansione georeferenziata (stessa griglia, nessuna riproiezione).",
       "sceneAnchorReprojected": "Posizionato tramite il suo CRS rispetto all'ancora della scena, riproiettato tramite WGS84.",
@@ -580,5 +581,93 @@
     "apply": "Applica",
     "resetMany": "Ripristina il posizionamento delle scansioni ({{count}})",
     "oneAtATime": "Asse verticale, unità e SR si impostano una scansione alla volta: selezionane una sola per cambiarli."
+  },
+  "asBuilt": {
+    "title": "Confronta con il modello",
+    "preview": "Preview",
+    "note": "Risultato indicativo; dipende dal tuo allineamento.",
+    "step": {
+      "cloud": "Scansione",
+      "align": "Allinea",
+      "tolerance": "Tolleranza",
+      "run": "Esegui",
+      "results": "Risultati"
+    },
+    "mode": {
+      "label": "Adattamento",
+      "level": "Scansione livellata (4 GDL)",
+      "free": "Scansione non livellata (6 GDL)"
+    },
+    "pairs": {
+      "add": "Aggiungi coppie di punti",
+      "stop": "Fine",
+      "pickModel": "Fai clic su uno spigolo del modello.",
+      "pickCloud": "Ora fai clic sullo stesso spigolo nella scansione. Esc annulla.",
+      "hint": "Scegli almeno {{need}} spigoli corrispondenti, distribuiti sul modello.",
+      "item": "Coppia {{n}}",
+      "pending": "manca il punto della scansione",
+      "remove": "Rimuovi la coppia {{n}}",
+      "suspicious": "Controlla questa coppia"
+    },
+    "fit": {
+      "rmse": "RMSE dell’adattamento",
+      "loo": "RMSE leave-one-out",
+      "tau": "Tolleranza τ",
+      "apply": "Applica allineamento",
+      "applied": "Allineamento applicato alla scansione.",
+      "tiltOut": "Questo adattamento inclinerebbe la scansione oltre il limite. Controlla le coppie.",
+      "applyFailed": "Impossibile applicare l’allineamento."
+    },
+    "tol": {
+      "declared": "Tolleranza di costruzione (mm)",
+      "precision": "Precisione dello scanner (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} coppie su {{need}}.",
+      "degenerate": "I punti sono troppo vicini o allineati. Distribuiscili meglio.",
+      "tooFewToScore": "Per il punteggio servono almeno {{need}} coppie.",
+      "tooCoarse": "L’errore di allineamento ({{rmse}} mm) è troppo grande per una tolleranza di {{tol}} mm. Aggiungi o correggi coppie, oppure aumenta la tolleranza."
+    },
+    "run": {
+      "start": "Confronta",
+      "cancel": "Annulla",
+      "stage": {
+        "model": "Lettura della geometria del modello…",
+        "cloud": "Campionamento della scansione…",
+        "score": "Confronto in corso…"
+      },
+      "noModel": "Impossibile leggere la geometria del modello.",
+      "noCloud": "La scansione non ha ancora punti in memoria.",
+      "failed": "Il confronto non è riuscito."
+    },
+    "result": {
+      "score": "Punteggio",
+      "coverage": "Copertura",
+      "more": "Mostrati i {{shown}} peggiori su {{total}}.",
+      "col": {
+        "element": "Elemento",
+        "state": "Stato",
+        "p95": "p95 (mm)",
+        "matched": "Corrispondenza"
+      },
+      "inconclusive": {
+        "low-coverage": "Nessun punteggio: la scansione copre troppo poco del modello.",
+        "tolerance-below-alignment": "Nessun punteggio: la tolleranza è più stretta di quanto consenta l’allineamento.",
+        "nothing-scoreable": "Nessun punteggio: nessun elemento è valutabile."
+      }
+    },
+    "state": {
+      "conforming": "Conforme",
+      "deviated": "Deviato",
+      "missing": "Mancante",
+      "occluded": "Nascosto",
+      "unobserved": "Non scansionato"
+    },
+    "view": {
+      "colour": "Colora per stato",
+      "isolate": "Isola deviati + mancanti",
+      "clear": "Cancella",
+      "csv": "Scarica CSV"
+    }
   }
 }

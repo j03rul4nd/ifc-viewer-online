@@ -159,6 +159,7 @@
       "unitFeet": "L'étendue suggère des pieds — mise à l'échelle par 0,3048.",
       "unitAssumed": "Unité non déclarée ; mètres supposés.",
       "noCommonReference": "Rien ne relie les deux fichiers, le relevé a donc été centré sur le modèle. Utilisez les décalages ci-dessous pour le placer.",
+      "pointPairs": "Positionné en ajustant les paires de points que vous avez marquées sur le scan et le modèle.",
       "cloudCrsUnknown": "Le relevé nomme un système de coordonnées dont cette version n'a pas la définition, son géoréférencement n'a donc pas pu être utilisé. Collez une définition proj4 ci-dessous pour le débloquer.",
       "sceneAnchorSameGrid": "Placé par son SCR par rapport au premier scan géoréférencé (même grille, sans reprojection).",
       "sceneAnchorReprojected": "Placé par son SCR par rapport à l'ancre de la scène, reprojeté via WGS84.",
@@ -580,5 +581,93 @@
     "apply": "Appliquer",
     "resetMany": "Réinitialiser le placement des scans ({{count}})",
     "oneAtATime": "L'axe vertical, les unités et le SCR se règlent scan par scan — sélectionnez un seul scan pour les modifier."
+  },
+  "asBuilt": {
+    "title": "Comparer avec la maquette",
+    "preview": "Preview",
+    "note": "Résultat indicatif ; dépend de votre recalage.",
+    "step": {
+      "cloud": "Scan",
+      "align": "Recaler",
+      "tolerance": "Tolérance",
+      "run": "Lancer",
+      "results": "Résultats"
+    },
+    "mode": {
+      "label": "Ajustement",
+      "level": "Scan de niveau (4 DDL)",
+      "free": "Scan non nivelé (6 DDL)"
+    },
+    "pairs": {
+      "add": "Ajouter des paires de points",
+      "stop": "Terminer",
+      "pickModel": "Cliquez sur un angle de la maquette.",
+      "pickCloud": "Cliquez maintenant sur le même angle dans le scan. Échap annule.",
+      "hint": "Choisissez au moins {{need}} angles correspondants, répartis sur la maquette.",
+      "item": "Paire {{n}}",
+      "pending": "point du scan en attente",
+      "remove": "Retirer la paire {{n}}",
+      "suspicious": "Vérifiez cette paire"
+    },
+    "fit": {
+      "rmse": "RMSE de l’ajustement",
+      "loo": "RMSE en validation croisée",
+      "tau": "Tolérance τ",
+      "apply": "Appliquer le recalage",
+      "applied": "Recalage appliqué au scan.",
+      "tiltOut": "Cet ajustement inclinerait le scan au-delà de la limite. Vérifiez les paires.",
+      "applyFailed": "Le recalage n’a pas pu être appliqué."
+    },
+    "tol": {
+      "declared": "Tolérance d’exécution (mm)",
+      "precision": "Précision du scanner (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} paires sur {{need}}.",
+      "degenerate": "Les points sont trop proches ou alignés. Répartissez-les davantage.",
+      "tooFewToScore": "Il faut au moins {{need}} paires pour noter.",
+      "tooCoarse": "L’erreur de recalage ({{rmse}} mm) est trop grande pour une tolérance de {{tol}} mm. Ajoutez ou corrigez des paires, ou augmentez la tolérance."
+    },
+    "run": {
+      "start": "Comparer",
+      "cancel": "Annuler",
+      "stage": {
+        "model": "Lecture de la géométrie de la maquette…",
+        "cloud": "Échantillonnage du scan…",
+        "score": "Comparaison…"
+      },
+      "noModel": "La géométrie de la maquette n’a pas pu être lue.",
+      "noCloud": "Le scan n’a encore aucun point en mémoire.",
+      "failed": "La comparaison a échoué."
+    },
+    "result": {
+      "score": "Note",
+      "coverage": "Couverture",
+      "more": "Affichage des {{shown}} pires sur {{total}}.",
+      "col": {
+        "element": "Élément",
+        "state": "État",
+        "p95": "p95 (mm)",
+        "matched": "Correspondance"
+      },
+      "inconclusive": {
+        "low-coverage": "Pas de note : le scan couvre trop peu de la maquette pour en juger.",
+        "tolerance-below-alignment": "Pas de note : la tolérance est plus stricte que ce que permet le recalage.",
+        "nothing-scoreable": "Pas de note : aucun élément n’a pu être évalué."
+      }
+    },
+    "state": {
+      "conforming": "Conforme",
+      "deviated": "Écart",
+      "missing": "Absent",
+      "occluded": "Masqué",
+      "unobserved": "Non scanné"
+    },
+    "view": {
+      "colour": "Colorer par état",
+      "isolate": "Isoler écarts + manquants",
+      "clear": "Effacer",
+      "csv": "Télécharger CSV"
+    }
   }
 }

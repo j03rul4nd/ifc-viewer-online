@@ -159,6 +159,7 @@
       "unitFeet": "Extent suggests feet — scaled by 0.3048.",
       "unitAssumed": "Unit not declared; metres assumed.",
       "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it.",
+      "pointPairs": "Placed by fitting the point pairs you marked on the scan and the model.",
       "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it.",
       "sceneAnchorSameGrid": "Placed by its CRS against the first georeferenced scan (same grid, no reprojection).",
       "sceneAnchorReprojected": "Placed by its CRS against the scene anchor, reprojected through WGS84.",
@@ -580,5 +581,93 @@
     "apply": "Apply",
     "resetMany": "Reset placement of {{count}} scans",
     "oneAtATime": "Up axis, units and CRS are set one scan at a time — select a single scan to change them."
+  },
+  "asBuilt": {
+    "title": "Compare with model",
+    "preview": "Preview",
+    "note": "Indicative result; depends on your alignment.",
+    "step": {
+      "cloud": "Scan",
+      "align": "Align",
+      "tolerance": "Tolerance",
+      "run": "Run",
+      "results": "Results"
+    },
+    "mode": {
+      "label": "Fit",
+      "level": "Level scan (4-DOF)",
+      "free": "Unlevelled scan (6-DOF)"
+    },
+    "pairs": {
+      "add": "Add point pairs",
+      "stop": "Done picking",
+      "pickModel": "Click a corner on the model.",
+      "pickCloud": "Now click the same corner on the scan. Esc cancels.",
+      "hint": "Pick at least {{need}} matching corners, spread across the model.",
+      "item": "Pair {{n}}",
+      "pending": "waiting for the scan point",
+      "remove": "Remove pair {{n}}",
+      "suspicious": "Check this pair"
+    },
+    "fit": {
+      "rmse": "Fit RMSE",
+      "loo": "Leave-one-out RMSE",
+      "tau": "Tolerance τ",
+      "apply": "Apply alignment",
+      "applied": "Alignment applied to the scan.",
+      "tiltOut": "This fit would tilt the scan beyond the allowed range. Check the pairs.",
+      "applyFailed": "The alignment could not be applied."
+    },
+    "tol": {
+      "declared": "Construction tolerance (mm)",
+      "precision": "Scanner precision (mm)"
+    },
+    "block": {
+      "needPairs": "{{have}} of {{need}} pairs picked.",
+      "degenerate": "The points are too close together or in a line. Spread them out.",
+      "tooFewToScore": "Scoring needs at least {{need}} pairs.",
+      "tooCoarse": "The alignment error ({{rmse}} mm) is too large for a {{tol}} mm tolerance. Add or fix pairs, or raise the tolerance."
+    },
+    "run": {
+      "start": "Compare",
+      "cancel": "Cancel",
+      "stage": {
+        "model": "Reading the model geometry…",
+        "cloud": "Sampling the scan…",
+        "score": "Comparing…"
+      },
+      "noModel": "The model geometry could not be read.",
+      "noCloud": "The scan has no points in memory yet.",
+      "failed": "The comparison failed."
+    },
+    "result": {
+      "score": "Score",
+      "coverage": "Coverage",
+      "more": "Showing the {{shown}} worst of {{total}}.",
+      "col": {
+        "element": "Element",
+        "state": "State",
+        "p95": "p95 (mm)",
+        "matched": "Matched"
+      },
+      "inconclusive": {
+        "low-coverage": "No score: the scan covers too little of the model to judge it.",
+        "tolerance-below-alignment": "No score: the tolerance is tighter than the alignment allows.",
+        "nothing-scoreable": "No score: no element could be judged."
+      }
+    },
+    "state": {
+      "conforming": "Conforming",
+      "deviated": "Deviated",
+      "missing": "Missing",
+      "occluded": "Occluded",
+      "unobserved": "Not scanned"
+    },
+    "view": {
+      "colour": "Colour by state",
+      "isolate": "Isolate deviated + missing",
+      "clear": "Clear",
+      "csv": "Download CSV"
+    }
   }
 }

@@ -954,6 +954,8 @@ export interface ViewerAPI {
   // ─── Technical drawings (see docs/DRAWINGS.md) ───────────────────────────────
   /** What drawings need of the scene: where to lay a sheet in 3D and how to redraw. */
   drawingHost(): { scene: THREE.Scene; requestRender(): void }
+  /** The shared scene picker (measure/section snapping); used by the As-Built point-pair tool. */
+  getScenePicker(): import('./measure/picker').ScenePicker
   /** Every visible model's triangles in scene space, per IFC class; the source of plans and sections. */
   collectDrawingSoups(skip: RegExp): Promise<Map<string, Float32Array[]>>
   /** The scene's box in scene space, or null with nothing loaded. */
@@ -5034,6 +5036,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       storeyLevelsCache = { key, levels }
       return levels
     },
+
+    getScenePicker() { return picker },
 
     drawingHost() {
       return { scene: world.scene.three, requestRender: () => { if (world.renderer) world.renderer.needsUpdate = true } }
