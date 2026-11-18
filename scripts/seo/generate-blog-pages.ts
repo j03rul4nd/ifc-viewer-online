@@ -1006,7 +1006,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
               description: video.description,
               thumbnailUrl: mediaUrl(video.thumbnailUrl),
               contentUrl: mediaUrl(video.contentUrl),
-              uploadDate: video.uploadDate,
+              // Google wants a full ISO 8601 datetime with a timezone.
+              uploadDate: /T/.test(video.uploadDate) ? video.uploadDate : `${video.uploadDate}T00:00:00+00:00`,
               duration: video.duration,
               embedUrl: canonical,
             }
