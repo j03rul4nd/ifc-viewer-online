@@ -38,5 +38,67 @@
       "imageLabel": "Image",
       "footer": "Cet article provient d'IFC Viewer Online — un visionneur IFC gratuit dans le navigateur. Les fichiers ne quittent jamais votre machine. Essayez-le sur {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Vérifiez votre propre maquette : ouvrez votre IFC dans le navigateur, rien n'est envoyé.",
+      "iso19650": "Vérifiez votre livraison face à l'ISO 19650 : ouvrez votre IFC dans le navigateur.",
+      "steel": "Voyez un métré acier sur un vrai hangar, dans le navigateur.",
+      "large": "Ouvrez votre gros IFC dans le navigateur, rien n'est envoyé.",
+      "twin": "Ouvrez votre IFC dans le navigateur et voyez-le comme un jumeau.",
+      "open": "Ouvrez votre propre IFC dans le navigateur, rien n'est envoyé."
+    },
+    "midTitle": {
+      "validation": "Essayez sur votre propre maquette",
+      "iso19650": "Vérifiez votre livraison, pas un exemple",
+      "steel": "Essayez le métré acier sur un vrai hangar",
+      "large": "Essayez avec votre maquette la plus lourde",
+      "twin": "Démarrez le jumeau depuis votre maquette",
+      "open": "Essayez avec votre propre fichier"
+    },
+    "midBody": {
+      "validation": "J'ai conçu le visualiseur pour que vous ouvriez un IFC et voyiez son Health Score en une minute, en local. Validation Pro ajoute le jeu de règles complet et les rapports.",
+      "iso19650": "Ouvrez votre IFC et voyez où les noms et les données enfreignent l'ISO 19650. Les contrôles ISO 19650 de Team le font à chaque livraison.",
+      "steel": "Profils, longueurs et poids regroupés par profil, isolés en 3D et exportés. Steel Takeoff le fait sur vos propres maquettes.",
+      "large": "Le visualiseur ouvre de gros fichiers dans votre navigateur. Pour les ensembles fédérés de plusieurs maquettes, je construis la fédération de grands modèles dans Pro.",
+      "twin": "Votre maquette est la base du jumeau. Twin y ajoute données en direct, couches et scènes.",
+      "open": "Le visualiseur tourne dans votre navigateur ; votre fichier ne quitte jamais votre ordinateur."
+    },
+    "primary": "Ouvrir votre IFC dans le visualiseur",
+    "primarySteel": "Ouvrir la démo de métré acier",
+    "secondary": "Voir les offres {{feature}}",
+    "feature": {
+      "health_pro": "Health Score / validation Pro",
+      "iso19650_team": "contrôles ISO 19650 (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "grands modèles et fédération (Pro)",
+      "twin": "jumeau numérique",
+      "viewer": "le visualiseur"
+    },
+    "lead": {
+      "title": "Envie de savoir quand {{feature}} conviendra à votre travail ?",
+      "body": "Laissez votre e-mail et votre rôle. Je vous écris une fois, personnellement, quand ce sera prêt pour vous. Pas de newsletter.",
+      "name": "Nom",
+      "email": "E-mail",
+      "role": "Votre rôle",
+      "rolePlaceholder": "Choisissez",
+      "consent": "J'accepte d'être contacté par e-mail au sujet de {{feature}}.",
+      "privacyLink": "Voir la politique de confidentialité",
+      "submit": "Envoyer",
+      "sending": "Envoi…",
+      "success": "Merci. Je vous écrirai au sujet de {{feature}}.",
+      "errorName": "Indiquez votre nom.",
+      "errorEmail": "Cette adresse e-mail ne semble pas correcte.",
+      "errorServer": "Un problème est survenu de mon côté. Réessayez.",
+      "errorNetwork": "Pas de connexion. Rien n'a été envoyé. Réessayez dans un instant.",
+      "roles": {
+        "bim_coordinator": "Coordinateur BIM",
+        "engineer": "Ingénieur",
+        "steel_detailer": "Dessinateur charpente métallique",
+        "contractor": "Entreprise de construction",
+        "owner_operator": "Maître d'ouvrage / exploitant",
+        "other": "Autre"
+      }
+    }
   }
 }

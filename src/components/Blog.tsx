@@ -23,6 +23,7 @@ import FloodHazard from './blog/FloodHazard'
 import FoldableCheck from './blog/FoldableCheck'
 import SketchDemoBlock from './blog/SketchDemoBlock'
 import SmartTable from './blog/SmartTable'
+import BlogCta, { useBlogInterest } from './blog/BlogCta'
 import { editorialCopy } from '../lib/blog-editorial-copy'
 import { HERO_SIZES, heroSources } from '../lib/blog-hero'
 import { localizedSrc } from '../lib/blog-image-lang'
@@ -1990,6 +1991,10 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
   }, [post.slug])
   const headings = extractHeadings(post.content)
   const chrome = editorialCopy(post.lang ?? 'en').post
+  // Topic CTAs: after the first block, around the middle, and at the end.
+  const ctaInterest = useBlogInterest(post, (slug) => getBlogPost(slug, post.lang ?? 'en'))
+  const ctaProps = { interest: ctaInterest, slug: post.slug, category: post.categorySlug, lang: post.lang ?? 'en' }
+  const midCtaIndex = post.content.length >= 6 ? Math.floor(post.content.length / 2) : -1
 
   // Update document title + OG/Twitter meta while viewing a specific post.
   React.useEffect(() => {
@@ -2187,14 +2192,18 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
             <ReferencesProvider value={refsCtx}>
             <div ref={bodyRef}>
               {post.content.map((block, i) => (
-                <RenderBlock
-                  key={i}
-                  block={block}
-                  lang={post.lang ?? 'en'}
-                  onNavigateToPost={onNavigateToPost}
-                  onNavigateToLanding={onNavigateToLanding}
-                />
+                <React.Fragment key={i}>
+                  <RenderBlock
+                    block={block}
+                    lang={post.lang ?? 'en'}
+                    onNavigateToPost={onNavigateToPost}
+                    onNavigateToLanding={onNavigateToLanding}
+                  />
+                  {i === 0 && <BlogCta position="top" {...ctaProps} />}
+                  {i === midCtaIndex && <BlogCta position="mid" {...ctaProps} />}
+                </React.Fragment>
               ))}
+              <BlogCta position="end" {...ctaProps} />
             </div>
 
             <ReferenceList />

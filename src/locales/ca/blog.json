@@ -38,5 +38,67 @@
       "imageLabel": "Imatge",
       "footer": "Aquest article és d'IFC Viewer Online — un visor IFC gratuït al navegador. Els fitxers mai no surten del teu ordinador. Prova'l a {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Comprova el teu propi model: obre el teu IFC al navegador, no es puja res.",
+      "iso19650": "Comprova el teu lliurament davant ISO 19650: obre el teu IFC al navegador.",
+      "steel": "Mira un amidament d'acer sobre una nau real, al navegador.",
+      "large": "Obre el teu IFC gran al navegador, no es puja res.",
+      "twin": "Obre el teu IFC al navegador i mira'l com a bessó.",
+      "open": "Obre el teu propi IFC al navegador, no es puja res."
+    },
+    "midTitle": {
+      "validation": "Prova-ho amb el teu propi model",
+      "iso19650": "Revisa el teu lliurament, no un exemple",
+      "steel": "Prova l'amidament d'acer en una nau real",
+      "large": "Prova-ho amb el teu model més pesat",
+      "twin": "Comença el bessó des del teu model",
+      "open": "Prova-ho amb el teu propi fitxer"
+    },
+    "midBody": {
+      "validation": "Vaig fer el visor perquè obris un IFC i vegis el seu Health Score en un minut, en local. Validation Pro hi afegeix el conjunt complet de regles i informes.",
+      "iso19650": "Obre el teu IFC i mira on els noms i les dades trenquen ISO 19650. Les comprovacions ISO 19650 de Team ho fan a cada lliurament.",
+      "steel": "Perfils, longituds i pesos agrupats per perfil, aïllats en 3D i exportats. Steel Takeoff ho fa amb els teus propis models.",
+      "large": "El visor obre fitxers grans al teu navegador. Per a conjunts federats de diversos models estic construint la federació de models grans a Pro.",
+      "twin": "El teu model és la base del bessó. Twin hi afegeix dades en directe, capes i escenes.",
+      "open": "El visor funciona al teu navegador; el teu fitxer mai surt del teu ordinador."
+    },
+    "primary": "Obre el teu IFC al visor",
+    "primarySteel": "Obre la demo d'amidament d'acer",
+    "secondary": "Veure plans de {{feature}}",
+    "feature": {
+      "health_pro": "Health Score / validació Pro",
+      "iso19650_team": "comprovacions ISO 19650 (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "models grans i federació (Pro)",
+      "twin": "bessó digital",
+      "viewer": "el visor"
+    },
+    "lead": {
+      "title": "Vols saber quan {{feature}} encaixa amb la teva feina?",
+      "body": "Deixa el teu email i el teu rol. T'escric un cop, en persona, quan estigui llest per a tu. Sense newsletter.",
+      "name": "Nom",
+      "email": "Email",
+      "role": "El teu rol",
+      "rolePlaceholder": "Tria'n un",
+      "consent": "Accepto que em contacteu per email sobre {{feature}}.",
+      "privacyLink": "Veure la política de privadesa",
+      "submit": "Enviar",
+      "sending": "Enviant…",
+      "success": "Gràcies. T'escriuré sobre {{feature}}.",
+      "errorName": "Afegeix el teu nom.",
+      "errorEmail": "Aquest email no sembla correcte.",
+      "errorServer": "Alguna cosa ha fallat per part meva. Torna-ho a provar.",
+      "errorNetwork": "Sense connexió. No s'ha enviat res. Torna-ho a provar d'aquí a un moment.",
+      "roles": {
+        "bim_coordinator": "Coordinador/a BIM",
+        "engineer": "Enginyer/a",
+        "steel_detailer": "Detallista d'acer",
+        "contractor": "Constructora",
+        "owner_operator": "Propietat / explotació",
+        "other": "Altre"
+      }
+    }
   }
 }

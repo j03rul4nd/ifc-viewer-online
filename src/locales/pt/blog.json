@@ -38,5 +38,67 @@
       "imageLabel": "Imagem",
       "footer": "Este artigo é do IFC Viewer Online — um visualizador IFC gratuito no navegador. Os ficheiros nunca saem da sua máquina. Experimente em {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Verifique o seu próprio modelo: abra o seu IFC no navegador, nada é enviado.",
+      "iso19650": "Verifique a sua entrega face à ISO 19650: abra o seu IFC no navegador.",
+      "steel": "Veja uma medição de aço num pavilhão real, no navegador.",
+      "large": "Abra o seu IFC grande no navegador, nada é enviado.",
+      "twin": "Abra o seu IFC no navegador e veja-o como gémeo.",
+      "open": "Abra o seu próprio IFC no navegador, nada é enviado."
+    },
+    "midTitle": {
+      "validation": "Experimente com o seu próprio modelo",
+      "iso19650": "Verifique a sua entrega, não um exemplo",
+      "steel": "Experimente a medição de aço num pavilhão real",
+      "large": "Experimente com o seu modelo mais pesado",
+      "twin": "Comece o gémeo a partir do seu modelo",
+      "open": "Experimente com o seu próprio ficheiro"
+    },
+    "midBody": {
+      "validation": "Criei o visualizador para que abra um IFC e veja o seu Health Score num minuto, localmente. O Validation Pro acrescenta o conjunto completo de regras e relatórios.",
+      "iso19650": "Abra o seu IFC e veja onde os nomes e os dados quebram a ISO 19650. As verificações ISO 19650 do Team fazem isso em cada entrega.",
+      "steel": "Perfis, comprimentos e pesos agrupados por perfil, isolados em 3D e exportados. O Steel Takeoff faz isso nos seus próprios modelos.",
+      "large": "O visualizador abre ficheiros grandes no seu navegador. Para conjuntos federados de vários modelos, estou a construir a federação de modelos grandes no Pro.",
+      "twin": "O seu modelo é a base do gémeo. O Twin acrescenta dados em tempo real, camadas e cenas.",
+      "open": "O visualizador corre no seu navegador; o seu ficheiro nunca sai do seu computador."
+    },
+    "primary": "Abrir o seu IFC no visualizador",
+    "primarySteel": "Abrir a demo de medição de aço",
+    "secondary": "Ver planos de {{feature}}",
+    "feature": {
+      "health_pro": "Health Score / validação Pro",
+      "iso19650_team": "verificações ISO 19650 (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "modelos grandes e federação (Pro)",
+      "twin": "gémeo digital",
+      "viewer": "o visualizador"
+    },
+    "lead": {
+      "title": "Quer saber quando {{feature}} se adequa ao seu trabalho?",
+      "body": "Deixe o seu email e a sua função. Escrevo uma vez, pessoalmente, quando estiver pronto para si. Sem newsletter.",
+      "name": "Nome",
+      "email": "Email",
+      "role": "A sua função",
+      "rolePlaceholder": "Escolha uma",
+      "consent": "Aceito ser contactado por email sobre {{feature}}.",
+      "privacyLink": "Ver a política de privacidade",
+      "submit": "Enviar",
+      "sending": "A enviar…",
+      "success": "Obrigado. Vou escrever-lhe sobre {{feature}}.",
+      "errorName": "Indique o seu nome.",
+      "errorEmail": "Esse email não parece correto.",
+      "errorServer": "Algo correu mal do meu lado. Tente novamente.",
+      "errorNetwork": "Sem ligação. Nada foi enviado. Tente daqui a pouco.",
+      "roles": {
+        "bim_coordinator": "Coordenador BIM",
+        "engineer": "Engenheiro",
+        "steel_detailer": "Projetista de estruturas metálicas",
+        "contractor": "Construtora",
+        "owner_operator": "Dono de obra / gestor",
+        "other": "Outro"
+      }
+    }
   }
 }

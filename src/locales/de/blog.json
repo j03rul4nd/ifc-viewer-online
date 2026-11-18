@@ -38,5 +38,67 @@
       "imageLabel": "Bild",
       "footer": "Dieser Artikel stammt von IFC Viewer Online — einem kostenlosen IFC-Viewer im Browser. Dateien verlassen niemals deinen Rechner. Probiere ihn aus auf {{site}}"
     }
+  },
+  "cta": {
+    "top": {
+      "validation": "Prüfen Sie Ihr eigenes Modell: Öffnen Sie Ihr IFC im Browser, nichts wird hochgeladen.",
+      "iso19650": "Prüfen Sie Ihre Lieferung gegen ISO 19650: Öffnen Sie Ihr IFC im Browser.",
+      "steel": "Sehen Sie eine Stahl-Mengenermittlung an einer echten Halle, im Browser.",
+      "large": "Öffnen Sie Ihr großes IFC im Browser, nichts wird hochgeladen.",
+      "twin": "Öffnen Sie Ihr IFC im Browser und sehen Sie es als Zwilling.",
+      "open": "Öffnen Sie Ihr eigenes IFC im Browser, nichts wird hochgeladen."
+    },
+    "midTitle": {
+      "validation": "Probieren Sie es mit Ihrem eigenen Modell",
+      "iso19650": "Prüfen Sie Ihre Lieferung, kein Beispiel",
+      "steel": "Testen Sie die Stahl-Mengenermittlung an einer echten Halle",
+      "large": "Probieren Sie es mit Ihrem schwersten Modell",
+      "twin": "Starten Sie den Zwilling mit Ihrem Modell",
+      "open": "Probieren Sie es mit Ihrer eigenen Datei"
+    },
+    "midBody": {
+      "validation": "Ich habe den Viewer gebaut, damit Sie ein IFC öffnen und in einer Minute seinen Health Score sehen, lokal. Validation Pro ergänzt den vollständigen Regelsatz und Berichte.",
+      "iso19650": "Öffnen Sie Ihr IFC und sehen Sie, wo Namen und Daten ISO 19650 verletzen. Die ISO-19650-Prüfungen in Team tun das bei jeder Lieferung.",
+      "steel": "Profile, Längen und Gewichte nach Profil gruppiert, in 3D isoliert und exportiert. Steel Takeoff macht das mit Ihren eigenen Modellen.",
+      "large": "Der Viewer öffnet große Dateien in Ihrem Browser. Für föderierte Sätze aus mehreren Modellen baue ich die Föderation großer Modelle in Pro.",
+      "twin": "Ihr Modell ist die Basis des Zwillings. Twin ergänzt Live-Daten, Ebenen und Szenen.",
+      "open": "Der Viewer läuft in Ihrem Browser; Ihre Datei verlässt nie Ihren Rechner."
+    },
+    "primary": "Ihr IFC im Viewer öffnen",
+    "primarySteel": "Stahl-Demo öffnen",
+    "secondary": "{{feature}}-Pläne ansehen",
+    "feature": {
+      "health_pro": "Health Score / Validierung Pro",
+      "iso19650_team": "ISO-19650-Prüfungen (Team)",
+      "steel_takeoff": "Steel Takeoff",
+      "large_models": "große Modelle und Föderation (Pro)",
+      "twin": "Digitaler Zwilling",
+      "viewer": "den Viewer"
+    },
+    "lead": {
+      "title": "Möchten Sie erfahren, wann {{feature}} zu Ihrer Arbeit passt?",
+      "body": "Hinterlassen Sie E-Mail und Rolle. Ich schreibe einmal, persönlich, wenn es für Sie bereit ist. Kein Newsletter.",
+      "name": "Name",
+      "email": "E-Mail",
+      "role": "Ihre Rolle",
+      "rolePlaceholder": "Bitte wählen",
+      "consent": "Ich bin einverstanden, per E-Mail zu {{feature}} kontaktiert zu werden.",
+      "privacyLink": "Datenschutzerklärung ansehen",
+      "submit": "Senden",
+      "sending": "Wird gesendet…",
+      "success": "Danke. Ich schreibe Ihnen zu {{feature}}.",
+      "errorName": "Bitte geben Sie Ihren Namen an.",
+      "errorEmail": "Diese E-Mail-Adresse sieht nicht richtig aus.",
+      "errorServer": "Bei mir ist etwas schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "errorNetwork": "Keine Verbindung. Nichts wurde gesendet. Versuchen Sie es gleich noch einmal.",
+      "roles": {
+        "bim_coordinator": "BIM-Koordinator/in",
+        "engineer": "Ingenieur/in",
+        "steel_detailer": "Stahlbau-Detaillierer/in",
+        "contractor": "Bauunternehmen",
+        "owner_operator": "Eigentümer / Betreiber",
+        "other": "Andere"
+      }
+    }
   }
 }
