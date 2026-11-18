@@ -159,6 +159,7 @@
       "unitFeet": "A extensão sugere pés — escalado por 0,3048.",
       "unitAssumed": "Unidade não declarada; assumidos metros.",
       "noCommonReference": "Nada liga os dois ficheiros, por isso o levantamento foi centrado no modelo. Use os desvios abaixo para o colocar.",
+      "pointPairs": "Posicionado ajustando os pares de pontos que marcou no varrimento e no modelo.",
       "cloudCrsUnknown": "O levantamento nomeia um sistema de coordenadas para o qual esta versão não tem definição, por isso a sua georreferenciação não pôde ser usada. Cole abaixo uma definição proj4 para a desbloquear.",
       "sceneAnchorSameGrid": "Posicionado pelo seu CRS em relação à primeira digitalização georreferenciada (mesma grelha, sem reprojeção).",
       "sceneAnchorReprojected": "Posicionado pelo seu CRS em relação à âncora da cena, reprojetado via WGS84.",

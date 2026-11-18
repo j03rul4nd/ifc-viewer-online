@@ -159,6 +159,7 @@
       "unitFeet": "La extensión sugiere pies: escalado por 0,3048.",
       "unitAssumed": "Unidad no declarada; se asumen metros.",
       "noCommonReference": "Nada relaciona los dos archivos, así que el escaneo se ha centrado sobre el modelo. Usa los desplazamientos de abajo para situarlo.",
+      "pointPairs": "Colocado ajustando los pares de puntos que marcaste en el escaneo y en el modelo.",
       "cloudCrsUnknown": "El escaneo nombra un sistema de coordenadas del que esta versión no tiene definición, así que no se ha podido usar su georreferenciación. Pega abajo una definición proj4 para desbloquearlo.",
       "sceneAnchorSameGrid": "Situado por su CRS contra el primer escaneo georreferenciado (misma cuadrícula, sin reproyectar).",
       "sceneAnchorReprojected": "Situado por su CRS contra el ancla de la escena, reproyectado a través de WGS84.",

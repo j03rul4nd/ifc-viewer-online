@@ -159,6 +159,7 @@
       "unitFeet": "Die Ausdehnung deutet auf Fuß hin — mit 0,3048 skaliert.",
       "unitAssumed": "Einheit nicht angegeben; Meter angenommen.",
       "noCommonReference": "Nichts verbindet die beiden Dateien, daher wurde der Scan auf dem Modell zentriert. Platzieren Sie ihn über die Versätze unten.",
+      "pointPairs": "Platziert durch Ausgleich der Punktpaare, die du im Scan und im Modell markiert hast.",
       "cloudCrsUnknown": "Der Scan nennt ein Koordinatensystem, für das dieser Build keine Definition hat, daher konnte seine Georeferenzierung nicht genutzt werden. Fügen Sie unten eine proj4-Definition ein, um sie freizuschalten.",
       "sceneAnchorSameGrid": "Über sein KBS am ersten georeferenzierten Scan ausgerichtet (gleiches Gitter, ohne Umprojektion).",
       "sceneAnchorReprojected": "Über sein KBS am Szenenanker ausgerichtet, über WGS84 umprojiziert.",

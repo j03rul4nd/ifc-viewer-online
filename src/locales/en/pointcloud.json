@@ -159,6 +159,7 @@
       "unitFeet": "Extent suggests feet — scaled by 0.3048.",
       "unitAssumed": "Unit not declared; metres assumed.",
       "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it.",
+      "pointPairs": "Placed by fitting the point pairs you marked on the scan and the model.",
       "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it.",
       "sceneAnchorSameGrid": "Placed by its CRS against the first georeferenced scan (same grid, no reprojection).",
       "sceneAnchorReprojected": "Placed by its CRS against the scene anchor, reprojected through WGS84.",

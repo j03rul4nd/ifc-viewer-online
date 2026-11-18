@@ -159,6 +159,7 @@
       "unitFeet": "L'estensione suggerisce piedi — scalata di 0,3048.",
       "unitAssumed": "Unità non dichiarata; presunti metri.",
       "noCommonReference": "Nulla collega i due file, quindi la scansione è stata centrata sul modello. Usa gli scostamenti qui sotto per posizionarla.",
+      "pointPairs": "Posizionato adattando le coppie di punti che hai segnato sulla scansione e sul modello.",
       "cloudCrsUnknown": "La scansione nomina un sistema di coordinate di cui questa build non ha la definizione, quindi la sua georeferenziazione non è stata utilizzabile. Incolla qui sotto una definizione proj4 per sbloccarla.",
       "sceneAnchorSameGrid": "Posizionato tramite il suo CRS rispetto alla prima scansione georeferenziata (stessa griglia, nessuna riproiezione).",
       "sceneAnchorReprojected": "Posizionato tramite il suo CRS rispetto all'ancora della scena, riproiettato tramite WGS84.",
