@@ -12,14 +12,21 @@ export function locateTarget(
   elements: readonly Pick<ProgressElement, 'modelId' | 'expressId' | 'globalId'>[],
   fallbackModelId?: string,
 ): LocateTarget | null {
-  if (loc.expressId !== undefined && Number.isFinite(loc.expressId)) {
-    const modelId = loc.modelId ?? fallbackModelId
-    return modelId ? { modelId, expressId: loc.expressId } : null
-  }
+  // GlobalId first: the stored model id belongs to the load the snag was made in.
   if (loc.globalId) {
+    let any: LocateTarget | null = null
     for (const e of elements) {
-      if (e.globalId === loc.globalId && (!loc.modelId || e.modelId === loc.modelId)) return { modelId: e.modelId, expressId: e.expressId }
+      if (e.globalId !== loc.globalId) continue
+      if (e.modelId === loc.modelId) return { modelId: e.modelId, expressId: e.expressId }
+      any ??= { modelId: e.modelId, expressId: e.expressId }
     }
+    if (any) return any
+  }
+  if (loc.expressId !== undefined && Number.isFinite(loc.expressId)) {
+    // A model id from an earlier load is not live any more: use the fallback model.
+    const live = !!loc.modelId && elements.some((e) => e.modelId === loc.modelId)
+    const modelId = live ? loc.modelId : fallbackModelId ?? loc.modelId
+    return modelId ? { modelId, expressId: loc.expressId } : null
   }
   return null
 }

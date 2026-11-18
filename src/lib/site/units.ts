@@ -9,7 +9,7 @@ export const UNIT_STATUSES = ['available', 'reserved', 'sold', 'in_works', 'deli
 export type UnitStatus = typeof UNIT_STATUSES[number]
 
 export interface Unit {
-  /** Stable key within the project: `<modelId>:<globalId or #expressId>`. */
+  /** Stable across reloads: the GlobalId, else `~<storey>/<name>` (never the runtime model id). */
   id: string
   globalId: string | null
   expressIds: number[]
@@ -21,6 +21,8 @@ export interface Unit {
   status: UnitStatus
   buyer?: string
   notes?: string
+  /** Names of the IfcSpace children (rooms) when the unit is a zone. */
+  rooms?: string[]
 }
 
 /** A space as read from the model (already parsed). */
@@ -68,6 +70,22 @@ function label(name: string | null, longName: string | null, fallback: string): 
   return n || l || fallback
 }
 
+/** Persisted unit key: GlobalId, else storey + name. The runtime model id changes on every load. */
+export function unitKey(globalId: string | null, storey: string | null, name: string): string {
+  return globalId?.trim() || `~${storey ?? ''}/${name}`
+}
+
+/**
+ * Old keys were `<modelId>:<GlobalId or #expressId>` with a per-load model id.
+ * GlobalIds and `#n` never contain ':', so the part after the last ':' is the
+ * stable id. New fallback keys (`~storey/name`) are kept as they are.
+ */
+export function normalizeUnitId(id: string): string {
+  if (id.startsWith('~')) return id
+  const i = id.lastIndexOf(':')
+  return i >= 0 ? id.slice(i + 1) : id
+}
+
 /** Zones that group spaces become units; spaces in no zone are units of their own. */
 export function buildUnits(modelId: string, spaces: SpaceRecord[], zones: ZoneRecord[] = []): Unit[] {
   const byId = new Map(spaces.map((s) => [s.expressId, s]))
@@ -80,17 +98,18 @@ export function buildUnits(modelId: string, spaces: SpaceRecord[], zones: ZoneRe
     const areas = members.map((m) => spaceArea(m.quantitySets))
     const storeys = [...new Set(members.map((m) => m.storey).filter((s): s is string => !!s))]
     out.push({
-      id: `${modelId}:${z.globalId ?? `#${z.expressId}`}`, globalId: z.globalId, modelId,
+      id: unitKey(z.globalId, storeys[0] ?? null, label(z.name, z.longName, `#${z.expressId}`)), globalId: z.globalId, modelId,
       expressIds: members.map((m) => m.expressId), name: label(z.name, z.longName, `#${z.expressId}`),
       storey: storeys[0] ?? null,
       area: areas.every((a) => a === null) ? null : areas.reduce<number>((s, a) => s + (a ?? 0), 0),
       status: 'available',
+      rooms: members.map((m) => label(m.name, m.longName, `#${m.expressId}`)),
     })
   }
   for (const s of spaces) {
     if (used.has(s.expressId)) continue
     out.push({
-      id: `${modelId}:${s.globalId ?? `#${s.expressId}`}`, globalId: s.globalId, modelId, expressIds: [s.expressId],
+      id: unitKey(s.globalId, s.storey, label(s.name, s.longName, `#${s.expressId}`)), globalId: s.globalId, modelId, expressIds: [s.expressId],
       name: label(s.name, s.longName, `#${s.expressId}`), storey: s.storey, area: spaceArea(s.quantitySets), status: 'available',
     })
   }
@@ -99,8 +118,9 @@ export function buildUnits(modelId: string, spaces: SpaceRecord[], zones: ZoneRe
 
 /** Applies stored states (by unit id) to freshly built units. */
 export function applyStates(units: Unit[], states: Record<string, UnitState>): Unit[] {
+  const norm = new Map(Object.entries(states).map(([k, v]) => [normalizeUnitId(k), v]))
   return units.map((u) => {
-    const s = states[u.id]
+    const s = norm.get(u.id)
     return s && isUnitStatus(s.status) ? { ...u, status: s.status, buyer: s.buyer || undefined, notes: s.notes || undefined } : u
   })
 }

@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewerAPI } from '../../lib/viewer'
 import {
   aggregateProgressChunked, compareSnapshots, NO_GROUP, PROGRESS_STATUSES, progressCsv, progressTotals, setProgress,
-  stateFromRecords, takeSnapshot,
+  rebindState, stateFromRecords, takeSnapshot,
   type GroupBy, type ProgressElement, type ProgressRow, type ProgressSnapshot, type ProgressState, type ProgressStatus,
 } from '../../lib/site/progress'
 import { loadProgress, saveProgress } from '../../lib/site/progress-store'
@@ -62,6 +62,9 @@ export default function ProgressPanel({ viewerApiRef, projectKey, elements, sele
     if (!loaded.current) return
     saveProgress(projectKey, { records: [...state.values()], snapshots }).then(() => setSaveError(false), () => setSaveError(true))
   }, [projectKey, state, snapshots])
+
+  // Stored records carry the model id of an earlier load: re-point them by GlobalId.
+  useEffect(() => { setState((s) => rebindState(s, elements)) }, [elements, state])
 
   useEffect(() => {
     const ac = new AbortController()

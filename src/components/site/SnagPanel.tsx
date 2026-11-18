@@ -6,11 +6,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from '../../i18n'
 import {
-  SNAG_PRIORITIES, SNAG_STATUSES, createSnag, distinctTrades, distinctUnits, filterSnags, isOverdue,
+  SNAG_PRIORITIES, SNAG_STATUSES, createSnag, distinctTrades, distinctUnits, filterSnags, unitLabels, isOverdue,
   nextStatuses, snagStats, snagsToCsv, transitionSnag, updateSnag,
   type Snag, type SnagFilter, type SnagLocation, type SnagPriority, type SnagStatus,
 } from '../../lib/site/snags'
-import { deleteSnag, loadPhoto, loadSnags, newPhotoId, savePhoto, saveSnag } from '../../lib/site/snag-store'
+import { deleteSnag, loadPhoto, loadSnags, newPhotoId, onSnagSaved, savePhoto, saveSnag } from '../../lib/site/snag-store'
+import { canvasTextRasterizer } from '../../lib/site/pdf-text-raster'
 import { compressPhoto } from '../../lib/site/photo'
 import { buildSnagReportPdf, type ReportLabels, type ReportPhoto } from '../../lib/site/snag-report'
 
@@ -84,6 +85,12 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
     return () => { alive = false }
   }, [projectKey, t])
 
+  // Snags saved elsewhere (handover defects) show up without a reload.
+  useEffect(() => onSnagSaved((project, s) => {
+    if (project !== projectKey) return
+    setSnags((list) => [s, ...list.filter((x) => x.id !== s.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+  }), [projectKey])
+
   const persist = useCallback(async (s: Snag) => {
     setSnags((list) => [s, ...list.filter((x) => x.id !== s.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
     try { await saveSnag(projectKey, s) } catch { setError(t('storageError')) }
@@ -101,6 +108,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
   const stats = useMemo(() => snagStats(snags), [snags])
   const trades = useMemo(() => distinctTrades(snags), [snags])
   const units = useMemo(() => distinctUnits(snags), [snags])
+  const unitNames = useMemo(() => unitLabels(snags), [snags])
 
   const submit = async () => {
     if (!form) return
@@ -151,7 +159,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
         status: { open: t('status_open'), in_progress: t('status_in_progress'), resolved: t('status_resolved'), closed: t('status_closed') },
         priority: { low: t('priority_low'), medium: t('priority_medium'), high: t('priority_high'), critical: t('priority_critical') },
       }
-      const pdf = buildSnagReportPdf(visible, labels, photos, { project: projectKey === 'default' ? undefined : projectKey })
+      const pdf = buildSnagReportPdf(visible, labels, photos, { project: projectKey === 'default' ? undefined : projectKey, rasterize: canvasTextRasterizer() })
       download(pdf, 'application/pdf', `snags-${projectKey}.pdf`)
     } catch { setError(t('storageError')) } finally { setBusy(false) }
   }
@@ -220,7 +228,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
         </select>
         <select className={input} value={filter.unitId ?? ''} onChange={(e) => setFilter({ ...filter, unitId: e.target.value || undefined })}>
           <option value="">{t('allUnits')}</option>
-          {units.map((u) => <option key={u} value={u}>{u}</option>)}
+          {units.map((u) => <option key={u} value={u}>{unitNames.get(u) ?? u}</option>)}
         </select>
         <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={!!filter.overdue} onChange={(e) => setFilter({ ...filter, overdue: e.target.checked })} />{t('overdueOnly')}</label>
       </div>
@@ -238,7 +246,7 @@ export function SnagPanel({ projectKey = 'default', selection, onFocusLocation, 
               <span className="text-xs opacity-70">{t(`priority_${s.priority}`)}</span>
             </div>
             <div className="text-xs opacity-70">
-              {[t(`status_${s.status}`), s.trade, s.unitId, s.assignee, s.dueDate].filter(Boolean).join(' · ')}
+              {[t(`status_${s.status}`), s.trade, s.unitName ?? s.unitId, s.assignee, s.dueDate].filter(Boolean).join(' · ')}
               {isOverdue(s) && <span className="ml-1 text-red-400">{t('overdue')}</span>}
             </div>
             {s.photoIds.length > 0 && <div className="mt-1 flex gap-1">{s.photoIds.slice(0, 4).map((id) => <Thumb key={id} project={projectKey} id={id} />)}</div>}

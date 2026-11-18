@@ -15,6 +15,9 @@ import { loadUnitStates, saveUnitStates, siteProjectKey } from '../../lib/site/u
 import { STATUS_COLORS, applyUnitColors, clearUnitColors, isolateUnits } from '../../lib/site/unit-colors'
 import { useUnitsT, type UnitsTextKey } from '../../lib/site/units-i18n'
 import { onSiteColorModeChange } from '../../lib/site/site-colors'
+import { useTranslation } from '../../i18n'
+
+const HandoverPanel = React.lazy(() => import('./HandoverPanel'))
 
 interface Props { viewerApiRef: React.MutableRefObject<ViewerAPI | null> }
 
@@ -35,6 +38,8 @@ export default function UnitsPanel({ viewerApiRef }: Props) {
   const [colorOn, setColorOn] = useState(false)
   const [isolated, setIsolated] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const { t: st } = useTranslation('site')
+  const [handoverId, setHandoverId] = useState<string | null>(null)
   const sl = useCallback((s: UnitStatus) => t(`s_${s}` as UnitsTextKey), [t])
   const n1 = useMemo(() => new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), [lang])
 
@@ -114,6 +119,16 @@ export default function UnitsPanel({ viewerApiRef }: Props) {
   const groups = useMemo(() => groupByStorey(visible), [visible])
   const counts = useMemo(() => countByStatus(units ?? []), [units])
 
+  const handoverUnit = handoverId ? units?.find((u) => u.id === handoverId) ?? null : null
+  if (handoverUnit) {
+    return (
+      <React.Suspense fallback={<div className="p-3 text-[11px] text-[var(--text-dim)]">…</div>}>
+        <HandoverPanel unit={handoverUnit} project={project} onClose={() => setHandoverId(null)}
+          onSigned={(h) => patch(handoverUnit.id, { status: 'delivered', buyer: handoverUnit.buyer || h.buyerName || undefined })} />
+      </React.Suspense>
+    )
+  }
+
   if (models.length === 0) return <div className="p-3 text-[11.5px] text-[var(--text-dim)]">{t('needModel')}</div>
 
   return (
@@ -177,6 +192,9 @@ export default function UnitsPanel({ viewerApiRef }: Props) {
                     <td className="px-2 py-1">
                       <button type="button" title={t('isolate')} className="text-left hover:underline" onClick={() => isolate(u)}>
                         <span className="inline-block w-2 h-2 rounded-sm mr-1.5" style={{ background: STATUS_COLORS[u.status] }} />{u.name}
+                      </button>
+                      <button type="button" className="ml-1.5 text-[10.5px] text-[var(--accent)] hover:underline" onClick={() => setHandoverId(u.id)}>
+                        {String(st('handover.open'))}
                       </button>
                     </td>
                     <td className="px-2 py-1 text-right tabular-nums">{u.area === null ? '—' : n1.format(u.area)}</td>

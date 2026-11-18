@@ -3,6 +3,7 @@
 // two sites never mix; photos are separate Blobs so listing snags stays cheap.
 
 import type { Snag } from './snags'
+import { normalizeUnitId } from './units'
 
 const DB = 'ifc-site-snags'
 const SNAGS = 'snags'
@@ -45,13 +46,30 @@ async function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObject
   } finally { db.close() }
 }
 
+/** Old records keyed the unit with the per-load model id (`<modelId>:<GlobalId>`). */
+export function migrateSnag(s: Snag): Snag {
+  if (!s.unitId) return s
+  const unitId = normalizeUnitId(s.unitId)
+  return unitId === s.unitId ? s : { ...s, unitId }
+}
+
 export async function loadSnags(project: string): Promise<Snag[]> {
   const rows = (await run<StoredSnag[]>(SNAGS, 'readonly', (s) => s.getAll(projectKeyRange(project)) as IDBRequest<StoredSnag[]>)) ?? []
-  return rows.map((r) => r.snag).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  return rows.map((r) => migrateSnag(r.snag)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+type SnagSavedListener = (project: string, snag: Snag) => void
+const listeners = new Set<SnagSavedListener>()
+
+/** Notified after any saveSnag (e.g. a handover defect), so open lists update live. */
+export function onSnagSaved(fn: SnagSavedListener): () => void {
+  listeners.add(fn)
+  return () => { listeners.delete(fn) }
 }
 
 export async function saveSnag(project: string, snag: Snag): Promise<void> {
   await run(SNAGS, 'readwrite', (s) => { s.put({ project, snag } satisfies StoredSnag, snagKey(project, snag.id)) })
+  for (const fn of listeners) { try { fn(project, snag) } catch { /* a listener never breaks a save */ } }
 }
 
 /** Deletes the snag and its photos. */
