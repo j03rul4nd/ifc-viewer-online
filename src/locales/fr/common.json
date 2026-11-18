@@ -359,5 +359,20 @@
     "resizePanelHint": "Faites glisser ou utilisez les flèches du clavier pour redimensionner. Double-cliquez pour changer de taille.",
     "maximizePanel": "Agrandir le panneau",
     "restorePanel": "Restaurer la taille du panneau"
+  },
+  "federationFile": {
+    "save": "Enregistrer la fédération",
+    "saveHint": "Télécharger cet ensemble en .ifcfed.json : position, visibilité, opacité et fichiers mis de côté. Aucune donnée de maquette incluse.",
+    "open": "Ouvrir une fédération",
+    "openHint": "Ouvrez un .ifcfed.json puis choisissez ses fichiers IFC",
+    "namePrompt": "Nom de cette fédération",
+    "defaultName": "Ma fédération",
+    "saved": "Fédération enregistrée dans vos téléchargements",
+    "invalid": "Ce fichier n'est pas une fédération valide",
+    "pickFiles": "« {{name}} » liste {{count}} fichiers. Choisissez-les maintenant ; les fichiers correspondants se chargent tels qu'enregistrés.",
+    "chooseFiles": "Choisir les fichiers IFC",
+    "missing_one": "{{count}} fichier manquant — le reste a été chargé",
+    "missing_other": "{{count}} fichiers manquants — le reste a été chargé",
+    "dismiss": "Fermer"
   }
 }

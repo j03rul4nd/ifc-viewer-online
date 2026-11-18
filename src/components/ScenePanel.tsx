@@ -30,6 +30,7 @@ import { matchesQuery } from '../lib/federation'
 import { modelRegistry } from '../lib/model-registry'
 import { useFederationStore, takeParkedBytes } from '../stores/federationStore'
 import { submitIfcBytes } from '../lib/loading'
+import type { RestoreApply } from '../lib/federation-session'
 import { toast } from '../stores/toastStore'
 
 interface ScenePanelProps {
@@ -681,6 +682,20 @@ export default function ScenePanel({
     }
   }, [])
 
+  // A model reopened from a saved federation: put it back as it was saved.
+  // Not recorded as an undo step — it is the starting state, not an edit.
+  const handleApplyRestored = useCallback((id: string, a: RestoreApply) => {
+    const scene = useSceneStore.getState()
+    if (!scene.models.some((m) => m.id === id)) return
+    if (a.transform) {
+      scene.setModelTransform(id, a.transform)
+      viewerApiRef.current?.setModelTransform(a.transform, id)
+    }
+    if (a.placedByHand) scene.setPlacedByHand(id, true)
+    useFederationStore.getState().setOpacity(id, a.opacity)
+    if (!a.visible) onSetVisible(id, false)
+  }, [viewerApiRef, onSetVisible])
+
   const handleFrameAll = useCallback(() => {
     viewerApiRef.current?.frameAllModels()
   }, [viewerApiRef])
@@ -764,6 +779,7 @@ export default function ScenePanel({
             }}
             onPark={handlePark}
             onUnpark={handleUnpark}
+            onApplyRestored={handleApplyRestored}
           />
         )}
 

@@ -359,5 +359,20 @@
     "resizePanelHint": "Trascina o usa i tasti freccia per ridimensionare. Doppio clic per cambiare dimensione.",
     "maximizePanel": "Ingrandisci pannello",
     "restorePanel": "Ripristina dimensione pannello"
+  },
+  "federationFile": {
+    "save": "Salva federazione",
+    "saveHint": "Scarica questo insieme come .ifcfed.json: posizione, visibilità, opacità e file parcheggiati. Nessun dato dei modelli incluso.",
+    "open": "Apri federazione",
+    "openHint": "Apri un .ifcfed.json e poi scegli i suoi file IFC",
+    "namePrompt": "Nome di questa federazione",
+    "defaultName": "La mia federazione",
+    "saved": "Federazione salvata nei download",
+    "invalid": "Questo file non è una federazione valida",
+    "pickFiles": "«{{name}}» elenca {{count}} file. Sceglili ora; i file corrispondenti si caricano come sono stati salvati.",
+    "chooseFiles": "Scegli file IFC",
+    "missing_one": "Manca {{count}} file: il resto è stato caricato",
+    "missing_other": "Mancano {{count}} file: il resto è stato caricato",
+    "dismiss": "Chiudi"
   }
 }

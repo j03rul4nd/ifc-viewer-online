@@ -359,5 +359,20 @@
     "resizePanelHint": "Arraste ou use as teclas de seta para redimensionar. Clique duas vezes para alternar o tamanho.",
     "maximizePanel": "Maximizar painel",
     "restorePanel": "Restaurar tamanho do painel"
+  },
+  "federationFile": {
+    "save": "Guardar federação",
+    "saveHint": "Transfere este conjunto como .ifcfed.json: posição, visibilidade, opacidade e ficheiros estacionados. Não inclui dados dos modelos.",
+    "open": "Abrir federação",
+    "openHint": "Abre um .ifcfed.json e depois escolhe os seus ficheiros IFC",
+    "namePrompt": "Nome desta federação",
+    "defaultName": "A minha federação",
+    "saved": "Federação guardada nas transferências",
+    "invalid": "Esse ficheiro não é uma federação válida",
+    "pickFiles": "«{{name}}» lista {{count}} ficheiros. Escolhe-os agora; os que coincidirem carregam tal como foram guardados.",
+    "chooseFiles": "Escolher ficheiros IFC",
+    "missing_one": "Falta {{count}} ficheiro; o resto foi carregado",
+    "missing_other": "Faltam {{count}} ficheiros; o resto foi carregado",
+    "dismiss": "Fechar"
   }
 }

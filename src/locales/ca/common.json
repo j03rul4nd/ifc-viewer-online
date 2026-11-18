@@ -359,5 +359,20 @@
     "resizePanelHint": "Arrossega o fes servir les tecles de fletxa per redimensionar. Fes doble clic per canviar la mida.",
     "maximizePanel": "Maximitzar el panell",
     "restorePanel": "Restaurar la mida del panell"
+  },
+  "federationFile": {
+    "save": "Desa la federació",
+    "saveHint": "Descarrega aquest conjunt com a .ifcfed.json: posició, visibilitat, opacitat i fitxers aparcats. No inclou dades dels models.",
+    "open": "Obre una federació",
+    "openHint": "Obre un .ifcfed.json i després tria'n els fitxers IFC",
+    "namePrompt": "Nom d'aquesta federació",
+    "defaultName": "La meva federació",
+    "saved": "Federació desada a les baixades",
+    "invalid": "Aquest fitxer no és una federació vàlida",
+    "pickFiles": "«{{name}}» inclou {{count}} fitxers. Tria'ls ara; els que coincideixin es carreguen tal com es van desar.",
+    "chooseFiles": "Tria fitxers IFC",
+    "missing_one": "Falta {{count}} fitxer; la resta s'ha carregat",
+    "missing_other": "Falten {{count}} fitxers; la resta s'ha carregat",
+    "dismiss": "Tanca"
   }
 }

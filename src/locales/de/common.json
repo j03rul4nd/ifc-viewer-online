@@ -359,5 +359,20 @@
     "resizePanelHint": "Ziehen oder Pfeiltasten verwenden, um die Größe zu ändern. Doppelklick wechselt die Größe.",
     "maximizePanel": "Bereich maximieren",
     "restorePanel": "Bereichsgröße wiederherstellen"
+  },
+  "federationFile": {
+    "save": "Föderation speichern",
+    "saveHint": "Diesen Satz als .ifcfed.json herunterladen: Platzierung, Sichtbarkeit, Deckkraft und geparkte Dateien. Keine Modelldaten enthalten.",
+    "open": "Föderation öffnen",
+    "openHint": "Eine .ifcfed.json öffnen und danach die zugehörigen IFC-Dateien wählen",
+    "namePrompt": "Name dieser Föderation",
+    "defaultName": "Meine Föderation",
+    "saved": "Föderation in deinen Downloads gespeichert",
+    "invalid": "Diese Datei ist keine gültige Föderation",
+    "pickFiles": "„{{name}}“ umfasst {{count}} Dateien. Wähle sie jetzt; passende Dateien werden wie gespeichert geladen.",
+    "chooseFiles": "IFC-Dateien wählen",
+    "missing_one": "{{count}} Datei fehlt – der Rest wurde geladen",
+    "missing_other": "{{count}} Dateien fehlen – der Rest wurde geladen",
+    "dismiss": "Schließen"
   }
 }

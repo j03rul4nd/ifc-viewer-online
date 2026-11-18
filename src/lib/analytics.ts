@@ -587,6 +587,10 @@ export function trackFeatureUsed(props: {
     | 'drawing_sheet_set'
     | 'drawing_scan_slice'
     | 'drawing_compare'
+    | 'federation_save'
+    | 'federation_open'
+  /** Bucketed model count only — never names, hashes or sizes. */
+  models?: '2' | '3-5' | '6-10' | '11+'
 }): void {
   const signal = FEATURE_SIGNAL[props.feature]
   if (signal) noteFeedbackSignal(signal)
