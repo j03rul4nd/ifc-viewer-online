@@ -997,3 +997,15 @@ back (an unescaped backslash) is never rewritten: its edit is skipped and
 counted, since rewriting it would blank that text. Phase B: `{type}` and `{longname}` tokens, opening the
 fixed file as the current version, certifying the fixed bytes, and fixes for
 MISSING_TYPE and PROXY_OVERUSE.
+
+## D-37 · Federations persist as a versioned byte-free manifest; local save/compare free, cloud/link paid
+
+**Date:** 2026-11-18 · **Status:** accepted (manifest), proposed (UI and cloud)
+
+**Context.** Multi-model is the most used feature (698 `multi_model` events vs 245 for measurement, Nov 2026), but a federation is lost when the tab closes. Rules: what is free in the browser stays free; anything that costs server is paid and is built dark until there is revenue.
+
+**Decision.** One `FederationManifestV1` JSON (`src/lib/federation-manifest.ts`): models referenced by sha256/basename/size/stackKey, transforms, visibility, parked state, zones, views and camera — never IFC bytes or paths. Reopening reconciles dropped files (`src/lib/federation-reconcile.ts`): sha256 > name+size > normalised name > stackKey (a different revision = `revision`). Free: `.ifcfed.json` file, local library in IndexedDB, reconcile on reopen, in-browser version compare. Pro: cloud save, sync, read-only link with hosted IFC, server history. Team: shared editing and automatic compare to BCF. Analytics: enums and buckets only. Prices unchanged.
+
+**Rejected.** Reusing the twin scene document as the container (mixes domains, keyed by file name); keying by file name only; putting local save behind a paywall.
+
+**Consequences.** Someone who receives a local manifest needs the IFC files. The old `ifc-federation-views-v1` views need a one-time migration (next PR).
