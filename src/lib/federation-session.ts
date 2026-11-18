@@ -6,8 +6,10 @@
 
 import type { ModelTransform } from '../types'
 import {
-  buildManifest, type FederationManifestV1, type ManifestModelInput, type RefId,
+  buildManifest, baseName, type FederationManifestV1, type ManifestModelInput, type ManifestView, type RefId,
+  MAX_MANIFEST_VIEWS, MAX_VIEW_ID, MAX_VIEW_NAME, MAX_VIEW_SECTIONS,
 } from './federation-manifest'
+import type { FederationView } from './federation'
 import type { ReconcileResult } from './federation-reconcile'
 
 export const FEDERATION_FILE_SUFFIX = '.ifcfed.json'
@@ -33,6 +35,23 @@ export interface SessionInput {
   opacityById: Record<string, number>
   disciplineById?: Record<string, string>
   colorByDiscipline: boolean
+  /** Saved views (keyed by file name, as federationStore keeps them). Those naming no file of the set are left out. */
+  views?: FederationView[]
+}
+
+/** File-name-keyed view → manifest view keyed by session model key. */
+function viewToKeys(v: FederationView, keysByName: Map<string, string[]>): ManifestView {
+  const visible: Record<string, boolean> = {}
+  const opacity: Record<string, number> = {}
+  for (const [name, on] of Object.entries(v.visible)) for (const k of keysByName.get(name) ?? []) visible[k] = on
+  for (const [name, o] of Object.entries(v.opacity)) for (const k of keysByName.get(name) ?? []) opacity[k] = o
+  const out: ManifestView = {
+    id: v.id.slice(0, MAX_VIEW_ID), name: v.name.slice(0, MAX_VIEW_NAME), visible, opacity,
+    colorByDiscipline: v.colorByDiscipline,
+  }
+  if (v.camera) out.camera = v.camera
+  if (v.sections) out.sections = v.sections.slice(0, MAX_VIEW_SECTIONS)
+  return out
 }
 
 const isIdentity = (t?: ModelTransform): boolean => {
@@ -61,10 +80,50 @@ export function manifestFromSession(s: SessionInput): FederationManifestV1 {
       key: p.id, fileName: p.fileName, size: p.fileSize, visible: true, parked: true, opacity: 1,
     })),
   ]
+  const keysByName = new Map<string, string[]>()
+  const index = (name: string, key: string) => {
+    const list = keysByName.get(name) ?? []
+    if (!list.includes(key)) keysByName.set(name, [...list, key])
+  }
+  for (const m of models) { index(m.fileName, m.key); index(baseName(m.fileName), m.key) }
+  const views = (s.views ?? [])
+    .map((v) => viewToKeys(v, keysByName))
+    .filter((v) => Object.keys(v.visible).length > 0)
+    .slice(0, MAX_MANIFEST_VIEWS)
   return buildManifest({
     id: s.id, name: s.name, now: s.now, build: s.build,
     models, colorByDiscipline: s.colorByDiscipline,
+    ...(views.length > 0 ? { views } : {}),
   })
+}
+
+/**
+ * The manifest's views back in federationStore's shape (keyed by file name),
+ * in file order — the first is the one to show on open.
+ */
+export function viewsFromManifest(manifest: FederationManifestV1, now = Date.now()): FederationView[] {
+  const nameOf = new Map(manifest.models.map((m) => [m.refId, m.fileName]))
+  const byName = <V>(rec: Record<string, V>): Record<string, V> => {
+    const out: Record<string, V> = {}
+    for (const [r, v] of Object.entries(rec)) { const n = nameOf.get(r); if (n !== undefined) out[n] = v }
+    return out
+  }
+  return manifest.presentation.views.map((v, i) => {
+    const view: FederationView = {
+      id: v.id, name: v.name, visible: byName(v.visible), opacity: byName(v.opacity),
+      colorByDiscipline: v.colorByDiscipline ?? manifest.presentation.colorByDiscipline,
+      createdAt: now - i,
+    }
+    if (v.camera) view.camera = { position: [...v.camera.position], target: [...v.camera.target], projection: v.camera.projection }
+    if (v.sections) view.sections = v.sections.map((c) => ({ point: [...c.point], normal: [...c.normal] }))
+    return view
+  })
+}
+
+/** The view to show on open: the active one if the file names it, else the first. */
+export function defaultView(manifest: FederationManifestV1, views: FederationView[]): FederationView | null {
+  const id = manifest.presentation.activeViewId
+  return (id ? views.find((v) => v.id === id) : undefined) ?? views[0] ?? null
 }
 
 /** File-system-safe download name: `<name>.ifcfed.json`. */

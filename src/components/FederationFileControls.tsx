@@ -48,6 +48,7 @@ export default function FederationFileControls({ variant, models = [], chipClass
     const manifest = manifestFromSession({
       id: newId(), name, models, parked: fed.parked,
       opacityById: fed.opacityById, disciplineById: fed.disciplineById, colorByDiscipline: fed.colorByDiscipline,
+      views: fed.views,
     })
     downloadManifest(manifest)
     void saveToLibrary(manifest).then(() => useFederationOpenStore.getState().bumpLibrary())

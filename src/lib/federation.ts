@@ -87,7 +87,17 @@ export interface FederationView {
   opacity: Record<string, number>
   colorByDiscipline: boolean
   createdAt: number
+  /** Where the camera stood (scene axes). Absent on views saved before cameras were kept. */
+  camera?: ViewCamera
+  /** Section planes on when saved (absent = leave the current cuts alone). */
+  sections?: ViewSection[]
 }
+
+export type Vec3Tuple = [number, number, number]
+export interface ViewCamera { position: Vec3Tuple; target: Vec3Tuple; projection: 'perspective' | 'orthographic' }
+export interface ViewSection { point: Vec3Tuple; normal: Vec3Tuple }
+/** Camera and cuts of the viewer right now, as a view keeps them. */
+export interface ViewLook { camera?: ViewCamera; sections?: ViewSection[] }
 
 export interface ModelLike { id: string; fileName: string; visible: boolean }
 
@@ -97,6 +107,7 @@ export function captureView(
   opacityById: Record<string, number>,
   colorByDiscipline: boolean,
   now = Date.now(),
+  look: ViewLook = {},
 ): FederationView {
   const visible: Record<string, boolean> = {}
   const opacity: Record<string, number> = {}
@@ -105,7 +116,10 @@ export function captureView(
     const o = opacityById[m.id]
     if (o !== undefined && o < 0.999) opacity[m.fileName] = clampOpacity(o)
   }
-  return { id: `v${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || 'View', visible, opacity, colorByDiscipline, createdAt: now }
+  const view: FederationView = { id: `v${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || 'View', visible, opacity, colorByDiscipline, createdAt: now }
+  if (look.camera) view.camera = look.camera
+  if (look.sections) view.sections = look.sections
+  return view
 }
 
 /** What applying a view does to the models open now. Files the view does not know keep their state. */

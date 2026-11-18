@@ -40,9 +40,20 @@ export interface ManifestView {
   name: string
   visible: Record<RefId, boolean>
   opacity: Record<RefId, number>
+  /** Optional (files written before views carried a camera have none). */
+  camera?: { position: Vec3; target: Vec3; projection: 'perspective' | 'orthographic' }
+  sections?: Array<{ point: Vec3; normal: Vec3 }>
+  colorByDiscipline?: boolean
 }
 
 export type Vec3 = [number, number, number]
+
+/** Bounds parseManifest enforces on views — a file is untrusted input. */
+export const MAX_MANIFEST_VIEWS = 50
+export const MAX_VIEW_NAME = 120
+export const MAX_VIEW_ID = 64
+export const MAX_VIEW_SECTIONS = 12
+export const MAX_VIEW_ENTRIES = 2000
 
 export interface FederationManifestV1 {
   kind: typeof MANIFEST_KIND
@@ -148,7 +159,13 @@ export function buildManifest(input: ManifestInput): FederationManifestV1 {
     models,
     presentation: {
       colorByDiscipline: input.colorByDiscipline,
-      views: (input.views ?? []).map((v) => ({ id: v.id, name: v.name, visible: mapRec(v.visible), opacity: mapRec(v.opacity) })),
+      views: (input.views ?? []).map((v) => {
+        const out: ManifestView = { id: v.id, name: v.name, visible: mapRec(v.visible), opacity: mapRec(v.opacity) }
+        if (v.camera) out.camera = { position: [...v.camera.position], target: [...v.camera.target], projection: v.camera.projection }
+        if (v.sections) out.sections = v.sections.map((c) => ({ point: [...c.point], normal: [...c.normal] }))
+        if (v.colorByDiscipline !== undefined) out.colorByDiscipline = v.colorByDiscipline
+        return out
+      }),
     },
   }
   if (input.activeViewId) manifest.presentation.activeViewId = input.activeViewId
@@ -232,13 +249,26 @@ function checkV1(o: Record<string, unknown>): void {
   const pr = o.presentation as Record<string, unknown>
   need(typeof pr.colorByDiscipline === 'boolean', 'presentation.colorByDiscipline')
   need(Array.isArray(pr.views), 'presentation.views')
+  need((pr.views as unknown[]).length <= MAX_MANIFEST_VIEWS, 'presentation.views')
   ;(pr.views as unknown[]).forEach((v, i) => {
     const p = `presentation.views[${i}]`
     need(isObj(v), p)
     const vo = v as Record<string, unknown>
-    need(isStr(vo.id) && isStr(vo.name), p)
-    need(isObj(vo.visible) && Object.values(vo.visible).every((b) => typeof b === 'boolean'), `${p}.visible`)
-    need(isObj(vo.opacity) && Object.values(vo.opacity).every(isNum), `${p}.opacity`)
+    need(isStr(vo.id) && vo.id.length <= MAX_VIEW_ID && isStr(vo.name) && vo.name.length <= MAX_VIEW_NAME, p)
+    need(isObj(vo.visible) && Object.keys(vo.visible).length <= MAX_VIEW_ENTRIES &&
+      Object.values(vo.visible).every((b) => typeof b === 'boolean'), `${p}.visible`)
+    need(isObj(vo.opacity) && Object.keys(vo.opacity).length <= MAX_VIEW_ENTRIES &&
+      Object.values(vo.opacity).every(isNum), `${p}.opacity`)
+    if (vo.camera !== undefined) {
+      const c = vo.camera
+      need(isObj(c) && isVec3(c.position) && isVec3(c.target) &&
+        (c.projection === 'perspective' || c.projection === 'orthographic'), `${p}.camera`)
+    }
+    if (vo.sections !== undefined) {
+      need(Array.isArray(vo.sections) && vo.sections.length <= MAX_VIEW_SECTIONS &&
+        vo.sections.every((s) => isObj(s) && isVec3(s.point) && isVec3(s.normal)), `${p}.sections`)
+    }
+    if (vo.colorByDiscipline !== undefined) need(typeof vo.colorByDiscipline === 'boolean', `${p}.colorByDiscipline`)
   })
   optStr(pr, 'activeViewId', 'presentation')
   if (o.zones !== undefined) {
