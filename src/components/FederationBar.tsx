@@ -20,7 +20,6 @@ import {
   type FacetKind, type FacetInput,
 } from '../lib/federation-index'
 import FederationFileControls from './FederationFileControls'
-import type { RestoreApply } from '../lib/federation-session'
 
 interface FederationBarProps {
   models: SceneModel[]
@@ -34,8 +33,6 @@ interface FederationBarProps {
   onPark: (ids: string[]) => void
   /** Load parked models back. */
   onUnpark: (parkedIds: string[]) => void
-  /** Apply a saved federation state to a model that just loaded. */
-  onApplyRestored: (modelId: string, apply: RestoreApply) => void
 }
 
 const fmtMB = (b: number): string => (b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} GB` : `${Math.max(0.1, b / 1024 ** 2).toFixed(1)} MB`)
@@ -53,7 +50,7 @@ const chip = 'h-[24px] max-md:h-9 px-2 rounded-[6px] border text-[10.5px] max-md
 const chipOff = 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)] hover:border-[var(--border-strong)]'
 const chipOn = 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
 
-export default function FederationBar({ models, query, onQuery, layersOpen, onLayersOpen, onSetVisible, onPark, onUnpark, onApplyRestored }: FederationBarProps) {
+export default function FederationBar({ models, query, onQuery, layersOpen, onLayersOpen, onSetVisible, onPark, onUnpark }: FederationBarProps) {
   const { t } = useTranslation('viewer')
   const disciplineById = useFederationStore((s) => s.disciplineById)
   const opacityById = useFederationStore((s) => s.opacityById)
@@ -262,7 +259,7 @@ export default function FederationBar({ models, query, onQuery, layersOpen, onLa
         </button>
       </div>
 
-      <FederationFileControls models={models} chipClass={`${chip} ${chipOff}`} onApplyRestored={onApplyRestored} />
+      <FederationFileControls variant="bar" models={models} chipClass={`${chip} ${chipOff}`} />
 
       {viewsOpen && (
         <div className="rounded-md border border-[var(--border)] p-1.5 space-y-1">

@@ -369,6 +369,8 @@
     "chooseFiles": "IFC ファイルを選択",
     "missing_one": "{{count}} 個のファイルが見つかりません。残りは読み込みました",
     "missing_other": "{{count}} 個のファイルが見つかりません。残りは読み込みました",
-    "dismiss": "閉じる"
+    "dismiss": "閉じる",
+    "openSaved": "保存したフェデレーションを開く（.ifcfed.json）",
+    "download": "ダウンロード"
   }
 }

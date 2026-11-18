@@ -373,6 +373,8 @@
     "chooseFiles": "Choose IFC files",
     "missing_one": "{{count}} file missing — the rest were loaded",
     "missing_other": "{{count}} files missing — the rest were loaded",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "openSaved": "Open a saved federation (.ifcfed.json)",
+    "download": "Download"
   }
 }

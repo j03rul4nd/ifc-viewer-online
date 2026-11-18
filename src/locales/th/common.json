@@ -369,6 +369,8 @@
     "chooseFiles": "เลือกไฟล์ IFC",
     "missing_one": "ขาด {{count}} ไฟล์ ไฟล์ที่เหลือโหลดแล้ว",
     "missing_other": "ขาด {{count}} ไฟล์ ไฟล์ที่เหลือโหลดแล้ว",
-    "dismiss": "ปิด"
+    "dismiss": "ปิด",
+    "openSaved": "เปิดชุดโมเดลรวมที่บันทึกไว้ (.ifcfed.json)",
+    "download": "ดาวน์โหลด"
   }
 }

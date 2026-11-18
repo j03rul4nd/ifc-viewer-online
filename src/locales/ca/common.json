@@ -373,6 +373,8 @@
     "chooseFiles": "Tria fitxers IFC",
     "missing_one": "Falta {{count}} fitxer; la resta s'ha carregat",
     "missing_other": "Falten {{count}} fitxers; la resta s'ha carregat",
-    "dismiss": "Tanca"
+    "dismiss": "Tanca",
+    "openSaved": "Obre una federació desada (.ifcfed.json)",
+    "download": "Descarrega"
   }
 }

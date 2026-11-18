@@ -369,6 +369,8 @@
     "chooseFiles": "选择 IFC 文件",
     "missing_one": "缺少 {{count}} 个文件，其余已加载",
     "missing_other": "缺少 {{count}} 个文件，其余已加载",
-    "dismiss": "关闭"
+    "dismiss": "关闭",
+    "openSaved": "打开已保存的联合模型（.ifcfed.json）",
+    "download": "下载"
   }
 }

@@ -373,6 +373,8 @@
     "chooseFiles": "Elegir ficheros IFC",
     "missing_one": "Falta {{count}} fichero; el resto se ha cargado",
     "missing_other": "Faltan {{count}} ficheros; el resto se ha cargado",
-    "dismiss": "Cerrar"
+    "dismiss": "Cerrar",
+    "openSaved": "Abrir una federación guardada (.ifcfed.json)",
+    "download": "Descargar"
   }
 }
