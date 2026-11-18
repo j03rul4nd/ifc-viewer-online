@@ -16,6 +16,7 @@ import { PREVIEW_FEATURE_POSTS_EN } from './blog-preview-features-en.ts'
 import { PREVIEW_FEATURE_POSTS2_EN } from './blog-preview-features2-en.ts'
 import { PREVIEW_FEATURE_POSTS3_EN } from './blog-preview-features3-en.ts'
 import { PREVIEW_FEATURE_POSTS4_EN } from './blog-preview-features4-en.ts'
+import { ASBUILT_POSTS_EN } from './blog-asbuilt-en.ts'
 
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no static imports (the translated packs at the
@@ -390,6 +391,7 @@ export interface BlogPost {
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 const EN_POSTS_SOURCE: BlogPost[] = [
+  ...ASBUILT_POSTS_EN,
   ...PREVIEW_FEATURE_POSTS4_EN,
   ...PREVIEW_FEATURE_POSTS_EN,
   ...PREVIEW_FEATURE_POSTS3_EN,

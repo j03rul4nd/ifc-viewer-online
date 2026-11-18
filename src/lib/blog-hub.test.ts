@@ -62,8 +62,10 @@ describe('blog hub discovery', () => {
       'citygml-vs-ifc-vs-3d-tiles',
       'city-open-data-browser-test',
       'real-time-city-data-freshness-test',
+      'as-built-vs-bim-point-cloud-conformance',
+      'city-digital-twin-on-phone-safari',
     ]))
-    expect(results).toHaveLength(31)
+    expect(results).toHaveLength(33)
   })
 
   it('filters by category and sorts short reads first', () => {

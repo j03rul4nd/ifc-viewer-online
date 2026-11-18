@@ -12,6 +12,495 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_FR_PACK: BlogPost[] = [
   {
+    slug: "as-built-vs-bim-point-cloud-conformance",
+    title: "Récolement vs BIM : contrôler un nuage de points face à la maquette IFC, élément par élément",
+    seoTitle: "Récolement vs BIM : nuage de points face à l'IFC",
+    seoDescription: "Comparer un relevé laser ou LiDAR mobile à la maquette IFC : recalage, tolérance, couverture, et pourquoi un élément non vu ne compte pas comme construit.",
+    excerpt: "Comparer un relevé avec la maquette semble simple : mesurer la distance, colorer. Le plus difficile est d'être honnête sur ce que le relevé n'a pas vu. La méthode pas à pas, et un aperçu du contrôle de récolement que nous développons.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Validation",
+    categorySlug: "validation",
+    readTimeMin: 8,
+    heroImage: "blog/images/ifc-point-cloud-browser-scan-to-bim-1600x900.jpg",
+    heroAlt: "Un relevé laser d'un bâtiment chargé avec sa maquette IFC dans IFC Viewer Online",
+    heroCredit: "IFC Viewer Online",
+    keywords: [
+      "récolement BIM",
+      "nuage de points IFC comparaison",
+      "contrôle de conformité chantier",
+      "écarts scan BIM",
+      "vérification récolement nuage de points",
+      "contrôle récolement LiDAR",
+      "contrôle tolérances construction",
+      "as-built vs BIM",
+      "point cloud vs IFC",
+      "construction conformance check",
+      "scan vs BIM deviation",
+      "as-built verification point cloud",
+      "LiDAR as-built check",
+      "construction tolerance check",
+    ],
+    references: [
+      {
+        id: "pricing",
+        title: "Offres IFC Viewer Online",
+        source: "IFC Viewer Online",
+        year: "2026",
+        url: "https://www.ifcvieweronline.eu/pricing/",
+        note: "Prix prévus des offres payantes, qui ne sont pas encore ouvertes.",
+      },
+      {
+        id: "e57",
+        title: "ASTM E2807, Standard Specification for 3D Imaging Data Exchange (E57)",
+        source: "ASTM International",
+        year: "2019",
+        url: "https://www.astm.org/e2807-11r19e01.html",
+        note: "Le format E57, vers lequel exportent la plupart des scanners laser. Consulté le 18 novembre 2026.",
+      },
+      {
+        id: "las",
+        title: "LAS Specification 1.4",
+        source: "ASPRS",
+        year: "2019",
+        url: "https://www.asprs.org/divisions-committees/lidar-division/laser-las-file-format-exchange-activities",
+        note: "Le format de nuage de points LAS/LAZ et ses codes de classification. Consulté le 18 novembre 2026.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Puis-je lancer le contrôle de récolement dès aujourd'hui ?",
+        a: "Pas le contrôle par élément décrit ici : il est en aperçu (preview). Aujourd'hui, vous pouvez charger votre IFC et votre nuage de points ensemble dans la visionneuse gratuite et comparer une coupe du relevé avec le plan d'étage coupé dans la maquette.",
+      },
+      {
+        q: "Qu'est-ce qui sera gratuit et qu'est-ce qui sera payant ?",
+        a: "Comparer votre propre nuage de points (E57, LAS/LAZ ou un export LiDAR de téléphone) avec l'IFC se fera dans votre navigateur, gratuitement. Transformer une vidéo de téléphone en nuage de points exige un serveur graphique : cette partie fera donc partie d'une offre payante.",
+      },
+      {
+        q: "Mon IFC est-il envoyé sur un serveur ?",
+        a: "Non. La comparaison s'exécute dans le navigateur. Dans le parcours vidéo payant, seule la vidéo est envoyée pour être transformée en nuage de points ; la maquette reste sur votre ordinateur.",
+      },
+      {
+        q: "Un relevé LiDAR de téléphone est-il assez précis ?",
+        a: "Pour repérer un mur manquant ou une ouverture mal placée, souvent oui. Pour une tolérance de quelques millimètres, non. Le contrôle est conçu pour refuser de donner un résultat lorsque la tolérance demandée est inférieure à l'erreur du relevé et de son recalage.",
+      },
+    ],
+    content: [
+      {
+        type: "callout",
+        variant: "info",
+        title: "Aperçu",
+        text: [
+          "Le contrôle de récolement par élément décrit dans cet article est en cours de développement et testé sur des scènes synthétiques. Il n'est pas encore ouvert. Charger votre propre relevé à côté de l'IFC et en comparer une coupe avec le plan d'étage est gratuit dès aujourd'hui. Les offres prévues figurent sur la ",
+          { text: "page des tarifs", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: "Vous avez la maquette IFC d'un bâtiment et un relevé de ce qui a réellement été construit. Sur le chantier, la question est simple : a-t-on construit là où c'était dessiné ? La réponse habituelle est une carte colorée des distances entre les deux. Elle est convaincante, et elle peut être fausse sans que personne ne s'en aperçoive : tout ce que le scanner n'a pas vu apparaît comme si c'était correct.",
+      },
+      {
+        type: "p",
+        text: "Cet article explique comment fonctionne un contrôle de récolement mené honnêtement : le recalage d'abord, une tolérance qui a un sens, et une frontière nette entre « construit comme modélisé », « construit ailleurs », « non construit » et « non vu ».",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Recalez le relevé sur la maquette avant de mesurer quoi que ce soit. Un relevé mal recalé ressemble exactement à un bâtiment mal construit.",
+          "La tolérance doit être supérieure à l'erreur du relevé plus l'erreur du recalage, sinon vous mesurez votre propre installation.",
+          "Chaque élément est conforme, en écart, manquant ou non observé. Non observé ne veut pas dire conforme.",
+          "Un résultat s'accompagne toujours de sa couverture : la part de la maquette que le relevé a réellement pu voir.",
+        ],
+      },
+      { type: "h2", text: "Étape 1 : placer le relevé et la maquette au même endroit" },
+      {
+        type: "p",
+        text: [
+          "Un scanner laser exporte en E57 ou LAS/LAZ",
+          { cite: "e57" },
+          " ",
+          { cite: "las" },
+          ", généralement dans les coordonnées du géomètre. Un relevé LiDAR de téléphone a sa propre origine locale. L'IFC a son propre positionnement, et parfois un géoréférencement. Avant qu'une distance ait un sens, les trois doivent être ramenés dans un même système de coordonnées.",
+        ],
+      },
+      {
+        type: "p",
+        text: "La méthode robuste consiste à choisir au moins trois points reconnaissables dans les deux, comme des angles de poteaux, des rives de dalle ou l'angle d'un escalier, et à calculer la transformation entre eux. Ce calage laisse une erreur résiduelle (la RMSE du recalage). Notez-la : elle limite tout ce qui suit.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "Le piège",
+        text: "Si le relevé est tourné d'un demi-degré, chaque mur éloigné de l'origine semble décalé de plusieurs centimètres. Une carte des écarts produite avant un recalage soigné décrit votre recalage, pas le bâtiment.",
+      },
+      { type: "h2", text: "Étape 2 : choisir une tolérance mesurable" },
+      {
+        type: "p",
+        text: "La tolérance a deux composantes. La première est la tolérance d'exécution à laquelle vous comparez : par exemple 25 mm pour un élément de structure, point de départ courant, mais c'est le marché ou le cahier des charges du projet qui décide. La seconde est l'incertitude de la mesure elle-même : la précision du scanner et la RMSE du recalage.",
+      },
+      {
+        type: "p",
+        text: "Notre règle : si la tolérance n'est pas nettement supérieure à l'erreur de recalage (nous exigeons au moins le double), le contrôle refuse de donner un résultat et explique pourquoi. Sans cette règle, un outil produit des rapports d'écarts très assurés qui ne sont que des artefacts de la consolidation.",
+      },
+      {
+        type: "table",
+        headers: ["Origine du relevé", "Usage courant", "Ce pour quoi il convient"],
+        rows: [
+          [
+            "Scanner laser terrestre (E57, LAS)",
+            "Relevés, structure, façades",
+            "Tolérances serrées, si la consolidation est bonne",
+          ],
+          [
+            "LiDAR de téléphone ou de tablette",
+            "Pièces, contrôles rapides sur chantier",
+            "Repérer des éléments manquants ou mal placés, pas des millimètres",
+          ],
+          [
+            "Nuage de points issu d'une vidéo",
+            "Visite filmée d'un chantier",
+            "Contrôles grossiers ; la précision dépend de la reconstruction",
+          ],
+        ],
+        caption: "Un repère approximatif, pas une spécification. Vérifiez la précision réellement atteinte par votre appareil et votre méthode avant de fixer une tolérance.",
+      },
+      { type: "h2", text: "Étape 3 : comparer élément par élément, pas point par point" },
+      {
+        type: "p",
+        text: "Une carte colorée des distances entre points répond à « à quelle distance ce point est-il de la surface la plus proche ». Une équipe de chantier a besoin d'une autre réponse : « ce mur est-il là où il doit être ». La comparaison part donc de la maquette. La surface de chaque élément IFC est échantillonnée en points, et pour chaque échantillon on cherche le point du relevé le plus proche. Chaque élément reçoit alors l'un de cinq états :",
+      },
+      {
+        type: "table",
+        headers: ["État", "Quand", "Ce que cela signifie"],
+        rows: [
+          [
+            "Conforme",
+            "Apparié, et 95 % de ses échantillons dans la tolérance",
+            "Construit là où le prévoit la maquette",
+          ],
+          [
+            "En écart",
+            "Apparié, mais hors tolérance",
+            "Construit, mais au mauvais endroit ou à la mauvaise dimension",
+          ],
+          [
+            "Manquant",
+            "Vu par le relevé, mais moins de 20 % apparié",
+            "Modélisé et non construit (ou pas encore)",
+          ],
+          ["Non observé", "Aucune station du relevé ne pouvait le voir", "Inconnu : impossible à noter"],
+          ["Occulté", "Dans le champ, mais caché derrière autre chose", "Inconnu : impossible à noter"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Il existe aussi le sens inverse : des points du relevé sans aucun élément IFC à proximité. Regroupés, ce sont des ouvrages construits mais non modélisés. C'est souvent la constatation la plus utile sur le chantier, et aucun validateur IFC ne peut la produire, car elle exige la réalité.",
+      },
+      { type: "h2", text: "Étape 4 : indiquer la couverture à côté du résultat" },
+      {
+        type: "p",
+        text: "C'est l'étape que la plupart des outils ignorent. Si vous relevez un angle propre pendant vingt secondes et considérez tout le reste comme correct, vous obtenez une note parfaite pour un bâtiment que vous n'avez jamais regardé. Un élément non observé n'est donc ni conforme ni non conforme. Il est inconnu, et il est compté à part.",
+      },
+      {
+        type: "p",
+        text: "Le résultat est donc toujours deux chiffres, jamais un seul : à quel point ce qui a été vu correspond, et quelle part de la maquette a été vue. Une bonne correspondance sur une petite part de la maquette n'est pas une conclusion. Notre règle : en dessous de 25 % de couverture, aucune note n'est donnée, seulement « relevé insuffisant ».",
+      },
+      { type: "h3", text: "Pourquoi un problème ne doit pas compter cent fois" },
+      {
+        type: "p",
+        text: [
+          "Si toute une dalle a été coulée 4 cm trop haut, c'est un seul problème sur le chantier, pas huit cents éléments défectueux. La note utilise la même pénalité logarithmique que notre ",
+          { text: "Health Score pour les maquettes IFC", to: "ifc-health-score-explained" },
+          " : de nombreux éléments présentant le même défaut pèsent plus qu'un seul, mais pas proportionnellement. Sinon, n'importe quel relevé réel obtiendrait zéro et la note ne servirait à rien.",
+        ],
+      },
+      { type: "h2", text: "Ce que vous pouvez faire aujourd'hui, gratuitement" },
+      {
+        type: "p",
+        text: [
+          "Chargez l'IFC et votre relevé ensemble dans la visionneuse : E57, LAS/LAZ et d'autres formats courants s'ouvrent dans le navigateur, sans rien envoyer. Le fonctionnement sur un vrai cas de scan-to-BIM est décrit dans ",
+          { text: "IFC et nuages de points dans le navigateur", to: "ifc-point-cloud-browser-scan-to-bim" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Pour une première réponse à « ce mur est-il là où il a été dessiné », coupez le relevé à une hauteur donnée et comparez-le avec le plan coupé dans la maquette : ",
+          {
+            text: "contrôler un nuage de points face au plan d'étage IFC",
+            to: "check-point-cloud-against-ifc-floor-plan",
+          },
+          ". C'est un contrôle 2D à une seule hauteur : il indique où regarder plutôt qu'il ne certifie quoi que ce soit. Pour les sols, ",
+          {
+            text: "la planéité des dalles à partir d'un nuage de points",
+            to: "point-cloud-floor-plan-slab-flatness",
+          },
+          " fonctionne de la même manière.",
+        ],
+      },
+      { type: "h2", text: "Ce qu'apportera le contrôle de récolement, et ce qu'il coûtera" },
+      {
+        type: "table",
+        headers: ["", "Gratuit (dans le navigateur)", "Offre payante (prévue)"],
+        rows: [
+          [
+            "Votre propre nuage de points (E57, LAS/LAZ, LiDAR de téléphone)",
+            "Oui : états par élément, couverture et note, calculés sur votre ordinateur",
+            "Identique",
+          ],
+          [
+            "Une vidéo de téléphone transformée en nuage de points",
+            "Non",
+            "Oui : la vidéo est traitée sur un serveur graphique",
+          ],
+          [
+            "Votre maquette IFC",
+            "Ne quitte jamais le navigateur",
+            "Ne quitte jamais le navigateur : seule la vidéo est envoyée",
+          ],
+        ],
+        caption: "Plan de la fonctionnalité, pas un engagement de dates. Les prix prévus figurent sur la page des tarifs.",
+      },
+      {
+        type: "p",
+        text: [
+          "La répartition suit une règle : tout ce qui nous coûte de l'argent à faire tourner va dans l'offre payante, et l'offre gratuite reçoit la version qui s'exécute sur votre propre machine. Traiter une vidéo exige un serveur GPU ; comparer un nuage de points que vous avez déjà, non.",
+          { cite: "pricing" },
+        ],
+      },
+      { type: "h3", text: "Ce qu'il ne fait pas encore" },
+      {
+        type: "ul",
+        items: [
+          "Il n'y a pas encore d'interface : le moteur de comparaison (échantillonnage, plus proche voisin, visibilité et note) est développé et testé uniquement sur des scènes synthétiques.",
+          "Le recalage sur trois points n'est pas développé. Tant qu'il ne l'est pas, aucune note ne sera affichée aux utilisateurs.",
+          "Il n'a pas été testé sur un vrai chantier par un client.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Si vous contrôlez des ouvrages exécutés face à des maquettes IFC et souhaitez l'essayer sur un vrai projet à son ouverture, ",
+          { text: "dites-le-nous sur la page des tarifs", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ". Pour suivre l'avancement dans le temps plutôt que la conformité, voir ",
+          {
+            text: "le suivi d'avancement 4D avec IFC et nuages de points",
+            to: "4d-construction-progress-ifc-temporal-point-cloud",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "check-point-cloud-against-ifc-floor-plan",
+        why: "Le contrôle disponible aujourd'hui : une coupe du relevé face au plan d'étage IFC, avec pourcentages et PDF.",
+      },
+      { type: "tool", id: "viewer", why: "Ouvrez votre IFC et votre relevé ensemble, dans le navigateur." },
+    ],
+    lang: "fr",
+    translationKey: "as-built-vs-bim-point-cloud-conformance",
+  },
+  {
+    slug: "city-digital-twin-on-phone-safari",
+    title: "Un jumeau numérique urbain sur votre téléphone : la démo de Barcelone dans Safari et Chrome",
+    seoTitle: "Jumeau numérique urbain sur mobile : IFC et carte 3D",
+    seoDescription: "Jumeau numérique urbain avec maquettes IFC et carte 3D sur iPhone ou Android : pourquoi Safari recharge les pages lourdes et comment rester en mémoire.",
+    excerpt: "Huit maquettes IFC de la Plaça de Catalunya sur une carte 3D de Barcelone, ouvertes depuis un lien sur un téléphone. Ce que fait Safari mobile quand une page consomme trop de mémoire, et ce que fait la visionneuse pour que le jumeau reste ouvert.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Jumeaux numériques",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    heroImage: "blog/images/barcelona-digital-twin-open-data-1600x900.jpg",
+    heroAlt: "La Plaça de Catalunya dans IFC Viewer Online : maquettes IFC sur la carte 3D de Barcelone avec les données Bicing en direct",
+    heroCredit: "IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)",
+    keywords: [
+      "jumeau numérique mobile",
+      "jumeau numérique ville smartphone",
+      "visionneuse IFC iPhone",
+      "carte 3D Safari iPhone",
+      "BIM SIG navigateur mobile",
+      "Safari page rechargée mémoire",
+      "ouvrir IFC sur téléphone",
+      "digital twin on mobile",
+      "city digital twin phone",
+      "IFC viewer iPhone",
+      "3D map Safari iPhone",
+      "BIM GIS mobile browser",
+      "Safari page reloaded memory",
+      "open IFC on phone",
+    ],
+    references: [
+      {
+        id: "webkit-memory",
+        title: "Device Memory API : compatibilité des navigateurs",
+        source: "MDN Web Docs",
+        year: "2026",
+        url: "https://developer.mozilla.org/en-US/docs/Web/API/Device_Memory_API",
+        note: "navigator.deviceMemory n'est pas disponible dans Safari : une page ne peut donc pas demander à un iPhone de combien de mémoire il dispose. Consulté le 18 novembre 2026.",
+      },
+      {
+        id: "opendata-bcn",
+        title: "Open Data BCN",
+        source: "Ajuntament de Barcelona",
+        url: "https://opendata-ajuntament.barcelona.cat/en/",
+        note: "Les flux de trafic, de recharge et de qualité de l'air de la démo, CC BY 4.0.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Faut-il une application pour ouvrir le jumeau sur un téléphone ?",
+        a: "Non. C'est une page web. Ouvrez le lien dans Safari sur iPhone ou iPad, ou dans Chrome sur Android.",
+      },
+      {
+        q: "Pourquoi Safari a-t-il rechargé la page ?",
+        a: "iOS ferme un onglet qui utilise plus de mémoire qu'il ne l'autorise, et Safari le recharge avec un bref message. La page ne reçoit aucun avertissement. Une carte 3D avec relief, bâtiments et plusieurs maquettes IFC est typiquement le genre de page qui peut atteindre cette limite.",
+      },
+      {
+        q: "Qu'est-ce que le mode carte sécurisé ?",
+        a: "Si la page a été fermée pendant le chargement de la carte 3D, le chargement suivant dans cet onglet ouvre la carte sans relief, bâtiments 3D, véhicules ni couches supplémentaires, pour éviter un nouveau plantage. Vos réglages enregistrés ne sont pas modifiés, et vous pouvez réactiver les couches.",
+      },
+      {
+        q: "Les données sont-elles réelles ?",
+        a: "Les flux en direct sont de vraies données ouvertes de Barcelone. Les maquettes IFC sont des reconstitutions illustratives réalisées à partir de sources publiques.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Un jumeau numérique qui ne s'ouvre que sur une station de travail est difficile à partager. La personne qui doit le voir est souvent sur le chantier, en réunion ou en train de lire un message sur son téléphone. Nous avons donc ouvert la démo de Barcelone, huit maquettes IFC de la Plaça de Catalunya sur une carte 3D avec des données urbaines en direct, sur des téléphones, et corrigé ce qui ne fonctionnait pas.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Le jumeau s'ouvre depuis un lien dans Safari sur iPhone et dans Chrome sur Android. Rien à installer.",
+          "iOS ferme un onglet qui consomme trop de mémoire, sans avertir la page. Safari le recharge ensuite.",
+          "Sur téléphone, la visionneuse dessine une carte plus légère : moins de tuiles gardées en mémoire, tuiles en résolution normale, un quart des objets décoratifs.",
+          "Si la carte a malgré tout fait planter l'onglet, le chargement suivant l'ouvre en mode carte sécurisé au lieu de planter à nouveau.",
+        ],
+      },
+      {
+        type: "tool-demo",
+        demo: "twin-barcelona",
+        title: "Essayez-le sur votre téléphone : Plaça de Catalunya",
+        description: "Ouvre les huit maquettes IFC sur le relief de Barcelone avec les couches en direct. Fonctionne dans Safari et Chrome sur mobile.",
+        poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
+        posterAlt: "Jumeau numérique de la Plaça de Catalunya dans IFC Viewer Online, avec les maquettes IFC sur la carte 3D de Barcelone",
+        launchLabel: "Ouvrir le jumeau en direct",
+        hint: "Sur téléphone, laissez-lui quelques secondes : le relief puis les maquettes se chargent l'un après l'autre. Open Data BCN peut mettre 15 à 40 s à répondre.",
+      },
+      { type: "h2", text: "Ce que contient la démo" },
+      {
+        type: "p",
+        text: [
+          "Huit maquettes IFC géoréférencées (une station Bicing, les fontaines, un monument, des bouches de métro, une borne de recharge) sont posées sur le relief de la place, entourées de la ville OpenStreetMap. Vélos en libre-service, recharge, trafic et qualité de l'air arrivent directement des données ouvertes de Barcelone",
+          { cite: "opendata-bcn" },
+          " dans le navigateur du visiteur. La construction de la scène est expliquée dans ",
+          {
+            text: "le jumeau numérique de Barcelone à partir de données ouvertes",
+            to: "barcelona-digital-twin-open-data",
+          },
+          ".",
+        ],
+      },
+      { type: "h2", text: "La limite invisible : la mémoire dans Safari mobile" },
+      {
+        type: "p",
+        text: "Sur un ordinateur, une page lourde devient lente. Sur un iPhone, elle est fermée. iOS attribue à chaque onglet un budget mémoire, et lorsqu'une page le dépasse, le système ferme le processus de l'onglet. La page ne reçoit ni événement ni erreur. Safari affiche un bref message indiquant que la page a été rechargée suite à un problème, et la relance depuis le début.",
+      },
+      {
+        type: "p",
+        text: [
+          "Apple ne publie pas de limite fixe, et une page web ne peut pas la demander : la Device Memory API prise en charge par Chrome n'est pas disponible dans Safari.",
+          { cite: "webkit-memory" },
+          " La visionneuse n'essaie donc pas de deviner ce chiffre. Elle traite chaque iPhone et iPad, et chaque téléphone, comme un appareil à mémoire limitée.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Ce qui remplit la mémoire d'un jumeau urbain n'est pas un seul gros élément. Ce sont les tuiles de carte conservées pour quand vous revenez en arrière, le relief, les bâtiments 3D autour des maquettes, les arbres et le mobilier urbain, et la géométrie IFC elle-même, tout cela en même temps.",
+      },
+      { type: "h2", text: "Comment la visionneuse s'adapte sur téléphone" },
+      {
+        type: "table",
+        headers: ["", "Ordinateur", "Téléphone ou tablette"],
+        rows: [
+          ["Tuiles de carte gardées en mémoire", "Jusqu'à 300", "Jusqu'à 80"],
+          ["Résolution des tuiles", "Suit la densité de l'écran", "Calculée en densité normale"],
+          ["Objets décoratifs (arbres, mobilier, bateaux)", "Tous", "Un quart"],
+          ["Géoréférencement des maquettes", "En parallèle", "Une maquette à la fois"],
+        ],
+        caption: "Ce qui change sur les appareils que la visionneuse considère comme limités en mémoire : tous les téléphones et tablettes, et les ordinateurs qui annoncent 4 Go ou moins.",
+      },
+      {
+        type: "p",
+        text: "Rien de tout cela ne supprime les maquettes ni les données en direct. Les bâtiments, le relief et l'IFC restent ; ce qui disparaît, c'est la partie de la scène qui ne fait que la décorer.",
+      },
+      { type: "h3", text: "Le mode carte sécurisé, après un plantage" },
+      {
+        type: "p",
+        text: "Même avec une carte allégée, un téléphone ancien peut manquer de mémoire. Le résultat habituel est pire que le plantage lui-même : la page se recharge, restaure les mêmes couches lourdes depuis vos réglages enregistrés, et est fermée à nouveau.",
+      },
+      {
+        type: "p",
+        text: "Juste avant le démarrage des couches lourdes, la page laisse donc une note pour cet onglet. Si la carte reste stable pendant 20 secondes, ou si vous quittez la page normalement, la note est effacée. Si la page démarre et que la note est encore là, la tentative précédente a échoué. Ce chargement s'ouvre alors en mode carte sécurisé : pas de relief, pas de bâtiments 3D, pas de véhicules, couches supplémentaires désactivées, un contexte simple. Cela ne concerne que cet onglet et cette visite ; vos réglages enregistrés ne sont pas touchés, et vous pouvez réactiver les couches une par une.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Gros fichiers IFC sur téléphone",
+        text: "Convertir un gros IFC sur le téléphone lui-même demande plusieurs fois la taille du fichier en mémoire. Au-delà de 80 Mo, la visionneuse vous prévient avant de commencer. Cela ne concerne pas la démo : ses maquettes sont légères.",
+      },
+      { type: "h2", text: "Conseils pour ouvrir un jumeau sur téléphone" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Fermez les autres onglets lourds",
+            body: "Les onglets se partagent la mémoire du téléphone. Une carte ou une vidéo dans un autre onglet en laisse moins pour le jumeau.",
+          },
+          {
+            title: "Commencez par les maquettes, puis ajoutez des couches",
+            body: "Ouvrez la scène, attendez les maquettes, puis activez les bâtiments 3D ou les couches supplémentaires si vous en avez besoin.",
+          },
+          {
+            title: "Passez en paysage pour la carte",
+            body: "La place tient mieux à l'écran, et les panneaux occupent moins de place.",
+          },
+          {
+            title: "Si Safari recharge, laissez le mode sécurisé se charger",
+            body: "Activez ensuite uniquement la couche dont vous avez besoin pour ce que vous voulez montrer.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Ouvrir votre propre IFC sur un téléphone fonctionne de la même façon, sans la ville autour. Sur les téléphones pliables, la maquette et ses données peuvent occuper des écrans séparés : voir ",
+          { text: "une visionneuse IFC pour téléphones pliables", to: "foldable-phone-ifc-viewer" },
+          ". Pour comprendre ce qui fait d'un jumeau urbain plus qu'une carte 3D, lisez ",
+          {
+            text: "ce qu'est un jumeau numérique urbain, avec des exemples en direct",
+            to: "urban-digital-twin-live-examples",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "barcelona-digital-twin-open-data",
+        why: "Comment la scène de Barcelone est construite : les maquettes, les quatre flux ouverts et les liaisons qui les colorent.",
+      },
+      { type: "tool", id: "viewer", why: "Ouvrez votre propre IFC sur un téléphone, dans le navigateur." },
+    ],
+    lang: "fr",
+    translationKey: "city-digital-twin-on-phone-safari",
+  },
+  {
     slug: "bim-project-email-templates",
     title: "Dix modèles d'e-mails pour la coordination BIM, chacun écrit pour un seul destinataire",
     seoTitle: "Modèles d'e-mails BIM : un message par destinataire",
@@ -4376,6 +4865,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         ],
       },
       { type: "tool", id: "viewer", why: "Chargez un IFC et un nuage, puis ouvrez Plans." },
+      { type: "related", to: "as-built-vs-bim-point-cloud-conformance" },
     ],
     lang: "fr",
     translationKey: "check-point-cloud-against-ifc-floor-plan",
@@ -9407,6 +9897,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
         why: "De quoi se compose un jumeau numérique urbain, et comment celui-ci se compare à ceux d'Helsinki et de Tokyo.",
       },
       { type: "tool", id: "embed", why: "Générez le code d'intégration pour votre propre maquette ou scène." },
+      { type: "related", to: "city-digital-twin-on-phone-safari" },
     ],
     lang: "fr",
     translationKey: "barcelona-digital-twin-open-data",

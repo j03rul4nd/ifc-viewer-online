@@ -12,6 +12,490 @@ import type { BlogPost } from '../blog-posts'
 
 export const BLOG_POSTS_ES_PACK: BlogPost[] = [
   {
+    slug: "as-built-vs-bim-point-cloud-conformance",
+    title: "As-built frente a BIM: cómo comprobar una nube de puntos contra el modelo IFC, elemento a elemento",
+    seoTitle: "As-built vs BIM: nube de puntos frente a IFC",
+    seoDescription: "Cómo comparar un escaneo láser o LiDAR del móvil con el modelo IFC: alineación, tolerancia, cobertura y por qué lo no visto no cuenta como construido.",
+    excerpt: "Comparar un escaneo con el modelo parece sencillo: mides la distancia y la coloreas. Lo difícil es ser honesto con lo que el escáner no vio. El método paso a paso y un adelanto (preview) de la comprobación as-built que estamos construyendo.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Validación",
+    categorySlug: "validation",
+    readTimeMin: 8,
+    heroImage: "blog/images/ifc-point-cloud-browser-scan-to-bim-1600x900.jpg",
+    heroAlt: "Un escaneo láser de un edificio cargado junto a su modelo IFC en IFC Viewer Online",
+    heroCredit: "IFC Viewer Online",
+    keywords: [
+      "as-built vs BIM",
+      "nube de puntos vs IFC",
+      "control de conformidad en obra",
+      "desviaciones escaneo vs BIM",
+      "verificación as-built con nube de puntos",
+      "comprobación as-built con LiDAR",
+      "control de tolerancias en obra",
+      "point cloud vs IFC",
+      "construction conformance check",
+      "scan vs BIM deviation",
+      "as-built verification point cloud",
+      "LiDAR as-built check",
+      "construction tolerance check",
+    ],
+    references: [
+      {
+        id: "pricing",
+        title: "Planes de IFC Viewer Online",
+        source: "IFC Viewer Online",
+        year: "2026",
+        url: "https://www.ifcvieweronline.eu/pricing/",
+        note: "Precios previstos de los planes de pago, que aún no están abiertos.",
+      },
+      {
+        id: "e57",
+        title: "ASTM E2807, Standard Specification for 3D Imaging Data Exchange (E57)",
+        source: "ASTM International",
+        year: "2019",
+        url: "https://www.astm.org/e2807-11r19e01.html",
+        note: "El formato E57, al que exportan la mayoría de escáneres láser. Consultado el 18 de noviembre de 2026.",
+      },
+      {
+        id: "las",
+        title: "LAS Specification 1.4",
+        source: "ASPRS",
+        year: "2019",
+        url: "https://www.asprs.org/divisions-committees/lidar-division/laser-las-file-format-exchange-activities",
+        note: "El formato de nube de puntos LAS/LAZ y sus códigos de clasificación. Consultado el 18 de noviembre de 2026.",
+      },
+    ],
+    faqs: [
+      {
+        q: "¿Puedo usar ya la comprobación as-built?",
+        a: "La comprobación por elemento que se describe aquí no: está en preview. Hoy puedes cargar tu IFC y tu nube de puntos juntos en el visor gratuito y comparar un corte del escaneo con la planta obtenida del modelo.",
+      },
+      {
+        q: "¿Qué será gratis y qué será de pago?",
+        a: "Comparar tu propia nube de puntos (E57, LAS/LAZ o una exportación LiDAR del móvil) con el IFC se hará en tu navegador, gratis. Convertir un vídeo del móvil en nube de puntos necesita un servidor gráfico, así que esa parte irá en un plan de pago.",
+      },
+      {
+        q: "¿Se sube mi IFC?",
+        a: "No. La comparación se hace en el navegador. En la opción de pago con vídeo solo se envía el vídeo para convertirlo en nube de puntos; el modelo se queda en tu ordenador.",
+      },
+      {
+        q: "¿Es suficientemente preciso un escaneo LiDAR del móvil?",
+        a: "Para encontrar un muro que falta o un hueco mal situado, a menudo sí. Para una tolerancia de pocos milímetros, no. La comprobación está pensada para negarse a dar un resultado cuando la tolerancia que pides es menor que el error del escaneo y de su alineación.",
+      },
+    ],
+    content: [
+      {
+        type: "callout",
+        variant: "info",
+        title: "Preview",
+        text: [
+          "La comprobación as-built por elemento que describe este artículo está en desarrollo y se está probando con escenas sintéticas. Todavía no está abierta. Cargar tu propio escaneo junto al IFC y comparar un corte con la planta ya es gratis hoy. Los planes previstos están en la ",
+          { text: "página de precios", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: "Tienes el modelo IFC de un edificio y un escaneo de lo que realmente se construyó. La pregunta en obra es simple: ¿se construyó donde estaba dibujado? La respuesta habitual es un mapa de colores con las distancias entre ambos. Parece convincente, y puede estar mal sin que nadie lo note: todo lo que el escáner no vio aparece como si estuviera bien.",
+      },
+      {
+        type: "p",
+        text: "Este artículo explica cómo funciona una comprobación as-built hecha con honestidad: primero la alineación, una tolerancia que signifique algo y una frontera clara entre «construido según modelo», «construido en otro sitio», «no construido» y «no visto».",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "Alinea el escaneo con el modelo antes de medir nada. Un escaneo mal alineado parece exactamente un edificio mal construido.",
+          "La tolerancia tiene que ser mayor que el error del escaneo más el error de la alineación; si no, estás midiendo tu propio montaje.",
+          "Cada elemento es conforme, desviado, ausente o no observado. No observado no es lo mismo que conforme.",
+          "Un resultado siempre va acompañado de su cobertura: la parte del modelo que el escaneo pudo ver realmente.",
+        ],
+      },
+      { type: "h2", text: "Paso 1: pon el escaneo y el modelo en el mismo sitio" },
+      {
+        type: "p",
+        text: [
+          "Un escáner láser exporta E57 o LAS/LAZ",
+          { cite: "e57" },
+          " ",
+          { cite: "las" },
+          ", normalmente en las coordenadas del topógrafo. Un escaneo LiDAR del móvil tiene su propio origen local. El IFC tiene su propia ubicación y, a veces, una georreferenciación. Antes de que una distancia signifique algo, hay que llevar los tres a un único sistema de coordenadas.",
+        ],
+      },
+      {
+        type: "p",
+        text: "La forma robusta es elegir al menos tres puntos que reconozcas en ambos, como esquinas de pilares, bordes de forjado o la esquina de una escalera, y ajustar la transformación entre ellos. El ajuste deja un error residual (el RMSE de la alineación). Anótalo: limita todo lo que viene después.",
+      },
+      {
+        type: "callout",
+        variant: "warning",
+        title: "La trampa",
+        text: "Si el escaneo está girado medio grado, cada muro lejos del origen parece desplazado varios centímetros. Un mapa de desviaciones hecho antes de una alineación cuidadosa informa de tu alineación, no del edificio.",
+      },
+      { type: "h2", text: "Paso 2: elige una tolerancia que se pueda medir" },
+      {
+        type: "p",
+        text: "La tolerancia tiene dos partes. Una es la tolerancia de ejecución contra la que compruebas: por ejemplo 25 mm para un elemento estructural, que es un punto de partida habitual, aunque lo decide el contrato o el pliego del proyecto. La otra es la incertidumbre de la propia medición: la precisión del escáner y el RMSE de la alineación.",
+      },
+      {
+        type: "p",
+        text: "La regla que usamos: si la tolerancia no es claramente mayor que el error de alineación (exigimos al menos el doble), la comprobación se niega a dar un resultado y explica por qué. Sin esa regla, una herramienta produce informes de desviaciones muy seguros que en realidad son artefactos del registro.",
+      },
+      {
+        type: "table",
+        headers: ["Origen del escaneo", "Uso típico", "Para qué sirve"],
+        rows: [
+          [
+            "Escáner láser terrestre (E57, LAS)",
+            "Levantamientos, estructura, fachadas",
+            "Tolerancias estrictas, si el registro es bueno",
+          ],
+          [
+            "LiDAR de móvil o tableta",
+            "Estancias, comprobaciones rápidas en obra",
+            "Encontrar elementos ausentes o mal situados, no milímetros",
+          ],
+          [
+            "Nube de puntos a partir de un vídeo",
+            "Recorrido por la obra",
+            "Comprobaciones gruesas; la precisión depende de la reconstrucción",
+          ],
+        ],
+        caption: "Una guía aproximada, no una especificación. Comprueba la precisión que consiguen tu dispositivo y tu flujo de trabajo antes de fijar una tolerancia.",
+      },
+      { type: "h2", text: "Paso 3: compara elemento a elemento, no punto a punto" },
+      {
+        type: "p",
+        text: "Un mapa de colores de distancias entre puntos responde a «a qué distancia está este punto de la superficie más cercana». Un equipo de obra necesita otra respuesta: «¿está este muro donde debe estar?». Por eso la comparación parte del modelo. La superficie de cada elemento IFC se muestrea en puntos y, para cada muestra, se busca el punto del escaneo más cercano. Después, cada elemento recibe uno de cinco estados:",
+      },
+      {
+        type: "table",
+        headers: ["Estado", "Cuándo", "Qué significa"],
+        rows: [
+          [
+            "Conforme",
+            "Emparejado, y el 95% de sus muestras dentro de tolerancia",
+            "Construido donde dice el modelo",
+          ],
+          [
+            "Desviado",
+            "Emparejado, pero fuera de tolerancia",
+            "Construido, pero en otro sitio o con otro tamaño",
+          ],
+          [
+            "Ausente",
+            "Visto por el escaneo, pero con menos del 20% emparejado",
+            "Modelado y no construido (o aún no construido)",
+          ],
+          ["No observado", "Ninguna posición de escaneo podía verlo", "Desconocido: no se puede puntuar"],
+          ["Ocluido", "En el campo de visión, pero tapado por algo", "Desconocido: no se puede puntuar"],
+        ],
+      },
+      {
+        type: "p",
+        text: "También existe la dirección contraria: puntos del escaneo sin ningún elemento IFC cerca. Agrupados, son cosas que se construyeron pero no se modelaron. Suele ser el hallazgo más útil en obra, y ningún validador IFC puede producirlo, porque necesita la realidad.",
+      },
+      { type: "h2", text: "Paso 4: informa de la cobertura junto al resultado" },
+      {
+        type: "p",
+        text: "Esta es la parte que la mayoría de herramientas se salta. Si escaneas una esquina limpia durante veinte segundos y das todo lo demás por bueno, obtienes una puntuación perfecta para un edificio que nunca has mirado. Por eso un elemento no observado no es ni conforme ni no conforme. Es desconocido y se cuenta aparte.",
+      },
+      {
+        type: "p",
+        text: "Por tanto, el resultado son siempre dos números, nunca uno: cuánto coincide lo que se vio y cuánto del modelo se vio. Una buena coincidencia sobre una parte pequeña del modelo no es una conclusión. Nuestra regla es que por debajo del 25% de cobertura no hay puntuación, solo «captura insuficiente».",
+      },
+      { type: "h3", text: "Por qué un problema no debe contar cien veces" },
+      {
+        type: "p",
+        text: [
+          "Si se hormigonó un forjado entero 4 cm más alto, es un problema en obra, no ochocientos elementos defectuosos. La puntuación usa la misma penalización logarítmica que nuestro ",
+          { text: "Health Score para modelos IFC", to: "health-score-ifc-que-es" },
+          ": muchos elementos con el mismo problema pesan más que uno, pero no de forma proporcional. Si no, cualquier captura real puntuaría cero y el número no serviría para nada.",
+        ],
+      },
+      { type: "h2", text: "Lo que puedes hacer hoy, gratis" },
+      {
+        type: "p",
+        text: [
+          "Carga el IFC y tu escaneo juntos en el visor: E57, LAS/LAZ y otros formatos habituales se abren en el navegador, sin subir nada. Cómo funciona en un caso real de scan-to-BIM lo cuenta ",
+          { text: "IFC y nubes de puntos en el navegador", to: "ifc-nube-de-puntos-scan-to-bim-navegador" },
+          ".",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Para una primera respuesta a «¿está este muro donde se dibujó?», corta el escaneo a una altura y compáralo con la planta obtenida del modelo: ",
+          {
+            text: "comprobar una nube de puntos contra la planta del IFC",
+            to: "check-point-cloud-against-ifc-floor-plan",
+          },
+          ". Es una comprobación 2D a una sola altura, así que te dice dónde mirar, no certifica nada. Para suelos, ",
+          {
+            text: "la planeidad de forjados a partir de una nube de puntos",
+            to: "point-cloud-floor-plan-slab-flatness",
+          },
+          " funciona igual.",
+        ],
+      },
+      { type: "h2", text: "Qué añadirá la comprobación as-built y cuánto costará" },
+      {
+        type: "table",
+        headers: ["", "Gratis (en el navegador)", "Plan de pago (previsto)"],
+        rows: [
+          [
+            "Tu propia nube de puntos (E57, LAS/LAZ, LiDAR del móvil)",
+            "Sí: estados por elemento, cobertura y puntuación, calculados en tu ordenador",
+            "Igual",
+          ],
+          [
+            "Un vídeo del móvil convertido en nube de puntos",
+            "No",
+            "Sí: el vídeo se procesa en un servidor gráfico",
+          ],
+          ["Tu modelo IFC", "Nunca sale del navegador", "Nunca sale del navegador: solo se envía el vídeo"],
+        ],
+        caption: "Plan de la funcionalidad, no un compromiso de fechas. Los precios previstos están en la página de precios.",
+      },
+      {
+        type: "p",
+        text: [
+          "El reparto sigue una regla: lo que nos cuesta dinero ejecutar va al plan de pago, y el plan gratuito recibe la versión que funciona en tu propio equipo. Procesar vídeo necesita un servidor con GPU; comparar una nube de puntos que ya tienes, no.",
+          { cite: "pricing" },
+        ],
+      },
+      { type: "h3", text: "Lo que todavía no hace" },
+      {
+        type: "ul",
+        items: [
+          "Aún no hay interfaz: el motor de comparación (muestreo, vecino más cercano, visibilidad y puntuación) está construido y probado solo con escenas sintéticas.",
+          "La alineación por tres puntos no está construida. Hasta que lo esté, no se mostrará ninguna puntuación a los usuarios.",
+          "No se ha probado en una obra real con un cliente.",
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Si compruebas el as-built contra modelos IFC y quieres probarlo en un proyecto real cuando se abra, ",
+          { text: "cuéntanoslo en la página de precios", href: "https://www.ifcvieweronline.eu/pricing/" },
+          ". Para el avance en el tiempo en lugar de la conformidad, consulta ",
+          {
+            text: "el avance de obra 4D con IFC y nubes de puntos",
+            to: "progreso-obra-4d-ifc-nube-puntos-temporal",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "check-point-cloud-against-ifc-floor-plan",
+        why: "La comprobación que puedes hacer hoy: un corte del escaneo contra la planta del IFC, con porcentajes y un PDF.",
+      },
+      { type: "tool", id: "viewer", why: "Abre tu IFC y tu escaneo juntos, en el navegador." },
+    ],
+    lang: "es",
+    translationKey: "as-built-vs-bim-point-cloud-conformance",
+  },
+  {
+    slug: "city-digital-twin-on-phone-safari",
+    title: "Un gemelo digital de ciudad en tu móvil: la demo de Barcelona en Safari y Chrome",
+    seoTitle: "Gemelo digital urbano en el móvil: IFC y mapa 3D",
+    seoDescription: "Abre un gemelo digital de ciudad con modelos IFC y mapa 3D en iPhone o Android, por qué Safari recarga páginas pesadas y cómo el visor ahorra memoria.",
+    excerpt: "Ocho modelos IFC de la plaza de Catalunya sobre un mapa 3D de Barcelona, abiertos desde un enlace en el móvil. Qué hace Safari en móvil cuando una página usa demasiada memoria y qué hace el visor para que el gemelo siga abierto.",
+    date: "2026-11-18",
+    dateModified: "2026-11-18",
+    author: "IFC Viewer Online",
+    category: "Gemelos digitales",
+    categorySlug: "digital-twins",
+    readTimeMin: 6,
+    heroImage: "blog/images/barcelona-digital-twin-open-data-1600x900.jpg",
+    heroAlt: "La plaza de Catalunya en IFC Viewer Online: modelos IFC sobre el mapa 3D de Barcelona con datos de Bicing en directo",
+    heroCredit: "IFC Viewer Online · map data © OpenStreetMap contributors (ODbL)",
+    keywords: [
+      "gemelo digital en el móvil",
+      "gemelo digital urbano móvil",
+      "visor IFC iPhone",
+      "mapa 3D Safari iPhone",
+      "BIM GIS navegador móvil",
+      "Safari recarga la página memoria",
+      "abrir IFC en el móvil",
+      "digital twin on mobile",
+      "city digital twin phone",
+      "IFC viewer iPhone",
+      "3D map Safari iPhone",
+      "BIM GIS mobile browser",
+      "Safari page reloaded memory",
+      "open IFC on phone",
+    ],
+    references: [
+      {
+        id: "webkit-memory",
+        title: "Device Memory API: browser compatibility",
+        source: "MDN Web Docs",
+        year: "2026",
+        url: "https://developer.mozilla.org/en-US/docs/Web/API/Device_Memory_API",
+        note: "navigator.deviceMemory no está disponible en Safari, así que una página no puede preguntar a un iPhone cuánta memoria tiene. Consultado el 18 de noviembre de 2026.",
+      },
+      {
+        id: "opendata-bcn",
+        title: "Open Data BCN",
+        source: "Ajuntament de Barcelona",
+        url: "https://opendata-ajuntament.barcelona.cat/en/",
+        note: "Los datos de tráfico, recarga y calidad del aire de la demo, CC BY 4.0.",
+      },
+    ],
+    faqs: [
+      {
+        q: "¿Necesito una app para abrir el gemelo en el móvil?",
+        a: "No. Es una página web. Abre el enlace en Safari en un iPhone o iPad, o en Chrome en Android.",
+      },
+      {
+        q: "¿Por qué Safari ha recargado la página?",
+        a: "iOS cierra una pestaña que usa más memoria de la que permite, y Safari la recarga con un breve aviso. La página no recibe ninguna advertencia. Un mapa 3D con relieve, edificios y varios modelos IFC es el tipo de página que puede llegar a ese límite.",
+      },
+      {
+        q: "¿Qué es el modo de mapa seguro?",
+        a: "Si la página se cerró mientras cargaba el mapa 3D, la siguiente carga en esa pestaña abre el mapa sin relieve, edificios 3D, vehículos ni capas extra, para que no vuelva a fallar. Tus ajustes guardados no cambian y puedes volver a activar las capas.",
+      },
+      {
+        q: "¿Los datos son reales?",
+        a: "Los datos en directo son datos abiertos reales de Barcelona. Los modelos IFC son reconstrucciones ilustrativas hechas a partir de fuentes públicas.",
+      },
+    ],
+    content: [
+      {
+        type: "p",
+        text: "Un gemelo digital que solo se abre en una estación de trabajo es difícil de compartir. Quien necesita verlo suele estar en obra, en una reunión o leyendo un mensaje en el móvil. Así que abrimos en móviles la demo de Barcelona, ocho modelos IFC de la plaza de Catalunya sobre un mapa 3D con datos de la ciudad en directo, y arreglamos lo que fallaba.",
+      },
+      {
+        type: "takeaways",
+        items: [
+          "El gemelo se abre desde un enlace en Safari en iPhone y en Chrome en Android. No hay nada que instalar.",
+          "iOS cierra una pestaña que usa demasiada memoria sin avisar a la página. Después Safari la recarga.",
+          "En móviles el visor dibuja un mapa más ligero: menos teselas del mapa en memoria, teselas a resolución normal y una cuarta parte de los objetos decorativos.",
+          "Si aun así el mapa tumbó la pestaña, la siguiente carga lo abre en modo de mapa seguro en lugar de volver a fallar.",
+        ],
+      },
+      {
+        type: "tool-demo",
+        demo: "twin-barcelona",
+        title: "Pruébalo en tu móvil: plaza de Catalunya",
+        description: "Abre los ocho modelos IFC sobre el relieve de Barcelona con las capas en directo. Funciona en Safari y Chrome para móvil.",
+        poster: "blog/images/barcelona-digital-twin-open-data-capture.jpg",
+        posterAlt: "Gemelo digital de la plaza de Catalunya en IFC Viewer Online, con modelos IFC sobre el mapa 3D de Barcelona",
+        launchLabel: "Abrir el gemelo en directo",
+        hint: "En el móvil, dale unos segundos: el relieve y los modelos se cargan uno tras otro. Open Data BCN puede tardar entre 15 y 40 s en responder.",
+      },
+      { type: "h2", text: "Qué hay en la demo" },
+      {
+        type: "p",
+        text: [
+          "Ocho modelos IFC georreferenciados (una estación de Bicing, las fuentes, un monumento, accesos de metro, un cargador de vehículos eléctricos) se apoyan en el relieve de la plaza, con la ciudad de OpenStreetMap alrededor. La bici compartida, la recarga, el tráfico y la calidad del aire llegan directamente de los datos abiertos de Barcelona",
+          { cite: "opendata-bcn" },
+          " al navegador del visitante. Cómo se construye la escena lo explica ",
+          {
+            text: "el gemelo digital de Barcelona con datos abiertos",
+            to: "barcelona-digital-twin-open-data",
+          },
+          ".",
+        ],
+      },
+      { type: "h2", text: "El límite que no ves: la memoria en Safari para móvil" },
+      {
+        type: "p",
+        text: "En un ordenador, una página pesada se vuelve lenta. En un iPhone, se cierra. iOS da a cada pestaña un presupuesto de memoria y, cuando una página lo supera, el sistema cierra el proceso de la pestaña. La página no recibe ningún evento ni error. Safari muestra un breve aviso de que la página se ha recargado porque se ha producido un problema, y la vuelve a cargar desde el principio.",
+      },
+      {
+        type: "p",
+        text: [
+          "Apple no publica un límite fijo y una página web no puede preguntarlo: la Device Memory API que admite Chrome no está disponible en Safari.",
+          { cite: "webkit-memory" },
+          " Así que el visor no intenta adivinar la cifra. Trata cada iPhone y iPad, y cada móvil, como un dispositivo con poca memoria.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Lo que llena la memoria en un gemelo urbano no es una sola cosa grande. Son las teselas del mapa guardadas por si vuelves atrás, el relieve, los edificios 3D alrededor de los modelos, los árboles y el mobiliario urbano, y la propia geometría IFC, todo a la vez.",
+      },
+      { type: "h2", text: "Cómo se adapta el visor en el móvil" },
+      {
+        type: "table",
+        headers: ["", "Ordenador", "Móvil o tableta"],
+        rows: [
+          ["Teselas del mapa en memoria", "Hasta 300", "Hasta 80"],
+          ["Resolución de las teselas", "Según la densidad de la pantalla", "Calculada a densidad normal"],
+          ["Objetos decorativos (árboles, mobiliario, barcos)", "Completos", "Una cuarta parte"],
+          ["Georreferenciación de los modelos", "En paralelo", "Un modelo cada vez"],
+        ],
+        caption: "Lo que cambia en los dispositivos que el visor considera con poca memoria: todos los móviles y tabletas, y los ordenadores que indican 4 GB o menos.",
+      },
+      {
+        type: "p",
+        text: "Nada de esto elimina los modelos ni los datos en directo. Los edificios, el relieve y el IFC se mantienen; lo que se va es la parte de la escena que solo la decora.",
+      },
+      { type: "h3", text: "Modo de mapa seguro, tras un cierre" },
+      {
+        type: "p",
+        text: "Incluso con un mapa más ligero, un móvil antiguo puede quedarse sin memoria. Lo habitual es algo peor que el propio cierre: la página se recarga, restaura las mismas capas pesadas desde tus ajustes guardados y vuelve a cerrarse.",
+      },
+      {
+        type: "p",
+        text: "Por eso, justo antes de que arranquen las capas pesadas, la página deja una nota para esa pestaña. Si el mapa se mantiene estable 20 segundos, o sales de la página con normalidad, la nota se borra. Si la página arranca y la nota sigue ahí, el intento anterior murió. Esa carga se abre en modo de mapa seguro: sin relieve, sin edificios 3D, sin vehículos, con las capas extra desactivadas y un contexto sencillo. Solo afecta a esa pestaña y a esa visita; tus ajustes guardados no se tocan y puedes volver a activar las capas una a una.",
+      },
+      {
+        type: "callout",
+        variant: "info",
+        title: "Archivos IFC grandes en el móvil",
+        text: "Convertir un IFC grande en el propio móvil requiere varias veces el tamaño del archivo en memoria. Por encima de 80 MB el visor te avisa antes de empezar. En la demo no ocurre: sus modelos son pequeños.",
+      },
+      { type: "h2", text: "Consejos para abrir un gemelo en el móvil" },
+      {
+        type: "steps",
+        items: [
+          {
+            title: "Cierra otras pestañas pesadas",
+            body: "Las pestañas comparten la memoria del móvil. Un mapa o un vídeo en otra pestaña deja menos para el gemelo.",
+          },
+          {
+            title: "Empieza por los modelos y después añade capas",
+            body: "Abre la escena, espera a los modelos y luego activa los edificios 3D o las capas extra si los necesitas.",
+          },
+          {
+            title: "Usa el modo horizontal para el mapa",
+            body: "Cabe más plaza y los paneles ocupan menos parte de la vista.",
+          },
+          {
+            title: "Si Safari recarga, deja que cargue el modo seguro",
+            body: "Después activa solo la capa que necesites para lo que quieras mostrar.",
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: [
+          "Abrir tu propio IFC en el móvil funciona igual, sin la ciudad alrededor. En los móviles plegables, el modelo y sus datos pueden ir en pantallas separadas: consulta ",
+          { text: "un visor IFC para móviles plegables", to: "foldable-phone-ifc-viewer" },
+          ". Para saber qué hace que un gemelo urbano sea más que un mapa 3D, lee ",
+          {
+            text: "qué es un gemelo digital urbano, con ejemplos en directo",
+            to: "urban-digital-twin-live-examples",
+          },
+          ".",
+        ],
+      },
+      {
+        type: "related",
+        to: "barcelona-digital-twin-open-data",
+        why: "Cómo se construye la escena de Barcelona: los modelos, los cuatro flujos de datos abiertos y los vínculos que los colorean.",
+      },
+      { type: "tool", id: "viewer", why: "Abre tu propio IFC en el móvil, en el navegador." },
+    ],
+    lang: "es",
+    translationKey: "city-digital-twin-on-phone-safari",
+  },
+  {
     slug: "bim-project-email-templates",
     title: "Diez plantillas de correo para la coordinación BIM, cada una escrita para un solo lector",
     seoTitle: "Plantillas de correo BIM para cada destinatario",
@@ -4317,6 +4801,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         ],
       },
       { type: "tool", id: "viewer", why: "Carga un IFC y una nube, y abre Planos." },
+      { type: "related", to: "as-built-vs-bim-point-cloud-conformance" },
     ],
     lang: "es",
     translationKey: "check-point-cloud-against-ifc-floor-plan",
@@ -9359,6 +9844,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         why: "De qué se compone un gemelo digital urbano y cómo se compara este con los de Helsinki y Tokio.",
       },
       { type: "tool", id: "embed", why: "Genera el código de incrustación para tu propio modelo o escena." },
+      { type: "related", to: "city-digital-twin-on-phone-safari" },
     ],
     lang: "es",
     translationKey: "barcelona-digital-twin-open-data",

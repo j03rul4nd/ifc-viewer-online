@@ -181,6 +181,7 @@ export const TWIN_POSTS_EN: BlogPost[] = [
       { type: 'p', text: ['The same embed works on a project website, an intranet page or a CDE panel. The full set of parameters is in ', { text: 'how to embed an IFC viewer', to: 'embed-ifc-viewer-website' }, '. The same approach with other data is in ', { text: 'live buses on an IFC bus terminal over MQTT', to: 'bus-terminal-digital-twin-mqtt' }, ' and ', { text: 'Tokyo station twins from ODPT data', to: 'tokyo-transit-digital-twin-odpt' }, '.'] },
       { type: 'related', to: 'urban-digital-twin-live-examples', why: 'What an urban digital twin is made of, and how this one compares with Helsinki and Tokyo.' },
       { type: 'tool', id: 'embed', why: 'Generate the embed code for your own model or scene.' },
+      { type: 'related', to: 'city-digital-twin-on-phone-safari' },
     ],
   },
 

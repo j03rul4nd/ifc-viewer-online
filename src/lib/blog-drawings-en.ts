@@ -135,6 +135,7 @@ export const DRAWINGS_POSTS_EN: BlogPost[] = [
       { type: 'p', text: 'The percentages count grid cells, not wall length. Clutter inflates the red share, and only one height is checked, so a leaning wall can pass at 1.2 m and fail at 2.4 m. Run two or three heights if that matters.' },
       { type: 'p', text: ['The same slice works alone, with no model: it gives you a ', { text: 'floor plan from a point cloud', to: 'point-cloud-floor-plan-slab-flatness' }, ' to trace over.'] },
       { type: 'tool', id: 'viewer', why: 'Load an IFC and a scan, then open Drawings.' },
+      { type: 'related', to: 'as-built-vs-bim-point-cloud-conformance' },
     ],
   },
 ]
