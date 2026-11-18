@@ -18,3 +18,5 @@ Panel UI (T-405), running the worker.
 ## Formato de vuelta (obligatorio, ≤ 250 palabras)
 STATUS: done|partial|blocked · CAMBIOS · VERIFICADO (pasa/falla + cifra) · RIESGOS/DUDAS (≤3) · SIGUIENTE
 ## Informe
+
+- 2026-11-18: i18n `align.reason.pointPairs` added to 10 pointcloud locales (cb65dced). tsc exit 0; vitest asbuilt+locales+i18n 29 files / 241 tests green.
