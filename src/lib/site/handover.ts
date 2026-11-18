@@ -3,6 +3,7 @@
 // readings, keys and both signatures. A defect becomes a snag tied to the unit.
 // Pure data, no browser APIs. Labels are i18n keys resolved by the UI.
 
+import { localDate } from './local-date'
 import { createSnag, type Snag } from './snags'
 import { normalizeUnitId } from './units'
 
@@ -87,7 +88,7 @@ export interface HandoverUnit { id: string; name: string; buyer?: string; rooms?
 export function createHandover(unit: HandoverUnit, now: Date = new Date(), id = newHandoverId(now.getTime())): Handover {
   const at = now.toISOString()
   return {
-    id, unitId: unit.id, unitName: unit.name, date: at.slice(0, 10), buyerName: unit.buyer?.trim() ?? '',
+    id, unitId: unit.id, unitName: unit.name, date: localDate(now), buyerName: unit.buyer?.trim() ?? '',
     attendees: [], checklist: defaultChecklist(unit.rooms), meterReadings: {}, keysDelivered: { count: 0, types: '' },
     signatures: {}, status: 'draft', createdAt: at, updatedAt: at,
   }

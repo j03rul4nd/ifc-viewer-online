@@ -1,6 +1,6 @@
 // ─── SiteHub ──────────────────────────────────────────────────────────────────
-// The "Site" tab of the sidebar (desktop column and mobile sheet alike): three
-// sub-tabs — snags, units, progress — each lazy-loaded. Owns what they share:
+// The "Site" tab of the sidebar (desktop column and mobile sheet alike): five
+// sub-tabs — snags, units, progress, inspections, daily report — each lazy-loaded. Owns what they share:
 // the project key (siteProjectKey, the same one unit-store uses), the current
 // selection with its GlobalId, and the progress element index, read in batches
 // with progress and aborted when the models change. Everything stays in this
@@ -21,6 +21,8 @@ import { loadSnags } from '../../lib/site/snag-store'
 const SnagPanel = React.lazy(() => import('./SnagPanel'))
 const UnitsPanel = React.lazy(() => import('./UnitsPanel'))
 const ProgressPanel = React.lazy(() => import('./ProgressPanel'))
+const InspectionPanel = React.lazy(() => import('./InspectionPanel'))
+const DailyReportPanel = React.lazy(() => import('./DailyReportPanel'))
 
 interface Props {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -97,14 +99,14 @@ export default function SiteHub({ viewerApiRef, selected }: Props) {
   const onOpened = useCallback(() => requestOpenSnag(null), [requestOpenSnag])
   const progressSelection = useMemo(() => (selection ? [selection] : []), [selection])
 
-  const tabs: Array<[SiteTab, string]> = [['snags', t('tabSnags')], ['units', t('tabUnits')], ['progress', t('tabProgress')]]
+  const tabs: Array<[SiteTab, string]> = [['snags', t('tabSnags')], ['units', t('tabUnits')], ['progress', t('tabProgress')], ['inspections', t('tabInspections')], ['daily', t('tabDaily')]]
 
   return (
     <div className="flex flex-col min-h-0" data-testid="site-hub">
-      <div role="tablist" className="flex items-center gap-0.5 p-1.5 border-b border-[var(--border)] shrink-0">
+      <div role="tablist" className="flex items-center gap-0.5 p-1.5 overflow-x-auto border-b border-[var(--border)] shrink-0">
         {tabs.map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className="flex-1 h-7 max-md:h-9 text-[12px] font-medium rounded-[6px] transition-colors"
+            className="flex-1 shrink-0 px-1.5 whitespace-nowrap h-7 max-md:h-9 text-[12px] font-medium rounded-[6px] transition-colors"
             style={{ background: tab === id ? 'var(--surface-2)' : 'transparent', color: tab === id ? 'var(--text)' : 'var(--text-dim)' }}>
             {label}
           </button>
@@ -124,6 +126,10 @@ export default function SiteHub({ viewerApiRef, selected }: Props) {
             {t('collecting', { done: reading?.done ?? 0, total: reading?.total ?? 0 })}
           </div>
         ))}
+        {tab === 'inspections' && (
+          <InspectionPanel projectKey={project} viewerApiRef={viewerApiRef} selectedGlobalId={selection?.globalId ?? null} />
+        )}
+        {tab === 'daily' && <DailyReportPanel projectKey={project} />}
       </React.Suspense>
     </div>
   )

@@ -6,7 +6,7 @@ import { create } from 'zustand'
 import type { Snag } from '../lib/site/snags'
 import type { ProgressElement } from '../lib/site/progress'
 
-export type SiteTab = 'snags' | 'units' | 'progress'
+export type SiteTab = 'snags' | 'units' | 'progress' | 'inspections' | 'daily'
 
 interface SiteState {
   tab: SiteTab

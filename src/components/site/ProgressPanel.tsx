@@ -6,6 +6,7 @@
 // Aggregates run chunked (aggregateProgressChunked) so 100k+ elements never
 // block the viewer.
 
+import { localDate } from '../../lib/site/local-date'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewerAPI } from '../../lib/viewer'
 import {
@@ -32,7 +33,7 @@ export interface ProgressPanelProps {
 
 const btn = 'h-7 px-2.5 rounded-[6px] border border-[var(--border)] text-[11px] font-medium text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 whitespace-nowrap'
 const btnPrimary = 'h-7 px-3 rounded-[6px] text-[11px] font-semibold bg-[var(--accent)] text-[var(--accent-contrast,#fff)] disabled:opacity-40 whitespace-nowrap'
-const today = (): string => new Date().toISOString().slice(0, 10)
+const today = (): string => localDate()
 
 export default function ProgressPanel({ viewerApiRef, projectKey, elements, selection, onClose }: ProgressPanelProps) {
   const { t, lang } = useProgressT()

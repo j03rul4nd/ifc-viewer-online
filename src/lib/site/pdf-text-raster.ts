@@ -50,12 +50,29 @@ export function canvasTextRasterizer(): TextRasterizer | undefined {
   }
 }
 
+export const IMAGE_DECODE_TIMEOUT_MS = 3000
+
+/** Resolves true once the image is usable, false on error or after the timeout. */
+export function loadImage(im: HTMLImageElement, src: string, timeoutMs = IMAGE_DECODE_TIMEOUT_MS): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    let done = false
+    const finish = (v: boolean) => { if (!done) { done = true; clearTimeout(timer); resolve(v) } }
+    const timer = setTimeout(() => finish(im.complete && im.naturalWidth > 0), timeoutMs)
+    im.onload = () => finish(true)
+    im.onerror = () => finish(false)
+    im.src = src
+    if (typeof im.decode === 'function') im.decode().then(() => finish(true), () => { /* onload/onerror/timeout decide */ })
+  })
+}
+
 /** A PNG data URL (signature) flattened on white and re-encoded as JPEG. */
 export async function pngDataUrlToJpeg(url: string): Promise<PdfImage | null> {
   if (typeof document === 'undefined') return null
   const im = new Image()
-  im.src = url
-  try { await im.decode() } catch { return null }
+  // decode() can stay pending forever in a hidden tab: race it against onload
+  // and a timeout, and export without the signature rather than hang.
+  const ok = await loadImage(im, url)
+  if (!ok) return null
   const c = document.createElement('canvas')
   c.width = Math.max(1, im.naturalWidth); c.height = Math.max(1, im.naturalHeight)
   const ctx = c.getContext('2d')

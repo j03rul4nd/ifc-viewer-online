@@ -3,6 +3,7 @@
 // drawing/export.ts and cover/pdf.ts (no library): Helvetica text and JPEG
 // photos as DCTDecode streams.
 
+import { localDate } from './local-date'
 import { groupByTrade, isOverdue, snagStats, type Snag } from './snags'
 import { MARGIN as M, PAGE_W, PdfDoc, wrapText as wrap, type PdfImage, type TextRasterizer } from './pdf-doc'
 
@@ -53,7 +54,7 @@ export function buildSnagReportPdf(
 
   const stats = snagStats(snags, today)
   text(labels.title + (meta.project ? ` - ${meta.project}` : ''), M, 18, true); doc.y -= 20
-  text(`${labels.generated}: ${today.toISOString().slice(0, 10)}  ·  ${labels.total}: ${stats.total}  ·  ${labels.overdue}: ${stats.overdue}`, M, 9, false, '0.35 0.35 0.35'); doc.y -= 24
+  text(`${labels.generated}: ${localDate(today)}  ·  ${labels.total}: ${stats.total}  ·  ${labels.overdue}: ${stats.overdue}`, M, 9, false, '0.35 0.35 0.35'); doc.y -= 24
 
   for (const sec of reportSections(snags)) {
     doc.ensure(40)
