@@ -767,6 +767,28 @@ export function trackSolarWeatherFileLoaded(props: { format: 'epw' | 'zip'; far_
 
 // ── Virality ──────────────────────────────────────────────────────────────────
 
+// Raw load messages may embed the file name, so analytics only ever get one of
+// these fixed tokens (or 'other'). They tell apart what code@phase cannot:
+// a main-thread allocation failure, a WASM trap, a lost GPU, a JS bug.
+const ERROR_KIND_TOKENS: ReadonlyArray<[RegExp, string]> = [
+  [/out of memory|allocation failed|Cannot enlarge memory|Aborted\(OOM\)/i, 'oom'],
+  [/Invalid (typed )?array length/i, 'array-length'],
+  [/memory access out of bounds/i, 'oob'],
+  [/unreachable/i, 'wasm-unreachable'],
+  [/Aborted\(/i, 'wasm-abort'],
+  [/context lost|CONTEXT_LOST/i, 'gpu-lost'],
+  [/Maximum call stack/i, 'stack-overflow'],
+  [/RangeError/, 'range-error'],
+  [/TypeError/, 'type-error'],
+  [/RuntimeError/, 'runtime-error'],
+]
+
+/** Sanitised failure class of a raw load message (safe to send to analytics). */
+export function errorKindOf(message: string): string {
+  for (const [re, kind] of ERROR_KIND_TOKENS) if (re.test(message)) return kind
+  return 'other'
+}
+
 /**
  * IFC file failed to load (parser error, unsupported schema, OOM, etc.).
  * Without this you are blind to your real parse failure rate.
@@ -779,6 +801,8 @@ export function trackSolarWeatherFileLoaded(props: { format: 'epw' | 'zip'; far_
 export function trackFileOpenFailed(props: {
   error_msg:     string
   file_size_mb?: number
+  /** Allowlisted failure token from errorKindOf — never the raw message. */
+  error_kind?:   string
 }): void {
   track('file_open_failed', props)
 }
