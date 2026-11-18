@@ -27,6 +27,7 @@ import type enVideo from '../locales/en/video.json';
 import type enDrawings from '../locales/en/drawings.json';
 import type enLoading from '../locales/en/loading.json';
 import type enCompare from '../locales/en/compare.json';
+import type enSite from '../locales/en/site.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -61,6 +62,7 @@ declare module 'i18next' {
       drawings: typeof enDrawings;
       loading: typeof enLoading;
       compare: typeof enCompare;
+      site: typeof enSite;
     };
   }
 }

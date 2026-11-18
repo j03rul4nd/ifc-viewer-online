@@ -115,7 +115,7 @@ interface UIStore {
   treeWidth:               number
   treeVisible:             boolean
   /** Pending tab to activate in the sidebar — consumed by Sidebar on mount or change. null = no pending request. */
-  pendingSidebarTab:       'props' | 'cats' | 'qty' | null
+  pendingSidebarTab:       'props' | 'cats' | 'qty' | 'site' | null
   /** Whether the sidebar is open as a mobile drawer (< md breakpoint). */
   mobileSidebarOpen:       boolean
   /**
@@ -179,7 +179,7 @@ interface UIStore {
   setTreeVisible:           (visible: boolean) => void
   setSidebarExpanded:       (expanded: boolean) => void
   openSidebarLegend:        () => void
-  setPendingSidebarTab:     (tab: 'props' | 'cats' | 'qty') => void
+  setPendingSidebarTab:     (tab: 'props' | 'cats' | 'qty' | 'site') => void
   clearPendingSidebarTab:   () => void
   setMobileSidebarOpen:     (open: boolean) => void
   toggleMobileSidebar:      () => void

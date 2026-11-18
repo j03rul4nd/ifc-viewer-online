@@ -212,6 +212,7 @@ const DrawingDock = React.lazy(() => import('./components/drawings/DrawingDock')
 // Clash detection (Pro/Team): engine, worker and texts load on first open.
 const ClashPanel = React.lazy(() => import('./components/clash/ClashPanel'))
 const SteelTakeoffPanel = React.lazy(() => import('./components/steel/SteelTakeoffPanel'))
+const SnagPins = React.lazy(() => import('./components/site/SnagPins'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel, type DemoSet } from './demo-models/models'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -5383,6 +5384,9 @@ export default function App() {
                   {/* Data legend — a chip in the corner while data layers are
                       visible; the legend itself only when the viewer opens it. */}
                   {twinInUse && <TwinLabels viewerApiRef={viewerApiRef} />}
+                  {sceneModels.length > 0 && !clientMode && (
+                    <React.Suspense fallback={null}><SnagPins viewerApiRef={viewerApiRef} /></React.Suspense>
+                  )}
                   {/* Scene explorer (canvas presets with a scene, or ?explore=1): the data of
                       what a click picked, an Explore list of the twin, and buttons to move. */}
                   {exploreOn && sceneModels.length > 0 && tourMode !== 'playing' && (

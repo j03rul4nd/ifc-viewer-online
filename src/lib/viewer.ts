@@ -774,6 +774,11 @@ export interface ViewerAPI {
    */
   applyModelPalette(palette: Record<'structure' | 'envelope' | 'glazing' | 'mep' | 'interiors' | 'other', string> | null, glazingOpacity?: number): Promise<void>
   /**
+   * Undo a per-element setColor: resetColor drops the category palette too,
+   * so the palette colour of those ids is painted back.
+   */
+  restoreDefaultColors(modelId: string, ids: number[]): Promise<void>
+  /**
    * Art direction: the scene's light — sky/ground ambient, a key "sun" (colour,
    * strength, azimuth and elevation in degrees) and a fill from the opposite
    * side. Null puts the viewer's own lighting back.
@@ -4610,6 +4615,17 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       } catch {
         return null
       }
+    },
+
+    async restoreDefaultColors(modelId, ids) {
+      const model = modelObjects.get(modelId)
+      if (!model || ids.length === 0) return
+      await model.resetColor(ids)
+      const typeMap = typeMapByModel.get(modelId)
+      if (!typeMap) return
+      const sub = new Map<number, string>()
+      for (const id of ids) { const t = typeMap.get(id); if (t !== undefined) sub.set(id, t) }
+      await paintPalette(model, sub)
     },
 
     async applyModelPalette(palette, glazingOpacity = 0.5) {
