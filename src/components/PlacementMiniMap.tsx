@@ -17,12 +17,37 @@ import { useTranslation } from 'react-i18next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { createLogger } from '../lib/logger'
+import { useGeoStore } from '../stores/geoStore'
+import { DEFAULT_PROVIDER_ID, resolveProvider } from '../lib/geo/providers'
+import { createVectorGridLayer } from '../lib/geo/basemap/leaflet-vector-layer'
 
 const log = createLogger('MiniMap')
 
-/** OSM raster tiles — same source and attribution duty as the 3D basemap. */
+/** Raster fallback when the basemap itself is raster (topo, satellite, custom). */
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const TILE_ATTRIBUTION = '© OpenStreetMap'
+
+/**
+ * The minimap's ground: the SAME provider as the 3D map. A vector style is
+ * painted by our own painter (sharp at any DPR, same cartography); a raster
+ * provider is shown as raster.
+ */
+function basemapLayerFor(id: string): L.Layer {
+  const p = resolveProvider(id) ?? resolveProvider(DEFAULT_PROVIDER_ID)
+  if (p?.vector) {
+    return createVectorGridLayer({
+      tileJsonUrl: p.vector.tileJsonUrl,
+      styleId: p.vector.styleId,
+      language: () => document.documentElement.lang || 'en',
+      attribution: p.attribution,
+    })
+  }
+  return L.tileLayer(p?.urlTemplate ?? TILE_URL, {
+    attribution: p?.attribution ?? TILE_ATTRIBUTION, maxZoom: Math.min(19, p?.maxZoom ?? 19),
+    // Retina: ask for the next zoom's tiles so a 256 px tile is not stretched.
+    detectRetina: true,
+  })
+}
 /** Tile zoom used when focusing a single site. */
 const SITE_ZOOM = 16
 
@@ -75,6 +100,9 @@ export function PlacementMiniMap({
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const othersRef = useRef<L.Marker[]>([])
+  const baseRef = useRef<L.Layer | null>(null)
+  const baseIdRef = useRef<string | null>(null)
+  const baseLayerId = useGeoStore((s) => s.baseLayerId)
   const onChangeRef = useRef(onChange)
   useEffect(() => { onChangeRef.current = onChange }, [onChange])
 
@@ -95,7 +123,8 @@ export function PlacementMiniMap({
       // gesture over the map should scroll the panel, not zoom the map.
       scrollWheelZoom: false,
     })
-    L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map)
+    baseIdRef.current = useGeoStore.getState().baseLayerId
+    baseRef.current = basemapLayerFor(baseIdRef.current).addTo(map)
 
     const marker = L.marker([lat, lon], {
       icon: pinIcon(false),
@@ -129,6 +158,15 @@ export function PlacementMiniMap({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Follow the basemap: a style switch in the panel restyles the minimap ────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || baseIdRef.current === baseLayerId) return
+    baseRef.current?.remove()
+    baseIdRef.current = baseLayerId
+    baseRef.current = basemapLayerFor(baseLayerId).addTo(map)
+  }, [baseLayerId])
 
   // ── Follow externally-driven coordinate changes (typed input, 3D drag) ───────
   useEffect(() => {

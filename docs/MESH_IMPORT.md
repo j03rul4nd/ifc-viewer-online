@@ -118,7 +118,9 @@ const id = await viewer.addMesh([
   { name: 'scene.bin',  bytes: binBytes  },
   { name: 'wall.jpg',   bytes: texBytes  },
 ])
-// Or let the viewer fetch them (CORS required, fetched in parallel):
+// Or let the viewer fetch them (CORS required; downloaded one after another,
+// with progress in the Loading Center — the entry is the first URL whose path
+// names a .glb / .gltf / .obj):
 await viewer.addMeshFromUrl(['https://…/a.gltf', 'https://…/a.bin'])
 
 const meshes = await viewer.listMeshes()

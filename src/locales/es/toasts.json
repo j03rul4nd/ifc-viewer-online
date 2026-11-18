@@ -7,7 +7,14 @@
     "removeFailed": "No se pudo eliminar el modelo: {{message}}",
     "urlLoadFailed": "No se pudo cargar el modelo enlazado: {{message}}",
     "mapFailed": "No se pudo abrir el modo mapa: {{message}}",
-    "scanLoadFailed": "No se pudo cargar el escaneo del enlace: {{message}}"
+    "scanLoadFailed": "No se pudo cargar el escaneo del enlace: {{message}}",
+    "loadFailedNamed": "No se pudo cargar \"{{fileName}}\" — {{reason}}",
+    "batchLoaded_one": "{{name}} — {{count}} modelo cargado",
+    "batchLoaded_other": "{{name}} — {{count}} modelos cargados",
+    "batchPartial": "{{name}} — {{loaded}} cargados, {{failed}} con error",
+    "dropUnsupported_one": "{{count}} archivo no tiene un formato compatible",
+    "dropUnsupported_other": "{{count}} archivos no tienen un formato compatible",
+    "dropBcfHint": "Abre el panel BCF para importar archivos .bcf"
   },
   "validation": {
     "complete": "Validación completada — {{count}} incidencias encontradas",

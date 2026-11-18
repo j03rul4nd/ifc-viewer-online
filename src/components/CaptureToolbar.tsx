@@ -28,6 +28,7 @@ import type { ViewerAPI } from '../lib/viewer'
 const log = createLogger('CaptureToolbar')
 
 const CapturePreviewModal = React.lazy(() => import('./CapturePreviewModal'))
+const CoverStudioModal = React.lazy(() => import('./CoverStudioModal'))
 
 function timestamp(): string {
   return new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19)
@@ -61,22 +62,44 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
 
   const [capturing, setCapturing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [studioOpen, setStudioOpen] = useState(false)
 
-  // ── Canvas acquisition — the only viewer coupling is getCanvas() ─────────────
+  // ── Canvas acquisition ──────────────────────────────────────────────────────
+  // The replay buffer records the viewer's RECORDING canvas — each frame with
+  // the measurement labels painted on — not the WebGL canvas, whose
+  // captureStream has the lines of a measurement and never its numbers (the
+  // labels are HTML). Every video and GIF comes out of this buffer. The canvas
+  // is held only while this instance owns a buffer: keeping it current costs a
+  // blit per frame.
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const holdRef = useRef<{ viewer: ViewerAPI; release: () => void } | null>(null)
   const [canvasReady, setCanvasReady] = useState(false)
+  const wantsRecording = replay && !isMobile
+
+  const releaseCanvas = useCallback(() => {
+    holdRef.current?.release()
+    holdRef.current = null
+    canvasRef.current = null
+  }, [])
 
   const syncCanvas = useCallback(() => {
-    const c = viewerApiRef.current?.getCanvas() ?? null
-    canvasRef.current = c
-    setCanvasReady(c !== null)
-  }, [viewerApiRef])
+    const viewer = viewerApiRef.current
+    if (!viewer || !wantsRecording) { releaseCanvas(); setCanvasReady(false); return }
+    if (holdRef.current?.viewer !== viewer) {
+      releaseCanvas()
+      const held = viewer.acquireRecordingCanvas()
+      holdRef.current = { viewer, release: held.release }
+      canvasRef.current = held.canvas
+    }
+    setCanvasReady(canvasRef.current !== null)
+  }, [viewerApiRef, wantsRecording, releaseCanvas])
 
   useAppEvent('model:loaded', syncCanvas)
   useEffect(() => {
-    if (hasModel && !canvasReady) syncCanvas()
-    if (!hasModel && canvasReady) { canvasRef.current = null; setCanvasReady(false) }
-  }, [hasModel, canvasReady, syncCanvas])
+    if (hasModel && wantsRecording && !canvasReady) syncCanvas()
+    if ((!hasModel || !wantsRecording) && canvasReady) { releaseCanvas(); setCanvasReady(false) }
+  }, [hasModel, wantsRecording, canvasReady, syncCanvas, releaseCanvas])
+  useEffect(() => releaseCanvas, [releaseCanvas])
 
   // ── Replay buffer (window = max selectable duration) ─────────────────────────
   const { isRecording, supported, availableSeconds, captureLastSeconds } = useCanvasReplayBuffer(canvasRef, {
@@ -170,6 +193,14 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
           className={btnBase}
         >
           <Icons.Camera size={13} />
+        </button>
+        <button
+          onClick={() => setStudioOpen(true)}
+          disabled={!hasModel}
+          title={t('cover.open')}
+          className={btnBase}
+        >
+          <Icons.Sparkles size={13} />
         </button>
 
         {replayAvailable && (
@@ -285,11 +316,24 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
         >
           <Icons.Camera size={14} />
         </button>
+        <button
+          onClick={() => setStudioOpen(true)}
+          disabled={!hasModel}
+          title={t('cover.open')}
+          className={btnBase}
+        >
+          <Icons.Sparkles size={14} />
+        </button>
         {replay && <SceneBackgroundMenu disabled={!hasModel} />}
       </div>
 
       {/* Preview modal is owned by the replay-owning instance only (avoids a
           duplicate portal when Toolbar + TourPlayer both render this). */}
+      {studioOpen && (
+        <Suspense fallback={null}>
+          <CoverStudioModal viewerApiRef={viewerApiRef} onClose={() => setStudioOpen(false)} />
+        </Suspense>
+      )}
       {replay && clip && (
         <Suspense fallback={null}>
           <CapturePreviewModal />

@@ -1,0 +1,85 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.16969,
+   "lat": 41.385477,
+   "height": 66.03
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "lift kiosk",
+    "lon": 2.16969359,
+    "lat": 41.38547926,
+    "bearing": 95.0,
+    "s": [
+     -1.6,
+     1.6
+    ],
+    "t": [
+     -1.525,
+     1.525
+    ],
+    "z": [
+     0.06,
+     5.0
+    ]
+   },
+   {
+    "name": "signage totem",
+    "lon": 2.16965085,
+    "lat": 41.38546072,
+    "bearing": 95.0,
+    "s": [
+     -0.45,
+     0.45
+    ],
+    "t": [
+     -0.55,
+     0.55
+    ],
+    "z": [
+     0.06,
+     3.6
+    ]
+   },
+   {
+    "name": "parapet and balustrade",
+    "lon": 2.16959721,
+    "lat": 41.38545032,
+    "bearing": 95.0,
+    "s": [
+     -3.6,
+     4.6
+    ],
+    "t": [
+     -1.85,
+     1.85
+    ],
+    "z": [
+     0.06,
+     2.2
+    ]
+   },
+   {
+    "name": "stairwell",
+    "lon": 2.16959721,
+    "lat": 41.38545032,
+    "bearing": 95.0,
+    "s": [
+     -3.25,
+     3.15
+    ],
+    "t": [
+     -1.35,
+     1.35
+    ],
+    "z": [
+     -7.0,
+     -0.07
+    ]
+   }
+  ]
+ }
+}

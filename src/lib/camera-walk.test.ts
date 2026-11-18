@@ -263,6 +263,20 @@ describe('bindWalkNavigation', () => {
     expect(controls.look.pz).toBe(0)
   })
 
+  it('moves on the arrows with the mode off when the scene itself has focus', () => {
+    nav.setAmbientMovement(true)
+    target.fire('keydown', key('ArrowUp', { target: { tagName: 'BODY' } }))
+    run(1)
+    expect(controls.look.pz).toBeCloseTo(-2, 1)
+  })
+
+  it('leaves the arrows to a focused list or control with the mode off', () => {
+    nav.setAmbientMovement(true)
+    target.fire('keydown', key('ArrowUp', { target: { tagName: 'BUTTON' } }))
+    run(1)
+    expect(controls.look.pz).toBe(0)
+  })
+
   it('does not look on a drag while the mode is off — that is still orbit', () => {
     nav.setAmbientMovement(true)
     target.fire('pointerdown', { button: 0, clientX: 0, clientY: 0 })

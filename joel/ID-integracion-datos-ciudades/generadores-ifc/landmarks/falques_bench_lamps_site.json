@@ -1,0 +1,60 @@
+{
+ "origin": {
+  "lat": 41.389942,
+  "lon": 2.167819,
+  "osm": "no OSM node for the bench-lamps: the first one is placed in the 24.8 m gap of the island tree row between tree nodes 12633020996 and 12633020995"
+ },
+ "datum_raw_ellipsoidal": 72.92,
+ "icgc_offset_m": -49.7,
+ "ground_ring_raw": {
+  "ring_m": [2.5, 6.0],
+  "bench_lamp_1": {"lat": 41.389942, "lon": 2.167819, "ground_raw": 72.92, "p05": 72.74, "p50": 73.23, "n": 1068},
+  "bench_lamp_2": {"lat": 41.390172, "lon": 2.167534, "ground_raw": 73.45, "p05": 73.37, "p50": 73.50, "n": 1897}
+ },
+ "note": "Local metres, +x east +y north, origin at bench-lamp 1, from OpenStreetMap (ODbL) via Overpass on 2026-10-01 (equirectangular around the origin). Levels are ICGC Barcelona mesh heights (ellipsoidal, raw), read with tools/icgc_ground.py --ring 2.5,6 (20th percentile).",
+ "levels_raw": {
+  "bench_lamp_1": 72.92,
+  "bench_lamp_2": 73.45
+ },
+ "block": "Passeig de Gràcia between Gran Via de les Corts Catalanes (crossing at s ≈ -30) and Carrer de la Diputació (crossing at s ≈ +66), Besòs (north-east) side",
+ "axis": {
+  "bearing_deg": 316.9,
+  "osm_ways": {
+   "116343002": "Passeig de Gràcia (lateral Besòs), 316.9 deg",
+   "908375889": "Passeig de Gràcia central carriageway (6 lanes), 316.9 deg",
+   "909097447": "sidewalk on the island between the lateral and the central carriageway (surface paving_stones)",
+   "887356885": "wide sidewalk along the buildings (surface paving_stones)"
+  }
+ },
+ "frame_note": "Frame F: s along 316.9 deg (up the Passeig, towards Diputació), t to its left (south-west, towards the central carriageway), z up from bench-lamp 1's pavement.",
+ "edges_t_m": {
+  "central_carriageway_axis (way 908375889)": 10.5,
+  "island_kerb_to_central_carriageway (model)": 1.1,
+  "island_tree_row (OSM tree nodes)": 0.2,
+  "island_sidewalk_line (way 909097447)": -3.5,
+  "lateral_lane_edge (model, width 3.4 m)": -6.7,
+  "lateral_lane_axis (way 116343002)": -8.4,
+  "wide_sidewalk_line (way 887356885)": -14.5
+ },
+ "bench_lamps": [
+  {"name": "Banc-fanal 1", "s": 0.0, "t": 0.0, "x": 0.0, "y": 0.0, "lat": 41.389942, "lon": 2.167819, "z": 0.0,
+   "evidence": "centre of the 24.8 m gap in the island tree row (trees at s = -12.29 and +12.47; the row's spacing elsewhere is 6-8.5 m)"},
+  {"name": "Banc-fanal 2", "s": 34.83, "t": 0.0, "x": -23.8, "y": 25.43, "lat": 41.390172, "lon": 2.167534, "z": 0.53,
+   "evidence": "centre of the 13.9 m gap in the island tree row (trees at s = 27.97 and 41.82)"}
+ ],
+ "trees": [
+  {"osm": 12633020996, "lat": 41.3898603, "lon": 2.1679187, "x": 8.33, "y": -9.03, "s": -12.29, "t": 0.09},
+  {"osm": 12633020995, "lat": 41.390023, "lon": 2.167715, "x": -8.69, "y": 8.96, "s": 12.47, "t": 0.22},
+  {"osm": 12633020994, "lat": 41.3900786, "lon": 2.1676449, "x": -14.54, "y": 15.1, "s": 20.96, "t": 0.3},
+  {"osm": 12633020993, "lat": 41.3901252, "lon": 2.167588, "x": -19.29, "y": 20.26, "s": 27.97, "t": 0.25},
+  {"osm": 12633020992, "lat": 41.3902145, "lon": 2.1674716, "x": -29.01, "y": 30.13, "s": 41.82, "t": 0.6}
+ ],
+ "osm_lamps_benches_in_block": "none: no highway=street_lamp or amenity=bench node is mapped on this block of Passeig de Gràcia",
+ "photo_references": [
+  "Wikimedia Commons, Category:Fanals-bancs",
+  "File:Banc-fanal del passeig de Gràcia.jpg (front view: bench, post, curved stay, long arm and short scroll arm, two hanging lanterns)",
+  "File:109 Banc fanal del passeig de Gràcia (Barcelona).jpg (long arm with cresting and the hanging lantern)",
+  "File:035 Banc de trencadís dels fanals del pg. de Gràcia.jpg (the trencadís bench, its plinth and the end bolster the post rises from)",
+  "File:Barcelona - Passeig de Gràcia - View North on lamppost-bench 1906 by Pere Falqués i Urpí.jpg (on the tree-lined island, back to the central carriageway)"
+ ]
+}

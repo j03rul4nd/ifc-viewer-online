@@ -72,7 +72,8 @@ describe('Port Vell benchmark · the survey reaches the parser', () => {
       // column below on purpose: "consumed" and "unrecognised" are different
       // problems and merging them hides the second behind the first.
       'coastline-consumed-into-sea': 9,
-      'no-classifier-claims-it': 57,
+      // Was 57: the 23 barriers, 4 tree rows and 7 car parks are drawn now.
+      'no-classifier-claims-it': 23,
     })
   })
 })
@@ -124,19 +125,19 @@ describe('Port Vell benchmark · what the harbour is made of', () => {
       .map((p) => `${p.key}(${p.input})`)
       .sort()
     expect(ignored).toEqual([
-      // Walls, fences, bollards and handrails. Not even requested — there is no
-      // `barrier` group in the Overpass query.
-      'barriers(23)',
       // Port Vell's own landuse polygon: the harbour, as a place.
       'harbourLanduse(1)',
       // Marina Vela and Marina Port Vell, both within sight of the model.
       'marinas(2)',
-      'parking(7)',
-      // `natural=tree_row` — a WAY, while the classifier only knows the `tree`
-      // NODE. A row of planes down a promenade is four elements here and
-      // twenty in the wider box.
-      'trees(4)',
     ])
+    // Walls, fences, bollards and handrails were on this list — not even
+    // requested — and so were the four `natural=tree_row` ways, which the
+    // classifier did not know as trees. Both reach the scene now.
+    const reached = (key: string) => CENSUS.probes.find((p) => p.key === key)!
+    expect(reached('barriers').reached).toBe(reached('barriers').input)
+    expect(reached('trees').reached).toBe(reached('trees').input)
+    // The bus apron by the cruise terminals and the lots along the quay.
+    expect(reached('parking').reached).toBe(7)
   })
 })
 
@@ -322,7 +323,7 @@ describe('Port Vell benchmark · a square is a square', () => {
     expect(promenade.ring!.length).toBeGreaterThan(3)
 
     // Every closed pedestrian way in the box is now an area, and there are six.
-    const areas = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined)
+    const areas = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking)
     expect(areas).toHaveLength(5)   // the sixth is the Rambla de Mar, claimed as a pier
   })
 
@@ -331,7 +332,7 @@ describe('Port Vell benchmark · a square is a square', () => {
     // Over terrain those seven corners are one flat plate across a third of a
     // kilometre; the fill has to be split against the DEM like every other
     // ground surface in the scene.
-    const plaza = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined)
+    const plaza = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking)
     const flat = buildLinearLayer(plaza, 'road', OPTS)!
     const hilly = buildLinearLayer(plaza, 'road', {
       ...OPTS,

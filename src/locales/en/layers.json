@@ -1,0 +1,438 @@
+{
+  "entry": "Data layers",
+  "title": "Data layers",
+  "intro": "Bring in routes, zones and points from GeoJSON files, URLs or WFS services. Everything lands on the same site as your model, scans and map.",
+  "working": "Loading…",
+  "anchor": {
+    "by": "Placed against {{label}} ({{source}})",
+    "map": "Placed against the map / model location",
+    "none": "Not anchored yet: the first georeferenced layer sets the site.",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "scan",
+      "vector": "data layer",
+      "manual": "manual"
+    }
+  },
+  "file": {
+    "drop": "Open GeoJSON file…",
+    "sample": "Try a sample (synthetic, Barcelona)",
+    "sampleLive": "Try live data (simulated trains, Barcelona)",
+    "sampleLiveName": "Simulated trains"
+  },
+  "url": {
+    "title": "GeoJSON from a URL",
+    "add": "Add"
+  },
+  "wfs": {
+    "title": "WFS service",
+    "connect": "Connect",
+    "found": "{{count}} layers in {{title}}",
+    "noJson": "no GeoJSON output",
+    "radius": "Area",
+    "load": "Load",
+    "hint": "Only the area around the site is requested, up to 5,000 features. The server must allow cross-origin requests (CORS)."
+  },
+  "list": {
+    "title": "Connected layers ({{count}})"
+  },
+  "count": {
+    "lines_one": "{{count}} line",
+    "lines_other": "{{count}} lines",
+    "polygons_one": "{{count}} area",
+    "polygons_other": "{{count}} areas",
+    "points_one": "{{count}} point",
+    "points_other": "{{count}} points"
+  },
+  "action": {
+    "hide": "Hide",
+    "show": "Show",
+    "frame": "Frame layer",
+    "remove": "Remove",
+    "close": "Close"
+  },
+  "height": {
+    "title": "Heights",
+    "relative": "Above ground (draped)",
+    "absolute": "Absolute elevation",
+    "ignore": "Flat on the ground",
+    "source": {
+      "coordinates": "The data carries a Z coordinate.",
+      "property": "Height column: {{prop}}",
+      "none": "The data carries no heights."
+    }
+  },
+  "style": {
+    "color": "Colour",
+    "width": "Line width",
+    "opacity": "Fill opacity",
+    "fill": "Fill areas",
+    "extrude": "Extrude areas",
+    "extrudeFallback": "Extrude areas without height",
+    "pointSize": "Point size"
+  },
+  "warn": {
+    "far": "This layer is {{km}} km from the site — check its coordinate system.",
+    "skipped": "{{count}} features skipped (empty or unsupported geometry)."
+  },
+  "error": {
+    "notJson": "The file is not valid JSON.",
+    "notGeoJson": "This is not GeoJSON.",
+    "unknownCrs": "The data declares a coordinate system this viewer does not know.",
+    "projectedWithoutCrs": "The coordinates are in metres but no coordinate system is declared.",
+    "empty": "The layer has no features.",
+    "noAnchor": "No site to place the layer on.",
+    "http": "The server answered with an error.",
+    "network": "Could not reach the server — it may be offline or block cross-origin requests (CORS).",
+    "aborted": "Cancelled.",
+    "badUrl": "That URL is not valid.",
+    "notWfs": "That address is not a WFS service.",
+    "noFeatureTypes": "The service lists no layers.",
+    "wfsException": "The WFS server rejected the request.",
+    "notJsonOutput": "The server did not return GeoJSON (it may only offer GML).",
+    "cors": "The source does not allow browsers to read it (no CORS). Configure a proxy below.",
+    "notGbfs": "That is not a GBFS feed.",
+    "notGtfsRt": "That is not a GTFS-Realtime feed (JSON).",
+    "noGeometryInTable": "That table has no columns with a location (lon/lat, WKT or coordinates). Join it onto a layer instead.",
+    "noJoinBase": "There is no geometry to join onto.",
+    "emptyTable": "The table is empty."
+  },
+  "kind": {
+    "point": "Point",
+    "line": "Line",
+    "polygon": "Area"
+  },
+  "selected": {
+    "noProps": "This feature has no attributes."
+  },
+  "restore": {
+    "failed": "{{count}} saved layers could not be restored (offline, or the file was too large to keep)."
+  },
+  "search": {
+    "title": "Search the twin",
+    "placeholder": "Station, asset code, line, file… e.g. code:BCN-SANTS",
+    "hint": "Searches every layer, IFC and scan loaded ({{count}} items), including nested attributes. Use field:value to filter.",
+    "empty": "Nothing matches.",
+    "related": "Connected to {{label}}",
+    "noRelated": "Nothing connected found.",
+    "reason": {
+      "shared": "same {{field}}: {{value}}",
+      "inside": "inside it",
+      "contains": "contains it",
+      "near": "{{m}} m away"
+    }
+  },
+  "symbology": {
+    "styleBy": "Style by",
+    "single": "One style",
+    "others": "Everything else",
+    "all": "All features",
+    "hint": "Each value of the field gets its own colour and symbol. Untick a value to hide it.",
+    "symbol": "Symbol",
+    "size": "Size (m)",
+    "visible": "Show",
+    "icons": "Icons",
+    "shapes": "3D shapes",
+    "models": "Your models",
+    "uploadModel": "Upload GLB model…",
+    "modelFailed": "That model could not be read (GLB only).",
+    "icon": {
+      "pin": "Pin",
+      "train": "Train station",
+      "metro": "Metro",
+      "tram": "Tram",
+      "bus": "Bus",
+      "power": "Power / substation",
+      "exit": "Exit",
+      "door": "Door / access",
+      "sensor": "Sensor",
+      "camera": "Camera",
+      "wifi": "Antenna / Wi-Fi",
+      "warning": "Warning",
+      "info": "Information",
+      "fire": "Fire safety",
+      "water": "Water",
+      "parking": "Parking",
+      "tree": "Tree",
+      "building": "Building",
+      "bike": "Bike",
+      "charger": "Charging point"
+    },
+    "shape": {
+      "sphere": "Sphere",
+      "pin": "Pin",
+      "cube": "Cube",
+      "cylinder": "Cylinder",
+      "cone": "Cone"
+    }
+  },
+  "links": {
+    "linkTo": "Link to…",
+    "pickTarget": "Now pick what {{label}} links to: click a search result.",
+    "cancel": "Cancel",
+    "urlPlaceholder": "https://… datasheet, dashboard, document",
+    "addUrl": "Add link",
+    "remove": "Remove link",
+    "notLoaded": "not loaded",
+    "badge": "LINK"
+  },
+  "presets": {
+    "title": "Public live sources",
+    "hint": "Ready to connect, each set to how often its provider actually updates.",
+    "connect": "Connect",
+    "needsProxy": "proxy",
+    "needsProxyHint": "This provider sends no CORS header: a browser can only read it through a proxy (see Proxy below).",
+    "bicing": {
+      "name": "Bicing stations",
+      "hint": "Bikes and free docks per station (GBFS) · every 30 s"
+    },
+    "fgc": {
+      "name": "FGC trains",
+      "hint": "Live position, punctuality and occupancy · quota-limited (5,000/day)"
+    },
+    "rodalies": {
+      "name": "Rodalies trains (Renfe)",
+      "hint": "Live positions (GTFS-Realtime) · the source refreshes every 30 s"
+    },
+    "catastro": {
+      "name": "Cadastral parcels",
+      "hint": "Catastro WFS (GML) · 250 m around the site · static"
+    },
+    "icgc-municipis": {
+      "name": "Municipalities (ICGC)",
+      "hint": "Municipal boundaries of Catalonia · static"
+    },
+    "bcn-traffic": {
+      "name": "Barcelona traffic (live)",
+      "hint": "State of 500+ street sections · every 5 min · both directions, animated flow"
+    }
+  },
+  "live": {
+    "toggle": "Live refresh",
+    "interval": "Refresh every",
+    "animate": "Glide moved points",
+    "secondsAgo": "{{n}} s ago",
+    "minutesAgo": "{{n}} min ago",
+    "hoursAgo": "{{n}} h ago",
+    "dataAge": "Data from {{ago}}",
+    "fetched": "Fetched {{ago}}",
+    "unchanged": "no changes",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "next in {{s}} s",
+    "sourcePaced": "paced by the source",
+    "quota": "{{n}} requests left today",
+    "viaProxy": "via proxy",
+    "retrying": "retry {{n}}",
+    "identityIndex": "Features have no stable id: matched by position in the list."
+  },
+  "proxy": {
+    "title": "Proxy for sources without CORS",
+    "hint": "Some public feeds (Renfe) do not allow browsers to read them. A proxy you control relays them. Use {url} where the address goes.",
+    "save": "Save",
+    "saved": "Proxy saved",
+    "cleared": "Proxy removed",
+    "needsPlaceholder": "The template must contain {url}."
+  },
+  "styleTabs": {
+    "groups": "Groups",
+    "zoom": "Zoom",
+    "aggregate": "Aggregate",
+    "alerts": "Alerts"
+  },
+  "groups": {
+    "summary": "{{n}} features · {{g}} groups",
+    "create": "Create groups",
+    "rest": "Everything else",
+    "all": "All features",
+    "visible": "Show",
+    "priorityHint": "A feature takes the look of the FIRST group it matches — reorder with ▲▼.",
+    "count": "features in this group",
+    "up": "Up",
+    "down": "Down",
+    "name": "Group name",
+    "delete": "Delete group"
+  },
+  "maker": {
+    "title": "Pick features by a property",
+    "field": "Property",
+    "filter": "Filter values…",
+    "all": "All",
+    "none": "None",
+    "picked": "{{n}} features selected",
+    "noValues": "No values",
+    "oneGroup": "One group with these",
+    "groupPerValue": "One group per value",
+    "newGroup": "New group",
+    "empty": "Empty group"
+  },
+  "cond": {
+    "title": "Conditions",
+    "all": "all must hold",
+    "any": "any is enough",
+    "none": "No conditions: every feature matches.",
+    "add": "Add condition",
+    "remove": "Remove condition"
+  },
+  "look": {
+    "points": "Points",
+    "symbol": "Symbol",
+    "size": "Size",
+    "label": "Label",
+    "noLabel": "No label",
+    "lines": "Lines",
+    "width": "Width",
+    "opacity": "Opacity",
+    "areas": "Areas",
+    "fill": "Fill",
+    "outline": "Outline",
+    "height": "Height",
+    "fixedHeight": "Fixed height (m)",
+    "byField": "From {{f}}",
+    "offset": "Separate",
+    "offsetHint": "Shift each line to the right of its direction, so two-way streets show both directions.",
+    "flow": "Animate flow",
+    "flowSpeed": "Flow speed"
+  },
+  "zoom": {
+    "detail": "Full symbol + label up to",
+    "icon": "Symbol only up to",
+    "dot": "Coloured dot up to",
+    "hint": "Like a web map: the further the camera, the simpler each point is drawn — so thousands stay readable.",
+    "detailShort": "full",
+    "iconShort": "icon",
+    "dotShort": "dot",
+    "hiddenShort": "hidden",
+    "beyond": "Farther than {{d}}: not drawn.",
+    "onlyPoints": "Zoom levels apply to point features; this layer has none."
+  },
+  "agg": {
+    "onlyPoints": "Aggregation summarises point features; this layer has none.",
+    "hint": "From far away, show the layer as density or as cells coloured by a value — e.g. charger occupancy — instead of thousands of pins.",
+    "value": "Value",
+    "count": "Number of features",
+    "atValue": "at value",
+    "atFraction": "at fraction (0–1)",
+    "absolute": "Stops in data units (not 0–1)",
+    "cell": "Cell size",
+    "radius": "Radius",
+    "from": "Show when farther than",
+    "extrude": "Extrude cells by value",
+    "legend": "Closer than {{d}} the individual features return.",
+    "kind": {
+      "none": "None",
+      "heatmap": "Heatmap",
+      "hexbin": "Hexagons"
+    },
+    "fn": {
+      "mean": "average",
+      "sum": "sum",
+      "min": "minimum",
+      "max": "maximum"
+    },
+    "ramp": {
+      "occupancy": "Occupancy",
+      "traffic": "Traffic",
+      "heat": "Density",
+      "blues": "Blues"
+    }
+  },
+  "op": {
+    "eq": "is",
+    "neq": "is not",
+    "in": "is one of",
+    "notIn": "is none of",
+    "contains": "contains",
+    "startsWith": "starts with",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "between",
+    "exists": "exists",
+    "missing": "is missing",
+    "isTrue": "is true",
+    "isFalse": "is false"
+  },
+  "legend": {
+    "title": "Legend",
+    "openHint": "Show what the colours and symbols of your data layers mean",
+    "close": "Minimise legend",
+    "restore": "Show {{n}} layer(s) left out",
+    "tip": "Click a group to hide or show it · Alt/⌘-click: only that group",
+    "exclude": "Leave this layer out of the legend",
+    "hideGroup": "Hide in the scene",
+    "showGroup": "Show in the scene",
+    "aggregateFar": "From far away it turns into a summary.",
+    "density": "Density",
+    "less": "less",
+    "more": "more",
+    "zoomInForDetail": "Zoom in to see each feature.",
+    "inCaptures": "in captures",
+    "inCapturesHint": "While open, the legend is also drawn into screenshots, clips and GIFs. Minimise it to leave it out.",
+    "asOf": "data {{when}}",
+    "scale": "Scale",
+    "scaleHint": "Show a scale bar (also in captures). Only drawn when the view looks down enough to be true.",
+    "scaleNeedsTopDown": "Tilt the view further down to show a true scale.",
+    "northHint": "Show true north of the site (also in captures)",
+    "northNeedsSite": "North needs a located site (a georeferenced model, scan or data layer).",
+    "move": "Move to another corner (also in captures)"
+  },
+  "history": {
+    "bar": "Time bar",
+    "past": "Past",
+    "pastHint": "You are looking at recorded data, not the present.",
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "Playback speed",
+    "when": "Moment shown",
+    "live": "Live",
+    "liveHint": "Back to the present",
+    "record": "Record history",
+    "recordHint": "Keep this feed’s past on this device to rewind it later (only what changes is stored).",
+    "retention": "Keep for",
+    "hours": "{{n}} h",
+    "days": "{{n}} days",
+    "sizeHint": "Space used on this device",
+    "view": "View history",
+    "nothingYet": "Nothing recorded yet — history builds up while the layer is live.",
+    "spanH": "{{n}} h recorded",
+    "spanM": "{{n}} min recorded",
+    "clear": "Delete"
+  },
+  "traffic": {
+    "veryFluid": "Very fluid",
+    "fluid": "Fluid",
+    "dense": "Dense",
+    "veryDense": "Very dense",
+    "congestion": "Congestion",
+    "closed": "Closed",
+    "noData": "No data"
+  },
+  "join": {
+    "open": "Join live data…",
+    "title": "Join a live table",
+    "hint": "Values from a table refreshed on a timer (CSV, “;”, “#” records…) are matched onto these features by a key — e.g. a traffic status feed onto street sections.",
+    "test": "Test",
+    "headerless": "The table has no header row",
+    "namesPlaceholder": "Column names, comma-separated (e.g. id,time,state)",
+    "layerKey": "Key in this layer",
+    "tableKey": "Key in the table",
+    "timeColumn": "Time of the data",
+    "apply": "Join",
+    "done": "Joined — the layer now refreshes live."
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}}: {{n}} in {{layer}}",
+    "show": "Show",
+    "newName": "New alert",
+    "hint": "Get notified when features meet a condition — at once or after it has held for some minutes. Alerting features pulse with a red ring.",
+    "notLive": "Alerts are checked on every refresh: turn on live refresh for this layer.",
+    "enabled": "Active",
+    "name": "Alert name",
+    "remove": "Delete alert",
+    "forMin": "For at least",
+    "minutes": "min",
+    "add": "New alert",
+    "fromGroup": "From a group…"
+  }
+}

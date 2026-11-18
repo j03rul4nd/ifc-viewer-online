@@ -176,10 +176,12 @@ export interface DynamicFrameUpdate {
  *   map-conversion — both georeferenced, IFC has a full IfcMapConversion
  *   shared-crs     — both carry the same projected CRS
  *   geographic     — cloud is georeferenced, IFC only has IfcSite lat/lon
+ *   scene-anchor   — no IFC placement; cloud placed by its CRS against the
+ *                    scene's geographic anchor (geo/scene-anchor.ts)
  *   local          — neither is georeferenced, the bboxes plausibly coincide
  *   manual         — nothing known; centred on the model, user drives from there
  */
-export type AlignmentRung = 'map-conversion' | 'shared-crs' | 'geographic' | 'local' | 'manual'
+export type AlignmentRung = 'map-conversion' | 'shared-crs' | 'geographic' | 'scene-anchor' | 'local' | 'manual'
 
 export type AlignmentConfidence = 'exact' | 'high' | 'approximate' | 'manual'
 
@@ -334,6 +336,24 @@ export interface PointCloudDisplay {
   round: boolean
   /** Eye-dome-lighting-ish depth cue: darken points by depth gradient. */
   edl: boolean
+  // ── Analysis filters — shader-only, so they are as instant as the colour
+  //    modes. Session state: parseDisplay never restores them, because a slice
+  //    or a hidden class surviving a reload reads as "half my scan is gone". ──
+  /** Keep only the points inside [sliceMin, sliceMax] of the height range. */
+  sliceEnabled: boolean
+  /** Lower edge of the height slice, as a fraction 0-1 of the resident height range. */
+  sliceMin: number
+  /** Upper edge of the height slice, fraction 0-1. */
+  sliceMax: number
+  /**
+   * ASPRS classes 0-15 still drawn, one bit per class. 0xFFFF = all. Only
+   * applied when the source carried classification.
+   */
+  classMask: number
+  /** Draw iso-height lines over the points (terrain, slabs, floor flatness). */
+  contours: boolean
+  /** Contour spacing, scene metres. */
+  contourInterval: number
 }
 
 export const DEFAULT_DISPLAY: PointCloudDisplay = {
@@ -346,7 +366,16 @@ export const DEFAULT_DISPLAY: PointCloudDisplay = {
   confidenceThreshold: 0,
   round: true,
   edl: false,
+  sliceEnabled: false,
+  sliceMin: 0,
+  sliceMax: 1,
+  classMask: 0xffff,
+  contours: false,
+  contourInterval: 1,
 }
+
+/** Every ASPRS class the shader palette knows — the class filter's rows. */
+export const ASPRS_CLASS_CODES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const
 
 // ── Budgets ────────────────────────────────────────────────────────────────────
 
@@ -369,6 +398,9 @@ export const RENDER_BUDGET_DEFAULT = 4_000_000
 export const BYTES_PER_POINT = 18
 
 // ── Worker protocol ────────────────────────────────────────────────────────────
+//
+// Whole file:  parse → header · (budget) · progress×n, chunk×n · done | error
+// Streaming:   stream-open → header, index · (stream-nodes → node×n, nodes-done)×n
 
 /**
  * Streaming protocol for COPC, alongside the one-shot `parse`.
@@ -413,17 +445,41 @@ export interface StreamIndexNode {
   pointCount: number
 }
 
+/**
+ * One-shot parse of a whole file.
+ *
+ * Carries NO point budget. The worker opens the file, posts `header`, and then
+ * waits for a `budget` grant before it reads a single point — see
+ * PointCloudBudgetGrant for why the budget can only be decided after the header.
+ */
 export interface PointCloudParseRequest {
   type: 'parse'
   id: string
   file: File
   format: PointCloudFormat
-  maxPoints: number
   chunkPoints: number
+}
+
+/**
+ * The runner's reply to a whole-file `header`: how many points this parse may
+ * keep resident.
+ *
+ * Granted AFTER the header on purpose. The resident-point cap is shared by every
+ * cloud, and a budget read when the parse was requested could only be "whatever
+ * is left right now" — so two scans opened together each read the same
+ * remainder and together blew the cap N times over. Waiting for the header lets
+ * the runner reserve what this file actually declares, and queue it when
+ * another scan still holds the rest.
+ */
+export interface PointCloudBudgetGrant {
+  type: 'budget'
+  id: string
+  maxPoints: number
 }
 
 export type PointCloudWorkerIn =
   | PointCloudParseRequest
+  | PointCloudBudgetGrant
   | PointCloudStreamOpenRequest
   | PointCloudStreamNodesRequest
   | PointCloudStreamCloseRequest
@@ -432,6 +488,15 @@ export type PointCloudWorkerIn =
 export type PointCloudWorkerOut =
   | { type: 'header'; id: string; frame: SourceFrame; attributes: PointAttributesPresent; declaredCount: number | null }
   | { type: 'chunk'; id: string; chunk: PointChunk; progress: number }
+  /**
+   * Read progress, independent of chunks: `fraction` 0-1 as the reader reports
+   * it, `points` decoded so far. Throttled in the worker.
+   *
+   * Exists because chunks are a poor clock. The chunker only emits when a voxel
+   * cell fills, so a compact cloud — a room, a single object — posts nothing
+   * until the final flush and sat at 0 % for its whole parse.
+   */
+  | { type: 'progress'; id: string; fraction: number; points: number }
   /** The octree index, once, in reply to `stream-open`. */
   | {
       type: 'index'

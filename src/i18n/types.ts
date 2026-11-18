@@ -22,7 +22,9 @@ import type enVerify from '../locales/en/verify.json';
 import type enPro from '../locales/en/pro.json';
 import type enPointCloud from '../locales/en/pointcloud.json';
 import type enMesh from '../locales/en/mesh.json';
+import type enLayers from '../locales/en/layers.json';
 import type enVideo from '../locales/en/video.json';
+import type enLoading from '../locales/en/loading.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -52,7 +54,9 @@ declare module 'i18next' {
       pro: typeof enPro;
       pointcloud: typeof enPointCloud;
       mesh: typeof enMesh;
+      layers: typeof enLayers;
       video: typeof enVideo;
+      loading: typeof enLoading;
     };
   }
 }

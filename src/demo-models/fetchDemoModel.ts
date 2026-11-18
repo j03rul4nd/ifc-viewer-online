@@ -4,6 +4,7 @@
 // transparently falls back to a secondary URL if the primary host is down.
 
 import type { DemoModel } from './models'
+import { lastModifiedFromResponse } from '../lib/fetch-ifc-url'
 
 export interface FetchProgress {
   /** 0–1, or null when total size is unknown (no Content-Length). */
@@ -19,28 +20,42 @@ export class DemoFetchError extends Error {
   }
 }
 
+interface Fetched {
+  /**
+   * The body as it arrived: the streamed chunks, or the one Blob of a plain
+   * read. Never concatenated here — `new File(parts)` copies them into Blob
+   * storage once, where a joined buffer would be a second full copy of the
+   * model on the main heap (see fetchIfcFromUrl).
+   */
+  parts: BlobPart[]
+  size: number
+  /** From `Last-Modified`, else 0 — see lastModifiedFromResponse. */
+  lastModified: number
+}
+
 async function fetchOne(
   url: string,
   fallbackTotal: number,
   signal: AbortSignal | undefined,
   onProgress?: (p: FetchProgress) => void,
-): Promise<ArrayBuffer> {
+): Promise<Fetched> {
   const res = await fetch(url, { signal, cache: 'force-cache' })
   if (!res.ok) throw new DemoFetchError(`HTTP ${res.status} ${res.statusText}`)
 
   const lenHeader = res.headers.get('Content-Length')
   const total = lenHeader ? Number(lenHeader) : fallbackTotal || null
+  const lastModified = lastModifiedFromResponse(res)
 
   // Stream when possible so the UI can report progress; fall back to a plain
-  // arrayBuffer() read for browsers/responses without a readable body.
+  // blob() read for browsers/responses without a readable body.
   if (!res.body || !onProgress) {
-    const buf = await res.arrayBuffer()
-    onProgress?.({ ratio: 1, receivedBytes: buf.byteLength, totalBytes: total })
-    return buf
+    const blob = await res.blob()
+    onProgress?.({ ratio: 1, receivedBytes: blob.size, totalBytes: total })
+    return { parts: [blob], size: blob.size, lastModified }
   }
 
   const reader = res.body.getReader()
-  const chunks: Uint8Array[] = []
+  const chunks: BlobPart[] = []
   let received = 0
   for (;;) {
     const { done, value } = await reader.read()
@@ -51,14 +66,7 @@ async function fetchOne(
       onProgress({ ratio: total ? Math.min(received / total, 1) : null, receivedBytes: received, totalBytes: total })
     }
   }
-
-  const out = new Uint8Array(received)
-  let offset = 0
-  for (const c of chunks) {
-    out.set(c, offset)
-    offset += c.byteLength
-  }
-  return out.buffer
+  return { parts: chunks, size: received, lastModified }
 }
 
 /**
@@ -73,9 +81,15 @@ export async function fetchDemoModel(
   let lastErr: unknown
   for (const url of urls) {
     try {
-      const buf = await fetchOne(url, model.sizeBytes, opts.signal, opts.onProgress)
-      if (buf.byteLength === 0) throw new DemoFetchError('Empty response')
-      return new File([buf], model.fileName, { type: '' })
+      const { parts, size, lastModified } = await fetchOne(url, model.sizeBytes, opts.signal, opts.onProgress)
+      if (size === 0) throw new DemoFetchError('Empty response')
+      // A stable lastModified keeps the OPFS cache key (and the placement /
+      // validation results keyed by it) the same on every visit, so a repeat
+      // demo load is a cache hit instead of a re-parse plus a duplicate entry.
+      // The primary and the fallback host may disagree on the date; that costs
+      // one extra conversion when the host changes, never a stale model (the
+      // entry's content fingerprint is checked on lookup).
+      return new File(parts, model.fileName, { type: '', lastModified })
     } catch (err) {
       if (opts.signal?.aborted) throw err
       lastErr = err

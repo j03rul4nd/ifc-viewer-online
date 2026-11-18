@@ -1,0 +1,438 @@
+{
+  "entry": "Livelli di dati",
+  "title": "Livelli di dati",
+  "intro": "Importa percorsi, zone e punti da file GeoJSON, URL o servizi WFS. Tutto finisce nello stesso sito del modello, delle scansioni e della mappa.",
+  "working": "Caricamento…",
+  "anchor": {
+    "by": "Posizionato rispetto a {{label}} ({{source}})",
+    "map": "Posizionato rispetto alla posizione della mappa / del modello",
+    "none": "Nessuna ancora: il primo livello georeferenziato fissa il sito.",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "scansione",
+      "vector": "livello di dati",
+      "manual": "manuale"
+    }
+  },
+  "file": {
+    "drop": "Apri file GeoJSON…",
+    "sample": "Prova un esempio (sintetico, Barcellona)",
+    "sampleLive": "Prova dati in tempo reale (treni simulati, Barcellona)",
+    "sampleLiveName": "Treni simulati"
+  },
+  "url": {
+    "title": "GeoJSON da un URL",
+    "add": "Aggiungi"
+  },
+  "wfs": {
+    "title": "Servizio WFS",
+    "connect": "Connetti",
+    "found": "{{count}} livelli in {{title}}",
+    "noJson": "nessun output GeoJSON",
+    "radius": "Area",
+    "load": "Carica",
+    "hint": "Viene richiesta solo l'area attorno al sito, fino a 5.000 elementi. Il server deve consentire richieste cross-origin (CORS)."
+  },
+  "list": {
+    "title": "Livelli connessi ({{count}})"
+  },
+  "count": {
+    "lines_one": "{{count}} linea",
+    "lines_other": "{{count}} linee",
+    "polygons_one": "{{count}} area",
+    "polygons_other": "{{count}} aree",
+    "points_one": "{{count}} punto",
+    "points_other": "{{count}} punti"
+  },
+  "action": {
+    "hide": "Nascondi",
+    "show": "Mostra",
+    "frame": "Inquadra livello",
+    "remove": "Rimuovi",
+    "close": "Chiudi"
+  },
+  "height": {
+    "title": "Altezze",
+    "relative": "Sopra il terreno (drappeggiato)",
+    "absolute": "Quota assoluta",
+    "ignore": "Piatto sul suolo",
+    "source": {
+      "coordinates": "I dati hanno una coordinata Z.",
+      "property": "Colonna di altezza: {{prop}}",
+      "none": "I dati non hanno altezze."
+    }
+  },
+  "style": {
+    "color": "Colore",
+    "width": "Spessore linea",
+    "opacity": "Opacità riempimento",
+    "fill": "Riempi aree",
+    "extrude": "Estrudi aree",
+    "extrudeFallback": "Estrudi aree senza altezza",
+    "pointSize": "Dimensione punti"
+  },
+  "warn": {
+    "far": "Questo livello è a {{km}} km dal sito: controlla il suo sistema di coordinate.",
+    "skipped": "{{count}} elementi ignorati (geometria vuota o non supportata)."
+  },
+  "error": {
+    "notJson": "Il file non è JSON valido.",
+    "notGeoJson": "Questo non è GeoJSON.",
+    "unknownCrs": "I dati dichiarano un sistema di coordinate sconosciuto a questo visualizzatore.",
+    "projectedWithoutCrs": "Le coordinate sono in metri ma non è dichiarato alcun sistema di coordinate.",
+    "empty": "Il livello non ha elementi.",
+    "noAnchor": "Nessun sito su cui posizionare il livello.",
+    "http": "Il server ha risposto con un errore.",
+    "network": "Impossibile raggiungere il server: potrebbe essere offline o bloccare le richieste cross-origin (CORS).",
+    "aborted": "Annullato.",
+    "badUrl": "URL non valido.",
+    "notWfs": "Questo indirizzo non è un servizio WFS.",
+    "noFeatureTypes": "Il servizio non elenca alcun livello.",
+    "wfsException": "Il server WFS ha rifiutato la richiesta.",
+    "notJsonOutput": "Il server non ha restituito GeoJSON (forse offre solo GML).",
+    "cors": "La fonte non consente ai browser di leggerla (niente CORS). Configura un proxy sotto.",
+    "notGbfs": "Non è un feed GBFS.",
+    "notGtfsRt": "Non è un feed GTFS-Realtime (JSON).",
+    "noGeometryInTable": "La tabella non ha colonne con posizione (lon/lat, WKT o coordinate). Uniscila a un livello.",
+    "noJoinBase": "Nessuna geometria a cui unire.",
+    "emptyTable": "La tabella è vuota."
+  },
+  "kind": {
+    "point": "Punto",
+    "line": "Linea",
+    "polygon": "Area"
+  },
+  "selected": {
+    "noProps": "Questo elemento non ha attributi."
+  },
+  "restore": {
+    "failed": "{{count}} livelli salvati non sono stati ripristinati (offline, o file troppo grande da conservare)."
+  },
+  "search": {
+    "title": "Cerca nel gemello",
+    "placeholder": "Stazione, codice asset, linea, file… es. code:BCN-SANTS",
+    "hint": "Cerca in tutti i livelli, IFC e scansioni caricati ({{count}} elementi), inclusi gli attributi annidati. Usa campo:valore per filtrare.",
+    "empty": "Nessun risultato.",
+    "related": "Collegato a {{label}}",
+    "noRelated": "Nessun collegamento trovato.",
+    "reason": {
+      "shared": "stesso {{field}}: {{value}}",
+      "inside": "è all'interno",
+      "contains": "lo contiene",
+      "near": "a {{m}} m"
+    }
+  },
+  "symbology": {
+    "styleBy": "Stile per",
+    "single": "Un solo stile",
+    "others": "Tutto il resto",
+    "all": "Tutti gli elementi",
+    "hint": "Ogni valore del campo ha il suo colore e simbolo. Deseleziona un valore per nasconderlo.",
+    "symbol": "Simbolo",
+    "size": "Dimensione (m)",
+    "visible": "Mostra",
+    "icons": "Icone",
+    "shapes": "Forme 3D",
+    "models": "I tuoi modelli",
+    "uploadModel": "Carica modello GLB…",
+    "modelFailed": "Impossibile leggere il modello (solo GLB).",
+    "icon": {
+      "pin": "Puntina",
+      "train": "Stazione ferroviaria",
+      "metro": "Metro",
+      "tram": "Tram",
+      "bus": "Autobus",
+      "power": "Elettricità / sottostazione",
+      "exit": "Uscita",
+      "door": "Porta / accesso",
+      "sensor": "Sensore",
+      "camera": "Telecamera",
+      "wifi": "Antenna / Wi-Fi",
+      "warning": "Avviso",
+      "info": "Informazioni",
+      "fire": "Antincendio",
+      "water": "Acqua",
+      "parking": "Parcheggio",
+      "tree": "Albero",
+      "building": "Edificio",
+      "bike": "Bicicletta",
+      "charger": "Punto di ricarica"
+    },
+    "shape": {
+      "sphere": "Sfera",
+      "pin": "Puntina",
+      "cube": "Cubo",
+      "cylinder": "Cilindro",
+      "cone": "Cono"
+    }
+  },
+  "links": {
+    "linkTo": "Collega a…",
+    "pickTarget": "Ora scegli a cosa collegare {{label}}: fai clic su un risultato.",
+    "cancel": "Annulla",
+    "urlPlaceholder": "https://… scheda, dashboard, documento",
+    "addUrl": "Aggiungi link",
+    "remove": "Rimuovi link",
+    "notLoaded": "non caricato",
+    "badge": "LINK"
+  },
+  "presets": {
+    "title": "Fonti pubbliche in tempo reale",
+    "hint": "Pronte da collegare, ognuna impostata su quanto spesso il fornitore aggiorna davvero.",
+    "connect": "Collega",
+    "needsProxy": "proxy",
+    "needsProxyHint": "Questo fornitore non invia l'intestazione CORS: un browser può leggerlo solo tramite proxy (vedi Proxy sotto).",
+    "bicing": {
+      "name": "Stazioni Bicing",
+      "hint": "Bici e stalli liberi per stazione (GBFS) · ogni 30 s"
+    },
+    "fgc": {
+      "name": "Treni FGC",
+      "hint": "Posizione in tempo reale, puntualità e occupazione · quota limitata (5.000/giorno)"
+    },
+    "rodalies": {
+      "name": "Treni Rodalies (Renfe)",
+      "hint": "Posizioni in tempo reale (GTFS-Realtime) · la fonte si aggiorna ogni 30 s"
+    },
+    "catastro": {
+      "name": "Particelle catastali",
+      "hint": "WFS del Catasto (GML) · 250 m attorno al sito · statico"
+    },
+    "icgc-municipis": {
+      "name": "Comuni (ICGC)",
+      "hint": "Confini comunali della Catalogna · statico"
+    },
+    "bcn-traffic": {
+      "name": "Traffico di Barcellona (dal vivo)",
+      "hint": "Stato di oltre 500 tratti · ogni 5 min · entrambi i sensi, flusso animato"
+    }
+  },
+  "live": {
+    "toggle": "Aggiornamento in tempo reale",
+    "interval": "Aggiorna ogni",
+    "animate": "Fai scorrere i punti che si muovono",
+    "secondsAgo": "{{n}} s fa",
+    "minutesAgo": "{{n}} min fa",
+    "hoursAgo": "{{n}} h fa",
+    "dataAge": "Dati di {{ago}}",
+    "fetched": "Scaricato {{ago}}",
+    "unchanged": "nessuna modifica",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "prossimo tra {{s}} s",
+    "sourcePaced": "al ritmo della fonte",
+    "quota": "{{n}} richieste rimaste oggi",
+    "viaProxy": "via proxy",
+    "retrying": "tentativo {{n}}",
+    "identityIndex": "Gli elementi non hanno un id stabile: abbinati per posizione nella lista."
+  },
+  "proxy": {
+    "title": "Proxy per fonti senza CORS",
+    "hint": "Alcuni feed pubblici (Renfe) non possono essere letti da un browser. Un tuo proxy li inoltra. Usa {url} al posto dell'indirizzo.",
+    "save": "Salva",
+    "saved": "Proxy salvato",
+    "cleared": "Proxy rimosso",
+    "needsPlaceholder": "Il modello deve contenere {url}."
+  },
+  "styleTabs": {
+    "groups": "Gruppi",
+    "zoom": "Zoom",
+    "aggregate": "Aggregazione",
+    "alerts": "Avvisi"
+  },
+  "groups": {
+    "summary": "{{n}} elementi · {{g}} gruppi",
+    "create": "Crea gruppi",
+    "rest": "Tutto il resto",
+    "all": "Tutti gli elementi",
+    "visible": "Mostra",
+    "priorityHint": "Un elemento prende l’aspetto del PRIMO gruppo che soddisfa — riordina con ▲▼.",
+    "count": "elementi in questo gruppo",
+    "up": "Su",
+    "down": "Giù",
+    "name": "Nome del gruppo",
+    "delete": "Elimina gruppo"
+  },
+  "maker": {
+    "title": "Scegli elementi per una proprietà",
+    "field": "Proprietà",
+    "filter": "Filtra valori…",
+    "all": "Tutti",
+    "none": "Nessuno",
+    "picked": "{{n}} elementi selezionati",
+    "noValues": "Nessun valore",
+    "oneGroup": "Un gruppo con questi",
+    "groupPerValue": "Un gruppo per valore",
+    "newGroup": "Nuovo gruppo",
+    "empty": "Gruppo vuoto"
+  },
+  "cond": {
+    "title": "Condizioni",
+    "all": "devono valere tutte",
+    "any": "ne basta una",
+    "none": "Nessuna condizione: tutti gli elementi corrispondono.",
+    "add": "Aggiungi condizione",
+    "remove": "Rimuovi condizione"
+  },
+  "look": {
+    "points": "Punti",
+    "symbol": "Simbolo",
+    "size": "Dimensione",
+    "label": "Etichetta",
+    "noLabel": "Nessuna etichetta",
+    "lines": "Linee",
+    "width": "Spessore",
+    "opacity": "Opacità",
+    "areas": "Aree",
+    "fill": "Riempimento",
+    "outline": "Contorno",
+    "height": "Altezza",
+    "fixedHeight": "Altezza fissa (m)",
+    "byField": "Da {{f}}",
+    "offset": "Separa",
+    "offsetHint": "Sposta ogni linea a destra del suo senso, così le strade a doppio senso mostrano entrambi.",
+    "flow": "Anima flusso",
+    "flowSpeed": "Velocità del flusso"
+  },
+  "zoom": {
+    "detail": "Simbolo completo + testo fino a",
+    "icon": "Solo simbolo fino a",
+    "dot": "Punto colorato fino a",
+    "hint": "Come una mappa web: più la camera è lontana, più semplice è ogni punto — migliaia restano leggibili.",
+    "detailShort": "completo",
+    "iconShort": "icona",
+    "dotShort": "punto",
+    "hiddenShort": "nascosto",
+    "beyond": "Oltre {{d}}: non disegnato.",
+    "onlyPoints": "I livelli di zoom valgono per i punti; questo livello non ne ha."
+  },
+  "agg": {
+    "onlyPoints": "L’aggregazione riassume i punti; questo livello non ne ha.",
+    "hint": "Da lontano, mostra il livello come densità o celle colorate per un valore — es. occupazione delle colonnine — invece di migliaia di segnaposto.",
+    "value": "Valore",
+    "count": "Numero di elementi",
+    "atValue": "al valore",
+    "atFraction": "alla frazione (0–1)",
+    "absolute": "Soglie in unità del dato (non 0–1)",
+    "cell": "Dimensione cella",
+    "radius": "Raggio",
+    "from": "Mostra oltre",
+    "extrude": "Estrudi le celle per valore",
+    "legend": "Più vicino di {{d}} tornano i singoli elementi.",
+    "kind": {
+      "none": "Nessuna",
+      "heatmap": "Mappa di calore",
+      "hexbin": "Esagoni"
+    },
+    "fn": {
+      "mean": "media",
+      "sum": "somma",
+      "min": "minimo",
+      "max": "massimo"
+    },
+    "ramp": {
+      "occupancy": "Occupazione",
+      "traffic": "Traffico",
+      "heat": "Densità",
+      "blues": "Blu"
+    }
+  },
+  "op": {
+    "eq": "è",
+    "neq": "non è",
+    "in": "è uno di",
+    "notIn": "non è nessuno di",
+    "contains": "contiene",
+    "startsWith": "inizia con",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "tra",
+    "exists": "esiste",
+    "missing": "manca",
+    "isTrue": "è vero",
+    "isFalse": "è falso"
+  },
+  "legend": {
+    "title": "Legenda",
+    "openHint": "Vedi cosa significano colori e simboli dei tuoi livelli di dati",
+    "close": "Riduci legenda",
+    "restore": "Mostra {{n}} livello/i esclusi",
+    "tip": "Clic su un gruppo per nasconderlo o mostrarlo · Alt/⌘-clic: solo quel gruppo",
+    "exclude": "Escludi questo livello dalla legenda",
+    "hideGroup": "Nascondi nella scena",
+    "showGroup": "Mostra nella scena",
+    "aggregateFar": "Da lontano diventa un riepilogo.",
+    "density": "Densità",
+    "less": "meno",
+    "more": "più",
+    "zoomInForDetail": "Avvicinati per vedere ogni elemento.",
+    "inCaptures": "nelle catture",
+    "inCapturesHint": "Se aperta, la legenda compare anche in screenshot, clip e GIF. Riducila per escluderla.",
+    "asOf": "dati {{when}}",
+    "scale": "Scala",
+    "scaleHint": "Mostra una barra di scala (anche nelle catture). Disegnata solo se la vista guarda abbastanza in basso da essere corretta.",
+    "scaleNeedsTopDown": "Inclina di più la vista verso il basso per una scala affidabile.",
+    "northHint": "Mostra il nord geografico del sito (anche nelle catture)",
+    "northNeedsSite": "Il nord richiede un sito localizzato (modello, scansione o livello georeferenziati).",
+    "move": "Sposta in un altro angolo (anche nelle catture)"
+  },
+  "history": {
+    "bar": "Barra temporale",
+    "past": "Passato",
+    "pastHint": "Stai guardando dati registrati, non il presente.",
+    "play": "Riproduci",
+    "pause": "Pausa",
+    "speed": "Velocità di riproduzione",
+    "when": "Istante mostrato",
+    "live": "Dal vivo",
+    "liveHint": "Torna al presente",
+    "record": "Registra cronologia",
+    "recordHint": "Conserva il passato di questo feed su questo dispositivo per riavvolgerlo (si salvano solo le modifiche).",
+    "retention": "Conserva",
+    "hours": "{{n}} h",
+    "days": "{{n}} giorni",
+    "sizeHint": "Spazio usato su questo dispositivo",
+    "view": "Vedi cronologia",
+    "nothingYet": "Ancora nulla di registrato: la cronologia cresce mentre il livello è dal vivo.",
+    "spanH": "{{n}} h registrate",
+    "spanM": "{{n}} min registrati",
+    "clear": "Elimina"
+  },
+  "traffic": {
+    "veryFluid": "Molto fluido",
+    "fluid": "Fluido",
+    "dense": "Denso",
+    "veryDense": "Molto denso",
+    "congestion": "Congestione",
+    "closed": "Chiuso",
+    "noData": "Nessun dato"
+  },
+  "join": {
+    "open": "Unisci dati dal vivo…",
+    "title": "Unisci una tabella dal vivo",
+    "hint": "I valori di una tabella aggiornata (CSV, “;”, record con “#”…) vengono abbinati a questi elementi tramite una chiave — es. lo stato del traffico sui tratti stradali.",
+    "test": "Prova",
+    "headerless": "La tabella non ha riga di intestazione",
+    "namesPlaceholder": "Nomi di colonna, separati da virgole (es. id,ora,stato)",
+    "layerKey": "Chiave in questo livello",
+    "tableKey": "Chiave nella tabella",
+    "timeColumn": "Ora dei dati",
+    "apply": "Unisci",
+    "done": "Unito: il livello ora si aggiorna dal vivo."
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}}: {{n}} in {{layer}}",
+    "show": "Mostra",
+    "newName": "Nuovo avviso",
+    "hint": "Ti avvisa quando gli elementi soddisfano una condizione, subito o dopo alcuni minuti. Gli elementi in allerta pulsano con un anello rosso.",
+    "notLive": "Gli avvisi vengono controllati a ogni aggiornamento: attiva l’aggiornamento dal vivo per questo livello.",
+    "enabled": "Attivo",
+    "name": "Nome dell’avviso",
+    "remove": "Elimina avviso",
+    "forMin": "Per almeno",
+    "minutes": "min",
+    "add": "Nuovo avviso",
+    "fromGroup": "Da un gruppo…"
+  }
+}

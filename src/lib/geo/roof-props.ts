@@ -31,6 +31,8 @@ export type RoofPropKind = 'chimney' | 'hvac' | 'tank' | 'stairbox'
 export interface RoofPropBuilding {
   id?: string
   ring: ReadonlyArray<{ lat: number; lon: number }>
+  /** Courtyards: a chimney standing in one would stand on nothing. */
+  holes?: ReadonlyArray<ReadonlyArray<{ lat: number; lon: number }>>
   height: BuildingHeight
   style?: FeatureStyle
 }
@@ -187,6 +189,7 @@ export function roofPropAnchors(
     if (!b.ring || b.ring.length < 3) continue
 
     const pts = b.ring.map((p) => latLonToNormalized(p.lat, p.lon))
+    const holes = (b.holes ?? []).map((h) => h.map((p) => latLonToNormalized(p.lat, p.lon)))
     const areaM2 = ringArea(pts) / (mToN * mToN)
     if (areaM2 < MIN_ROOF_AREA_M2) continue
 
@@ -204,7 +207,7 @@ export function roofPropAnchors(
     const spot = (alongM: number, acrossM: number): { nx: number; ny: number } | null => {
       const nx = c.nx + Math.cos(yaw) * alongM * mToN - Math.sin(yaw) * acrossM * mToN
       const ny = c.ny + Math.sin(yaw) * alongM * mToN + Math.cos(yaw) * acrossM * mToN
-      return inside(pts, nx, ny) ? { nx, ny } : null
+      return inside(pts, nx, ny) && !holes.some((h) => inside(h, nx, ny)) ? { nx, ny } : null
     }
     const push = (kind: RoofPropKind, at: { nx: number; ny: number } | null, deckM: number,
                   seed: string): void => {

@@ -17,6 +17,7 @@
 // No three.js here — the mesh is extruded in geo-system.
 
 import { bboxAround, OVERPASS_ENDPOINT, overpassRemarkError } from '../lib/geo/buildings'
+import { fetchOmtFallback } from '../lib/geo/omt-fallback'
 import {
   newFootprints, extractCovers, clearsModelPlan,
   type OvertureExtract, type OvertureFootprint,
@@ -44,6 +45,8 @@ export interface BuildingsRequest {
   lon: number
   /** Half the side of the square query area, metres. */
   halfSizeM: number
+  /** Dev QA only: skip Overpass as if it had failed, to exercise the fallback. */
+  forceFallback?: boolean
   /**
    * The model's own plan, in normalized planar coordinates.
    *
@@ -65,6 +68,12 @@ export type BuildingsResponse =
       truncated: boolean
       /** Footprints added from the shipped Overture extract. Drives attribution. */
       overture: number
+      /**
+       * True when Overpass failed and the city was rebuilt from the basemap's
+       * OpenMapTiles vector tiles instead (omt-fallback.ts). Drives the panel
+       * note and the attribution.
+       */
+      fallback?: boolean
     }
   | { type: 'error'; id: string; message: string }
 
@@ -73,41 +82,62 @@ self.onmessage = (e: MessageEvent<BuildingsRequest>): void => {
   if (msg?.type === 'fetch-buildings') void handleFetch(msg)
 }
 
+/** One Overpass query; throws on HTTP errors, timeouts and "busy" remarks. */
+async function fetchOverpass(query: string): Promise<unknown> {
+  // AbortController rather than a bare race: a hung request must actually be
+  // cancelled, not merely ignored while it keeps the connection open.
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+  let json: unknown
+  try {
+    const res = await fetch(OVERPASS_ENDPOINT, {
+      method: 'POST',
+      // Overpass expects the QL in a form body; this is the documented shape.
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: controller.signal,
+    })
+    if (!res.ok) {
+      // 429/504 are Overpass telling us it is busy — surface that plainly
+      // rather than as a generic failure, since retrying later works.
+      throw new Error(`Overpass HTTP ${res.status}`)
+    }
+    json = await res.json()
+  } finally {
+    clearTimeout(timer)
+  }
+  // A busy Overpass answers 200 with an empty body and a `remark`. Treated as
+  // success it becomes "nothing is mapped here", which the caller then CACHES
+  // — so one unlucky moment blanks the neighbourhood for the whole session
+  // and retrying does nothing. Surface it as the failure it is.
+  const remark = overpassRemarkError(json)
+  if (remark) throw new Error(`Overpass: ${remark}`)
+  return json
+}
+
 async function handleFetch(req: BuildingsRequest): Promise<void> {
   try {
     const bbox = bboxAround(req.lat, req.lon, req.halfSizeM)
     const query = buildFeaturesQuery(bbox, QUERY_TIMEOUT_S, MAX_ELEMENTS)
 
-    // AbortController rather than a bare race: a hung request must actually be
-    // cancelled, not merely ignored while it keeps the connection open.
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-
     let json: unknown
+    let fallback = false
     try {
-      const res = await fetch(OVERPASS_ENDPOINT, {
-        method: 'POST',
-        // Overpass expects the QL in a form body; this is the documented shape.
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: controller.signal,
-      })
-      if (!res.ok) {
-        // 429/504 are Overpass telling us it is busy — surface that plainly
-        // rather than as a generic failure, since retrying later works.
-        throw new Error(`Overpass HTTP ${res.status}`)
+      if (req.forceFallback) throw new Error('Overpass skipped (forced fallback)')
+      json = await fetchOverpass(query)
+    } catch (overpassErr) {
+      // Overpass is busy, rate-limited or down. Build the city from the
+      // basemap's own vector tiles instead (same OSM data, coarser tags) —
+      // a thinner city, labelled as such, rather than no city at all.
+      try {
+        json = { elements: await fetchOmtFallback(bbox) }
+        fallback = true
+      } catch (fallbackErr) {
+        const a = overpassErr instanceof Error ? overpassErr.message : String(overpassErr)
+        const b = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)
+        throw new Error(`${a} — fallback failed too: ${b}`)
       }
-      json = await res.json()
-    } finally {
-      clearTimeout(timer)
     }
-
-    // A busy Overpass answers 200 with an empty body and a `remark`. Treated as
-    // success it becomes "nothing is mapped here", which the caller then CACHES
-    // — so one unlucky moment blanks the neighbourhood for the whole session
-    // and retrying does nothing. Surface it as the failure it is.
-    const remark = overpassRemarkError(json)
-    if (remark) throw new Error(`Overpass: ${remark}`)
 
     const elements = (json as { elements?: unknown[] })?.elements
 
@@ -130,8 +160,9 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
       features,
       counts: countByKind(features),
       overture: extra.length,
+      fallback,
       // Hitting the element cap means the view is showing a partial picture.
-      truncated: Array.isArray(elements) && elements.length >= MAX_ELEMENTS,
+      truncated: !fallback && Array.isArray(elements) && elements.length >= MAX_ELEMENTS,
     })
   } catch (err) {
     post({

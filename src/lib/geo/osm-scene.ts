@@ -25,6 +25,7 @@
 // a river has no idea where its own bank is.
 
 import * as THREE from 'three'
+import { appendRailDetail } from './rail-detail'
 import {
   laneDividers, arrowOffsets, arrowPlacements, offsetByFraction,
   parseTurnLanes, turnsForOffset, turnArrowQuads, TURN_ANGLES,
@@ -63,6 +64,8 @@ import {
   STOP_LINE_M, STOP_SETBACK_M, SIGNAL_SEARCH_M,
 } from './stop-lines'
 import { deckProfile, PARAPET_T_M } from './deck-profile'
+import { appendBridgeRailing } from './bridge-railing'
+import { solveAccessProfiles, appendAccessFlight, appendAccessElevator, accessPoint, connectedDeck, railingOutsideElevators } from './bridge-access'
 import { placePiers, type ProfilePoint } from './deck-supports'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
 import {
@@ -254,12 +257,16 @@ function projectRing(ring: ReadonlyArray<LatLonPoint>): THREE.Vector2[] {
  * polygons collapse to nothing (this cost us ~89 % of buildings once — see
  * building-mesh). Indices are topological, so they apply to the normalized ring.
  */
-function triangulate(ring: THREE.Vector2[], mToN: number): number[][] | null {
+function triangulate(
+  ring: THREE.Vector2[], mToN: number, holes: ReadonlyArray<THREE.Vector2[]> = [],
+): number[][] | null {
   if (ring.length < 3) return null
   if (THREE.ShapeUtils.isClockWise(ring)) ring.reverse()
   const metric = ring.map((p) => new THREE.Vector2(p.x / mToN, p.y / mToN))
   try {
-    const faces = THREE.ShapeUtils.triangulateShape(metric, [])
+    const faces = THREE.ShapeUtils.triangulateShape(
+      metric, holes.map((h) => h.map((p) => new THREE.Vector2(p.x / mToN, p.y / mToN))),
+    )
     return faces.length > 0 ? faces : null
   } catch {
     return null
@@ -301,8 +308,11 @@ function buildSimpleSurface(
 
   for (const f of features) {
     if (f.kind !== layer || !f.ring) continue
-    const ring = projectRing(f.ring)
-    const faces = triangulate(ring, mToN)
+    const outer = projectRing(f.ring)
+    const holes = (f.holes ?? []).map(projectRing).filter((h) => h.length >= 3)
+    const faces = triangulate(outer, mToN, holes)
+    // Indices address the outer ring followed by every hole.
+    const ring = holes.length ? [...outer, ...holes.flat()] : outer
     // A ring the triangulator refuses is a feature the user asked for and will
     // not see. Counted, not swallowed — see LayerMesh.dropped.
     if (!faces) { dropped++; continue }
@@ -311,7 +321,7 @@ function buildSimpleSurface(
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      flatZ = frame.zAtElevationM(waterLevelM(ring, frame, f.isSea === true) + lift)
+      flatZ = frame.zAtElevationM(waterLevelM(outer, frame, f.isSea === true) + lift)
     }
 
     // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
@@ -494,9 +504,22 @@ const MAX_SURFACE_SPLITS = 5
 interface SurfacePiece {
   f: OsmFeature
   /** Ring in layer-local metres, wound counter-clockwise. */
+  /** Outer ring then every hole, concatenated — what `faces` indexes. */
   ringM: Vec2[]
   faces: Face[]
   areaM2: number
+  /** The closed rings themselves, for anything that measures distance to an edge. */
+  boundaries: Vec2[][]
+}
+
+/** Distance from each point to the nearest of several closed rings. */
+function distanceToRings(points: ReadonlyArray<Vec2>, rings: ReadonlyArray<ReadonlyArray<Vec2>>): Float32Array {
+  const out = distanceToRing(points, rings[0])
+  for (let r = 1; r < rings.length; r++) {
+    const d = distanceToRing(points, rings[r])
+    for (let i = 0; i < out.length; i++) if (d[i] < out[i]) out[i] = d[i]
+  }
+  return out
 }
 
 /** Shoelace area of a ring given in metres. Sign discarded. */
@@ -522,20 +545,26 @@ function collectSurfacePieces(
   const items: SurfacePiece[] = []
   let dropped = 0
 
+  const toLocal = (p: LatLonPoint): Vec2 => {
+    const { nx, ny } = latLonToNormalized(p.lat, p.lon)
+    return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
+  }
   for (const f of wanted) {
-    const ringM: Vec2[] = f.ring!.map((p) => {
-      const { nx, ny } = latLonToNormalized(p.lat, p.lon)
-      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
-    })
-    const asVectors = ringM.map((p) => new THREE.Vector2(p.x, p.y))
+    const outerM: Vec2[] = f.ring!.map(toLocal)
+    const asVectors = outerM.map((p) => new THREE.Vector2(p.x, p.y))
     if (THREE.ShapeUtils.isClockWise(asVectors)) {
       asVectors.reverse()
-      ringM.reverse()
+      outerM.reverse()
     }
+    // Holes — the pond cut out of a lawn, the courtyard out of a square. Left
+    // out, the lawn is laid straight across the pond and the two z-fight.
+    const holesM = (f.holes ?? []).map((h) => h.map(toLocal)).filter((h) => h.length >= 3)
 
     let faces: Face[]
     try {
-      const raw = THREE.ShapeUtils.triangulateShape(asVectors, [])
+      const raw = THREE.ShapeUtils.triangulateShape(
+        asVectors, holesM.map((h) => h.map((p) => new THREE.Vector2(p.x, p.y))),
+      )
       if (raw.length === 0) { dropped++; continue }
       faces = raw.map((t) => [t[0], t[1], t[2]] as Face)
     } catch {
@@ -543,7 +572,10 @@ function collectSurfacePieces(
       continue
     }
 
-    items.push({ f, ringM, faces, areaM2: ringAreaM2(ringM) })
+    // Indices address the outer ring followed by each hole, so the points must too.
+    const ringM = holesM.length ? [...outerM, ...holesM.flat()] : outerM
+    const areaM2 = Math.max(0, ringAreaM2(outerM) - holesM.reduce((a, h) => a + ringAreaM2(h), 0))
+    items.push({ f, ringM, faces, areaM2, boundaries: [outerM, ...holesM] })
   }
 
   return { items, dropped }
@@ -639,7 +671,7 @@ function buildDetailedSurface(
   const totalClaim = pieces.items.reduce((a, it) => a + it.areaM2 * weightOf(it), 0)
 
   // PASS 2 — subdivide each feature within its own share.
-  for (const { f, ringM, faces, areaM2 } of pieces.items) {
+  for (const { f, ringM, faces, areaM2, boundaries } of pieces.items) {
     const share = totalClaim > 0
       ? (spare * areaM2 * weightOf({ ringM })) / totalClaim
       : spare / pieces.items.length
@@ -661,11 +693,11 @@ function buildDetailedSurface(
     // Water is level across the whole polygon; the rest follows the ground.
     const flatZ = isWater
       ? frame.zAtElevationM(waterLevelM(
-          ringM.map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
+          boundaries[0].map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
           frame, f.isSea === true,
         ) + lift)
       : 0
-    const shoreDist = isWater ? distanceToRing(mesh.points, ringM) : null
+    const shoreDist = isWater ? distanceToRings(mesh.points, boundaries) : null
 
     for (let i = 0; i < mesh.points.length; i++) {
       const p = mesh.points[i]
@@ -1127,18 +1159,6 @@ export const MAX_LINEAR = 3000
 const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 }
 
 /**
- * How close a way's END must be to a junction to count as one of its arms.
- *
- * The junction solver trims each arm back from the node, so the node itself is
- * a few metres from any surviving ribbon vertex — but the ORIGINAL centreline
- * endpoints are still exactly on it, and those are what the profiles are
- * indexed by. Generous enough to survive the projection rounding, tight enough
- * that the next junction down the street is never mistaken for this one.
- */
-const JUNCTION_SNAP_M = 4
-
-
-/**
  * Greatest disagreement between a junction's arms that can still be one node.
  *
  * Arms that truly meet are pinned to a single elevation by the vertical solver,
@@ -1159,7 +1179,6 @@ const JUNCTION_MAX_SPREAD_M = 1.5
 const BURIED_MARGIN_M = 0.5
 
 /** Steel rail heads sitting on the ballast. */
-const RAIL_STEEL: [number, number, number] = [0.29, 0.29, 0.32]
 /** Depth of the kerb face along a carriageway / the ballast shoulder, metres. */
 const SIDE_DROP_M: Record<'road' | 'rail', number> = { road: 0.16, rail: 0.45 }
 /** Shading of that vertical face — it faces sideways, so it never catches light. */
@@ -1199,6 +1218,36 @@ const EDGE_DOT_GAP_M = 0.35
 const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
 
 /**
+ * True where a mapped area already says what the ground is — greenery, water,
+ * or a paved pedestrian area. Points are normalized coordinates.
+ */
+function mappedAreaPredicate(features: ReadonlyArray<OsmFeature>): (p: THREE.Vector2) => boolean {
+  const polys: Array<{ ring: THREE.Vector2[]; minX: number; minY: number; maxX: number; maxY: number }> = []
+  for (const f of features) {
+    if (!f.ring || f.ring.length < 3) continue
+    const area = f.kind === 'green' || f.kind === 'water' || f.kind === 'sand'
+      || (f.kind === 'road' && f.widthM === undefined)
+    if (!area) continue
+    const ring = projectRing(f.ring)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const p of ring) {
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y
+    }
+    polys.push({ ring, minX, minY, maxX, maxY })
+  }
+  const inside = (p: THREE.Vector2, ring: THREE.Vector2[]): boolean => {
+    let hit = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i], b = ring[j]
+      if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) hit = !hit
+    }
+    return hit
+  }
+  return (p) => polys.some((q) => p.x >= q.minX && p.x <= q.maxX && p.y >= q.minY && p.y <= q.maxY && inside(p, q.ring))
+}
+
+/**
  * The centre of a roundabout: paving, a shade lighter than the asphalt round it.
  *
  * Neutral on purpose. The ring being a roundabout is mapped; what stands inside
@@ -1207,12 +1256,17 @@ const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
  */
 const ISLAND_TONE: [number, number, number] = [0.52, 0.51, 0.49]
 
+/** A ground way this far above the terrain is a ramp, and gets walls. */
+const RAMP_WALL_MIN_M = 0.45
+/** Ramp walls are rendered concrete: lighter than the asphalt edge they replace. */
+const RAMP_WALL_SHADE = 1.45
+
 /** The painted safety line along a platform edge. */
 const PLATFORM_EDGE: [number, number, number] = [0.86, 0.72, 0.25]
 /** Width of that line, metres — generous so it survives at map scale. */
 const PLATFORM_EDGE_M = 0.9
 /** Where an overhead line mast stands, and which way its cantilever reaches. */
-interface Mast { at: THREE.Vector2; yaw: number }
+interface Mast { at: THREE.Vector2; yaw: number; z?: number }
 
 /** Spacing and size of overhead line masts along an electrified track. */
 const MAST_SPACING_M = 45
@@ -1224,10 +1278,6 @@ const MAST_HEIGHT_M = 6.5
 const MAST_RADIUS_M = 0.22
 const MAST_COLOR = new THREE.Color(0x53565c)
 
-/** Half-distance between the two rails of a track, in metres (standard gauge). */
-const RAIL_GAUGE_HALF_M = 0.72
-/** Rail head width, exaggerated to survive at map scale without shimmering. */
-const RAIL_HEAD_HALF_M = 0.22
 
 /**
  * A point-in-water test over the mapped water polygons.
@@ -1338,6 +1388,7 @@ export function solveSceneVertical(
   const ways: VerticalWay[] = []
   for (const f of features) {
     if (!f.vertical || !f.ring || f.ring.length < 2) continue
+    if (f.style.accessKind) continue
     if (f.kind !== 'road' && f.kind !== 'rail') continue
     // A paved area and a painted crossing are not alignments; they have no
     // profile to solve and no structure to carry.
@@ -1357,7 +1408,9 @@ export function solveSceneVertical(
     groundTrusted: (nx, ny) => resolver.resolve(nx, ny).confidence !== 'low',
     stepM: opts.groundStepM,
   })
-  return new Map(solved.map((p) => [p.wayId, p]))
+  const profiles = new Map(solved.map((p) => [p.wayId, p]))
+  solveAccessProfiles(features, profiles, frame.mToN, (x,y)=>resolver.groundM(x,y))
+  return profiles
 }
 
 /**
@@ -1381,6 +1434,10 @@ export function buildLinearLayer(
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
   const baseLift = LINEAR_LIFT_M[kind] * mToN
+  const solidRanges: Array<[number, number]> = []
+  const featureById = new Map(features.map(f=>[f.id,f]))
+  const liftCentres = features.filter(f=>f.style.accessKind==='elevator' && f.point
+    && opts.vertical && connectedDeck(accessPoint(f.point),features,opts.vertical,mToN)).map(f=>accessPoint(f.point!))
   /**
    * The seam height every push routine below adds to `structuralZ`.
    *
@@ -1605,7 +1662,7 @@ export function buildLinearLayer(
    */
   const pushSurfaceQuad = (
     quad: THREE.Vector2[], tone: [number, number, number], drop: number,
-    deck: { soffit: boolean; parapet: number; thickness: number } =
+    deck: { soffit: boolean; parapet: number; thickness: number; rampWalls?: boolean } =
       { soffit: false, parapet: 0, thickness: 0 },
   ): void => {
     if (buriedHere(quad)) return
@@ -1622,16 +1679,27 @@ export function buildLinearLayer(
 
     // Edge faces down both sides. On the ground this is a kerb; held clear of
     // it, the same faces are the deck's fascia — see `deck-profile`.
+    // A way ON THE GROUND that has climbed off it — the approach ramp of a
+    // bridge, which the solver lifts at the legal grade — is a solid ramp in
+    // reality: walls down to the ground either side. With a kerb's 5 cm lip it
+    // was a ribbon hanging in the air, black from underneath (measured on the
+    // footbridge approaches in the Ciutadella, 3.8 m up on a `footway`).
+    const bottom = (v: THREE.Vector2, z: number): number =>
+      deck.rampWalls ? Math.min(z - drop, frame.groundZ(v.x, v.y) + lift - drop) : z - drop
+    const wall = deck.rampWalls ? gain(tone, RAMP_WALL_SHADE) : side
     for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
       const z0 = structuralZ(e0.x, e0.y) + lift
       const z1 = structuralZ(e1.x, e1.y) + lift
-      for (const [v, z] of [[e0, z0], [e1, z1], [e1, z1 - drop]] as const) {
+      const b0 = bottom(e0, z0)
+      const b1 = bottom(e1, z1)
+      const c = (b0 < z0 - drop - 1e-12 || b1 < z1 - drop - 1e-12) ? wall : side
+      for (const [v, z] of [[e0, z0], [e1, z1], [e1, b1]] as const) {
         positions.push(v.x, v.y, z)
-        colors.push(side[0], side[1], side[2])
+        colors.push(c[0], c[1], c[2])
       }
-      for (const [v, z] of [[e0, z0], [e1, z1 - drop], [e0, z0 - drop]] as const) {
+      for (const [v, z] of [[e0, z0], [e1, b1], [e0, b0]] as const) {
         positions.push(v.x, v.y, z)
-        colors.push(side[0], side[1], side[2])
+        colors.push(c[0], c[1], c[2])
       }
     }
 
@@ -1650,6 +1718,16 @@ export function buildLinearLayer(
     }
 
     if (deck.parapet > 0) {
+      if (opts.quality === 'detailed') {
+        for (const [a, b] of [[l0, l1], [r1, r0]]) {
+          for(const [p,q] of railingOutsideElevators(
+            new THREE.Vector3(a.x,a.y,structuralZ(a.x,a.y)+lift),
+            new THREE.Vector3(b.x,b.y,structuralZ(b.x,b.y)+lift),liftCentres,1.9*mToN)) {
+            appendBridgeRailing(positions,colors,p,q,mToN,gain(tone,1.18))
+          }
+        }
+        return
+      }
       // A raised walkway without an edge does not read as a walkway, it reads
       // as a mistake. Drawn double-sided: at this width the inner face is as
       // visible as the outer one, and a single winding leaves it missing from
@@ -1821,7 +1899,12 @@ export function buildLinearLayer(
   }
 
   const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
+  const railSegments = kind==='rail' ? wanted.filter(f=>f.style.railKind!=='platform' && f.vertical?.structure!=='tunnel').flatMap(f=>{
+    const line=projectRing(f.ring!)
+    return line.slice(1).map((b,i)=>({a:line[i],b,id:f.id}))
+  }) : []
   for (const f of wanted) {
+    if(kind==='rail' && (f.vertical?.structure==='tunnel' || (f.vertical?.layer ?? 0)<0)) continue
     const line = projectRing(f.ring!)
     const tone = f.style.tone ?? [0.42, 0.42, 0.44]
     // Rail, platforms, paved areas and crossings are emitted here and now, so
@@ -1878,7 +1961,8 @@ export function buildLinearLayer(
       // A platform is a real polygon: fill it, slightly proud of the ballast.
       const faces = triangulate(line, mToN)
       if (!faces) { dropped++; continue }
-      const platformLift = 0.55 * mToN
+      const platformLift = (f.style.platformHeightM ?? .55) * mToN
+      const platformStart = positions.length / 3
       for (const [i0, i1, i2] of faces) {
         for (const idx of [i0, i1, i2]) {
           const v = line[idx]
@@ -1889,9 +1973,16 @@ export function buildLinearLayer(
       // The painted edge line. Nothing else says "platform" as immediately —
       // it is the one marking every station on earth has.
       const closed = [...line, line[0]]
+      for (let i=1;i<closed.length;i++) {
+        const a=closed[i-1], b=closed[i]
+        const za=structuralZ(a.x,a.y)+lift, zb=structuralZ(b.x,b.y)+lift
+        const vertices=[[a.x,a.y,za],[b.x,b.y,zb],[b.x,b.y,zb+platformLift],[a.x,a.y,za+platformLift]]
+        for(const j of [0,1,2,0,2,3]) { positions.push(...vertices[j]); colors.push(...tone.map(c=>c*.72)) }
+      }
       for (const quad of bufferCentreline(closed, (PLATFORM_EDGE_M / 2) * mToN)) {
         pushQuad(quad, PLATFORM_EDGE, platformLift + 0.02 * mToN)
       }
+      solidRanges.push([platformStart,positions.length/3])
       count++
       continue
     }
@@ -1942,6 +2033,8 @@ export function buildLinearLayer(
         id: f.id,
         sourceId: f.id,
         points: line,
+        elevations: activeProfile ? line.map(p=>activeProfile!.sample(p.x,p.y).elevationM*mToN) : undefined,
+        smooth: !f.style.accessKind,
         halfWidth: half,
         tone,
         // Paint belongs to carriageways. A centre line down a footpath is the
@@ -1972,19 +2065,23 @@ export function buildLinearLayer(
     // Rails on top of the ballast: two thin steel ribbons. This is what makes a
     // corridor read as "railway" rather than "grey path" from any distance.
     if (kind === 'rail' && f.style.railKind !== 'platform') {
-      const headHalf = RAIL_HEAD_HALF_M * mToN
-      const gauge = RAIL_GAUGE_HALF_M * mToN
-      for (const side of [-1, 1]) {
-        const offsetLine = offsetCentreline(line, side * gauge)
-        for (const quad of bufferCentreline(offsetLine, headHalf)) {
-          pushQuad(quad, RAIL_STEEL, 0.12 * mToN)
-        }
-      }
+      const railStart=positions.length/3
+      appendRailDetail(positions,colors,draped,mToN,(x,y)=>structuralZ(x,y)+lift,
+        f.style.railGaugeM ?? 1.435,opts.quality==='detailed',opts.anchorLon===undefined?undefined:(()=>{const o=latLonToNormalized(opts.anchorLat,opts.anchorLon);return new THREE.Vector2(o.nx,o.ny)})(),f.style.overheadWire)
+      solidRanges.push([railStart,positions.length/3])
     }
-    if (kind === 'rail' && f.style.electrified && masts.length < MAX_MASTS) {
+    if (kind === 'rail' && (f.style.overheadWire ?? f.style.electrified) && masts.length < MAX_MASTS) {
       for (const at of mastPoints(line, MAST_SPACING_M * mToN, MAST_OFFSET_M * mToN)) {
         if (masts.length >= MAX_MASTS) break
-        masts.push(at)
+        // Side poles cannot stand inside an adjacent track's loading envelope.
+        // Dense station yards need surveyed gantries, not a pole through a train.
+        const blocked=railSegments.some(s=>{
+          if(s.id===f.id)return false
+          const dx=s.b.x-s.a.x,dy=s.b.y-s.a.y,l2=dx*dx+dy*dy
+          const t=l2?Math.max(0,Math.min(1,((at.at.x-s.a.x)*dx+(at.at.y-s.a.y)*dy)/l2)):0
+          return Math.hypot(at.at.x-s.a.x-dx*t,at.at.y-s.a.y-dy*t)<1.9*mToN
+        })
+        if(!blocked) masts.push({...at,z:structuralZ(at.at.x,at.at.y)+lift})
       }
     }
     count++
@@ -2072,6 +2169,7 @@ export function buildLinearLayer(
     const bandStart = positions.length / 3
 
     for (const ribbon of network.ribbons) {
+      const structuralStart = positions.length / 3
       // The ribbon carries the id of the way it came from, which is the whole
       // reason a trimmed, mitred, tapered ribbon can still be given the right
       // height: it can still say whose it is. The same id answers what it is
@@ -2089,9 +2187,40 @@ export function buildLinearLayer(
         soffit: profile.soffit,
         parapet: profile.parapetM * mToN,
         thickness: PARAPET_T_M * mToN,
+        // Ground-tagged, but lifted somewhere along its length by a structure
+        // it leads onto: build it as a ramp, walled down to the terrain.
+        rampWalls: !profile.soffit && solved !== undefined
+          && solved.elevationM.some((e, k) => e - solved.groundM[k] > RAMP_WALL_MIN_M),
       }
       const ribbonRough = surfaceOf.get(ribbon.sourceId)
       const ribbonStart = ribbonRough === undefined ? -1 : positions.length / 3
+      const access = featureById.get(ribbon.sourceId)?.style.accessKind
+      const stair = (access === 'stairs' || access === 'escalator') && activeProfile
+      if (stair) {
+        const mappedSteps=featureById.get(ribbon.sourceId)?.style.stepCount
+        const elevations=solved?.elevationM??[]
+        const sourceRise=elevations.reduce((sum,z,i)=>sum+(i?Math.abs(z-elevations[i-1]):0),0)*mToN
+        // Trimming consumes the approach landing, not its height: both ends
+        // still meet their original node elevation exactly.
+        const z0 = structuralZ(ribbon.startNode.x,ribbon.startNode.y)+lift
+        const z1 = structuralZ(ribbon.endNode.x,ribbon.endNode.y)+lift
+        const lengths = ribbon.centre.slice(1).map((p,i)=>p.distanceTo(ribbon.centre[i]))
+        const pads = lengths.map(len=>Math.min(.9*mToN,len*.18))
+        for(let i=0;i<lengths.length;i++){
+          const len=lengths[i]
+          if(len<1e-15)continue
+          const cuts=[0,pads[i]/len,1-pads[i]/len,1]
+          const a=ribbon.centre[i],b=ribbon.centre[i+1]
+          const startZ=i===0?z0:structuralZ(a.x,a.y)+lift
+          const endZ=i===lengths.length-1?z1:structuralZ(b.x,b.y)+lift
+          const heights=[startZ,startZ,endZ,endZ]
+          for(let k=0;k<3;k++) appendAccessFlight(positions,colors,
+            ribbon.left[i].clone().lerp(ribbon.left[i+1],cuts[k]),ribbon.left[i].clone().lerp(ribbon.left[i+1],cuts[k+1]),
+            ribbon.right[i].clone().lerp(ribbon.right[i+1],cuts[k]),ribbon.right[i].clone().lerp(ribbon.right[i+1],cuts[k+1]),
+            heights[k],heights[k+1],mToN,access,mappedSteps && sourceRise>1e-15
+              ? Math.max(1,Math.round(mappedSteps*Math.abs(heights[k+1]-heights[k])/sourceRise)) : undefined)
+        }
+      }
       // One quad per station, cut on the MITRED borders rather than on each
       // segment's own normals — which is what lets the edge of a curve run
       // continuously instead of stepping at every vertex.
@@ -2101,6 +2230,7 @@ export function buildLinearLayer(
       // straight chord through the slope: the road either buries itself in the
       // hill or flies over the valley between its own endpoints.
       for (let i = 0; i < ribbon.centre.length - 1; i++) {
+        if (stair) break
         const fences = [0, ...cutsFor(ribbon.centre[i], ribbon.centre[i + 1]), 1]
         for (let s = 0; s < fences.length - 1; s++) {
           const t0 = fences[s]
@@ -2128,12 +2258,13 @@ export function buildLinearLayer(
       // (vertical-mesh.test) holds it to a budget these would blow: 30 of the
       // 90 ways in that fixture are structures, and supporting every one of
       // them tripled the cost of the whole layer.
-      if (profile.soffit && opts.quality === 'detailed') {
+      if (profile.soffit && !stair && opts.quality === 'detailed') {
         pushPiers(ribbon.centre, cls, profile.edgeDropM, ribbon.tone)
       }
 
       // Whatever the miter had to give up on a sharp turn.
       for (const tri of ribbon.joins) {
+        if(stair)continue
         pushShaded([tri[0], tri[1], tri[2], tri[0]],
           [ribbon.tone, ribbon.tone, ribbon.tone, ribbon.tone])
       }
@@ -2240,6 +2371,7 @@ export function buildLinearLayer(
 
       // Close this ribbon's grain band. Its markings are inside it on purpose:
       // paint takes the grain of the surface it is painted on.
+      if (profile.soffit) solidRanges.push([structuralStart, positions.length / 3])
       if (ribbonStart >= 0) {
         surfaceBands.push({
           start: ribbonStart, end: positions.length / 3, value: ribbonRough!,
@@ -2252,6 +2384,7 @@ export function buildLinearLayer(
     // actually stands on. No kerb — a junction is where the kerb is interrupted.
     activeProfile = null
     for (const j of network.junctions) {
+      const junctionStart = positions.length / 3
       // A junction is where several arms MEET, so it has one height, and the
       // vertical solver has already forced every arm to agree on it. Sampling
       // the arms that actually end here — rather than any profile that happens
@@ -2274,14 +2407,9 @@ export function buildLinearLayer(
       // the road passing under it is a lie about the city.
       const armZ: number[] = []
       if (opts.vertical) {
-        for (const r of network.ribbons) {
-          const prof = profileFor(r.sourceId)
+        for (const sourceId of j.sourceIds) {
+          const prof = profileFor(sourceId)
           if (!prof) continue
-          // The trim is proportional to the arm's own width, so the search
-          // radius has to be too.
-          const reach = Math.max(JUNCTION_SNAP_M * mToN, (r.halfWidths[0] ?? 0) * 6)
-          const ends = [r.centre[0], r.centre[r.centre.length - 1]]
-          if (!ends.some((e) => e.distanceTo(j.at) <= reach)) continue
           const { elevationM, groundM } = prof.sample(j.at.x, j.at.y)
           armZ.push(frame.zAtElevationM(groundM) + (elevationM - groundM) * mToN)
         }
@@ -2292,7 +2420,7 @@ export function buildLinearLayer(
       }
       junctionZ = armZ.length === 0
         ? null
-        : armZ.reduce((a, b) => a + b, 0) / armZ.length + lift
+        : armZ.reduce((a, b) => a + b, 0) / armZ.length
       const poly = j.polygon
       const fan = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
         for (const tri of subdivideOnGround([j.at, p0, p1], frame)) {
@@ -2302,6 +2430,36 @@ export function buildLinearLayer(
       }
       for (let i = 1; i < poly.length; i++) fan(poly[i - 1], poly[i])
       if (poly.length > 2) fan(poly[poly.length - 1], poly[0])
+      // Elevated junctions are volumes too. Leave each incident arm open and
+      // close only the exposed boundary, including its railing.
+      const elevated = j.sourceIds.every(id => opts.vertical?.get(id)?.structure === 'bridge')
+      if (elevated && junctionZ !== null) {
+        const depth = deckProfile('bridge', cls, ROAD_CLASS_KERB_M[cls]).edgeDropM * mToN
+        const top = junctionZ + lift
+        const bottom = top - depth
+        const shade = gain(j.tone, SIDE_SHADE)
+        const triangle = (vertices: Array<[THREE.Vector2, number]>): void => {
+          for (const [v, z] of vertices) { positions.push(v.x, v.y, z); colors.push(...shade) }
+        }
+        const onMouth = (p: THREE.Vector2, a: THREE.Vector2, b: THREE.Vector2): boolean => {
+          const ab = b.clone().sub(a)
+          const t = p.clone().sub(a).dot(ab) / Math.max(ab.lengthSq(), 1e-30)
+          return t >= -1e-5 && t <= 1.00001 && p.distanceTo(a.clone().addScaledVector(ab, t)) < .01 * mToN
+        }
+        for (let i = 0; i < poly.length; i++) {
+          const a = poly[i], b = poly[(i + 1) % poly.length]
+          triangle([[j.at, bottom], [b, bottom], [a, bottom]])
+          if (j.mouths.some(([p, q]) => onMouth(a, p, q) && onMouth(b, p, q))) continue
+          triangle([[a, top], [a, bottom], [b, bottom]])
+          triangle([[a, top], [b, bottom], [b, top]])
+          if (cls === 'pedestrian' && opts.quality === 'detailed') {
+            for(const [p,q] of railingOutsideElevators(new THREE.Vector3(a.x,a.y,top),new THREE.Vector3(b.x,b.y,top),liftCentres,1.9*mToN)) {
+              appendBridgeRailing(positions,colors,p,q,mToN,gain(j.tone,1.18))
+            }
+          }
+        }
+      }
+      if (elevated) solidRanges.push([junctionStart, positions.length / 3])
       junctionZ = null
     }
 
@@ -2312,7 +2470,13 @@ export function buildLinearLayer(
     // it does not say what is inside it. A paved island is the answer that is
     // wrong least often, and inventing a lawn on top of mapped geometry would
     // cross the line this file's header draws between data and scenery.
+    // ...unless the data says what IS inside. A mapped garden, fountain or
+    // square in the ring (Plaça d'Espanya's fountain, Francesc Macià's lawn and
+    // pond) is drawn by its own layer, and paving the island on top of it —
+    // at road height, above the ground layers — erased it.
+    const mappedCentre = mappedAreaPredicate(features)
     for (const island of network.islands) {
+      if (mappedCentre(island.centre)) continue
       const poly = island.polygon
       const fanIsland = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
         for (const tri of subdivideOnGround([island.centre, p0, p1], frame)) {
@@ -2330,8 +2494,28 @@ export function buildLinearLayer(
     count += network.count
   }
 
+  if (kind === 'road' && opts.vertical) for (const f of features) {
+    if (f.style.accessKind !== 'elevator' || !f.point) continue
+    const at=accessPoint(f.point),deck=connectedDeck(at,features,opts.vertical,mToN)
+    if (!deck) continue
+    const groundM=frame.groundM(at.x,at.y)
+    const groundZ=frame.zAtElevationM(groundM)
+    const start=positions.length/3
+    appendAccessElevator(positions,colors,at,deck.direction,groundZ,
+      groundZ+(deck.heightM-groundM)*mToN+baseLift+CLASS_LIFT_M.pedestrian*mToN,mToN)
+    solidRanges.push([start,positions.length/3])
+    count++
+  }
+
   if (count === 0) return null
 
+  // At Shanghai's longitude Float32 Mercator loses ~1 m. Rebase BEFORE casting
+  // so centimetre railings and curved fascia survive into the GPU buffer.
+  const linearOrigin = latLonToNormalized(opts.anchorLat, opts.anchorLon ?? 0)
+  for (let i = 0; i < positions.length; i += 3) {
+    positions[i] -= linearOrigin.nx
+    positions[i + 1] -= linearOrigin.ny
+  }
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
@@ -2345,10 +2529,32 @@ export function buildLinearLayer(
     // Surveyed materials last: a band pushed later wins, so a class guess
     // covers everything and each way that knows better overrides its own run.
     metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind], [...roughBands, ...surfaceBands])
-    const paved = new THREE.Mesh(geometry, createSurfaceMaterial('asphalt', {
+    const groundMaterial = createSurfaceMaterial('asphalt', {
       opacity: kind === 'road' ? 0.94 : 0.96,
-    }))
+    })
+    let materials: THREE.Material | THREE.Material[] = groundMaterial
+    if (solidRanges.length) {
+      // Ground overlays need ordering; a bridge needs depth occlusion. Drawing
+      // its underside through its fascia produced alternating dark panels.
+      const solidMaterial = createSurfaceMaterial('asphalt', {opacity: 1})
+      solidMaterial.transparent = false
+      solidMaterial.depthWrite = true
+      solidMaterial.polygonOffset = false
+      const groundIndices: number[] = [], solidIndices: number[] = []
+      let cursor = 0
+      for (const [start, end] of solidRanges) {
+        for (; cursor < start; cursor++) groundIndices.push(cursor)
+        for (; cursor < end; cursor++) solidIndices.push(cursor)
+      }
+      for (; cursor < positions.length / 3; cursor++) groundIndices.push(cursor)
+      geometry.setIndex([...groundIndices, ...solidIndices])
+      geometry.addGroup(0, groundIndices.length, 0)
+      geometry.addGroup(groundIndices.length, solidIndices.length, 1)
+      materials = [groundMaterial, solidMaterial]
+    }
+    const paved = new THREE.Mesh(geometry, materials)
     paved.name = `osm-${kind}`
+    paved.position.set(linearOrigin.nx, linearOrigin.ny, 0)
     paved.renderOrder = 4
     return finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
   }
@@ -2364,6 +2570,7 @@ export function buildLinearLayer(
     side: THREE.DoubleSide,
   }))
   surface.name = `osm-${kind}`
+  surface.position.set(linearOrigin.nx, linearOrigin.ny, 0)
   // Above greenery (2) and water (3). Rail is added after road, so where a
   // tramway shares a street the track lands on top of the asphalt.
   surface.renderOrder = 4
@@ -2484,6 +2691,7 @@ function finishLinear(
   }
 
   const posts = new THREE.InstancedMesh(mastGeo, material, masts.length)
+  posts.position.copy(surface.position)
   posts.name = `osm-${kind}-masts`
   const m = new THREE.Matrix4()
   const p = new THREE.Vector3()
@@ -2491,7 +2699,7 @@ function finishLinear(
   const sc = new THREE.Vector3()
   const zAxis = new THREE.Vector3(0, 0, 1)
   masts.forEach((mast, i) => {
-    p.set(mast.at.x, mast.at.y, groundZ(mast.at.x, mast.at.y) + lift)
+    p.set(mast.at.x-surface.position.x, mast.at.y-surface.position.y, mast.z ?? groundZ(mast.at.x, mast.at.y) + lift)
     // The authored mast is modelled at true size, so it scales like every other
     // prop. The procedural post is a unit cylinder stretched to height.
     if (authored) {

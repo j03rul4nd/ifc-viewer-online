@@ -440,6 +440,43 @@ describe('roads carried on structures, through buildLinearLayer', () => {
     expect(liftedSpan.lo).toBeCloseTo(flatSpan.lo, 9)
   })
 
+  // The approach is tagged as an ordinary road, and the solver lifts it at
+  // the legal grade to meet the deck. Drawn with a kerb's lip it was a ribbon
+  // hanging metres in the air; a ramp is walled down to the ground.
+  it('walls a lifted approach down to the ground instead of floating it', () => {
+    const features = scene()
+    const carried = buildLinearLayer(
+      features, 'road', { ...FLAT, vertical: solveSceneVertical(features, FLAT) },
+    )!
+    const frame = createGroundFrame(FLAT)
+    const draped = zRange(buildLinearLayer(features, 'road', FLAT)!.object)
+    // Every vertex on the approach's east edge (4 m off its centreline), by
+    // station: somewhere the ramp is well up, and the SAME station must also
+    // carry a vertex at the foot of its wall.
+    const o = latLonToNormalized(LAT, LON)
+    const byStation = new Map<number, number[]>()
+    carried.object.updateMatrixWorld(true)
+    const v = new THREE.Vector3()
+    carried.object.traverse((obj) => {
+      const mesh = obj as THREE.Mesh
+      const pos = mesh.isMesh ? mesh.geometry.getAttribute('position') : null
+      if (!pos) return
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld)
+        const xM = (v.x - o.nx) / frame.mToN, yM = (v.y - o.ny) / frame.mToN
+        if (Math.abs(xM - 4) > 0.3 || yM > -44 || yM < -215) continue
+        const k = Math.round(yM)
+        const list = byStation.get(k)
+        const h = (v.z - draped.lo) / frame.mToN
+        if (list) list.push(h); else byStation.set(k, [h])
+      }
+    })
+    const walled = [...byStation.values()].filter((hs) => Math.max(...hs) > 1.5 && Math.min(...hs) < 0.3)
+    const lifted = [...byStation.values()].filter((hs) => Math.max(...hs) > 1.5)
+    expect(lifted.length).toBeGreaterThan(0)            // the ramp really is up
+    expect(walled.length).toBe(lifted.length)           // and walled wherever it is
+  })
+
   it('keeps the deck at a TRUE-METRE clearance under exaggeration', () => {
     // The rule bridges used to break. The deck rides the structure model, which
     // is metres; only the ground it stands over is exaggerated.

@@ -32,7 +32,9 @@
     "solarNoon": "Solar noon",
     "polarDay": "Polar day — the sun never sets on this date",
     "polarNight": "Polar night — the sun never rises on this date",
-    "timezone": "Time zone"
+    "timezone": "Time zone",
+    "play": "播放一天",
+    "pause": "暂停"
   },
   "seasons": {
     "summer": "Summer solstice",

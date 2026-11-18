@@ -26,6 +26,7 @@ import { isCloudEnabled } from '../../lib/cloud/api-client'
 import { trackCheckoutStarted } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
 import { authAppearance } from './authAppearance'
+import { SheetGrip } from '../mobile/SheetGrip'
 
 interface AccountModalProps {
   onClose: () => void
@@ -229,11 +230,11 @@ export default function AccountModal({ onClose }: AccountModalProps) {
     'h-7 px-2.5 rounded-lg text-[11px] font-medium border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+    <div className="m-sheet-host fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
         role="dialog" aria-modal="true" aria-label={t('title')}
-        className="relative z-[81] w-[460px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,15,20,0.92)] backdrop-blur-[24px] border border-[var(--border-strong)] shadow-[0_30px_80px_-24px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
+        className="m-sheet relative z-[81] w-[460px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,15,20,0.92)] backdrop-blur-[24px] border border-[var(--border-strong)] shadow-[0_30px_80px_-24px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
       >
         {/* Decorative accent glow (Apple-style soft light behind the header) */}
         <div
@@ -242,6 +243,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
           style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(94,106,210,0.18), transparent 72%)' }}
         />
 
+        <SheetGrip onClose={onClose} />
         {/* Header */}
         <div className="relative flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
           <span className="text-[13px] font-semibold text-[var(--text)]">{t('title')}</span>

@@ -137,6 +137,9 @@ export function runGeoExtract(ifcBuffer: ArrayBuffer | Uint8Array): Promise<Geor
 
 // In-flight dedupe so a double panel-open doesn't spawn two workers per model.
 const inFlight = new Map<string, Promise<GeorefExtraction>>()
+/** Tail of the one-at-a-time extraction queue. */
+let extractQueue: Promise<void> = Promise.resolve()
+let extractPending = 0
 
 /**
  * Ensure the model's georeferencing has been fully extracted, lazily.
@@ -152,7 +155,15 @@ export function ensureGeorefExtracted(modelId: string): Promise<GeorefExtraction
   const pending = inFlight.get(modelId)
   if (pending) return pending
 
-  const p = doExtract(modelId).finally(() => { inFlight.delete(modelId) })
+  // Serialized: one extraction (one worker, one IFC copy) at a time. Parallel
+  // WASM parses of several IFCs is what pushed iPhone Safari past its memory
+  // budget. The copy is transferred to the worker (so it leaves this heap at
+  // once) and the worker is terminated before the next one starts.
+  // Idle queue → start synchronously (worker spawned in this tick).
+  const run = extractPending > 0 ? extractQueue.then(() => doExtract(modelId)) : doExtract(modelId)
+  extractPending++
+  const p = run.finally(() => { extractPending--; inFlight.delete(modelId) })
+  extractQueue = p.then(() => undefined, () => undefined)
   inFlight.set(modelId, p)
   return p
 }

@@ -9,6 +9,8 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import type { SelectedInfo } from '../types'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
 
 export interface SceneContextMenuPayload {
   x: number
@@ -95,9 +97,11 @@ export default function SceneContextMenu({
   hiddenCount, isolationActive = false, onShowAllHidden,
 }: SceneContextMenuProps) {
   const { t } = useTranslation('viewer')
+  const { t: tc } = useTranslation('common')
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const [copied, setCopied] = useState(false)
+  const isMobile = useIsMobile()
 
   // Clamp the menu inside the viewport once we know its rendered height.
   useLayoutEffect(() => {
@@ -117,14 +121,45 @@ export default function SceneContextMenu({
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }
     const onScroll = () => onClose()
     window.addEventListener('keydown', onKey, true)
-    window.addEventListener('resize', onScroll)
+    // On a phone the URL bar collapsing is a resize; it must not close the sheet.
+    if (!isMobile) window.addEventListener('resize', onScroll)
     window.addEventListener('wheel', onScroll, { passive: true })
     return () => {
       window.removeEventListener('keydown', onKey, true)
       window.removeEventListener('resize', onScroll)
       window.removeEventListener('wheel', onScroll)
     }
-  }, [payload, onClose])
+  }, [payload, onClose, isMobile])
+
+  // Phones: the same actions as a thumb-reach action sheet (opened by a long
+  // press on the model — see camera-nav). A pointer-anchored popover under a
+  // finger is both covered by that finger and too small to hit.
+  if (isMobile) {
+    const info = payload?.info
+    const id = info ? parseInt(info.id, 10) : 0
+    const actions: SheetAction[] = !info ? [] : [
+      { key: 'frame',   icon: <FrameIcon />,              label: t('contextMenu.frame'),           onClick: () => onFrame(id, info.modelId) },
+      { key: 'iso',     icon: <IsolateElementIcon />,     label: t('contextMenu.isolateElement'),  onClick: () => onIsolateElement(id, info.modelId) },
+      { key: 'hide',    icon: <Icons.EyeOff size={16} />, label: t('contextMenu.hide'),            onClick: () => onHide(id, info.modelId ?? '') },
+      { key: 'isocat',  icon: <Icons.Isolate size={16} />, label: t('contextMenu.isolateCategory'), desc: prettyType(info.type), onClick: () => onIsolateCategory(info.type) },
+      { key: 'reveal',  icon: <TreeIcon />,               label: t('contextMenu.revealInTree'),    onClick: () => onReveal(id, info.modelId) },
+      { key: 'copy',    icon: <Icons.Copy size={16} />,   label: t('contextMenu.copyId'), desc: `#${info.id}`, onClick: () => { navigator.clipboard.writeText(info.id).catch(() => {}) } },
+      ...((hiddenCount > 0 || isolationActive) ? [{
+        key: 'showall', tone: 'accent' as const, icon: <Icons.Eye size={16} />,
+        label: isolationActive ? t('contextMenu.showFullModel') : t('contextMenu.showAllHidden', { count: hiddenCount }),
+        onClick: onShowAllHidden,
+      }] : []),
+    ]
+    return (
+      <MobileActionSheet
+        open={!!payload}
+        title={info ? `${info.name} · ${prettyType(info.type)}` : undefined}
+        actions={actions}
+        onClose={onClose}
+        closeLabel={tc('actions.close')}
+      />
+    )
+  }
 
   if (!payload) return null
 

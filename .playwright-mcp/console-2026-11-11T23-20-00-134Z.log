@@ -1,0 +1,178 @@
+[   12345ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3341/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=de7be54e:21608
+[   12439ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3341/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=de7be54e:2000
+[   13420ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13421ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13421ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13422ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13424ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13425ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13425ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13425ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13458ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13459ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13459ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13459ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13459ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13459ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13459ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13460ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13461ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13461ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13461ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13461ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13461ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13461ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13462ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13463ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13463ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13463ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13463ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13463ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13463ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13464ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13464ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13464ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13516ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13516ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13516ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13516ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13518ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13519ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13519ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13519ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13530ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13531ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13531ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13531ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13531ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13531ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13532ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13532ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13532ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13532ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13533ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13533ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13533ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13533ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13533ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13534ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13534ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13534ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13534ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13534ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13534ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13535ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13535ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13535ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13535ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13535ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13536ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13536ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13536ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13536ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13536ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13536ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13537ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13537ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13537ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   13537ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19802ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19802ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19802ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19803ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19805ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19805ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19805ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19806ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19823ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19823ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19824ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19824ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19824ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19824ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19824ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19825ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19825ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19825ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19825ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19825ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19826ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19826ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19826ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19826ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19827ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19827ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19827ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19827ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19828ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19828ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19828ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19828ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19829ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19829ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19830ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19830ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19830ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19830ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19831ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19831ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19831ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19831ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19832ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   19832ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20616ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20616ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20617ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20617ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20618ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20618ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20618ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20619ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20628ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20628ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20628ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20628ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20629ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20629ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20629ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20629ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20629ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20630ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20631ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20631ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20631ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20631ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20631ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20632ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20632ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20632ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20632ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20632ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20633ms] [WARNING] [i18n] Missing key  workspace:Aprobación  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20633ms] [WARNING] [i18n] Missing key  workspace:Enviar  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20633ms] [WARNING] [i18n] Missing key  workspace:Clientes  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20633ms] [WARNING] [i18n] Missing key  workspace:Plantillas  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20633ms] [WARNING] [i18n] Missing key  workspace:Automatizaciones  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20633ms] [WARNING] [i18n] Missing key  workspace:Historial  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20634ms] [WARNING] [i18n] Missing key  workspace:Resultados  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20634ms] [WARNING] [i18n] Missing key  workspace:Página del cliente  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136
+[   20634ms] [WARNING] [i18n] Missing key  workspace:Departamentos  for lang(s): en @ http://localhost:3341/src/i18n/config.ts:136

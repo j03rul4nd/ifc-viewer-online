@@ -205,6 +205,18 @@ const MOVEMENT_KEYS = [FORWARD_KEYS, BACK_KEYS, LEFT_KEYS, RIGHT_KEYS, UP_KEYS, 
  *  fixes. */
 const AMBIENT_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE'])
 
+/** The arrows join the ambient set only while nothing else wants them: focus is
+ *  on the canvas or on the page itself, not inside a list, menu or slider.
+ *  Users reach for the arrows before WASD, and with the scene focused there is
+ *  no panel for them to scroll. */
+const AMBIENT_ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+
+function isSceneFocus(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el || typeof el.tagName !== 'string') return false
+  return el.tagName === 'CANVAS' || el.tagName === 'BODY' || el.tagName === 'HTML'
+}
+
 function isMovementKey(code: string): boolean {
   return MOVEMENT_KEYS.some((set) => set.has(code))
 }
@@ -502,7 +514,8 @@ export function bindWalkNavigation<A>(
     sprint = e.shiftKey
     creep  = e.altKey
     if (!isMovementKey(e.code)) return
-    if (!active && !AMBIENT_KEYS.has(e.code)) return
+    if (!active && !AMBIENT_KEYS.has(e.code)
+      && !(AMBIENT_ARROW_KEYS.has(e.code) && isSceneFocus(e.target))) return
     // Space scrolls the page and the arrows scroll the panel behind the canvas.
     e.preventDefault()
     held.add(e.code)

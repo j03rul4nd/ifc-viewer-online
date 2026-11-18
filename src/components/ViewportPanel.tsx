@@ -28,7 +28,7 @@
 //
 // Desktop rendering is untouched in both cases.
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { MobileSheet } from './mobile/MobileSheet'
@@ -62,6 +62,19 @@ interface ViewportPanelBase {
    * — three of which reached down over the camera controls.
    */
   maxHeight?: string
+  /**
+   * Mobile 'sheet' only: add a low "peek" detent showing just the top of the
+   * content. For panels whose point is to WATCH the scene while you drive it
+   * (the map, the sun): put the live control first and the sheet can rest
+   * low with the scene in full view above it.
+   */
+  peek?: boolean
+  /**
+   * Mobile 'sheet' only: whenever this changes to a non-null value the sheet
+   * drops to its lowest detent — e.g. the moment the map or the study starts,
+   * so the user sees the result instead of the form that produced it.
+   */
+  collapseKey?: string | number | null
   children: React.ReactNode
 }
 
@@ -77,10 +90,12 @@ export type ViewportPanelProps = ViewportPanelBase & (
 
 /** Detents for the sheet: a glance, then the whole thing. */
 const SHEET_DETENTS = [0.55, 0.94]
+/** Peek: header + the one live control (≈ 180px on a 812px phone). */
+const PEEK_DETENTS = [0.23, 0.55, 0.94]
 
 export function ViewportPanel({
   id, open, onClose, label, mobile, widthPx,
-  anchor = 'center', centerShift, maxHeight, children,
+  anchor = 'center', centerShift, maxHeight, peek = false, collapseKey = null, children,
 }: ViewportPanelProps) {
   const isMobile = useIsMobile()
 
@@ -90,7 +105,10 @@ export function ViewportPanel({
   useViewportPanel(id, open, onClose)
   // Half height by default: glancing at the state is the common errand, and
   // opening full every time buries the model the panel is describing.
-  const [detent, setDetent] = useState(0)
+  // With a peek detent, half is index 1: open on half, collapse to peek.
+  const [detent, setDetent] = useState(peek ? 1 : 0)
+  useEffect(() => { if (!open) setDetent(peek ? 1 : 0) }, [open, peek])
+  useEffect(() => { if (collapseKey != null) setDetent(0) }, [collapseKey])
 
   if (isMobile && mobile === 'sheet') {
     return (
@@ -98,11 +116,11 @@ export function ViewportPanel({
         open={open}
         onClose={onClose ?? (() => undefined)}
         label={label}
-        snapPoints={SHEET_DETENTS}
+        snapPoints={peek ? PEEK_DETENTS : SHEET_DETENTS}
         detentIndex={detent}
         onDetentChange={setDetent}
       >
-        <div className="flex flex-col h-full min-h-0">{children}</div>
+        <div className="m-touch flex flex-col h-full min-h-0">{children}</div>
       </MobileSheet>
     )
   }

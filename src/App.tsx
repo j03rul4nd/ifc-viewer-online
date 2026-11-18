@@ -23,6 +23,7 @@ import FloorPlanPanel from './components/FloorPlanPanel'
 import ExportModal from './components/ExportModal'
 import KeyboardHelpModal from './components/KeyboardHelpModal'
 import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
+import { MobileSelectionBar } from './components/mobile/MobileSelectionBar'
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import VerifyCertificateView from './components/VerifyCertificateView'
 import WelcomeView from './components/WelcomeView'
@@ -74,8 +75,10 @@ import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
 import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
+import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLayerStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
+import { useTransformHistoryStore } from './stores/transformHistoryStore'
 // pc-types is deliberately dependency-free — importing it here costs the
 // entry bundle nothing, which is why clampOffset and NO_OFFSET live there.
 import { NO_OFFSET } from './lib/pointcloud/pc-types'
@@ -91,15 +94,34 @@ const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
 // Lazy for the same reason: MeshPanel statically imports three's GLTF, OBJ and
 // MTL loaders, which nobody who never imports a model should download.
 const MeshPanel = React.lazy(() => import('./components/MeshPanel'))
+// Lazy: the data-layer panel pulls proj4 + the vector builders. Mounted only
+// once used, and kept mounted while layers exist (it owns their sync).
+const VectorLayersPanel = React.lazy(() => import('./components/VectorLayersPanel'))
+// The data legend overlay: lazy for the same reason, mounted only with data layers.
+const DataLegend = React.lazy(() => import('./components/DataLegend'))
+const TimeBar = React.lazy(() => import('./components/TimeBar'))
 // Video resources are a separate lazy chunk: no media/Three implementation is
 // downloaded until the tool is opened.
 const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
-import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel } from './demo-models/models'
-import { fetchDemoModel } from './demo-models/fetchDemoModel'
+import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel, type DemoSet } from './demo-models/models'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
 import { expandWithDecomp } from './lib/visibility'
 import { useIfcLoader } from './lib/loader'
+import {
+  resetLoading, notifyModelRemoving, notifyModelRemoved, cancelAllLoads, type LoadingHooks,
+  submitPointClouds, submitMeshes, canLoadKind, describeSourceError, sourceErrorKey, type SourceSubmitItem,
+  removeSourceResult, clearSources, loadPointCloudsOnce, loadMeshesOnce,
+} from './lib/loading'
+import { legacyPhase } from './lib/loading/phases'
+import {
+  classifyFiles, groupMeshFiles, hasFilePayload, routedCount, fileExtensionOf, MESH_ENTRY_EXTENSIONS,
+} from './lib/loading/drop-routing'
+import { ACTIVE_STATUSES, type JobOrigin, type JobOutcome, type LoadSource } from './lib/loading/types'
+import { fetchFileFromUrl } from './lib/fetch-ifc-url'
+import { useLoadingStore, jobForModel } from './stores/loadingStore'
+import { useSceneGroupStore } from './stores/sceneGroupStore'
+import { LoadingCenter, LoadingIndicator, FirstLoadCard } from './components/loading'
 import { publishAggregateResult } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
 import { useValidationRunner } from './hooks/useValidationRunner'
@@ -216,6 +238,12 @@ function deriveScanFileName(url: string): string {
   catch { last = '' }
   const name = last.replace(/[\/?:*"<>|]+/g, '_').trim()
   return /\.[a-z0-9]{2,5}$/i.test(name) ? name : `${name || 'scan'}.las`
+}
+
+/** The last path segment of a URL (query and fragment excluded), or ''. */
+function urlPathName(url: string): string {
+  try { return decodeURIComponent(new URL(url, window.location.href).pathname.split('/').pop() ?? '') }
+  catch { return '' }
 }
 
 // Camera presets accepted by the `ifcviewer:view` embed command.
@@ -521,21 +549,30 @@ export default function App() {
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
 
-  // requestId of the in-flight SDK-initiated load, echoed back so the SDK can
-  // correlate its add()/addFromUrl() promise. null for app-initiated loads.
-  const pendingRequestIdRef = useRef<string | null>(null)
+  // SDK correlation now travels on each load job (`requestId` on the job and
+  // on every hook call), so a host's add() can never be resolved with another
+  // request's model — the single pending-id slot this replaced could.
 
   const prevRouteRef               = useRef<Route>(route)
   const hasTrackedFirstInteraction = useRef(false)
 
-  // Demo gallery overlay + a flag so analytics tags demo loads as `source: 'demo'`.
+  // Demo gallery overlay. Analytics tags demo loads by the job's origin.
   const [showDemoGallery, setShowDemoGallery] = useState(false)
-  const demoLoadRef = useRef(false)
 
-  // Size (MB) of the most recent load attempt, captured before handing the file
-  // to the loader — on failure the File is out of scope in onError, and pairing
-  // file_open_failed with a size is what reveals the real memory-bound ceiling.
-  const lastLoadSizeMbRef = useRef<number | null>(null)
+  // Models whose `?validate` auto-run waits for the load queue to go idle.
+  // Validation parses the IFC again in WASM; starting one per model while the
+  // rest of a federated set is still converting stacks those parses.
+  const pendingAutoValidateRef = useRef<Set<string>>(new Set())
+  // Last `model-progress` relay per job: when (throttle) and the highest
+  // percent sent (an automatic retry restarts the job's own progress at 0, and
+  // a host's bar must still never move backwards).
+  const progressRelayRef = useRef<Map<string, { at: number; percent: number }>>(new Map())
+  // IFC files dropped on the viewer, handed to the upload dialog for review.
+  const [uploadInitial, setUploadInitial] = useState<File[] | null>(null)
+  // Scans / meshes of a drop whose IFCs are still in the upload dialog (see
+  // routeDroppedFiles), and whether that dialog is open right now.
+  const deferredDropRef = useRef<{ pointcloud: File[]; mesh: File[] } | null>(null)
+  const showUploadRef = useRef(false)
 
   // ── Shared-report route — decode on mount if URL hash contains #report=... ──
   const [sharedReport, setSharedReport] = useState<SharedReportPayload | null>(() => {
@@ -545,7 +582,8 @@ export default function App() {
 
   // Model & loading state
   const [modelInfo,    setModelInfo]    = useState<ModelInfo | null>(null)
-  const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  // `loadingState` is derived (see below, next to sceneModels): with a queue
+  // there is no single "the load" whose state a flag could hold.
   const [loadError,    setLoadError]    = useState<string | null>(null)
 
   // Viewer interaction state
@@ -559,6 +597,7 @@ export default function App() {
   const [isolatedElement,      setIsolatedElement]      = useState<number | null>(null)
   const [isolatedElementModel, setIsolatedElementModel] = useState<string | null>(null)
   const [showUpload, setShowUpload]           = useState(false)
+  useEffect(() => { showUploadRef.current = showUpload }, [showUpload])
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
@@ -640,6 +679,12 @@ export default function App() {
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
   const meshCount = useMeshStore((s) => s.meshes.length)
+  const vectorLayersInUse = useVectorLayerStore((s) => s.panelOpen || s.layers.length > 0 || s.restorePending)
+  // Layers saved on this device come back on boot. Only a flag here: the panel
+  // (and with it proj4 + the vector chunk) mounts only when there IS something.
+  useEffect(() => {
+    if (hasPersistedVectorLayers()) useVectorLayerStore.getState().setRestorePending(true)
+  }, [])
 
   // Availability, stated from the SAME conditions that render each panel below.
   // Written from memory instead, it drifted immediately: the client skin got a
@@ -704,6 +749,28 @@ export default function App() {
     removeModel:        removeSceneModel,
     clearScene,
   } = useSceneStore()
+
+  // What used to be one flag is now a reading of the queue. 'loading' means
+  // something is still loading — models already in the scene stay fully usable
+  // meanwhile (the toolbar is told 'loaded' as soon as one model is in; the
+  // loading indicator carries the activity). The deep-link effects keyed on
+  // 'loaded' therefore wait for the WHOLE initial batch, which is what a
+  // `?model=a,b&select=…` link needs.
+  // Managed IFC loads that are actually working — not a job the user paused,
+  // not a point cloud / mesh / terrain fetch the manager merely tracks. Those
+  // must never hold the app in 'loading': a ?scan= link would tear its own
+  // deep-link effect down on the first scan, and a paused file would block
+  // ?validate and georef extraction indefinitely.
+  const loadsActive = useLoadingStore((s) => s.summary.managedActive > 0)
+  const loadingState: 'idle' | 'loading' | 'loaded' | 'error' =
+    loadsActive ? 'loading' : sceneModels.length > 0 ? 'loaded' : loadError ? 'error' : 'idle'
+  // Toolbar-less presets put the loading indicator in the bottom-left corner
+  // the OPFS badge also uses; while there is anything to show there, the
+  // badge (whose click clears the cache) yields the corner.
+  const hasLoadHistory = useLoadingStore((s) => s.jobs.length > 0)
+  const activeFromCache = useLoadingStore((s) => (
+    activeModelId ? jobForModel(s.jobs, activeModelId)?.metrics.fromCache === true : false
+  ))
 
   // Georef extractions land asynchronously, one per model. Subscribed rather
   // than read on demand so map placement re-runs the moment a model's
@@ -794,20 +861,34 @@ export default function App() {
   const elementFocus = useElementFocus(viewerApiRef, modelTreeRef)
 
   // ── Loading pipeline ──────────────────────────────────────────────────────
+  // Every load — upload, drop, demo set, ?model=, SDK bytes, companion — is a
+  // job in the loading manager (src/lib/loading, docs/MODEL_LOADING.md). What
+  // App owns is the reaction: these hooks are refreshed on every render, so a
+  // commit always runs the current closures (validation.run's `canRun`,
+  // `embedChrome`, the setters) instead of the ones captured when the load
+  // started.
 
-  const {
-    loadFile,
-    progress,
-    memoryStats,
-    cacheEntries,
-    deleteFromCache,
-    isFromCache,
-    opfsAvailable,
-  } = useIfcLoader({
-    viewerApiRef,
-    onModelLoaded: (info, fromCache, modelId) => {
+  const loadHooks: LoadingHooks = {
+    beforeSubmit: ({ sceneEmpty }) => {
+      setRoute('viewer')
+      setLoadError(null)
+      // D-19: only the first model of an empty scene resets interaction state.
+      // Loading more models must not disturb selection/visibility.
+      if (sceneEmpty) {
+        setModelInfo(null)
+        setSelected(null)
+        setHidden(new Set(DEFAULT_HIDDEN_TYPES))
+        setIsolated(null)
+        setIsolatedElement(null)
+        setIsolatedElementModel(null)
+        clearHiddenElements()
+      }
+    },
+
+    onModelLoaded: (info, fromCache, modelId, ctx) => {
+      // Read BEFORE addSceneModel: was this the first model of an empty scene?
+      const firstInScene = useSceneStore.getState().models.length === 0
       setModelInfo(info)
-      setLoadingState('loaded')
       setLoadError(null)
       // Re-apply category filters now that there is geometry to apply them to.
       //
@@ -824,30 +905,24 @@ export default function App() {
         setValidationPanelOpen(true)
         trackValidationPanelOpened({ trigger: 'auto' })
       }
-      // Notify an embedding parent (CDE / blog) that a model is ready. Echo the
-      // SDK requestId (if this load was SDK-initiated) so it resolves the right
-      // add()/addFromUrl() promise, then clear it.
+      // Notify an embedding parent (CDE / blog) that a model is ready, echoing
+      // the SDK requestId of THIS job so it resolves the right add() promise.
       emitEmbedEvent('model-loaded', {
         modelId,
         fileName: info.fileName,
         elementCount: info.elementCount,
         fromCache,
-        requestId: pendingRequestIdRef.current ?? undefined,
+        requestId: ctx.requestId ?? undefined,
       })
-      pendingRequestIdRef.current = null
+      progressRelayRef.current.delete(ctx.jobId)
 
       // Track when a second (or later) model is loaded into the scene
-      if (useSceneStore.getState().models.length > 0) {
-        trackFeatureUsed({ feature: 'multi_model' })
-      }
+      if (!firstInScene) trackFeatureUsed({ feature: 'multi_model' })
 
       // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
       addSceneModel(modelId, info)
 
-      // Analytics: a demo load sets demoLoadRef; otherwise treat known demo
-      // filenames as demo too (covers cached repeat loads), else it's an upload.
-      const isDemo = demoLoadRef.current || DEMO_FILENAMES.has(info.fileName)
-      demoLoadRef.current = false
+      const isDemo = ctx.origin === 'demo' || ctx.origin === 'companion' || DEMO_FILENAMES.has(info.fileName)
       trackFileOpened({
         file_size_mb:  Math.round((info.fileSize / 1_048_576) * 10) / 10,
         element_count: info.elementCount,
@@ -859,24 +934,137 @@ export default function App() {
         `[IFC] Loaded "${info.fileName}" (${info.elementCount} elements, id: ${modelId})` +
         (fromCache ? ' — from cache ⚡' : ' — parsed fresh'),
       )
-      toast(
-        fromCache
-          ? tToasts('model.loadedFromCache', { fileName: info.fileName, count: info.elementCount })
-          : tToasts('model.loaded', { fileName: info.fileName, count: info.elementCount }),
-        'success',
-      )
-      if (urlParams.autoValidate) void validation.run(undefined, modelId)
+      // Members of a batch are summarised once when the batch settles, so a
+      // six-file federation does not stack six toasts.
+      if (ctx.batchSize <= 1) {
+        toast(
+          fromCache
+            ? tToasts('model.loadedFromCache', { fileName: info.fileName, count: info.elementCount })
+            : tToasts('model.loaded', { fileName: info.fileName, count: info.elementCount }),
+          'success',
+        )
+      }
+      // `?validate` (default on) means "validate after load" — the Health Score
+      // the landing promises. The old loader captured `validation.run` when the
+      // load STARTED, while `canRun` was still false, so in practice it skipped
+      // the first model and every member of a URL list or demo set. Now every
+      // model is validated, once the queue is idle: validation parses the IFC
+      // again in WASM, and doing that while other models convert slows both.
+      if (urlParams.autoValidate) pendingAutoValidateRef.current.add(modelId)
     },
-    onError: (msg) => {
-      console.error('[IFC] Load error:', msg)
-      setLoadingState('error')
-      setLoadError(msg)
+
+    onLoadFailed: (job, error) => {
+      console.error('[IFC] Load failed:', job.fileName, `${error.code}@${error.phase ?? '-'}`, error.message)
+      setLoadError(error.message)
+      progressRelayRef.current.delete(job.id)
+      // Analytics get the failure CLASS, never the raw message: those embed the
+      // file name, which must not leave the browser.
       trackFileOpenFailed({
-        error_msg: msg.slice(0, 200),
-        ...(lastLoadSizeMbRef.current != null ? { file_size_mb: lastLoadSizeMbRef.current } : {}),
+        error_msg: `${error.code}@${error.phase ?? 'unknown'}`,
+        ...(job.sizeBytes > 0 ? { file_size_mb: Math.round((job.sizeBytes / 1_048_576) * 10) / 10 } : {}),
+      })
+      // Every failed load inside an iframe reaches the host, SDK-initiated or
+      // not: a plain `?model=` embed (the EmbedModal snippet, the blog's
+      // SpatialMediaDemo) switches to its error state on this event alone. URL
+      // loads report `url`, as they always have; bytes/file loads `name`.
+      emitEmbedEvent('model-error', {
+        ...(job.sourceUrl ? { url: job.sourceUrl } : { name: job.fileName }),
+        message: error.message,
+        requestId: job.requestId ?? undefined,
+      })
+      const reason = error.code === 'http'
+        ? i18n.t('loading:error.http', { status: error.httpStatus ?? '?' })
+        : i18n.t(`loading:error.${error.code}`)
+      toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error')
+    },
+
+    onLoadCancelled: (job) => {
+      progressRelayRef.current.delete(job.id)
+      // A host awaiting add() must hear about it — silence would look like a
+      // 120 s hang on its side.
+      emitEmbedEvent('model-error', {
+        ...(job.sourceUrl ? { url: job.sourceUrl } : { name: job.fileName }),
+        message: 'Load cancelled',
+        requestId: job.requestId ?? undefined,
       })
     },
-  })
+
+    onProgress: (job) => {
+      // Relay load progress to an embedding parent (SDK `model-progress`), for
+      // every load in the iframe as before — correlated by the job's own
+      // requestId when it has one. Only while the job is still loading: the
+      // background phases after commit (stream, index) must not re-show a
+      // progress bar the host hid on model-loaded.
+      if (!isEmbedded() || !ACTIVE_STATUSES.has(job.status)) return
+      const now = Date.now()
+      const prev = progressRelayRef.current.get(job.id)
+      if (prev && now - prev.at < 250) return
+      const percent = Math.max(prev?.percent ?? 0, Math.round(job.progress.fraction * 100))
+      progressRelayRef.current.set(job.id, { at: now, percent })
+      emitEmbedEvent('model-progress', {
+        percent,
+        phase: legacyPhase(job.phase, job.status),
+        requestId: job.requestId ?? undefined,
+      })
+    },
+
+    // A scan or a mesh that failed, whatever started it — the panels, a drop,
+    // ?scan=, the SDK. One toast per failure, named, with the runner's own
+    // reason; the panels no longer toast themselves, and a dropped file no
+    // longer fails into the console alone. Never the SDK's model-error: that
+    // event is about models (see LoadingHooks.onSourceFailed).
+    onSourceFailed: (job, error) => {
+      console.warn(`[App] ${job.kind} load failed:`, job.fileName, `${error.code}@${error.phase ?? '-'}`, error.message)
+      void describeSourceError(error, job.kind).then((reason) => {
+        toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error')
+      })
+    },
+
+    onBatchSettled: (batch, counts) => {
+      if (counts.loaded + counts.failed === 0) return
+      if (counts.failed > 0) {
+        toast(tToasts('model.batchPartial', { name: batch.name, loaded: counts.loaded, failed: counts.failed }), 'warning')
+      } else {
+        toast(tToasts('model.batchLoaded', { name: batch.name, count: counts.loaded }), 'success')
+      }
+    },
+
+    onIdle: () => {
+      // Only models still in the scene: an idle that coincides with a clear or
+      // a trip to the landing must not start a validation of a model that is
+      // about to be (or was just) torn down.
+      const inScene = new Set(useSceneStore.getState().models.map((m) => m.id))
+      const ids = [...pendingAutoValidateRef.current].filter((id) => inScene.has(id) && modelRegistry.get(id))
+      pendingAutoValidateRef.current.clear()
+      if (ids.length === 0) return
+      // One at a time: validation is a single global run.
+      void (async () => {
+        for (const id of ids) {
+          if (!modelRegistry.get(id) || !useSceneStore.getState().models.some((m) => m.id === id)) continue
+          await validation.run(undefined, id)
+        }
+      })()
+    },
+
+    removeModel: (modelId) => handleRemoveModel(modelId),
+
+    focusModel: (modelId) => {
+      handleSetActiveModel(modelId)
+      viewerApiRef.current?.frameActiveModel()
+    },
+
+    createGroup: (name, fileKeys) => useSceneGroupStore.getState().createGroup(name, fileKeys),
+  }
+
+  const {
+    loadFile,
+    loadUrls,
+    loadBytes,
+    memoryStats,
+    cacheEntries,
+    deleteFromCache,
+    opfsAvailable,
+  } = useIfcLoader({ viewerApiRef, hooks: loadHooks })
 
   // ── Sync the 3D overlay channel (validation OR IDS — mutually exclusive) ──
   // One combined effect: with two separate effects the disable-side of one
@@ -1024,29 +1212,15 @@ export default function App() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  const handleFileLoad = (file: File): void => {
-    setLoadingState('loading')
-    setLoadError(null)
-    setRoute('viewer')
-    // Only reset viewer interaction state for the very first model load.
-    // Loading additional models must not disturb existing selections/visibility.
-    if (sceneModels.length === 0) {
-      setModelInfo(null)
-      setSelected(null)
-      setHidden(new Set(DEFAULT_HIDDEN_TYPES))
-      setIsolated(null)
-      setIsolatedElement(null)
-      setIsolatedElementModel(null)
-      clearHiddenElements()
-    }
-    lastLoadSizeMbRef.current = Math.round((file.size / 1_048_576) * 10) / 10
-    void loadFile(file)
-  }
+  // Queue one local file. Route switch and the first-model reset happen in the
+  // `beforeSubmit` hook, the same for every entry point.
+  const handleFileLoad = (file: File, origin: JobOrigin = 'upload'): Promise<JobOutcome> =>
+    loadFile(file, { origin })
 
+  // No "already loading" guard any more: the dialog adds to the queue.
   const openUploadModal = useCallback((): void => {
-    if (loadingState === 'loading') return
     setShowUpload(true)
-  }, [loadingState])
+  }, [])
 
   // ── Route a dropped/picked .ids file to the IDS flow (P5-2) ───────────────
   // Parse on the main thread, load into the store and open the IDS modal. Auto-
@@ -1073,20 +1247,91 @@ export default function App() {
     return true
   }, [])
 
-  // Global drop handler: route .ids files anywhere over the viewer to the IDS
-  // flow. IFC drops still go through the explicit UploadOverlay; we only act on
-  // (and preventDefault) .ids so we never interfere with that path.
+  // ── Route dropped files by kind ───────────────────────────────────────────
+  // One drop can carry a federation plus its survey: IFCs go to the upload
+  // dialog (validation, duplicates, review → the loading queue), scans and
+  // meshes straight to the loading queue as jobs of their own (one per scan,
+  // one per model — a multi-file glTF is ONE model), an .ids to the IDS flow.
+  // `classifyFiles` works on extensions only, so none of the point cloud /
+  // mesh code is pulled into the entry chunk to decide. Scans and meshes do
+  // not need their panels any more: they load in client mode too.
+  const routeDroppedFiles = useCallback((files: File[]): void => {
+    const r = classifyFiles(files)
+    if (r.ifc.length > 0) {
+      setUploadInitial(r.ifc)
+      setShowUpload(true)
+    }
+    if (r.ids.length > 0) void handleIdsFile(r.ids[0])
+    // Scans and meshes that arrive WITH IFCs wait for the upload dialog: it
+    // reviews the IFCs before they become jobs, and a scan that started
+    // meanwhile found no model to align against (nor an anchor job to wait
+    // for) and landed at its own coordinates. Held here until the dialog
+    // closes — after its submit, so the IFC is queued and anchors the scene.
+    if ((r.ifc.length > 0 || showUploadRef.current) && (r.pointcloud.length > 0 || r.mesh.length > 0)) {
+      const held = deferredDropRef.current ?? { pointcloud: [], mesh: [] }
+      held.pointcloud.push(...r.pointcloud)
+      held.mesh.push(...r.mesh)
+      deferredDropRef.current = held
+    } else {
+      submitDroppedSources(r.pointcloud, r.mesh)
+    }
+    // GeoJSON never waits for the IFC dialog: a layer re-anchors on its own
+    // when the model's placement arrives (vector-runner rebuilds on it).
+    if (r.vector.length > 0) useVectorLayerStore.getState().enqueueFiles(r.vector)
+    if (r.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
+    if (r.other.length > 0 && routedCount(r) === 0) {
+      toast(tToasts('model.dropUnsupported', { count: r.other.length }), 'warning')
+    }
+  }, [handleIdsFile, tToasts])
+
+  /** Dropped scans and meshes → the loading queue (one job per scan, one per model). */
+  function submitDroppedSources(pointcloud: File[], mesh: File[]): void {
+    if (pointcloud.length > 0) {
+      if (canLoadKind('pointcloud')) {
+        // A scan already in the scene is not decoded again (see loadPointCloudsOnce).
+        void loadPointCloudsOnce(pointcloud.map((file) => ({ source: { type: 'file', file } })), { origin: 'drop' })
+      } else {
+        toast(tToasts('model.dropUnsupported', { count: pointcloud.length }), 'warning')
+      }
+    }
+    if (mesh.length > 0) {
+      const groups = groupMeshFiles(mesh)
+      if (!canLoadKind('mesh')) {
+        toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
+      } else if (groups.length === 0) {
+        // Only sidecars (.bin, .mtl): nothing to decode. Said, not swallowed.
+        toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
+      } else {
+        void loadMeshesOnce(groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })), { origin: 'drop' })
+      }
+    }
+  }
+
+  /** The upload dialog closed (after its submit, or dismissed): release what the drop held back. */
+  const releaseDeferredDrop = (): void => {
+    const held = deferredDropRef.current
+    deferredDropRef.current = null
+    if (held) submitDroppedSources(held.pointcloud, held.mesh)
+  }
+
+  // Global drop over the viewer. Only OS file drags count (`hasFilePayload`):
+  // the scene tree's own row drag-and-drop must pass straight through. While the
+  // upload dialog is open it owns drops itself and stops their propagation.
   useEffect(() => {
     if (route !== 'viewer') return
     const onDragOver = (e: DragEvent): void => {
-      if (Array.from(e.dataTransfer?.items ?? []).some((i) => i.kind === 'file')) e.preventDefault()
+      if (hasFilePayload(e.dataTransfer)) e.preventDefault()
     }
     const onDrop = (e: DragEvent): void => {
-      const file = e.dataTransfer?.files?.[0]
-      if (file && file.name.toLowerCase().endsWith('.ids')) {
-        e.preventDefault()
-        void handleIdsFile(file)
-      }
+      // A drop zone that took the drop itself (the point cloud panel's, the
+      // upload dialog's) prevented its default — React handlers run before the
+      // event bubbles here. Handling it again loaded the same scan twice.
+      if (e.defaultPrevented) return
+      if (!hasFilePayload(e.dataTransfer)) return
+      const files = Array.from(e.dataTransfer?.files ?? [])
+      if (files.length === 0) return
+      e.preventDefault()
+      routeDroppedFiles(files)
     }
     window.addEventListener('dragover', onDragOver)
     window.addEventListener('drop', onDrop)
@@ -1094,7 +1339,7 @@ export default function App() {
       window.removeEventListener('dragover', onDragOver)
       window.removeEventListener('drop', onDrop)
     }
-  }, [route, handleIdsFile])
+  }, [route, routeDroppedFiles])
 
   // "Open an IFC file" CTA — go to viewer and immediately show the upload overlay
   // so the user can pick their own file instead of the demo being auto-loaded.
@@ -1109,17 +1354,16 @@ export default function App() {
   const handleLaunch = (): void => {
     trackLandingCtaClicked({ variant: 'load_demo' })
     setRoute('viewer')
-    void (async () => {
-      try {
-        const file = await fetchDemoModel(DEFAULT_DEMO_MODEL)
-        demoLoadRef.current = true
-        handleFileLoad(file)
-      } catch (err: unknown) {
-        console.warn('[App] Demo file unavailable:', err)
-        toast(tToasts('model.demoUnavailable'), 'warning')
-        setShowUpload(true)
-      }
-    })()
+    const demo = DEFAULT_DEMO_MODEL
+    // A URL job: the download shows real progress in the loading UI, and the
+    // bundled fallback is tried by the job itself.
+    void loadUrls([{ url: demo.ifcUrl, fileName: demo.fileName, fallbackUrl: demo.fallbackUrl }], { origin: 'demo' })
+      .then(([outcome]) => {
+        // Could not even download it: offer the user's own file instead.
+        if (outcome?.status === 'failed' && (outcome.error.code === 'network' || outcome.error.code === 'http')) {
+          setShowUpload(true)
+        }
+      })
   }
 
   // Opens the demo gallery from anywhere (toolbar, upload overlay, …). Closes the
@@ -1135,57 +1379,42 @@ export default function App() {
     openDemoGallery()
   }
 
-  // The gallery already downloaded the chosen model into a File — switch to the
-  // viewer and run the normal load pipeline (which handles OPFS caching/parse).
+  // A demo set is one batch of URL jobs: the manager downloads the members
+  // (real byte progress in the loading UI), converts them in parallel and
+  // attaches them in discipline order — the first member sets the coordinate
+  // base, as it did when they were handed over one at a time. The gallery
+  // closes at once instead of spinning through every download.
+  const handleDemoSetSelected = (set: DemoSet): void => {
+    setShowDemoGallery(false)
+    setRoute('viewer')
+    void loadUrls(
+      set.models.map((m) => ({ url: m.ifcUrl, fileName: m.fileName, fallbackUrl: m.fallbackUrl })),
+      { origin: 'demo', batchName: set.name },
+    )
+  }
+
+  // Legacy gallery path (the gallery downloaded a File itself).
   const handleDemoModelReady = async (_model: DemoModel, file: File): Promise<void> => {
     setShowDemoGallery(false)
-    demoLoadRef.current = true
-    setRoute('viewer')
-    // Resolve only once the model is actually IN the scene. A federated set is
-    // handed over one file at a time and the parser takes them one at a time,
-    // so returning early lets the next file race the one still being read —
-    // and the loser is dropped without an error.
-    await new Promise<void>((resolve) => {
-      const off = appBus.on('model:loaded', ({ modelInfo }) => {
-        if (modelInfo.fileName !== file.name) return
-        window.clearTimeout(timer)
-        off()
-        resolve()
-      })
-      // Never leave the gallery spinning on a file that failed to parse: the
-      // set should carry on to the next discipline.
-      const timer = window.setTimeout(() => { off(); resolve() }, 60_000)
-      handleFileLoad(file)
-    })
+    await handleFileLoad(file, 'demo')
   }
 
   // One-click exhibition path from VideoPanel. The matching IFC is a normal
   // gallery model and goes through the normal loader/cache pipeline; the video
   // may already be playing while the IFC finishes parsing because it owns an
-  // independent world-space transform.
+  // independent world-space transform. Resolves when the model is in the scene
+  // (no fixed timeout: a slow parse is still a parse, and the loading UI says so).
   const handleLoadVideoCompanion = async (demoModelId = 'operations-pavilion-video'): Promise<void> => {
     const demo = DEMO_MODELS.find((model) => model.id === demoModelId)
     if (!demo || sceneModels.some((model) => model.fileName === demo.fileName)) return
-    try {
-      const file = await fetchDemoModel(demo)
-      demoLoadRef.current = true
-      await new Promise<void>((resolve, reject) => {
-        const off = appBus.on('model:loaded', ({ modelInfo }) => {
-          if (modelInfo.fileName !== demo.fileName) return
-          window.clearTimeout(timeout)
-          off()
-          resolve()
-        })
-        const timeout = window.setTimeout(() => {
-          off()
-          reject(new Error('Companion IFC load timed out'))
-        }, 30_000)
-        handleFileLoad(file)
-      })
-    } catch (error) {
-      console.warn('[App] Spatial companion IFC unavailable:', error)
-      toast(tToasts('model.demoUnavailable'), 'warning')
-      throw error
+    const [outcome] = await loadUrls(
+      [{ url: demo.ifcUrl, fileName: demo.fileName, fallbackUrl: demo.fallbackUrl }],
+      { origin: 'companion' },
+    )
+    if (outcome?.status !== 'loaded') {
+      // The failure itself was already toasted by the loading hooks.
+      console.warn('[App] Spatial companion IFC unavailable:', outcome)
+      throw new Error('Companion IFC unavailable')
     }
   }
 
@@ -1293,6 +1522,8 @@ export default function App() {
         try { viewerApiRef.current?.closeStoreyView() } catch { }
         setActivePlanViewId(null)
       }
+      // The loading center shows the row as "Removing…", then as history.
+      notifyModelRemoving(id)
       await viewerApiRef.current?.removeModel(id)
       removeSceneModel(id)
       useModelStore.getState().removeModelEntry(id)
@@ -1316,6 +1547,8 @@ export default function App() {
       publishAggregateResult()
       // Clear selection if the removed model owned the currently selected element
       setSelected((prev) => (prev?.modelId === id ? null : prev))
+      pendingAutoValidateRef.current.delete(id)
+      notifyModelRemoved(id)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('[App] Failed to remove model:', msg)
@@ -1329,10 +1562,15 @@ export default function App() {
     if (window.location.pathname !== base && window.location.pathname !== base.replace(/\/$/, '')) {
       history.pushState(null, '', base)
     }
+    // Cancel every load FIRST and bump the loading epoch: a model that is
+    // already attaching must not repopulate the stores this function is about
+    // to clear (the old loader kept going and left ghost rows behind).
+    pendingAutoValidateRef.current.clear()
+    progressRelayRef.current.clear()
+    resetLoading()
     setRoute('landing')
     setBlogSlug(null)
     setModelInfo(null)
-    setLoadingState('idle')
     setLoadError(null)
     setSelected(null)
     setHidden(new Set(DEFAULT_HIDDEN_TYPES))
@@ -1361,8 +1599,13 @@ export default function App() {
       void viewerApiRef.current?.getPointClouds().then((system) => system.dispose())
     }
     usePointCloudStore.getState().clearClouds()
+    useTransformHistoryStore.getState().clearHistory()
+    // Imported meshes too: the viewer's mesh system is disposed with it, and
+    // rows left behind listed "ready" models no scene held.
+    useMeshStore.getState().clearMeshes()
     modelRegistry.clear()
     clearScene()
+    appBus.emit('model:cleared', undefined)
     // Clean up Sprint 7+8 panel state and viewer tools
     setMeasurementPanelOpen(false)
     setActiveMeasurementTool('none')
@@ -1386,46 +1629,14 @@ export default function App() {
     else setRoute('landing')
   }, [])
 
-  // ── Load a single IFC File (shared by URL params, postMessage & SDK) ───────
-  const loadIfcFile = useCallback(async (file: File): Promise<void> => {
-    setRoute('viewer')
-    setLoadingState('loading')
-    setLoadError(null)
-    // Reset viewer interaction state only when this is the first model.
-    if (useSceneStore.getState().models.length === 0) {
-      setModelInfo(null)
-      setSelected(null)
-      setHidden(new Set(DEFAULT_HIDDEN_TYPES))
-      setIsolated(null)
-      setIsolatedElement(null)
-      setIsolatedElementModel(null)
-      clearHiddenElements()
-    }
-    // Await so the loader's concurrency guard doesn't reject a following load.
-    lastLoadSizeMbRef.current = Math.round((file.size / 1_048_576) * 10) / 10
-    await loadFile(file)
-  }, [loadFile, clearHiddenElements])
-
   // ── Load model(s) from remote URLs (shared by ?model= and postMessage) ────
-  // `requestId` is set by SDK-initiated loads so model-loaded/model-error echo it.
+  // One batch of URL jobs: downloads run through the network lane with real
+  // progress, conversions overlap, and each job carries the SDK requestId, so
+  // model-loaded / model-error / model-progress are correlated per model and a
+  // failed parse reports model-error instead of leaving the host to time out.
   const loadModelsFromUrls = useCallback(async (urls: string[], names: string[] = [], requestId?: string): Promise<void> => {
-    for (let i = 0; i < urls.length; i++) {
-      const url  = urls[i]
-      try {
-        const file = await fetchIfcFromUrl(url, names[i])
-        pendingRequestIdRef.current = requestId ?? null
-        await loadIfcFile(file)
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err)
-        console.error('[App] Failed to load model from URL:', url, msg)
-        setLoadingState('error')
-        setLoadError(msg)
-        toast(tToasts('model.urlLoadFailed', { message: msg }), 'error')
-        emitEmbedEvent('model-error', { url, message: msg, requestId })
-        pendingRequestIdRef.current = null
-      }
-    }
-  }, [loadIfcFile, tToasts])
+    await loadUrls(urls.map((url, i) => ({ url, fileName: names[i] })), { origin: 'url', requestId })
+  }, [loadUrls])
 
   // ── Tell map mode which models can place themselves ────────────────────────
   //
@@ -1486,7 +1697,13 @@ export default function App() {
       // Guarded by a ref because a model that genuinely carries no
       // georeferencing settles on `unknown` for good, and re-requesting it
       // every time this effect runs would spin the worker forever.
-      for (const m of useSceneStore.getState().models) {
+      //
+      // Deferred while models are still loading: each extraction is another
+      // WASM parse of a whole IFC, and a federated drop would otherwise start
+      // one per member on top of the conversions still running. The effect
+      // re-runs when the queue goes idle (loadsActive is a dependency).
+      const loadsRunning = useLoadingStore.getState().summary.managedActive > 0
+      for (const m of loadsRunning ? [] : useSceneStore.getState().models) {
         const g = useGeoStore.getState().georefByModel[m.id]
         if (g && g.status !== 'unknown') continue
         if (georefRequestedRef.current.has(m.id)) continue
@@ -1509,24 +1726,14 @@ export default function App() {
   // — so a []-deps effect registers nothing and the feature silently does not
   // exist. And extraction is async: a model can reach the store a beat before
   // its georeferencing does, so both have to re-trigger the placement.
-  }, [sceneModels.length, georefByModel])
+  }, [sceneModels.length, georefByModel, loadsActive])
 
   // ── Load model from raw IFC bytes handed in by a host app (SDK path) ───────
+  // The bytes stay the registry's copy once committed (no File wrap, no extra
+  // read); failures and cancels reach the host as model-error via the hooks.
   const loadModelFromBytes = useCallback(async (name: string, bytes: Uint8Array, requestId?: string): Promise<void> => {
-    const fname = name.toLowerCase().endsWith('.ifc') ? name : `${name}.ifc`
-    try {
-      pendingRequestIdRef.current = requestId ?? null
-      await loadIfcFile(new File([bytes], fname, { type: 'application/x-step' }))
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('[App] Failed to load model from bytes:', fname, msg)
-      setLoadingState('error')
-      setLoadError(msg)
-      toast(tToasts('model.urlLoadFailed', { message: msg }), 'error')
-      emitEmbedEvent('model-error', { name: fname, message: msg, requestId })
-      pendingRequestIdRef.current = null
-    }
-  }, [loadIfcFile, tToasts])
+    await loadBytes(name, bytes, { requestId })
+  }, [loadBytes])
 
   // ── Auto-load model(s) from URL params on mount (?model=…&embed=1) ────────
   const urlLoadStartedRef   = useRef(false)
@@ -1611,7 +1818,12 @@ export default function App() {
           let bytes: Uint8Array | null = null
           if (raw instanceof ArrayBuffer) bytes = new Uint8Array(raw)
           else if (raw instanceof Uint8Array) bytes = raw
-          else if (ArrayBuffer.isView(raw)) bytes = new Uint8Array((raw as ArrayBufferView).buffer)
+          // Honour the view's window: a Uint16Array over part of a buffer used to
+          // be read as the WHOLE buffer.
+          else if (ArrayBuffer.isView(raw)) {
+            const v = raw as ArrayBufferView
+            bytes = new Uint8Array(v.buffer, v.byteOffset, v.byteLength)
+          }
           const name = typeof msg.name === 'string' ? msg.name : 'model.ifc'
           if (bytes && bytes.byteLength > 0) void loadModelFromBytes(name, bytes, requestId)
           else if (requestId) emitEmbedEvent('model-error', { message: 'Empty or invalid bytes', requestId })
@@ -1683,10 +1895,15 @@ export default function App() {
           break
         }
         case 'ifcviewer:clear': {
+          // Stop what is still loading first, or a model mid-attach would land
+          // right after the scene was emptied. Pending auto-validations go
+          // first: cancelling can make the queue idle, and idle runs them.
+          pendingAutoValidateRef.current.clear()
+          cancelAllLoads()
           const ids = useSceneStore.getState().models.map((m) => m.id)
           void (async () => { for (const id of ids) await handleRemoveModel(id) })()
           setModelInfo(null)
-          setLoadingState('idle')
+          setLoadError(null)
           break
         }
 
@@ -1827,42 +2044,67 @@ export default function App() {
 
         // ── Mutating commands (fire-and-forget) ──────────────────────────────
         // ── Point clouds ───────────────────────────────────────────────
-        // Every one delegates to PointCloudPanel rather than reaching into the
-        // loader here: the alignment ladder, the viewer's PointCloudSystem and
-        // the model bounds all live behind that panel, and a second code path
-        // would be a second set of bugs.
+        // Loading goes through the loading queue (a managed job: download
+        // lane with progress, decode lane, the scene anchor, per-job cancel);
+        // every other command delegates to PointCloudPanel, which owns the
+        // display, placement and replay state.
         case 'ifcviewer:add-pointcloud': {
           void respond(async () => {
-            const name = typeof msg.name === 'string' ? msg.name : 'scan.las'
-            let file: File
+            const name = typeof msg.name === 'string' ? msg.name : undefined
+            let source: LoadSource
             if (msg.bytes instanceof ArrayBuffer) {
-              file = new File([msg.bytes], name)
+              source = { type: 'bytes', bytes: msg.bytes, fileName: name ?? 'scan.las' }
             } else if (typeof msg.url === 'string') {
-              const res = await fetch(msg.url)
-              if (!res.ok) throw new Error(`Fetch failed: HTTP ${res.status}`)
-              file = new File([await res.arrayBuffer()], name)
+              // The URL itself is the scan's identity across sessions (saved
+              // offset, proj4, node cache) — the job keeps it as its source.
+              // A name carrying a query is the URL's raw last segment (older
+              // SDK clients default to url.split('/').pop()), not a name: a
+              // signed ".copc.laz?X-Amz-…" would lose the extension the
+              // readers route on. The URL's own path names it then.
+              const usable = name && !/[?#]/.test(name) ? name : undefined
+              source = { type: 'url', url: msg.url, fileName: usable ?? deriveScanFileName(msg.url) }
             } else {
               throw new Error('Provide bytes (ArrayBuffer) or url')
             }
-            const cloudId = await dispatchPanelCommand('sdk:pointcloud',
-              // Pass the URL through when we fetched it: that, not the File we
-              // just wrapped the bytes in, is what identifies this scan later.
-              { action: 'add', file, sourceUrl: typeof msg.url === 'string' ? msg.url : undefined },
-              { unavailable: 'Point clouds are not enabled in this build' })
-            return { cloudId }
+            if (!canLoadKind('pointcloud')) throw new Error('Point clouds are not enabled in this build')
+            const outcome = await submitPointClouds([{ source }], { origin: 'sdk', requestId })[0].settled
+            if (outcome.status === 'loaded') return { cloudId: outcome.resultId }
+            // In words, in the viewer's language — what the host always
+            // received (a cancel too: the runner's own "Loading was cancelled").
+            if (outcome.status === 'cancelled') {
+              throw new Error(await describeSourceError({
+                code: 'cancelled', message: 'cancelled', phase: null, autoRetryable: false, userRetryable: true,
+                attempt: 1, detailKey: 'pointcloud:error.cancelled',
+              }, 'pointcloud'))
+            }
+            throw new Error(await describeSourceError(outcome.error, 'pointcloud'))
           })
           break
         }
+        // Remove and clear work without the panel too: the client skin
+        // mounts none, and a host that can add a scan there must be able to
+        // take it out. With the panel mounted it keeps the say (it also stops
+        // a temporal replay).
         case 'ifcviewer:remove-pointcloud':
           void respond(async () => {
-            await dispatchPanelCommand('sdk:pointcloud',
-              { action: 'remove', cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined },
+            const cloudId = typeof msg.cloudId === 'string' ? msg.cloudId : undefined
+            if (!canLoadKind('pointcloud')) throw new Error('Point clouds are not enabled in this build')
+            if (cloudId && !appBus.hasListeners('sdk:pointcloud')) {
+              await removeSourceResult('pointcloud', cloudId)
+              return { ok: true }
+            }
+            await dispatchPanelCommand('sdk:pointcloud', { action: 'remove', cloudId },
               { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
           })
           break
         case 'ifcviewer:clear-pointclouds':
           void respond(async () => {
+            if (!canLoadKind('pointcloud')) throw new Error('Point clouds are not enabled in this build')
+            if (!appBus.hasListeners('sdk:pointcloud')) {
+              await clearSources('pointcloud')
+              return { ok: true }
+            }
             await dispatchPanelCommand('sdk:pointcloud', { action: 'clear' },
               { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
@@ -1955,14 +2197,13 @@ export default function App() {
           })
           break
         // ── Imported models ────────────────────────────────────────────
-        // Same delegation as scans: MeshPanel owns the loader, the triangle
-        // budget and the placement, so the bridge asks it rather than growing a
-        // second copy of any of that.
+        // Loading goes through the loading queue, as for scans; the other
+        // mesh commands delegate to MeshPanel, which owns placement and
+        // display. One call is ONE model: the entry file plus everything it
+        // references (a .gltf needs its .bin and textures, an .obj its .mtl).
         case 'ifcviewer:add-mesh': {
           void respond(async () => {
             const files: File[] = []
-            // Bytes the host handed over directly. A .gltf needs its .bin and
-            // its textures alongside it, so this is a LIST, not a file.
             if (Array.isArray(msg.files)) {
               for (const f of msg.files as Array<{ name?: unknown; bytes?: unknown }>) {
                 if (typeof f?.name === 'string' && f.bytes instanceof ArrayBuffer) {
@@ -1970,36 +2211,65 @@ export default function App() {
                 }
               }
             }
-            // Or URLs for us to fetch. Fetched in parallel: a glTF with a dozen
-            // textures would otherwise serialise a dozen round trips.
             const urls = Array.isArray(msg.urls) ? (msg.urls as unknown[]).filter((u): u is string => typeof u === 'string') : []
-            if (urls.length > 0) {
-              const fetched = await Promise.all(urls.map(async (url) => {
-                const res = await fetch(url)
-                if (!res.ok) throw new Error(`Fetch failed for ${url}: HTTP ${res.status}`)
-                return new File([await res.arrayBuffer()], url.split('/').pop() ?? 'model.glb')
-              }))
-              files.push(...fetched)
-            }
-            if (files.length === 0) throw new Error('Provide files (name + bytes) or urls')
+            if (files.length === 0 && urls.length === 0) throw new Error('Provide files (name + bytes) or urls')
+            if (!canLoadKind('mesh')) throw new Error('Mesh import is not enabled in this build')
 
-            const meshId = await dispatchPanelCommand('sdk:mesh',
-              { action: 'add', files },
-              { unavailable: 'Mesh import is not enabled in this build' })
-            return { meshId }
+            let item: SourceSubmitItem
+            if (files.length > 0) {
+              // Bytes and URLs together (a raw postMessage can send both):
+              // fetch the URLs here and import everything as one selection,
+              // as before.
+              for (const url of urls) {
+                files.push(await fetchFileFromUrl(url, { fallbackName: 'model.glb', what: 'model' }))
+              }
+              const [group] = groupMeshFiles(files)
+              if (!group) throw new Error('error.noEntryFile')
+              item = { source: { type: 'file', file: group.entry, sidecars: group.sidecars } }
+            } else {
+              // URLs only: downloaded by the job (network lane, byte progress,
+              // cancel). The entry is the first URL whose PATH names a model —
+              // a signed "…/model.gltf?sig=…" is still a .gltf.
+              const entryAt = Math.max(0, urls.findIndex((u) =>
+                (MESH_ENTRY_EXTENSIONS as readonly string[]).includes(fileExtensionOf(urlPathName(u)))))
+              item = {
+                source: {
+                  type: 'url',
+                  url: urls[entryAt],
+                  sidecars: urls.filter((_, i) => i !== entryAt).map((url) => ({ url })),
+                },
+              }
+            }
+            const outcome = await submitMeshes([item], { origin: 'sdk', requestId })[0].settled
+            if (outcome.status === 'loaded') return { meshId: outcome.resultId }
+            if (outcome.status === 'cancelled') throw new Error('error.cancelled')
+            // The mesh wire contract is the raw i18n key ('error.noEntryFile').
+            throw new Error(sourceErrorKey(outcome.error) ?? outcome.error.message)
           })
           break
         }
         case 'ifcviewer:remove-mesh':
           void respond(async () => {
-            await dispatchPanelCommand('sdk:mesh',
-              { action: 'remove', meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined },
+            if (!canLoadKind('mesh')) throw new Error('Mesh import is not enabled in this build')
+            const meshId = typeof msg.meshId === 'string' ? msg.meshId : undefined
+            if (!appBus.hasListeners('sdk:mesh')) {
+              const target = meshId ?? useMeshStore.getState().activeMeshId
+              if (!target) throw new Error('No model loaded')
+              await removeSourceResult('mesh', target)
+              return { ok: true }
+            }
+            await dispatchPanelCommand('sdk:mesh', { action: 'remove', meshId },
               { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
           })
           break
         case 'ifcviewer:clear-meshes':
           void respond(async () => {
+            if (!canLoadKind('mesh')) throw new Error('Mesh import is not enabled in this build')
+            if (!appBus.hasListeners('sdk:mesh')) {
+              await clearSources('mesh')
+              return { ok: true }
+            }
             await dispatchPanelCommand('sdk:mesh', { action: 'clear' },
               { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
@@ -2144,15 +2414,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadModelsFromUrls, loadModelFromBytes, handleRemoveModel, handleRestoreVisibility])
 
-  // ── Relay load progress to an embedding parent (SDK model-progress event) ──
-  useEffect(() => {
-    if (loadingState !== 'loading') return
-    emitEmbedEvent('model-progress', {
-      percent: progress.percent,
-      phase:   progress.phase,
-      requestId: pendingRequestIdRef.current ?? undefined,
-    })
-  }, [progress, loadingState])
+  // (model-progress is relayed per job from the loading hooks — onProgress.)
 
   // ── Apply select / isolate deep-link actions once the first model is loaded ─
   useEffect(() => {
@@ -2177,9 +2439,9 @@ export default function App() {
 
   // ── Apply the map / scan deep links once the first model is loaded ─────────
   //
-  // Both go through the same `sdk:*` commands the SDK uses rather than reaching
-  // into the panels: the map needs the georeference ladder and the scan needs
-  // the alignment ladder, and both of those live in the panel that owns them.
+  // The map goes through the same `sdk:site` command the SDK uses (the
+  // georeference ladder lives in its panel); the scans are URL jobs in the
+  // loading queue, like the SDK's addPointCloudFromUrl.
   //
   // They wait for a model because neither means anything without one — the map
   // has nothing to place, and a scan would have nothing to align against.
@@ -2204,6 +2466,8 @@ export default function App() {
             terrain:   wanted.terrain,
             buildings: wanted.buildings,
             detail:    wanted.detail,
+            look:      wanted.look,
+            lookTo:    wanted.lookTo,
           }, {
             // Two different failures wearing one message cost a debugging
             // session: the build flag being off, and the panel simply not
@@ -2223,27 +2487,21 @@ export default function App() {
       })()
     }
 
-    void (async () => {
-      // Scans one at a time, like the model URLs: two decoding at once compete
-      // for the same worker and the same point budget.
-      for (const url of urlParams.scanUrls) {
-        if (cancelled) return
-        try {
-          const res = await fetch(url, { cache: 'force-cache', mode: 'cors' })
-          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-          const file = new File([await res.arrayBuffer()], deriveScanFileName(url))
-          await dispatchPanelCommand('sdk:pointcloud',
-            // The URL, not the File, is the scan's identity across sessions —
-            // see SdkPointCloudCommand.sourceUrl.
-            { action: 'add', file, sourceUrl: url },
-            { unavailable: 'Point clouds are not available in this build' })
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err)
-          console.error('[App] ?scan= deep link failed:', url, message)
-          if (!cancelled) toast(tToasts('model.scanLoadFailed', { message }), 'error')
-        }
+    // The scans are one batch of URL jobs: downloaded in the network lane with
+    // real progress, decoded in the decode lane (the resident-point budget
+    // decides who waits), aligned against the model once it is in. A failure
+    // is toasted by the loading hooks, like any other scan's.
+    if (urlParams.scanUrls.length > 0) {
+      if (canLoadKind('pointcloud')) {
+        // The same URL twice in the link, or a scan the page already holds,
+        // is loaded once.
+        void loadPointCloudsOnce(urlParams.scanUrls.map((url) => ({
+          source: { type: 'url', url, fileName: deriveScanFileName(url) },
+        })), { origin: 'url' })
+      } else {
+        toast(tToasts('model.scanLoadFailed', { message: 'Point clouds are not available in this build' }), 'error')
       }
-    })()
+    }
 
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2496,7 +2754,9 @@ export default function App() {
                     <Toolbar
                       fileName={displayName}
                       elementCount={displayCount}
-                      loadingState={loadingState}
+                      // Models already in the scene stay usable while others load;
+                      // the loading indicator in the toolbar carries that activity.
+                      loadingState={sceneModels.length > 0 ? 'loaded' : loadingState}
                       canIsolate={!!selected}
                       viewerApiRef={viewerApiRef}
                       onReset={() => viewerRef.current?.resetCamera()}
@@ -2543,22 +2803,22 @@ export default function App() {
                     style={{ overflow: 'hidden' }}
                   >
                     <div className="flex flex-col h-full bg-[var(--surface)] overflow-hidden border-r border-[var(--border)]">
-                      <ModelTree
-                        ref={modelTreeRef}
-                        onSelectElement={handleSelectTreeElement}
-                        onFocusElements={handleFocusElements}
-                        onFilterBySubtree={() => {
-                          useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
-                        }}
-                        // Act on a whole model from the row that names it. The
-                        // tree is the index of what is loaded, so it is where
-                        // people already point at the model they mean.
-                        onRemoveModel={(id) => { void handleRemoveModel(id) }}
-                        onOpenScene={(id) => {
-                          handleSetActiveModel(id)
-                          setScenePanelOpen(true)
-                        }}
-                      />
+                        <ModelTree
+                          ref={modelTreeRef}
+                          onSelectElement={handleSelectTreeElement}
+                          onFocusElements={handleFocusElements}
+                          onFilterBySubtree={() => {
+                            useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
+                          }}
+                          // Act on a whole model from the row that names it. The
+                          // tree is the index of what is loaded, so it is where
+                          // people already point at the model they mean.
+                          onRemoveModel={(id) => { void handleRemoveModel(id) }}
+                          onOpenScene={(id) => {
+                            handleSetActiveModel(id)
+                            setScenePanelOpen(true)
+                          }}
+                        />
                     </div>
                   </Panel>
                   <PanelResizeHandle
@@ -2589,6 +2849,10 @@ export default function App() {
                     viewerStyle={viewerStyle}
                   />
 
+                  {/* First load into an empty scene: the multiphase progress
+                      card, centred and non-modal (renders nothing otherwise). */}
+                  {!clientMode && <FirstLoadCard />}
+
                   {mobileSidebarOpen && (
                     <div
                       className="md:hidden drawer-backdrop"
@@ -2598,12 +2862,21 @@ export default function App() {
 
                   {/* Camera preset overlay (yields to the tour bar while playing —
                       it shares the bottom edge and presets fight the tour narrative) */}
-                  {sceneModels.length > 0 && effectiveChrome.showCameraControls && tourMode !== 'playing' && (
+                  {(sceneModels.length > 0 || pointCloudCount > 0) && effectiveChrome.showCameraControls && tourMode !== 'playing' && (
                     <CameraControls
                       viewerApiRef={viewerApiRef}
                       visible={cameraControlsVisible}
                       onToggle={toggleCameraControls}
                     />
+                  )}
+
+                  {/* Data legend — a chip in the corner while data layers are
+                      visible; the legend itself only when the viewer opens it. */}
+                  {vectorLayersInUse && (
+                    <React.Suspense fallback={null}>
+                      <DataLegend viewerApiRef={viewerApiRef} />
+                      <TimeBar />
+                    </React.Suspense>
                   )}
 
                   {/* Walk mode HUD — renders itself only while walking, and
@@ -2644,7 +2917,7 @@ export default function App() {
                         modelInfo={displayInfo}
                         modelId={activeModelId ?? undefined}
                         memoryStats={memoryStats}
-                        isFromCache={isFromCache}
+                        isFromCache={activeFromCache}
                         qualityScore={result?.qualityScore}
                         gpuBackend={gpuBackend}
                       />
@@ -2716,6 +2989,14 @@ export default function App() {
                       />
                     </React.Suspense>
                   )}
+                  {vectorLayersInUse && (
+                    <React.Suspense fallback={null}>
+                      <VectorLayersPanel
+                        viewerApiRef={viewerApiRef}
+                        onClose={() => useVectorLayerStore.getState().setPanelOpen(false)}
+                      />
+                    </React.Suspense>
+                  )}
                   {isVideoEnabled() && !clientMode && (
                     <React.Suspense fallback={null}>
                       <VideoPanel
@@ -2746,7 +3027,6 @@ export default function App() {
                           )
                         }
                       }}
-                      onSetTransform={setSceneModelTransform}
                       onTransformMode={() => {}}
                       onRemove={(id) => { void handleRemoveModel(id) }}
                       onValidate={(id) => { void validation.run(undefined, id, true) }}
@@ -2758,23 +3038,23 @@ export default function App() {
                   )}
 
                   {effectiveChrome.showSidebar && (
-                    <Sidebar
-                      categories={legendCategories}
-                      elementCount={legendElementCount}
-                      sceneModels={sceneModels}
-                      selected={selected}
-                      hidden={hidden}
-                      onToggleHidden={handleToggleHidden}
-                      isolated={isolated}
-                      onSetIsolated={handleSetIsolatedCategory}
-                      onFrame={(id) => viewerRef.current?.frameCategory(id)}
-                      onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
-                      onFrameElement={handleFrameElement}
-                      onRevealInTree={handleRevealInTree}
-                      viewerApiRef={viewerApiRef}
-                      mobileOpen={mobileSidebarOpen}
-                      onMobileClose={() => setMobileSidebarOpen(false)}
-                    />
+                      <Sidebar
+                        categories={legendCategories}
+                        elementCount={legendElementCount}
+                        sceneModels={sceneModels}
+                        selected={selected}
+                        hidden={hidden}
+                        onToggleHidden={handleToggleHidden}
+                        isolated={isolated}
+                        onSetIsolated={handleSetIsolatedCategory}
+                        onFrame={(id) => viewerRef.current?.frameCategory(id)}
+                        onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
+                        onFrameElement={handleFrameElement}
+                        onRevealInTree={handleRevealInTree}
+                        viewerApiRef={viewerApiRef}
+                        mobileOpen={mobileSidebarOpen}
+                        onMobileClose={() => setMobileSidebarOpen(false)}
+                      />
                   )}
 
                   {effectiveChrome.showHome && (
@@ -2816,6 +3096,17 @@ export default function App() {
 
                   {/* ── Mobile bottom nav (only on < md; hidden in embed and
                       while a tour is playing — the tour bar takes the stage) ── */}
+                  {!embedChrome.embed && tourMode !== 'playing' && !clientMode && sceneModels.length > 0 && (
+                  <MobileSelectionBar
+                    selected={selected}
+                    suppressed={!!ctxMenu}
+                    onFrame={handleFrameElement}
+                    onIsolate={handleIsolateElement}
+                    onHide={handleHideElement}
+                    onProps={() => { setPendingSidebarTab('props'); setMobileSidebarOpen(true) }}
+                    onMore={(info) => setCtxMenu({ x: 0, y: 0, info })}
+                  />
+                  )}
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
                     // Properties is excluded: the bottom nav already has its
@@ -2889,6 +3180,7 @@ export default function App() {
         open={showDemoGallery}
         onClose={() => setShowDemoGallery(false)}
         onModelReady={handleDemoModelReady}
+        onSetSelected={handleDemoSetSelected}
       />
 
       {/* ── 3D scene context menu (right-click on an element) —
@@ -2910,26 +3202,32 @@ export default function App() {
       <AnimatePresence>
         {showUpload && (
           <UploadOverlay
-            onClose={() => setShowUpload(false)}
-            onLoad={handleFileLoad}
+            onClose={() => { setShowUpload(false); setUploadInitial(null); releaseDeferredDrop() }}
             onOpenDemoGallery={openDemoGallery}
-            isLoading={loadingState === 'loading'}
-            loadProgress={progress.percent}
-            loadError={loadError}
-            loadDone={loadingState === 'loaded'}
+            initialFiles={uploadInitial ?? undefined}
+            initialOrigin={uploadInitial ? 'drop' : undefined}
+            onNonIfcFiles={routeDroppedFiles}
           />
         )}
       </AnimatePresence>
 
-      {/* ── OPFS cache badge ── */}
-      {opfsAvailable && cacheEntries.length > 0 && (
+      {/* ── Loading Center (popover on desktop, sheet on mobile; portals itself) ── */}
+      {route === 'viewer' && <LoadingCenter anchor={effectiveChrome.showToolbar ? 'toolbar' : 'floating'} />}
+
+      {/* ── Loading indicator for presets without a toolbar (kiosk, client) ── */}
+      {route === 'viewer' && !effectiveChrome.showToolbar && <LoadingIndicator variant="floating" />}
+
+      {/* ── OPFS cache badge (yields its corner to the floating loading indicator) ── */}
+      {opfsAvailable && cacheEntries.length > 0 && !(route === 'viewer' && !effectiveChrome.showToolbar && hasLoadHistory) && (
         <div
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
-          className="fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          // Desktop only: on a phone it sat in the strip above the nav that the
+          // selection bar and the tool docks use, and a stray tap cleared the cache.
+          className={`max-md:hidden fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none`}
           style={{ bottom: `max(calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 8px), 16px)` }}
         >
-          {isFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
+          {activeFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
         </div>
       )}
 

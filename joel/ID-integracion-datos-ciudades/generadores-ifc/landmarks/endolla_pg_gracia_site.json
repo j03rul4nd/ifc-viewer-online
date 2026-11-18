@@ -1,0 +1,42 @@
+{
+ "origin": {
+  "lat": 41.388421,
+  "lon": 2.169485,
+  "osm": "node 5310083454 (amenity=charging_station, capacity=2, operator=Endolla Barcelona)"
+ },
+ "datum_raw_ellipsoidal": 70.40,
+ "icgc_offset_m": -49.7,
+ "ground_ring_raw": {"ring_m": [2.5, 6.0], "p05": 70.31, "p50": 70.60},
+ "note": "Local metres, +x east +y north, origin at the OSM node. Heights are ICGC Scene-28 mesh heights (ellipsoidal, raw), read 2026-10-01 from the mesh's triangle centroids within 15 m of the node (10 leaf tiles, ~97 000 triangles). Plan frame K: s along the bearing below (towards Plaça de Catalunya), t to its left (north-east, towards the carriageway).",
+ "axis": {
+  "bearing_deg": 136.8,
+  "osm_ways": {
+   "549518619": "Passeig de Gràcia carriageway, 136.5 deg",
+   "315739558": "Passeig de Gràcia carriageway south of Casp, 136.5 deg",
+   "295268540": "Passeig de Gràcia (lateral Llobregat), 137.0 deg",
+   "667709530": "traffic island between the carriageway and the Llobregat side lane, carriageway edge 136.8 deg"
+  }
+ },
+ "osm_island_edge_t_m": -5.4,
+ "osm_island_south_tip_s_m": 6.3,
+ "osm_crossing_s_m": [9.3, 10.1],
+ "osm_tree_row_t_m": -6.4,
+ "mesh": {
+  "tree_trunks_s_m": [-11.0, -6.2],
+  "tree_trunks_t_m": -6.5,
+  "pedestal_lumps": [{"s": 0.2, "t": -4.0, "height_m": 0.7}, {"s": 3.3, "t": -4.0, "height_m": 0.4}],
+  "cabinet_lump": {"s": [-2.5, 1.5], "t": [-8.0, -6.5], "height_m": 0.8},
+  "note": "The photogrammetric mesh smooths thin objects: the 1.6 m pedestals read as 0.4-0.7 m lumps. No kerb step is resolved; the carriageway is crowned (≈ +0.1 m towards its axis)."
+ },
+ "model": {
+  "kerb_face_t_m": -3.45,
+  "kerb_s_m": [-8.0, 5.1],
+  "bays_s_m": [[-4.9, 0.1], [0.1, 5.1]],
+  "bay_width_m": 2.2,
+  "build_out_s_m": [5.1, 6.5],
+  "pedestals": [{"s": 0.2, "t": -4.0}, {"s": 3.3, "t": -4.0}],
+  "cabinet": {"s": -0.6, "t": -7.4},
+  "road_below_pavement_m": 0.16,
+  "traffic_direction": "+s (south-east bound lane on the south-west side of the carriageway)"
+ }
+}

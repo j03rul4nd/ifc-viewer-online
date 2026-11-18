@@ -11,7 +11,7 @@
 // trench through every park".
 //
 // They are applied to elevated ways too, and there they are absurd. Lujiazui's
-// pedestrian circle stands about twelve metres above the street, and it was
+// pedestrian circle stands clear of the street (its OSM height tag is 9 m), and it was
 // being drawn as a ribbon five centimetres thick — a sheet of paper in the air,
 // with nothing underneath it and nothing along its edges. No amount of colour
 // or lighting rescues that, because the shape itself is wrong.

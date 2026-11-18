@@ -68,12 +68,14 @@ the viewer use the `ifcviewer:` namespace. Loads and queries are correlated with
 | Direction | `type` | Payload / effect |
 |---|---|---|
 | viewer → host | `ready` | `{ languages }` — mounted, ready for commands |
-| viewer → host | `model-loaded` | `{ modelId, fileName, elementCount, fromCache }` |
-| viewer → host | `model-error` | `{ message, url?, name? }` |
+| viewer → host | `model-progress` | `{ percent, phase, requestId? }`. `phase` ∈ `reading · parsing · uploading`. Monotonic per load, sent only while that load is still in progress |
+| viewer → host | `model-loaded` | `{ modelId, fileName, elementCount, fromCache, requestId? }` |
+| viewer → host | `model-error` | `{ message, url?, name?, requestId? }`. Covers download, invalid-file, parse and scene failures and cancellations. `url` for URL loads, `name` otherwise |
 | viewer → host | `validation-completed` | `{ qualityScore, errors, warnings, info }` |
 | viewer → host | `element-selected` | `{ expressId, modelId, ifcType, name }` |
 | host → viewer | `ifcviewer:load-bytes` | `{ requestId, name, bytes }` (transferable) |
-| host → viewer | `ifcviewer:load` | `{ requestId, url, name? }` (public URL) |
+| host → viewer | `ifcviewer:load` | `{ requestId, url, name? }` (public URL; `url` may be an array, which loads as one batch) |
+| host → viewer | `ifcviewer:clear` | cancels IFC loads in flight, then removes every model |
 | host → viewer | `ifcviewer:select` / `:isolate` / `:fit` / `:reset` / `:view` | camera / selection |
 | host → viewer | `ifcviewer:get-*` | request/response queries (`get-stats`, `get-issues`, `get-validation`, `check-ids`, `check-eir`) |
 
@@ -91,9 +93,12 @@ sequenceDiagram
     SDK-->>Host: resolve whenReady()
     Host->>SDK: viewer.add("model.ifc", arrayBuffer)
     SDK->>IFrame: postMessage {type:ifcviewer:load-bytes, requestId, bytes}  [transfer]
-    Note over IFrame: parse + render 100% client-side<br/>bytes never leave this origin
+    Note over IFrame: queued as a load job (LoadManager)<br/>convert in a worker → attach → commit<br/>100% client-side, bytes never leave this origin
+    IFrame-->>SDK: {type:model-progress, requestId, percent, phase} (repeated)
+    SDK-->>Host: emit "model-progress"
     IFrame-->>SDK: {type:model-loaded, requestId, modelId, elementCount}
     SDK-->>Host: resolve add() → ModelLoadedEvent
+    Note over IFrame,SDK: on failure or cancel instead:<br/>{type:model-error, requestId, name, message} → reject add()
     IFrame-->>SDK: {type:validation-completed, qualityScore, errors,...}
     SDK-->>Host: emit "validation-completed"
 ```
@@ -536,7 +541,9 @@ refuses the write. This is the split `CONFORMANCE_DOMAIN.md` §3.9 pins.
 
 ---
 
-*Last updated: 2026-07-12 (rev 4: certificate surface marked SHIPPED with production-verified
+*Last updated: 2026-09-24 (rev 5: load messages brought in line with the queued loading system, D-29.
+Adds the `model-progress` row and the widened `model-error` coverage, `ifcviewer:clear` cancelling in-flight loads, and batch
+`ifcviewer:load`. The wire format is unchanged.) · Previous: 2026-07-12 (rev 4: certificate surface marked SHIPPED with production-verified
 acceptance; additive `issuer_logo` display field documented on `GET /certificates/:hash` with the
 raster-only client-side allowlist rule) · Previous: rev 3 2026-07-10 (audit fixes — cloud
 queue/container attribution, keys filename, fail-closed quota split) · Status: SDK/embed + BCF

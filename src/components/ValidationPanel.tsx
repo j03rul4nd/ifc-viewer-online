@@ -49,6 +49,8 @@ import { buildShareUrl, buildBadgeMarkdown, validationResultToSharePayload } fro
 import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '../lib/benchmark'
 import { useIsMobile } from '../hooks/useIsMobile'
 import ValidationPanelMobile from './mobile/ValidationPanelMobile'
+import ScoreUpsell from './pricing/ScoreUpsell'
+import { isPricingPreview } from '../lib/pricing/pricing-preview'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
 // Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
@@ -1856,6 +1858,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     setFilters({ groupBy: 'rule', activeTab: 'all' })
     setSearch('')
     setFocusRule(ruleId)
+    // issue_viewed only fires on a 3D jump; this is the step before it.
+    trackFeatureUsed({ feature: 'fix_first_click' })
   }, [setFilters])
 
   // ── Handlers ──────────────────────────────────────────────────────────
@@ -2516,6 +2520,14 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           rules={rules}
           qualityScore={result.qualityScore ?? 0}
           onDismiss={dismissCoverageSummary}
+        />
+      )}
+
+      {/* ── Next step after the score (team-only fake door until paid plans launch) ── */}
+      {result && isPricingPreview() && (
+        <ScoreUpsell
+          score={result.qualityScore ?? 0}
+          topRule={Object.entries(result.stats?.byRule ?? {}).sort((x, y) => y[1] - x[1])[0]?.[0]}
         />
       )}
 

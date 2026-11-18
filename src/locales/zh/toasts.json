@@ -7,7 +7,12 @@
     "removeFailed": "无法移除模型：{{message}}",
     "urlLoadFailed": "无法加载链接的模型：{{message}}",
     "mapFailed": "无法打开地图模式：{{message}}",
-    "scanLoadFailed": "无法加载链接中的扫描数据：{{message}}"
+    "scanLoadFailed": "无法加载链接中的扫描数据：{{message}}",
+    "loadFailedNamed": "无法加载 \"{{fileName}}\" — {{reason}}",
+    "batchLoaded_other": "{{name}} — 已加载 {{count}} 个模型",
+    "batchPartial": "{{name}} — 已加载 {{loaded}} 个，{{failed}} 个失败",
+    "dropUnsupported_other": "{{count}} 个文件的格式不受支持",
+    "dropBcfHint": "请打开 BCF 面板以导入 .bcf 文件"
   },
   "validation": {
     "complete": "验证完成 — 发现 {{count}} 个问题",

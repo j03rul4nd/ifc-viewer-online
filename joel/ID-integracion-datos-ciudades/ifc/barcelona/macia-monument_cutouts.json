@@ -1,0 +1,31 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.170102,
+   "lat": 41.386252,
+   "height": 66.31
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "Monument a Francesc Maci\u00e0",
+    "lon": 2.170102,
+    "lat": 41.386252,
+    "bearing": 0.0,
+    "s": [
+     -4.3,
+     4.9
+    ],
+    "t": [
+     -2.6,
+     2.6
+    ],
+    "z": [
+     0.063,
+     9.8
+    ]
+   }
+  ]
+ }
+}

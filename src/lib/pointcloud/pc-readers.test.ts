@@ -9,7 +9,7 @@ import { parseLasHeader, parseLasCrs, LasReader } from './las-reader'
 import { LazReader } from './laz-reader'
 import { parsePlyHeader, PlyReader } from './ply-reader'
 import { sniffXyzLayout, XyzReader } from './xyz-reader'
-import { detectFormat, sniffMagic, extensionOf } from './pc-format'
+import { detectFormat, sniffMagic, extensionOf, isCopcName } from './pc-format'
 import type { PointConsumer } from './pc-reader'
 
 // ── Collector ──────────────────────────────────────────────────────────────────
@@ -469,6 +469,22 @@ describe('format detection', () => {
     expect(detectFormat('site.laz')).toEqual({ ok: true, format: 'laz' })
     // "copc" merely appearing in the name is not enough.
     expect(detectFormat('my-copc-export.laz')).toEqual({ ok: true, format: 'laz' })
+  })
+
+  it('routes a bare .copc to the octree reader even though its magic says LAS', () => {
+    // The gap this closes: EXTENSION_FORMATS knew '.copc', but a COPC is a LAZ,
+    // so its LASF signature outvoted the extension and the file was parsed
+    // whole — a budget's worth of the site instead of a stream.
+    const lasfMagic = new Uint8Array([0x4c, 0x41, 0x53, 0x46, 0, 0, 0, 0])
+    expect(detectFormat('site.copc')).toEqual({ ok: true, format: 'copc' })
+    expect(detectFormat('site.copc', lasfMagic)).toEqual({ ok: true, format: 'copc' })
+    expect(detectFormat('SITE.COPC ', lasfMagic)).toEqual({ ok: true, format: 'copc' })
+    expect(isCopcName('site.copc')).toBe(true)
+    expect(isCopcName('site.copc.las')).toBe(true)
+    // Still not fooled by the word alone.
+    expect(isCopcName('copc')).toBe(false)
+    expect(isCopcName('site.copcx')).toBe(false)
+    expect(isCopcName('my-copc-export.laz')).toBe(false)
   })
 
   it('gives deferred formats their own reason instead of "unsupported"', () => {

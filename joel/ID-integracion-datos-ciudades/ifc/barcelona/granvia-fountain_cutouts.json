@@ -1,0 +1,49 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.1682913,
+   "lat": 41.3894302,
+   "height": 72.2
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "Font Monumental del Passeig de Gr\u00e0cia",
+    "lon": 2.1682913,
+    "lat": 41.3894302,
+    "bearing": 0.0,
+    "s": [
+     -7.7,
+     7.7
+    ],
+    "t": [
+     -7.7,
+     7.7
+    ],
+    "z": [
+     0.06,
+     8.0
+    ]
+   },
+   {
+    "name": "plant chamber roof and hatch",
+    "lon": 2.1682913,
+    "lat": 41.38950798,
+    "bearing": 0.0,
+    "s": [
+     -1.25,
+     1.25
+    ],
+    "t": [
+     -1.85,
+     1.85
+    ],
+    "z": [
+     0.06,
+     1.0
+    ]
+   }
+  ]
+ }
+}

@@ -88,7 +88,14 @@
     "memory": "{{mb}} MB a la GPU",
     "truncated": "S'ha aturat als {{count}} punts — el fitxer en conté més dels que aquest visor manté a la memòria alhora.",
     "noModel": "No hi ha cap model IFC carregat — l'escaneig se situa tot sol.",
-    "partial": "Una part d'aquest escaneig no s'ha pogut llegir i falta a la vista. El que veus és incomplet."
+    "partial": "Una part d'aquest escaneig no s'ha pogut llegir i falta a la vista. El que veus és incomplet.",
+    "budget": "Pressupost de punts: {{used}} de {{max}}",
+    "budgetNearlyFull": "Pressupost de punts: {{used}} de {{max}} — gairebé ple",
+    "budgetFull": "Pressupost de punts: {{used}} de {{max}} — ple",
+    "budgetLabel": "Pressupost de punts en memòria",
+    "budgetHint": "Punts que els escaneigs carregats mantenen en memòria, inclosos els que encara s'estan carregant. Un escaneig que no hi cap espera mentre un altre escaneig s'està carregant; si no, es carrega truncat, o es rebutja quan el pressupost és ple. Els núvols COPC en streaming no compten: els limita l'ajust Detall.",
+    "budgetReserved": "+ {{reserved}} reservats per a escaneigs que encara es carreguen",
+    "budgetAbout": "Sobre el pressupost de punts"
   },
   "align": {
     "title": "Alineació",
@@ -96,6 +103,7 @@
       "map-conversion": "Georeferenciat (conversió cartogràfica)",
       "shared-crs": "Georeferenciat (quadrícula compartida)",
       "geographic": "Ancoratge geogràfic",
+      "scene-anchor": "Àncora de l'escena",
       "local": "Coordenades locals compartides",
       "manual": "Col·locat a mà"
     },
@@ -124,7 +132,10 @@
       "unitFeet": "L'extensió suggereix peus — escalat per 0,3048.",
       "unitAssumed": "Unitat no declarada; se suposen metres.",
       "noCommonReference": "Res no lliga els dos fitxers, així que l'escaneig s'ha centrat al model. Fes servir els desplaçaments de sota per col·locar-lo.",
-      "cloudCrsUnknown": "L'escaneig anomena un sistema de coordenades del qual aquesta versió no té definició, així que no s'ha pogut fer servir la seva georeferenciació. Enganxa a sota una definició proj4 per desbloquejar-la."
+      "cloudCrsUnknown": "L'escaneig anomena un sistema de coordenades del qual aquesta versió no té definició, així que no s'ha pogut fer servir la seva georeferenciació. Enganxa a sota una definició proj4 per desbloquejar-la.",
+      "sceneAnchorSameGrid": "Situat pel seu CRS respecte al primer escaneig georeferenciat (mateixa quadrícula, sense reprojectar).",
+      "sceneAnchorReprojected": "Situat pel seu CRS respecte a l'àncora de l'escena, reprojectat a través de WGS84.",
+      "assumedVerticalDatum": "Se suposa que tots els escanejos fan servir la mateixa referència d'altures: el fitxer no la declara."
     },
     "manualWarning": "Aquesta col·locació és un punt de partida, no pas un mesurament.",
     "recompute": "Torna a calcular l'alineació",
@@ -185,7 +196,10 @@
     "classification": "Classificació",
     "intensity": "Intensitat",
     "distance": "Distància a la càmera",
-    "clear": "Neteja"
+    "clear": "Neteja",
+    "copy": "Copia coordenades",
+    "copied": "Coordenades copiades",
+    "sliceHere": "Talla a aquesta alçada"
   },
   "view": {
     "title": "Vista",
@@ -236,5 +250,217 @@
     "pcdCompressed": "No s'ha pogut descodificar el cos comprimit del PCD. Pot ser que el fitxer estigui truncat.",
     "pcdMalformed": "No s'ha pogut llegir la capçalera PCD.",
     "alignFailed": "L'escaneig s'ha llegit bé, però no s'ha pogut calcular la seva col·locació. Ha quedat sense situar."
+  },
+  "tabs": {
+    "appearance": "Aspecte",
+    "placement": "Posició",
+    "view": "Vista",
+    "samples": "Exemples",
+    "help": "Arreglar",
+    "analyze": "Analitzar"
+  },
+  "ui": {
+    "loaded": "Núvols carregats",
+    "add": "Afegeix núvol",
+    "frame": "Enquadra aquest núvol",
+    "startTitle": "Obre un núvol de punts",
+    "startHint": "Deixa anar un o diversos fitxers: es carreguen en paral·lel i pots treure'ls un a un.",
+    "orSample": "…o prova un exemple",
+    "featured": "Recomanat",
+    "showAllSamples": "Mostra els {{count}} exemples",
+    "showFewerSamples": "Mostra'n menys",
+    "replayTeaser": "Demos animades LiDAR + IFC",
+    "replayTeaserHint": "Quatre línies de temps d'escaneig simulades, alineades amb els seus models.",
+    "advanced": "Avançat",
+    "quality": "Pressupost de dibuix",
+    "qualityHint": "Punts dibuixats per fotograma. Més es veu més dens, però cal una GPU més ràpida.",
+    "qualityLevel": {
+      "low": "Lleuger",
+      "medium": "Normal",
+      "high": "Alt",
+      "ultra": "Màx."
+    },
+    "compare": "Núvol ↔ model",
+    "compareScan": "Núvol",
+    "compareModel": "Model",
+    "stats": "Rendiment",
+    "modes": {
+      "point-cloud": "Només núvol",
+      "ifc": "Només model",
+      "overlay": "Superposat",
+      "xray": "Raigs X",
+      "scan-vs-bim": "Núvol vs BIM"
+    },
+    "drawn": "Dibuixats / carregats"
+  },
+  "presets": {
+    "title": "Estil ràpid",
+    "balanced": "Equilibrat",
+    "detail": "Nítid",
+    "presentation": "Presentació",
+    "performance": "Ràpid",
+    "custom": "Personalitzat",
+    "reset": "Restableix l'aspecte"
+  },
+  "diag": {
+    "title": "Revisió",
+    "allGood": "Tot sembla correcte en aquest núvol.",
+    "issueCount": "Per revisar: {{count}}",
+    "issue": {
+      "failed": "No s'ha pogut obrir aquest fitxer.",
+      "partial": "Part del núvol no s'ha pogut llegir: el que veus és incomplet.",
+      "truncated": "Només cap a la memòria una part del fitxer, així que el núvol s'ha retallat.",
+      "upAxisGuessed": "El fitxer no indica quin eix és amunt. Si sembla estirat, gira'l.",
+      "colorUnavailable": "El fitxer no té dades per al mode de color actual i es dibuixa pla.",
+      "hidden": "Aquest núvol està ocult.",
+      "faint": "L'opacitat és tan baixa que el núvol gairebé no es veu.",
+      "farFromModel": "El núvol és molt lluny del model.",
+      "manualPlacement": "Res no relaciona aquest núvol amb el model: s'ha centrat sobre seu. Revisa la posició.",
+      "crsUnknown": "Aquest visor no coneix el sistema de coordenades del núvol, així que se n'ha ignorat la georeferència.",
+      "tooLarge": "El núvol és molt més gran del que s'esperava: probablement és en mil·límetres, centímetres o peus.",
+      "tooSmall": "El núvol és molt més petit del que s'esperava: pot ser en quilòmetres o escalat.",
+      "heavy": "Molts punts al màxim detall: un ajust més lleuger mantindrà la navegació fluida."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Gira l'eix vertical",
+    "bestColor": "Usa el millor color",
+    "showAll": "Mostra'l",
+    "opacityFull": "Opacitat total",
+    "fitCloud": "Enquadra el núvol",
+    "fitBoth": "Mostra tots dos",
+    "realign": "Recalcula l'alineació",
+    "openPlacement": "Ajusta la posició",
+    "unitMm": "És en mm",
+    "unitCm": "És en cm",
+    "unitFt": "És en peus",
+    "scaleUp": "Escala ×1000",
+    "performance": "Alleugereix",
+    "remove": "Treu",
+    "applied": "Arreglat: {{what}}"
+  },
+  "help": {
+    "title": "Què veus?",
+    "hint": "Tria el símptoma: cada botó aplica l'arranjament habitual, i tot es pot desfer des d'Aspecte o Posició.",
+    "sideways": {
+      "label": "Està estirat o de costat",
+      "hint": "Exportacions Y-amunt vs Z-amunt"
+    },
+    "invisible": {
+      "label": "No el veig",
+      "hint": "El mostra i enquadra la càmera"
+    },
+    "wrongSize": {
+      "label": "Enorme o minúscul",
+      "hint": "Tria la unitat del fitxer"
+    },
+    "misplaced": {
+      "label": "No quadra amb el model",
+      "hint": "Realinea i obre la posició"
+    },
+    "colours": {
+      "label": "Negre, blanc o colors estranys",
+      "hint": "Canvia a un mode que el fitxer admeti"
+    },
+    "sparse": {
+      "label": "Ple de forats / massa fi",
+      "hint": "Punts més grans i rodons"
+    },
+    "blobby": {
+      "label": "Borrós, punts massa grossos",
+      "hint": "Punts més petits i nítids"
+    },
+    "slow": {
+      "label": "Va lent",
+      "hint": "Dibuixa menys punts mentre et mous"
+    },
+    "broken": {
+      "label": "No carrega",
+      "hint": "Causes habituals"
+    },
+    "brokenTips": "Aquí es llegeixen LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 i els projectes d'escàner (RCP, FLS, LSPROJ) s'han d'exportar abans a LAS o PLY. Alguns LAZ fan servir una variant de LASzip que el navegador no pot descomprimir: desa'ls com a LAS o COPC. Fitxers molt grans: retalla'ls o delma'ls abans."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Casos d'ús",
+      "hint": "Un clic prepara la vista per a una tasca real. Tots els filtres de sota continuen sent editables i res no modifica l'escaneig."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Tall en planta",
+        "hint": "Deixa una franja de 60 cm a l'alçada del punt triat (o a 1,2 m sobre el punt més baix) i mira des de dalt: els murs es llegeixen com un plànol."
+      },
+      "terrain": {
+        "label": "Terreny i corbes de nivell",
+        "hint": "Acoloreix per alçada, dibuixa corbes de nivell i deixa només el terreny si el fitxer està classificat."
+      },
+      "vegetation": {
+        "label": "Treure vegetació i soroll",
+        "hint": "Amaga les classes de vegetació i soroll perquè destaquin edificis, vials i terreny. Cal un fitxer classificat."
+      },
+      "slab": {
+        "label": "Planor del forjat",
+        "hint": "Fes clic en un punt del forjat: deixa una franja fina al voltant i dibuixa una línia cada 1 cm, així els bonys i sots apareixen com a anells."
+      },
+      "scanVsBim": {
+        "label": "Escaneig vs BIM",
+        "hint": "Pinta l'escaneig en un color viu sobre el model translúcid: el que no es va construir segons projecte salta a la vista. Cal un model IFC."
+      },
+      "clearance": {
+        "label": "Mesurar un gàlib",
+        "hint": "Activa l'eina de distància: fes clic en dos punts de l'escaneig (terra a biga, mur a mur) per llegir el buit real construït."
+      }
+    },
+    "needsClasses": "Cal un fitxer classificat",
+    "needsModel": "Cal un model IFC",
+    "pickFirst": "Primer fes clic en un punt de l'escaneig: Inspeccionar està actiu.",
+    "applied": "Aplicat: {{what}}",
+    "activeBanner": "Els filtres d'anàlisi amaguen part de l'escaneig.",
+    "reset": "Treu els filtres",
+    "slice": {
+      "title": "Tall per alçada",
+      "toggle": "Mostra només una franja d'alçada",
+      "from": "Des de",
+      "to": "Fins a",
+      "hint": "Alçades en metres d'escena. Combina-ho amb Mesurar per llegir alçades lliures, o amb vista superior per calcar una planta."
+    },
+    "contours": {
+      "title": "Corbes de nivell",
+      "toggle": "Dibuixa corbes de nivell",
+      "hint": "Passos grans per llegir el terreny; passos d'1–2 cm revelen un forjat que no és pla."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Toca una classe per amagar-la o mostrar-la. Els codis segueixen l'estàndard ASPRS LAS.",
+      "all": "Totes",
+      "ground": "Només terreny",
+      "noVeg": "Sense vegetació",
+      "names": {
+        "c0": "Mai classificat",
+        "c1": "Sense classificar",
+        "c2": "Terreny",
+        "c3": "Vegetació baixa",
+        "c4": "Vegetació mitjana",
+        "c5": "Vegetació alta",
+        "c6": "Edifici",
+        "c7": "Soroll",
+        "c8": "Punt clau",
+        "c9": "Aigua",
+        "c10": "Via fèrria",
+        "c11": "Calçada",
+        "c12": "Solapament",
+        "c13": "Cable de guarda",
+        "c14": "Conductor",
+        "c15": "Torre elèctrica"
+      }
+    },
+    "measure": {
+      "title": "Mesurar l'escaneig",
+      "hint": "Els escanejos s'enganxen igual que els models: distàncies, àrees i angles cauen en punts reals.",
+      "distance": "Distància",
+      "area": "Àrea",
+      "angle": "Angle",
+      "point": "Punt"
+    }
   }
 }

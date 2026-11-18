@@ -6,7 +6,8 @@
       "base": "Mapa base",
       "terrain": "Terreno",
       "context": "Entorno",
-      "place": "Ubicación"
+      "place": "Ubicación",
+      "perf": "Rendimiento"
     },
     "mode": {
       "off": "Apagado",
@@ -16,7 +17,17 @@
     },
     "back": "Volver",
     "mapOff": "El mapa está apagado. Actívalo para cargar lo que rodea al modelo.",
-    "terrainHint": "Elevación real bajo el modelo, con el mapa base drapeado encima. Carga algunas teselas más."
+    "terrainHint": "Elevación real bajo el modelo, con el mapa base drapeado encima. Carga algunas teselas más.",
+    "modeBasic": "Básico",
+    "modeAdvanced": "Avanzado",
+    "modeLabel": "Modo del panel",
+    "introTitle": "Mira tu modelo donde está",
+    "introBody": "Mapa base, relieve real y los edificios de alrededor. Tu archivo no sale del navegador.",
+    "cancel": "Cancelar",
+    "moreControls": "Todos los controles están en Avanzado",
+    "adjust": "Ajustar",
+    "sectionFailed": "Esta sección no se pudo mostrar.",
+    "sectionRetry": "Reintentar"
   },
   "consent": {
     "title": "¿Cargar teselas de mapa?",
@@ -84,6 +95,17 @@
     "topo": "Topográfico",
     "satellite": "Satélite",
     "custom": "Personalizada",
+    "vector": "Vectorial",
+    "mapStyle": "Estilo de mapa",
+    "styles": {
+      "standard": "Estándar",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "bim": "BIM",
+      "hybrid": "Híbrido",
+      "minimal": "Mínimo",
+      "contrast": "Alto contraste"
+    },
     "terrain": "Terreno 3D",
     "terrainLoading": "Cargando terreno…",
     "style": "Estilo del terreno",
@@ -136,7 +158,9 @@
       "road": "Carreteras y caminos",
       "rail": "Vías y andenes",
       "signal": "Semáforos",
-      "pier": "Muelles y pantalanes"
+      "pier": "Muelles y pantalanes",
+      "furniture": "Bancos, farolas y fuentes",
+      "barrier": "Vallas, muros y setos"
     },
     "detailLevel": "Detalle",
     "detailSimple": "Simple",
@@ -147,7 +171,7 @@
     "vehiclesHint": "Los coches, trenes, farolas y marquesinas de andén NO son datos mapeados — OpenStreetMap no registra dónde está aparcado un coche ni qué acera lleva farola. Su colocación es inventada para que la vista se sienta habitada, y es la misma siempre.",
     "facadeShowcase": "Presentación",
     "shanghaiParkHint": "Jardines de Shanghái: árboles regionales y vegetación de orilla (+720 KB). La plantación y el mobiliario son ilustrativos.",
-    "facadeShowcaseHint": "El modo presentación sustituye por modelos 3D creados a medida — árboles, coches, furgonetas, autobuses, vagones, semáforos, postes de catenaria, farolas y marquesinas de andén — que se descargan una sola vez desde este sitio (unos 136 KB). Todo lo demás funciona sin ellos.",
+    "facadeShowcaseHint": "El modo presentación sustituye por modelos 3D creados a medida — árboles, coches, furgonetas, autobuses, vagones, semáforos, postes de catenaria, farolas y marquesinas de andén — que se descargan una sola vez desde este sitio (unos {{kb}} KB). Todo lo demás funciona sin ellos.",
     "contextTone": "Tono del entorno",
     "contextToneNatural": "Natural",
     "contextToneNeutral": "Discreto",
@@ -159,7 +183,8 @@
     "hidePickHint": "Actívalo y haz clic en cualquier edificio del mapa para sacarlo de la vista. Sirve cuando el mapa y tu modelo describen lo mismo y la regla automática de arriba no lo ha detectado. No se borra nada: todo lo que ocultes aparece en esta lista y vuelve con un clic.",
     "hidePickActive": "Haz clic en un edificio del mapa para ocultarlo. Desactívalo cuando termines.",
     "hiddenRestore": "Mostrar",
-    "hiddenRestoreAll": "Mostrar todos de nuevo"
+    "hiddenRestoreAll": "Mostrar todos de nuevo",
+    "buildingsFallback": "Servidor de OpenStreetMap ocupado — creado desde las teselas del mapa, con menos detalle"
   },
   "placement": {
     "title": "Ubicación",
@@ -203,5 +228,128 @@
   },
   "attribution": {
     "vertical": "Las alturas son aproximadas — los datums verticales del IFC y del terreno pueden diferir en metros."
+  },
+  "quick": {
+    "view": "Vista",
+    "custom": "Personalizada",
+    "basemap": "Mapa base",
+    "show": "Mostrar",
+    "quality": "Calidad",
+    "terrain": "Relieve 3D",
+    "context": "Edificios y entorno",
+    "cost": {
+      "light": "Ligera",
+      "medium": "Media",
+      "heavy": "Pesada"
+    },
+    "presets": {
+      "plan": {
+        "name": "Plano",
+        "desc": "El mapa base bajo tu modelo. La vista más rápida."
+      },
+      "relief": {
+        "name": "Relieve",
+        "desc": "Elevación real, con el mapa base encima."
+      },
+      "city": {
+        "name": "Ciudad",
+        "desc": "Relieve y los edificios de alrededor, sencillos."
+      },
+      "showcase": {
+        "name": "Presentación",
+        "desc": "Fachadas iluminadas, árboles 3D, vehículos y mobiliario."
+      }
+    },
+    "showcaseNote": "Incluye escenografía ilustrativa (coches, farolas, barcos) que no son datos cartografiados.",
+    "qualityHint": {
+      "simple": "Volúmenes sencillos: lo más rápido, ideal para trabajar.",
+      "detailed": "Plantas, materiales iluminados y agua en movimiento.",
+      "showcase": "Añade árboles, vehículos y mobiliario 3D (unos {{kb}} KB, se descargan una vez)."
+    },
+    "offHint": "Elige una vista ya: se aplica en cuanto el mapa se encienda."
+  },
+  "scene": {
+    "building": "Construyendo el entorno… {{pct}} %",
+    "downloading": "Descargando el entorno de OpenStreetMap…",
+    "stats": "{{triangles}} triángulos · construido en {{ms}} ms",
+    "failed": "No se pudo construir: {{layers}}. El resto de la escena está bien.",
+    "retry": "Reintentar",
+    "skipped": "Omitido para mantener la fluidez: {{layers}} — demasiada geometría para este equipo.",
+    "loadAnyway": "Cargar igualmente",
+    "slow": "La vista va lenta ({{fps}} fps).",
+    "lowerQuality": "Bajar calidad",
+    "autoLowered": "Calidad bajada a {{level}} para mantener la fluidez.",
+    "restore": "Restaurar",
+    "contextLost": "La tarjeta gráfica se quedó sin memoria y se recuperó. La escena se reconstruyó con un límite de geometría menor.",
+    "scenery": "Escenografía"
+  },
+  "perf": {
+    "fps": "Fotogramas",
+    "fpsValue": "{{fps}} fps",
+    "measuring": "midiendo…",
+    "triangles": "Geometría del entorno",
+    "budgetOf": "de {{budget}}",
+    "unlimited": "sin límite",
+    "lastBuild": "Última construcción",
+    "device": "Tipo de equipo",
+    "tier": {
+      "low": "Ligero",
+      "mid": "Estándar",
+      "high": "Alta gama"
+    },
+    "tiles": "Teselas de mapa en memoria",
+    "layers": "Por capa",
+    "status": {
+      "ok": "OK",
+      "failed": "Falló",
+      "skipped": "Omitida"
+    },
+    "adaptive": "Calidad adaptativa",
+    "adaptiveHint": "Baja el nivel de detalle por sí sola cuando la vista sigue lenta. Siempre puedes restaurarlo.",
+    "lift": "Quitar el límite de geometría",
+    "liftHint": "El límite evita que la pestaña se congele —o pierda el contexto gráfico— en barrios densos. Quítalo solo en un equipo potente.",
+    "rebuild": "Reconstruir escena",
+    "empty": "Activa el entorno para ver lo que cuesta la escena.",
+    "mapOff": "Enciende el mapa para medirlo."
+  },
+  "context": {
+    "appearance": "Apariencia",
+    "layers": "Capas",
+    "groups": {
+      "built": "Construido",
+      "mobility": "Movilidad",
+      "nature": "Naturaleza",
+      "street": "Mobiliario urbano"
+    },
+    "showAll": "Mostrar todo",
+    "hideAll": "Ocultar todo",
+    "detailOnly": "Solo en Detallado y Presentación",
+    "yield": "Modelo y mapa",
+    "scenery": "Escenografía",
+    "whatIsIt": "¿Qué incluye?"
+  },
+  "georef": {
+    "found": "Georreferenciado: caerá en su sitio.",
+    "partial": "Georreferencia parcial: revisa la posición cuando se encienda.",
+    "none": "Sin georreferencia: lo colocarás sobre un mapa.",
+    "invalid": "Georreferencia inservible: lo colocarás sobre un mapa."
+  },
+  "readout": {
+    "scaleHint": "Escala en el centro de la vista",
+    "copy": "Copiar coordenadas (lat, lon)",
+    "copied": "Copiado"
+  },
+  "looks": {
+    "title": "Ambiente",
+    "daylight": "Día",
+    "maquette": "Maqueta",
+    "golden": "Hora dorada",
+    "night": "Noche",
+    "blueprint": "Plano",
+    "dawn": "Amanecer",
+    "exposure": "Exposición",
+    "glow": "Luces",
+    "playToNight": "▶ Pasar a la noche",
+    "playToDay": "▶ Pasar al día"
   }
 }

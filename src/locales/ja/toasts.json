@@ -7,7 +7,12 @@
     "removeFailed": "モデルを削除できませんでした: {{message}}",
     "urlLoadFailed": "リンクされたモデルを読み込めませんでした: {{message}}",
     "mapFailed": "マップモードを開けませんでした: {{message}}",
-    "scanLoadFailed": "リンクのスキャンを読み込めませんでした: {{message}}"
+    "scanLoadFailed": "リンクのスキャンを読み込めませんでした: {{message}}",
+    "loadFailedNamed": "\"{{fileName}}\" を読み込めませんでした — {{reason}}",
+    "batchLoaded_other": "{{name}} — {{count}} 個のモデルを読み込みました",
+    "batchPartial": "{{name}} — {{loaded}} 件読み込み、{{failed}} 件失敗",
+    "dropUnsupported_other": "{{count}} 個のファイルは対応していない形式です",
+    "dropBcfHint": ".bcf ファイルを読み込むには BCF パネルを開いてください"
   },
   "validation": {
     "complete": "検証完了 — {{count}} 件の問題が見つかりました",

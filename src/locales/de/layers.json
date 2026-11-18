@@ -1,0 +1,438 @@
+{
+  "entry": "Datenebenen",
+  "title": "Datenebenen",
+  "intro": "Routen, Zonen und Punkte aus GeoJSON-Dateien, URLs oder WFS-Diensten einbinden. Alles landet am selben Ort wie Modell, Scans und Karte.",
+  "working": "Wird geladen…",
+  "anchor": {
+    "by": "Ausgerichtet an {{label}} ({{source}})",
+    "map": "Ausgerichtet am Karten-/Modellstandort",
+    "none": "Noch kein Anker: Die erste georeferenzierte Ebene legt den Standort fest.",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "Scan",
+      "vector": "Datenebene",
+      "manual": "manuell"
+    }
+  },
+  "file": {
+    "drop": "GeoJSON-Datei öffnen…",
+    "sample": "Beispiel ausprobieren (synthetisch, Barcelona)",
+    "sampleLive": "Live-Daten ausprobieren (simulierte Züge, Barcelona)",
+    "sampleLiveName": "Simulierte Züge"
+  },
+  "url": {
+    "title": "GeoJSON von einer URL",
+    "add": "Hinzufügen"
+  },
+  "wfs": {
+    "title": "WFS-Dienst",
+    "connect": "Verbinden",
+    "found": "{{count}} Ebenen in {{title}}",
+    "noJson": "keine GeoJSON-Ausgabe",
+    "radius": "Bereich",
+    "load": "Laden",
+    "hint": "Es wird nur der Bereich um den Standort angefragt, bis zu 5.000 Objekte. Der Server muss Cross-Origin-Anfragen (CORS) erlauben."
+  },
+  "list": {
+    "title": "Verbundene Ebenen ({{count}})"
+  },
+  "count": {
+    "lines_one": "{{count}} Linie",
+    "lines_other": "{{count}} Linien",
+    "polygons_one": "{{count}} Fläche",
+    "polygons_other": "{{count}} Flächen",
+    "points_one": "{{count}} Punkt",
+    "points_other": "{{count}} Punkte"
+  },
+  "action": {
+    "hide": "Ausblenden",
+    "show": "Einblenden",
+    "frame": "Ebene einpassen",
+    "remove": "Entfernen",
+    "close": "Schließen"
+  },
+  "height": {
+    "title": "Höhen",
+    "relative": "Über Gelände (drapiert)",
+    "absolute": "Absolute Höhe",
+    "ignore": "Flach auf dem Boden",
+    "source": {
+      "coordinates": "Die Daten haben eine Z-Koordinate.",
+      "property": "Höhenspalte: {{prop}}",
+      "none": "Die Daten haben keine Höhen."
+    }
+  },
+  "style": {
+    "color": "Farbe",
+    "width": "Linienbreite",
+    "opacity": "Deckkraft der Füllung",
+    "fill": "Flächen füllen",
+    "extrude": "Flächen extrudieren",
+    "extrudeFallback": "Flächen ohne Höhe extrudieren",
+    "pointSize": "Punktgröße"
+  },
+  "warn": {
+    "far": "Diese Ebene liegt {{km}} km vom Standort entfernt – prüfen Sie ihr Koordinatensystem.",
+    "skipped": "{{count}} Objekte übersprungen (leere oder nicht unterstützte Geometrie)."
+  },
+  "error": {
+    "notJson": "Die Datei ist kein gültiges JSON.",
+    "notGeoJson": "Das ist kein GeoJSON.",
+    "unknownCrs": "Die Daten nennen ein Koordinatensystem, das dieser Viewer nicht kennt.",
+    "projectedWithoutCrs": "Die Koordinaten sind in Metern, aber es ist kein Koordinatensystem angegeben.",
+    "empty": "Die Ebene enthält keine Objekte.",
+    "noAnchor": "Kein Standort, an dem die Ebene platziert werden kann.",
+    "http": "Der Server hat mit einem Fehler geantwortet.",
+    "network": "Server nicht erreichbar – er ist evtl. offline oder blockiert Cross-Origin-Anfragen (CORS).",
+    "aborted": "Abgebrochen.",
+    "badUrl": "Diese URL ist ungültig.",
+    "notWfs": "Diese Adresse ist kein WFS-Dienst.",
+    "noFeatureTypes": "Der Dienst listet keine Ebenen.",
+    "wfsException": "Der WFS-Server hat die Anfrage abgelehnt.",
+    "notJsonOutput": "Der Server hat kein GeoJSON geliefert (evtl. nur GML).",
+    "cors": "Die Quelle erlaubt Browsern keinen Zugriff (kein CORS). Unten einen Proxy einrichten.",
+    "notGbfs": "Das ist kein GBFS-Feed.",
+    "notGtfsRt": "Das ist kein GTFS-Realtime-Feed (JSON).",
+    "noGeometryInTable": "Die Tabelle hat keine Ortsspalten (lon/lat, WKT oder Koordinaten). Verknüpfen Sie sie mit einer Ebene.",
+    "noJoinBase": "Keine Geometrie zum Verknüpfen.",
+    "emptyTable": "Die Tabelle ist leer."
+  },
+  "kind": {
+    "point": "Punkt",
+    "line": "Linie",
+    "polygon": "Fläche"
+  },
+  "selected": {
+    "noProps": "Dieses Objekt hat keine Attribute."
+  },
+  "restore": {
+    "failed": "{{count}} gespeicherte Ebenen konnten nicht wiederhergestellt werden (offline oder Datei zu groß zum Speichern)."
+  },
+  "search": {
+    "title": "Im Zwilling suchen",
+    "placeholder": "Bahnhof, Anlagencode, Linie, Datei… z. B. code:BCN-SANTS",
+    "hint": "Durchsucht alle geladenen Ebenen, IFCs und Scans ({{count}} Einträge), auch verschachtelte Attribute. Mit feld:wert filtern.",
+    "empty": "Keine Treffer.",
+    "related": "Verbunden mit {{label}}",
+    "noRelated": "Keine Verbindungen gefunden.",
+    "reason": {
+      "shared": "gleiches {{field}}: {{value}}",
+      "inside": "liegt darin",
+      "contains": "enthält es",
+      "near": "{{m}} m entfernt"
+    }
+  },
+  "symbology": {
+    "styleBy": "Stil nach",
+    "single": "Ein Stil",
+    "others": "Alles andere",
+    "all": "Alle Objekte",
+    "hint": "Jeder Wert des Feldes bekommt eigene Farbe und Symbol. Häkchen entfernen, um ihn auszublenden.",
+    "symbol": "Symbol",
+    "size": "Größe (m)",
+    "visible": "Anzeigen",
+    "icons": "Icons",
+    "shapes": "3D-Formen",
+    "models": "Eigene Modelle",
+    "uploadModel": "GLB-Modell hochladen…",
+    "modelFailed": "Das Modell konnte nicht gelesen werden (nur GLB).",
+    "icon": {
+      "pin": "Stecknadel",
+      "train": "Bahnhof",
+      "metro": "U-Bahn",
+      "tram": "Straßenbahn",
+      "bus": "Bus",
+      "power": "Strom / Umspannwerk",
+      "exit": "Notausgang",
+      "door": "Tür / Zugang",
+      "sensor": "Sensor",
+      "camera": "Kamera",
+      "wifi": "Antenne / WLAN",
+      "warning": "Warnung",
+      "info": "Information",
+      "fire": "Brandschutz",
+      "water": "Wasser",
+      "parking": "Parken",
+      "tree": "Baum",
+      "building": "Gebäude",
+      "bike": "Fahrrad",
+      "charger": "Ladestation"
+    },
+    "shape": {
+      "sphere": "Kugel",
+      "pin": "Stecknadel",
+      "cube": "Würfel",
+      "cylinder": "Zylinder",
+      "cone": "Kegel"
+    }
+  },
+  "links": {
+    "linkTo": "Verknüpfen mit…",
+    "pickTarget": "Wählen Sie jetzt, womit {{label}} verknüpft wird: Suchergebnis anklicken.",
+    "cancel": "Abbrechen",
+    "urlPlaceholder": "https://… Datenblatt, Dashboard, Dokument",
+    "addUrl": "Link hinzufügen",
+    "remove": "Link entfernen",
+    "notLoaded": "nicht geladen",
+    "badge": "LINK"
+  },
+  "presets": {
+    "title": "Öffentliche Live-Quellen",
+    "hint": "Sofort verbindbar, jeweils so eingestellt, wie oft der Anbieter tatsächlich aktualisiert.",
+    "connect": "Verbinden",
+    "needsProxy": "Proxy",
+    "needsProxyHint": "Dieser Anbieter sendet keinen CORS-Header: Ein Browser kann ihn nur über einen Proxy lesen (siehe Proxy unten).",
+    "bicing": {
+      "name": "Bicing-Stationen",
+      "hint": "Räder und freie Docks je Station (GBFS) · alle 30 s"
+    },
+    "fgc": {
+      "name": "FGC-Züge",
+      "hint": "Live-Position, Pünktlichkeit und Auslastung · Kontingent (5.000/Tag)"
+    },
+    "rodalies": {
+      "name": "Rodalies-Züge (Renfe)",
+      "hint": "Live-Positionen (GTFS-Realtime) · Quelle aktualisiert alle 30 s"
+    },
+    "catastro": {
+      "name": "Katasterflurstücke",
+      "hint": "Kataster-WFS (GML) · 250 m um den Standort · statisch"
+    },
+    "icgc-municipis": {
+      "name": "Gemeinden (ICGC)",
+      "hint": "Gemeindegrenzen Kataloniens · statisch"
+    },
+    "bcn-traffic": {
+      "name": "Verkehr Barcelona (live)",
+      "hint": "Zustand von 500+ Abschnitten · alle 5 min · beide Richtungen, animierter Fluss"
+    }
+  },
+  "live": {
+    "toggle": "Live-Aktualisierung",
+    "interval": "Aktualisieren alle",
+    "animate": "Bewegte Punkte gleiten lassen",
+    "secondsAgo": "vor {{n}} s",
+    "minutesAgo": "vor {{n}} min",
+    "hoursAgo": "vor {{n}} h",
+    "dataAge": "Daten von {{ago}}",
+    "fetched": "Geladen {{ago}}",
+    "unchanged": "keine Änderungen",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "nächste in {{s}} s",
+    "sourcePaced": "im Takt der Quelle",
+    "quota": "heute noch {{n}} Anfragen",
+    "viaProxy": "über Proxy",
+    "retrying": "Versuch {{n}}",
+    "identityIndex": "Objekte haben keine stabile ID: Zuordnung nach Position in der Liste."
+  },
+  "proxy": {
+    "title": "Proxy für Quellen ohne CORS",
+    "hint": "Manche öffentliche Feeds (Renfe) dürfen Browser nicht lesen. Ein eigener Proxy leitet sie weiter. {url} steht für die Adresse.",
+    "save": "Speichern",
+    "saved": "Proxy gespeichert",
+    "cleared": "Proxy entfernt",
+    "needsPlaceholder": "Die Vorlage muss {url} enthalten."
+  },
+  "styleTabs": {
+    "groups": "Gruppen",
+    "zoom": "Zoom",
+    "aggregate": "Aggregation",
+    "alerts": "Alarme"
+  },
+  "groups": {
+    "summary": "{{n}} Objekte · {{g}} Gruppen",
+    "create": "Gruppen erstellen",
+    "rest": "Alles andere",
+    "all": "Alle Objekte",
+    "visible": "Anzeigen",
+    "priorityHint": "Ein Objekt übernimmt das Aussehen der ERSTEN passenden Gruppe — mit ▲▼ umsortieren.",
+    "count": "Objekte in dieser Gruppe",
+    "up": "Nach oben",
+    "down": "Nach unten",
+    "name": "Gruppenname",
+    "delete": "Gruppe löschen"
+  },
+  "maker": {
+    "title": "Objekte nach einer Eigenschaft wählen",
+    "field": "Eigenschaft",
+    "filter": "Werte filtern…",
+    "all": "Alle",
+    "none": "Keine",
+    "picked": "{{n}} Objekte ausgewählt",
+    "noValues": "Keine Werte",
+    "oneGroup": "Eine Gruppe mit diesen",
+    "groupPerValue": "Eine Gruppe je Wert",
+    "newGroup": "Neue Gruppe",
+    "empty": "Leere Gruppe"
+  },
+  "cond": {
+    "title": "Bedingungen",
+    "all": "alle müssen gelten",
+    "any": "eine genügt",
+    "none": "Keine Bedingungen: alle Objekte passen.",
+    "add": "Bedingung hinzufügen",
+    "remove": "Bedingung entfernen"
+  },
+  "look": {
+    "points": "Punkte",
+    "symbol": "Symbol",
+    "size": "Größe",
+    "label": "Beschriftung",
+    "noLabel": "Keine Beschriftung",
+    "lines": "Linien",
+    "width": "Breite",
+    "opacity": "Deckkraft",
+    "areas": "Flächen",
+    "fill": "Füllung",
+    "outline": "Umriss",
+    "height": "Höhe",
+    "fixedHeight": "Feste Höhe (m)",
+    "byField": "Aus {{f}}",
+    "offset": "Trennen",
+    "offsetHint": "Verschiebt jede Linie nach rechts in Fahrtrichtung, damit beide Richtungen sichtbar sind.",
+    "flow": "Fluss animieren",
+    "flowSpeed": "Flussgeschwindigkeit"
+  },
+  "zoom": {
+    "detail": "Volles Symbol + Text bis",
+    "icon": "Nur Symbol bis",
+    "dot": "Farbiger Punkt bis",
+    "hint": "Wie eine Webkarte: Je weiter die Kamera, desto einfacher wird jeder Punkt gezeichnet — Tausende bleiben lesbar.",
+    "detailShort": "voll",
+    "iconShort": "Icon",
+    "dotShort": "Punkt",
+    "hiddenShort": "aus",
+    "beyond": "Weiter als {{d}}: nicht gezeichnet.",
+    "onlyPoints": "Zoomstufen gelten für Punkte; diese Ebene hat keine."
+  },
+  "agg": {
+    "onlyPoints": "Aggregation fasst Punkte zusammen; diese Ebene hat keine.",
+    "hint": "Aus der Ferne die Ebene als Dichte oder als nach einem Wert gefärbte Zellen zeigen — z. B. Ladesäulen-Belegung — statt Tausender Marker.",
+    "value": "Wert",
+    "count": "Anzahl Objekte",
+    "atValue": "bei Wert",
+    "atFraction": "bei Anteil (0–1)",
+    "absolute": "Stufen in Dateneinheiten (nicht 0–1)",
+    "cell": "Zellgröße",
+    "radius": "Radius",
+    "from": "Anzeigen ab",
+    "extrude": "Zellen nach Wert extrudieren",
+    "legend": "Näher als {{d}} erscheinen wieder die einzelnen Objekte.",
+    "kind": {
+      "none": "Keine",
+      "heatmap": "Heatmap",
+      "hexbin": "Sechsecke"
+    },
+    "fn": {
+      "mean": "Mittel",
+      "sum": "Summe",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "ramp": {
+      "occupancy": "Belegung",
+      "traffic": "Verkehr",
+      "heat": "Dichte",
+      "blues": "Blautöne"
+    }
+  },
+  "op": {
+    "eq": "ist",
+    "neq": "ist nicht",
+    "in": "ist einer von",
+    "notIn": "ist keiner von",
+    "contains": "enthält",
+    "startsWith": "beginnt mit",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "zwischen",
+    "exists": "vorhanden",
+    "missing": "fehlt",
+    "isTrue": "ist wahr",
+    "isFalse": "ist falsch"
+  },
+  "legend": {
+    "title": "Legende",
+    "openHint": "Zeigen, was Farben und Symbole Ihrer Datenebenen bedeuten",
+    "close": "Legende minimieren",
+    "restore": "{{n}} ausgeblendete Ebene(n) zeigen",
+    "tip": "Gruppe anklicken zum Aus-/Einblenden · Alt/⌘-Klick: nur diese Gruppe",
+    "exclude": "Diese Ebene aus der Legende nehmen",
+    "hideGroup": "In der Szene ausblenden",
+    "showGroup": "In der Szene einblenden",
+    "aggregateFar": "Aus der Ferne wird sie zur Zusammenfassung.",
+    "density": "Dichte",
+    "less": "weniger",
+    "more": "mehr",
+    "zoomInForDetail": "Heranzoomen für einzelne Objekte.",
+    "inCaptures": "in Aufnahmen",
+    "inCapturesHint": "Geöffnet erscheint die Legende auch in Screenshots, Clips und GIFs. Minimieren, um sie wegzulassen.",
+    "asOf": "Daten {{when}}",
+    "scale": "Maßstab",
+    "scaleHint": "Maßstabsleiste anzeigen (auch in Aufnahmen). Nur bei ausreichend steiler Draufsicht, damit sie stimmt.",
+    "scaleNeedsTopDown": "Ansicht steiler nach unten neigen für einen verlässlichen Maßstab.",
+    "northHint": "Geografisch Nord des Standorts anzeigen (auch in Aufnahmen)",
+    "northNeedsSite": "Nord braucht einen verorteten Standort (georeferenziertes Modell, Scan oder Datenebene).",
+    "move": "In eine andere Ecke verschieben (auch in Aufnahmen)"
+  },
+  "history": {
+    "bar": "Zeitleiste",
+    "past": "Vergangenheit",
+    "pastHint": "Sie sehen aufgezeichnete Daten, nicht die Gegenwart.",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "speed": "Wiedergabetempo",
+    "when": "Gezeigter Zeitpunkt",
+    "live": "Live",
+    "liveHint": "Zurück zur Gegenwart",
+    "record": "Verlauf aufzeichnen",
+    "recordHint": "Die Vergangenheit dieses Feeds auf diesem Gerät speichern, um zurückzuspulen (nur Änderungen werden gespeichert).",
+    "retention": "Behalten",
+    "hours": "{{n}} h",
+    "days": "{{n}} Tage",
+    "sizeHint": "Belegter Speicher auf diesem Gerät",
+    "view": "Verlauf ansehen",
+    "nothingYet": "Noch nichts aufgezeichnet – der Verlauf wächst, solange die Ebene live ist.",
+    "spanH": "{{n}} h aufgezeichnet",
+    "spanM": "{{n}} min aufgezeichnet",
+    "clear": "Löschen"
+  },
+  "traffic": {
+    "veryFluid": "Sehr flüssig",
+    "fluid": "Flüssig",
+    "dense": "Dicht",
+    "veryDense": "Sehr dicht",
+    "congestion": "Stau",
+    "closed": "Gesperrt",
+    "noData": "Keine Daten"
+  },
+  "join": {
+    "open": "Live-Daten verknüpfen…",
+    "title": "Live-Tabelle verknüpfen",
+    "hint": "Werte einer regelmäßig aktualisierten Tabelle (CSV, „;“, „#“-Datensätze…) werden über einen Schlüssel diesen Objekten zugeordnet — z. B. Verkehrszustand auf Straßenabschnitte.",
+    "test": "Testen",
+    "headerless": "Die Tabelle hat keine Kopfzeile",
+    "namesPlaceholder": "Spaltennamen, kommagetrennt (z. B. id,zeit,zustand)",
+    "layerKey": "Schlüssel in dieser Ebene",
+    "tableKey": "Schlüssel in der Tabelle",
+    "timeColumn": "Zeit der Daten",
+    "apply": "Verknüpfen",
+    "done": "Verknüpft – die Ebene aktualisiert sich jetzt live."
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}}: {{n}} in {{layer}}",
+    "show": "Zeigen",
+    "newName": "Neuer Alarm",
+    "hint": "Benachrichtigt, wenn Objekte eine Bedingung erfüllen – sofort oder nachdem sie einige Minuten anhält. Betroffene Objekte pulsieren mit rotem Ring.",
+    "notLive": "Alarme werden bei jeder Aktualisierung geprüft: Live-Aktualisierung für diese Ebene einschalten.",
+    "enabled": "Aktiv",
+    "name": "Name des Alarms",
+    "remove": "Alarm löschen",
+    "forMin": "Mindestens",
+    "minutes": "min",
+    "add": "Neuer Alarm",
+    "fromGroup": "Aus einer Gruppe…"
+  }
+}

@@ -1,0 +1,628 @@
+[  100358ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  100528ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  121967ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121968ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121969ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121969ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121977ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121978ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121978ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  121978ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122210ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122211ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122374ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122374ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122375ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122375ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122379ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122380ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122380ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122380ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122439ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  122440ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126036ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126037ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126037ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126037ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126039ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126040ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126040ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126041ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126069ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  126070ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  127583ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  127632ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  129096ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129096ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129097ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129097ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129100ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129100ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129100ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129101ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129146ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129146ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129163ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129164ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129164ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129164ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129166ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129167ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129167ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129167ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129184ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  129185ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132437ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132438ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132438ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132438ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132443ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132444ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132444ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132444ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132483ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132484ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132495ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132495ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132496ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132499ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132503ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132504ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132504ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132504ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132526ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  132526ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  135204ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  135261ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  136259ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136260ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136260ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136260ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136265ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136266ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136266ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136266ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136495ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136496ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136496ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136496ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136498ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136498ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136499ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  136499ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139946ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139946ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139946ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139947ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139949ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139950ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139950ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  139950ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  141867ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  141927ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  142869ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142870ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142870ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142870ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142873ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142873ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142874ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142874ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142915ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142915ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142915ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142915ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142916ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142916ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142916ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142916ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142949ms] [ERROR] Warning: Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}.%s true inert inert true inert 
+    at div
+    at div
+    at div
+    at LockedSection (http://localhost:3001/src/components/workspace/LockedSection.tsx:24:3)
+    at main
+    at div
+    at div
+    at WorkspacePreview (http://localhost:3001/src/components/workspace/WorkspacePreview.tsx:100:44)
+    at Suspense
+    at div
+    at MotionComponent (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:945:40)
+    at PresenceChild (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:121:24)
+    at AnimatePresence (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:210:26)
+    at App (http://localhost:3001/src/App.tsx:538:26)
+    at ThemeProvider (http://localhost:3001/src/theme/ThemeProvider.tsx:29:33)
+    at ErrorBoundary (http://localhost:3001/src/components/ErrorBoundary.tsx:83:8)
+    at MotionConfig (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:679:25) @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:520
+[  142958ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142958ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142958ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142959ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142960ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142960ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142961ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142961ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142978ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142978ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142979ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142979ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142979ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142980ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142980ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  142980ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147082ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147083ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147083ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147084ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147086ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147087ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147087ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147087ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147105ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147106ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147106ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147107ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147107ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147108ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147108ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147108ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147130ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147130ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147131ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147131ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147133ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147134ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147134ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147134ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147151ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147151ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147152ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147152ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147152ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147153ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147153ms] [WARNING] [i18n] Missing key  workspace:Personas  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  147153ms] [WARNING] [i18n] Missing key  workspace:Qué puede hacer cada rol  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  151633ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  151685ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  152595ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152597ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152597ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152597ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152600ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152601ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152601ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152601ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152665ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152666ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152680ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152681ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152681ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152681ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152683ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152683ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152684ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152684ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152702ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152703ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152879ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152879ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152879ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152880ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152882ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152883ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152883ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152883ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152902ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  152903ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156500ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156500ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156501ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156501ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156503ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156503ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156503ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156504ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156521ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  156522ms] [WARNING] [i18n] Missing key  workspace:Auto-fix  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  161632ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  161684ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  164528ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164528ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164528ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164529ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164531ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164531ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164532ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  164532ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170561ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170561ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170561ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170562ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170562ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170562ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170562ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170563ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170563ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170563ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170563ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170563ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170564ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170564ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170564ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170564ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170564ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170565ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170565ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170565ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  170788ms] [ERROR] Warning: Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}.%s true inert inert true inert 
+    at div
+    at div
+    at div
+    at LockedSection (http://localhost:3001/src/components/workspace/LockedSection.tsx:24:3)
+    at main
+    at div
+    at div
+    at WorkspacePreview (http://localhost:3001/src/components/workspace/WorkspacePreview.tsx:100:44)
+    at Suspense
+    at div
+    at MotionComponent (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:945:40)
+    at PresenceChild (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:121:24)
+    at AnimatePresence (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:210:26)
+    at App (http://localhost:3001/src/App.tsx:538:26)
+    at ThemeProvider (http://localhost:3001/src/theme/ThemeProvider.tsx:29:33)
+    at ErrorBoundary (http://localhost:3001/src/components/ErrorBoundary.tsx:83:8)
+    at MotionConfig (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:679:25) @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:520
+[  172071ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172072ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172072ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172072ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172073ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172073ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172074ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172074ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172088ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172088ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172088ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172088ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172088ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172088ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172089ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172089ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172089ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172089ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172089ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172090ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172091ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172091ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172104ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172105ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172105ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172105ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172106ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172107ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172107ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172107ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172117ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172117ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172117ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172117ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172118ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172118ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172118ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172118ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172118ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172118ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172119ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172119ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172119ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172119ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172119ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172119ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172120ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172120ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172120ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172120ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172371ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172371ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172371ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172371ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172374ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172374ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172374ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172374ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172385ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172386ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172387ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172388ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172388ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172388ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172388ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  172388ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179880ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179881ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179881ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179881ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179883ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179883ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179884ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179884ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179899ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179899ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179899ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179899ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179900ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179900ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179900ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179900ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179900ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179900ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179901ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179902ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179902ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179902ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179915ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179915ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179915ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179916ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179917ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179917ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179917ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179917ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179932ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179933ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179933ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179933ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179934ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179934ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179934ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179934ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179935ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179935ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179935ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179935ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179935ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179935ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179936ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179936ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179936ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179936ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179936ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  179936ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196544ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196544ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196544ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196544ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196545ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196546ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196546ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196546ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196554ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196555ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196556ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196556ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196556ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196556ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196556ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  196556ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217610ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217610ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217610ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217610ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217611ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217612ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217612ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217612ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217622ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217622ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217622ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217622ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217623ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217623ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217623ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217623ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217623ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217623ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217624ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217624ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217624ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217624ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217624ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217624ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217625ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217625ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217625ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  217625ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts:136
+[  254591ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:21608
+[  254695ms] [WARNING] THREE.WARNING: Multiple instances of Three.js being imported. @ http://localhost:3001/@fs/C:/repo/ifc/node_modules/three/build/three.core.js?v=3ec276c6:2000
+[  256883ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256883ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256883ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256884ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256885ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256885ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256886ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256886ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256910ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256911ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256912ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256912ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256912ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256912ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256912ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256912ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256932ms] [ERROR] Warning: Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}.%s true inert inert true inert 
+    at div
+    at div
+    at div
+    at LockedSection (http://localhost:3001/src/components/workspace/LockedSection.tsx:24:3)
+    at main
+    at div
+    at div
+    at WorkspacePreview (http://localhost:3001/src/components/workspace/WorkspacePreview.tsx?t=1794430268412:100:44)
+    at Suspense
+    at div
+    at MotionComponent (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:945:40)
+    at PresenceChild (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:121:24)
+    at AnimatePresence (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:210:26)
+    at App (http://localhost:3001/src/App.tsx?t=1794430278255:538:26)
+    at ThemeProvider (http://localhost:3001/src/theme/ThemeProvider.tsx:29:33)
+    at ErrorBoundary (http://localhost:3001/src/components/ErrorBoundary.tsx:83:8)
+    at MotionConfig (http://localhost:3001/node_modules/.vite/deps/framer-motion.js?v=cfb45e78:679:25) @ http://localhost:3001/node_modules/.vite/deps/chunk-EGBHRFHM.js?v=3ec276c6:520
+[  256937ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256937ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256937ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256938ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256938ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256939ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256939ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256939ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256946ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256946ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256946ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256946ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256946ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256947ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  256948ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257031ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257031ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257031ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257031ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257031ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257032ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  257033ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266666ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266666ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266666ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266666ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266667ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266667ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266667ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266667ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266675ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266676ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  266677ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281683ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281684ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281684ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281684ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281686ms] [WARNING] [i18n] Missing key  workspace:Design preview · sample data  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281686ms] [WARNING] [i18n] Missing key  workspace:Modeller  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281686ms] [WARNING] [i18n] Missing key  workspace:Management  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281686ms] [WARNING] [i18n] Missing key  workspace:Subcontractor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281705ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281705ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281705ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281706ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281706ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281706ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281706ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281706ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281706ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281707ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281707ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281707ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281707ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281707ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281708ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281708ms] [WARNING] [i18n] Missing key  workspace:Bandeja de entrada  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281708ms] [WARNING] [i18n] Missing key  workspace:Proveedores  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281708ms] [WARNING] [i18n] Missing key  workspace:Registro  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281708ms] [WARNING] [i18n] Missing key  workspace:Obra  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136
+[  281708ms] [WARNING] [i18n] Missing key  workspace:Vista del proveedor  for lang(s): en @ http://localhost:3001/src/i18n/config.ts?t=1794430278255:136

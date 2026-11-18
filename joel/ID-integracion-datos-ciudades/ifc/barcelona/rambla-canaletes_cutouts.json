@@ -1,0 +1,49 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.170176,
+   "lat": 41.385161,
+   "height": 64.51
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "Font de Canaletes",
+    "lon": 2.170176,
+    "lat": 41.385161,
+    "bearing": 153.9,
+    "s": [
+     -1.05,
+     1.05
+    ],
+    "t": [
+     -1.05,
+     1.05
+    ],
+    "z": [
+     0.06,
+     5.6
+    ]
+   },
+   {
+    "name": "newspaper kiosk",
+    "lon": 2.17038565,
+    "lat": 41.38519473,
+    "bearing": 153.9,
+    "s": [
+     -2.1,
+     2.1
+    ],
+    "t": [
+     -2.25,
+     1.45
+    ],
+    "z": [
+     0.01,
+     3.35
+    ]
+   }
+  ]
+ }
+}

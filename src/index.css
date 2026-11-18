@@ -377,6 +377,120 @@ kbd {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
+/* ── Dialogs become bottom sheets on phones ─────────────────────────────────
+   A centred card is a desktop idiom: on a phone it floats out of thumb reach,
+   its close button sits in the hardest corner to hit, and the keyboard pushes
+   it off-screen. Every dialog therefore carries two hooks — `.m-sheet-host` on
+   the full-viewport wrapper and `.m-sheet` on the card — and below 768px the
+   card docks to the bottom edge, full width, top corners rounded, safe-area
+   aware, sliding up. One rule here instead of a mobile fork per dialog.
+   `!important` because the cards' own Tailwind classes (and framer-motion's
+   inline transform) are written for the centred desktop layout. */
+@keyframes m-sheet-up {
+  from { translate: 0 100%; }
+  to   { translate: 0 0; }
+}
+.m-sheet-grip { display: none; }
+@media (max-width: 767px) {
+  .m-sheet-host {
+    align-items: flex-end !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+  }
+  .m-sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - max(28px, env(safe-area-inset-top))) !important;
+    transform: none !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: m-sheet-up 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  /* A "full" dialog is a page, not a sheet: edge to edge, no corners. */
+  .m-sheet.m-sheet-full {
+    top: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    padding-top: env(safe-area-inset-top);
+  }
+  .m-sheet-grip {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 2px;
+    flex-shrink: 0;
+    touch-action: none;
+  }
+  /* Footer actions become a thumb row: full-width, 44px targets. */
+  .m-sheet-actions { flex-wrap: nowrap !important; }
+  .m-sheet-actions > button, .m-sheet-actions > a {
+    flex: 1 1 0;
+    min-height: 44px;
+    justify-content: center;
+  }
+  /* Form controls at 16px stop iOS from zooming the page on focus. */
+  .m-sheet input:not([type=checkbox]):not([type=radio]):not([type=range]),
+  .m-sheet select,
+  .m-sheet textarea { font-size: 16px !important; }
+}
+
+/* ── Thumb-sized range slider (mobile tool docks) ───────────────────────────
+   The native range is a 16px thumb on a 4px track: fine for a mouse, a coin
+   toss for a finger. This one keeps a 44px hit row and a 26px thumb. */
+.m-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  touch-action: pan-y;
+}
+.m-range::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(to right, var(--m-range-c, var(--accent)) var(--m-range-p, 50%), rgba(255,255,255,0.12) var(--m-range-p, 50%));
+}
+.m-range::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.12); }
+.m-range::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--m-range-c, var(--accent)); }
+.m-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--m-range-c, var(--accent));
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.m-range::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--m-range-c, var(--accent));
+}
+.m-range:disabled { opacity: 0.4; }
+
+/* ── Finger-sized form controls inside mobile panel sheets ─────────────────────
+   The panels were drawn for a pointer: 13px checkboxes, 24px inputs, 11px
+   labels. Inside a sheet (ViewportPanel mobile='sheet' adds .m-touch) a
+   checkbox row becomes a 44px row, text inputs reach 40px at 16px type (no iOS
+   focus zoom). Buttons are left alone: their sizes are each panel's design. */
+@media (max-width: 767px) {
+  .m-touch input[type=checkbox]:not(.sr-only), .m-touch input[type=radio]:not(.sr-only) { width: 20px; height: 20px; flex-shrink: 0; }
+  .m-touch label:has(> input[type=checkbox]:not(.sr-only)), .m-touch label:has(> input[type=radio]:not(.sr-only)) {
+    min-height: 44px; font-size: 13px !important; gap: 10px;
+  }
+  /* Type floor: 9-10px captions were drawn for a desktop card at arm's
+     length; on a phone in the hand they are unreadable. */
+  .m-touch [class~="text-[9px]"], .m-touch [class~="text-[9.5px]"] { font-size: 11px !important; }
+  .m-touch [class~="text-[10px]"], .m-touch [class~="text-[10.5px]"] { font-size: 11.5px !important; }
+  .m-touch input[type=text], .m-touch input[type=number], .m-touch input[type=date],
+  .m-touch input[type=search], .m-touch input:not([type]), .m-touch select, .m-touch textarea {
+    font-size: 16px !important; min-height: 40px;
+  }
+}
+
 /* ── B2B Light mode (landing + blog only) ───────────────────────────────────── */
 /* Applied via .lp-light wrapper — never touches the IFC viewer.                */
 

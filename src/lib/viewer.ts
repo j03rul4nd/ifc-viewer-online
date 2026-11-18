@@ -9,10 +9,63 @@ import { bindNavigation } from './camera-nav'
 import { aimPoint } from './aim-point'
 import { bindWalkNavigation, type WalkNavigation, type WalkState } from './camera-walk'
 import { createFrameCoalescer } from './frame-coalescer'
+import { createScenePicker } from './measure/picker'
+import { createMeasureSystem, type MeasureSystem } from './measure/measure-system'
+import { createSectionSystem, type SectionSystem } from './measure/section-system'
+import { toIfcAxes } from './measure/measure-math'
+import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './measure/section-math'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
+import { resolveFraming, presetPose, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
+import { createLogger } from './logger'
+import { mintModelId } from './loading/model-id'
+import { resolveDatum, withinDatum, isShifted, ZERO as DATUM_ZERO, DATUM_JOIN_RADIUS_M, type Vec3 as DatumVec3 } from './coordination-datum'
+import {
+  isAbortError, isFragmentsLoadAborted, loadCancelledError, pickActiveAfterDiscard,
+  pollModelIdle, stageFraction, throwIfLoadAborted, type ModelIdleResult,
+} from './loading/viewer-abort'
+import type { RenderStats } from './loading/controller'
+
+const log = createLogger('Viewer')
+
+/** Scene dressing for one Cover Studio capture (see lib/cover/looks.ts). */
+export interface PresentationLook {
+  base: 'original' | 'clay' | 'ghost'
+  baseColor: string
+  baseOpacity: number
+  /** IFC types (e.g. 'IFCWALL') kept solid and painted focusColor. */
+  focusTypes: string[]
+  focusColor: string | null
+  /** Hide the ground grid (drawings: line work, sections, plans). */
+  hideGrid?: boolean
+}
+
+/** Plane cut for a Cover Studio capture. */
+export interface PresentationSection {
+  normal: Vec3Like
+  point: Vec3Like
+  /** Fill for cut solids, '#rrggbb'. */
+  poche: string
+}
+
+/** One storey of an exploded axonometric: element ids per model. */
+export type ExplodeLayer = Array<{ modelId: string; ids: number[] }>
+
+export interface CameraPresetOptions {
+  scope?: FramingScope
+  /** Group id per model/cloud id (from useModelGroups). Without it every model is its own group. */
+  groupIdOf?: Record<string, string>
+  /** Point clouds the user has visible. Omitted = every loaded cloud, as one item. */
+  visibleCloudIds?: string[]
+  /**
+   * Fly (default) or jump. Captures jump: a flight only advances on rendered
+   * frames, so a snapshot taken while the tab is throttled would still show
+   * the old view.
+   */
+  animate?: boolean
+}
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
@@ -155,6 +208,9 @@ export interface IFCMaterial {
 }
 
 /** Structured data returned by getItemData() */
+/** 2D overlay painted into captures (see ViewerAPI.addCapturePainter). */
+export type CapturePainter = (ctx: CanvasRenderingContext2D, width: number, height: number, s: number) => boolean
+
 export interface IFCItemData {
   /** IFC Name attribute */
   name: string | null
@@ -186,6 +242,20 @@ export interface IFCItemData {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+/** A lighting setup for art-directed renders (see `setLighting`). */
+export interface SceneLighting {
+  sky: string
+  ground: string
+  ambient: number
+  key: string
+  keyIntensity: number
+  /** Where the sun comes from: degrees around Y, degrees above the horizon. */
+  azimuth: number
+  elevation: number
+  fill: string
+  fillIntensity: number
+}
+
 /** Appearance/filter knobs for the overlay, forwarded to the OverlayController. */
 export interface OverlayApplyOptions {
   /** Which severities to paint in colour; the rest fall back to the ghost. */
@@ -194,6 +264,43 @@ export interface OverlayApplyOptions {
   ghostOpacity?: number
   /** Render flagged elements through occluding geometry (no depth test). */
   xray?: boolean
+}
+
+/**
+ * Where a `loadFragments` call is, as reported by the code doing it:
+ *   decompressing / parsing / generating — fragments' own worker stages
+ *     (`generating` carries a real 0..1 fraction; the other two report 1 when
+ *     they finish, never a partial value);
+ *   setup — categories, type map and palette on the main thread (no fraction);
+ *   done  — the model is registered, painted and (optionally) framed.
+ * fragments also emits a `done` of its own when its worker finishes; it is NOT
+ * forwarded, because at that point the model is not usable yet — `done` here
+ * means the whole call succeeded, and it is always the last stage reported.
+ */
+export type LoadFragmentsStage = 'decompressing' | 'parsing' | 'generating' | 'setup' | 'done'
+
+export interface LoadFragmentsOptions {
+  /**
+   * Scene id to register the model under. The loading manager mints it before
+   * the job starts (see loading/model-id.ts) so it can cancel and correlate the
+   * load; omitted, the viewer mints one the same way.
+   */
+  modelId?: string
+  /**
+   * Cancels the load. Before fragments has the model it is aborted inside the
+   * worker (`core.abort`); after, the viewer undoes everything it registered.
+   * Either way the call rejects with DOMException('Load cancelled', 'AbortError')
+   * and the scene is left as it was before the call.
+   */
+  signal?: AbortSignal
+  /** Real stages with their fraction (null = no measurable progress). */
+  onStage?: (stage: LoadFragmentsStage, fraction: number | null) => void
+  /**
+   * Frame the camera on the new model (default true — the historic behaviour).
+   * false leaves the camera alone and only retunes near/far/fog to every loaded
+   * model, so a model that lands off-screen is not clipped or fogged out.
+   */
+  frame?: boolean
 }
 
 export interface ViewerAPI {
@@ -205,18 +312,57 @@ export interface ViewerAPI {
     modelObject: unknown
     getElementInfo: (id: string) => SelectedInfo | null
   }>
+  /**
+   * Add a fragments model to the scene (never replaces the loaded ones).
+   *
+   * `buffer` decides who pays for the copy into the fragments worker:
+   *   ArrayBuffer — TRANSFERRED (zero-copy). The caller's buffer is detached
+   *     (byteLength 0) the moment the load starts; write it to a cache first.
+   *   Uint8Array  — structured-cloned (copied); the caller keeps its bytes.
+   *     The historic behaviour, and what the blog embed relies on.
+   *
+   * `onProgress` keeps its historic fixed milestones (5…100) for old callers;
+   * `options.onStage` reports the real stages. Rejects with an AbortError when
+   * `options.signal` cancels it; on any rejection nothing of the model is left
+   * in the scene or the viewer's maps, and the previously active model is
+   * active again.
+   */
   loadFragments(
-    buffer: Uint8Array,
+    buffer: Uint8Array | ArrayBuffer,
     fileName: string,
     fileSize?: number,
     onProgress?: (pct: number) => void,
+    options?: LoadFragmentsOptions,
   ): Promise<{
     modelInfo: ModelInfo
     modelObject: unknown
     getElementInfo: (id: string) => SelectedInfo | null
-    /** Stable ID assigned to this model load. Same ID used in sceneStore, modelRegistry, validationStore. */
+    /**
+     * Scene id of this model — `options.modelId` when given, else minted here.
+     * Same id used in sceneStore, modelRegistry, validationStore.
+     */
     modelId: string
   }>
+  /** True while `modelId` is loaded in the viewer (registered and not removed). */
+  hasModel(modelId: string): boolean
+  /**
+   * Resolve once a loaded model has finished streaming its current view to the
+   * GPU (fragments `isBusy` false on two consecutive polls, 100 ms apart).
+   * 'missing' when the model is not loaded or is removed meanwhile, 'timeout'
+   * after `timeoutMs` of wall time, 'aborted' when `signal` fires. Never
+   * rejects. Polls on timers, so it also ends in a hidden pane or background
+   * tab, where requestAnimationFrame never fires: if streaming stalls there,
+   * the answer is 'timeout', never a hang.
+   */
+  waitForModelIdle(modelId: string, timeoutMs: number, signal?: AbortSignal): Promise<ModelIdleResult>
+  /**
+   * three.js renderer counters for the Loading Center's Advanced view, or null
+   * when the renderer cannot be read. `calls`/`triangles` are for the LAST
+   * render call (three resets them per call): with quality mode
+   * (postproduction) on, that is only the last pass of the frame.
+   * `geometries`/`textures`/`programs` are live GPU allocations.
+   */
+  getRenderStats(): RenderStats | null
   /**
    * Fetches real IFC data for a given expressId.
    * Pass modelId to target a specific loaded model; omit to query the current model.
@@ -246,6 +392,33 @@ export interface ViewerAPI {
     isolatedModelId?: string | null,
   ): void
   applyStyle(style: ViewerStyle): void
+  /**
+   * Dress the scene for a presentation capture (Cover Studio looks): repaint
+   * non-focus elements as a clay model or ghost them, and paint the focus IFC
+   * types in one colour. null restores the category palette. Resolves once
+   * the fragments have been updated, so a takeSnapshot() right after sees it.
+   */
+  setPresentationLook(look: PresentationLook | null): Promise<void>
+  /**
+   * Cut the scene with one plane for a capture, and paint the cut solids in
+   * `poche` (the architectural section fill). Keeps the side the normal points
+   * TOWARD: normal (0,-1,0) through y=h keeps everything below h — a plan cut.
+   * null removes the cut and restores the materials.
+   */
+  setPresentationSection(section: PresentationSection | null): Promise<void>
+  /**
+   * Exploded axonometric: render each layer (a storey: element ids per model)
+   * alone, lifted by index × gap, over a transparent background, from the
+   * current camera. Returns one PNG data URL per layer, in input order; the
+   * caller stacks them bottom-up. Visibility and positions are restored.
+   */
+  captureExplodedLayers(layers: ExplodeLayer[], gap: number, scale?: number): Promise<string[]>
+  /**
+   * Art direction: the scene's light — sky/ground ambient, a key "sun" (colour,
+   * strength, azimuth and elevation in degrees) and a fill from the opposite
+   * side. Null puts the viewer's own lighting back.
+   */
+  setLighting(light: SceneLighting | null): void
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
   frameElements(ids: number[], modelId?: string): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean, options?: OverlayApplyOptions): void
@@ -281,8 +454,22 @@ export interface ViewerAPI {
    */
   setContextMenuCallback(cb: ((payload: { x: number; y: number; info: SelectedInfo } | null) => void) | null): void
   getGpuEstimateBytes(): number
-  /** Fly to a named camera preset (iso, top, front, right, left, back, bottom). */
-  setCameraPreset(preset: CameraPreset): void
+  /**
+   * Fly to a named camera preset (iso, top, front, right, left, back, bottom)
+   * framing a SCOPE of the scene (see lib/camera-framing). Default `auto`:
+   * everything visible, narrowed to the active group when the scene spans
+   * several distant sites. Returns what was framed, or null when nothing is
+   * visible (the camera does not move).
+   */
+  setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions): FramingResult | null
+  /** The world boxes a preset would choose from, with visibility applied. */
+  getFramingItems(opts?: CameraPresetOptions): FramingItem[]
+  /**
+   * Fit the camera to the union of these models / clouds (hidden ones included —
+   * framing a hidden group is how you find where it went). False when none of
+   * the ids has geometry.
+   */
+  frameItems(ids: ReadonlyArray<string>, opts?: CameraPresetOptions): boolean
   /**
    * First-person walk mode: WASD to move, left-drag to look, Q/E for height.
    *
@@ -428,7 +615,7 @@ export interface ViewerAPI {
    * target implied at distance 1), this preserves the stored orbit distance —
    * used by Tour Mode playback.
    */
-  setCameraLookAt(position: Vec3Like, target: Vec3Like): void
+  setCameraLookAt(position: Vec3Like, target: Vec3Like, animate?: boolean): void
   /**
    * World-space merged AABB of a set of elements (serialisable, no THREE
    * objects). Reuses the same getMergedBox path as frameElements. Null when
@@ -436,14 +623,48 @@ export interface ViewerAPI {
    */
   getElementsBox(ids: number[], modelId?: string): Promise<{ min: Vec3Like; max: Vec3Like } | null>
   /**
+   * Attributes + Psets/Qtos (same parse as getItemData) AND the world box of
+   * many elements at once — what the twin search indexes. Batched internally;
+   * entries come back in `ids` order, null where an element is unknown.
+   */
+  getElementsDetail(ids: number[], modelId: string): Promise<Array<{
+    expressId: number
+    data: IFCItemData | null
+    box: { min: Vec3Like; max: Vec3Like } | null
+  }>>
+  /**
    * Swap the scene backdrop (solid colour or vertical gradient) and the derived
    * fog / grid colours. Purely visual: no geometry, camera or material state is
    * touched, and the change lands in screenshots and replay clips because it is
    * part of the rendered frame.
    */
   setBackground(settings: BackgroundSettings): void
-  /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
-  takeSnapshot(): string
+  /**
+   * Capture a PNG snapshot of the current renderer canvas. Returns a data URL.
+   * `scale` > 1 renders the frame at that multiple of the on-screen resolution
+   * (print boards), capped at the GPU's render-buffer limit; the on-screen view
+   * is restored before returning.
+   *
+   * Measurements come WITH their numbers (the labels are HTML, so they are
+   * painted onto the frame here); section handles never appear. Pass
+   * `annotations: false` for a clean presentation image with no measurements.
+   */
+  takeSnapshot(scale?: number, options?: { annotations?: boolean }): string
+  /**
+   * Paint a 2D overlay into every capture that carries annotations — PNG
+   * snapshots and the recording surface behind clips and GIFs. `s` is device
+   * pixels per CSS pixel, so an overlay keeps its on-screen size. Return true
+   * when something was drawn. Returns the unregister function.
+   */
+  addCapturePainter(paint: CapturePainter): () => void
+  /**
+   * A 2D canvas that repeats every rendered frame WITH the measurement labels
+   * painted on it — the surface a video recording should capture. The labels
+   * are HTML, so a captureStream of the WebGL canvas records the lines of a
+   * measurement and never its numbers. The canvas is only kept up to date
+   * while held: call `release()` when the recording stops.
+   */
+  acquireRecordingCanvas(): { canvas: HTMLCanvasElement; release(): void }
   /**
    * Stable reference to the WebGL canvas (Capture Toolkit replay buffer).
    * Read-only access — callers must never mutate or re-parent the element.
@@ -474,6 +695,23 @@ export interface ViewerAPI {
    */
   getPointClouds(): Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI>
   /**
+   * The point cloud system if it is already loaded, else null. For callers that
+   * must apply a change in the same tick they read it back (group moves read
+   * the cloud's new bounds right after moving it).
+   */
+  peekPointClouds(): import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null
+  /**
+   * Lazily load the vector layer subsystem (GeoJSON / WFS routes, zones,
+   * points). Separate chunk, created once per viewer.
+   */
+  getVectorLayers(): Promise<import('./layers/vector-layer-system').VectorLayerSystemAPI>
+  /**
+   * World-space ground height under (x, z) from the running map — terrain as
+   * displayed, or the basemap plane. Null when the map is off. Never creates
+   * the geo system.
+   */
+  mapGroundAt(x: number, z: number): number | null
+  /**
    * Lazy mesh importer. Owns every GPU resource a GLB/OBJ import touches; the
    * IFC model is never moved to accommodate one.
    */
@@ -489,46 +727,29 @@ export interface ViewerAPI {
    */
   setRenderQuality(quality: 'standard' | 'quality'): void
   /**
-   * Activate a measurement tool ('length' or 'area') or return to normal interaction ('none').
-   * While a tool is active pointer click-select and hover-highlight are suppressed.
+   * The measurement engine (lib/measure): the active tool, the measurement being
+   * drawn, every finished measurement and the overlay they draw. While a tool is
+   * active, click-select, hover highlight and the context menu stand down.
    */
-  setMeasurementTool(tool: 'none' | 'length' | 'area'): void
+  getMeasure(): MeasureSystem
   /** Remove all placed measurements from the scene. */
   clearMeasurements(): void
-  /** Delete the most recently placed measurement. */
-  deleteLastMeasurement(): void
-  /** Return the number of placed measurements of each type. */
-  getMeasurementCount(): { length: number; area: number }
-  /** Return all placed measurements with their computed values. */
-  getMeasurements(): Array<{ id: string; type: 'length' | 'area'; value: number }>
-  /**
-   * Finish the area polygon currently being drawn (calls endCreation on the
-   * area measurement tool). No-op if < 3 points have been placed.
-   */
-  finishCurrentMeasurement(): void
 
-  // ─── Clipping planes ─────────────────────────────────────────────────────────
+  // ─── Sections ────────────────────────────────────────────────────────────────
   /**
-   * Put the Clipper into creation mode — the next click on the model surface
-   * creates a clipping plane aligned to the face normal at that point.
+   * Section planes (plan, elevation, face-aligned) and the section box, with
+   * their in-scene handles. Every cut is a global renderer plane, and picking —
+   * selection as well as measurement — only ever hits what the cut left.
    */
-  startAddClipPlane(): void
-  /** Cancel clip-plane creation mode without placing a plane. */
-  stopAddClipPlane(): void
-  /** Delete the clip plane with the given ID, or the one under the cursor if omitted. */
-  deleteClipPlane(id?: string): Promise<void>
-  /** Remove every clipping plane from the scene. */
-  clearClipPlanes(): void
-  /** Toggle a single clip plane's enabled state. */
-  toggleClipPlane(id: string, enabled: boolean): void
-  /** Snapshot of all active clip planes. */
-  getClipPlanes(): { id: string; enabled: boolean; title: string }[]
+  getSections(): SectionSystem
   /**
-   * Register a one-shot callback that fires when the next clip plane is placed
-   * and auto-deactivates creation mode. Pass null to cancel without placing.
+   * Storey levels of every visible model, bottom to top, in scene metres (the
+   * height a plan cut is measured from). Calibrated against the geometry, so
+   * millimetre and offset models come out right; merged across federated
+   * models. Empty when no model has IfcBuildingStorey entities.
    */
-  setClipCreationCallback(cb: (() => void) | null): void
-  /** Remove all clipping planes and close any open storey view. */
+  getStoreyLevels(): Promise<Array<{ name: string; y: number }>>
+  /** Remove all section planes and the box, and close any open storey view. */
   cleanupSectionAndPlans(): void
 
   // ─── Floor plan / storey views ───────────────────────────────────────────────
@@ -811,6 +1032,43 @@ function parseAssociations(hasAssociations: unknown): IFCMaterial[] {
 
 // ─── Helper: parse type-object property sets from IsTypedBy ──────────────────
 
+/** What getItemData / getElementsDetail ask fragments for (one definition, one parse). */
+const ITEM_DATA_CONFIG = {
+  attributesDefault: false,
+  attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
+  relations: {
+    // Property sets + quantity sets (IfcPropertySet + IfcElementQuantity)
+    IsDefinedBy: { attributes: true, relations: true },
+    // Spatial containment — to extract storey name
+    ContainedInStructure: { attributes: true, relations: false },
+    // Suppress inverse relations we don't need
+    DefinesOccurrence: { attributes: false, relations: false },
+    // IFC4: type object and its property sets
+    IsTypedBy: { attributes: true, relations: true },
+    // Materials via IfcRelAssociatesMaterial
+    HasAssociations: { attributes: true, relations: true },
+  },
+}
+
+function parseItemData(raw: Record<string, unknown>): IFCItemData {
+  const { typeName, psets: typeProperties } = parseTypeProps(raw['IsTypedBy'])
+  return {
+    name:           attrStr(raw['Name']),
+    longName:       attrStr(raw['LongName']),
+    description:    attrStr(raw['Description']),
+    globalId:       attrStr(raw['GlobalId']),
+    objectType:     attrStr(raw['ObjectType']),
+    tag:            attrStr(raw['Tag']),
+    storey:         extractStorey(raw['ContainedInStructure']),
+    propertySets:   formatPsets(raw['IsDefinedBy']),
+    quantitySets:   formatQuantities(raw['IsDefinedBy']),
+    materials:      parseAssociations(raw['HasAssociations']),
+    typeProperties,
+    typeName,
+    raw,
+  }
+}
+
 function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: IFCPropertySet[] } {
   if (!Array.isArray(isTypedBy) || isTypedBy.length === 0) return { typeName: null, psets: [] }
 
@@ -828,6 +1086,26 @@ function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: I
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
+
+/**
+ * Paint the category palette onto a model. Batched by palette entry (≤25 calls
+ * instead of one per element). Shared by the load path and by
+ * setPresentationLook(null), which has to put exactly this back.
+ */
+async function paintPalette(model: FRAGS.FragmentsModel, typeMap: Map<number, string>): Promise<void> {
+  const colorBatches:   Map<number, number[]> = new Map()
+  const opacityBatches: Map<number, number[]> = new Map()
+  for (const [localId, rawType] of typeMap.entries()) {
+    const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
+    if (!pal) continue
+    const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
+    if (pal.opacity !== undefined) {
+      const ob = opacityBatches.get(pal.opacity) ?? []; ob.push(localId); opacityBatches.set(pal.opacity, ob)
+    }
+  }
+  for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
+  for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+}
 
 export function createViewer(container: HTMLElement): ViewerAPI {
 
@@ -866,6 +1144,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const fill = new THREE.DirectionalLight(0x6B7AC8, 0.3)
   fill.position.set(-40, 20, -30)
   world.scene.three.add(fill)
+  // What setLighting(null) restores.
+  const defaultLighting = {
+    sky: hemi.color.clone(), ground: hemi.groundColor.clone(), ambient: hemi.intensity,
+    key: dir.color.clone(), keyIntensity: dir.intensity, keyPos: dir.position.clone(),
+    fill: fill.color.clone(), fillIntensity: fill.intensity, fillPos: fill.position.clone(),
+  }
 
   const grids = components.get(OBC.Grids)
   const grid  = grids.create(world)
@@ -941,6 +1225,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let videoInstance: import('./video/video-system').VideoSystemAPI | null = null
   let videoLoadPromise: Promise<import('./video/video-system').VideoSystemAPI> | null = null
   let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
+  let vectorLoadPromise: Promise<import('./layers/vector-layer-system').VectorLayerSystemAPI> | null = null
   let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
@@ -1007,10 +1292,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const onCameraControl = (): void => {
     pointCloudInstance?.setInteractionActive(true)
     fragmentUpdates.request()
+    // The measurement HUD sits on a projected point: keep it on it. (The system
+    // is created further down; a control event can never precede that, but a
+    // TDZ read would throw, so it is guarded rather than assumed.)
+    try { measureSystem.cameraChanged() } catch { /* not created yet */ }
   }
   const onCameraRest = (): void => {
     pointCloudInstance?.setInteractionActive(false)
     fragmentUpdates.request()
+    try { measureSystem.cameraChanged() } catch { /* not created yet */ }
   }
   world.camera.controls.addEventListener('control', onCameraControl)
   world.camera.controls.addEventListener('rest', onCameraRest)
@@ -1133,26 +1423,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     console.info('[Viewer] PostproductionRenderer unavailable, using standard renderer:', (err as Error)?.message ?? err)
   }
 
-  // ─── Measurement tools ────────────────────────────────────────────────────────
-  const lengthMeasurement = components.get(OBCF.LengthMeasurement)
-  lengthMeasurement.world   = world
-  lengthMeasurement.enabled = false
-
-  const areaMeasurement = components.get(OBCF.AreaMeasurement)
-  areaMeasurement.world   = world
-  areaMeasurement.enabled = false
-
-  let activeMeasurementTool: 'none' | 'length' | 'area' = 'none'
-
-  // ─── Clipping planes (OBC.Clipper) ────────────────────────────────────────────
-  const clipper = components.get(OBC.Clipper)
-  clipper.enabled = false
-  clipper.orthogonalY = true
-
-  // One-shot callback invoked when a clip plane is placed (auto-deactivates creation mode)
-  let clipCreationCallback: (() => void) | null = null
-  // Handler ref so we can remove it cleanly
-  let onAfterCreateHandler: ((plane: OBC.SimplePlane) => void) | null = null
+  // Measurement and section tools (lib/measure) are created once the scene
+  // state they read is declared — see "Measurement & sections" below.
 
   // ─── Floor plan / section views (OBC.Views) ───────────────────────────────────
   const views = components.get(OBC.Views)
@@ -1161,8 +1433,38 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const initPromise = (async () => {
     const workerURL = await OBC.FragmentsManager.getWorker()
     fragmentsManager.init(workerURL)
+    // fragments aligns every model to the FIRST one it loaded, whatever that
+    // one is: a UTM model loaded after a local one is sent back to its
+    // 4,600 km coordinates, and a local model loaded after a UTM one is thrown
+    // that far the other way. The scene datum (reconcileCoordination) does
+    // this job with the knowledge fragments lacks — which models share a site.
+    fragmentsManager.core.settings.autoCoordinate = false
     await ifcLoader.setup()
   })()
+
+  /**
+   * A model's bounding box in its PIVOT's space — what every "apply the pivot
+   * matrix to the box" caller below needs.
+   *
+   * NOT `model.box`: that getter already applies `object.matrixWorld`, which
+   * includes the pivot, and it uses whatever matrixWorld was last computed (one
+   * render ago). Transforming it by the pivot again moved/rotated a transformed
+   * model twice, and by a stale amount — framing, footprints and group pivots
+   * all drifted as soon as a model was moved.
+   */
+  function pivotLocalBox(model: FRAGS.FragmentsModel): THREE.Box3 {
+    const raw = (model as unknown as { _bbox?: unknown })._bbox
+    if (raw instanceof THREE.Box3) {
+      model.object.updateMatrix()
+      return raw.clone().applyMatrix4(model.object.matrix)
+    }
+    // Library internals changed: fall back to the world box, un-transformed by
+    // a FRESH pivot matrix. Exact for translation-only pivots.
+    const pivot = model.object.parent
+    if (!pivot) return model.box
+    pivot.updateMatrixWorld(true)
+    return model.box.applyMatrix4(pivot.matrixWorld.clone().invert())
+  }
 
   // ─── Per-model pivot groups ───────────────────────────────────────────────────
   // Each loaded model gets its own THREE.Group pivot so transforms are independent.
@@ -1175,11 +1477,146 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   // Per-model maps — survive a model swap so past data stays addressable
   const modelObjects:    Map<string, FRAGS.FragmentsModel> = new Map()
+  // Cover Studio section capture: materials patched for poché, and the
+  // renderer's planes before the cut (restored by setPresentationSection(null)).
+  const pochePatched = new Map<THREE.MeshLambertMaterial, {
+    side: THREE.Side
+    onBeforeCompile: THREE.MeshLambertMaterial['onBeforeCompile']
+    cacheKey: THREE.MeshLambertMaterial['customProgramCacheKey']
+  }>()
+  let sectionPrevPlanes: THREE.Plane[] | null = null
+  // Grid visibility before a presentation look/section hid it (null = untouched).
+  let presentationGridPrev: boolean | null = null
+  const hidePresentationGrid = (hide: boolean) => {
+    if (hide) {
+      if (presentationGridPrev === null) presentationGridPrev = grid.visible
+      grid.visible = false
+    } else if (presentationGridPrev !== null) {
+      grid.visible = presentationGridPrev
+      presentationGridPrev = null
+    }
+  }
+
+  /**
+   * Run `fn` with the drawing buffer at `scale` × its normal pixel ratio — the
+   * CSS size (and so the camera aspect and framing) is untouched, only the
+   * pixel count grows. Postproduction targets are resized to match, and both
+   * are put back before returning, so the live view never sees the change.
+   */
+  function withRenderScale<T>(scale: number, fn: () => T): T {
+    if (!(scale > 1)) return fn()
+    const renderer = world.renderer!
+    const three = renderer.three
+    const base = three.getPixelRatio()
+    const gl = three.getContext()
+    const limit = Math.min(8192, gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number)
+    const css = new THREE.Vector2()
+    three.getSize(css)
+    const longest = Math.max(css.x, css.y, 1)
+    const ratio = Math.min(base * scale, limit / longest)
+    const pp = postproductionReady ? renderer.postproduction : null
+    three.setPixelRatio(ratio)
+    try { pp?.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+    try {
+      return fn()
+    } finally {
+      three.setPixelRatio(base)
+      try { pp?.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+    }
+  }
   /**
    * Translation the loader applied between a model's own IFC coordinates and the
    * geometry we draw, in SCENE axes. See getModelCoordination.
    */
   const modelCoordination: Map<string, { x: number; y: number; z: number }> = new Map()
+  /**
+   * One shift for every model the converter moved to the origin, so files from
+   * one site stay registered to each other. See coordination-datum.
+   */
+  let sceneDatum: DatumVec3 | null = null
+
+  /** Centre of a model's geometry in its pivot's space, without its object offset. */
+  function drawnCentreOf(model: FRAGS.FragmentsModel): DatumVec3 | null {
+    try {
+      const box = pivotLocalBox(model)
+      if (box.isEmpty()) return null
+      const c = box.getCenter(new THREE.Vector3()).sub(model.object.position)
+      return Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z) ? { x: c.x, y: c.y, z: c.z } : null
+    } catch {
+      return null
+    }
+  }
+
+  function offsetModelObject(model: FRAGS.FragmentsModel, d: DatumVec3): void {
+    if (d.x === 0 && d.y === 0 && d.z === 0) return
+    model.object.position.x += d.x
+    model.object.position.y += d.y
+    model.object.position.z += d.z
+    model.object.updateMatrixWorld(true)
+  }
+
+  /**
+   * Record what the loader did to this model's datum, rather than assuming it
+   * did nothing, and draw it in the scene's shared datum when it belongs there.
+   *
+   * Normally the shift is zero: the converter keeps a model's own coordinates.
+   * It is not zero for a file with coordinates past 100 km (UTM baked into the
+   * geometry), which the converter moves to the origin so the importer does not
+   * drop every element. Each such file picks its own shift; resolveDatum makes
+   * files from one site share one, so a road and its drainage still meet.
+   */
+  async function reconcileCoordination(modelId: string, model: FRAGS.FragmentsModel): Promise<void> {
+    let own: DatumVec3
+    try {
+      // getCoordinates, not getCoordinationMatrix: the matrix is cached per
+      // model and handed out BEFORE it is filled, so a call that lands while
+      // another is in flight reads the identity. Measured: a cached model
+      // reported no shift while carrying 4.6 million metres of one.
+      const [x, y, z] = await model.getCoordinates()
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return
+      own = { x, y, z }
+    } catch {
+      // Older fragments build without the accessor. Absent beats invented:
+      // callers read null as "unknown" and leave positions alone.
+      return
+    }
+
+    const r = resolveDatum({ own, drawnCentre: drawnCentreOf(model), datum: sceneDatum })
+    offsetModelObject(model, r.objectOffset)
+    modelCoordination.set(modelId, r.coordination)
+
+    if (r.role === 'set' && r.datum) {
+      sceneDatum = r.datum
+      log.info(`"${modelId}" has coordinates far from the origin; drawn shifted by (${fmtShift(r.datum)}) m, real coordinates kept`)
+      // A model loaded earlier in local coordinates that turns out to sit on
+      // this site (real coordinates under 100 km, a little past the datum's)
+      // joins it now, or the two would be drawn kilometres apart.
+      for (const [otherId, other] of modelObjects) {
+        if (otherId === modelId || isShifted(modelCoordination.get(otherId))) continue
+        if (!withinDatum(drawnCentreOf(other), DATUM_ZERO, r.datum)) continue
+        offsetModelObject(other, r.datum)
+        modelCoordination.set(otherId, { ...r.datum })
+      }
+    } else if (r.role === 'joined') {
+      log.info(`"${modelId}" drawn in the scene datum (offset ${fmtShift(r.objectOffset)} m)`)
+    } else if (r.role === 'separate') {
+      log.warn(`"${modelId}" is more than ${DATUM_JOIN_RADIUS_M / 1000} km from the other far-coordinate models; kept on its own shift (another site or another CRS)`)
+    }
+  }
+
+  /** Forget the datum once no loaded model is drawn in it. */
+  function releaseDatumIfUnused(): void {
+    if (!sceneDatum) return
+    const d = sceneDatum
+    for (const c of modelCoordination.values()) {
+      if (c.x === d.x && c.y === d.y && c.z === d.z) return
+    }
+    sceneDatum = null
+  }
+
+  function fmtShift(v: DatumVec3): string {
+    return `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`
+  }
   const typeMapByModel:  Map<string, Map<number, string>>  = new Map()
   // Models explicitly hidden at the model level (via setModelVisible / isolateModel).
   // applyFilters skips these so element-level calls never re-show a model-hidden model.
@@ -1552,10 +1989,14 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     aimAt(e)
-
-    // Measurement tools handle their own pointer feedback — skip hover highlight
-    if (activeMeasurementTool !== 'none') return
     if (geoPointerSuppressed) return // map placement editor owns the pointer
+
+    // Section handles first (they only answer while the section panel is
+    // open), then the measurement tool. Both draw their own pointer feedback,
+    // so element hover highlighting stands down while either has the cursor.
+    sectionSystem.pointerMove(e)
+    if (measureSystem.isActive()) { measureSystem.pointerMove(e); return }
+    if (sectionSystem.isPlacing() || sectionSystem.isOverHandle()) return
     if (modelObjects.size === 0) return
 
     const now = performance.now()
@@ -1605,6 +2046,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     pdTime = Date.now()
     pdX    = e.clientX
     pdY    = e.clientY
+    // Pressing on the scene hands the keyboard back to it: a toolbar button
+    // clicked a moment ago would otherwise keep focus and eat the arrow keys.
+    const focused = document.activeElement as HTMLElement | null
+    if (focused && focused !== document.body && !canvas.contains(focused)) focused.blur?.()
   }
 
   const onPointerUp = (e: PointerEvent): void => {
@@ -1613,37 +2058,23 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return   // ignore drags / long-press
 
-    // ── Measurement tools ────────────────────────────────────────────────────
-    // ThatOpen's Measurement base class only registers pointermove + keydown(Esc)
-    // via setEvents(). It does NOT add a click/pointerdown listener.
-    // We must call create() ourselves on each quick click.
-    if (activeMeasurementTool === 'length') {
-      void lengthMeasurement.create()
+    // ── Measurement tools / face section placement ────────────────────────────
+    if (measureSystem.isActive()) {
+      measureSystem.click(e)
       return
     }
-    if (activeMeasurementTool === 'area') {
-      void areaMeasurement.create()
-      return
-    }
+    if (sectionSystem.click(e)) return
 
     aimAt(e)
-
-    // ── Clipper ───────────────────────────────────────────────────────────────
-    if (clipper.enabled) {
-      void clipper.create(world)
-      return
-    }
 
     // ── Element selection ─────────────────────────────────────────────────────
     void commitSelection()
   }
 
-  // Double-click: finish in-progress area polygon (needs ≥ 3 points already placed)
+  // Double-click: while measuring it finishes a path or an area.
   const onDoubleClick = (e: MouseEvent): void => {
-    if (activeMeasurementTool === 'area') {
-      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
-      return
-    }
+    if (measureSystem.doubleClick(e)) return
+    if (sectionSystem.isPlacing()) return
     // ── Walking: double-click is "go there" ───────────────────────────────────
     // Re-centring an orbit means nothing while you are standing in a room, and
     // crossing a building on foot is a minute of holding W. Aim at the floor of
@@ -1676,11 +2107,22 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   // Right-click: select the element under the cursor and surface a context menu.
-  // Suppressed while a measurement tool or the clipper is active so their own
-  // interactions aren't hijacked.
+  // While measuring it is the CAD "done" gesture instead: it finishes a path or
+  // an area when there is enough to finish, and otherwise drops the
+  // measurement being drawn. Never the browser's own menu over the canvas.
   const onContextMenu = (e: MouseEvent): void => {
+    if (measureSystem.isActive()) {
+      e.preventDefault()
+      if (measureSystem.getSnapshot().canFinish) measureSystem.finishDraft()
+      else measureSystem.cancelDraft()
+      return
+    }
+    if (sectionSystem.isPlacing()) {
+      e.preventDefault()
+      sectionSystem.cancelFacePlacement()
+      return
+    }
     if (modelObjects.size === 0) return
-    if (activeMeasurementTool !== 'none' || clipper.enabled) return
     e.preventDefault()
     aimAt(e)
     void (async () => {
@@ -1695,13 +2137,320 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     })()
   }
 
+  // ─── Measurement & sections (lib/measure) ─────────────────────────────────
+  //
+  // One picker for both: it tests every hit against the section planes (the
+  // GPU picker the old tools used ignores them, so a click on the inside of a
+  // cut measured the wall that had been cut away), and it snaps in screen
+  // pixels rather than @thatopen's fixed metre.
+  const snapResolver = ((): OBC.SnapResolver | null => {
+    try { return components.get(OBC.SnapResolvers).get() } catch { return null }
+  })()
+  const aimClient = (e: { clientX: number; clientY: number }): { x: number; y: number } => {
+    const locked = typeof document !== 'undefined' && document.pointerLockElement === canvas
+    return aimPoint(locked, canvas.getBoundingClientRect(), e.clientX, e.clientY)
+  }
+  const picker = createScenePicker({
+    canvas,
+    getCamera: () => world.camera.three,
+    getModels: function* () {
+      for (const [id, model] of modelObjects) {
+        if (modelHidden.has(id)) continue
+        yield [id, model] as [string, FRAGS.FragmentsModel]
+      }
+    },
+    getExtraTargets: () => {
+      const roots = new Set<THREE.Object3D>()
+      for (const m of modelObjects.values()) roots.add(m.object)
+      return [...world.meshes].filter((o) => !roots.has(o)) as THREE.Object3D[]
+    },
+    getClippingPlanes: () => wr.clippingPlanes,
+    getSnapResolver: () => snapResolver,
+  })
+
+  const measureSystem: MeasureSystem = createMeasureSystem({
+    scene: world.scene.three,
+    canvas,
+    getCamera: () => world.camera.three,
+    picker,
+    toModelCoordinates: (point, modelId) => {
+      // The picked model's own IFC frame: undo its placement in the scene, then
+      // the loader's coordination. That is the number on the drawings.
+      const pivot = modelId ? modelPivots.get(modelId) : undefined
+      if (!modelId || !pivot) return { coords: toIfcAxes(point), frame: 'scene' }
+      pivot.updateMatrixWorld(true)
+      const local = point.clone().applyMatrix4(pivot.matrixWorld.clone().invert())
+      const c = modelCoordination.get(modelId)
+      if (c) local.sub(new THREE.Vector3(c.x, c.y, c.z))
+      return { coords: toIfcAxes(local), frame: 'model' }
+    },
+    frameBox: (box) => {
+      try { void world.camera.controls.fitToBox(box, true) } catch (err) {
+        console.debug('[Viewer] measurement focus failed:', err instanceof Error ? err.message : err)
+      }
+    },
+    aim: aimClient,
+  })
+
+  // ── Poché: flat-filled cut solids ─────────────────────────────────────────
+  // A cut closed solid exposes its inside, i.e. its back faces. Rendering those
+  // double-sided and flat is the classic section fill without stencil caps.
+  // Shared by the section tool and Cover Studio, which must not stack patches:
+  // the presentation cut wins while it is up, and the section tool's fill comes
+  // back when it is lifted.
+  let sectionPoche: string | null = null
+  let presentationPoche: string | null = null
+  let appliedPoche: string | null = null
+
+  function patchPocheMaterial(mat: unknown, color: string, skipTransparent: boolean): void {
+    if (!(mat instanceof THREE.MeshLambertMaterial) || pochePatched.has(mat)) return
+    // Glass seen through glass would show its own back faces filled.
+    if (skipTransparent && (mat.transparent || mat.opacity < 1)) return
+    const c = new THREE.Color(color)
+    const fill = `vec4(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)}, 1.0)`
+    pochePatched.set(mat, { side: mat.side, onBeforeCompile: mat.onBeforeCompile, cacheKey: mat.customProgramCacheKey })
+    mat.side = THREE.DoubleSide
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>\n  if (!gl_FrontFacing) gl_FragColor = ${fill};`,
+      )
+    }
+    const key = `poche-${color}`
+    mat.customProgramCacheKey = () => key
+    mat.needsUpdate = true
+  }
+
+  function clearPoche(): void {
+    for (const [mat, orig] of pochePatched) {
+      mat.side = orig.side
+      mat.onBeforeCompile = orig.onBeforeCompile
+      mat.customProgramCacheKey = orig.cacheKey
+      mat.needsUpdate = true
+    }
+    pochePatched.clear()
+    appliedPoche = null
+  }
+
+  function applyPoche(color: string, skipTransparent: boolean): void {
+    for (const model of modelObjects.values()) {
+      model.object.traverse((o) => {
+        const mesh = o as THREE.Mesh
+        if (!mesh.isMesh) return
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        for (const mat of mats) patchPocheMaterial(mat, color, skipTransparent)
+      })
+    }
+    appliedPoche = color
+  }
+
+  function syncPoche(): void {
+    const want = presentationPoche ?? sectionPoche
+    if (want === appliedPoche) return
+    clearPoche()
+    if (want) applyPoche(want, presentationPoche === null)
+  }
+
+  // Materials created after the cut (streamed tiles, highlight materials) are
+  // filled too, or the poché would come and go as the camera moved.
+  try {
+    fragmentsManager.core.models.materials.list.onItemSet.add(({ value }) => {
+      if (appliedPoche) patchPocheMaterial(value, appliedPoche, presentationPoche === null)
+    })
+  } catch (err) {
+    console.debug('[Viewer] poché material hook unavailable:', err instanceof Error ? err.message : err)
+  }
+
+  const sectionSystem: SectionSystem = createSectionSystem({
+    scene: world.scene.three,
+    canvas,
+    container,
+    getCamera: () => world.camera.three,
+    picker,
+    setPlane: (active, plane) => { world.renderer!.setPlane(active, plane) },
+    getSceneBounds: () => {
+      const box = combinedModelsBox()
+      return box.isEmpty() ? null : box
+    },
+    getSelectionBounds: async () => {
+      if (selectedLocalId === null || !selectedModelId) return null
+      const model = modelObjects.get(selectedModelId)
+      if (!model) return null
+      try { return await model.getMergedBox([selectedLocalId]) } catch { return null }
+    },
+    setControlsEnabled: (enabled) => { world.camera.controls.enabled = enabled },
+    planesChanged: (final) => {
+      // Fragments cull streamed tiles against the planes too, so moving a cut
+      // must re-run the view or what it uncovers would stay missing.
+      if (final) void fragmentsManager.core.update(true)
+      else fragmentUpdates.request()
+    },
+    setPoche: (color) => { sectionPoche = color; syncPoche() },
+    lookAt: (position, target) => {
+      // A NaN handed to camera-controls poisons it for the session: nothing
+      // it is asked afterwards (framing included) brings the camera back.
+      const finite = [position.x, position.y, position.z, target.x, target.y, target.z].every(Number.isFinite)
+      if (!finite) return
+      try {
+        void world.camera.controls.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, true)
+      } catch (err) {
+        console.debug('[Viewer] section lookAt failed:', err instanceof Error ? err.message : err)
+      }
+    },
+    aim: aimClient,
+    isPointerBusy: () => measureSystem.isActive(),
+  })
+
+  // Dev handle, like __ifcLoad / __basemapTiles: lets a session inspect the
+  // measurement and section state (and drive the picker) without pixels.
+  if (import.meta.env.DEV) {
+    ;(globalThis as Record<string, unknown>).__measure = {
+      measure: measureSystem, sections: sectionSystem, picker,
+      camera: () => world.camera.three,
+      frame: () => { const b = combinedModelsBox(); if (!b.isEmpty()) void world.camera.controls.fitToBox(b, false) },
+      controls: () => world.camera.controls,
+      recordingCanvas: () => recording?.canvas ?? null,
+    }
+  }
+
+  // ── Recording surface ─────────────────────────────────────────────────────
+  // Copied right after each render (onAfterUpdate runs in the same task, while
+  // the WebGL buffer still holds the frame), then the labels are painted over.
+  // At most ~30 copies a second: the replay buffer samples at 24 fps, and a
+  // blit per 60 Hz frame would be half wasted.
+  let recording: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; holders: number; last: number } | null = null
+  /** Overlays that ride along in captures: data legend, and whatever comes next. */
+  const capturePainters = new Set<CapturePainter>()
+  const paintCaptureOverlays = (ctx: CanvasRenderingContext2D, w: number, h: number, sc: number): boolean => {
+    let drew = false
+    for (const p of capturePainters) {
+      try { drew = p(ctx, w, h, sc) || drew } catch (err) {
+        console.debug('[Viewer] capture overlay failed:', err instanceof Error ? err.message : err)
+      }
+    }
+    return drew
+  }
+  const RECORD_MIN_INTERVAL_MS = 1000 / 30
+  const paintRecordingFrame = (): void => {
+    const rec = recording
+    if (!rec) return
+    const now = performance.now()
+    if (now - rec.last < RECORD_MIN_INTERVAL_MS) return
+    const src = wr.domElement
+    if (src.width === 0 || src.height === 0) return
+    rec.last = now
+    if (rec.canvas.width !== src.width || rec.canvas.height !== src.height) {
+      rec.canvas.width = src.width
+      rec.canvas.height = src.height
+    }
+    try {
+      rec.ctx.drawImage(src, 0, 0)
+      const sc = src.width / Math.max(1, src.clientWidth || src.width)
+      measureSystem.paintLabels(rec.ctx, src.width, src.height, sc)
+      paintCaptureOverlays(rec.ctx, src.width, src.height, sc)
+    } catch (err) {
+      console.debug('[Viewer] recording frame failed:', err instanceof Error ? err.message : err)
+    }
+  }
+  function acquireRecordingCanvas(): { canvas: HTMLCanvasElement; release(): void } {
+    if (!recording) {
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, wr.domElement.width)
+      canvas.height = Math.max(1, wr.domElement.height)
+      const ctx = canvas.getContext('2d', { alpha: false })
+      if (!ctx) {
+        // No 2D context (exotic / headless): recording the WebGL canvas is the
+        // honest fallback — lines without labels beats no recording.
+        return { canvas: wr.domElement, release: () => undefined }
+      }
+      recording = { canvas, ctx, holders: 0, last: 0 }
+      world.renderer!.onAfterUpdate.add(paintRecordingFrame)
+    }
+    const rec = recording
+    rec.holders += 1
+    let released = false
+    return {
+      canvas: rec.canvas,
+      release: () => {
+        if (released || recording !== rec) return
+        released = true
+        rec.holders -= 1
+        if (rec.holders > 0) return
+        try { world.renderer!.onAfterUpdate.remove(paintRecordingFrame) } catch { /* disposed */ }
+        recording = null
+      },
+    }
+  }
+
+  // Storey levels are read once per set of visible models (and after a move).
+  let storeyLevelsCache: { key: string; levels: Level[] } | null = null
+
+  const onPointerLeave = (): void => { measureSystem.pointerLeave() }
+
   canvas.addEventListener('pointermove',  onPointerMove)
   canvas.addEventListener('pointerdown',  onPointerDown)
   canvas.addEventListener('pointerup',    onPointerUp)
+  canvas.addEventListener('pointerleave', onPointerLeave)
   canvas.addEventListener('dblclick',     onDoubleClick)
   canvas.addEventListener('contextmenu',  onContextMenu)
 
   // ─── Setup post-carga ─────────────────────────────────────────────────────
+
+  /**
+   * Hand the renderer's clipping planes to a model's own raycasting and culling.
+   *
+   * Fragments only honour the planes it is given, and nothing gave it any — so
+   * with a section in place, clicking the exposed inside of a cut SELECTED THE
+   * WALL THAT HAD BEEN CUT AWAY in front of it, and streamed tiles behind the
+   * cut kept being fetched. The getter is live: planes added, moved or removed
+   * later are read on the next raycast and the next view update.
+   */
+  function bindClippingPlanes(model: FRAGS.FragmentsModel): void {
+    try { model.getClippingPlanesEvent = () => wr.clippingPlanes } catch { /* older build */ }
+  }
+
+  /**
+   * World-space union of every loaded model's box, pivot transforms applied.
+   * Empty when nothing has geometry. Shared by frameAllModels and by unframed
+   * loads, which must retune the scene to ALL models without moving the camera.
+   */
+  function combinedModelsBox(): THREE.Box3 {
+    const combined = new THREE.Box3()
+    for (const [mid, model] of modelObjects) {
+      const box   = pivotLocalBox(model)
+      const pivot = modelPivots.get(mid)
+      if (box.isEmpty()) continue
+      if (pivot) {
+        pivot.updateMatrixWorld(true)
+        const m = pivot.matrixWorld
+        // Transform all 8 corners: a rotated/scaled pivot turns the box into an
+        // oriented box, and the AABB of just min+max would be wrong. (Same pattern
+        // as getModelBounds.)
+        const corners: THREE.Vector3[] = [
+          new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+          new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+          new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+          new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+          new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+          new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+          new THREE.Vector3(box.min.x, box.max.y, box.max.z),
+          new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+        ]
+        for (const v of corners) combined.expandByPoint(v.applyMatrix4(m))
+      } else {
+        combined.expandByPoint(box.min)
+        combined.expandByPoint(box.max)
+      }
+    }
+    return combined
+  }
+
+  interface SetupOptions {
+    signal?: AbortSignal
+    /** Default true: tune the scene to this model and fit the camera to it. */
+    frame?: boolean
+    onStage?: LoadFragmentsOptions['onStage']
+  }
 
   async function setupLoadedModel(
     model: FRAGS.FragmentsModel,
@@ -1709,11 +2458,28 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     fileName: string,
     fileSize: number,
     onProgress?: (pct: number) => void,
+    opts: SetupOptions = {},
   ): Promise<{ modelInfo: ModelInfo; modelObject: unknown; getElementInfo: (id: string) => SelectedInfo | null }> {
 
+    // Every await below yields to the rest of the app, which may cancel this
+    // load or remove the model outright (removeModel on an id it already
+    // knows). Carrying on would paint a disposed model and re-register the type
+    // map of a model nobody holds any more — so each await is a checkpoint, and
+    // the caller's compensation cleans up whatever was registered so far.
+    const checkpoint = (): void => {
+      throwIfLoadAborted(opts.signal)
+      if (modelObjects.get(modelId) !== model) {
+        throw new Error(`[Viewer] model "${modelId}" was removed while it was being set up`)
+      }
+    }
+
+    opts.onStage?.('setup', null)
+
     const categoryNames = await model.getCategories()
+    checkpoint()
     const regexes    = categoryNames.map((c) => new RegExp(`^${c}$`, 'i'))
     const byCategory = await model.getItemsOfCategories(regexes)
+    checkpoint()
 
     // Build a fresh per-model type map (never mutates a map from another model)
     const modelTypeMap = new Map<number, string>()
@@ -1733,35 +2499,36 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       categoryElements.set(canon, arr)
     }
 
-    // Register per-model map and update the current alias
+    // Register per-model map and update the current alias — but only while this
+    // model is still the active one. The alias must describe `currentModel`:
+    // if another load or setActiveModel took the focus during the awaits above,
+    // pointing the alias here would pair that model with this one's types.
     typeMapByModel.set(modelId, modelTypeMap)
-    expressIDToType = modelTypeMap
+    if (currentModelId === modelId) expressIDToType = modelTypeMap
 
     onProgress?.(80)
 
-    // Batch setColor/setOpacity by palette entry (≤25 calls instead of one per element)
-    const colorBatches:   Map<number, number[]> = new Map()
-    const opacityBatches: Map<number, number[]> = new Map()
-
-    for (const [localId, rawType] of expressIDToType.entries()) {
-      const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
-      if (!pal) continue
-      const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
-      if (pal.opacity !== undefined) {
-        const opKey = pal.opacity
-        const ob = opacityBatches.get(opKey) ?? []; ob.push(localId); opacityBatches.set(opKey, ob)
-      }
-    }
-
-    for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
-    for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+    // From here on read the LOCAL map, never the alias: every await lets a
+    // concurrent load reassign `expressIDToType`, and this model would then be
+    // painted, counted and labelled with another model's types.
+    await paintPalette(model, modelTypeMap)
+    checkpoint()
 
     onProgress?.(90)
 
-    const box = model.box
-    if (!box.isEmpty()) {
-      tuneSceneToBounds(box)
-      void world.camera.controls.fitToBox(box, true)
+    if (opts.frame !== false) {
+      const box = model.box
+      if (!box.isEmpty()) {
+        tuneSceneToBounds(box)
+        void world.camera.controls.fitToBox(box, true)
+      }
+    } else {
+      // Unframed (a federated member landing behind the one being looked at):
+      // leave the camera where the user put it, but size near/far/fog to the
+      // whole scene — tuned to the previous models alone, a model that lands
+      // beyond them would be clipped by `far` or buried in fog.
+      const all = combinedModelsBox()
+      if (!all.isEmpty()) tuneSceneToBounds(all)
     }
 
     void fragmentsManager.core.update()
@@ -1781,19 +2548,80 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const modelInfo: ModelInfo = {
       fileName,
       fileSize,
-      elementCount: expressIDToType.size,
+      elementCount: modelTypeMap.size,
       categories,
     }
 
+    // Closes over THIS model's map: the alias would answer for whichever model
+    // is active when a caller asks, which is not necessarily this one.
     const getElementInfo = (id: string): SelectedInfo | null => {
       const localId = parseInt(id, 10)
-      const rawType = expressIDToType.get(localId) ?? 'IFCELEMENT'
+      const rawType = modelTypeMap.get(localId) ?? 'IFCELEMENT'
       const canon   = canonicalType(rawType)
       const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${localId}`
       return { id, name, type: rawType, storey: '', modelId }
     }
 
     return { modelInfo, modelObject: model, getElementInfo }
+  }
+
+  /**
+   * Undo a loadFragments call that got its model from fragments but did not
+   * finish — cancelled during setup, or setup threw. Leaves the viewer as the
+   * call found it: no pivot in the scene, no entry in any per-model map, the
+   * fragments model disposed on both threads, and the focus back on the model
+   * that had it. Before this, a throwing setup left the model drawn in the
+   * scene and registered in every map, with no id handed to anyone who could
+   * remove it.
+   *
+   * Never throws: it runs on the way out of a failure the caller is about to
+   * rethrow, and must not replace that error with its own.
+   */
+  async function discardUncommittedLoad(
+    modelId: string,
+    model: FRAGS.FragmentsModel,
+    previousActiveId: string | null,
+  ): Promise<void> {
+    // The maps are keyed by id; only clear them if the id is still ours
+    // (removeModel may have run during setup, and a later load could in
+    // principle have reused the id since).
+    const ownsId = !modelObjects.has(modelId) || modelObjects.get(modelId) === model
+    if (ownsId) {
+      const pivot = modelPivots.get(modelId)
+      if (pivot) world.scene.three.remove(pivot)
+      modelPivots.delete(modelId)
+      pivotTransforms.delete(modelId)
+      modelObjects.delete(modelId)
+      modelCoordination.delete(modelId)
+      releaseDatumIfUnused()
+      typeMapByModel.delete(modelId)
+      modelHidden.delete(modelId)
+      if (hoveredModelId  === modelId) { hoveredLocalId  = null; hoveredModelId  = null }
+      if (selectedModelId === modelId) {
+        selectedLocalId = null
+        selectedModelId = null
+        try { removeSelectionBox() } catch { /* a helper box is not worth masking the load error */ }
+      }
+      overlay.forget(modelId)
+    }
+
+    // Hand the focus back — only if this model still has it. Something that
+    // moved it meanwhile (setActiveModel, removeModel's own promotion) wins.
+    if (currentModel === model) {
+      const nextId = pickActiveAfterDiscard(previousActiveId, modelObjects.keys())
+      currentModel    = nextId ? (modelObjects.get(nextId) ?? null) : null
+      currentModelId  = nextId
+      currentPivot    = nextId ? (modelPivots.get(nextId) ?? null) : null
+      expressIDToType = nextId ? (typeMapByModel.get(nextId) ?? new Map()) : new Map()
+    }
+
+    try {
+      await model.dispose()
+    } catch (err) {
+      log.warn(`discarding "${modelId}": dispose failed`, err)
+    }
+
+    void fragmentsManager.core.update()
   }
 
   async function teardownCurrentModel(): Promise<void> {
@@ -1814,6 +2642,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       await model.dispose()
     }
     modelObjects.clear()
+    modelCoordination.clear()
+    sceneDatum = null
     typeMapByModel.clear()
     modelHidden.clear()
 
@@ -1839,7 +2669,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const buffer = new Uint8Array(await file.arrayBuffer())
       onProgress?.(25)
 
-      const assignedId = `${file.name}-${Date.now()}`
+      const assignedId = mintModelId(file.name)
 
       let model: FRAGS.FragmentsModel
       try {
@@ -1861,82 +2691,142 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       currentModelId = assignedId
       currentPivot   = pivot
       modelObjects.set(assignedId, model)
+      bindClippingPlanes(model)
 
-      // Record whatever the loader did to this model's datum, rather than
-      // assuming it did nothing. The converter no longer translates models to
-      // the origin, so this is normally zero — but `loadIfc` still asks for
-      // coordination, and a library default can change under us again. Reading
-      // it once and handing it to whoever needs it is what stops that from
-      // silently misplacing every coordinate-registered thing in the scene.
-      try {
-        const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
-        if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
-          modelCoordination.set(assignedId, { x: t.x, y: t.y, z: t.z })
-        }
-      } catch {
-        // Older fragments build without the accessor. Absent beats invented:
-        // callers read null as "unknown" and leave positions alone.
-      }
+      await reconcileCoordination(assignedId, model)
       onProgress?.(60)
 
       return setupLoadedModel(model, assignedId, file.name, file.size, onProgress)
     },
 
-    async loadFragments(buffer, fileName, fileSize, onProgress) {
+    async loadFragments(buffer, fileName, fileSize, onProgress, options) {
+      const signal = options?.signal
+      throwIfLoadAborted(signal)
       await initPromise
+      // The first load waits here for the fragments worker (fetched when the
+      // viewer starts); a cancel that landed meanwhile must not start a parse.
+      throwIfLoadAborted(signal)
       // Do NOT teardown here — multiple models can coexist in the scene.
       // Use removeModel(modelId) for explicit unloading.
 
       onProgress?.(5)
-      const modelId = `${fileName}-${Date.now()}`
-
-      let model: FRAGS.FragmentsModel
-      try {
-        model = await fragmentsManager.core.load(buffer, {
-          modelId,
-          camera: world.camera.three,
-          onProgress: (event) => {
-            const stagePercent: Record<string, number> = {
-              decompressing: 20, parsing: 45, generating: 65, done: 75,
-            }
-            onProgress?.(stagePercent[event.stage] ?? 50)
-          },
-        })
-      } catch (err) {
-        console.error('[Viewer] loadFragments error:', err)
-        throw err
+      // The loading manager mints the id before the job starts, so it can abort
+      // and correlate the load; direct callers (the blog embed, the legacy
+      // loader) still get one minted here, in the same shape.
+      const modelId = options?.modelId ?? mintModelId(fileName)
+      if (modelObjects.has(modelId) || fragmentsManager.core.models.list.has(modelId)) {
+        // fragments keys its model list by id and would silently replace the
+        // loaded model's entry: two models drawn, one of them unreachable.
+        throw new Error(`[Viewer] loadFragments: model id "${modelId}" is already loaded`)
       }
 
-      const pivot = new THREE.Group()
-      pivot.name = `ifc-model-pivot-${modelId}`
-      world.scene.three.add(pivot)
-      pivot.add(model.object)
-      modelPivots.set(modelId, pivot)
-      pivotTransforms.set(modelId, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
+      // A progress listener is the caller's code; it must never fail the load
+      // (or, called from inside fragments' message handler, break fragments).
+      const stage = (s: LoadFragmentsStage, fraction: number | null): void => {
+        if (!options?.onStage) return
+        try { options.onStage(s, fraction) } catch (err) { log.warn('loadFragments onStage listener threw', err) }
+      }
 
-      currentModel   = model
-      currentModelId = modelId
-      currentPivot   = pivot
-      modelObjects.set(modelId, model)
+      // What a cancelled or failed load has to put back.
+      const previousActiveId = currentModelId
 
-      // Record whatever the loader did to this model's datum, rather than
-      // assuming it did nothing. The converter no longer translates models to
-      // the origin, so this is normally zero — but `loadIfc` still asks for
-      // coordination, and a library default can change under us again. Reading
-      // it once and handing it to whoever needs it is what stops that from
-      // silently misplacing every coordinate-registered thing in the scene.
+      // fragments' own cancel: the worker checks between its stages and rejects
+      // the pending load. It cannot interrupt a stage (inflate is one
+      // synchronous call) and is a no-op once the worker has finished — the
+      // checks after the await cover that window.
+      const onAbort = (): void => {
+        try { fragmentsManager.core.abort(modelId) } catch { /* nothing in flight */ }
+      }
+      signal?.addEventListener('abort', onAbort, { once: true })
+
+      let model: FRAGS.FragmentsModel | null = null
       try {
-        const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
-        if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
-          modelCoordination.set(modelId, { x: t.x, y: t.y, z: t.z })
+        try {
+          model = await fragmentsManager.core.load(buffer, {
+            modelId,
+            camera: world.camera.three,
+            onProgress: (event) => {
+              const stagePercent: Record<string, number> = {
+                decompressing: 20, parsing: 45, generating: 65, done: 75,
+              }
+              onProgress?.(stagePercent[event.stage] ?? 50)
+              // fragments' own 'done' is its worker finishing, not this call
+              // (see LoadFragmentsStage) — ours is reported after setup.
+              if (event.stage !== 'done') stage(event.stage, stageFraction(event.progress))
+            },
+          })
+        } catch (err) {
+          // fragments already disposed its partial model on both threads.
+          if (signal?.aborted || err instanceof FRAGS.LoadAbortedError || isFragmentsLoadAborted(err)) {
+            throw loadCancelledError()
+          }
+          log.error('loadFragments error:', err)
+          throw err
+        }
+        throwIfLoadAborted(signal)
+
+        const pivot = new THREE.Group()
+        pivot.name = `ifc-model-pivot-${modelId}`
+        world.scene.three.add(pivot)
+        pivot.add(model.object)
+        modelPivots.set(modelId, pivot)
+        pivotTransforms.set(modelId, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
+
+        currentModel   = model
+        currentModelId = modelId
+        currentPivot   = pivot
+        modelObjects.set(modelId, model)
+        bindClippingPlanes(model)
+
+        await reconcileCoordination(modelId, model)
+        throwIfLoadAborted(signal)
+
+        const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress, {
+          signal,
+          frame: options?.frame,
+          onStage: stage,
+        })
+        stage('done', 1)
+        return { ...result, modelId }
+      } catch (err) {
+        // A cancel can surface as any error from the call it interrupted; the
+        // signal is the truth. Either way nothing of this model may stay behind.
+        const cancelled = signal?.aborted === true || isAbortError(err)
+        if (model) {
+          if (!cancelled) log.error(`loadFragments: setup of "${modelId}" failed — model discarded:`, err)
+          await discardUncommittedLoad(modelId, model, previousActiveId)
+        }
+        if (cancelled) throw isAbortError(err) ? err : loadCancelledError()
+        throw err
+      } finally {
+        signal?.removeEventListener('abort', onAbort)
+      }
+    },
+
+    hasModel(modelId: string): boolean {
+      return modelObjects.has(modelId)
+    },
+
+    waitForModelIdle(modelId: string, timeoutMs: number, signal?: AbortSignal) {
+      return pollModelIdle(() => {
+        const model = modelObjects.get(modelId)
+        return model ? model.isBusy : null
+      }, { timeoutMs, signal })
+    },
+
+    getRenderStats(): RenderStats | null {
+      try {
+        const info = wr.info
+        return {
+          calls:      info.render.calls,
+          triangles:  info.render.triangles,
+          geometries: info.memory.geometries,
+          textures:   info.memory.textures,
+          programs:   info.programs?.length ?? 0,
         }
       } catch {
-        // Older fragments build without the accessor. Absent beats invented:
-        // callers read null as "unknown" and leave positions alone.
+        return null
       }
-
-      const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress)
-      return { ...result, modelId }
     },
 
     // ─── getItemData ─────────────────────────────────────────────────────────
@@ -1948,62 +2838,44 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (!targetModel) return null
 
       try {
-        const [data] = await targetModel.getItemsData([expressId], {
-          attributesDefault: false,
-          attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
-          relations: {
-            // Property sets + quantity sets (IfcPropertySet + IfcElementQuantity)
-            IsDefinedBy: {
-              attributes: true,
-              relations: true,
-            },
-            // Spatial containment — to extract storey name
-            ContainedInStructure: {
-              attributes: true,
-              relations: false,
-            },
-            // Suppress inverse relations we don't need
-            DefinesOccurrence: {
-              attributes: false,
-              relations: false,
-            },
-            // IFC4: type object and its property sets
-            IsTypedBy: {
-              attributes: true,
-              relations: true,
-            },
-            // Materials via IfcRelAssociatesMaterial
-            HasAssociations: {
-              attributes: true,
-              relations: true,
-            },
-          },
-        })
+        const [data] = await targetModel.getItemsData([expressId], ITEM_DATA_CONFIG)
 
         if (!data) return null
 
-        const raw = data as Record<string, unknown>
-        const { typeName, psets: typeProperties } = parseTypeProps(raw['IsTypedBy'])
-
-        return {
-          name:           attrStr(raw['Name']),
-          longName:       attrStr(raw['LongName']),
-          description:    attrStr(raw['Description']),
-          globalId:       attrStr(raw['GlobalId']),
-          objectType:     attrStr(raw['ObjectType']),
-          tag:            attrStr(raw['Tag']),
-          storey:         extractStorey(raw['ContainedInStructure']),
-          propertySets:   formatPsets(raw['IsDefinedBy']),
-          quantitySets:   formatQuantities(raw['IsDefinedBy']),
-          materials:      parseAssociations(raw['HasAssociations']),
-          typeProperties,
-          typeName,
-          raw,
-        }
+        return parseItemData(data as Record<string, unknown>)
       } catch (err) {
         console.warn('[Viewer] getItemData error:', err)
         return null
       }
+    },
+
+    async getElementsDetail(ids, modelId) {
+      const model = modelObjects.get(modelId)
+      if (!model) return ids.map((expressId) => ({ expressId, data: null, box: null }))
+      const out: Array<{ expressId: number; data: IFCItemData | null; box: { min: Vec3Like; max: Vec3Like } | null }> = []
+      const BATCH = 400
+      for (let i = 0; i < ids.length; i += BATCH) {
+        const chunk = ids.slice(i, i + BATCH)
+        let items: unknown[] = []
+        let boxes: THREE.Box3[] = []
+        try { items = await model.getItemsData(chunk, ITEM_DATA_CONFIG) } catch (e) { console.debug('[Viewer] getElementsDetail data:', e) }
+        try { boxes = await model.getBoxes(chunk) } catch (e) { console.debug('[Viewer] getElementsDetail boxes:', e) }
+        chunk.forEach((expressId, k) => {
+          const raw = items[k] as Record<string, unknown> | undefined
+          const b = boxes[k]
+          out.push({
+            expressId,
+            data: raw ? parseItemData(raw) : null,
+            box: b && !b.isEmpty()
+              ? { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z } }
+              : null,
+          })
+        })
+        // Yield between batches: indexing a 20 000-element model must not
+        // freeze the orbit controls.
+        await new Promise((r) => setTimeout(r, 0))
+      }
+      return out
     },
 
     resetCamera() {
@@ -2238,6 +3110,158 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async setPresentationLook(look) {
+      if (!sectionPrevPlanes) hidePresentationGrid(!!look?.hideGrid)
+      if (modelObjects.size === 0) return
+      for (const [modelId, model] of modelObjects) {
+        const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
+        await model.resetOpacity(undefined)
+        await model.resetColor(undefined)
+        if (!look) { await paintPalette(model, typeMap); continue }
+
+        const focus = new Set(look.focusTypes.map((t) => t.toUpperCase()))
+        const focusIds: number[] = []
+        const restIds: number[] = []
+        for (const [localId, rawType] of typeMap) {
+          const t = rawType.toUpperCase()
+          if (focus.has(t) || focus.has(canonicalType(rawType))) focusIds.push(localId)
+          else restIds.push(localId)
+        }
+        if (look.base === 'original') {
+          await paintPalette(model, new Map(restIds.map((id) => [id, typeMap.get(id)!])))
+        } else if (restIds.length) {
+          await model.setColor(restIds, new THREE.Color(look.baseColor))
+        }
+        if (restIds.length && look.baseOpacity < 0.999) await model.setOpacity(restIds, look.baseOpacity)
+        if (focusIds.length) {
+          if (look.focusColor) await model.setColor(focusIds, new THREE.Color(look.focusColor))
+          else await paintPalette(model, new Map(focusIds.map((id) => [id, typeMap.get(id)!])))
+        }
+      }
+      await fragmentsManager.core.update(true)
+    },
+
+    async setPresentationSection(section) {
+      const wr3 = world.renderer!.three
+      wr3.clippingPlanes = sectionPrevPlanes ?? wr3.clippingPlanes
+      sectionPrevPlanes = null
+      if (!section) {
+        // Hand the fill back to the section tool, if it has one up.
+        presentationPoche = null
+        syncPoche()
+        hidePresentationGrid(false)
+        void fragmentsManager.core.update(true)
+        return
+      }
+      // A cut is a drawing: the ground grid only adds noise to it.
+      hidePresentationGrid(true)
+
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(section.normal.x, section.normal.y, section.normal.z).normalize(),
+        new THREE.Vector3(section.point.x, section.point.y, section.point.z),
+      )
+      sectionPrevPlanes = wr3.clippingPlanes
+      wr3.clippingPlanes = [...wr3.clippingPlanes, plane]
+
+      // Poché for the cut (see patchPocheMaterial). Takes over from any section
+      // tool fill while the capture is set up.
+      presentationPoche = section.poche
+      syncPoche()
+      await fragmentsManager.core.update(true)
+    },
+
+    async captureExplodedLayers(layers, gap, scale = 1) {
+      const scene3 = world.scene.three
+      const wr3 = world.renderer!.three
+      const prevBg = scene3.background
+      const prevFog = scene3.fog
+      const prevClear = wr3.getClearAlpha()
+      const prevGrid = grid.visible
+      // Hide everything that isn't a model or a light (grid, OSM context,
+      // markers) so each layer is the storey alone on transparency.
+      const pivots = new Set<THREE.Object3D>(modelPivots.values())
+      for (const m of modelObjects.values()) pivots.add(m.object)
+      const hidden: THREE.Object3D[] = []
+      for (const child of scene3.children) {
+        if (pivots.has(child) || (child as THREE.Light).isLight || !child.visible) continue
+        child.visible = false
+        hidden.push(child)
+      }
+      scene3.background = null
+      scene3.fog = null
+      grid.visible = false
+      wr3.setClearAlpha(0)
+
+      const origY = new Map<string, number>()
+      for (const [mid, m] of modelObjects) origY.set(mid, m.object.position.y)
+      const allIds = (mid: string) => [...(typeMapByModel.get(mid)?.keys() ?? [])]
+      const out: string[] = []
+      try {
+        for (let i = 0; i < layers.length; i++) {
+          const wanted = new Map(layers[i].map((l) => [l.modelId, l.ids]))
+          for (const [mid, m] of modelObjects) {
+            if (modelHidden.has(mid)) continue
+            const all = allIds(mid)
+            if (all.length) await m.setVisible(all, false)
+            const ids = wanted.get(mid)
+            if (ids?.length) await m.setVisible(ids, true)
+            m.object.position.y = (origY.get(mid) ?? 0) + i * gap
+            m.object.updateMatrixWorld(true)
+          }
+          await fragmentsManager.core.update(true)
+          await new Promise((r) => setTimeout(r, 250))
+          try { world.camera.controls.update(0) } catch { /* no controls */ }
+          out.push(withRenderScale(scale, () => {
+            wr3.render(scene3, world.camera.three)
+            return wr3.domElement.toDataURL('image/png')
+          }))
+        }
+      } finally {
+        for (const [mid, m] of modelObjects) {
+          m.object.position.y = origY.get(mid) ?? 0
+          m.object.updateMatrixWorld(true)
+          if (modelHidden.has(mid)) continue
+          const all = allIds(mid)
+          if (all.length) await m.setVisible(all, true)
+        }
+        for (const o of hidden) o.visible = true
+        scene3.background = prevBg
+        scene3.fog = prevFog
+        grid.visible = prevGrid
+        wr3.setClearAlpha(prevClear)
+        await fragmentsManager.core.update(true)
+      }
+      return out
+    },
+
+    setLighting(light) {
+      if (!light) {
+        hemi.color.copy(defaultLighting.sky)
+        hemi.groundColor.copy(defaultLighting.ground)
+        hemi.intensity = defaultLighting.ambient
+        dir.color.copy(defaultLighting.key)
+        dir.intensity = defaultLighting.keyIntensity
+        dir.position.copy(defaultLighting.keyPos)
+        fill.color.copy(defaultLighting.fill)
+        fill.intensity = defaultLighting.fillIntensity
+        fill.position.copy(defaultLighting.fillPos)
+        return
+      }
+      const az = (light.azimuth * Math.PI) / 180
+      const el = (Math.max(2, Math.min(88, light.elevation)) * Math.PI) / 180
+      const r = defaultLighting.keyPos.length()
+      hemi.color.set(light.sky)
+      hemi.groundColor.set(light.ground)
+      hemi.intensity = light.ambient
+      dir.color.set(light.key)
+      dir.intensity = light.keyIntensity
+      dir.position.set(Math.sin(az) * Math.cos(el) * r, Math.sin(el) * r, Math.cos(az) * Math.cos(el) * r)
+      // The fill comes from the other side, lower, so the shadow side never goes flat black.
+      fill.color.set(light.fill)
+      fill.intensity = light.fillIntensity
+      fill.position.set(-Math.sin(az) * r * 0.8, r * 0.3, -Math.cos(az) * r * 0.8)
+    },
+
     setSelectCallback(cb) { selectCallback = cb },
 
     setContextMenuCallback(cb) { contextMenuCallback = cb },
@@ -2256,43 +3280,91 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // ─── Camera presets ───────────────────────────────────────────────────────
 
-    setCameraPreset(preset: CameraPreset) {
-      const box = currentModel?.box ?? new THREE.Box3(
-        new THREE.Vector3(-10, -10, -10),
-        new THREE.Vector3(10,  10,  10),
-      )
-      const center = new THREE.Vector3()
-      const size   = new THREE.Vector3()
-      box.getCenter(center)
-      box.getSize(size)
+    getFramingItems(opts?: CameraPresetOptions) {
+      const items: FramingItem[] = []
+      for (const [mid, model] of modelObjects) {
+        const box = pivotLocalBox(model)
+        if (box.isEmpty()) continue
+        const world = box.clone()
+        const pivot = modelPivots.get(mid)
+        if (pivot) {
+          pivot.updateMatrixWorld(true)
+          // Box3.applyMatrix4 transforms all 8 corners, so a rotated pivot
+          // still yields a correct world AABB.
+          world.applyMatrix4(pivot.matrixWorld)
+        }
+        items.push({
+          id: mid,
+          kind: 'model',
+          groupId: opts?.groupIdOf?.[mid] ?? null,
+          visible: !modelHidden.has(mid) && model.object.visible,
+          box: { min: world.min.clone(), max: world.max.clone() },
+        })
+      }
+      if (pointCloudInstance) {
+        const ids = opts?.visibleCloudIds
+        if (ids) {
+          for (const id of ids) {
+            const b = pointCloudInstance.getBounds(id)
+            if (b) items.push({ id, kind: 'cloud', groupId: opts?.groupIdOf?.[id] ?? null, visible: true, box: { min: b.min, max: b.max } })
+          }
+        } else {
+          const b = pointCloudInstance.getBounds()
+          if (b) items.push({ id: 'clouds', kind: 'cloud', groupId: null, visible: true, box: { min: b.min, max: b.max } })
+        }
+      }
+      return items
+    },
 
-      // Apply pivot offset so camera targets the transformed model
-      if (currentPivot) {
-        center.add(new THREE.Vector3(
-          currentPivot.position.x,
-          currentPivot.position.y,
-          currentPivot.position.z,
+    frameItems(ids: ReadonlyArray<string>, opts?: CameraPresetOptions) {
+      const want = new Set(ids)
+      const framing = resolveFraming({
+        items: this.getFramingItems({ ...opts, visibleCloudIds: [...want] })
+          .filter((i) => want.has(i.id))
+          .map((i) => ({ ...i, visible: true })),
+        activeModelId: null,
+        scope: 'all',
+      })
+      if (!framing) return false
+      const box = new THREE.Box3(
+        new THREE.Vector3(framing.box.min.x, framing.box.min.y, framing.box.min.z),
+        new THREE.Vector3(framing.box.max.x, framing.box.max.y, framing.box.max.z),
+      )
+      void world.camera.controls.fitToBox(box, true)
+      return true
+    },
+
+    setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions) {
+      const framing = resolveFraming({
+        items: this.getFramingItems(opts),
+        activeModelId: currentModelId,
+        scope: opts?.scope ?? 'auto',
+      })
+      if (!framing) return null
+
+      const cam = world.camera.three
+      const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
+      const aspect = cam instanceof THREE.PerspectiveCamera
+        ? cam.aspect
+        : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9)
+      const { position, target } = presetPose(framing.box, preset, fov, aspect)
+
+      // Retune near/far/fog to the whole visible scene, not just the framed
+      // part: narrowing the shot must not clip the other site out of existence.
+      const all = resolveFraming({ items: this.getFramingItems(opts), activeModelId: currentModelId, scope: 'all' })
+      if (all) {
+        tuneSceneToBounds(new THREE.Box3(
+          new THREE.Vector3(all.box.min.x, all.box.min.y, all.box.min.z),
+          new THREE.Vector3(all.box.max.x, all.box.max.y, all.box.max.z),
         ))
       }
 
-      const d = Math.max(size.x, size.y, size.z, 4) * 1.6
-
-      const OFFSETS: Record<CameraPreset, [number, number, number]> = {
-        iso:    [d,  d * 0.75, d],
-        top:    [0,  d * 2.2,  0.001],
-        bottom: [0, -d * 2.2,  0.001],
-        front:  [0,  0,         d * 2],
-        back:   [0,  0,        -d * 2],
-        left:   [-d * 2, 0,    0],
-        right:  [d * 2,  0,    0],
-      }
-      const [ox, oy, oz] = OFFSETS[preset]
-
       void world.camera.controls.setLookAt(
-        center.x + ox, center.y + oy, center.z + oz,
-        center.x,       center.y,      center.z,
-        true,
+        position.x, position.y, position.z,
+        target.x,   target.y,   target.z,
+        opts?.animate !== false,
       )
+      return framing
     },
 
     // ─── Model transform ──────────────────────────────────────────────────────
@@ -2324,6 +3396,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivotTransforms.set(tid, stored)
       void fragmentsManager.core.update()
       refreshSelectionBox()
+      // Snap geometry is cached in WORLD space: a moved model would snap to
+      // where it used to be.
+      try { snapResolver?.clear() } catch { /* ok */ }
+      storeyLevelsCache = null
     },
 
     setSatelliteResolver(fn) { satelliteResolver = fn },
@@ -2338,6 +3414,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivotTransforms.set(tid, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
       void fragmentsManager.core.update()
       refreshSelectionBox()
+      try { snapResolver?.clear() } catch { /* ok */ }
+      storeyLevelsCache = null
     },
 
     getModelBounds(modelId?: string) {
@@ -2345,7 +3423,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
       const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
       if (!model || !pivot) return null
-      const box = model.box
+      const box = pivotLocalBox(model)
       if (box.isEmpty()) return null
 
       pivot.updateMatrixWorld(true)
@@ -2388,7 +3466,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
       const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
       if (!model || !pivot) return null
-      const box = model.box
+      const box = pivotLocalBox(model)
       if (box.isEmpty()) return null
 
       pivot.updateMatrixWorld(true)
@@ -2421,33 +3499,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     frameAllModels() {
       if (modelObjects.size === 0) return
-      const combined = new THREE.Box3()
-      for (const [mid, model] of modelObjects) {
-        const box   = model.box
-        const pivot = modelPivots.get(mid)
-        if (box.isEmpty()) continue
-        if (pivot) {
-          pivot.updateMatrixWorld(true)
-          const m = pivot.matrixWorld
-          // Transform all 8 corners: a rotated/scaled pivot turns the box into an
-          // oriented box, and the AABB of just min+max would be wrong. (Same pattern
-          // as getModelBounds.)
-          const corners: THREE.Vector3[] = [
-            new THREE.Vector3(box.min.x, box.min.y, box.min.z),
-            new THREE.Vector3(box.max.x, box.min.y, box.min.z),
-            new THREE.Vector3(box.min.x, box.max.y, box.min.z),
-            new THREE.Vector3(box.max.x, box.max.y, box.min.z),
-            new THREE.Vector3(box.min.x, box.min.y, box.max.z),
-            new THREE.Vector3(box.max.x, box.min.y, box.max.z),
-            new THREE.Vector3(box.min.x, box.max.y, box.max.z),
-            new THREE.Vector3(box.max.x, box.max.y, box.max.z),
-          ]
-          for (const v of corners) combined.expandByPoint(v.applyMatrix4(m))
-        } else {
-          combined.expandByPoint(box.min)
-          combined.expandByPoint(box.max)
-        }
-      }
+      const combined = combinedModelsBox()
       if (!combined.isEmpty()) {
         tuneSceneToBounds(combined)
         void world.camera.controls.fitToBox(combined, true)
@@ -2555,9 +3607,19 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       pivotTransforms.delete(modelId)
 
-      await model.dispose()
+      // A dispose that throws (worker already gone, a tile half-deleted) must
+      // not strand the model in the maps: it is out of the scene already, and
+      // the callers go on to drop it from every store. Leaving it here made
+      // the id look loaded forever, and every loop over the loaded models
+      // (raycast, filters, framing) kept visiting a disposed one.
+      try {
+        await model.dispose()
+      } catch (err) {
+        log.error(`removeModel: dispose of "${modelId}" failed — dropping it anyway:`, err)
+      }
       modelObjects.delete(modelId)
       modelCoordination.delete(modelId)
+      releaseDatumIfUnused()
       typeMapByModel.delete(modelId)
       modelHidden.delete(modelId)
 
@@ -2580,7 +3642,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     frameActiveModel() {
       if (!currentModel) return
-      const box = currentModel.box
+      const box = currentPivot ? pivotLocalBox(currentModel) : currentModel.box
       if (box.isEmpty()) return
       // If the model has a pivot transform, compute the world-space box
       if (currentPivot) {
@@ -2631,24 +3693,33 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const aspect  = isPersp
           ? (cam as THREE.PerspectiveCamera).aspect
           : container.clientWidth / Math.max(1, container.clientHeight)
+        const ortho = cam as THREE.OrthographicCamera
         return {
           position:  { x: pos.x, y: pos.y, z: pos.z },
           target:    { x: tgt.x, y: tgt.y, z: tgt.z },
           direction: { x: dir.x, y: dir.y, z: dir.z },
           fovDeg,
           aspect,
+          ...(isPersp ? {} : { orthoWorldHeight: (ortho.top - ortho.bottom) / Math.max(1e-9, ortho.zoom) }),
         }
       } catch {
         return null
       }
     },
 
-    setCameraLookAt(position: Vec3Like, target: Vec3Like) {
+    setCameraLookAt(position: Vec3Like, target: Vec3Like, animate = true) {
       void world.camera.controls.setLookAt(
         position.x, position.y, position.z,
         target.x, target.y, target.z,
-        true,
+        animate,
       )
+      if (!animate) {
+        // Land the jump now and re-cull fragments for the new view; otherwise
+        // the camera only moves on the next frame and a snapshot taken before it
+        // renders with tiles streamed for the old viewpoint (half a building).
+        try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+        void fragmentsManager.core.update(true)
+      }
     },
 
     async getElementsBox(ids: number[], modelId?: string) {
@@ -2670,26 +3741,63 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       applyBackground(settings)
     },
 
-    takeSnapshot(): string {
+    takeSnapshot(scale = 1, options: { annotations?: boolean } = {}): string {
+      const annotations = options.annotations !== false
       // The WebGL drawing buffer is cleared after compositing
       // (preserveDrawingBuffer is off), so reading pixels outside the render
       // loop yields a black PNG. Force a synchronous render into the buffer
       // and read it back in the same task.
+      // Apply any pending camera-controls state (an instant setLookAt only lands
+      // on the next update) so the frame shows the camera that was asked for.
+      try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+      // Hidden for this one render only; the next frame shows them again.
+      const restoreHandles = sectionSystem.hideForCapture()
+      const restoreMeasures = annotations ? null : measureSystem.hideForCapture()
       try {
-        const pp = postproductionReady ? world.renderer?.postproduction : null
-        if (pp?.enabled && pp.composer) {
-          pp.composer.render()
-        } else {
-          wr.render(world.scene.three, world.camera.three)
-        }
-      } catch {
-        try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
+        return withRenderScale(scale, () => {
+          try {
+            const pp = postproductionReady ? world.renderer?.postproduction : null
+            if (pp?.enabled && pp.composer) {
+              pp.composer.render()
+            } else {
+              wr.render(world.scene.three, world.camera.three)
+            }
+          } catch {
+            try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
+          }
+          try {
+            const frame = wr.domElement
+            if (annotations) {
+              // Copy the frame in the same task (the buffer is not preserved),
+              // then paint the measurement labels over it.
+              const out = document.createElement('canvas')
+              out.width = frame.width
+              out.height = frame.height
+              const ctx = out.getContext('2d')
+              if (ctx) {
+                ctx.drawImage(frame, 0, 0)
+                const s = frame.width / Math.max(1, frame.clientWidth || frame.width)
+                const labels = measureSystem.paintLabels(ctx, out.width, out.height, s)
+                const overlays = paintCaptureOverlays(ctx, out.width, out.height, s)
+                if (labels || overlays) return out.toDataURL('image/png')
+              }
+            }
+            return frame.toDataURL('image/png')
+          } catch {
+            return ''
+          }
+        })
+      } finally {
+        restoreHandles()
+        restoreMeasures?.()
       }
-      try {
-        return wr.domElement.toDataURL('image/png')
-      } catch {
-        return ''
-      }
+    },
+
+    acquireRecordingCanvas,
+
+    addCapturePainter(paint) {
+      capturePainters.add(paint)
+      return () => { capturePainters.delete(paint) }
     },
 
     getCanvas(): HTMLCanvasElement | null {
@@ -2716,191 +3824,66 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // ─── Measurements ─────────────────────────────────────────────────────────
 
-    setMeasurementTool(tool: 'none' | 'length' | 'area') {
-      // Deactivate all tools first
-      try { lengthMeasurement.endCreation() } catch { /* in-progress creation — ok */ }
-      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
-
-      lengthMeasurement.enabled = false
-      areaMeasurement.enabled   = false
-      activeMeasurementTool     = tool
-
-      if (tool === 'length') {
-        lengthMeasurement.enabled = true
-        canvas.style.cursor = 'crosshair'
-      } else if (tool === 'area') {
-        areaMeasurement.enabled = true
-        canvas.style.cursor = 'crosshair'
-      } else {
-        canvas.style.cursor = 'default'
-      }
+    getMeasure() {
+      return measureSystem
     },
 
     clearMeasurements() {
-      // DataSet<T> extends Set<T> — iterate and remove each item so the
-      // Measurement class receives onBeforeDelete events to clean up 3D objects.
-      try {
-        for (const item of [...lengthMeasurement.list]) {
-          try { lengthMeasurement.list.delete(item) } catch { /* ok */ }
-        }
-      } catch { /* ok */ }
-      try {
-        for (const item of [...areaMeasurement.list]) {
-          try { areaMeasurement.list.delete(item) } catch { /* ok */ }
-        }
-      } catch { /* ok */ }
+      measureSystem.setTool('none')
+      measureSystem.clear()
     },
 
-    deleteLastMeasurement() {
-      try {
-        if (activeMeasurementTool === 'length') {
-          const items = [...lengthMeasurement.list]
-          const last = items[items.length - 1]
-          if (last) lengthMeasurement.list.delete(last)
-        } else if (activeMeasurementTool === 'area') {
-          const items = [...areaMeasurement.list]
-          const last = items[items.length - 1]
-          if (last) areaMeasurement.list.delete(last)
-        }
-      } catch (err) {
-        console.debug('[Viewer] deleteLastMeasurement:', err)
-      }
+    // ─── Sections ─────────────────────────────────────────────────────────────
+
+    getSections() {
+      return sectionSystem
     },
 
-    getMeasurementCount(): { length: number; area: number } {
-      return {
-        length: lengthMeasurement.list.size,
-        area:   areaMeasurement.list.size,
-      }
-    },
-
-    getMeasurements(): Array<{ id: string; type: 'length' | 'area'; value: number }> {
-      const out: Array<{ id: string; type: 'length' | 'area'; value: number }> = []
-      try {
-        let i = 0
-        for (const item of lengthMeasurement.list) {
-          try { out.push({ id: `length-${i++}`, type: 'length', value: item.value ?? 0 }) } catch { /* skip */ }
-        }
-        i = 0
-        for (const item of areaMeasurement.list) {
-          try { out.push({ id: `area-${i++}`, type: 'area', value: item.value ?? 0 }) } catch { /* skip */ }
-        }
-      } catch { /* ok */ }
-      return out
-    },
-
-    finishCurrentMeasurement(): void {
-      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
-    },
-
-    // ─── Clipping planes ───────────────────────────────────────────────────────
-
-    startAddClipPlane() {
-      // Remove any stale one-shot listener before registering a fresh one
-      if (onAfterCreateHandler) {
-        try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-        onAfterCreateHandler = null
-      }
-      clipper.enabled = true
-      canvas.style.cursor = 'crosshair'
-      // Auto-deactivate and fire UI callback after the first plane is placed
-      onAfterCreateHandler = (_plane: OBC.SimplePlane) => {
-        try { clipper.enabled = false } catch { /* ok */ }
-        canvas.style.cursor = 'default'
-        if (onAfterCreateHandler) {
-          try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-          onAfterCreateHandler = null
-        }
-        if (clipCreationCallback) {
-          const cb = clipCreationCallback
-          clipCreationCallback = null
-          try { cb() } catch (e) { console.debug('[Viewer] clipCreationCallback threw:', e) }
-        }
-      }
-      clipper.onAfterCreate.add(onAfterCreateHandler)
-    },
-
-    stopAddClipPlane() {
-      clipper.enabled = false
-      canvas.style.cursor = 'default'
-      if (onAfterCreateHandler) {
-        try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-        onAfterCreateHandler = null
-      }
-      clipCreationCallback = null
-    },
-
-    setClipCreationCallback(cb: (() => void) | null) {
-      clipCreationCallback = cb
-    },
-
-    async deleteClipPlane(id?: string) {
-      try {
-        if (id !== undefined && id !== '') {
-          const plane = clipper.list.get(id)
-          if (plane) {
-            // dispose() removes from scene; list.delete() removes from registry
-            try { plane.dispose() } catch (e) { console.debug('[Viewer] plane.dispose:', e) }
-            try { clipper.list.delete(id) } catch (e) { console.debug('[Viewer] list.delete:', e) }
+    async getStoreyLevels() {
+      const key = [...modelObjects.keys()].filter((id) => !modelHidden.has(id)).join('|')
+      if (storeyLevelsCache?.key === key) return storeyLevelsCache.levels
+      const all: Level[] = []
+      for (const [modelId, model] of modelObjects) {
+        if (modelHidden.has(modelId)) continue
+        try {
+          const ids = Object.values(await model.getItemsOfCategories([/BUILDINGSTOREY/])).flat()
+          if (ids.length === 0) continue
+          const data = await model.getItemsData(ids, {
+            attributesDefault: true,
+            relationsDefault: { attributes: false, relations: false },
+          }) as Array<Record<string, { value?: unknown } | undefined>>
+          const raw: RawStorey[] = []
+          for (let i = 0; i < ids.length; i++) {
+            const d = data[i] ?? {}
+            const name = String(d.Name?.value ?? d.LongName?.value ?? `#${ids[i]}`)
+            const e = Number(d.Elevation?.value)
+            let contentMinY: number | null = null
+            try {
+              const children = await model.getItemsChildren([ids[i]])
+              if (children.length) {
+                const b = await model.getMergedBox(children)
+                if (!b.isEmpty()) contentMinY = b.min.y
+              }
+            } catch { /* no spatial children: elevation alone */ }
+            raw.push({ name, elevation: Number.isFinite(e) ? e : null, contentMinY })
           }
-        } else {
-          // No id — delete the one under cursor (raycasting)
-          await clipper.delete(world)
+          const pivot = modelPivots.get(modelId)
+          const box = pivotLocalBox(model)
+          if (pivot) { pivot.updateMatrixWorld(true); box.applyMatrix4(pivot.matrixWorld) }
+          all.push(...calibrateLevels(raw, box.min.y, box.max.y))
+        } catch (err) {
+          console.debug('[Viewer] storey levels unavailable:', err instanceof Error ? err.message : err)
         }
-      } catch (err) {
-        console.debug('[Viewer] deleteClipPlane:', err)
       }
-    },
-
-    clearClipPlanes() {
-      try {
-        clipper.deleteAll()
-      } catch (err) {
-        // deleteAll may throw on empty list in some OBC versions
-        console.debug('[Viewer] clearClipPlanes:', err)
-      }
-    },
-
-    toggleClipPlane(id: string, enabled: boolean) {
-      try {
-        const plane = clipper.list.get(id)
-        if (plane) plane.enabled = enabled
-      } catch (err) {
-        console.debug('[Viewer] toggleClipPlane:', err)
-      }
-    },
-
-    getClipPlanes() {
-      const result: { id: string; enabled: boolean; title: string }[] = []
-      try {
-        let index = 0
-        for (const [id, plane] of clipper.list) {
-          index++
-          const enabled = typeof plane?.enabled === 'boolean' ? plane.enabled : true
-          const title   = (typeof plane?.title === 'string' && plane.title.trim())
-            ? plane.title.trim()
-            : `Plane ${index}`
-          result.push({ id, enabled, title })
-        }
-      } catch (err) {
-        console.debug('[Viewer] getClipPlanes:', err)
-      }
-      return result
+      const levels = mergeLevels(all)
+      storeyLevelsCache = { key, levels }
+      return levels
     },
 
     cleanupSectionAndPlans() {
-      // Remove all clip planes
-      try { clipper.deleteAll() } catch { /* ok */ }
-      // Stop any in-progress clip creation
-      try {
-        clipper.enabled = false
-        canvas.style.cursor = 'default'
-        if (onAfterCreateHandler) {
-          try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-          onAfterCreateHandler = null
-        }
-        clipCreationCallback = null
-      } catch { /* ok */ }
+      // Every plane and the box go, and any face placement in progress.
+      try { sectionSystem.cancelFacePlacement() } catch { /* ok */ }
+      try { sectionSystem.clear() } catch { /* ok */ }
       // Close any open storey view
       try { views.close() } catch { /* ok */ }
       // Restore perspective orbit camera mode
@@ -3137,6 +4120,39 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return videoLoadPromise
     },
 
+    peekPointClouds() {
+      return pointCloudInstance
+    },
+
+    getVectorLayers() {
+      const self = this
+      vectorLoadPromise ??= import('./layers/vector-layer-system').then((m) => m.createVectorLayerSystem({
+        scene: world.scene.three,
+        getActiveCamera: () => world.camera.three,
+        getCanvas: () => self.getCanvas(),
+        frameBox: (min, max) => {
+          try {
+            const box = new THREE.Box3(min, max)
+            tuneSceneToBounds(box.clone())
+            // Routes and zones are read from above: keeping the current camera
+            // direction (fitToBox) frames a 1 km route edge-on from eye level.
+            // An oblique ~55° view from the south shows the layout AND heights.
+            const c = box.getCenter(new THREE.Vector3())
+            const size = box.getSize(new THREE.Vector3())
+            const d = Math.max(size.x, size.z, size.y * 2) * 0.9
+            void world.camera.controls.setLookAt(c.x, c.y + d * 0.82, c.z + d * 0.57, c.x, c.y, c.z, true)
+          } catch (e) {
+            console.debug('[Viewer] vector layer fit failed:', e instanceof Error ? e.message : e)
+          }
+        },
+      }))
+      return vectorLoadPromise
+    },
+
+    mapGroundAt(x, z) {
+      return geoSystemInstance?.groundAtWorld(x, z) ?? null
+    },
+
     getPointClouds() {
       // Dynamic import keeps the point cloud engine, its shader and its readers
       // in their own chunk: a user who never opens a scan never downloads them.
@@ -3212,6 +4228,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       canvas.removeEventListener('pointermove',  onPointerMove)
       canvas.removeEventListener('pointerdown',  onPointerDown)
       canvas.removeEventListener('pointerup',    onPointerUp)
+      canvas.removeEventListener('pointerleave', onPointerLeave)
       canvas.removeEventListener('dblclick',     onDoubleClick)
       canvas.removeEventListener('contextmenu',  onContextMenu)
       // Window-level, so nothing else here would have caught it: without this
@@ -3221,9 +4238,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       world.camera.controls.removeEventListener('control', onCameraControl)
       world.camera.controls.removeEventListener('rest', onCameraRest)
       fragmentUpdates.dispose()
-      try { lengthMeasurement.dispose() } catch { /* ok */ }
-      try { areaMeasurement.dispose() } catch { /* ok */ }
-      try { clipper.dispose() } catch { /* ok */ }
+      if (recording) {
+        try { world.renderer!.onAfterUpdate.remove(paintRecordingFrame) } catch { /* ok */ }
+        recording = null
+      }
+      try { measureSystem.dispose() } catch { /* ok */ }
+      try { sectionSystem.dispose() } catch { /* ok */ }
+      clearPoche()
       bgTexture?.dispose()
       bgTexture = null
       components.dispose()

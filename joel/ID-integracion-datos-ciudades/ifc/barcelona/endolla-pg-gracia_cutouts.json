@@ -1,0 +1,67 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.169485,
+   "lat": 41.388421,
+   "height": 70.4
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "charging pedestal 1",
+    "lon": 2.16945173,
+    "lat": 41.38839492,
+    "bearing": 136.8,
+    "s": [
+     -0.62,
+     0.62
+    ],
+    "t": [
+     -0.36,
+     0.3
+    ],
+    "z": [
+     0.06,
+     1.9
+    ]
+   },
+   {
+    "name": "charging pedestal 2",
+    "lon": 2.16947713,
+    "lat": 41.38837448,
+    "bearing": 136.8,
+    "s": [
+     -0.62,
+     0.62
+    ],
+    "t": [
+     -0.36,
+     0.3
+    ],
+    "z": [
+     0.06,
+     1.9
+    ]
+   },
+   {
+    "name": "feeder pillar",
+    "lon": 2.16941549,
+    "lat": 41.38837914,
+    "bearing": 136.8,
+    "s": [
+     -0.55,
+     0.55
+    ],
+    "t": [
+     -0.32,
+     0.36
+    ],
+    "z": [
+     0.06,
+     1.7
+    ]
+   }
+  ]
+ }
+}

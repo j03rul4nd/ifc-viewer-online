@@ -275,7 +275,10 @@ function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | str
       creator: { '@type': 'Organization', name: image.credit },
       copyrightNotice: image.credit,
     } : {}),
-    ...(image.license ? { license: image.license } : {}),
+    // Google's image-metadata report wants license + acquireLicensePage as a
+    // pair. Our own renders and covers fall back to the site terms.
+    license: image.license ?? `${SITE}/terms/`,
+    acquireLicensePage: `${SITE}/terms/`,
     ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
   }))
 }
@@ -691,7 +694,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
               description: video.description,
               thumbnailUrl: mediaUrl(video.thumbnailUrl),
               contentUrl: mediaUrl(video.contentUrl),
-              uploadDate: video.uploadDate,
+              // Google wants a full ISO 8601 datetime with a timezone.
+              uploadDate: /T/.test(video.uploadDate) ? video.uploadDate : `${video.uploadDate}T00:00:00+00:00`,
               duration: video.duration,
               embedUrl: canonical,
             }

@@ -7,7 +7,12 @@
     "removeFailed": "ไม่สามารถนำโมเดลออกได้: {{message}}",
     "urlLoadFailed": "ไม่สามารถโหลดโมเดลที่เชื่อมโยงได้: {{message}}",
     "mapFailed": "ไม่สามารถเปิดโหมดแผนที่ได้: {{message}}",
-    "scanLoadFailed": "ไม่สามารถโหลดข้อมูลสแกนจากลิงก์ได้: {{message}}"
+    "scanLoadFailed": "ไม่สามารถโหลดข้อมูลสแกนจากลิงก์ได้: {{message}}",
+    "loadFailedNamed": "ไม่สามารถโหลด \"{{fileName}}\" ได้ — {{reason}}",
+    "batchLoaded_other": "{{name}} — โหลดแล้ว {{count}} โมเดล",
+    "batchPartial": "{{name}} — โหลดแล้ว {{loaded}} รายการ ล้มเหลว {{failed}} รายการ",
+    "dropUnsupported_other": "ไฟล์ {{count}} ไฟล์มีรูปแบบที่ไม่รองรับ",
+    "dropBcfHint": "เปิดแผง BCF เพื่อนำเข้าไฟล์ .bcf"
   },
   "validation": {
     "complete": "การตรวจสอบเสร็จสิ้น — พบ {{count}} ปัญหา",

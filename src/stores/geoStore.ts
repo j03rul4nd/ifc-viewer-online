@@ -13,15 +13,18 @@ import { createLogger } from '../lib/logger'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from '../lib/geo/terrain-look'
 import type { FeatureKind } from '../lib/geo/osm-features'
 import type { FeatureLayerVisibility } from '../lib/geo/geo-system'
+import type { FrameVerdict, SceneReport } from '../lib/geo/scene-budget'
 import type { BuildingDetail, ContextTone } from '../lib/geo/building-mesh'
+import { clampLookTuning, DEFAULT_LOOK_TUNING, type LookTuning } from '../lib/geo/map-look'
 import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
+import { consumeMapCrashFlag, safeMapOverrides } from '../lib/geo/map-crash-guard'
 
 const log = createLogger('GeoStore')
 
 /** Empty per-layer counts — the shape `buildingsCounts` always has. */
 const NO_FEATURE_COUNTS: Record<FeatureKind, number> = {
   building: 0, water: 0, green: 0, sand: 0, rock: 0,
-  tree: 0, bridge: 0, road: 0, rail: 0, signal: 0, pier: 0,
+  tree: 0, bridge: 0, road: 0, rail: 0, signal: 0, pier: 0, furniture: 0, barrier: 0,
 }
 
 /**
@@ -36,7 +39,18 @@ const clearedBuildingsResult = {
   buildingsEstimated: 0,
   buildingsTruncated: false,
   buildingsOverture: 0,
+  buildingsFallback: false,
 }
+
+/** The transient health of the built scene — cleared with the map. */
+const clearedSceneHealth = {
+  sceneReport:   null,
+  perf:          null,
+  autoDowngrade: null,
+  hideMode:      false,
+}
+
+export type GeoPanelMode = 'basic' | 'advanced'
 
 // ── localStorage keys (versioned) ──────────────────────────────────────────────
 
@@ -50,9 +64,13 @@ const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 const LS_DETAIL        = 'ifc-geo-detail:v1'
 const LS_TONE          = 'ifc-geo-context-tone:v1'
+const LS_LOOK          = 'ifc-geo-map-look:v1'
+const LS_LOOK_TUNE     = 'ifc-geo-look-tuning:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
 const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 const LS_HIDDEN        = 'ifc-geo-hidden-features:v1'
+const LS_PANEL_MODE    = 'ifc-geo-panel-mode:v1'
+const LS_ADAPTIVE      = 'ifc-geo-adaptive-quality:v1'
 
 /**
  * How many hand-hidden features are remembered.
@@ -83,6 +101,14 @@ function readContextDetail(): BuildingDetail {
  * because it IS separate: a showcase view with a discreet street behind the
  * model is a perfectly ordinary thing to want.
  */
+function readLookTuning(): LookTuning {
+  try {
+    const raw = lsGet(LS_LOOK_TUNE)
+    if (raw) return clampLookTuning(JSON.parse(raw) as Partial<LookTuning>)
+  } catch { /* corrupt — defaults */ }
+  return { ...DEFAULT_LOOK_TUNING }
+}
+
 function readContextTone(): ContextTone {
   return lsGet(LS_TONE) === 'neutral' ? 'neutral' : 'natural'
 }
@@ -94,6 +120,8 @@ function readFeatureLayers(): FeatureLayerVisibility {
     tree: true, bridge: true, road: true, rail: true, pier: true,
     // Off by default: a junction full of masts is a choice, not a default.
     signal: false,
+    // Mapped furniture and barriers are data like the rest, and small.
+    furniture: true, barrier: true,
   }
   const raw = lsGet(LS_LAYERS)
   if (!raw) return fallback
@@ -246,6 +274,10 @@ interface GeoStore {
   /** How much of a surrounding facade to model (persisted). */
   contextDetail: BuildingDetail
   contextTone: ContextTone
+  /** Art direction id (lib/geo/map-look.ts MAP_LOOKS). */
+  mapLook: string
+  /** User fine-tuning on top of the look: multipliers, 1 = as designed. */
+  lookTuning: LookTuning
   /** Decorative cars and trains (persisted). Invented placement — off by default. */
   vehicles: boolean
   /**
@@ -275,6 +307,8 @@ interface GeoStore {
    * nobody's data.
    */
   buildingsOverture: number
+  /** The surroundings were built from vector tiles because Overpass failed. */
+  buildingsFallback: boolean
   georefByModel: Record<string, GeorefExtraction>
   /** EFFECTIVE placement driving the geoRoot transform. */
   placement: GeoPlacement | null
@@ -287,6 +321,36 @@ interface GeoStore {
   /** Tile-failure degraded banner. */
   degraded: boolean
   panelOpen: boolean
+  /**
+   * Which face of the panel is showing (persisted). 'basic' is four presets
+   * and the handful of switches that change the picture most; 'advanced' is
+   * every control, grouped. Same state underneath — the mode is only a view.
+   */
+  panelMode: GeoPanelMode
+  /** What the last scene build produced (transient; geo-system reports it). */
+  sceneReport: SceneReport | null
+  /** The map's frame watch, once per second while on (transient). */
+  perf: FrameVerdict | null
+  /**
+   * Step the detail level down on its own when the scene stays slow
+   * (persisted, ON by default). The user can always put it back, and a level
+   * they restored is never auto-lowered again in the same session.
+   */
+  adaptiveQuality: boolean
+  /** Set when adaptive quality stepped the detail down, so the panel can offer it back. */
+  autoDowngrade: { from: BuildingDetail; to: BuildingDetail } | null
+  /** Levels the user restored after an automatic step-down (session only). */
+  autoDowngradeBlocked: BuildingDetail[]
+  /** The triangle budget was lifted for this session. */
+  budgetLifted: boolean
+  /**
+   * While true a click on the surroundings strikes that feature out instead of
+   * inspecting it. A MODE rather than a button on the inspector card, because
+   * "get this mass out of my view" is one decision, not three clicks. Never
+   * persisted: leaving the app in a state where clicking the map deletes
+   * things, across a reload, is a trap.
+   */
+  hideMode: boolean
 
   // ── Actions ───────────────────────────────────────────────────────────────────
   startEnable: () => number
@@ -312,12 +376,15 @@ interface GeoStore {
       estimated?: number
       truncated?: boolean
       overture?: number
+      fallback?: boolean
     },
   ) => void
   /** Toggle one OSM layer (persisted). */
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
   setContextDetail: (d: BuildingDetail) => void
   setContextTone: (t: ContextTone) => void
+  setMapLook: (id: string) => void
+  setLookTuning: (patch: Partial<LookTuning>) => void
   setVehicles: (v: boolean) => void
   setSuppressContext: (v: boolean) => void
   /** Strike out one mapped feature. Idempotent on id. */
@@ -337,11 +404,34 @@ interface GeoStore {
   setAttributions: (a: string[]) => void
   setDegraded: (v: boolean) => void
   setPanelOpen: (v: boolean) => void
+  setPanelMode: (m: GeoPanelMode) => void
+  setSceneReport: (r: SceneReport | null) => void
+  setPerf: (v: FrameVerdict | null) => void
+  setAdaptiveQuality: (v: boolean) => void
+  setAutoDowngrade: (d: { from: BuildingDetail; to: BuildingDetail } | null) => void
+  blockAutoDowngrade: (level: BuildingDetail) => void
+  setBudgetLifted: (v: boolean) => void
+  setHideMode: (v: boolean) => void
   /** Full reset on navigate-to-landing (parallels sceneStore.clearScene). */
   resetForScene: () => void
 }
 
 // ── Store ───────────────────────────────────────────────────────────────────────
+
+/**
+ * Safe map mode: the previous session's map enable never disarmed the crash
+ * guard (iOS killed the page). Heavy layers start off for THIS session only —
+ * localStorage is not rewritten, so the user's choices come back next time.
+ */
+const SAFE_MAP = consumeMapCrashFlag()
+if (SAFE_MAP) {
+  setTimeout(() => {
+    void import('./toastStore').then((m) => m.useToastStore.getState().addToast({
+      message: 'The 3D map was too heavy for this device last time — heavy layers are off for this session.',
+      severity: 'warning',
+    })).catch(() => { /* best effort */ })
+  }, 0)
+}
 
 export const useGeoStore = create<GeoStore>()(
   devtools(
@@ -349,7 +439,7 @@ export const useGeoStore = create<GeoStore>()(
       mapMode:        'off' as MapMode,
       mapErrorKey:    null,
       epoch:          0,
-      baseLayerId:    lsGet(LS_LAYER) ?? 'osm',
+      baseLayerId:    lsGet(LS_LAYER) ?? 'vt-standard',
       termsAccepted:  readTerms(),
       consentGiven:   lsGet(LS_CONSENT) === '1',
       terrainEnabled: false,
@@ -357,18 +447,21 @@ export const useGeoStore = create<GeoStore>()(
       terrainStyle:   readTerrainStyle(),
       terrainExaggeration: readTerrainExaggeration(),
       terrainLook:    readTerrainLook(),
-      buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
+      buildingsEnabled:   !SAFE_MAP && lsGet(LS_BUILDINGS) === '1',
       buildingsStatus:    'idle' as const,
       buildingsCounts:    NO_FEATURE_COUNTS,
       buildingsEstimated: 0,
-      featureLayers:      readFeatureLayers(),
-      contextDetail:      readContextDetail(),
+      featureLayers:      SAFE_MAP ? safeMapOverrides(readFeatureLayers()).featureLayers : readFeatureLayers(),
+      contextDetail:      SAFE_MAP ? 'simple' : readContextDetail(),
       contextTone:        readContextTone(),
-      vehicles:           lsGet(LS_VEHICLES) === '1',
+      mapLook:            lsGet(LS_LOOK) ?? 'daylight',
+      lookTuning:         readLookTuning(),
+      vehicles:           !SAFE_MAP && lsGet(LS_VEHICLES) === '1',
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       hiddenFeatures:     readHiddenFeatures(),
       buildingsTruncated: false,
       buildingsOverture: 0,
+      buildingsFallback: false,
       georefByModel:  {},
       placement:      null,
       editing:        false,
@@ -376,6 +469,14 @@ export const useGeoStore = create<GeoStore>()(
       attributions:   [],
       degraded:       false,
       panelOpen:      false,
+      panelMode:      lsGet(LS_PANEL_MODE) === 'advanced' ? 'advanced' : 'basic',
+      sceneReport:    null,
+      perf:           null,
+      adaptiveQuality: lsGet(LS_ADAPTIVE) !== '0',
+      autoDowngrade:  null,
+      autoDowngradeBlocked: [],
+      budgetLifted:   false,
+      hideMode:       false,
 
       startEnable: () => {
         const s = get()
@@ -427,6 +528,7 @@ export const useGeoStore = create<GeoStore>()(
             ...clearedBuildingsResult,
             attributions:   [],
             degraded:       false,
+            ...clearedSceneHealth,
           }),
           false,
           'disable',
@@ -496,6 +598,7 @@ export const useGeoStore = create<GeoStore>()(
             buildingsEstimated: result.estimated ?? 0,
             buildingsTruncated: result.truncated ?? false,
             buildingsOverture: result.overture ?? 0,
+            buildingsFallback: result.fallback ?? false,
           }),
           false,
           'setBuildingsResult',
@@ -540,6 +643,15 @@ export const useGeoStore = create<GeoStore>()(
         set({ contextDetail: d }, false, 'setContextDetail')
       },
 
+      setLookTuning: (patch) => {
+        const next = clampLookTuning({ ...get().lookTuning, ...patch })
+        lsSet(LS_LOOK_TUNE, JSON.stringify(next))
+        set({ lookTuning: next }, false, 'setLookTuning')
+      },
+      setMapLook: (id) => {
+        lsSet(LS_LOOK, id)
+        set({ mapLook: id }, false, 'setMapLook')
+      },
       setContextTone: (t) => {
         lsSet(LS_TONE, t)
         set({ contextTone: t }, false, 'setContextTone')
@@ -636,6 +748,49 @@ export const useGeoStore = create<GeoStore>()(
       setPanelOpen: (v) =>
         set({ panelOpen: v }, false, 'setPanelOpen'),
 
+      setPanelMode: (m) => {
+        lsSet(LS_PANEL_MODE, m)
+        set({ panelMode: m }, false, 'setPanelMode')
+      },
+
+      setSceneReport: (r) =>
+        set({ sceneReport: r }, false, 'setSceneReport'),
+
+      setPerf: (v) =>
+        set(
+          (s) => {
+            // Once a second while the map is on: re-render only on a change
+            // the panel can show.
+            if (v && s.perf && v.fps === s.perf.fps && v.slow === s.perf.slow) return s
+            return { ...s, perf: v }
+          },
+          false,
+          'setPerf',
+        ),
+
+      setAdaptiveQuality: (v) => {
+        lsSet(LS_ADAPTIVE, v ? '1' : '0')
+        set({ adaptiveQuality: v }, false, 'setAdaptiveQuality')
+      },
+
+      setAutoDowngrade: (d) =>
+        set({ autoDowngrade: d }, false, 'setAutoDowngrade'),
+
+      blockAutoDowngrade: (level) =>
+        set(
+          (s) => (s.autoDowngradeBlocked.includes(level)
+            ? s
+            : { ...s, autoDowngradeBlocked: [...s.autoDowngradeBlocked, level] }),
+          false,
+          'blockAutoDowngrade',
+        ),
+
+      setBudgetLifted: (v) =>
+        set({ budgetLifted: v }, false, 'setBudgetLifted'),
+
+      setHideMode: (v) =>
+        set({ hideMode: v }, false, 'setHideMode'),
+
       resetForScene: () =>
         set(
           (s) => ({
@@ -653,6 +808,7 @@ export const useGeoStore = create<GeoStore>()(
             attributions:   [],
             degraded:       false,
             panelOpen:      false,
+            ...clearedSceneHealth,
           }),
           false,
           'resetForScene',

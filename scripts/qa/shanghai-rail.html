@@ -1,0 +1,21 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estaciones de Shanghai · revisión 3D</title>
+<style>body{margin:0;overflow:hidden;font:14px system-ui;background:#b9cbd5;color:#183443}aside{position:fixed;z-index:2;top:12px;left:12px;padding:16px;background:#fffffff0;border-radius:12px;max-width:300px;max-height:35vh;overflow:auto}h1{font-size:19px;margin:0 0 12px}button{padding:8px;margin:2px;border:1px solid #abc;border-radius:5px;cursor:pointer}p{font-size:12px;line-height:1.4}canvas{display:block}</style>
+<aside><h1>Estaciones de Shanghai</h1><button id="hongqiao">Hongqiao</button><button id="south">Shanghai Sur</button><button id="section">Sección de vías</button><button id="train">Trenes</button><p>Huellas y vías: © OpenStreetMap, ODbL. Arquitectura de referencia aproximada; trenes decorativos. La sección oculta los edificios para revisar los andenes.</p><p id="stats">Cargando…</p></aside>
+<script type="module">
+import * as T from 'three';import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0xb9cbd5);renderer.toneMapping=T.ACESFilmicToneMapping;document.body.append(renderer.domElement);
+const scene=new T.Scene(),camera=new T.PerspectiveCamera(42,innerWidth/innerHeight,.1,8000);camera.up.set(0,0,1);const controls=new OrbitControls(camera,renderer.domElement);scene.add(new T.HemisphereLight(0xe8f4ff,0x68766a,2));const sun=new T.DirectionalLight(0xfff0dd,3);sun.position.set(-150,-200,400);scene.add(sun);
+const ground=new T.Mesh(new T.PlaneGeometry(6000,6000),new T.MeshStandardMaterial({color:0xa9b5ad}));ground.position.z=-.1;scene.add(ground);
+let root=null,data=null,name='hongqiao',token=0;
+function view(eye,target){camera.position.set(...eye);controls.target.set(...target);controls.update()}
+async function load(which){const t=++token;document.querySelector('#stats').textContent='Preparando geometría…';const d=await(await fetch(`/.tmp/shanghai-rail/${which}/mesh.json`)).json();if(t!==token)return;
+ if(root){scene.remove(root);root.traverse(o=>{o.geometry?.dispose();o.material?.dispose()})}root=new T.Group();data=d;name=which;
+ for(const item of d.meshes){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(item.vertices.flat(),3));g.setAttribute('color',new T.Float32BufferAttribute(item.colors.flatMap(c=>c.slice(0,3)),3));g.computeVertexNormals();const m=new T.Mesh(g,new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:.65}));m.name=item.name;root.add(m)}scene.add(root);view(which==='south'?[260,-330,220]:[530,-650,450],[0,0,12]);window.railQA={ready:true,name,root,renderer};}
+document.querySelector('#hongqiao').onclick=()=>load('hongqiao');document.querySelector('#south').onclick=()=>load('south');
+function section(){root?.children.forEach(m=>{if(m.name==='Station architecture')m.visible=false})}
+document.querySelector('#section').onclick=()=>{section();view([120,-200,90],[0,-70,1])};
+document.querySelector('#train').onclick=()=>{section();const cab=data.meshes.find(m=>m.name==='osm-train-cabs');const v=cab?.vertices;if(!v)return;const stride=cab.instanceVertices;const centers=[];for(let i=0;i<v.length;i+=stride){const p=v.slice(i,i+stride);centers.push([0,1,2].map(k=>p.reduce((s,x)=>s+x[k],0)/p.length))}centers.sort((a,b)=>a[0]**2+a[1]**2-b[0]**2-b[1]**2);const c=centers[0];view([c[0]+28,c[1]-35,c[2]+18],c)};
+await load(name);let frames=0,start=performance.now();function tick(){requestAnimationFrame(tick);controls.update();renderer.render(scene,camera);frames++;if(performance.now()-start>1000){document.querySelector('#stats').textContent=`${Math.round(frames*1000/(performance.now()-start))} FPS · ${renderer.info.render.triangles.toLocaleString()} triángulos · ${renderer.info.render.calls} llamadas`;frames=0;start=performance.now()}}tick();
+onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};
+</script></html>
+

@@ -1,0 +1,79 @@
+{
+  "endolla-f": {
+    "file": "endolla-f.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 5.8,
+    "heightM": 2.11
+  },
+  "endolla-ff": {
+    "file": "endolla-ff.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 10.8,
+    "heightM": 2.11
+  },
+  "endolla-fff": {
+    "file": "endolla-fff.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 15.8,
+    "heightM": 2.11
+  },
+  "endolla-ffff": {
+    "file": "endolla-ffff.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 20.8,
+    "heightM": 2.11
+  },
+  "endolla-h": {
+    "file": "endolla-h.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 5.8,
+    "heightM": 2.74
+  },
+  "endolla-hh": {
+    "file": "endolla-hh.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 10.8,
+    "heightM": 2.74
+  },
+  "endolla-hf": {
+    "file": "endolla-hf.glb",
+    "kind": "place",
+    "lengthM": 3.72,
+    "widthM": 10.8,
+    "heightM": 2.74
+  },
+  "endolla-p": {
+    "file": "endolla-p.glb",
+    "kind": "place",
+    "lengthM": 1.52,
+    "widthM": 3.0,
+    "heightM": 1.54
+  },
+  "endolla-pp": {
+    "file": "endolla-pp.glb",
+    "kind": "place",
+    "lengthM": 1.52,
+    "widthM": 5.2,
+    "heightM": 1.54
+  },
+  "endolla-ppp": {
+    "file": "endolla-ppp.glb",
+    "kind": "place",
+    "lengthM": 1.52,
+    "widthM": 7.4,
+    "heightM": 1.54
+  },
+  "endolla-parking": {
+    "file": "endolla-parking.glb",
+    "kind": "place",
+    "lengthM": 0.5,
+    "widthM": 0.9,
+    "heightM": 2.7
+  }
+}

@@ -50,6 +50,8 @@ export interface NetworkWay {
    */
   sourceId?: string
   points: ReadonlyArray<THREE.Vector2>
+  elevations?: ReadonlyArray<number>
+  smooth?: boolean
   /** Half the carriageway width, in the same units as `points`. */
   halfWidth: number
   tone: [number, number, number]
@@ -72,6 +74,8 @@ export interface NetworkWay {
 
 /** A node-to-node stretch of carriageway, already pulled back from its ends. */
 export interface RoadRibbon {
+  startNode: THREE.Vector2
+  endNode: THREE.Vector2
   /** Identity of THIS piece of geometry — unique, and not a feature id. */
   id: string
   /** Identity of the FEATURE it was cut from. See `NetworkWay.sourceId`. */
@@ -101,6 +105,10 @@ export interface RoadRibbon {
 
 /** The surface that fills a node where three or more carriageways meet. */
 export interface RoadJunctionSurface {
+  /** Actual incident features; proximity is insufficient at stacked crossings. */
+  sourceIds: string[]
+  /** Open arm boundaries, which must never acquire a wall or railing. */
+  mouths: Array<[THREE.Vector2, THREE.Vector2]>
   at: THREE.Vector2
   /** CCW polygon, star-shaped about `at`, ready to fan-triangulate. */
   polygon: THREE.Vector2[]
@@ -220,6 +228,7 @@ class NodeIndex {
   readonly positions: THREE.Vector2[] = []
   /** How many way-vertices landed on each node. */
   readonly uses: number[] = []
+  private readonly elevations: Array<number | undefined> = []
 
   constructor(private readonly snap: number) {}
 
@@ -228,7 +237,7 @@ class NodeIndex {
   }
 
   /** Node id for a point, creating one when nothing sits within `snap`. */
-  add(p: THREE.Vector2): number {
+  add(p: THREE.Vector2, elevation?: number): number {
     const ix = Math.floor(p.x / this.snap)
     const iy = Math.floor(p.y / this.snap)
     const snapSq = this.snap * this.snap
@@ -237,6 +246,8 @@ class NodeIndex {
         const bucket = this.cells.get(this.key(ix + dx, iy + dy))
         if (!bucket) continue
         for (const id of bucket) {
+          const existing = this.elevations[id]
+          if (elevation !== undefined && existing !== undefined && Math.abs(existing-elevation)>this.snap*3) continue
           if (this.positions[id].distanceToSquared(p) <= snapSq) {
             this.uses[id]++
             return id
@@ -246,6 +257,7 @@ class NodeIndex {
     }
     const id = this.positions.length
     this.positions.push(p.clone())
+    this.elevations.push(elevation)
     this.uses.push(1)
     const k = this.key(ix, iy)
     const bucket = this.cells.get(k)
@@ -268,7 +280,7 @@ class NodeIndex {
 function splitWays(ways: ReadonlyArray<NetworkWay>, index: NodeIndex): RawEdge[] {
   // Pass 1 registers every vertex, so `uses` is complete before we decide where
   // to cut. Node ids are stable, so pass 2 re-reads them for free.
-  const nodeIds: number[][] = ways.map((w) => w.points.map((p) => index.add(p)))
+  const nodeIds: number[][] = ways.map((w) => w.points.map((p,i) => index.add(p,w.elevations?.[i])))
 
   const edges: RawEdge[] = []
   ways.forEach((way, wi) => {
@@ -660,7 +672,7 @@ export function buildRoadNetwork(
   // `points`, and smoothing afterwards would leave each of them describing a
   // centreline that no longer exists.
   for (const e of edges) {
-    e.points = smoothCurve(e.points, ways[e.wayIndex].halfWidth)
+    if (ways[e.wayIndex].smooth !== false) e.points = smoothCurve(e.points, ways[e.wayIndex].halfWidth)
   }
 
   // Half-edges per node: the local picture the solver needs.
@@ -758,8 +770,28 @@ export function buildRoadNetwork(
   const drawn = new Set<number>()
   edges.forEach((e, i) => {
     const way = ways[e.wayIndex]
-    const centre = trimPolyline(e.points, trimStart[i], trimEnd[i])
+    let centre = trimPolyline(e.points, trimStart[i], trimEnd[i])
     if (!centre) return
+
+    // A two-vertex OSM segment still needs stations inside its width transition.
+    // Sample only the flare, keeping long constant-width spans inexpensive.
+    if (flareStart[i] > 0 || flareEnd[i] > 0) {
+      const lengths = arcLengths(centre)
+      const total = lengths[lengths.length - 1]
+      const stations = new Set(lengths)
+      for (const [target, reverse] of [[flareStart[i], false], [flareEnd[i], true]] as const) {
+        if (!(target > 0)) continue
+        const reach = Math.min(total, TAPER_WIDTHS * target)
+        for (let s = 1; s <= 12; s++) stations.add(reverse ? total - reach * s / 12 : reach * s / 12)
+      }
+      const original = centre
+      centre = [...stations].sort((a, b) => a - b).map((s) => {
+        let i = 1
+        while (i < lengths.length - 1 && lengths[i] < s) i++
+        const t = (s - lengths[i - 1]) / Math.max(1e-15, lengths[i] - lengths[i - 1])
+        return original[i - 1].clone().lerp(original[i], t)
+      })
+    }
 
     const cum = arcLengths(centre)
     const halfWidths = new Array<number>(centre.length).fill(way.halfWidth)
@@ -772,6 +804,7 @@ export function buildRoadNetwork(
 
     const { left, right, joins } = mitredBorders(centre, halfWidths)
     const ribbon: RoadRibbon = {
+      startNode: e.points[0].clone(), endNode: e.points[e.points.length-1].clone(),
       id: `${way.id}#${i}`,
       sourceId: way.sourceId ?? way.id,
       centre, halfWidths, left, right, joins,
@@ -831,6 +864,7 @@ function closeJunction(
   const { at, sorted, need, fillets } = node
   const k = sorted.length
   const polygon: THREE.Vector2[] = []
+  const mouths: Array<[THREE.Vector2, THREE.Vector2]> = []
 
   for (let i = 0; i < k; i++) {
     const arm = sorted[i]
@@ -856,6 +890,7 @@ function closeJunction(
       )
     }
 
+    mouths.push([polygon[polygon.length - 2].clone(), polygon[polygon.length - 1].clone()])
     const f = fillets[i]
     // Keep only a fillet genuinely on this wedge's side of the node; a meeting
     // behind it belongs to the opposite wedge and would fold the polygon.
@@ -882,6 +917,11 @@ function closeJunction(
     (best, s, i) => (s.halfWidth > sorted[best].halfWidth ? i : best), 0,
   )
   return {
+    sourceIds: [...new Set(sorted.map((arm) => {
+      const way = ways[edges[arm.edge].wayIndex]
+      return way.sourceId ?? way.id
+    }))],
+    mouths,
     at: at.clone(),
     polygon: ordered,
     tone: ways[edges[sorted[widestArm].edge].wayIndex].tone,

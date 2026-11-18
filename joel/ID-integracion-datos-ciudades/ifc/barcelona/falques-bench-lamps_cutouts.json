@@ -1,0 +1,49 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.167819,
+   "lat": 41.389942,
+   "height": 72.92
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "Banc-fanal 1",
+    "lon": 2.167819,
+    "lat": 41.389942,
+    "bearing": -43.1,
+    "s": [
+     -2.3,
+     2.3
+    ],
+    "t": [
+     -1.05,
+     0.8
+    ],
+    "z": [
+     0.06,
+     7.6
+    ]
+   },
+   {
+    "name": "Banc-fanal 2",
+    "lon": 2.16753404,
+    "lat": 41.390172,
+    "bearing": -43.1,
+    "s": [
+     -2.3,
+     2.3
+    ],
+    "t": [
+     -1.05,
+     0.8
+    ],
+    "z": [
+     0.59,
+     8.13
+    ]
+   }
+  ]
+ }
+}

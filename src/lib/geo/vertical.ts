@@ -455,7 +455,13 @@ export function resolveStructureElevationM(
     // room for BOTH, and this is the only place `LAYER_SEPARATION_M` is
     // legitimate — separating levels already known to be stacked.
     const extra = Math.max(0, (ctx.stackedLevels ?? 1) - 1) * LAYER_SEPARATION_M
-    return { offsetM: ctx.crossingClearanceM + extra, confidence: 'inferred' }
+    const clearance = ctx.crossingClearanceM + extra
+    // A mapped deck height remains useful when a ground-level road crosses it.
+    // Layer numbering alone must not launch the Lujiazui ring above that height.
+    if (tags.heightM !== null && tags.heightM > MAX_STRUCTURE_DEPTH_M && tags.heightM >= clearance) {
+      return { offsetM: tags.heightM, confidence: 'tagged' }
+    }
+    return { offsetM: clearance, confidence: 'inferred' }
   }
 
   // ── 2b. TAGGED HEIGHT, where it cannot mean anything else ───────────────────

@@ -37,6 +37,7 @@ import { buildCertifyPayload } from '../lib/certify/build-payload'
 import { sha256Hex } from '../lib/certify/canonical'
 import { modelRegistry } from '../lib/model-registry'
 import { buildBadgeMarkdown } from '../lib/share-report'
+import { SheetGrip } from './mobile/SheetGrip'
 
 type ExportFormat = 'json' | 'csv' | 'certificate' | 'bcf' | 'delivery' | 'cobie'
 type Severity = 'error' | 'warning' | 'info'
@@ -514,7 +515,7 @@ export default function ValidationExportModal({
           (flex) rather than via translate on the modal itself, because
           framer-motion writes an inline `transform` for the scale/y animation
           that would otherwise clobber any `-translate-x/y-1/2` centering. */}
-      <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div className="m-sheet-host fixed inset-0 z-[80] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
@@ -527,9 +528,10 @@ export default function ValidationExportModal({
           exit={{ opacity: 0, scale: 0.97, y: 8 }}
           transition={{ duration: 0.18 }}
           role="dialog" aria-modal="true" aria-label={t('export.title')}
-          className="relative z-[81] w-[440px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,14,18,0.98)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+          className="m-sheet relative z-[81] w-[440px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,14,18,0.98)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
+        <SheetGrip onClose={onClose} />
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
           <div className="flex items-center gap-2">

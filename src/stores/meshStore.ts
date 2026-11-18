@@ -35,7 +35,17 @@ interface MeshStore {
   activeMeshId: string | null
   panelOpen: boolean
   maxTriangles: number
-  /** Cancellation token — bumped whenever an import is dropped. */
+  /**
+   * The CLEAR epoch — bumped by clearMeshes() only, never by removeMesh().
+   *
+   * It used to be bumped on every removal, and every import in flight used it
+   * as its cancellation token. So removing ANY row — a finished one, an errored
+   * one, an id that was not even there — made every sibling still decoding
+   * throw its result away as 'cancelled' without touching its own row, which
+   * then sat at 'loading' forever. A single import's staleness is now its own:
+   * its signal, whether its row still exists, and this epoch for the one event
+   * that really does invalidate everything at once.
+   */
   epoch: number
 
   setPanelOpen: (open: boolean) => void
@@ -85,10 +95,16 @@ export const useMeshStore = create<MeshStore>()(
       removeMesh: (id) =>
         set(
           (s) => {
+            // An absent id is a true no-op, not a fresh `meshes` array: every
+            // subscriber diffing the list (the loading mirror, the removal
+            // watcher, an in-flight import checking its own row) would otherwise
+            // wake up to a change that did not happen.
+            if (!s.meshes.some((m) => m.id === id)) return s
             const meshes = s.meshes.filter((m) => m.id !== id)
+            // No epoch bump — see `epoch`. Removing one row is that row's
+            // business; an import still decoding notices its OWN row vanish.
             return {
               meshes,
-              epoch: s.epoch + 1,
               activeMeshId: s.activeMeshId === id
                 ? (meshes[meshes.length - 1]?.id ?? null)
                 : s.activeMeshId,
@@ -165,6 +181,8 @@ export const useMeshStore = create<MeshStore>()(
           'setUnitScale',
         ),
 
+      // The one global invalidation: every import in flight is stale at once,
+      // because every row it could land in is gone.
       clearMeshes: () =>
         set((s) => ({ meshes: [], activeMeshId: null, epoch: s.epoch + 1 }), false, 'clearMeshes'),
     }),

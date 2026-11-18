@@ -88,7 +88,14 @@
     "memory": "{{mb}} MB na GPU",
     "truncated": "Parou nos {{count}} pontos — o ficheiro contém mais do que este visualizador mantém em memória de uma vez.",
     "noModel": "Nenhum modelo IFC carregado — o levantamento é colocado por si só.",
-    "partial": "Parte deste levantamento não pôde ser lida e falta na vista. O que vê está incompleto."
+    "partial": "Parte deste levantamento não pôde ser lida e falta na vista. O que vê está incompleto.",
+    "budget": "Orçamento de pontos: {{used}} de {{max}}",
+    "budgetNearlyFull": "Orçamento de pontos: {{used}} de {{max}} — quase cheio",
+    "budgetFull": "Orçamento de pontos: {{used}} de {{max}} — cheio",
+    "budgetLabel": "Orçamento de pontos em memória",
+    "budgetHint": "Pontos que os levantamentos carregados mantêm na memória, incluindo os que ainda estão carregando. Um levantamento que não cabe espera enquanto outro levantamento está carregando; caso contrário, carrega truncado, ou é recusado quando o orçamento está cheio. Nuvens COPC em streaming não contam: a configuração Detalhe as limita.",
+    "budgetReserved": "+ {{reserved}} reservados para levantamentos ainda carregando",
+    "budgetAbout": "Sobre o orçamento de pontos"
   },
   "align": {
     "title": "Alinhamento",
@@ -96,6 +103,7 @@
       "map-conversion": "Georreferenciado (conversão cartográfica)",
       "shared-crs": "Georreferenciado (grelha partilhada)",
       "geographic": "Âncora geográfica",
+      "scene-anchor": "Âncora da cena",
       "local": "Coordenadas locais partilhadas",
       "manual": "Colocado à mão"
     },
@@ -124,7 +132,10 @@
       "unitFeet": "A extensão sugere pés — escalado por 0,3048.",
       "unitAssumed": "Unidade não declarada; assumidos metros.",
       "noCommonReference": "Nada liga os dois ficheiros, por isso o levantamento foi centrado no modelo. Use os desvios abaixo para o colocar.",
-      "cloudCrsUnknown": "O levantamento nomeia um sistema de coordenadas para o qual esta versão não tem definição, por isso a sua georreferenciação não pôde ser usada. Cole abaixo uma definição proj4 para a desbloquear."
+      "cloudCrsUnknown": "O levantamento nomeia um sistema de coordenadas para o qual esta versão não tem definição, por isso a sua georreferenciação não pôde ser usada. Cole abaixo uma definição proj4 para a desbloquear.",
+      "sceneAnchorSameGrid": "Posicionado pelo seu CRS em relação à primeira digitalização georreferenciada (mesma grelha, sem reprojeção).",
+      "sceneAnchorReprojected": "Posicionado pelo seu CRS em relação à âncora da cena, reprojetado via WGS84.",
+      "assumedVerticalDatum": "Assume-se que todas as digitalizações partilham o mesmo referencial altimétrico: o ficheiro não o declara."
     },
     "manualWarning": "Esta colocação é um ponto de partida, não uma medição.",
     "recompute": "Recalcular o alinhamento",
@@ -185,7 +196,10 @@
     "classification": "Classificação",
     "intensity": "Intensidade",
     "distance": "Distância à câmara",
-    "clear": "Limpar"
+    "clear": "Limpar",
+    "copy": "Copiar coordenadas",
+    "copied": "Coordenadas copiadas",
+    "sliceHere": "Cortar nesta altura"
   },
   "view": {
     "title": "Vista",
@@ -236,5 +250,217 @@
     "pcdCompressed": "Não foi possível descodificar o corpo comprimido do PCD. O ficheiro pode estar truncado.",
     "pcdMalformed": "Não foi possível ler o cabeçalho PCD.",
     "alignFailed": "O levantamento foi lido, mas não foi possível calcular a sua colocação. Ficou por situar."
+  },
+  "tabs": {
+    "appearance": "Aparência",
+    "placement": "Posição",
+    "view": "Vista",
+    "samples": "Exemplos",
+    "help": "Corrigir",
+    "analyze": "Analisar"
+  },
+  "ui": {
+    "loaded": "Nuvens carregadas",
+    "add": "Adicionar nuvem",
+    "frame": "Enquadrar esta nuvem",
+    "startTitle": "Abra uma nuvem de pontos",
+    "startHint": "Solte um ou vários ficheiros: carregam em paralelo e pode remover cada um separadamente.",
+    "orSample": "…ou experimente um exemplo",
+    "featured": "Recomendado",
+    "showAllSamples": "Ver os {{count}} exemplos",
+    "showFewerSamples": "Ver menos",
+    "replayTeaser": "Demos animadas LiDAR + IFC",
+    "replayTeaserHint": "Quatro linhas temporais de digitalização simuladas, alinhadas com os seus modelos.",
+    "advanced": "Avançado",
+    "quality": "Orçamento de desenho",
+    "qualityHint": "Pontos desenhados por fotograma. Mais parece mais denso, mas exige uma GPU mais rápida.",
+    "qualityLevel": {
+      "low": "Leve",
+      "medium": "Normal",
+      "high": "Alto",
+      "ultra": "Máx."
+    },
+    "compare": "Nuvem ↔ modelo",
+    "compareScan": "Nuvem",
+    "compareModel": "Modelo",
+    "stats": "Desempenho",
+    "modes": {
+      "point-cloud": "Só nuvem",
+      "ifc": "Só modelo",
+      "overlay": "Sobreposto",
+      "xray": "Raio X",
+      "scan-vs-bim": "Nuvem vs BIM"
+    },
+    "drawn": "Desenhados / carregados"
+  },
+  "presets": {
+    "title": "Estilo rápido",
+    "balanced": "Equilibrado",
+    "detail": "Nítido",
+    "presentation": "Apresentação",
+    "performance": "Rápido",
+    "custom": "Personalizado",
+    "reset": "Repor aparência"
+  },
+  "diag": {
+    "title": "Verificação",
+    "allGood": "Tudo parece correto nesta nuvem.",
+    "issueCount": "Por rever: {{count}}",
+    "issue": {
+      "failed": "Não foi possível abrir este ficheiro.",
+      "partial": "Parte da nuvem não pôde ser lida: o que vê está incompleto.",
+      "truncated": "Só parte do ficheiro cabe na memória, por isso a nuvem foi cortada.",
+      "upAxisGuessed": "O ficheiro não indica o eixo vertical. Se parecer deitada, rode-a.",
+      "colorUnavailable": "O ficheiro não tem dados para o modo de cor atual e aparece plano.",
+      "hidden": "Esta nuvem está oculta.",
+      "faint": "A opacidade é tão baixa que a nuvem mal se vê.",
+      "farFromModel": "A nuvem está muito longe do modelo.",
+      "manualPlacement": "Nada liga esta nuvem ao modelo: foi centrada sobre ele. Verifique a posição.",
+      "crsUnknown": "O sistema de coordenadas da nuvem é desconhecido aqui, por isso a georreferência foi ignorada.",
+      "tooLarge": "A nuvem é muito maior do que o esperado: provavelmente está em milímetros, centímetros ou pés.",
+      "tooSmall": "A nuvem é muito menor do que o esperado: pode estar em quilómetros ou escalada.",
+      "heavy": "Muitos pontos no detalhe máximo: definições mais leves mantêm a navegação fluida."
+    }
+  },
+  "fix": {
+    "flipUpAxis": "Rodar eixo vertical",
+    "bestColor": "Melhor cor",
+    "showAll": "Mostrar",
+    "opacityFull": "Opacidade total",
+    "fitCloud": "Enquadrar nuvem",
+    "fitBoth": "Ver ambos",
+    "realign": "Recalcular alinhamento",
+    "openPlacement": "Ajustar posição",
+    "unitMm": "Está em mm",
+    "unitCm": "Está em cm",
+    "unitFt": "Está em pés",
+    "scaleUp": "Escala ×1000",
+    "performance": "Aliviar",
+    "remove": "Remover",
+    "applied": "Corrigido: {{what}}"
+  },
+  "help": {
+    "title": "O que vê?",
+    "hint": "Escolha o sintoma: cada botão aplica a correção habitual, reversível em Aparência ou Posição.",
+    "sideways": {
+      "label": "Está deitada de lado",
+      "hint": "Exportações Y-cima vs Z-cima"
+    },
+    "invisible": {
+      "label": "Não a vejo",
+      "hint": "Mostra-a e enquadra a câmara"
+    },
+    "wrongSize": {
+      "label": "Enorme ou minúscula",
+      "hint": "Escolha a unidade do ficheiro"
+    },
+    "misplaced": {
+      "label": "Não coincide com o modelo",
+      "hint": "Realinha e abre a posição"
+    },
+    "colours": {
+      "label": "Preta, branca ou cores estranhas",
+      "hint": "Muda para um modo suportado"
+    },
+    "sparse": {
+      "label": "Cheia de buracos / muito fina",
+      "hint": "Pontos maiores e redondos"
+    },
+    "blobby": {
+      "label": "Desfocada, pontos grandes",
+      "hint": "Pontos menores e nítidos"
+    },
+    "slow": {
+      "label": "Está lenta",
+      "hint": "Desenha menos pontos ao mover"
+    },
+    "broken": {
+      "label": "Não carrega",
+      "hint": "Causas comuns"
+    },
+    "brokenTips": "São lidos LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV. E57 e projetos de scanner (RCP, FLS, LSPROJ) têm de ser exportados antes para LAS ou PLY. Alguns LAZ usam uma variante LASzip que os browsers não descodificam: guarde-os como LAS ou COPC. Ficheiros muito grandes: recorte-os ou decime-os antes."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Casos de uso",
+      "hint": "Um clique prepara a vista para uma tarefa real. Todos os filtros abaixo continuam editáveis e nada altera o scan."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Corte em planta",
+        "hint": "Mantém uma faixa de 60 cm na altura do ponto escolhido (ou 1,2 m acima do ponto mais baixo) e olha de cima: as paredes leem-se como uma planta."
+      },
+      "terrain": {
+        "label": "Terreno e curvas de nível",
+        "hint": "Colore por altura, desenha curvas de nível e mantém só o solo se o ficheiro estiver classificado."
+      },
+      "vegetation": {
+        "label": "Remover vegetação e ruído",
+        "hint": "Oculta as classes de vegetação e ruído para destacar edifícios, estradas e solo. Requer um ficheiro classificado."
+      },
+      "slab": {
+        "label": "Planeza da laje",
+        "hint": "Clique num ponto da laje: mantém uma faixa fina à volta e desenha uma linha a cada 1 cm, pelo que saliências e depressões surgem como anéis."
+      },
+      "scanVsBim": {
+        "label": "Scan vs BIM",
+        "hint": "Desenha o scan numa cor viva sobre o modelo translúcido: o que não foi construído segundo o projeto salta à vista. Requer um modelo IFC."
+      },
+      "clearance": {
+        "label": "Medir um gabarito",
+        "hint": "Ativa a ferramenta de distância: clique em dois pontos do scan (chão a viga, parede a parede) para ler a folga real construída."
+      }
+    },
+    "needsClasses": "Requer um ficheiro classificado",
+    "needsModel": "Requer um modelo IFC",
+    "pickFirst": "Primeiro clique num ponto do scan — Inspecionar está ativo.",
+    "applied": "Aplicado: {{what}}",
+    "activeBanner": "Os filtros de análise ocultam parte do scan.",
+    "reset": "Limpar filtros",
+    "slice": {
+      "title": "Corte por altura",
+      "toggle": "Mostrar só uma faixa de altura",
+      "from": "De",
+      "to": "Até",
+      "hint": "Alturas em metros de cena. Combine com Medir para ler pés-direitos, ou com a vista de topo para decalcar uma planta."
+    },
+    "contours": {
+      "title": "Curvas de nível",
+      "toggle": "Desenhar curvas de nível",
+      "hint": "Passos largos para o terreno; 1–2 cm revelam uma laje que não está plana."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Toque numa classe para a ocultar ou mostrar. Códigos segundo a norma ASPRS LAS.",
+      "all": "Todas",
+      "ground": "Só solo",
+      "noVeg": "Sem vegetação",
+      "names": {
+        "c0": "Nunca classificado",
+        "c1": "Não classificado",
+        "c2": "Solo",
+        "c3": "Vegetação baixa",
+        "c4": "Vegetação média",
+        "c5": "Vegetação alta",
+        "c6": "Edifício",
+        "c7": "Ruído",
+        "c8": "Ponto-chave",
+        "c9": "Água",
+        "c10": "Ferrovia",
+        "c11": "Pavimento rodoviário",
+        "c12": "Sobreposição",
+        "c13": "Cabo de guarda",
+        "c14": "Condutor",
+        "c15": "Torre elétrica"
+      }
+    },
+    "measure": {
+      "title": "Medir o scan",
+      "hint": "Os scans fazem snap como os modelos: distâncias, áreas e ângulos caem em pontos reais.",
+      "distance": "Distância",
+      "area": "Área",
+      "angle": "Ângulo",
+      "point": "Ponto"
+    }
   }
 }

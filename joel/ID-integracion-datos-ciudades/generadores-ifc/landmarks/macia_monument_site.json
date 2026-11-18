@@ -1,0 +1,56 @@
+{
+ "origin": {
+  "lat": 41.386252,
+  "lon": 2.170102,
+  "osm": "way 128230182 (historic=monument, tourism=artwork, building=yes, «Monument a Francesc Macià», artist_name Josep Maria Subirachs, wikidata Q13405928), centroid of its 4 nodes"
+ },
+ "datum_raw_ellipsoidal": 66.31,
+ "icgc_offset_m": -49.7,
+ "note": "Local metres, +x east +y north, from OpenStreetMap (ODbL) via the OSM API on 2026-10-01 (equirectangular around the origin). Heights are ICGC Barcelona mesh heights (ellipsoidal, raw), measured with tools/icgc_ground.py.",
+ "ground_measurements": {
+  "ring_7_12_m": {"ground_raw_p20": 66.31, "p05": 66.22, "p50": 66.5, "p95": 67.27, "n": 2610},
+  "ring_0_4_m": {"p05": 66.43, "p50": 68.68, "p95": 75.36, "n": 937},
+  "mesh_top_above_RAW0_m": 9.06,
+  "paving_slope": "The paving rises northwards across the monument: about +0.03 m at y = -4 and +0.87 m at y = +5 above RAW0 (minimum mesh heights in 1 m cells), modelled as z = 0.31 + 0.093 (y + 1)"
+ },
+ "osm_footprint_local": {
+  "way": 128230182,
+  "x": [-1.6, 1.9],
+  "y": [-2.8, 3.2],
+  "reading": "Axis-aligned 3.6 x 6.0 m outline; it matches the mesh's top-down extent of the inverted staircase (mesh corners at about 9.1-9.4 m: (-2, 3), (2, 3), (-1.5, -3.5), (2, -3.5)), so it is read as the aerial outline of the cantilevered stair, not the pedestal's base"
+ },
+ "mesh_solid_core_local": {
+  "x": [-1.5, 2.5],
+  "y": [-0.5, 3.5],
+  "reading": "Cells whose minimum mesh height is well above the paving: the pedestal. Under the south overhang (y -1 to -2.5) the mesh reaches the paving (0.3-0.4 m), so the pedestal does not extend there"
+ },
+ "orientation": {
+  "bearing_deg": 0.0,
+  "source": "OSM way 128230182 is drawn north-aligned; inscription face to the south (towards La Rambla, Wikipedia ca «enfront de la Rambla»), stair rising and cantilevering southwards, concrete side wall on the east (photos on Wikimedia Commons «Category:Monument a Francesc Macià (Barcelona)», mesh asymmetry: tall surfaces at x = +2)"
+ },
+ "neighbours": {
+  "reflecting_pool": {"osm": "way 128230183 (natural=water, water=reflecting_pool)", "y": [8.8, 22.8], "note": "Pool by Helio Piñón and Albert Viaplana; not modelled"},
+  "la_deessa": {"osm": "node 5404638138 (Josep Clarà, 1927)", "x": 0.2, "y": 19.0, "note": "Stands in the pool; not modelled"},
+  "metro_L3_Catalunya": {"osm": "ways 966064737 (Via 1, x 0.4..6) and 966064738 (Via 2, x -8.5..-3), level -2", "note": "The station runs directly under the monument: its foundation bears on the station structure (load path not documented)"}
+ },
+ "facts": {
+  "artist": "Josep Maria Subirachs (1927-2014)",
+  "inaugurated": "1991-12-25 (58th anniversary of Macià's death)",
+  "pedestal": "Travertine, a succession of stone blocks in broken bond (Wikipedia ca)",
+  "stair": "Concrete inverted staircase; the first three steps are set into the pedestal (Macià's three years as President), the rest end abruptly, unfinished (the country's future)",
+  "inscription": "«CATALUNYA A FRANCESC MACIÀ» in large letters at the top of the pedestal's front",
+  "back": "Iron coat of arms of Catalonia and a sentence of Macià's to the Catalan deputies of 14 December 1932",
+  "bust": "Separate monolith in front of the monument with a bronze bust of Macià, replica of the portrait by Josep Clarà (1932)",
+  "wikidata": "Q13405928; P8601 Barcelona public-art id 2048-1; P12802 poblesdecatalunya.cat id 2736; P2043 length '795 metre' (implausible unit, not used)",
+  "railing": "None visible in any photograph: not modelled",
+  "lighting": "No fixture documented in OSM or the photographs; the three in-ground uplights in the model are illustrative"
+ },
+ "steps": {
+  "count": 9,
+  "count_source": "Counted on Commons photographs (8-9 nosings visible); 9 chosen: 3 set into the pedestal + 6 above it",
+  "riser_m": 0.63,
+  "going_m": 0.689,
+  "north_end_y": 2.9,
+  "south_end_y": -3.31
+ }
+}

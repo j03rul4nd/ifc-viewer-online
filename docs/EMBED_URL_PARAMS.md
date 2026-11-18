@@ -31,11 +31,11 @@ live preview). This doc is the reference for the underlying parameters.
 
 | Param      | Values                          | Default   | Description |
 |------------|----------------------------------|-----------|-------------|
-| `model`    | URL(s)                           | —         | Public IFC URL to load. Comma-separated or repeated for multiple (federated) models. Aliases: `src`, `url`. |
+| `model`    | URL(s)                           | —         | Public IFC URL to load. Comma-separated or repeated for multiple (federated) models, which load as one batch (see below). Aliases: `src`, `url`. |
 | `name`     | string(s)                        | from URL  | Display file name(s), parallel to `model`. Aliases: `file`. |
 | `embed`    | `1`/`0`                          | `0`       | Embed mode — slims the chrome for iframe hosting. |
 | `ui`       | `minimal` \| `full` \| `kiosk` \| `client` | `minimal` | Chrome preset (implies `embed=1`). |
-| `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). |
+| `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). With several models, validation waits until none is still loading, then runs model by model. |
 | `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
 | `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
@@ -43,7 +43,17 @@ live preview). This doc is the reference for the underlying parameters.
 | `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
 | `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
+| `look`     | look id, or `from..to`           | user's    | Art direction of the map (needs `map`): `daylight`, `maquette`, `golden`, `night`, `blueprint`, `dawn`. `look=daylight..night` opens in the first and plays a 6 s time-of-day transition to the second once the city is built (it waits for the tab to be visible). Dawn/day/dusk use the site's real sun for today. Unknown ids are ignored. |
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
+
+### Federated links: how several models load
+
+`?model=a.ifc,b.ifc,c.ifc` becomes one **batch** in the viewer's loading queue ([`MODEL_LOADING.md`](./MODEL_LOADING.md)):
+- Downloads run two at a time with real byte progress, and conversions run one at a time. The next file downloads while the current one converts, but downloads never run more than a couple of files ahead of conversion, so a long link does not park every model in memory at once.
+- The **first URL attaches first**. It sets the scene's coordinate base, so a small file that finishes early waits for it instead of silently becoming the origin of the federation. Put the architectural model first.
+- Only the first model moves the camera. When the batch settles, the view frames all of them.
+- A model that fails does not stop the others. Each failure is reported on its own (`model-error` below).
+- Converted geometry is cached in the visitor's browser. Opening the same link again skips conversion, as long as the host sends the same file (the cache checks a content fingerprint, not just the name).
 
 ### Sun study (`solar` / `moon`)
 
@@ -63,7 +73,8 @@ study simply does not start.
 
 Both wait for the first model — the map has nothing to place without one, and a
 scan would have nothing to align against — and both then drive the same internal
-commands the SDK uses, so behaviour is identical either way.
+commands the SDK uses, so behaviour is identical either way. In a federated link
+that is the first URL, which always lands first.
 
 ```
 ?model=/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc&map=terrain,buildings&scan=/models/poblenou/poblenou-site-scan.las
@@ -83,12 +94,20 @@ Three things worth knowing before you build a link:
   what makes it work.
 - **`scan` lands wherever the alignment ladder puts it.** Sharing a projected
   CRS with the model is exact; anything less is labelled as the guess it is.
-- **Neither works with `ui=client`.** The panels that serve them are not mounted
-  in the client skin, so the command has nobody to answer it and you get an
-  error toast. Use `ui=kiosk` for a chrome-less recording instead.
+- **`map` does not work with `ui=client`.** Map mode is served by a panel the
+  client skin does not mount, so the command has nobody to answer it and you get
+  an error toast. Use `ui=kiosk` for a chrome-less recording instead. `scan`
+  does work there: scans load through the loading queue, not through their panel.
 
 Turning on OpenStreetMap surroundings queries a public service (Overpass) and
 can take half a minute; the scan loads in parallel rather than queueing behind it.
+Both show up as rows in the viewer's Loading Center next to the IFC models. The
+scans are jobs of their own: each downloads with real progress, decodes in a
+lane separate from the IFC conversions (it never waits for a conversion slot),
+aligns against the model, and can be cancelled on its own. A list of scans
+shares the point budget: one that does not fit while another is still loading
+waits for it instead of overflowing the GPU. A failure is toasted with its
+reason (for example "LAZ file too large to decompress in the browser").
 
 ### Granular chrome overrides (embed mode)
 
@@ -180,9 +199,15 @@ so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
 | `type`             | Payload |
 |--------------------|---------|
 | `ready`            | — (viewer mounted) |
+| `model-progress`   | `percent`, `phase` (`reading` · `parsing` · `uploading`). One stream per load, never decreasing, sent only while that load is in progress (≤ 4/s) |
 | `model-loaded`     | `modelId`, `fileName`, `elementCount`, `fromCache` |
-| `model-error`      | `url`, `message` |
+| `model-error`      | `url` (URL loads) or `name` (byte/file loads), `message`. Sent for download failures, invalid/unparseable files, scene failures and cancelled loads |
+| `validation-completed` | `qualityScore`, `errors`, `warnings`, `info` |
 | `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
+
+Messages about a load a host started with a `requestId` (see below and the
+[SDK](./IFC_VIEWER_SDK.md)) echo that `requestId`, so a host can tell its own
+loads from the ones started inside the viewer.
 
 ```js
 window.addEventListener('message', (e) => {
@@ -201,7 +226,9 @@ iframe (only honored when the app runs inside an iframe). Commands use the
 
 | `type`              | Fields | Effect |
 |---------------------|--------|--------|
-| `ifcviewer:load`    | `url` (string or string[]), `name?` | Load model(s) into the scene |
+| `ifcviewer:load`    | `url` (string or string[]), `name?` (string or string[]), `requestId?` | Load model(s) into the scene. An array loads as one batch, like a federated `?model=`. The viewer accepts a new `load` while others are still running and queues it |
+| `ifcviewer:load-bytes` | `name`, `bytes` (transferable `ArrayBuffer`), `requestId?` | Load IFC bytes the host already has (what the SDK's `add()` sends) |
+| `ifcviewer:clear`   | — | Cancel IFC loads still in flight, then remove every model |
 | `ifcviewer:select`  | `expressId`, `modelId?` | Select + frame an element |
 | `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear) | Isolate a category |
 | `ifcviewer:fit`     | — | Frame the active model |

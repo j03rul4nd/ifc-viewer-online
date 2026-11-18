@@ -452,7 +452,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.10.0";
+    readonly version = "1.10.1";
     readonly iframe: HTMLIFrameElement;
     private readonly baseUrl;
     private readonly appOrigin;
@@ -524,7 +524,11 @@ export declare class IfcViewer {
      * finishing would report failure on a working load.
      */
     addPointCloud(fileName: string, bytes: ArrayBuffer | Uint8Array): Promise<string>;
-    /** Add a scan the viewer fetches itself. The URL must allow CORS. */
+    /**
+     * Add a scan the viewer fetches itself. The URL must allow CORS. Without a
+     * `fileName` the viewer names the scan from the URL's path — a signed URL's
+     * query is never part of the name (its extension is what picks the reader).
+     */
     addPointCloudFromUrl(url: string, fileName?: string): Promise<string>;
     /** Every scan currently loaded. See PointCloudInfo on reading the counts. */
     listPointClouds(): Promise<PointCloudInfo[]>;
@@ -587,8 +591,9 @@ export declare class IfcViewer {
     addMesh(files: MeshFileInput[]): Promise<string>;
     /**
      * Import a model the viewer fetches itself. Pass every URL the model needs —
-     * the `.gltf` AND its `.bin` and textures — and they are fetched in parallel.
-     * All must allow CORS.
+     * the `.gltf` AND its `.bin` and textures; they are downloaded one after
+     * another, with progress in the viewer's Loading Center. The entry is the
+     * first URL whose path names a .glb / .gltf / .obj. All must allow CORS.
      */
     addMeshFromUrl(urls: string | string[]): Promise<string>;
     /** Every model currently imported. See MeshInfo on trusting unit and axis. */

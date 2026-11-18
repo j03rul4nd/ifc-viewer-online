@@ -1,141 +1,341 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { ViewportPanel } from './ViewportPanel'
-import { motion, AnimatePresence } from 'framer-motion'
+// ─── SectionPanel ─────────────────────────────────────────────────────────────
+// The Section palette. The engine (lib/measure/section-system) owns the planes
+// and their handles; this panel creates them and reads them back:
+//
+//   CUT        Plan (horizontal), along X, along Y, or by clicking a face.
+//              Axis cuts start through the middle of the model, keeping the
+//              side away from the camera, so the first click already shows
+//              the inside.
+//   BOX        A section box around the model or the selected element, each
+//              face sliding on its own — in the scene by its arrow, or here.
+//   EACH CUT   A slider and a typed value for where it is, flip, hide, look
+//              straight at it, delete.
+//   LOOK       Fill cut solids (poché) in a choice of colours; hide the
+//              handles for a clean picture.
+//
+// Handles in the scene are only offered while this panel is open: once it
+// closes the cut stays and the clutter goes.
+
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ViewportPanel } from './ViewportPanel'
 import { useUIStore } from '../stores/uiStore'
-import { createLogger } from '../lib/logger'
+import { useSceneStore } from '../stores/sceneStore'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { haptic } from '../lib/haptics'
 import type { ViewerAPI } from '../lib/viewer'
 import { trackFeatureUsed } from '../lib/analytics'
-
-const log = createLogger('SectionPanel')
+import { anyModalOpen } from '../lib/ui/modal-stack'
+import type { IfcAxis, LengthUnit } from '../lib/measure/measure-types'
+import type { SectionPlaneInfo } from '../lib/measure/section-system'
+import { POCHE_COLORS } from '../lib/measure/section-system'
+import type { Range } from '../lib/measure/section-math'
+import { formatLength, lengthInUnits } from '../lib/measure/measure-math'
+import { planCutY } from '../lib/cover/cuts'
+import { loadMeasureSettings } from '../lib/measure/measure-settings'
+import { isTypingTarget, useSectionSnapshot } from './measure/useMeasureStores'
+import {
+  BoxIcon, ChevronIcon, CloseIcon, ElevationCutIcon, EyeIcon, FaceIcon, FlipIcon, PlanCutIcon, TargetIcon, TrashIcon,
+} from './measure/icons'
 
 interface SectionPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
 }
 
-interface PlaneEntry {
-  id:      string
-  enabled: boolean
-  title:   string
+const AXIS_COLOR: Record<IfcAxis, string> = { x: '#FF5A5A', y: '#4CD964', z: '#4C8DFF' }
+
+function fromUnits(value: number, units: LengthUnit): number {
+  if (units === 'ft') return value * 0.3048
+  if (units === 'cm') return value / 100
+  if (units === 'mm') return value / 1000
+  return value
 }
 
+// ── Dual range (section box) ──────────────────────────────────────────────────
+
+function DualRange({ limits, value, step, color, onChange, label, touch = false }: {
+  /** Finger-sized: a 44px hit row and 24px thumbs (mobile dock). */
+  touch?: boolean
+  limits: Range
+  value: Range
+  step: number
+  color: string
+  label: string
+  onChange: (range: Range, final: boolean) => void
+}) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const drag = useRef<'min' | 'max' | null>(null)
+  const span = Math.max(1e-9, limits.max - limits.min)
+  const pct = (v: number) => ((v - limits.min) / span) * 100
+  const valueAt = (clientX: number): number => {
+    const r = trackRef.current!.getBoundingClientRect()
+    const raw = limits.min + ((clientX - r.left) / Math.max(1, r.width)) * span
+    return Math.round(raw / step) * step
+  }
+  const move = (side: 'min' | 'max', v: number, final: boolean) => {
+    onChange(side === 'min' ? { min: v, max: value.max } : { min: value.min, max: v }, final)
+  }
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!trackRef.current) return
+    const v = valueAt(e.clientX)
+    const side = Math.abs(v - value.min) <= Math.abs(v - value.max) ? 'min' : 'max'
+    drag.current = side
+    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+    move(side, v, false)
+  }
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (drag.current) move(drag.current, valueAt(e.clientX), false)
+  }
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (drag.current) move(drag.current, valueAt(e.clientX), true)
+    drag.current = null
+  }
+  const onKey = (side: 'min' | 'max') => (e: React.KeyboardEvent) => {
+    const k = e.shiftKey ? 10 : 1
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); move(side, value[side] - step * k, true) }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); move(side, value[side] + step * k, true) }
+  }
+  return (
+    <div
+      ref={trackRef}
+      className={['relative cursor-pointer touch-none', touch ? 'h-11' : 'h-6'].join(' ')}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-[var(--surface-2)] border border-[var(--border)]" />
+      <div className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full" style={{ left: `${pct(value.min)}%`, width: `${pct(value.max) - pct(value.min)}%`, background: color }} />
+      {(['min', 'max'] as const).map((side) => (
+        <div
+          key={side}
+          role="slider"
+          tabIndex={0}
+          aria-label={`${label} ${side}`}
+          aria-valuemin={limits.min}
+          aria-valuemax={limits.max}
+          aria-valuenow={value[side]}
+          onKeyDown={onKey(side)}
+          className={[touch ? 'w-6 h-6' : 'w-3.5 h-3.5', 'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#0A0A0C] shadow outline-none focus-visible:ring-2 focus-visible:ring-white/60'].join(' ')}
+          style={{ left: `${pct(value[side])}%`, background: color }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Editable value ────────────────────────────────────────────────────────────
+
+function ValueField({ value, units, locale, prefix, onCommit, title }: {
+  value: number; units: LengthUnit; locale: string; prefix?: string; title: string; onCommit: (metres: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState('')
+  const shown = formatLength(value, { units, precision: units === 'mm' ? 0 : units === 'cm' ? 1 : 2, locale })
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        title={title}
+        onClick={() => { setText(lengthInUnits(value, units).toFixed(units === 'mm' ? 0 : 3)); setEditing(true) }}
+        className="text-[11px] font-mono tabular-nums text-[var(--text)] hover:text-white px-1 rounded hover:bg-white/[0.06]"
+      >
+        {prefix}{shown}
+      </button>
+    )
+  }
+  const commit = () => {
+    const n = Number(text.replace(',', '.'))
+    if (Number.isFinite(n)) onCommit(fromUnits(n, units))
+    setEditing(false)
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <input
+        autoFocus
+        inputMode="decimal"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') setEditing(false)
+        }}
+        className="w-[72px] bg-[var(--surface)] border border-[var(--accent)] rounded-[5px] px-1.5 py-0.5 text-[11px] font-mono text-[var(--text)] outline-none text-right"
+      />
+      <span className="text-[10px] text-[var(--text-faint)]">{units === 'ft' ? 'ft' : units}</span>
+    </span>
+  )
+}
+
+function IconButton({ title, onClick, children, danger, active }: {
+  title: string; onClick: () => void; children: React.ReactNode; danger?: boolean; active?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      onClick={(e) => { e.stopPropagation(); onClick() }}
+      className={[
+        'flex-none w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors',
+        danger ? 'text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)]'
+          : active ? 'text-[var(--accent-2)] hover:bg-white/[0.06]'
+            : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/[0.06]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ── Panel ─────────────────────────────────────────────────────────────────────
+
 export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
-  const { t } = useTranslation('viewer')
-  const {
-    clipPanelOpen, clipPlaneCount, setClipPlaneCount,
-    setClipPanelOpen,
-  } = useUIStore()
+  const { t, i18n } = useTranslation('measurement')
+  const clipPanelOpen = useUIStore((s) => s.clipPanelOpen)
+  const setClipPanelOpen = useUIStore((s) => s.setClipPanelOpen)
+  const setClipPlaneCount = useUIStore((s) => s.setClipPlaneCount)
 
-  const [planes,   setPlanes]   = useState<PlaneEntry[]>([])
-  const [adding,   setAdding]   = useState(false)
-  const [opError,  setOpError]  = useState<string | null>(null)
-  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
-  const addingRef  = useRef(adding)
-  useEffect(() => { addingRef.current = adding }, [adding])
+  const system = viewerApiRef.current?.getSections() ?? null
+  const snap = useSectionSnapshot(system)
+  const [notice, setNotice] = useState<string | null>(null)
+  const tracked = useRef(false)
+  const isMobile = useIsMobile()
+  const [optionsOpen, setOptionsOpen] = useState(false)
+  const [boxAxis, setBoxAxis] = useState<IfcAxis>('z')
 
-  const cancelAddMode = useCallback(() => {
-    try { viewerApiRef.current?.stopAddClipPlane() } catch { }
-    try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
-    setAdding(false)
-  }, [viewerApiRef])
+  // Length display follows the Measure panel's unit choice.
+  const [units, setUnits] = useState<LengthUnit>(() => loadMeasureSettings().units)
+  useEffect(() => { if (clipPanelOpen) setUnits(loadMeasureSettings().units) }, [clipPanelOpen])
+  const locale = i18n.language || 'en'
 
-  const syncPlanes = useCallback(() => {
-    const viewer = viewerApiRef.current
-    if (!viewer) return
-    try {
-      const next = viewer.getClipPlanes()
-      setPlanes(next)
-      setClipPlaneCount(next.length)
-    } catch { }
-  }, [viewerApiRef, setClipPlaneCount])
+  const active = snap?.active ?? 0
+  useEffect(() => { setClipPlaneCount(active) }, [active, setClipPlaneCount])
 
-  // Poll plane list every 400 ms while panel is open
-  useEffect(() => {
-    if (!clipPanelOpen) {
-      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
-      if (addingRef.current) cancelAddMode()
-      return
-    }
-    syncPlanes()
-    pollRef.current = setInterval(syncPlanes, 400)
-    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null } }
-  }, [clipPanelOpen, syncPlanes, cancelAddMode])
-
-  // Unmount cleanup — prevent stale adding mode and dangling callbacks
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
-      try { viewerApiRef.current?.stopAddClipPlane() } catch { }
-      try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // ESC cancels add mode
+  // Storey levels, for plan cuts "at a floor". Read when the panel opens and
+  // whenever the set of models changes; the viewer caches the answer.
+  const [levels, setLevels] = useState<Array<{ name: string; y: number }>>([])
+  const modelKey = useSceneStore((s) => s.models.map((m) => `${m.id}:${m.visible ? 1 : 0}`).join('|'))
   useEffect(() => {
     if (!clipPanelOpen) return
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && addingRef.current) cancelAddMode()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [clipPanelOpen, cancelAddMode])
+    let alive = true
+    viewerApiRef.current?.getStoreyLevels()
+      .then((l) => { if (alive) setLevels(l) })
+      .catch(() => { if (alive) setLevels([]) })
+    return () => { alive = false }
+  }, [clipPanelOpen, modelKey, viewerApiRef])
 
-  const hasTrackedSection = useRef(false)
-  const handleStartAdd = (): void => {
-    setOpError(null)
-    if (!hasTrackedSection.current) {
-      hasTrackedSection.current = true
-      trackFeatureUsed({ feature: 'section_plane' })
+  /** Where a plan of level i is cut: 1.2 m up, below the next floor. */
+  const levelCut = (i: number) => planCutY(levels[i].y, levels[i + 1]?.y ?? null)
+  const levelAt = (offset: number) => levels.findIndex((_, i) => Math.abs(levelCut(i) - offset) < 0.01)
+
+  useEffect(() => {
+    if (!system) return
+    system.setInteractive(clipPanelOpen)
+    if (clipPanelOpen) system.refreshBounds()
+  }, [system, clipPanelOpen])
+
+  useEffect(() => () => { try { viewerApiRef.current?.getSections().setInteractive(false) } catch { /* disposed */ } }, [viewerApiRef])
+
+  useEffect(() => {
+    if (!notice) return
+    const id = setTimeout(() => setNotice(null), 2400)
+    return () => clearTimeout(id)
+  }, [notice])
+
+  const track = useCallback(() => {
+    if (tracked.current) return
+    tracked.current = true
+    trackFeatureUsed({ feature: 'section_plane' })
+  }, [])
+
+  // Escape cancels a face placement before the panel registry closes the panel;
+  // Delete removes the selected cut.
+  useEffect(() => {
+    if (!system || !clipPanelOpen) return
+    const onDown = (e: KeyboardEvent): void => {
+      if (isTypingTarget(e.target) || anyModalOpen()) return
+      if (system.keyDown(e)) { e.preventDefault(); e.stopPropagation() }
     }
-    try {
-      // Register callback first so it's in place before the plane is created
-      viewerApiRef.current?.setClipCreationCallback(() => setAdding(false))
-      viewerApiRef.current?.startAddClipPlane()
-      setAdding(true)
-    } catch (err) {
-      setOpError(t('section.errStart'))
-      log.warn('startAddClipPlane:', err)
-      try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
+    window.addEventListener('keydown', onDown, true)
+    return () => window.removeEventListener('keydown', onDown, true)
+  }, [system, clipPanelOpen])
+
+  const nameOf = (p: SectionPlaneInfo) => {
+    const base = t(`section.name.${p.axis ?? 'face'}`, { n: p.seq })
+    const li = p.axis === 'z' ? levelAt(p.offset) : -1
+    return li >= 0 ? `${base} · ${levels[li].name}` : base
+  }
+
+  const stepLevel = (p: SectionPlaneInfo, dir: 1 | -1) => {
+    const cuts = levels.map((_, i) => levelCut(i))
+    const target = dir > 0
+      ? cuts.findIndex((y) => y > p.offset + 0.01)
+      : cuts.map((y, i) => [y, i] as const).filter(([y]) => y < p.offset - 0.01).pop()?.[1] ?? -1
+    if (target >= 0) system?.setOffset(p.id, cuts[target], true)
+  }
+
+  const addAxis = (axis: IfcAxis) => {
+    track()
+    const id = system?.addAxisPlane(axis)
+    if (!id) { setNotice(t('section.noModel')); return }
+    // A plan of the ground floor is the drawing people mean by "a plan": the
+    // level nearest ±0.00, 1.2 m up. Without storeys it stays mid-height.
+    if (axis === 'z' && levels.length > 0) {
+      let best = 0
+      levels.forEach((l, i) => { if (Math.abs(l.y) < Math.abs(levels[best].y)) best = i })
+      system?.setOffset(id, levelCut(best), true)
     }
   }
 
-  const handleStopAdd = (): void => {
-    cancelAddMode()
+  const addBox = async (fit: 'model' | 'selection') => {
+    track()
+    const ok = await system?.enableBox(fit)
+    if (!ok) setNotice(fit === 'selection' ? t('section.boxNeedsSelection') : t('section.noModel'))
   }
 
-  const handleDelete = (id: string): void => {
-    if (!id) return
-    setOpError(null)
-    try {
-      void viewerApiRef.current?.deleteClipPlane(id)
-      setTimeout(syncPlanes, 50)
-    } catch (err) {
-      setOpError(t('section.errDelete'))
-      log.warn('deleteClipPlane:', err)
-    }
+  if (!snap || !system) {
+    return (
+      <ViewportPanel id="section" onClose={() => setClipPanelOpen(false)} open={clipPanelOpen}
+        label={t('section.title')} mobile="dock" widthPx={288} anchor="top">
+        <div className="px-3 py-3 text-[11px] text-[var(--text-faint)]">{t('section.title')}</div>
+      </ViewportPanel>
+    )
   }
 
-  const handleClear = (): void => {
-    setOpError(null)
-    try {
-      viewerApiRef.current?.clearClipPlanes()
-      setTimeout(syncPlanes, 50)
-    } catch (err) {
-      setOpError(t('section.errClear'))
-      log.warn('clearClipPlanes:', err)
-    }
-  }
+  const quick: Array<{ id: string; label: string; hint: string; icon: React.ReactNode; onClick: () => void; active?: boolean }> = [
+    { id: 'z', label: t('section.plan'), hint: t('section.planHint'), icon: <PlanCutIcon size={17} />, onClick: () => addAxis('z') },
+    { id: 'x', label: t('section.alongX'), hint: t('section.alongXHint'), icon: <ElevationCutIcon axis="x" size={17} />, onClick: () => addAxis('x') },
+    { id: 'y', label: t('section.alongY'), hint: t('section.alongYHint'), icon: <ElevationCutIcon axis="y" size={17} />, onClick: () => addAxis('y') },
+    {
+      id: 'face', label: t('section.face'), hint: t('section.faceHint'), icon: <FaceIcon size={17} />, active: snap.placing,
+      onClick: () => { track(); if (snap.placing) system.cancelFacePlacement(); else system.startFacePlacement() },
+    },
+    {
+      // A box around the model; fitting it to the selection lives on the box.
+      id: 'box', label: t('section.boxShort'), hint: t('section.boxHint'), icon: <BoxIcon size={17} />, active: !!snap.box?.enabled,
+      onClick: () => { if (snap.box) system.setBoxEnabled(!snap.box.enabled); else void addBox('model') },
+    },
+  ]
+  const hasCuts = snap.planes.length > 0 || !!snap.box
 
-  const handleToggle = (id: string, enabled: boolean): void => {
-    if (!id) return
-    try {
-      viewerApiRef.current?.toggleClipPlane(id, enabled)
-      setPlanes((prev) => prev.map((p) => p.id === id ? { ...p, enabled } : p))
-    } catch (err) {
-      log.warn('toggleClipPlane:', err)
-      syncPlanes()
-    }
+  if (isMobile) {
+    return (
+      <ViewportPanel id="section" onClose={() => setClipPanelOpen(false)} open={clipPanelOpen}
+        label={t('section.title')} mobile="dock" widthPx={296} anchor="top">
+        <SectionMobileBody
+          snap={snap} system={system} quick={quick} hasCuts={hasCuts}
+          levels={levels} levelCut={levelCut} levelAt={levelAt} nameOf={nameOf}
+          units={units} locale={locale} notice={notice} active={active}
+          optionsOpen={optionsOpen} onToggleOptions={() => setOptionsOpen((v) => !v)}
+          boxAxis={boxAxis} setBoxAxis={setBoxAxis}
+          addBox={addBox} onClose={() => setClipPanelOpen(false)}
+        />
+      </ViewportPanel>
+    )
   }
 
   return (
@@ -145,107 +345,511 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       open={clipPanelOpen}
       label={t('section.title')}
       mobile="dock"
-      widthPx={188}
-      anchor="center"
-      centerShift="translateY(-30%)"
+      widthPx={296}
+      anchor="top"
     >
-            {/* Header */}
-            <div className="shrink-0 px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
-              <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
-                {t('section.title')}
+      {/* Header */}
+      <div className="shrink-0 flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-[var(--border)]">
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">{t('section.title')}</div>
+          <div className="text-[11px] text-[var(--text-dim)] truncate">
+            {active > 0 ? t('section.active', { count: active }) : t('section.none')}
+          </div>
+        </div>
+        <IconButton title={t('panel.close')} onClick={() => setClipPanelOpen(false)}><CloseIcon size={13} /></IconButton>
+      </div>
+
+      {/* Quick cuts */}
+      <div className="shrink-0 grid grid-cols-5 gap-1 p-1.5">
+        {quick.map((q) => (
+          <button
+            key={q.id}
+            type="button"
+            title={q.hint}
+            aria-pressed={q.active}
+            onClick={q.onClick}
+            className={[
+              'flex flex-col items-center justify-center gap-1 h-[52px] rounded-[9px] transition-all',
+              q.active ? 'bg-[var(--accent)] text-white shadow-[0_4px_14px_rgba(94,106,210,0.35)]'
+                : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
+            ].join(' ')}
+          >
+            {q.icon}
+            <span className="text-[10px] font-medium leading-none text-center">{q.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {snap.placing && (
+        <div className="shrink-0 mx-2 mb-2 rounded-[9px] border border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.08)] px-2.5 py-2">
+          <div className="text-[11.5px] text-[var(--text)]">{t('section.placing')}</div>
+          <div className="mt-0.5 text-[10px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
+        </div>
+      )}
+
+      {/* The cuts. The newest plane first — it is the one being worked on —
+          and the box above them, because it is six planes in one. */}
+      <div className="min-h-[96px] flex-1 overflow-y-auto border-t border-[var(--border)] px-2 py-2 flex flex-col gap-1.5">
+        {snap.box && (
+          <div
+            className={['rounded-[9px] border p-2', snap.selectedId === 'box' ? 'border-[rgba(94,106,210,0.55)] bg-[rgba(94,106,210,0.06)]' : 'border-[var(--border)]'].join(' ')}
+            onClick={() => system.select('box')}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-[var(--accent-2)]"><BoxIcon size={15} /></span>
+              <span className={['flex-1 text-[11.5px] font-medium', snap.box.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>
+                {t('section.box')}
+              </span>
+              <IconButton title={t('section.boxFitSelection')} onClick={() => void addBox('selection')}><TargetIcon size={13} /></IconButton>
+              <IconButton title={t('section.boxFitModel')} onClick={() => void addBox('model')}><BoxIcon size={13} /></IconButton>
+              <IconButton title={snap.box.enabled ? t('section.disable') : t('section.enable')} onClick={() => system.setBoxEnabled(!snap.box!.enabled)} active={snap.box.enabled}>
+                <EyeIcon size={13} off={!snap.box.enabled} />
+              </IconButton>
+              <IconButton title={t('section.boxRemove')} onClick={() => system.removeBox()} danger><TrashIcon size={13} /></IconButton>
+            </div>
+            <div className="mt-1.5 flex flex-col gap-1">
+              {(['x', 'y', 'z'] as const).map((axis) => {
+                const r = snap.box!.ranges[axis]
+                return (
+                  <div key={axis} className="grid grid-cols-[14px_1fr] items-center gap-x-2" onClick={(e) => e.stopPropagation()}>
+                    <span className="text-[10.5px] font-bold" style={{ color: AXIS_COLOR[axis] }}>{axis.toUpperCase()}</span>
+                    <DualRange
+                      label={axis.toUpperCase()}
+                      limits={snap.box!.limits[axis]}
+                      value={r}
+                      step={snap.box!.step}
+                      color={AXIS_COLOR[axis]}
+                      onChange={(range, final) => system.setBoxRange(axis, range, final)}
+                    />
+                    <span />
+                    <div className="flex justify-between -mt-1">
+                      <ValueField value={r.min} units={units} locale={locale} title={t('section.min')}
+                        onCommit={(v) => system.setBoxRange(axis, { min: v, max: r.max }, true)} />
+                      <ValueField value={r.max} units={units} locale={locale} title={t('section.max')}
+                        onCommit={(v) => system.setBoxRange(axis, { min: r.min, max: v }, true)} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {[...snap.planes].reverse().map((p) => {
+          const selected = snap.selectedId === p.id
+          const color = p.axis ? AXIS_COLOR[p.axis] : '#6CE0FF'
+          return (
+            <div
+              key={p.id}
+              onClick={() => system.select(p.id)}
+              className={['rounded-[9px] border px-2 py-1.5 cursor-pointer', selected ? 'border-[rgba(94,106,210,0.55)] bg-[rgba(94,106,210,0.06)]' : 'border-[var(--border)] hover:bg-[var(--surface-2)]'].join(' ')}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="flex-none w-4 h-4 rounded-[4px] text-[9.5px] font-bold flex items-center justify-center text-[#0A0A0C]" style={{ background: color, opacity: p.enabled ? 1 : 0.4 }}>
+                  {p.axis ? p.axis.toUpperCase() : '◇'}
+                </span>
+                <span className={['flex-1 min-w-0 truncate text-[11.5px]', p.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>
+                  {nameOf(p)}
+                </span>
+                <IconButton title={t('section.view')} onClick={() => system.lookAt(p.id)}><TargetIcon size={13} /></IconButton>
+                <IconButton title={t('section.flip')} onClick={() => system.flip(p.id)} active={p.flipped}><FlipIcon size={13} /></IconButton>
+                <IconButton title={p.enabled ? t('section.disable') : t('section.enable')} onClick={() => system.setEnabled(p.id, !p.enabled)} active={p.enabled}>
+                  <EyeIcon size={13} off={!p.enabled} />
+                </IconButton>
+                <IconButton title={t('section.delete')} onClick={() => system.remove(p.id)} danger><TrashIcon size={13} /></IconButton>
               </div>
-              {clipPlaneCount > 0 && (
-                <div className="text-[11px] text-[var(--text-dim)]">
-                  {t('section.planes', { count: clipPlaneCount })}
+              {p.axis === 'z' && levels.length > 0 && (
+                <div className="mt-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <IconButton title={t('section.levelDown')} onClick={() => stepLevel(p, -1)}><ChevronIcon size={12} className="rotate-90" /></IconButton>
+                  <select
+                    aria-label={t('section.level')}
+                    value={levelAt(p.offset)}
+                    disabled={!p.enabled}
+                    onChange={(e) => { const i = Number(e.target.value); if (i >= 0) system.setOffset(p.id, levelCut(i), true) }}
+                    className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border)] rounded-[6px] px-1.5 py-1 text-[11px] text-[var(--text-dim)] outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value={-1}>{t('section.levelPick')}</option>
+                    {levels.map((l, i) => (
+                      <option key={`${l.name}-${i}`} value={i}>{l.name} · {formatLength(l.y, { units, precision: 2, locale })}</option>
+                    ))}
+                  </select>
+                  <IconButton title={t('section.levelUp')} onClick={() => stepLevel(p, 1)}><ChevronIcon size={12} className="-rotate-90" /></IconButton>
                 </div>
               )}
-              {opError && (
-                <div className="text-[10px] text-[var(--danger)] mt-0.5 leading-snug">{opError}</div>
-              )}
+              <div className="mt-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="range"
+                  aria-label={nameOf(p)}
+                  min={p.range.min}
+                  max={p.range.max}
+                  step={p.step}
+                  value={p.offset}
+                  disabled={!p.enabled}
+                  onChange={(e) => system.setOffset(p.id, Number(e.target.value), false)}
+                  onPointerUp={(e) => system.setOffset(p.id, Number((e.target as HTMLInputElement).value), true)}
+                  onKeyUp={(e) => system.setOffset(p.id, Number((e.target as HTMLInputElement).value), true)}
+                  className="flex-1 min-w-0 h-1 cursor-pointer disabled:opacity-40"
+                  style={{ accentColor: color }}
+                />
+                <ValueField
+                  value={p.offset}
+                  units={units}
+                  locale={locale}
+                  prefix={p.axis ? `${p.axis.toUpperCase()} ` : (p.offset >= 0 ? '+' : '')}
+                  title={p.axis ? t('section.position') : t('section.offset')}
+                  onCommit={(v) => system.setOffset(p.id, v, true)}
+                />
+              </div>
             </div>
+          )
+        })}
 
-            {/* Add button */}
-            <div className="p-1.5">
-              {adding ? (
-                <button
-                  onClick={handleStopAdd}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[8px] text-[12px] font-medium bg-[var(--accent)] text-white transition-all"
-                >
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M2 2l10 10M12 2L2 12"/>
-                  </svg>
-                  {t('section.clickToPlace')}
-                </button>
-              ) : (
-                <button
-                  onClick={handleStartAdd}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[8px] text-[12px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-all"
-                >
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <line x1="7" y1="1" x2="7" y2="13"/>
-                    <line x1="1" y1="7" x2="13" y2="7"/>
-                  </svg>
-                  {t('section.addPlane')}
-                </button>
-              )}
-            </div>
+        {!hasCuts && (
+          <p className="px-1 py-2 text-[11px] text-[var(--text-faint)] leading-relaxed text-center">{t('section.empty')}</p>
+        )}
+        {hasCuts && snap.gizmos && (
+          <p className="px-1 text-[10px] text-[var(--text-faint)] leading-snug">{t('section.dragHint')}</p>
+        )}
+      </div>
 
-            {/* Plane list */}
-            {planes.length > 0 && (
-              <div className="border-t border-[var(--border)] p-1.5 flex flex-col gap-0.5 min-h-0 shrink overflow-y-auto">
-                {planes.map((plane, i) => (
-                  <div key={plane.id} className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] hover:bg-[var(--surface-2)] group">
-                    {/* Enable toggle */}
-                    <button
-                      onClick={() => handleToggle(plane.id, !plane.enabled)}
-                      title={plane.enabled ? t('section.disablePlane') : t('section.enablePlane')}
-                      className={`flex-none w-4 h-4 flex items-center justify-center rounded transition-colors ${
-                        plane.enabled ? 'text-[var(--accent)]' : 'text-[var(--text-faint)]'
-                      }`}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                        <circle cx="5" cy="5" r="4"/>
-                      </svg>
-                    </button>
-                    <span className="flex-1 text-[11px] text-[var(--text-dim)] truncate">
-                      {plane.title || t('section.planeName', { number: i + 1 })}
-                    </span>
-                    <button
-                      onClick={() => handleDelete(plane.id)}
-                      title={t('section.deletePlane')}
-                      className="flex-none opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--danger)] transition-all"
-                    >
-                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                        <path d="M1 1l8 8M9 1L1 9"/>
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+      {notice && (
+        <div className="shrink-0 px-3 py-1.5 border-t border-[var(--border)] text-[10.5px] text-[var(--warn)]" role="status">{notice}</div>
+      )}
 
-            {/* Actions footer */}
-            {planes.length > 0 && (
-              <div className="border-t border-[var(--border)] p-1.5">
-                <button
-                  onClick={handleClear}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[11px] text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)] transition-colors text-left"
-                >
-                  <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M2 2l10 10M12 2L2 12"/>
-                  </svg>
-                  {t('section.clearAll')}
-                </button>
-              </div>
-            )}
-
-            {/* Hint */}
-            {adding && (
-              <div className="border-t border-[var(--border)] px-3 py-2 text-[10.5px] text-[var(--text-faint)] leading-snug">
-                {t('section.clickHint')}
-                <div className="mt-0.5 opacity-70">{t('section.escToCancel')}</div>
-              </div>
-            )}
+      {/* Look and clear: one compact strip, always reachable. */}
+      {hasCuts && (
+        <div className="shrink-0 border-t border-[var(--border)] px-2 py-1.5 flex items-center gap-1.5">
+          <label className="flex items-center gap-1.5 text-[10.5px] text-[var(--text-dim)] cursor-pointer" title={t('section.fill')}>
+            <input type="checkbox" checked={snap.poche} onChange={(e) => system.setPoche(e.target.checked)} className="accent-[var(--accent)]" />
+            {t('section.fillShort')}
+          </label>
+          <div className="flex gap-1" role="radiogroup" aria-label={t('section.fillColor')}>
+            {POCHE_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={snap.pocheColor === c}
+                title={t('section.fillColor')}
+                disabled={!snap.poche}
+                onClick={() => system.setPocheColor(c)}
+                className={['w-3.5 h-3.5 rounded-full border transition disabled:opacity-30', snap.pocheColor === c ? 'border-white ring-1 ring-white/60' : 'border-white/20'].join(' ')}
+                style={{ background: c }}
+              />
+            ))}
+          </div>
+          <label className="ml-1 flex items-center gap-1.5 text-[10.5px] text-[var(--text-dim)] cursor-pointer" title={t('section.handles')}>
+            <input type="checkbox" checked={snap.gizmos} onChange={(e) => system.setGizmosVisible(e.target.checked)} className="accent-[var(--accent)]" />
+            {t('section.handlesShort')}
+          </label>
+          <div className="flex-1" />
+          <IconButton title={t('section.clearAll')} onClick={() => system.clear()} danger><TrashIcon size={13} /></IconButton>
+        </div>
+      )}
     </ViewportPanel>
+  )
+}
+
+// ── Mobile ────────────────────────────────────────────────────────────────────
+// The desktop palette lists every cut with its own slider, four 24px icon
+// buttons and a native select: on a phone that is a column of controls taller
+// than the screen, covering the model being cut, with targets a finger misses.
+//
+// The phone dock works on ONE cut at a time: the quick-cut row, a strip of
+// chips to pick the cut, and a focus card for it, with a thumb-sized slider,
+// the storeys as tappable chips instead of a select, and 40px actions. The look
+// options (poché, handles, clear) fold behind a toggle. The model stays in view
+// above it, which is the point of a section.
+
+type QuickCut = { id: string; label: string; hint: string; icon: React.ReactNode; onClick: () => void; active?: boolean }
+type SectionSnap = NonNullable<ReturnType<typeof useSectionSnapshot>>
+type SectionSys = ReturnType<ViewerAPI['getSections']>
+
+function MBtn({ title, onClick, children, danger, active }: {
+  title: string; onClick: () => void; children: React.ReactNode; danger?: boolean; active?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      onClick={(e) => { e.stopPropagation(); haptic('tick'); onClick() }}
+      className={[
+        'flex-none w-10 h-10 flex items-center justify-center rounded-[11px] active:scale-[0.93] transition-transform',
+        danger ? 'text-[var(--danger)] bg-[rgba(229,72,77,0.1)]'
+          : active ? 'text-[var(--accent-2)] bg-[rgba(94,106,210,0.16)]'
+            : 'text-[var(--text-dim)] bg-white/[0.05]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Chip({ on, onClick, children, disabled, dataLevel }: {
+  on: boolean; onClick: () => void; children: React.ReactNode; disabled?: boolean; dataLevel?: number
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={disabled}
+      data-level={dataLevel}
+      onClick={() => { haptic('tick'); onClick() }}
+      className={[
+        'shrink-0 h-9 px-3 rounded-full text-[12px] font-medium flex items-center gap-1.5 border whitespace-nowrap max-w-[220px] disabled:opacity-40',
+        on ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.18)] text-[var(--text)]' : 'border-[var(--border)] text-[var(--text-dim)]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function SectionMobileBody({
+  snap, system, quick, hasCuts, levels, levelCut, levelAt, nameOf, units, locale, notice, active,
+  optionsOpen, onToggleOptions, boxAxis, setBoxAxis, addBox, onClose,
+}: {
+  snap: SectionSnap
+  system: SectionSys
+  quick: QuickCut[]
+  hasCuts: boolean
+  levels: Array<{ name: string; y: number }>
+  levelCut: (i: number) => number
+  levelAt: (offset: number) => number
+  nameOf: (p: SectionPlaneInfo) => string
+  units: LengthUnit
+  locale: string
+  notice: string | null
+  active: number
+  optionsOpen: boolean
+  onToggleOptions: () => void
+  boxAxis: IfcAxis
+  setBoxAxis: (a: IfcAxis) => void
+  addBox: (fit: 'model' | 'selection') => Promise<void>
+  onClose: () => void
+}) {
+  const { t } = useTranslation('measurement')
+  // The cut being worked on: the selected one, else the newest.
+  const newest = snap.planes[snap.planes.length - 1]
+  const selectedValid = snap.selectedId === 'box' ? !!snap.box : snap.planes.some((p) => p.id === snap.selectedId)
+  const focusId = selectedValid ? snap.selectedId : newest?.id ?? (snap.box ? 'box' : null)
+  const plane = snap.planes.find((p) => p.id === focusId) ?? null
+  const curLevel = plane && plane.axis === 'z' ? levelAt(plane.offset) : -1
+  const levelStripRef = useRef<HTMLDivElement>(null)
+
+  // Keep the current storey chip in view as the cut steps through floors.
+  useEffect(() => {
+    if (curLevel < 0) return
+    levelStripRef.current
+      ?.querySelector<HTMLElement>(`[data-level="${curLevel}"]`)
+      ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [curLevel])
+
+  const cutCount = snap.planes.length + (snap.box ? 1 : 0)
+
+  return (
+    <>
+      {/* Header */}
+      <div className="shrink-0 flex items-center gap-1.5 pl-3.5 pr-1.5 pt-1.5 pb-1">
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-[var(--text)] leading-tight">{t('section.title')}</div>
+          <div className="text-[11px] text-[var(--text-faint)] truncate">
+            {active > 0 ? t('section.active', { count: active }) : t('section.none')}
+          </div>
+        </div>
+        {hasCuts && (
+          <MBtn title={t('mobile.options')} onClick={onToggleOptions} active={optionsOpen}>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M2 4h7M12 4h2M2 12h2M7 12h7" /><circle cx="10.5" cy="4" r="1.5" /><circle cx="5.5" cy="12" r="1.5" />
+            </svg>
+          </MBtn>
+        )}
+        <MBtn title={t('panel.close')} onClick={onClose}><CloseIcon size={15} /></MBtn>
+      </div>
+
+      {/* Quick cuts */}
+      <div className="shrink-0 grid grid-cols-5 gap-1.5 px-2 pb-2">
+        {quick.map((q) => (
+          <button
+            key={q.id}
+            type="button"
+            aria-pressed={q.active}
+            aria-label={q.hint}
+            onClick={() => { haptic('tick'); q.onClick() }}
+            className={[
+              'flex flex-col items-center justify-center gap-1 h-[56px] rounded-[12px] active:scale-[0.95] transition-transform min-w-0',
+              q.active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] bg-white/[0.04]',
+            ].join(' ')}
+          >
+            {q.icon}
+            <span className="text-[10.5px] font-medium leading-none text-center px-0.5 truncate max-w-full">{q.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {snap.placing && (
+          <div className="mx-2 mb-2 rounded-[12px] border border-[rgba(94,106,210,0.35)] bg-[rgba(94,106,210,0.1)] px-3 py-2.5">
+            <div className="text-[13px] text-[var(--text)]">{t('section.placing')}</div>
+            <div className="mt-0.5 text-[11.5px] text-[var(--text-faint)]">{t('section.placingHint')}</div>
+          </div>
+        )}
+
+        {!hasCuts && !snap.placing && (
+          <p className="px-4 pb-3 text-[12px] text-[var(--text-faint)] leading-relaxed text-center">{t('section.empty')}</p>
+        )}
+
+        {/* Which cut: one chip each, box first, then newest first. */}
+        {cutCount > 1 && (
+          <div className="flex gap-1.5 overflow-x-auto px-2 pb-2" style={{ scrollbarWidth: 'none' }}>
+            {snap.box && (
+              <Chip on={focusId === 'box'} onClick={() => system.select('box')}>
+                <BoxIcon size={13} />{t('section.boxShort')}
+              </Chip>
+            )}
+            {[...snap.planes].reverse().map((p) => (
+              <Chip key={p.id} on={focusId === p.id} onClick={() => system.select(p.id)}>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.axis ? AXIS_COLOR[p.axis] : '#6CE0FF', opacity: p.enabled ? 1 : 0.4 }} />
+                <span className={['truncate', p.enabled ? '' : 'line-through'].join(' ')}>{nameOf(p)}</span>
+              </Chip>
+            ))}
+          </div>
+        )}
+
+        {/* Focus card: a plane */}
+        {plane && (() => {
+          const color = plane.axis ? AXIS_COLOR[plane.axis] : '#6CE0FF'
+          const span = Math.max(1e-9, plane.range.max - plane.range.min)
+          const pctPos = Math.min(100, Math.max(0, ((plane.offset - plane.range.min) / span) * 100))
+          const rangeStyle = { '--m-range-c': color, '--m-range-p': `${pctPos}%` } as React.CSSProperties
+          return (
+            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="flex-none w-5 h-5 rounded-[5px] text-[10.5px] font-bold flex items-center justify-center text-[#0A0A0C]" style={{ background: color }}>
+                  {plane.axis ? plane.axis.toUpperCase() : '◇'}
+                </span>
+                <span className={['flex-1 min-w-0 truncate text-[13px] font-medium', plane.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>
+                  {nameOf(plane)}
+                </span>
+                <ValueField
+                  value={plane.offset} units={units} locale={locale}
+                  prefix={plane.axis ? `${plane.axis.toUpperCase()} ` : (plane.offset >= 0 ? '+' : '')}
+                  title={plane.axis ? t('section.position') : t('section.offset')}
+                  onCommit={(v) => system.setOffset(plane.id, v, true)}
+                />
+              </div>
+
+              {plane.axis === 'z' && levels.length > 0 && (
+                <div ref={levelStripRef} className="mt-2 flex gap-1.5 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: 'none' }} aria-label={t('mobile.levels')}>
+                  {levels.map((l, i) => (
+                    <Chip key={`${l.name}-${i}`} dataLevel={i} on={curLevel === i} disabled={!plane.enabled}
+                      onClick={() => system.setOffset(plane.id, levelCut(i), true)}>
+                      {l.name}
+                    </Chip>
+                  ))}
+                </div>
+              )}
+
+              <input
+                type="range"
+                className="m-range"
+                aria-label={t('mobile.position')}
+                min={plane.range.min}
+                max={plane.range.max}
+                step={plane.step}
+                value={plane.offset}
+                disabled={!plane.enabled}
+                style={rangeStyle}
+                onChange={(e) => system.setOffset(plane.id, Number(e.target.value), false)}
+                onPointerUp={(e) => system.setOffset(plane.id, Number((e.target as HTMLInputElement).value), true)}
+                onTouchEnd={(e) => system.setOffset(plane.id, Number((e.target as HTMLInputElement).value), true)}
+              />
+
+              <div className="flex items-center gap-1.5">
+                <MBtn title={t('section.view')} onClick={() => system.lookAt(plane.id)}><TargetIcon size={17} /></MBtn>
+                <MBtn title={t('section.flip')} onClick={() => system.flip(plane.id)} active={plane.flipped}><FlipIcon size={17} /></MBtn>
+                <MBtn title={plane.enabled ? t('section.disable') : t('section.enable')} onClick={() => system.setEnabled(plane.id, !plane.enabled)} active={plane.enabled}>
+                  <EyeIcon size={17} off={!plane.enabled} />
+                </MBtn>
+                <div className="flex-1" />
+                <MBtn title={t('section.delete')} onClick={() => system.remove(plane.id)} danger><TrashIcon size={17} /></MBtn>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Focus card: the box, one axis at a time */}
+        {focusId === 'box' && snap.box && (() => {
+          const box = snap.box
+          const r = box.ranges[boxAxis]
+          return (
+            <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] bg-white/[0.02] px-3 pt-2.5 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--accent-2)]"><BoxIcon size={17} /></span>
+                <span className={['flex-1 text-[13px] font-medium', box.enabled ? 'text-[var(--text)]' : 'text-[var(--text-faint)] line-through'].join(' ')}>{t('section.box')}</span>
+                <div className="flex p-0.5 gap-0.5 rounded-[10px] bg-[var(--surface-2)]" role="radiogroup">
+                  {(['x', 'y', 'z'] as const).map((a) => (
+                    <button key={a} type="button" role="radio" aria-checked={boxAxis === a} onClick={() => setBoxAxis(a)}
+                      className={['w-9 h-8 rounded-[8px] text-[12px] font-bold', boxAxis === a ? 'bg-white/[0.12]' : 'opacity-60'].join(' ')}
+                      style={{ color: AXIS_COLOR[a] }}>
+                      {a.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <DualRange touch label={boxAxis.toUpperCase()} limits={box.limits[boxAxis]} value={r} step={box.step}
+                color={AXIS_COLOR[boxAxis]} onChange={(range, final) => system.setBoxRange(boxAxis, range, final)} />
+              <div className="flex justify-between -mt-1 mb-1.5">
+                <ValueField value={r.min} units={units} locale={locale} title={t('section.min')}
+                  onCommit={(v) => system.setBoxRange(boxAxis, { min: v, max: r.max }, true)} />
+                <ValueField value={r.max} units={units} locale={locale} title={t('section.max')}
+                  onCommit={(v) => system.setBoxRange(boxAxis, { min: r.min, max: v }, true)} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <MBtn title={t('section.boxFitSelection')} onClick={() => void addBox('selection')}><TargetIcon size={17} /></MBtn>
+                <MBtn title={t('section.boxFitModel')} onClick={() => void addBox('model')}><BoxIcon size={17} /></MBtn>
+                <MBtn title={box.enabled ? t('section.disable') : t('section.enable')} onClick={() => system.setBoxEnabled(!box.enabled)} active={box.enabled}>
+                  <EyeIcon size={17} off={!box.enabled} />
+                </MBtn>
+                <div className="flex-1" />
+                <MBtn title={t('section.boxRemove')} onClick={() => system.removeBox()} danger><TrashIcon size={17} /></MBtn>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Look: folded away until asked for */}
+        {hasCuts && optionsOpen && (
+          <div className="mx-2 mb-2 rounded-[14px] border border-[var(--border)] px-3 py-2 flex flex-col gap-2">
+            <label className="flex items-center justify-between gap-3 min-h-[40px] text-[13px] text-[var(--text)]">
+              {t('section.fill')}
+              <input type="checkbox" checked={snap.poche} onChange={(e) => system.setPoche(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
+            </label>
+            <div className="flex gap-2.5" role="radiogroup" aria-label={t('section.fillColor')}>
+              {POCHE_COLORS.map((c) => (
+                <button key={c} type="button" role="radio" aria-checked={snap.pocheColor === c} title={t('section.fillColor')}
+                  disabled={!snap.poche} onClick={() => system.setPocheColor(c)}
+                  className={['w-8 h-8 rounded-full border-2 transition disabled:opacity-30', snap.pocheColor === c ? 'border-white' : 'border-white/20'].join(' ')}
+                  style={{ background: c }} />
+              ))}
+            </div>
+            <label className="flex items-center justify-between gap-3 min-h-[40px] text-[13px] text-[var(--text)]">
+              {t('section.handles')}
+              <input type="checkbox" checked={snap.gizmos} onChange={(e) => system.setGizmosVisible(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
+            </label>
+            <button type="button" onClick={() => { haptic('select'); system.clear() }}
+              className="h-11 rounded-[11px] text-[13px] font-medium text-[var(--danger)] bg-[rgba(229,72,77,0.1)] flex items-center justify-center gap-2">
+              <TrashIcon size={15} />{t('section.clearAll')}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {notice && (
+        <div className="shrink-0 px-3.5 py-2 border-t border-[var(--border)] text-[12px] text-[var(--warn)]" role="status">{notice}</div>
+      )}
+    </>
   )
 }

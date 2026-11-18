@@ -92,7 +92,8 @@ Most IFC validation tools have at least one of these friction points:
 | **Non-destructive editor** | Edit property values, fix GUIDs, rename elements. Every change is a diff with full undo/redo. Export a corrected IFC binary — diffs applied in a worker, no server. |
 | **BCF 2.1 / 3.0 import/export** | Navigate to imported BCF viewpoints and manage issue topics in a dedicated BCF panel (create, comment, capture viewpoints). Export validation or IDS findings as a BCF zip for Navisworks, BIMcollab, Solibri, and any BCF-compatible CDE. |
 | **Quantity takeoff** | Aggregates `IfcElementQuantity` across the model — area, volume, length per IFC class. |
-| **OPFS geometry cache** | Parsed geometry is cached in the browser's Origin Private File System. Reloads are ~10× faster and work offline. |
+| **OPFS geometry cache** | Parsed geometry is cached in the browser's Origin Private File System, for dropped files and URL/demo models alike, and checked against a content fingerprint so an edited file with the same name is not served stale. Reloads skip conversion: a three-model federated set came back in 2.4 s instead of 10.5 s cold. |
+| **Queued multi-model loading** | Drop a whole federation at once. Every model is a job you can follow, cancel or retry. Downloads, conversions and scene attaches overlap, progress comes from the real pipeline phases rather than a timer, and the first model sets the shared coordinate base. |
 | **Embed / SDK** | Drop the viewer into any page via iframe + URL params, or mount it from a ~6 KB dependency-free JS SDK that streams IFC bytes client-side (no upload, no CORS). See [Embed it / SDK](#embed-it--sdk). |
 | **Mobile UI** | Dedicated bottom-sheet panels for validation and IDS, a floating bottom-nav, and touch-friendly controls down to 320 px. |
 | **10 languages** | EN · ES · FR · DE · PT · JA · CA · ZH · IT · TH |
@@ -187,14 +188,15 @@ flowchart LR
 
 ## How it works (architecture)
 
-The whole pipeline lives in the browser. The IFC file is parsed in a Web Worker via WebAssembly, rendered with Three.js, and validated in a second worker — **nothing about your model is sent to any server.**
+The whole pipeline lives in the browser. Every load becomes a job in one loading queue. The IFC file is converted in a Web Worker via WebAssembly, rendered with Three.js, and validated in a separate worker — **nothing about your model is sent to any server.**
 
 ```mermaid
 flowchart TD
     subgraph BROWSER["Your browser — the model never leaves this boundary"]
         UI["React 18 UI<br/>Tailwind · Radix · Zustand"]
+        QUEUE["Loading queue<br/>jobs · phases · cancel · retry"]
         VIEWER["Viewer (Three.js)<br/>multi-model, postprocessing"]
-        CACHE[("OPFS cache<br/>~10x faster reloads")]
+        CACHE[("OPFS cache<br/>reloads skip conversion")]
 
         subgraph WORKERS["Web Workers (WebAssembly)"]
             PARSE["ifc-parser.worker<br/>IFC → fragments"]
@@ -206,10 +208,12 @@ flowchart TD
         end
     end
 
-    FILE["📄 drag &amp; drop .ifc"] --> UI
-    UI --> PARSE
-    PARSE -->|fragments| VIEWER
-    PARSE -->|fragments + ifc bytes| CACHE
+    FILE["📄 drag &amp; drop .ifc (one or many)"] --> UI
+    UI --> QUEUE
+    QUEUE <-->|hit / miss| CACHE
+    QUEUE --> PARSE
+    PARSE -->|fragments| QUEUE
+    QUEUE -->|fragments| VIEWER
     UI --> VALID
     VALID -->|streamed issues| UI
     VALID -->|Health Score| UI
@@ -217,7 +221,7 @@ flowchart TD
     EXPORT -->|corrected .ifc| DL["⬇ download"]
 ```
 
-Independent workers keep the UI responsive: parsing, validation, export, IDS checking, BCF import, GIF encoding (Capture Toolkit) and (in Map mode) georeferencing/terrain each run off the main thread. State is held in thirteen small [Zustand](https://github.com/pmndrs/zustand) stores; geometry never enters the store (only stable IDs do). See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full data-flow diagrams.
+Independent workers keep the UI responsive: parsing, validation, export, IDS checking, BCF import, GIF encoding (Capture Toolkit), point clouds and (in Map mode) georeferencing/terrain/surroundings each run off the main thread. State is held in small [Zustand](https://github.com/pmndrs/zustand) stores (25 today); geometry never enters the store (only stable IDs do). See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full data-flow diagrams and [`docs/MODEL_LOADING.md`](docs/MODEL_LOADING.md) for how loads are queued, scheduled and cancelled.
 
 ---
 
@@ -267,7 +271,8 @@ Every worker message is validated at runtime with [Zod](https://zod.dev) schemas
 | GIS / basemap | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (tiles inside the three.js scene) — Map mode only |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | Animations | Framer Motion + GSAP |
-| State | Zustand 5 (13 stores: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation) |
+| State | Zustand 5 (25 stores, among them model, scene, validation, editor, ui, loading, bcf, ids, geo, capture, presentation) |
+| Loading | One queued `LoadManager` (`src/lib/loading/`): network / convert / attach lanes, real phases, cancel, per-class retry |
 | Validation | Web Worker — 44 rules, streamed via `postMessage` |
 | IDS | Pure-TS IDS 1.0 engine + dedicated web-ifc worker (`src/lib/ids/`, `ids.worker.ts`) |
 | Runtime safety | Zod schemas on every worker boundary |
@@ -313,10 +318,11 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, IdsPanel, BcfPanel, GeoPanel, Sidebar, ModelTree, ScenePanel, …
                    #   + mobile/ (bottom-sheet panels) · ids/ · blog/ · legal/ · reactbits/
-  workers/         # ifc-parser · validator · export · ids · bcf-parser · geo-extract · geo-terrain · gif-export · point-cloud (.worker.ts)
-  stores/          # 13 Zustand stores (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
+  workers/         # ifc-parser · validator · export · ids · bcf-parser · geo-extract · geo-terrain · geo-buildings · gif-export · point-cloud (.worker.ts)
+  stores/          # 25 Zustand stores (model, scene, validation, editor, ui, loading, takeoff, toast, bcf, ids, geo, …)
   hooks/           # useModelSession, useValidationRunner, useIdsRun, useElementFocus, useIsMobile, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts · share-report.ts
+    loading/       # Model loading & orchestration (queue, scheduler, convert pool, cache, retry — docs/MODEL_LOADING.md)
     ids/           # IDS 1.0 engine (parser, facets, runner, report, golden testcases)
     geo/           # GIS / Map mode (basemap engine, CRS, georef ladder, terrain, providers)
     pointcloud/    # Point clouds (LAS/LAZ/COPC/PLY/PCD/XYZ readers, chunker, alignment ladder, LOD, shader)

@@ -92,7 +92,14 @@
     "memory": "{{mb}} MB on the GPU",
     "truncated": "Stopped at {{count}} points — the file holds more than this viewer keeps in memory at once.",
     "noModel": "No IFC model loaded — the scan is placed on its own.",
-    "partial": "Part of this scan could not be read and is missing from the view. What you see is incomplete."
+    "partial": "Part of this scan could not be read and is missing from the view. What you see is incomplete.",
+    "budget": "Point budget: {{used}} of {{max}}",
+    "budgetNearlyFull": "Point budget: {{used}} of {{max}} — nearly full",
+    "budgetFull": "Point budget: {{used}} of {{max}} — full",
+    "budgetLabel": "Resident point budget",
+    "budgetHint": "Points the loaded scans keep in memory, including scans still loading. A scan that does not fit waits while another scan is still loading; otherwise it loads truncated, or is refused when the budget is full. Streamed COPC clouds are not counted: the Detail setting bounds them.",
+    "budgetReserved": "+ {{reserved}} reserved for scans still loading",
+    "budgetAbout": "About the point budget"
   },
   "align": {
     "title": "Alignment",
@@ -100,6 +107,7 @@
       "map-conversion": "Georeferenced (map conversion)",
       "shared-crs": "Georeferenced (shared grid)",
       "geographic": "Geographic anchor",
+      "scene-anchor": "Scene anchor",
       "local": "Shared local coordinates",
       "manual": "Placed by hand"
     },
@@ -128,7 +136,10 @@
       "unitFeet": "Extent suggests feet — scaled by 0.3048.",
       "unitAssumed": "Unit not declared; metres assumed.",
       "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it.",
-      "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it."
+      "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it.",
+      "sceneAnchorSameGrid": "Placed by its CRS against the first georeferenced scan (same grid, no reprojection).",
+      "sceneAnchorReprojected": "Placed by its CRS against the scene anchor, reprojected through WGS84.",
+      "assumedVerticalDatum": "All scans are assumed to share one height datum — the file does not state it."
     },
     "manualWarning": "This placement is a starting point, not a measurement.",
     "recompute": "Re-run alignment",
@@ -189,7 +200,10 @@
     "classification": "Classification",
     "intensity": "Intensity",
     "distance": "Distance from camera",
-    "clear": "Clear"
+    "clear": "Clear",
+    "copy": "Copy coordinates",
+    "copied": "Coordinates copied",
+    "sliceHere": "Cut at this height"
   },
   "view": {
     "title": "View",
@@ -240,5 +254,217 @@
     "pcdCompressed": "The compressed PCD body could not be decoded. The file may be truncated.",
     "pcdMalformed": "The PCD header could not be read.",
     "alignFailed": "The scan was read, but its placement could not be worked out. It has been left unplaced."
+  },
+  "tabs": {
+    "appearance": "Appearance",
+    "placement": "Placement",
+    "view": "View",
+    "samples": "Samples",
+    "help": "Fix it",
+    "analyze": "Analyze"
+  },
+  "ui": {
+    "loaded": "Loaded scans",
+    "add": "Add scan",
+    "frame": "Fit to this scan",
+    "startTitle": "Open a point cloud",
+    "startHint": "Drop one or several files — each loads in parallel and can be removed on its own.",
+    "orSample": "…or try a sample",
+    "featured": "Recommended",
+    "showAllSamples": "Show all {{count}} samples",
+    "showFewerSamples": "Show fewer",
+    "replayTeaser": "Animated LiDAR + IFC demos",
+    "replayTeaserHint": "Four simulated scan timelines aligned with their models.",
+    "advanced": "Advanced",
+    "quality": "Draw budget",
+    "qualityHint": "Points drawn per frame. Higher looks denser but needs a faster GPU.",
+    "qualityLevel": {
+      "low": "Light",
+      "medium": "Normal",
+      "high": "High",
+      "ultra": "Max"
+    },
+    "compare": "Scan ↔ model",
+    "compareScan": "Scan",
+    "compareModel": "Model",
+    "stats": "Performance",
+    "modes": {
+      "point-cloud": "Scan only",
+      "ifc": "Model only",
+      "overlay": "Overlay",
+      "xray": "X-ray",
+      "scan-vs-bim": "Scan vs BIM"
+    },
+    "drawn": "Drawn / loaded"
+  },
+  "presets": {
+    "title": "Quick look",
+    "balanced": "Balanced",
+    "detail": "Sharp",
+    "presentation": "Presentation",
+    "performance": "Fast",
+    "custom": "Custom",
+    "reset": "Reset appearance"
+  },
+  "diag": {
+    "title": "Check-up",
+    "allGood": "Everything looks right with this scan.",
+    "issue": {
+      "failed": "This file could not be opened.",
+      "partial": "Part of the scan could not be read — what you see is incomplete.",
+      "truncated": "Only part of the file fits in memory, so the scan was cut short.",
+      "upAxisGuessed": "The file does not say which way is up. If it looks like it is lying on its side, flip it.",
+      "colorUnavailable": "The file has no data for the current colour mode, so it draws flat.",
+      "hidden": "This scan is hidden.",
+      "faint": "Opacity is so low the scan is barely visible.",
+      "farFromModel": "The scan is far away from the model.",
+      "manualPlacement": "Nothing links this scan to the model — it was centred on it. Check the placement.",
+      "crsUnknown": "The scan's coordinate system is unknown to this build, so its georeference was ignored.",
+      "tooLarge": "The scan is far larger than expected — the file is probably in millimetres, centimetres or feet.",
+      "tooSmall": "The scan is far smaller than expected — it may be in kilometres or scaled down.",
+      "heavy": "A lot of points at full detail — lighter settings will keep navigation smooth."
+    },
+    "issueCount": "To review: {{count}}"
+  },
+  "fix": {
+    "flipUpAxis": "Flip up axis",
+    "bestColor": "Use best colour",
+    "showAll": "Show it",
+    "opacityFull": "Full opacity",
+    "fitCloud": "Fit to scan",
+    "fitBoth": "Show both",
+    "realign": "Re-run alignment",
+    "openPlacement": "Adjust placement",
+    "unitMm": "It's mm",
+    "unitCm": "It's cm",
+    "unitFt": "It's feet",
+    "scaleUp": "Scale ×1000",
+    "performance": "Go lighter",
+    "remove": "Remove",
+    "applied": "Fixed: {{what}}"
+  },
+  "help": {
+    "title": "What do you see?",
+    "hint": "Pick the symptom — each button applies the usual fix, and every fix can be undone from Appearance or Placement.",
+    "sideways": {
+      "label": "It is lying on its side",
+      "hint": "Y-up vs Z-up exports"
+    },
+    "invisible": {
+      "label": "I can't see it",
+      "hint": "Shows it and frames the camera"
+    },
+    "wrongSize": {
+      "label": "Huge or tiny",
+      "hint": "Pick the unit the file was written in"
+    },
+    "misplaced": {
+      "label": "Not on the model",
+      "hint": "Re-aligns, then open the placement"
+    },
+    "colours": {
+      "label": "Black, white or odd colours",
+      "hint": "Cycles to a mode the file supports"
+    },
+    "sparse": {
+      "label": "Full of holes / too thin",
+      "hint": "Bigger, round points"
+    },
+    "blobby": {
+      "label": "Blurry, points too big",
+      "hint": "Smaller, sharper points"
+    },
+    "slow": {
+      "label": "It's slow",
+      "hint": "Draws fewer points while you move"
+    },
+    "broken": {
+      "label": "It won't load",
+      "hint": "Common causes"
+    },
+    "brokenTips": "LAS / LAZ / COPC / PLY / PCD / XYZ / PTS / CSV read here. E57 and scanner projects (RCP, FLS, LSPROJ) must be exported to LAS or PLY first. Some LAZ files use a LASzip variant browsers cannot decode — re-save them as LAS or COPC. Very large files: crop or decimate them first."
+  },
+  "analyze": {
+    "recipes": {
+      "title": "Use cases",
+      "hint": "One click sets up the view for a real task. Every filter below stays editable, and nothing changes the scan itself."
+    },
+    "recipe": {
+      "floorPlan": {
+        "label": "Floor plan cut",
+        "hint": "Keeps a 60 cm band at the picked height (or 1.2 m above the lowest point) and looks from above — walls read like a drawing."
+      },
+      "terrain": {
+        "label": "Terrain & contours",
+        "hint": "Colours by height, draws contour lines and keeps only ground returns when the file is classified."
+      },
+      "vegetation": {
+        "label": "Remove vegetation & noise",
+        "hint": "Hides the vegetation and noise classes so buildings, roads and ground stand out. Needs a classified file."
+      },
+      "slab": {
+        "label": "Slab flatness",
+        "hint": "Click a point on the slab: keeps a thin band around it and draws a line every 1 cm, so bumps and dips show as rings."
+      },
+      "scanVsBim": {
+        "label": "Scan vs BIM",
+        "hint": "Draws the scan in one bright colour over a translucent model, so anything built off-design sticks out. Needs an IFC model."
+      },
+      "clearance": {
+        "label": "Measure a clearance",
+        "hint": "Turns on the distance tool: click two points of the scan — floor to beam, wall to wall — to read the real, as-built gap."
+      }
+    },
+    "needsClasses": "Needs a classified file",
+    "needsModel": "Needs an IFC model",
+    "pickFirst": "Click a point on the scan first — Inspect is on.",
+    "applied": "Applied: {{what}}",
+    "activeBanner": "Analysis filters are hiding part of the scan.",
+    "reset": "Clear filters",
+    "slice": {
+      "title": "Height slice",
+      "toggle": "Only show a height band",
+      "from": "From",
+      "to": "To",
+      "hint": "Heights are scene metres. Pair it with Measure to read clear heights, or with a top view to trace a floor plan."
+    },
+    "contours": {
+      "title": "Contour lines",
+      "toggle": "Draw contour lines",
+      "hint": "Coarse steps read terrain; 1–2 cm steps reveal a slab that is not flat."
+    },
+    "classes": {
+      "title": "Classes",
+      "hint": "Tap a class to hide or show it. Codes follow the ASPRS LAS standard.",
+      "all": "All",
+      "ground": "Ground only",
+      "noVeg": "No vegetation",
+      "names": {
+        "c0": "Never classified",
+        "c1": "Unclassified",
+        "c2": "Ground",
+        "c3": "Low vegetation",
+        "c4": "Medium vegetation",
+        "c5": "High vegetation",
+        "c6": "Building",
+        "c7": "Noise",
+        "c8": "Key point",
+        "c9": "Water",
+        "c10": "Rail",
+        "c11": "Road surface",
+        "c12": "Overlap",
+        "c13": "Wire guard",
+        "c14": "Wire conductor",
+        "c15": "Transmission tower"
+      }
+    },
+    "measure": {
+      "title": "Measure the scan",
+      "hint": "Scans snap like models do: distances, areas and angles land on real points.",
+      "distance": "Distance",
+      "area": "Area",
+      "angle": "Angle",
+      "point": "Point"
+    }
   }
 }

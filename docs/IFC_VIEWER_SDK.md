@@ -74,21 +74,21 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `accent`   | `#rrggbb`                             | brand       | Tint the viewer to match your dashboard. |
 | `height` / `width` | number \| string              | `'100%'`    | iframe size (number → px). |
 | `model`    | string                                | —           | Auto-load this public IFC URL once ready. |
-| `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). |
+| `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). A backstop: the viewer now answers every load it accepts with `model-loaded` or `model-error`, including parse failures and cancellations. |
 | `onReady` / `onModelLoaded` / `onModelError` / `onProgress` | function | — | Convenience callbacks (same as `.on(...)`). |
 
 ### Methods
 | Method | Description |
 |--------|-------------|
-| `add(name, bytes)` | Load IFC `ArrayBuffer`/`Uint8Array`. Returns `Promise<ModelLoadedEvent>`. The buffer is transferred (detached) for zero-copy. |
-| `addFromUrl(url, name?)` | Load a public, CORS-enabled IFC URL. Returns `Promise<ModelLoadedEvent>`. |
+| `add(name, bytes)` | Load IFC `ArrayBuffer`/`Uint8Array`. Returns `Promise<ModelLoadedEvent>`; rejects with the `model-error` message if the model fails to load or the load is cancelled. The buffer is transferred (detached) for zero-copy. |
+| `addFromUrl(url, name?)` | Load a public, CORS-enabled IFC URL. Returns `Promise<ModelLoadedEvent>`, and rejects the same way. The download reports real byte progress. |
 | `select(expressId, modelId?)` | Select + frame an element by IFC expressID. |
 | `isolate(ifcType?)` | Isolate a category (e.g. `"IfcWall"`); omit to clear. |
 | `setView(view)` | Fly to a camera view: `iso`·`top`·`bottom`·`front`·`back`·`left`·`right`. |
 | `fit()` / `reset()` | Frame the active model / reset the camera. |
 | `showAll()` | Restore full visibility (clear hidden elements + isolation). |
 | `setLanguage(lang)` | Change UI language at runtime. |
-| `clear()` | Remove all loaded models. |
+| `clear()` | Cancel IFC loads still in flight, then remove all loaded models. |
 | `getLanguages()` | Supported language codes (reflects the iframe once ready). |
 | `getModels()` | `Promise<ModelSummary[]>` — the loaded models (`{ id, fileName, elementCount }`). |
 | `getElement(id, modelId?)` | `Promise<IfcElementData \| null>` — attributes + property/quantity sets. |
@@ -108,16 +108,18 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 
 Statics: `IfcViewer.LANGUAGES` (`{ code, label }[]`, native names) and `IfcViewer.SUPPORTED_LANGUAGES` (codes) — handy for building a language picker before the viewer is ready.
 
-Concurrent `add()`/`addFromUrl()` calls are **serialized** internally (one load at a time) and each promise is correlated to its own load by request id — so an app-initiated load inside the iframe (a URL param, a user upload) never resolves your `add()` promise.
+Each `add()`/`addFromUrl()` promise is correlated to its own load by request id, so an app-initiated load inside the iframe (a URL param, a user upload) never resolves your `add()` promise.
+
+Inside the iframe, every load is a job in the viewer's loading queue ([`MODEL_LOADING.md`](./MODEL_LOADING.md)). The queue overlaps downloads, conversions and scene attaches, converts one model at a time, and attaches the **first-submitted** model first, because that model sets the scene's coordinate base. The iframe accepts concurrent loads. The SDK still sends your calls one after another, which keeps their order stable and costs nothing, since the queue would serialise the conversions anyway. Calling `add()` several times in a row is safe, and the models land in the order you called it.
 
 ### Events
 | Event | Payload |
 |-------|---------|
 | `ready` | `{ languages }` — the viewer is mounted and ready |
-| `model-progress` | `{ percent, phase }` (download → parse → render) |
+| `model-progress` | `{ percent, phase }`. `phase` is `reading` (download / identify / cache check), `parsing` (conversion) or `uploading` (cache write / scene attach). `percent` never goes backwards for a load, even across an automatic retry. Sent only while that load is still in progress, at most every 250 ms. It is an estimate over the load's real phases, not a timer |
 | `model-loaded` | `{ modelId, fileName, elementCount, fromCache }` |
 | `validation-completed` | `{ qualityScore, errors, warnings, info }` — the Health Score |
-| `model-error` | `{ message, url?, name? }` |
+| `model-error` | `{ message, url?, name? }`. Sent for download failures, invalid or unparseable files, scene failures and cancelled loads (`message: 'Load cancelled'`). `url` for URL loads, `name` for byte/file loads |
 | `element-selected` | `{ expressId, modelId, ifcType, name }` |
 | `pointcloud-picked` | `{ cloudId, position, sourcePosition, classification, intensity, distance }` — armed with `inspectPointCloud()`. `sourcePosition` is the file's own coordinates, which is the number a survey record already holds |
 | `map-feature-picked` | `{ id, name?, label?, featureKind, heightM?, heightEstimated }` — a building in the OpenStreetMap surroundings. Context, not model: never validated, never exported, and `heightEstimated` is true far more often than not |
@@ -219,7 +221,14 @@ is enough — the SDK adds the byte-streaming `add()` path and a typed JS API on
 - **CORS** only matters for `addFromUrl`. `add(bytes)` needs no CORS — you hand the
   bytes over directly.
 - `add(bytes)` **transfers** the buffer (it becomes detached in your code). Pass a
-  copy if you still need the bytes afterward.
+  copy if you still need the bytes afterward. Inside the iframe, that same buffer
+  becomes the model's copy for validation, IDS and export, with no second copy.
+- Loads a host starts are not checked for duplicates: adding the same bytes twice
+  loads two models (only the in-app import dialog asks). Converted geometry is
+  cached in the visitor's browser, keyed by name and size and checked against a
+  SHA-256 of every byte. Adding the same file again, now or in a later session,
+  skips conversion, and an edited file with the same name and size is never
+  served stale. Bytes over 1 GB, or pages outside a secure context, are not cached.
 - The app must be **iframe-embeddable** (no `X-Frame-Options: DENY`). GitHub Pages
   sets none by default.
 - Vite **dev** server does not serve `public/sdk/index.html` for `/sdk/` (its SPA

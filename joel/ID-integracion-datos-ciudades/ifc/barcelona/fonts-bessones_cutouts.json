@@ -1,0 +1,193 @@
+{
+ "cdeMeshCutouts": {
+  "version": 1,
+  "anchor": {
+   "lon": 2.169636,
+   "lat": 41.387399,
+   "height": 70.18
+  },
+  "note": "Boxes in metres: s along bearing (deg clockwise from north), t to its left, z above the anchor height (the tileset anchor, before the scene placement offset).",
+  "boxes": [
+   {
+    "name": "Fonts Bessones \u2014 south-west fountain",
+    "lon": 2.16944379,
+    "lat": 41.38728551,
+    "bearing": 0.0,
+    "s": [
+     -10.6,
+     10.6
+    ],
+    "t": [
+     -10.6,
+     10.6
+    ],
+    "z": [
+     -0.01,
+     4.53
+    ]
+   },
+   {
+    "name": "Fonts Bessones \u2014 north-east fountain",
+    "lon": 2.1698275,
+    "lat": 41.38751193,
+    "bearing": 0.0,
+    "s": [
+     -10.6,
+     10.6
+    ],
+    "t": [
+     -10.6,
+     10.6
+    ],
+    "z": [
+     -0.06,
+     4.48
+    ]
+   },
+   {
+    "name": "sculpture Joventut",
+    "lon": 2.1697869,
+    "lat": 41.3874277,
+    "bearing": 200.005,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     -0.06,
+     4.01
+    ]
+   },
+   {
+    "name": "sculpture El Forjador",
+    "lon": 2.1695605,
+    "lat": 41.3873028,
+    "bearing": 78.902,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     -0.01,
+     4.03
+    ]
+   },
+   {
+    "name": "sculpture Noia",
+    "lon": 2.169495,
+    "lat": 41.3873845,
+    "bearing": 21.342,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     0.02,
+     3.61
+    ]
+   },
+   {
+    "name": "sculpture Pastor del flabiol",
+    "lon": 2.1696843,
+    "lat": 41.3874969,
+    "bearing": 262.089,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     0.0,
+     3.59
+    ]
+   },
+   {
+    "name": "sculpture Maternitat",
+    "lon": 2.1694043,
+    "lat": 41.3874189,
+    "bearing": 347.396,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     0.01,
+     3.6
+    ]
+   },
+   {
+    "name": "sculpture La Navegaci\u00f3",
+    "lon": 2.1696602,
+    "lat": 41.3875698,
+    "bearing": 294.606,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     -0.01,
+     3.58
+    ]
+   },
+   {
+    "name": "sculpture Figura femenina",
+    "lon": 2.1697116,
+    "lat": 41.3873777,
+    "bearing": 213.113,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     0.04,
+     3.63
+    ]
+   },
+   {
+    "name": "sculpture Dona amb nen i flabiol",
+    "lon": 2.1696469,
+    "lat": 41.3873368,
+    "bearing": 71.514,
+    "s": [
+     -0.85,
+     0.85
+    ],
+    "t": [
+     -0.85,
+     0.85
+    ],
+    "z": [
+     0.04,
+     3.63
+    ]
+   }
+  ]
+ }
+}

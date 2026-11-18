@@ -6,12 +6,22 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
-import { groupPositionUpdates, type Vec3 } from '../lib/model-grouping'
 import { useModelGroups } from '../hooks/useModelGroups'
+import SceneGroupTree from './SceneGroupTree'
+import { useScenePlacement, type ScenePlacement } from '../hooks/useScenePlacement'
+import { useTransformHistoryStore } from '../stores/transformHistoryStore'
+import { useSceneStore } from '../stores/sceneStore'
+import { usePointCloudStore } from '../stores/pointCloudStore'
+import { useGeoStore } from '../stores/geoStore'
+import type { Vec3 } from '../lib/rigid-move'
 import type { SceneModel, ModelTransform } from '../types'
 import type { TransformMode } from '../stores/uiStore'
 import { useUIStore } from '../stores/uiStore'
 import { ViewportPanel } from './ViewportPanel'
+import { SceneLoadingSection } from './loading'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { haptic } from '../lib/haptics'
+import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -20,7 +30,6 @@ interface ScenePanelProps {
   viewerApiRef:   React.MutableRefObject<ViewerAPI | null>
   onSetActive:    (id: string) => void
   onSetVisible:   (id: string, visible: boolean) => void
-  onSetTransform: (id: string, t: ModelTransform) => void
   onTransformMode:(mode: TransformMode) => void
   onRemove:       (id: string) => void
   onValidate:     (id: string) => void
@@ -52,6 +61,7 @@ interface NumberInputProps {
 
 function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInputProps) {
   const [draft, setDraft] = useState(value.toFixed(2))
+  const isMobile = useIsMobile()
 
   // Sync when value changes externally
   useEffect(() => { setDraft(value.toFixed(2)) }, [value])
@@ -65,6 +75,38 @@ function NumberInput({ label, value, step = 0.1, min, max, onChange }: NumberInp
     } else {
       setDraft(value.toFixed(2))
     }
+  }
+
+  // Phone: one row per value with −/+ steppers. Nudging by the step is how a
+  // model is placed by eye on a touch screen; the decimal keyboard is the
+  // fallback, not the main road.
+  if (isMobile) {
+    const nudge = (dir: 1 | -1) => {
+      haptic('tick')
+      const n = Math.round((value + dir * step) * 1000) / 1000
+      commit(String(n))
+    }
+    const stepBtn = 'w-11 h-10 shrink-0 rounded-[10px] bg-white/[0.06] text-[18px] leading-none text-[var(--text)] active:scale-[0.93] transition-transform'
+    return (
+      <div className="flex items-center gap-1.5 w-full">
+        <span className="w-[64px] shrink-0 text-[10.5px] text-[var(--text-muted)] uppercase tracking-wide truncate">{label}</span>
+        <button type="button" className={stepBtn} onClick={() => nudge(-1)} aria-label={`${label} −${step}`}>−</button>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={draft}
+          step={step}
+          min={min}
+          max={max}
+          aria-label={label}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') commit((e.target as HTMLInputElement).value) }}
+          className="flex-1 min-w-0 h-10 text-center bg-[rgba(255,255,255,0.05)] border border-[var(--border)] rounded-[10px] text-[16px] text-[var(--text)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
+        />
+        <button type="button" className={stepBtn} onClick={() => nudge(1)} aria-label={`${label} +${step}`}>+</button>
+      </div>
+    )
   }
 
   return (
@@ -99,10 +141,66 @@ interface ModelRowProps {
   onValidate:   () => void
   onFrame:      () => void
   onIsolate:    () => void
+  /** Optional "move to group" control, rendered before the delete button. */
+  moveControl?: React.ReactNode
 }
 
-function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActivate, onVisible, onRemove, onValidate, onFrame, onIsolate }: ModelRowProps) {
+function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActivate, onVisible, onRemove, onValidate, onFrame, onIsolate, moveControl }: ModelRowProps) {
   const { t } = useTranslation('viewer')
+  const { t: tc } = useTranslation('common')
+  const isMobile = useIsMobile()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Phone: four 24px icons in a row were four guesses for a thumb. The row
+  // keeps the two things done constantly (show/hide, make active) and the
+  // rest is one "⋯" away, labelled, in an action sheet.
+  if (isMobile) {
+    const actions: SheetAction[] = [
+      { key: 'frame', label: t('scene.frameCamera'), onClick: onFrame },
+      ...(multiModel ? [{ key: 'iso', label: isIsolated ? t('scene.showAllModels') : t('scene.isolateModel'), onClick: onIsolate }] : []),
+      { key: 'validate', label: t('scene.validateModel'), onClick: onValidate },
+      { key: 'remove', label: canDelete ? t('scene.removeModel') : t('scene.cannotRemoveOnly'), disabled: !canDelete, onClick: onRemove },
+    ]
+    return (
+      <div className={`w-full flex items-center gap-1.5 pl-1 pr-1 py-1.5 rounded-[12px] ${
+        isActive ? 'bg-[rgba(94,106,210,0.18)] border border-[rgba(94,106,210,0.35)]' : 'border border-transparent'
+      }`}>
+        <button
+          onClick={() => { haptic('tick'); onVisible(!model.visible) }}
+          aria-label={model.visible ? t('scene.hideModel') : t('scene.showModel')}
+          aria-pressed={model.visible}
+          className={`flex-none w-10 h-10 flex items-center justify-center rounded-[10px] ${model.visible ? 'text-[var(--accent)] bg-[rgba(94,106,210,0.12)]' : 'text-[var(--text-muted)] bg-white/[0.04]'}`}
+        >
+          <svg width="18" height="18" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
+            {model.visible
+              ? <><path d="M1 6C2.5 3 4.5 2 6 2s3.5 1 5 4c-1.5 3-3.5 4-5 4S2.5 9 1 6Z"/><circle cx="6" cy="6" r="1.5" fill="currentColor" stroke="none"/></>
+              : <><path d="M1 1l10 10M4.5 3.5C5 3.2 5.5 3 6 3c1.5 0 3.5 1 5 3-0.7 1.4-1.6 2.4-2.5 3"/><path d="M3 5.5C2 6.5 1.3 7.5 1 8c0.8 1.2 2 2.2 3.2 2.8"/></>}
+          </svg>
+        </button>
+        <button onClick={onActivate} className="flex-1 min-w-0 text-left py-1">
+          <p className={`text-[13.5px] font-medium truncate leading-tight ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text)]'}`}>
+            {model.fileName}
+          </p>
+          <p className="text-[11px] text-[var(--text-muted)] leading-tight mt-0.5">
+            {model.elementCount.toLocaleString()} el · {formatBytes(model.fileSize)}{isIsolated ? ' · ◎' : ''}
+          </p>
+        </button>
+        {moveControl}
+        <button
+          onClick={() => { haptic('tick'); setMenuOpen(true) }}
+          aria-label={model.fileName}
+          aria-haspopup="menu"
+          className="flex-none w-10 h-10 flex items-center justify-center rounded-[10px] bg-white/[0.04] text-[var(--text-dim)]"
+        >
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <circle cx="3" cy="8" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="13" cy="8" r="1.5" />
+          </svg>
+        </button>
+        <MobileActionSheet open={menuOpen} title={model.fileName} actions={actions} onClose={() => setMenuOpen(false)} closeLabel={tc('actions.close')} />
+      </div>
+    )
+  }
+
   return (
     <div
       className={`w-full flex items-center gap-1 px-2 py-2 rounded-lg transition-colors cursor-default ${
@@ -181,6 +279,8 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
         </svg>
       </button>
 
+      {moveControl}
+
       {/* Delete button — disabled when it's the last model */}
       <button
         onClick={(e) => { e.stopPropagation(); if (canDelete) onRemove() }}
@@ -200,170 +300,88 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
   )
 }
 
-// ── Transform section ─────────────────────────────────────────────────────────
+// ── Transform section (one file) ─────────────────────────────────────────────
+// Every edit goes through `placement`, so it is undoable and recorded in the
+// same history as group moves.
 
 interface TransformSectionProps {
-  model:          SceneModel
-  viewerApiRef:   React.MutableRefObject<ViewerAPI | null>
-  onSetTransform: (id: string, t: ModelTransform) => void
-  /**
-   * Every model this edit applies to, `model` included and first in intent.
-   *
-   * One entry is the ordinary per-file case. More than one is a federated set
-   * being moved as a unit, and then POSITION is applied as a delta so the
-   * offsets between the files survive — see `groupPositionUpdates`.
-   */
-  targets?: SceneModel[]
+  model:        SceneModel
+  placement:    ScenePlacement
+  viewerApiRef: React.MutableRefObject<ViewerAPI | null>
 }
 
-function TransformSection({ model, viewerApiRef, onSetTransform, targets }: TransformSectionProps) {
+function TransformSection({ model, placement, viewerApiRef }: TransformSectionProps) {
   const { t: tViewer } = useTranslation('viewer')
   const t = model.transform
-  const pos = (t.position as { x: number; y: number; z: number }) ?? { x: 0, y: 0, z: 0 }
-  const rot = (t.rotation as { x: number; y: number; z: number }) ?? { x: 0, y: 0, z: 0 }
+  const pos = (t.position as Vec3 | undefined) ?? { x: 0, y: 0, z: 0 }
+  const rot = (t.rotation as Vec3 | undefined) ?? { x: 0, y: 0, z: 0 }
   const rawScale = t.scale ?? 1
   const scale = typeof rawScale === 'number'
     ? { x: rawScale, y: rawScale, z: rawScale }
-    : rawScale as { x: number; y: number; z: number }
+    : rawScale as Vec3
 
-  const group = targets && targets.length > 1 ? targets : null
+  const applyPos   = (axis: 'x'|'y'|'z', v: number) => placement.setModelTransform(model.id, { position: { ...pos, [axis]: v } })
+  const applyRot   = (axis: 'x'|'y'|'z', v: number) => placement.setModelTransform(model.id, { rotation: { ...rot, [axis]: v } })
+  const applyScale = (axis: 'x'|'y'|'z', v: number) => placement.setModelTransform(model.id, { scale: { ...scale, [axis]: v } })
+  const applyUniformScale = (v: number) => placement.setModelTransform(model.id, { scale: v })
 
-  const applyPos = useCallback((axis: 'x'|'y'|'z', v: number) => {
-    if (group) {
-      // A DELTA, never an absolute. Writing the same position into every member
-      // would stack a building's three files on one point and destroy the
-      // alignment that made them a set.
-      const updates = groupPositionUpdates(
-        group.map((m) => ({
-          id: m.id,
-          position: (m.transform.position as Vec3 | undefined) ?? { x: 0, y: 0, z: 0 },
-        })),
-        model.id, axis, v,
-      )
-      for (const u of updates) {
-        onSetTransform(u.id, { position: u.position })
-        viewerApiRef.current?.setModelTransform({ position: u.position }, u.id)
-      }
-      return
-    }
-    const next = { ...pos, [axis]: v }
-    onSetTransform(model.id, { position: next })
-    viewerApiRef.current?.setModelTransform({ position: next }, model.id)
-  }, [group, pos, model.id, onSetTransform, viewerApiRef])
-
-  const applyRot = useCallback((axis: 'x'|'y'|'z', v: number) => {
-    const next = { ...rot, [axis]: v }
-    onSetTransform(model.id, { rotation: next })
-    viewerApiRef.current?.setModelTransform({ rotation: next }, model.id)
-  }, [rot, model.id, onSetTransform, viewerApiRef])
-
-  const applyScale = useCallback((axis: 'x'|'y'|'z', v: number) => {
-    const next = { ...scale, [axis]: v }
-    onSetTransform(model.id, { scale: next })
-    viewerApiRef.current?.setModelTransform({ scale: next }, model.id)
-  }, [scale, model.id, onSetTransform, viewerApiRef])
-
-  const applyUniformScale = useCallback((v: number) => {
-    onSetTransform(model.id, { scale: v })
-    viewerApiRef.current?.setModelTransform({ scale: v }, model.id)
-  }, [model.id, onSetTransform, viewerApiRef])
-
-  // Reset and centre follow the scope too. Leaving them per-file would be the
-  // feature's own trap: a user who set the scope to the whole set and pressed
-  // Reset would move ONE file back to the origin and leave the other two where
-  // they were — silently destroying exactly the alignment the scope exists to
-  // protect, with a button whose label promises the opposite.
-  const resetAll = useCallback(() => {
-    // Identity for every member. Their authored coordinates already share a site
-    // origin, so zeroing the whole set restores the federation rather than
-    // scattering it — which is not true of resetting one file out of three.
-    for (const target of group ?? [model]) {
-      onSetTransform(target.id, {
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: 1,
-      })
-      viewerApiRef.current?.resetModelTransform(target.id)
-    }
-  }, [group, model, onSetTransform, viewerApiRef])
-
-  const centerOnGrid = useCallback(() => {
+  const centerOnGrid = () => {
     const bounds = viewerApiRef.current?.getModelBounds(model.id)
     if (!bounds) return
-    const newPos = {
+    placement.setModelTransform(model.id, { position: {
       x: -bounds.center.x + pos.x,
       y: -bounds.center.y + bounds.size.y / 2 + pos.y,
       z: -bounds.center.z + pos.z,
-    }
-    if (group) {
-      // The reference file's move, applied to everyone. Centring each member on
-      // its OWN centroid would put three separate buildings on the origin: the
-      // MEP model's centroid is not the architectural model's, and the set would
-      // come apart on a button called "centre".
-      const delta = { x: newPos.x - pos.x, y: newPos.y - pos.y, z: newPos.z - pos.z }
-      for (const target of group) {
-        const p = (target.transform.position as Vec3 | undefined) ?? { x: 0, y: 0, z: 0 }
-        const moved = { x: p.x + delta.x, y: p.y + delta.y, z: p.z + delta.z }
-        onSetTransform(target.id, { position: moved })
-        viewerApiRef.current?.setModelTransform({ position: moved }, target.id)
-      }
-      return
-    }
-    onSetTransform(model.id, { position: newPos })
-    viewerApiRef.current?.setModelTransform({ position: newPos }, model.id)
-  }, [group, model, pos, onSetTransform, viewerApiRef])
+    } })
+  }
 
   const isUniform = scale.x === scale.y && scale.y === scale.z
   const uniformScale = isUniform ? scale.x : 1
 
   return (
     <div className="space-y-3 pt-2">
-      {/* Translate */}
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.position')}</p>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={pos.x} step={0.5} onChange={(v) => applyPos('x', v)} />
           <NumberInput label="Y" value={pos.y} step={0.5} onChange={(v) => applyPos('y', v)} />
           <NumberInput label="Z" value={pos.z} step={0.5} onChange={(v) => applyPos('z', v)} />
         </div>
       </div>
 
-      {/* Rotate */}
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.rotation')}</p>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={rot.x} step={5} min={-360} max={360} onChange={(v) => applyRot('x', v)} />
           <NumberInput label="Y" value={rot.y} step={5} min={-360} max={360} onChange={(v) => applyRot('y', v)} />
           <NumberInput label="Z" value={rot.z} step={5} min={-360} max={360} onChange={(v) => applyRot('z', v)} />
         </div>
       </div>
 
-      {/* Scale — uniform + per-axis */}
       <div>
         <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.scale')}</p>
-        <div className="flex gap-1.5 mb-1.5">
+        <div className="flex max-md:flex-col gap-1.5 mb-1.5">
           <NumberInput label={tViewer('transform.uniform')} value={uniformScale} step={0.1} min={0.001} onChange={applyUniformScale} />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex max-md:flex-col gap-1.5">
           <NumberInput label="X" value={scale.x} step={0.1} min={0.001} onChange={(v) => applyScale('x', v)} />
           <NumberInput label="Y" value={scale.y} step={0.1} min={0.001} onChange={(v) => applyScale('y', v)} />
           <NumberInput label="Z" value={scale.z} step={0.1} min={0.001} onChange={(v) => applyScale('z', v)} />
         </div>
       </div>
 
-      {/* Quick actions */}
       <div className="flex gap-1.5 pt-1">
         <button
           onClick={centerOnGrid}
           title={tViewer('transform.snapToGridHint')}
-          className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+          className="flex-1 h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
         >
           {tViewer('transform.snapToGrid')}
         </button>
         <button
-          onClick={resetAll}
+          onClick={() => placement.reset([model.id])}
           title={tViewer('transform.resetHint')}
-          className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
+          className="flex-1 h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
         >
           {tViewer('transform.reset')}
         </button>
@@ -372,11 +390,132 @@ function TransformSection({ model, viewerApiRef, onSetTransform, targets }: Tran
   )
 }
 
+// ── Rigid section (a group, or the whole scene) ──────────────────────────────
+// Moves every member as ONE body: position is edited as the set's floor-centre
+// pivot (typing a number moves the set there, not one file), and heading turns
+// the set about that same pivot. Clouds come along. See lib/rigid-move for why
+// per-member rotation would scatter the set.
+
+const TURN_STEPS = [-90, -15, -1, 1, 15, 90] as const
+
+function RigidTransformSection({ ids, placement, containsAnchor }: {
+  ids: string[]
+  placement: ScenePlacement
+  /** True when this set holds the model the map is anchored to. */
+  containsAnchor: boolean
+}) {
+  const { t } = useTranslation('viewer')
+  // Re-read whenever any placement changes, so the fields always show where
+  // the set actually is.
+  const models = useSceneStore((s) => s.models)
+  const clouds = usePointCloudStore((s) => s.clouds)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const pivot = useMemo(() => placement.pivotOf(ids), [placement, ids, models, clouds])
+  const [turn, setTurn] = useState(0)
+  const geoPlacement = useGeoStore((s) => s.placement)
+
+  if (!pivot) return <p className="text-[10.5px] text-[var(--text-muted)] py-2">{t('scene.rigid.noGeometry')}</p>
+
+  const moveTo = (axis: 'x' | 'y' | 'z', v: number) => {
+    const d = v - pivot[axis]
+    if (Math.abs(d) < 1e-9) return
+    placement.moveRigid(ids, { delta: { x: 0, y: 0, z: 0, [axis]: d } })
+  }
+  const rotate = (deg: number) => { if (deg) placement.moveRigid(ids, { yawDeg: deg, pivot }) }
+
+  return (
+    <div className="space-y-3 pt-2">
+      <div>
+        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1 font-medium">{t('scene.rigid.pivot')}</p>
+        <p className="text-[9.5px] text-[var(--text-muted)] mb-1.5 leading-snug">{t('scene.rigid.pivotHint')}</p>
+        <div className="flex max-md:flex-col gap-1.5">
+          <NumberInput label="X" value={pivot.x} step={0.5} onChange={(v) => moveTo('x', v)} />
+          <NumberInput label="Y" value={pivot.y} step={0.5} onChange={(v) => moveTo('y', v)} />
+          <NumberInput label="Z" value={pivot.z} step={0.5} onChange={(v) => moveTo('z', v)} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{t('scene.rigid.turn')}</p>
+        <div className="grid grid-cols-6 gap-1 mb-1.5">
+          {TURN_STEPS.map((d) => (
+            <button key={d} onClick={() => rotate(d)}
+              className="h-6 max-md:h-10 max-md:text-[12px] rounded-md border border-[var(--border)] text-[10px] tabular-nums text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors">
+              {d > 0 ? `+${d}°` : `${d}°`}
+            </button>
+          ))}
+        </div>
+        <div className="flex max-md:flex-col max-md:items-stretch gap-1.5 items-end">
+          <NumberInput label={t('scene.rigid.degrees')} value={turn} step={1} min={-360} max={360} onChange={setTurn} />
+          <button onClick={() => { rotate(turn); setTurn(0) }} disabled={!turn}
+            className="h-[26px] max-md:h-11 px-2.5 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] disabled:opacity-40 transition-colors">
+            {t('scene.rigid.apply')}
+          </button>
+        </div>
+      </div>
+
+      {containsAnchor && geoPlacement && (
+        <div className="rounded-md border border-[var(--border)] px-2 py-1.5 space-y-1">
+          <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-medium">{t('scene.rigid.geoTitle')}</p>
+          <p className="text-[10.5px] text-[var(--text)] tabular-nums">
+            {geoPlacement.lat.toFixed(6)}, {geoPlacement.lon.toFixed(6)} · {t('scene.rigid.heading', { deg: geoPlacement.rotationDeg.toFixed(1) })}
+          </p>
+          <p className="text-[9.5px] text-[var(--text-muted)] leading-snug">{t('scene.rigid.geoHint')}</p>
+          <button onClick={() => useGeoStore.getState().setPanelOpen(true)}
+            className="w-full h-6 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors">
+            {t('scene.rigid.calibrate')}
+          </button>
+        </div>
+      )}
+
+      <button
+        onClick={() => placement.reset(ids)}
+        title={t('scene.rigid.resetHint')}
+        className="w-full h-7 max-md:h-11 max-md:text-[13px] rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
+      >
+        {t('transform.reset')}
+      </button>
+    </div>
+  )
+}
+
+// ── History bar: undo / redo / temporary look ────────────────────────────────
+
+function HistoryBar({ placement }: { placement: ScenePlacement }) {
+  const { t } = useTranslation('viewer')
+  const canUndo = useTransformHistoryStore((s) => s.past.length > 0)
+  const canRedo = useTransformHistoryStore((s) => s.future.length > 0)
+  const temporary = useTransformHistoryStore((s) => s.tempBase !== null)
+  const btn = 'h-6 max-md:h-10 max-md:px-3.5 max-md:text-[13px] px-2 rounded-md border border-[var(--border)] text-[10.5px] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-35 disabled:cursor-not-allowed transition-colors'
+  return (
+    <div className="space-y-1.5 mb-2.5">
+      <div className="flex gap-1">
+        <button className={btn} onClick={placement.undo} disabled={!canUndo} title={t('scene.history.undo')} aria-label={t('scene.history.undo')}>↶</button>
+        <button className={btn} onClick={placement.redo} disabled={!canRedo} title={t('scene.history.redo')} aria-label={t('scene.history.redo')}>↷</button>
+        {!temporary && (
+          <button className={`${btn} flex-1`} onClick={placement.beginTemporary} title={t('scene.history.temporaryHint')}>
+            {t('scene.history.temporary')}
+          </button>
+        )}
+      </div>
+      {temporary && (
+        <div className="rounded-md border border-[rgba(245,166,35,0.45)] bg-[rgba(245,166,35,0.08)] px-2 py-1.5">
+          <p className="text-[10px] text-[var(--warn)] mb-1.5 leading-snug">{t('scene.history.temporaryOn')}</p>
+          <div className="flex gap-1">
+            <button className={`${btn} flex-1`} onClick={() => placement.endTemporary(true)}>{t('scene.history.restore')}</button>
+            <button className={`${btn} flex-1`} onClick={() => placement.endTemporary(false)}>{t('scene.history.keep')}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export default function ScenePanel({
   models, activeModelId, viewerApiRef,
-  onSetActive, onSetVisible, onSetTransform,
+  onSetActive, onSetVisible,
   onRemove, onValidate, onFrame,
   onIsolate, onShowAll,
   onClose,
@@ -384,18 +523,32 @@ export default function ScenePanel({
   const { t } = useTranslation('viewer')
   const activeModel = models.find((m) => m.id === activeModelId) ?? null
   const [isolatedId, setIsolatedId] = useState<string | null>(null)
-  const { groups } = useModelGroups()
+  const { groups, groupIdOf, looseCloudIds } = useModelGroups()
   const byId = useMemo(() => new Map(models.map((m) => [m.id, m])), [models])
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
-  /** Whether the transform panel edits one file or the whole family. */
-  const [transformScope, setTransformScope] = useState<'model' | 'group'>('model')
-  /** The family the active model belongs to, for the group scope. */
-  const activeGroupMembers = useMemo(() => {
-    if (!activeModelId) return [] as SceneModel[]
-    const g = groups.find((x) => x.memberIds.includes(activeModelId))
-    if (!g) return [] as SceneModel[]
-    return g.memberIds.map((id) => byId.get(id)).filter((m): m is SceneModel => m !== undefined)
-  }, [groups, activeModelId, byId])
+  /** Whether the transform panel edits one file, the active file's group, or everything. */
+  const [transformScope, setTransformScope] = useState<'model' | 'group' | 'scene'>('model')
+  const placement = useScenePlacement(viewerApiRef)
+  const cloudKey = usePointCloudStore((s) => s.clouds.map((c) => c.id).join('|'))
+  /** The active file's group — models and clouds — for the group scope. */
+  const activeGroup = useMemo(
+    () => (activeModelId ? groups.find((x) => x.memberIds.includes(activeModelId)) ?? null : null),
+    [groups, activeModelId],
+  )
+  const groupIds = useMemo(
+    () => (activeGroup ? [...activeGroup.memberIds, ...activeGroup.cloudIds] : []),
+    [activeGroup],
+  )
+  const sceneIds = useMemo(
+    () => [...models.map((m) => m.id), ...(cloudKey ? cloudKey.split('|') : [])],
+    [models, cloudKey],
+  )
+  const scopes = useMemo(() => {
+    const out: Array<'model' | 'group' | 'scene'> = ['model']
+    if (groupIds.length > 1) out.push('group')
+    if (sceneIds.length > Math.max(groupIds.length, 1)) out.push('scene')
+    return out
+  }, [groupIds.length, sceneIds.length])
+  const scope = scopes.includes(transformScope) ? transformScope : 'model'
   const [expandTransform, setExpandTransform] = useState(true)
   const { renderQuality, setRenderQuality } = useUIStore()
 
@@ -470,7 +623,7 @@ export default function ScenePanel({
             <button
               onClick={handleFrameAll}
               title={t('scene.frameAll')}
-              className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+              className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-white/[0.05] max-md:rounded-[10px] flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                 <path d="M1 4.5V2a1 1 0 0 1 1-1h2.5M8.5 1H11a1 1 0 0 1 1 1v2.5M12 8.5V11a1 1 0 0 1-1 1H8.5M4.5 12H2a1 1 0 0 1-1-1V8.5"/>
@@ -480,7 +633,7 @@ export default function ScenePanel({
           )}
           <button
             onClick={onClose}
-            className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            className="w-6 h-6 max-md:w-10 max-md:h-10 max-md:bg-white/[0.05] max-md:rounded-[10px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
               <path d="M1 1l9 9M10 1L1 10" />
@@ -492,89 +645,52 @@ export default function ScenePanel({
       {/* The shell already caps the card; the body just takes what is left and
           scrolls. A second hand-picked height here fought the first one. */}
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Models still loading, queued or failed — the federation as it forms */}
+        <SceneLoadingSection className="px-2 pt-2" />
+
         {/* Model list */}
         <div className="p-2 space-y-1">
           {models.length === 0 && (
             <p className="text-[11px] text-[var(--text-muted)] text-center py-4">{t('scene.noModels')}</p>
           )}
-          {groups.map((group) => {
-            const members = group.memberIds
-              .map((id) => byId.get(id))
-              .filter((m): m is SceneModel => m !== undefined)
-            if (members.length === 0) return null
-            // A group of one is just a file. Showing a family header over every
-            // single model would be noise pretending to be structure.
-            const isFamily = members.length > 1
-            const collapsed = collapsedGroups.has(group.id)
-            return (
-              <div key={group.id} className={isFamily ? 'rounded-[8px] border border-[var(--border)]' : ''}>
-                {isFamily && (
-                  <div className="flex items-center gap-1.5 px-2 py-1.5">
-                    <button
-                      onClick={() => setCollapsedGroups((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(group.id)) next.delete(group.id); else next.add(group.id)
-                        return next
-                      })}
-                      className="text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
-                      aria-label={collapsed ? t('scene.group.expand') : t('scene.group.collapse')}
-                    >
-                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor"
-                        strokeWidth="1.8" strokeLinecap="round"
-                        className={`transition-transform ${collapsed ? '-rotate-90' : ''}`}>
-                        <path d="M1 3l4 4 4-4"/>
-                      </svg>
-                    </button>
-                    <span className="flex-1 min-w-0 truncate text-[11px] font-medium text-[var(--text)]">
-                      {group.label}
-                    </span>
-                    <span className="text-[10px] text-[var(--text-dim)] tabular-nums">
-                      {members.length}
-                    </span>
-                    <button
-                      onClick={() => {
-                        setTransformScope('group')
-                        onSetActive(members[0].id)
-                      }}
-                      className={[
-                        'h-[20px] px-1.5 rounded-[5px] text-[10px] border transition-all',
-                        transformScope === 'group' && members.some((m) => m.id === activeModelId)
-                          ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
-                          : 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)]',
-                      ].join(' ')}
-                      title={t('scene.group.moveTogetherHint')}
-                    >
-                      {t('scene.group.moveTogether')}
-                    </button>
-                  </div>
-                )}
-                {!collapsed && (
-                  <div className={isFamily ? 'px-1 pb-1 space-y-1' : 'space-y-1'}>
-                    {members.map((model) => (
-                      <ModelRow
-                        key={model.id}
-                        model={model}
-                        isActive={model.id === activeModelId}
-                        isIsolated={isolatedId === model.id}
-                        canDelete={models.length > 1}
-                        multiModel={models.length > 1}
-                        onActivate={() => { setTransformScope('model'); onSetActive(model.id) }}
-                        onVisible={(v) => {
-                          onSetVisible(model.id, v)
-                          // If toggling visibility while isolated, clear isolation state
-                          if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
-                        }}
-                        onRemove={() => onRemove(model.id)}
-                        onValidate={() => onValidate(model.id)}
-                        onFrame={() => onFrame(model.id)}
-                        onIsolate={() => handleIsolate(model.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          <SceneGroupTree
+            groups={groups}
+            looseCloudIds={looseCloudIds}
+            modelsById={byId}
+            activeModelId={activeModelId}
+            viewerApiRef={viewerApiRef}
+            groupIdOf={groupIdOf}
+            onSetVisible={(id, v) => {
+              onSetVisible(id, v)
+              if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
+            }}
+            onMoveTogether={(g) => {
+              setTransformScope('group')
+              setExpandTransform(true)
+              if (!g.memberIds.includes(activeModelId ?? '')) onSetActive(g.memberIds[0])
+            }}
+            moveTogetherActive={(g) => scope === 'group' && g.memberIds.includes(activeModelId ?? '')}
+            renderModelRow={(model, moveControl) => (
+              <ModelRow
+                model={model}
+                isActive={model.id === activeModelId}
+                isIsolated={isolatedId === model.id}
+                canDelete={models.length > 1}
+                multiModel={models.length > 1}
+                onActivate={() => onSetActive(model.id)}
+                onVisible={(v) => {
+                  onSetVisible(model.id, v)
+                  // If toggling visibility while isolated, clear isolation state
+                  if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
+                }}
+                onRemove={() => onRemove(model.id)}
+                onValidate={() => onValidate(model.id)}
+                onFrame={() => onFrame(model.id)}
+                onIsolate={() => handleIsolate(model.id)}
+                moveControl={models.length > 1 || looseCloudIds.length > 0 || groups.some((g) => g.user) ? moveControl : null}
+              />
+            )}
+          />
         </div>
 
         {/* Transform controls — collapsible */}
@@ -596,37 +712,41 @@ export default function ScenePanel({
             </button>
             {expandTransform && (
               <div className="px-3 pb-3">
-                {activeGroupMembers.length > 1 && (
-                  <div className="flex gap-1.5 mb-2.5">
-                    {(['model', 'group'] as const).map((scope) => (
+                <HistoryBar placement={placement} />
+                {scopes.length > 1 && (
+                  <div className="flex gap-1.5 mb-2.5" role="radiogroup" aria-label={t('scene.scope.label')}>
+                    {scopes.map((sc) => (
                       <button
-                        key={scope}
-                        onClick={() => setTransformScope(scope)}
+                        key={sc}
+                        role="radio"
+                        aria-checked={scope === sc}
+                        onClick={() => setTransformScope(sc)}
+                        title={t(`scene.scope.${sc}Hint`)}
                         className={[
                           'flex-1 h-[26px] rounded-[7px] text-[11px] font-medium transition-all border',
-                          transformScope === scope
+                          scope === sc
                             ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
                             : 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)]',
                         ].join(' ')}
                       >
-                        {scope === 'model'
-                          ? t('scene.group.scopeModel')
-                          : t('scene.group.scopeGroup', { count: activeGroupMembers.length })}
+                        {sc === 'model' ? t('scene.scope.model')
+                          : sc === 'group' ? t('scene.scope.group', { count: groupIds.length })
+                          : t('scene.scope.scene', { count: sceneIds.length })}
                       </button>
                     ))}
                   </div>
                 )}
-                {transformScope === 'group' && activeGroupMembers.length > 1 && (
-                  <p className="text-[10px] text-[var(--text-dim)] mb-2 leading-snug">
-                    {t('scene.group.positionOnly')}
-                  </p>
+                {scope === 'model' ? (
+                  <TransformSection model={activeModel} placement={placement} viewerApiRef={viewerApiRef} />
+                ) : (
+                  <RigidTransformSection
+                    ids={scope === 'group' ? groupIds : sceneIds}
+                    placement={placement}
+                    // The map is anchored on the active model (geo-system), and
+                    // both wider scopes always contain it.
+                    containsAnchor
+                  />
                 )}
-                <TransformSection
-                  model={activeModel}
-                  viewerApiRef={viewerApiRef}
-                  onSetTransform={onSetTransform}
-                  targets={transformScope === 'group' ? activeGroupMembers : undefined}
-                />
               </div>
             )}
           </div>

@@ -60,11 +60,31 @@ let _initialized = false
 // is the fast in-module gate the hot `track()` path checks.
 let _optedOut = false
 
+const LOCAL_HOST_RE = /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|.*\.localhost|.*\.local)$/i
+
+/**
+ * Our own development traffic must never reach the product funnel: a page
+ * served from a local host, or a production page opened from (or embedded in)
+ * a local dev server — the generated blog/SDK previews link to production.
+ */
+export function isLocalTraffic(
+  hostname: string = typeof location !== 'undefined' ? location.hostname : '',
+  referrer: string = typeof document !== 'undefined' ? document.referrer : '',
+): boolean {
+  if (LOCAL_HOST_RE.test(hostname)) return true
+  if (!referrer) return false
+  try {
+    return LOCAL_HOST_RE.test(new URL(referrer).hostname)
+  } catch {
+    return false
+  }
+}
+
 export function initAnalytics(): void {
   const key  = import.meta.env.VITE_POSTHOG_KEY  as string | undefined
   const host = import.meta.env.VITE_POSTHOG_HOST as string | undefined
 
-  if (!key || _initialized || _optedOut) return
+  if (!key || _initialized || _optedOut || isLocalTraffic()) return
 
   posthog.init(key, {
     api_host:        host ?? 'https://us.i.posthog.com',
@@ -158,6 +178,20 @@ export function trackEmailCaptured(props: {
   locale:              string
 }): void {
   track('email_captured', props)
+}
+
+/**
+ * Fake-door click on a paid plan, credit pack or feature that is not on sale
+ * yet. Measures purchase intent before any backend exists.
+ */
+export function trackPricingIntent(props: {
+  kind:     'plan' | 'pack' | 'feature'
+  item:     string
+  surface:  'landing_pricing' | 'score_upsell'
+  billing?: 'monthly' | 'yearly'
+  score?:   number
+}): void {
+  track('pricing_intent', props)
 }
 
 // ── Attribution / personalized invites ────────────────────────────────────────
@@ -416,6 +450,7 @@ export function trackFeatureUsed(props: {
     | 'copy_for_ai'
     | 'bcf_create_topic'
     | 'ebook_download'
+    | 'fix_first_click'
 }): void {
   track('feature_used', props)
 }
@@ -439,7 +474,7 @@ export function trackMapModeDisabled(props: { duration_s: number }): void {
 
 /** Base layer switched. */
 export function trackMapLayerChanged(props: {
-  layer: 'osm' | 'opentopomap' | 'esri-imagery' | 'eox-s2' | 'gibs' | 'custom'
+  layer: 'osm' | 'opentopomap' | 'esri-imagery' | 'eox-s2' | 'gibs' | 'custom' | `vt-${string}`
 }): void {
   track('map_layer_changed', props)
 }
@@ -632,6 +667,7 @@ export function trackProUpsellShown(props: {
 export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): void {
   track('checkout_started', props)
 }
+
 
 /** Fired client-side when the post-checkout entitlement poll confirms the plan. */
 export function trackCheckoutCompleted(props: { plan: 'pro' | 'org' }): void {

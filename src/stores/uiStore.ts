@@ -15,8 +15,8 @@ export type RenderQuality = 'standard' | 'quality'
 /** Which GPU backend the viewer is running on. 'detecting' while the async check is in flight. */
 export type GpuBackend = 'webgpu' | 'webgl' | 'detecting'
 
-/** Active measurement tool in the 3D viewport. */
-export type MeasurementTool = 'none' | 'length' | 'area'
+/** Active measurement tool in the 3D viewport (mirrors the measure engine). */
+export type MeasurementTool = import('../lib/measure/measure-types').MeasureTool
 
 // ── Docked columns ────────────────────────────────────────────────────────────
 // The tree, the selection sidebar and the validation panel are LAYOUT REGIONS,

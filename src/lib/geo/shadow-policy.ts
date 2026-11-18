@@ -53,6 +53,10 @@ export const SHADOW_ROLES: Record<FeatureKind, ShadowRole> = {
   building: STANDING,
   tree: STANDING,
   signal: STANDING,
+  // Benches, lamps, fences: small, but standing — a fence with no shadow is a
+  // line painted on the lawn.
+  furniture: STANDING,
+  barrier: STANDING,
   // A pier has real thickness and a real side face, and its shadow on the water
   // is what tells a viewer it stands above rather than floats on it.
   pier: STANDING,

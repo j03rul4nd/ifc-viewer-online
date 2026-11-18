@@ -1,7 +1,13 @@
 // ─── DemoGallery ──────────────────────────────────────────────────────────────
-// A modal gallery for picking one of the curated demo IFC models. Downloads the
-// chosen model (with a live progress bar) and hands the resulting File to the
-// parent, which switches to the viewer and runs the normal load pipeline.
+// A modal gallery for picking one of the curated demo IFC models.
+//
+// With `onSetSelected` (the app's path) the gallery only PICKS: the whole set
+// goes to the loading manager as one batch of URL jobs, which downloads with
+// real progress in the Loading Center, converts members in parallel and
+// attaches them in discipline order. The gallery closes at once.
+//
+// Without it (the legacy path) the gallery downloads each member itself, with
+// a live progress bar, and hands each File to `onModelReady` in turn.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -34,15 +40,19 @@ interface DemoGalleryProps {
    * Called with each downloaded File. May return a promise, and when it does
    * the gallery WAITS for it before fetching the next member of a set.
    *
-   * That await is load-bearing. The parser adds one model at a time, so firing
-   * a federated set at it without waiting means the second file arrives while
-   * the first is still being read and is silently dropped — which looked
-   * exactly like "only the architecture loaded", with no error anywhere.
+   * The old single-flight loader rejected a second file while the first was
+   * still being read, which is why this await existed. The loading manager
+   * queues instead, so on this legacy path it only paces the downloads.
    */
   onModelReady: (model: DemoModel, file: File) => void | Promise<void>
+  /**
+   * Hand the whole set to the caller instead of downloading it here. When
+   * given, `onModelReady` is never called.
+   */
+  onSetSelected?: (set: DemoSet) => void
 }
 
-export default function DemoGallery({ open, onClose, onModelReady }: DemoGalleryProps) {
+export default function DemoGallery({ open, onClose, onModelReady, onSetSelected }: DemoGalleryProps) {
   const { t } = useTranslation('landing')
   const [filter, setFilter]       = useState<DemoCategory | 'all'>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -67,6 +77,10 @@ export default function DemoGallery({ open, onClose, onModelReady }: DemoGallery
       category: set.category,
       size_mb:  Math.round((set.sizeBytes / 1_048_576) * 10) / 10,
     })
+    if (onSetSelected) {
+      onSetSelected(set)
+      return
+    }
     abortRef.current?.abort()
     const ac = new AbortController()
     abortRef.current = ac
@@ -74,10 +88,10 @@ export default function DemoGallery({ open, onClose, onModelReady }: DemoGallery
     setLoadingId(set.id)
     setProgress({ ratio: 0, receivedBytes: 0, totalBytes: set.sizeBytes })
     try {
-      // Sequential on purpose. The disciplines are federated — they share an
-      // origin and a storey list — so the viewer has to receive them one at a
-      // time and add each to the scene; firing them together races the loader
-      // and the second file can land before the first has a model to join.
+      // Sequential: this legacy path hands files over one at a time and
+      // waits for each (see onModelReady). The app path (onSetSelected) gives
+      // the set to the loading manager instead, which keeps the disciplines in
+      // order without serialising the downloads.
       //
       // Progress is reported against the WHOLE set, so a three-file project
       // shows one bar that fills once rather than three that each restart.

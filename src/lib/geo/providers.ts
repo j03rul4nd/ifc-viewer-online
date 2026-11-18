@@ -15,16 +15,68 @@
 import { ok, err, type Result } from '../result'
 import { createLogger } from '../logger'
 import type { MapProvider } from './geo-types'
+import { getMapStyle, MAP_STYLE_IDS, type MapStyleId } from './basemap/map-styles'
+import { RASTER_SOURCES } from './basemap/raster-sources'
 
 const log = createLogger('GeoProviders')
 
-export const DEFAULT_PROVIDER_ID = 'osm'
+/** Vector Standard: sharp at any zoom and DPR, and our own cartography. */
+export const DEFAULT_PROVIDER_ID = 'vt-standard'
 
 const LS_CUSTOM = 'ifc-geo-custom-provider:v1'
 
 // ── Built-ins (Appendix A, licensing verified 2026-06) ─────────────────────────
 
+/**
+ * OpenFreeMap: OpenMapTiles-schema vector tiles of the whole planet built from
+ * OSM, free with no key and no usage cap, commercial use allowed (attribution
+ * only). TileJSON, because the tile URL is versioned and changes weekly.
+ */
+export const OPENFREEMAP_TILEJSON = 'https://tiles.openfreemap.org/planet'
+const VECTOR_ATTRIBUTION = '© OpenStreetMap contributors · OpenFreeMap © OpenMapTiles'
+
+/** Vector map styles offered, in UI order. Ids are `vt-<style>`. */
+export const VECTOR_STYLE_IDS: readonly MapStyleId[] = MAP_STYLE_IDS
+export const DEFAULT_VECTOR_PROVIDER_ID = 'vt-standard'
+
+export function vectorProviderId(style: MapStyleId): string { return `vt-${style}` }
+
+const LS_VECTOR = 'ifc-geo-vector-style:v1'
+
+/** The vector style last used, so "Vector" brings back the one you picked. */
+export function lastVectorProviderId(): string {
+  try {
+    const v = localStorage.getItem(LS_VECTOR)
+    if (v && isVectorProviderId(v) && MAP_STYLE_IDS.includes(v.slice(3) as MapStyleId)) return v
+  } catch { /* storage blocked — default */ }
+  return DEFAULT_VECTOR_PROVIDER_ID
+}
+
+export function rememberVectorProvider(id: string): void {
+  if (!isVectorProviderId(id)) return
+  try { localStorage.setItem(LS_VECTOR, id) } catch { /* ignore */ }
+}
+export function isVectorProviderId(id: string): boolean { return id.startsWith('vt-') }
+
+function vectorProvider(style: MapStyleId): MapProvider {
+  return {
+    id: vectorProviderId(style),
+    kind: 'streets',
+    // Raster fallback for the terrain drape only — see MapProvider.vector.
+    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    // Every source the style mixes in is credited — a licence condition.
+    attribution: [VECTOR_ATTRIBUTION, ...getMapStyle(style).rasters.map((r) => RASTER_SOURCES[r.source].attribution)].join(' · '),
+    maxZoom: 20,
+    tileDimension: 512,
+    requiresTermsNotice: false,
+    homepage: 'https://openfreemap.org',
+    lastReviewed: '2026-10',
+    vector: { tileJsonUrl: OPENFREEMAP_TILEJSON, styleId: style },
+  }
+}
+
 export const BUILTIN_PROVIDERS: readonly MapProvider[] = [
+  ...MAP_STYLE_IDS.map(vectorProvider),
   {
     id: 'osm',
     kind: 'streets',

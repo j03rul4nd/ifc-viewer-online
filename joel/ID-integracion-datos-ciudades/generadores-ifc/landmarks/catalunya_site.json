@@ -1,0 +1,131 @@
+{
+ "origin": {
+  "lat": 41.3878551,
+  "lon": 2.1695421,
+  "osm": "node 6444804610 (highway=elevator, Passeig de Gràcia)"
+ },
+ "datum_raw_ellipsoidal": 69.96,
+ "icgc_offset_m": -49.7,
+ "note": "Local metres, +x east +y north. Levels are ICGC Scene-28 mesh heights (ellipsoidal, raw) measured on a 0.2 m DSM, 2026-10-01.",
+ "levels_raw": {
+  "lift": 69.96,
+  "bus": 70.05,
+  "stair": 69.83,
+  "bicing": 69.88,
+  "bin": 69.58,
+  "post": 69.87
+ },
+ "stair_fence_osm_way": 1425662351,
+ "stair_centre": [
+  11.8,
+  19.9
+ ],
+ "stair_bearing_deg": 136.0,
+ "road_axis": {
+  "osm_way": 8380812,
+  "point": [
+   -13.4,
+   -16.2
+  ],
+  "bearing_deg": 63.2,
+  "kerb_offset_north_m": 6.9,
+  "kerb_offset_south_m": -7.8
+ },
+ "lift_kiosk": {
+  "centre": [
+   -0.92,
+   -0.35
+  ],
+  "footprint_m": 3.0,
+  "top_above_pavement_m": 3.96
+ },
+ "bus_stop": {
+  "osm": 2484218128,
+  "ref": "1210",
+  "name": "Pl Catalunya - Pg de Gràcia",
+  "x": -17.2,
+  "y": -8.6,
+  "shelter_roof": {
+   "along_m": [
+    -1.4,
+    2.1
+   ],
+   "offset_m": [
+    7.8,
+    9.2
+   ],
+   "height_above_pavement_m": 2.5
+  }
+ },
+ "bicing": {
+  "osm": 430848865,
+  "ref": "065",
+  "capacity": 21,
+  "row_centre": [
+   3.84,
+   -17.74
+  ],
+  "row_length_m": 24.8,
+  "bearing_deg": 63.1
+ },
+ "post_box": {
+  "osm": 6328108611,
+  "x": 2.0,
+  "y": 35.4
+ },
+ "bin": {
+  "osm": 9776538016,
+  "x": 27.7,
+  "y": 16.6
+ },
+ "trees": [
+  {
+   "osm": 12633084511,
+   "x": 7.08,
+   "y": 26.36,
+   "ground_raw": 69.86
+  },
+  {
+   "osm": 12633084516,
+   "x": 14.85,
+   "y": 32.59,
+   "ground_raw": 69.79
+  },
+  {
+   "osm": 12633084517,
+   "x": 22.11,
+   "y": 24.72,
+   "ground_raw": 69.61
+  },
+  {
+   "osm": 12633084521,
+   "x": 27.54,
+   "y": 18.36,
+   "ground_raw": 69.61
+  },
+  {
+   "osm": 13539127525,
+   "x": 18.16,
+   "y": -25.47,
+   "ground_raw": 70.34
+  },
+  {
+   "osm": 14224772690,
+   "x": -2.74,
+   "y": 36.1,
+   "ground_raw": 69.94
+  },
+  {
+   "osm": 14224772691,
+   "x": 1.62,
+   "y": 31.78,
+   "ground_raw": 69.82
+  },
+  {
+   "osm": 14224772728,
+   "x": 18.48,
+   "y": 28.66,
+   "ground_raw": 69.76
+  }
+ ]
+}

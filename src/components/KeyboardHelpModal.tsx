@@ -68,6 +68,8 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
   // Narrow to a plain string→string helper here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = tRaw as (key: string) => string
+  const { t: tMeasureRaw } = useTranslation('measurement')
+  const tm = tMeasureRaw as (key: string) => string
 
   // '?' also closes — the same key that opens it. Escape, focus and the rest
   // belong to Modal.
@@ -110,13 +112,20 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
           </Section>
 
           <Section title={g('measurement')}>
-            <Row label={k('cancelMeasure')}      keys={['Esc']} />
-            <Row label={k('closePoly')}          keys={['Enter']} />
-            <Row label={k('deleteLastMeasure')}  keys={['Del']} />
+            <Row label={k('openMeasure')}            keys={['M']} />
+            {/* The tool names come from the Measure panel itself, so the two
+                can never disagree about what 1–5 are. */}
+            <Row label={(['distance', 'path', 'area', 'angle', 'point'] as const).map((id) => tm(`tools.${id}`)).join(' · ')} keys={['1', '…', '5']} />
+            <Row label={k('axisLock')}               keys={['Shift']} />
+            <Row label={k('finishMeasure')}          keys={['Enter']} />
+            <Row label={k('undoPoint')}              keys={['⌫']} />
+            <Row label={k('cancelMeasure')}          keys={['Esc']} />
+            <Row label={k('deleteSelectedMeasure')}  keys={['Del']} />
           </Section>
 
           <Section title={g('sections')}>
-            <Row label={k('cancelSection')}  keys={['Esc']} />
+            <Row label={k('cancelSection')}      keys={['Esc']} />
+            <Row label={k('deleteSelectedCut')}  keys={['Del']} />
           </Section>
 
           <Section title={g('camera')}>

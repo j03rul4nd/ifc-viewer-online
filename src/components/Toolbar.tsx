@@ -20,6 +20,7 @@ import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { useMeshStore } from '../stores/meshStore'
+import { useVectorLayerStore } from '../stores/vectorLayerStore'
 import { isMeshEnabled } from '../lib/mesh/mesh-flag'
 import { useVideoStore } from '../stores/videoStore'
 import { isVideoEnabled } from '../lib/video/video-flag'
@@ -36,6 +37,7 @@ import {
 } from '../lib/diffStore'
 import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+import { LoadingIndicator } from './loading'
 
 const log = createLogger('Toolbar')
 
@@ -258,6 +260,7 @@ export default function Toolbar({
   const { t: tTour } = useTranslation('tour')
   const { t: tPointCloud } = useTranslation('pointcloud')
   const { t: tMesh } = useTranslation('mesh')
+  const { t: tLayers } = useTranslation('layers')
   const { t: tVideo } = useTranslation('video')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
@@ -300,6 +303,12 @@ export default function Toolbar({
   const pointCloudCount     = usePointCloudStore((s) => s.clouds.length)
   const togglePointCloudPanel = (): void => {
     const s = usePointCloudStore.getState()
+    s.setPanelOpen(!s.panelOpen)
+  }
+  const layersPanelOpen = useVectorLayerStore((s) => s.panelOpen)
+  const layerCount      = useVectorLayerStore((s) => s.layers.length)
+  const toggleLayersPanel = (): void => {
+    const s = useVectorLayerStore.getState()
     s.setPanelOpen(!s.panelOpen)
   }
   const meshPanelOpen = useMeshStore((s) => s.panelOpen)
@@ -495,6 +504,14 @@ export default function Toolbar({
       <path d="M7 0.8v1.6M7 11.6v1.6M0.8 7h1.6M11.6 7h1.6M2.6 2.6l1.2 1.2M10.2 10.2l1.2 1.2M11.4 2.6l-1.2 1.2M3.8 10.2l-1.2 1.2" />
     </svg>
   )
+  const LayersSVG = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17l5-4 4 3 4-6 5 4" />
+      <path d="M3 21h18M3 3v18" />
+      <circle cx="16" cy="10" r="1.2" />
+    </svg>
+  )
   const MeshSVG = (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
       strokeLinecap="round" strokeLinejoin="round">
@@ -585,7 +602,7 @@ export default function Toolbar({
           Logo · app name (always visible)
           Desktop: + status dot · filename · element count
           Mobile:  status dot moves to the right side                        */}
-      <div className="flex items-center gap-2 shrink-0 min-w-0">
+      <div className="flex items-center gap-2 shrink min-w-0">
         <Icons.Logo size={18} className="shrink-0" />
         {/* App name: always visible */}
         <span className="text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline">
@@ -607,6 +624,9 @@ export default function Toolbar({
               · {elementCount.toLocaleString()}
             </span>
           )}
+          {/* Background loads: "Loading 3 models · 68%" — opens the Loading
+              Center. Renders nothing while nothing is loading. */}
+          <LoadingIndicator variant="toolbar" />
         </div>
       </div>
 
@@ -766,6 +786,9 @@ export default function Toolbar({
               badge={pointCloudCount > 0 ? pointCloudCount : undefined}
               onClick={() => { togglePointCloudPanel(); setOpenMenu(null) }} />
           )}
+          <MenuItem icon={LayersSVG} label={tLayers('entry')} active={layersPanelOpen || layerCount > 0}
+            badge={layerCount > 0 ? layerCount : undefined}
+            onClick={() => { toggleLayersPanel(); setOpenMenu(null) }} />
           {isMeshEnabled() && (
             <MenuItem icon={MeshSVG} label={tMesh('entry')} active={meshPanelOpen || meshCount > 0}
               badge={meshCount > 0 ? meshCount : undefined}
@@ -878,6 +901,7 @@ export default function Toolbar({
           Mobile actions are handled by MobileBottomNav. The toolbar on mobile
           only shows identity + current state so the user can orient themselves. */}
       <div className="flex-1 md:hidden" />
+      <div className="md:hidden flex items-center"><LoadingIndicator variant="mobile" /></div>
       {loadingState !== 'idle' && (
         <div className="md:hidden flex items-center gap-1.5 px-2">
           <span className="font-mono text-[12px]" style={{ color: statusColor }}>●</span>

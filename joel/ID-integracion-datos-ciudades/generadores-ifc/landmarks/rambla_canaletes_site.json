@@ -1,0 +1,77 @@
+{
+ "origin": {
+  "lat": 41.385161,
+  "lon": 2.170176,
+  "osm": "node 430607924 (amenity=drinking_water, Font de Canaletes, ref 01-051)"
+ },
+ "datum_raw_ellipsoidal": 64.51,
+ "icgc_offset_m": -49.7,
+ "note": "Local metres, +x east +y north, from OpenStreetMap (ODbL) via Overpass on 2026-10-01 (equirectangular around the origin). Levels are ICGC Barcelona mesh heights (ellipsoidal, raw).",
+ "levels_raw": {
+  "fountain": 64.51,
+  "kiosk": 64.46
+ },
+ "rambla_bearing_deg": 153.9,
+ "rambla_bearing_sources": {
+  "545937950": {
+   "kind": "pedestrian",
+   "bearing_deg": 153.5,
+   "distance_m": 2.35
+  },
+  "1360091606": {
+   "kind": "living_street",
+   "bearing_deg": 153.6,
+   "distance_m": 5.37
+  },
+  "920602948": {
+   "kind": "living_street",
+   "bearing_deg": 155.2,
+   "distance_m": 24.27
+  },
+  "306557216": {
+   "kind": "tree_row",
+   "bearing_deg": 152.3,
+   "distance_m": 0.46
+  },
+  "306557217": {
+   "kind": "tree_row",
+   "bearing_deg": 154.8,
+   "distance_m": 18.13
+  }
+ },
+ "frame_note": "s along the Rambla bearing (down-Rambla, towards the port), t to its left (east-north-east, towards the promenade centre)",
+ "edges_t_at_fountain_m": {
+  "promenade_west_edge (way 545937950)": -2.35,
+  "west_carriageway_axis (way 1360091606)": -5.37,
+  "west_tree_row (way 306557216)": 0.46,
+  "east_tree_row (way 306557217)": 18.13,
+  "east_carriageway_axis (way 920602948)": 24.27
+ },
+ "kiosk": {
+  "osm": 691591931,
+  "tags": "shop=kiosk",
+  "x": 17.51,
+  "y": 3.73,
+  "s": 4.36,
+  "t": 17.37,
+  "distance_m": 17.91,
+  "t_east_tree_row_here": 18.06
+ },
+ "trees": [
+  {
+   "source": "OSM tree_row way 306557216 (Platanus), position along it typical (spacing ~6.5 m)",
+   "s": -6.5,
+   "t": 0.28,
+   "x": -2.61,
+   "y": 5.96
+  },
+  {
+   "source": "OSM tree_row way 306557216 (Platanus), position along it typical (spacing ~6.5 m)",
+   "s": 6.5,
+   "t": 0.64,
+   "x": 3.44,
+   "y": -5.56
+  }
+ ],
+ "osm_trees_within_15m": "none mapped as natural=tree; nearest is node 6924275385 at 20 m (Platanus × hispanica, protected)"
+}

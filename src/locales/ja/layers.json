@@ -1,0 +1,438 @@
+{
+  "entry": "データレイヤー",
+  "title": "データレイヤー",
+  "intro": "GeoJSON ファイル、URL、WFS サービスからルート・ゾーン・ポイントを取り込みます。すべてモデル・スキャン・地図と同じ場所に配置されます。",
+  "working": "読み込み中…",
+  "anchor": {
+    "by": "{{label}}（{{source}}）を基準に配置",
+    "map": "地図／モデルの位置を基準に配置",
+    "none": "まだアンカーがありません。最初のジオリファレンス済みレイヤーがサイトを決めます。",
+    "source": {
+      "ifc": "IFC",
+      "pointcloud": "スキャン",
+      "vector": "データレイヤー",
+      "manual": "手動"
+    }
+  },
+  "file": {
+    "drop": "GeoJSON ファイルを開く…",
+    "sample": "サンプルを試す（合成データ、バルセロナ）",
+    "sampleLive": "ライブデータを試す（シミュレーション列車、バルセロナ）",
+    "sampleLiveName": "シミュレーション列車"
+  },
+  "url": {
+    "title": "URL から GeoJSON",
+    "add": "追加"
+  },
+  "wfs": {
+    "title": "WFS サービス",
+    "connect": "接続",
+    "found": "{{title}} に {{count}} 個のレイヤー",
+    "noJson": "GeoJSON 出力なし",
+    "radius": "範囲",
+    "load": "読み込む",
+    "hint": "サイト周辺の範囲だけを最大 5,000 件まで取得します。サーバーがクロスオリジン要求（CORS）を許可している必要があります。"
+  },
+  "list": {
+    "title": "接続中のレイヤー（{{count}}）"
+  },
+  "count": {
+    "lines_one": "{{count}} 本の線",
+    "lines_other": "{{count}} 本の線",
+    "polygons_one": "{{count}} 個の領域",
+    "polygons_other": "{{count}} 個の領域",
+    "points_one": "{{count}} 個のポイント",
+    "points_other": "{{count}} 個のポイント"
+  },
+  "action": {
+    "hide": "非表示",
+    "show": "表示",
+    "frame": "レイヤーに合わせる",
+    "remove": "削除",
+    "close": "閉じる"
+  },
+  "height": {
+    "title": "高さ",
+    "relative": "地表から（地形に沿う）",
+    "absolute": "絶対標高",
+    "ignore": "地面に平置き",
+    "source": {
+      "coordinates": "データに Z 座標があります。",
+      "property": "高さの列: {{prop}}",
+      "none": "データに高さがありません。"
+    }
+  },
+  "style": {
+    "color": "色",
+    "width": "線の幅",
+    "opacity": "塗りの不透明度",
+    "fill": "領域を塗る",
+    "extrude": "領域を押し出す",
+    "extrudeFallback": "高さのない領域を押し出す",
+    "pointSize": "ポイントの大きさ"
+  },
+  "warn": {
+    "far": "このレイヤーはサイトから {{km}} km 離れています。座標系を確認してください。",
+    "skipped": "{{count}} 件をスキップしました（空または未対応のジオメトリ）。"
+  },
+  "error": {
+    "notJson": "ファイルが有効な JSON ではありません。",
+    "notGeoJson": "GeoJSON ではありません。",
+    "unknownCrs": "このビューアーが知らない座標系が宣言されています。",
+    "projectedWithoutCrs": "座標はメートル単位ですが、座標系が宣言されていません。",
+    "empty": "レイヤーに要素がありません。",
+    "noAnchor": "レイヤーを配置するサイトがありません。",
+    "http": "サーバーがエラーを返しました。",
+    "network": "サーバーに接続できません。オフラインか、クロスオリジン要求（CORS）を拒否している可能性があります。",
+    "aborted": "キャンセルしました。",
+    "badUrl": "URL が正しくありません。",
+    "notWfs": "このアドレスは WFS サービスではありません。",
+    "noFeatureTypes": "サービスにレイヤーがありません。",
+    "wfsException": "WFS サーバーが要求を拒否しました。",
+    "notJsonOutput": "サーバーが GeoJSON を返しませんでした（GML のみの可能性があります）。",
+    "cors": "このソースはブラウザーからの読み取りを許可していません（CORS なし）。下でプロキシを設定してください。",
+    "notGbfs": "GBFS フィードではありません。",
+    "notGtfsRt": "GTFS-Realtime（JSON）フィードではありません。",
+    "noGeometryInTable": "このテーブルには位置の列（lon/lat、WKT、座標）がありません。レイヤーに結合してください。",
+    "noJoinBase": "結合先のジオメトリがありません。",
+    "emptyTable": "テーブルが空です。"
+  },
+  "kind": {
+    "point": "ポイント",
+    "line": "ライン",
+    "polygon": "エリア"
+  },
+  "selected": {
+    "noProps": "この要素には属性がありません。"
+  },
+  "restore": {
+    "failed": "保存した {{count}} 個のレイヤーを復元できませんでした（オフライン、またはファイルが大きすぎて保存できません）。"
+  },
+  "search": {
+    "title": "ツイン内を検索",
+    "placeholder": "駅、資産コード、路線、ファイル… 例: code:BCN-SANTS",
+    "hint": "読み込んだすべてのレイヤー・IFC・スキャン（{{count}} 件）を、ネストした属性も含めて検索します。フィールド:値 で絞り込めます。",
+    "empty": "一致するものがありません。",
+    "related": "{{label}} とのつながり",
+    "noRelated": "つながりは見つかりませんでした。",
+    "reason": {
+      "shared": "同じ {{field}}: {{value}}",
+      "inside": "内側にある",
+      "contains": "内包している",
+      "near": "{{m}} m 離れている"
+    }
+  },
+  "symbology": {
+    "styleBy": "スタイルの基準",
+    "single": "単一スタイル",
+    "others": "その他すべて",
+    "all": "すべての要素",
+    "hint": "フィールドの値ごとに色とシンボルを設定できます。チェックを外すと非表示になります。",
+    "symbol": "シンボル",
+    "size": "サイズ (m)",
+    "visible": "表示",
+    "icons": "アイコン",
+    "shapes": "3D 形状",
+    "models": "自分のモデル",
+    "uploadModel": "GLB モデルをアップロード…",
+    "modelFailed": "このモデルを読み込めませんでした（GLB のみ）。",
+    "icon": {
+      "pin": "ピン",
+      "train": "鉄道駅",
+      "metro": "地下鉄",
+      "tram": "路面電車",
+      "bus": "バス",
+      "power": "電力／変電所",
+      "exit": "非常口",
+      "door": "ドア／出入口",
+      "sensor": "センサー",
+      "camera": "カメラ",
+      "wifi": "アンテナ／Wi-Fi",
+      "warning": "警告",
+      "info": "案内",
+      "fire": "防火",
+      "water": "水",
+      "parking": "駐車場",
+      "tree": "樹木",
+      "building": "建物",
+      "bike": "自転車",
+      "charger": "充電スポット"
+    },
+    "shape": {
+      "sphere": "球",
+      "pin": "ピン",
+      "cube": "立方体",
+      "cylinder": "円柱",
+      "cone": "円錐"
+    }
+  },
+  "links": {
+    "linkTo": "リンク先を選ぶ…",
+    "pickTarget": "{{label}} のリンク先を選んでください：検索結果をクリックします。",
+    "cancel": "キャンセル",
+    "urlPlaceholder": "https://… 仕様書、ダッシュボード、文書",
+    "addUrl": "リンクを追加",
+    "remove": "リンクを削除",
+    "notLoaded": "未読み込み",
+    "badge": "リンク"
+  },
+  "presets": {
+    "title": "公開ライブソース",
+    "hint": "すぐに接続でき、各提供元の実際の更新頻度に合わせて設定済みです。",
+    "connect": "接続",
+    "needsProxy": "プロキシ",
+    "needsProxyHint": "この提供元は CORS ヘッダーを送りません。ブラウザーからはプロキシ経由でしか読めません（下のプロキシを参照）。",
+    "bicing": {
+      "name": "Bicing ステーション",
+      "hint": "ステーションごとの自転車と空きドック（GBFS）· 30 秒ごと"
+    },
+    "fgc": {
+      "name": "FGC の列車",
+      "hint": "ライブ位置・定時性・混雑度 · 回数制限あり（1 日 5,000 回）"
+    },
+    "rodalies": {
+      "name": "Rodalies の列車（Renfe）",
+      "hint": "ライブ位置（GTFS-Realtime）· ソースは 30 秒ごとに更新"
+    },
+    "catastro": {
+      "name": "地籍区画",
+      "hint": "スペイン地籍 WFS（GML）· 敷地周辺 250 m · 静的"
+    },
+    "icgc-municipis": {
+      "name": "市町村（ICGC）",
+      "hint": "カタルーニャの市町村境界 · 静的"
+    },
+    "bcn-traffic": {
+      "name": "バルセロナの交通（ライブ）",
+      "hint": "500 以上の区間の状態 · 5 分ごと · 両方向・流れのアニメーション"
+    }
+  },
+  "live": {
+    "toggle": "ライブ更新",
+    "interval": "更新間隔",
+    "animate": "移動した点をなめらかに動かす",
+    "secondsAgo": "{{n}} 秒前",
+    "minutesAgo": "{{n}} 分前",
+    "hoursAgo": "{{n}} 時間前",
+    "dataAge": "{{ago}}のデータ",
+    "fetched": "{{ago}}に取得",
+    "unchanged": "変更なし",
+    "changes": "+{{added}} −{{removed}} ~{{changed}}",
+    "next": "次は {{s}} 秒後",
+    "sourcePaced": "ソースのペースに合わせています",
+    "quota": "本日の残りリクエスト {{n}}",
+    "viaProxy": "プロキシ経由",
+    "retrying": "再試行 {{n}}",
+    "identityIndex": "要素に安定した ID がないため、リスト内の位置で対応付けています。"
+  },
+  "proxy": {
+    "title": "CORS のないソース用プロキシ",
+    "hint": "一部の公開フィード（Renfe）はブラウザーから読めません。自分のプロキシで中継します。アドレスの位置に {url} を使います。",
+    "save": "保存",
+    "saved": "プロキシを保存しました",
+    "cleared": "プロキシを削除しました",
+    "needsPlaceholder": "テンプレートには {url} が必要です。"
+  },
+  "styleTabs": {
+    "groups": "グループ",
+    "zoom": "ズーム",
+    "aggregate": "集約",
+    "alerts": "アラート"
+  },
+  "groups": {
+    "summary": "{{n}} 件 · {{g}} グループ",
+    "create": "グループを作成",
+    "rest": "その他すべて",
+    "all": "すべての要素",
+    "visible": "表示",
+    "priorityHint": "要素は最初に一致したグループの見た目になります — ▲▼ で並べ替え。",
+    "count": "このグループの要素数",
+    "up": "上へ",
+    "down": "下へ",
+    "name": "グループ名",
+    "delete": "グループを削除"
+  },
+  "maker": {
+    "title": "プロパティで要素を選ぶ",
+    "field": "プロパティ",
+    "filter": "値を絞り込む…",
+    "all": "すべて",
+    "none": "なし",
+    "picked": "{{n}} 件を選択",
+    "noValues": "値がありません",
+    "oneGroup": "これらで 1 グループ",
+    "groupPerValue": "値ごとに 1 グループ",
+    "newGroup": "新しいグループ",
+    "empty": "空のグループ"
+  },
+  "cond": {
+    "title": "条件",
+    "all": "すべて満たす",
+    "any": "いずれかを満たす",
+    "none": "条件なし：すべての要素が一致します。",
+    "add": "条件を追加",
+    "remove": "条件を削除"
+  },
+  "look": {
+    "points": "ポイント",
+    "symbol": "シンボル",
+    "size": "サイズ",
+    "label": "ラベル",
+    "noLabel": "ラベルなし",
+    "lines": "ライン",
+    "width": "幅",
+    "opacity": "不透明度",
+    "areas": "エリア",
+    "fill": "塗り",
+    "outline": "輪郭",
+    "height": "高さ",
+    "fixedHeight": "固定の高さ (m)",
+    "byField": "{{f}} から",
+    "offset": "分離",
+    "offsetHint": "各ラインを進行方向の右へずらし、双方向の道路で両方向が見えるようにします。",
+    "flow": "流れをアニメーション",
+    "flowSpeed": "流れの速さ"
+  },
+  "zoom": {
+    "detail": "シンボル＋ラベル表示の上限",
+    "icon": "シンボルのみの上限",
+    "dot": "色付きの点の上限",
+    "hint": "Web 地図と同じく、カメラが遠いほど各ポイントを簡略に描き、数千件でも読みやすく保ちます。",
+    "detailShort": "詳細",
+    "iconShort": "アイコン",
+    "dotShort": "点",
+    "hiddenShort": "非表示",
+    "beyond": "{{d}} より遠いと描画しません。",
+    "onlyPoints": "ズームレベルはポイントに適用されます。このレイヤーにはありません。"
+  },
+  "agg": {
+    "onlyPoints": "集約はポイントをまとめます。このレイヤーにはありません。",
+    "hint": "遠くからは、数千のピンの代わりに密度や値（例：充電器の使用率）で色分けしたセルとして表示します。",
+    "value": "値",
+    "count": "要素数",
+    "atValue": "値の位置",
+    "atFraction": "割合の位置 (0–1)",
+    "absolute": "データの単位で指定（0–1 ではない）",
+    "cell": "セルのサイズ",
+    "radius": "半径",
+    "from": "この距離より遠いと表示",
+    "extrude": "値に応じてセルを押し出す",
+    "legend": "{{d}} より近いと個々の要素に戻ります。",
+    "kind": {
+      "none": "なし",
+      "heatmap": "ヒートマップ",
+      "hexbin": "六角形"
+    },
+    "fn": {
+      "mean": "平均",
+      "sum": "合計",
+      "min": "最小",
+      "max": "最大"
+    },
+    "ramp": {
+      "occupancy": "使用率",
+      "traffic": "交通量",
+      "heat": "密度",
+      "blues": "青"
+    }
+  },
+  "op": {
+    "eq": "等しい",
+    "neq": "等しくない",
+    "in": "いずれか",
+    "notIn": "いずれでもない",
+    "contains": "含む",
+    "startsWith": "で始まる",
+    "gt": ">",
+    "gte": "≥",
+    "lt": "<",
+    "lte": "≤",
+    "between": "範囲内",
+    "exists": "あり",
+    "missing": "なし",
+    "isTrue": "真",
+    "isFalse": "偽"
+  },
+  "legend": {
+    "title": "凡例",
+    "openHint": "データレイヤーの色と記号の意味を表示",
+    "close": "凡例を最小化",
+    "restore": "除外した {{n}} 個のレイヤーを表示",
+    "tip": "グループをクリックで表示切替 · Alt/⌘+クリック：そのグループのみ",
+    "exclude": "このレイヤーを凡例から外す",
+    "hideGroup": "シーンで非表示",
+    "showGroup": "シーンで表示",
+    "aggregateFar": "遠くからは集約表示になります。",
+    "density": "密度",
+    "less": "少",
+    "more": "多",
+    "zoomInForDetail": "近づくと個々の要素が見えます。",
+    "inCaptures": "キャプチャに含む",
+    "inCapturesHint": "開いている間、凡例はスクリーンショット・クリップ・GIF にも描かれます。最小化すると含まれません。",
+    "asOf": "データ {{when}}",
+    "scale": "縮尺",
+    "scaleHint": "縮尺バーを表示（キャプチャにも）。正確になるよう、十分に見下ろしている時だけ描画します。",
+    "scaleNeedsTopDown": "正確な縮尺を表示するには、もっと下向きに傾けてください。",
+    "northHint": "敷地の真北を表示（キャプチャにも）",
+    "northNeedsSite": "方位には位置の分かる敷地（ジオリファレンス済みのモデル・スキャン・データ）が必要です。",
+    "move": "別の角へ移動（キャプチャにも反映）"
+  },
+  "history": {
+    "bar": "タイムバー",
+    "past": "過去",
+    "pastHint": "現在ではなく、記録されたデータを表示しています。",
+    "play": "再生",
+    "pause": "一時停止",
+    "speed": "再生速度",
+    "when": "表示中の時刻",
+    "live": "ライブ",
+    "liveHint": "現在に戻る",
+    "record": "履歴を記録",
+    "recordHint": "このフィードの過去をこの端末に保存して後で巻き戻せます（変更分のみ保存）。",
+    "retention": "保持期間",
+    "hours": "{{n}} 時間",
+    "days": "{{n}} 日",
+    "sizeHint": "この端末で使用中の容量",
+    "view": "履歴を見る",
+    "nothingYet": "まだ記録がありません。レイヤーがライブの間に履歴がたまります。",
+    "spanH": "{{n}} 時間分を記録",
+    "spanM": "{{n}} 分を記録",
+    "clear": "削除"
+  },
+  "traffic": {
+    "veryFluid": "非常に順調",
+    "fluid": "順調",
+    "dense": "混雑",
+    "veryDense": "かなり混雑",
+    "congestion": "渋滞",
+    "closed": "通行止め",
+    "noData": "データなし"
+  },
+  "join": {
+    "open": "ライブデータを結合…",
+    "title": "ライブテーブルを結合",
+    "hint": "定期更新されるテーブル（CSV、「;」、「#」区切りのレコードなど）の値をキーでこの要素に対応付けます（例：道路区間への交通状態）。",
+    "test": "テスト",
+    "headerless": "テーブルにヘッダー行がない",
+    "namesPlaceholder": "列名（カンマ区切り、例：id,time,state）",
+    "layerKey": "このレイヤーのキー",
+    "tableKey": "テーブルのキー",
+    "timeColumn": "データの時刻",
+    "apply": "結合",
+    "done": "結合しました。レイヤーはライブで更新されます。"
+  },
+  "alerts": {
+    "fired": "⚠ {{rule}}：{{layer}} で {{n}} 件",
+    "show": "表示",
+    "newName": "新しいアラート",
+    "hint": "要素が条件を満たしたとき（すぐに、または数分続いたとき）に通知します。該当要素は赤いリングで点滅します。",
+    "notLive": "アラートは更新ごとに確認されます。このレイヤーのライブ更新をオンにしてください。",
+    "enabled": "有効",
+    "name": "アラート名",
+    "remove": "アラートを削除",
+    "forMin": "継続時間",
+    "minutes": "分",
+    "add": "新しいアラート",
+    "fromGroup": "グループから…"
+  }
+}

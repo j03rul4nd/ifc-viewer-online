@@ -7,7 +7,14 @@
     "removeFailed": "Impossibile rimuovere il modello: {{message}}",
     "urlLoadFailed": "Impossibile caricare il modello collegato: {{message}}",
     "mapFailed": "Impossibile aprire la modalità mappa: {{message}}",
-    "scanLoadFailed": "Impossibile caricare la scansione del link: {{message}}"
+    "scanLoadFailed": "Impossibile caricare la scansione del link: {{message}}",
+    "loadFailedNamed": "Impossibile caricare \"{{fileName}}\" — {{reason}}",
+    "batchLoaded_one": "{{name}} — {{count}} modello caricato",
+    "batchLoaded_other": "{{name}} — {{count}} modelli caricati",
+    "batchPartial": "{{name}} — {{loaded}} caricati, {{failed}} non riusciti",
+    "dropUnsupported_one": "{{count}} file non è in un formato supportato",
+    "dropUnsupported_other": "{{count}} file non sono in un formato supportato",
+    "dropBcfHint": "Apri il pannello BCF per importare i file .bcf"
   },
   "validation": {
     "complete": "Validazione completata — {{count}} problema/i trovato/i",

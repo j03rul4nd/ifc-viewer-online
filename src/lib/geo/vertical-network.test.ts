@@ -516,3 +516,47 @@ describe('sampleProfile · fast paths agree with the reference', () => {
       .toBeCloseTo(solved.elevationM[solved.elevationM.length - 1], 9)
   })
 })
+
+// Barcelona's flyovers are mapped in PIECES of 10 to 20 m. The piece that
+// crosses a street is often one whose end is a junction with ground-level
+// approaches, and the junction reconciliation pulls that end down. Measured at
+// Plaça d'Espanya and the Nus de la Trinitat before the crossing floors: decks
+// 0.5 to 2.7 m above the carriageway they cross.
+describe('clearance at the crossing itself, not only at the deck core', () => {
+  const clearanceAt = (over: SolvedProfile, x: number): number => {
+    const s = sampleProfile(over).sample(x * M_TO_N, 0)
+    return s ? s.elevationM : NaN
+  }
+
+  it('keeps a short deck piece clear of the street it crosses beside a junction', () => {
+    const ways = [
+      way('a', [[-300, 0], [-12, 0]], { highway: 'primary' }),
+      // Two ground slips meeting the deck end make it a real junction.
+      way('c', [[-12, 0], [-12, -120]], { highway: 'primary_link' }),
+      way('d', [[-12, 0], [-120, 60]], { highway: 'primary_link' }),
+      way('b1', [[-12, 0], [12, 0]], { highway: 'primary', bridge: 'yes', layer: '1' }),
+      way('b2', [[12, 0], [300, 0]], { highway: 'primary', bridge: 'yes', layer: '1' }),
+      way('u', [[-5, -80], [-5, 80]], { highway: 'residential' }),
+    ]
+    const solved = solve(ways, flat(0))
+    const deck = clearanceAt(solved.get('b1')!, -5)
+    expect(deck).toBeGreaterThanOrEqual(CROSSING_CLEARANCE_M.road - 0.05)
+    // And it got there by ramping, not by a step.
+    for (const id of ['a', 'b1', 'b2']) expectContinuous(solved.get(id)!, 1.6)
+  })
+
+  it('clears a slip road that is itself climbing underneath', () => {
+    const ways = [
+      // The lower slip climbs to a layer-1 deck of its own…
+      way('s', [[-200, -40], [0, -40]], { highway: 'trunk_link' }),
+      way('s1', [[0, -40], [150, -40]], { highway: 'trunk_link', bridge: 'yes', layer: '1' }),
+      // …and a layer-2 flyover crosses it on its climb.
+      way('f', [[-20, -200], [-20, 200]], { highway: 'trunk', bridge: 'yes', layer: '2' }),
+    ]
+    const solved = solve(ways, flat(0))
+    const slip = sampleProfile(solved.get('s')!).sample(-20 * M_TO_N, -40 * M_TO_N)!.elevationM
+    const over = sampleProfile(solved.get('f')!).sample(-20 * M_TO_N, -40 * M_TO_N)!.elevationM
+    expect(over - slip).toBeGreaterThanOrEqual(CROSSING_CLEARANCE_M.road - 0.05)
+  })
+})
+

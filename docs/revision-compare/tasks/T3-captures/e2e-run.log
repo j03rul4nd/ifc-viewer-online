@@ -1,0 +1,9 @@
+PASS  list visible after dropping both sides, no extra click — 5 rows
+PASS  F8 has the 5 seeded changes — 5
+PASS  J visits every change — 5/5
+PASS  K steps back — 5 / 5
+PASS  click frames the element in < 300 ms — 0.6 ms
+PASS  curtain view at 30 FPS or more — 40 FPS
+PASS  review state survives a reload — 0EiQ8ymu1GJhDlfL6rL__a
+PASS  phone shows the change card
+exit 0

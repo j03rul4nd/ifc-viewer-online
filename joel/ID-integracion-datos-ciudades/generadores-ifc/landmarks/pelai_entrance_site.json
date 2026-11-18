@@ -1,0 +1,52 @@
+{
+ "origin": {
+  "lat": 41.385477,
+  "lon": 2.16969,
+  "osm": "node 4582874448 (railway=subway_entrance + highway=elevator, «Pelai», wheelchair=yes, level 0;-1)"
+ },
+ "datum_raw_ellipsoidal": 66.03,
+ "icgc_offset_m": -49.7,
+ "ground_ring_raw": {"p05": 65.96, "p50": 66.16},
+ "note": "Local metres, +x east +y north, z above 66.03 m (ICGC Scene-28 mesh, ellipsoidal raw). Measured 2026-10-01 on mesh points sampled from 30 leaf tiles (0.25 m raster); OSM read from Overpass the same day.",
+ "bearing_deg": 95.0,
+ "bearing_sources": {
+  "osm_steps_549784037": 95.6,
+  "osm_fence_1425664053": 95.5,
+  "osm_sidewalk_882273555": 95.9,
+  "building_facade_671833681": 95.4,
+  "mesh_depression_pca": [88.4, 92.4]
+ },
+ "osm": {
+  "accessible_entrance_lift": 4582874448,
+  "pelai_entrance_stair_top": 1238021393,
+  "pelai_entrance_north": 4444242732,
+  "steps": 549784037,
+  "stair_fence": 1425664053,
+  "lift_to_sidewalk_footway": 1023903726,
+  "lift_to_corridor_footway": 1552650533,
+  "corridor_level_minus1": 1217899970,
+  "sidewalk": 882273555,
+  "road_axis_carrer_de_pelai": 1108368269
+ },
+ "osm_local": {
+  "steps": [[-11.9, -1.5], [-4.8, -2.2]],
+  "stair_fence": [[-11.6, -2.1], [-4.9, -2.6], [-4.8, -2.2], [-4.8, -1.7], [-11.5, -1.2]],
+  "lift_footway_to_sidewalk": [[0.0, 0.0], [-0.2, -4.8]],
+  "sidewalk_line": [[-15.0, -3.2], [-0.2, -4.8], [10.1, -5.8]],
+  "road_axis": [[-23.1, 8.6], [-8.2, 9.4], [9.2, 14.6]],
+  "bicycle_stands_6933504758": [-0.9, -3.3]
+ },
+ "stair_opening": {
+  "centre": [-7.75, -2.95],
+  "length_m": 6.5,
+  "outer_width_m": 3.1,
+  "mesh_profile_note": "Along the axis the mesh falls from z≈-0.2 at x=-10.5 to ≈-1.9 at x=-8.0 (one flight), stays flat at ≈-1.9 to x=-6.0 (the landing seen through the opening) and rises to the far parapet (z≈+1.1) at x≈-4.5. The mesh sits ≈1.2 m south of the OSM fence; the model follows the mesh."
+ },
+ "lift_kiosk": {
+  "centre": [0.3, 0.25],
+  "footprint_m": [2.6, 2.45],
+  "top_above_pavement_m": 4.1,
+  "top_max_m": 4.47
+ },
+ "totem": {"x": -3.27, "y": -1.8, "top_above_pavement_m": 3.09}
+}
