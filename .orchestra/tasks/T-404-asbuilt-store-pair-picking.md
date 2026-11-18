@@ -20,3 +20,4 @@ STATUS: done|partial|blocked · CAMBIOS · VERIFICADO (pasa/falla + cifra) · RI
 ## Informe
 
 - 2026-11-18: i18n `align.reason.pointPairs` added to 10 pointcloud locales (cb65dced). tsc exit 0; vitest asbuilt+locales+i18n 29 files / 241 tests green.
+- 2026-11-18: asBuiltStore.ts (+test 5), pair-controller.ts (+test 5: mocked pickers, Esc, marker dispose, apply). apply = applyFitToAlignment -> pointCloudStore.setAlignment + setOffset (persisted manual-offset path; pc-gpu-sync pushes to the system). No wiring file. tsc exit 0, 0 errors; vitest asbuilt+store 10 files/76 tests green.
