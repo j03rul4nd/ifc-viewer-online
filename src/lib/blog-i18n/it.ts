@@ -19624,7 +19624,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Elaborazione locale nel browser (WebAssembly, workstation moderna, primo parsing): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. Caricamento ripetuto da OPFS (senza ri-parsing): ~2–5 secondi a qualsiasi dimensione di file.",
+        text: "Elaborazione locale nel browser (WebAssembly, workstation moderna, primo parsing): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s. Caricamento ripetuto da OPFS (senza ri-parsing): ~2–5 secondi a qualsiasi dimensione di file.",
       },
       {
         type: "p",

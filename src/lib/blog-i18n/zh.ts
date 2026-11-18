@@ -16963,7 +16963,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "浏览器本地处理（WebAssembly，现代工作站，首次解析）：50 MB 约 5–10 秒 · 250 MB 约 20–40 秒 · 1 GB 约 90–180 秒 · 2 GB 约 3–6 分钟。OPFS 重复加载（无需重新解析）：无论文件多大，均约 2–5 秒。",
+        text: "浏览器本地处理（WebAssembly，现代工作站，首次解析）：50 MB 约 5–10 秒 · 250 MB 约 20–40 秒 · 1 GB 约 90–180 秒。OPFS 重复加载（无需重新解析）：无论文件多大，均约 2–5 秒。",
       },
       {
         type: "p",

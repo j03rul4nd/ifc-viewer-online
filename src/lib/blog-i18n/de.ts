@@ -19462,7 +19462,7 @@ export const BLOG_POSTS_DE_PACK: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Lokale Browser-Verarbeitung (WebAssembly, aktuelle Workstation, erstes Parsen): 50 MB ~5–10 Sek. · 250 MB ~20–40 Sek. · 1 GB ~90–180 Sek. · 2 GB ~3–6 Min. Wiederholtes Laden aus OPFS (ohne erneutes Parsen): ~2–5 Sekunden, unabhängig von der Dateigröße.",
+        text: "Lokale Browser-Verarbeitung (WebAssembly, aktuelle Workstation, erstes Parsen): 50 MB ~5–10 Sek. · 250 MB ~20–40 Sek. · 1 GB ~90–180 Sek.. Wiederholtes Laden aus OPFS (ohne erneutes Parsen): ~2–5 Sekunden, unabhängig von der Dateigröße.",
       },
       {
         type: "p",

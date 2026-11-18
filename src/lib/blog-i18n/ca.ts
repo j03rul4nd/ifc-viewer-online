@@ -19595,7 +19595,7 @@ export const BLOG_POSTS_CA: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Processament local al navegador (WebAssembly, estació de treball moderna, primera anàlisi): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. Càrrega repetida des d'OPFS (sense tornar a analitzar): ~2–5 segons, sigui quina sigui la mida del fitxer.",
+        text: "Processament local al navegador (WebAssembly, estació de treball moderna, primera anàlisi): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s. Càrrega repetida des d'OPFS (sense tornar a analitzar): ~2–5 segons, sigui quina sigui la mida del fitxer.",
       },
       {
         type: "p",

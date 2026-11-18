@@ -6065,7 +6065,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
       {
         type: 'callout',
         variant: 'info',
-        text: "Browser local processing (WebAssembly, modern workstation, first parse): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. OPFS repeat load (no re-parsing): ~2–5 seconds at any file size.",
+        text: "Browser local processing (WebAssembly, modern workstation, first parse): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s. OPFS repeat load (no re-parsing): ~2–5 seconds at any file size.",
       },
       {
         type: 'p',
@@ -6429,7 +6429,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           ['Property editing', "Not stated on solibri.com", '✅ Non-destructive: Psets, GUIDs, names, full undo'],
           ['BCF support', "✅ BCF issue management and CDE integrations, from Essential", "✅ Reads and writes BCF 2.1 and 3.0 files — no BCF server, no issue inbox"],
           ['Health Score', "Not stated on solibri.com", '✅ 0–100 severity-weighted logarithmic score'],
-          ['Large models', "Not stated for the desktop plans; WebChecker accepts up to 5 GB per IFC file", "⚠️ 2 GB limit per file; in practice, the memory of the device"],
+          ['Large models', "Not stated for the desktop plans; WebChecker accepts up to 5 GB per IFC file", "⚠️ 1.5 GB limit per file; in practice, the memory of the device"],
           ['Multi-model', "✅ IFC and native Revit federation, with clash detection, from Essential", '✅ Federation and side-by-side comparison'],
           ['IFC export', "Not stated on solibri.com", '✅ Export corrected IFC with all applied edits'],
           ['GLB export', "Not stated on solibri.com", '✅ Export to GLB for web and visualisation workflows'],

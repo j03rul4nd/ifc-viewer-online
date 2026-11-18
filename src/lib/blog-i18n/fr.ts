@@ -19633,7 +19633,7 @@ export const BLOG_POSTS_FR_PACK: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Traitement local dans le navigateur (WebAssembly, poste récent, première analyse) : 50 Mo ~5–10 s · 250 Mo ~20–40 s · 1 Go ~90–180 s · 2 Go ~3–6 min. Rechargement OPFS (sans ré-analyse) : ~2–5 secondes, quelle que soit la taille du fichier.",
+        text: "Traitement local dans le navigateur (WebAssembly, poste récent, première analyse) : 50 Mo ~5–10 s · 250 Mo ~20–40 s · 1 Go ~90–180 s. Rechargement OPFS (sans ré-analyse) : ~2–5 secondes, quelle que soit la taille du fichier.",
       },
       {
         type: "p",

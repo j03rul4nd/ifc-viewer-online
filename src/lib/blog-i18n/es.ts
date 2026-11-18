@@ -18514,7 +18514,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
       {
         type: "callout",
         variant: "info",
-        text: "Procesamiento local en el navegador (WebAssembly, equipo moderno, primer análisis): 50 MB ~5-10 s · 250 MB ~20-40 s · 1 GB ~90-180 s · 2 GB ~3-6 min. Carga repetida desde OPFS (sin volver a analizar): ~2-5 segundos con cualquier tamaño de archivo.",
+        text: "Procesamiento local en el navegador (WebAssembly, equipo moderno, primer análisis): 50 MB ~5-10 s · 250 MB ~20-40 s · 1 GB ~90-180 s. Carga repetida desde OPFS (sin volver a analizar): ~2-5 segundos con cualquier tamaño de archivo.",
       },
       {
         type: "p",
