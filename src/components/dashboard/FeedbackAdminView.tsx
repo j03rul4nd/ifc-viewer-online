@@ -96,7 +96,7 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
       : state.phase === 'denied' ? 'Esta página no existe para tu cuenta.'
       : 'No se han podido cargar las peticiones. Vuelve a intentarlo en un momento.'
     return (
-      <div className={`${chrome} grid place-items-center px-4`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      <div className={`${chrome} grid place-items-center px-4`} data-theme={light ? 'light' : undefined} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <div className="rounded-2xl border p-8 text-center max-w-[380px] flex flex-col items-center gap-4" style={card}>
           <p className="text-[14px]" style={{ color: 'var(--text-dim)' }}>{msg}</p>
           <div className="flex gap-2">
@@ -124,7 +124,7 @@ export default function FeedbackAdminView({ onBack, onSignIn, theme = 'dark' }: 
   const w = SIGNAL_WEIGHTS
 
   return (
-    <div className={chrome} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className={chrome} data-theme={light ? 'light' : undefined} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-5 py-8 md:py-12">
         <header className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>

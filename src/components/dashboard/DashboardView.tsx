@@ -415,7 +415,7 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
 
   // ── Page ────────────────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-full w-full ${theme === 'light' ? 'lp-light' : ''}`}
+    <div className={`min-h-full w-full ${theme === 'light' ? 'lp-light' : ''}`} data-theme={theme === 'light' ? 'light' : undefined}
       // Links in the accent colour: the dark accent is too dim for small text (3.9:1), so it uses its light step there.
       style={{ background: 'var(--bg)', color: 'var(--text)', '--dash-link': theme === 'light' ? 'var(--accent)' : 'var(--accent-strong, #55CAC3)' } as React.CSSProperties}>
       <div className="mx-auto w-full max-w-[1040px] px-4 py-6 md:px-6 md:py-10">

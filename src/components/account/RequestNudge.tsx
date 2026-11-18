@@ -75,7 +75,7 @@ export default function RequestNudge() {
     setOptions(null)
   }
 
-  const chip = 'min-h-[32px] px-3 rounded-[8px] border border-[var(--border)] text-left text-[12px] leading-snug text-[var(--text)] hover:border-[var(--accent)] hover:bg-[rgba(10,132,129,0.12)] transition-colors cursor-pointer'
+  const chip = 'min-h-[32px] px-3 rounded-[8px] border border-[var(--border)] text-left text-[12px] leading-snug text-[var(--text)] hover:border-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] transition-colors cursor-pointer'
 
   // Say why now, from the strongest thing they did this session.
   const signals = readSignals()

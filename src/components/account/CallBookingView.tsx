@@ -114,7 +114,7 @@ export default function CallBookingView({ onBack, onSignIn, theme = 'dark' }: Ca
   const duration = state.phase === 'pick' ? state.duration : state.phase === 'booked' ? state.booking.duration : 15
 
   return (
-    <div className={`min-h-full w-full ${theme === 'light' ? 'lp-light' : ''}`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className={`min-h-full w-full ${theme === 'light' ? 'lp-light' : ''}`} data-theme={theme === 'light' ? 'light' : undefined} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <main className="mx-auto w-full max-w-[600px] px-4 sm:px-6 py-10 sm:py-16">
         <button type="button" onClick={onBack} className="text-[12px] text-[var(--text-faint)] hover:text-[var(--text)] cursor-pointer">← {t('call.back')}</button>
 

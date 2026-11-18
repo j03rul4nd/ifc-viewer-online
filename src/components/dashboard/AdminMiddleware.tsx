@@ -305,7 +305,7 @@ function Margins({ data, hourCost, setHourCost, act, busy }: { data: AdminMwData
         <Table empty="Sin clientes." head={['Empresa', 'Plan', 'Pagado hasta', 'Cobrado', 'Infra.', 'Horas', 'Regaladas', 'Margen']} rows={customers.map((c) => [
           <span key="w" title={c.workspace_id}>{short(c.workspace_id)}</span>, c.tier, day(c.paid_until), `${Math.round(c.revenue_eur)} €`, `${Math.round(c.infra_eur)} €`,
           (c.minutes / 60).toFixed(1), c.absorbed_minutes ? <strong key="g">{(c.absorbed_minutes / 60).toFixed(1)}</strong> : '0',
-          <span key="m" style={{ fontWeight: c.below_floor ? 600 : 400, color: c.below_floor ? 'var(--danger, #e5484d)' : undefined }}>{pct(c.margin)}</span>,
+          <span key="m" style={{ fontWeight: c.below_floor ? 600 : 400, color: c.below_floor ? 'var(--danger)' : undefined }}>{pct(c.margin)}</span>,
         ])} />
       </Section>
       <Section title="Apuntar horas sin petición" hint="Reuniones de venta, alta o revisión.">
