@@ -53,6 +53,7 @@ import enVideo       from '../locales/en/video.json'
 import enDrawings    from '../locales/en/drawings.json'
 import enLoading     from '../locales/en/loading.json'
 import enCompare     from '../locales/en/compare.json'
+import enSite        from '../locales/en/site.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -84,6 +85,7 @@ const EN_RESOURCES = {
   drawings:    enDrawings,
   loading:     enLoading,
   compare:     enCompare,
+  site:        enSite,
 } as const
 
 // ── Init ──────────────────────────────────────────────────────────────────────
