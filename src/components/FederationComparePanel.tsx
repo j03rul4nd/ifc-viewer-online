@@ -4,7 +4,7 @@
 // flags. Element-level changes are the revision compare's job: pick the old
 // IFC files and it opens with them as side A. Local and free (ADR D-37).
 
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SceneModel } from '../types'
 import { useFederationStore } from '../stores/federationStore'
@@ -12,7 +12,8 @@ import { useFederationOpenStore } from '../stores/federationOpenStore'
 import { compareFederation, countBucket, type CurrentModel, type ModelCompareStatus } from '../lib/federation-compare'
 import { reconcile } from '../lib/federation-reconcile'
 import { useRevisionStore } from './compare/revisionStore'
-import { trackFeatureUsed } from '../lib/analytics'
+import { trackFeatureUsed, isRevisionCompareEnabled, onRevisionCompareFlag } from '../lib/analytics'
+import { useCompareStore } from '../stores/compareStore'
 import { toast } from '../stores/toastStore'
 
 const TONE: Record<ModelCompareStatus, string> = {
@@ -28,6 +29,9 @@ export default function FederationComparePanel({ models, chipClass = '' }: { mod
   const parked = useFederationStore((s) => s.parked)
   const opacityById = useFederationStore((s) => s.opacityById)
   const oldInput = useRef<HTMLInputElement>(null)
+  // The hand-off opens the revision compare; with its flag off there is nothing to hand to.
+  const [rcFlag, setRcFlag] = useState(isRevisionCompareEnabled)
+  useEffect(() => onRevisionCompareFlag(setRcFlag), [])
 
   const current = useMemo<CurrentModel[]>(() => [
     ...models.map((m) => ({
@@ -62,6 +66,8 @@ export default function FederationComparePanel({ models, chipClass = '' }: { mod
     const rec = reconcile(baseline, files.map((f) => ({ name: f.name, size: f.size })))
     const old = rec.refs.flatMap((r) => (r.fileIndex === undefined ? [] : [files[r.fileIndex]]))
     if (old.length === 0) { toast(t('federationFile.compare.noOldMatch'), 'error'); return }
+    // Clear the classic set diff so the modal opens on the revision compare.
+    useCompareStore.getState().setDiff(null)
     const rs = useRevisionStore.getState()
     rs.reset()
     rs.setSource('own')
@@ -70,7 +76,7 @@ export default function FederationComparePanel({ models, chipClass = '' }: { mod
   }
 
   const { counts } = result
-  const size = (n?: number) => (n === undefined ? '' : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)
+  const size = (n?: number) => (!n || !(n > 0) ? '?' : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)
 
   return (
     <div className="rounded-md border border-[var(--border)] p-1.5 space-y-1 text-left" data-testid="federation-compare">
@@ -89,7 +95,7 @@ export default function FederationComparePanel({ models, chipClass = '' }: { mod
         <tbody>
           {result.rows.map((r, i) => (
             <tr key={i} className="align-top">
-              <td className={`pr-1 whitespace-nowrap ${TONE[r.status]}`}>{t(`federationFile.compare.status.${r.status}`)}</td>
+              <td className={`pr-1 whitespace-nowrap ${TONE[r.status]}`}>{t(`federationFile.compare.status.${r.status}`)}{r.sizeUnknown && <span className="text-[var(--text-dim)]"> ({t('federationFile.compare.sizeUnknown')})</span>}</td>
               <td className="min-w-0 max-w-0 w-full">
                 <div className="truncate text-[var(--text)]" title={r.currentName ?? r.baselineName}>{r.currentName ?? r.baselineName}</div>
                 {r.status === 'changed' && (
@@ -107,7 +113,7 @@ export default function FederationComparePanel({ models, chipClass = '' }: { mod
           ))}
         </tbody>
       </table>
-      {counts.changed > 0 && (
+      {rcFlag && counts.changed > 0 && (
         <div className="space-y-0.5">
           <button className={chipClass} onClick={() => oldInput.current?.click()} title={t('federationFile.compare.elementsHint')}>
             {t('federationFile.compare.elements')}

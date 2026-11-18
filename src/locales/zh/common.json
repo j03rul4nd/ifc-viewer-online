@@ -399,7 +399,8 @@
       "visibility": "可见性不同",
       "elements": "比较构件…",
       "elementsHint": "选择此联合模型的旧 IFC 文件，在版本比较中作为旧版本打开；然后拖入当前文件作为新版本。",
-      "noOldMatch": "所选文件均不属于此联合模型。"
+      "noOldMatch": "所选文件均不属于此联合模型。",
+      "sizeUnknown": "大小未知"
     }
   }
 }

@@ -33,6 +33,8 @@ export interface ModelCompareRow {
   currentIndex?: number
   placementChanged: boolean
   visibilityChanged: boolean
+  /** Matched by name with no usable size on one side (0 or missing): unchanged as far as we can tell. */
+  sizeUnknown?: boolean
 }
 
 export interface FederationCompareResult {
@@ -65,14 +67,19 @@ export function compareFederation(manifest: FederationManifestV1, current: Curre
     }
     const cur = current[r.fileIndex]
     const hashesDiffer = !!ref.sha256 && !!cur.sha256 && ref.sha256.toLowerCase() !== cur.sha256.toLowerCase()
-    const unchanged = r.matchedBy === 'sha256' || (r.matchedBy === 'name+size' && !hashesDiffer)
+    const sizeUnknown = !(ref.size > 0) || !(cur.size > 0)
+    const unchanged = !hashesDiffer && (
+      r.matchedBy === 'sha256' || r.matchedBy === 'name+size' || (r.matchedBy === 'name' && sizeUnknown)
+    )
     rows.push({
       status: unchanged ? 'unchanged' : 'changed',
       baselineName: ref.fileName, currentName: cur.fileName,
       baselineSize: ref.size, currentSize: cur.size,
       matchedBy: r.matchedBy, currentIndex: r.fileIndex,
-      placementChanged: !sameTransform(ref.transform, cur.transform),
+      // A parked model has no live transform: nothing to compare.
+      placementChanged: cur.parked && !cur.transform ? false : !sameTransform(ref.transform, cur.transform),
       visibilityChanged: ref.visible !== cur.visible || ref.parked !== cur.parked,
+      ...(unchanged && r.matchedBy !== 'sha256' && sizeUnknown ? { sizeUnknown: true } : {}),
     })
   }
   for (const i of rec.unassigned) {

@@ -404,7 +404,8 @@
       "visibility": "visibilitat diferent",
       "elements": "Comparar elements…",
       "elementsHint": "Tria els IFC antics d'aquesta federació per obrir-los a la comparació de revisions com a versió antiga; després deixa-hi els actuals com a nova.",
-      "noOldMatch": "Cap dels fitxers triats no pertany a aquesta federació."
+      "noOldMatch": "Cap dels fitxers triats no pertany a aquesta federació.",
+      "sizeUnknown": "mida desconeguda"
     }
   }
 }

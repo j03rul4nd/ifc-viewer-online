@@ -54,6 +54,30 @@ describe('compareFederation', () => {
     expect(r.counts).toMatchObject({ placement: 1, visibility: 2, unchanged: 3 })
   })
 
+  it('unknown size (0 or missing) on either side is unchanged, size unknown', () => {
+    const r = compareFederation(manifest(model('a', 'arch.ifc', 10), model('b', 'mep.ifc', 0)), [cur('arch.ifc', 0), cur('mep.ifc', 7)])
+    expect(r.rows.map((x) => [x.status, x.sizeUnknown])).toEqual([['unchanged', true], ['unchanged', true]])
+    expect(r.counts.changed).toBe(0)
+  })
+
+  it('unknown size still shows a hash conflict as changed', () => {
+    const r = compareFederation(manifest(model('a', 'arch.ifc', 10, { sha256: 'aa' })), [cur('arch.ifc', 0, { sha256: 'bb' })])
+    expect(r.rows[0].status).toBe('changed')
+  })
+
+  it('a parked model with no transform has no placement difference', () => {
+    const m = manifest(model('a', 'arch.ifc', 10, { parked: true, transform: { position: { x: 5, y: 0, z: 0 } } }))
+    const r = compareFederation(m, [cur('arch.ifc', 10, { parked: true })])
+    expect(r.rows[0]).toMatchObject({ status: 'unchanged', placementChanged: false, visibilityChanged: false })
+  })
+
+  it('two baseline entries with the same name each get at most one model', () => {
+    const r = compareFederation(manifest(model('a', 'arch.ifc', 10), model('b', 'arch.ifc', 20)), [cur('arch.ifc', 20)])
+    expect(r.rows.map((x) => [x.status, x.baselineSize])).toEqual([['removed', 10], ['unchanged', 20]])
+    const both = compareFederation(manifest(model('a', 'arch.ifc', 10), model('b', 'arch.ifc', 20)), [cur('arch.ifc', 10), cur('arch.ifc', 20)])
+    expect(both.counts).toMatchObject({ unchanged: 2, added: 0, removed: 0 })
+  })
+
   it('treats absent and identity transforms alike', () => {
     expect(sameTransform(undefined, { position: { x: 0, y: 0, z: 0 }, scale: 1 })).toBe(true)
     expect(sameTransform({ scale: 2 }, undefined)).toBe(false)

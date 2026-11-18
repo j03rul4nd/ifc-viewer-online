@@ -404,7 +404,8 @@
       "visibility": "visibilité différente",
       "elements": "Comparer les éléments…",
       "elementsHint": "Choisissez les anciens IFC de cette fédération pour les ouvrir dans la comparaison de révisions comme ancienne version ; déposez ensuite les fichiers actuels comme nouvelle.",
-      "noOldMatch": "Aucun des fichiers choisis n'appartient à cette fédération."
+      "noOldMatch": "Aucun des fichiers choisis n'appartient à cette fédération.",
+      "sizeUnknown": "taille inconnue"
     }
   }
 }

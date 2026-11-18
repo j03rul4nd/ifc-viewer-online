@@ -404,7 +404,8 @@
       "visibility": "Sichtbarkeit abweichend",
       "elements": "Elemente vergleichen…",
       "elementsHint": "Wählen Sie die alten IFC-Dateien dieser Föderation, um sie im Revisionsvergleich als alte Version zu öffnen; legen Sie dann die aktuellen als neue ab.",
-      "noOldMatch": "Keine der gewählten Dateien gehört zu dieser Föderation."
+      "noOldMatch": "Keine der gewählten Dateien gehört zu dieser Föderation.",
+      "sizeUnknown": "Größe unbekannt"
     }
   }
 }

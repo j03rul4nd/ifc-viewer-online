@@ -404,7 +404,8 @@
       "visibility": "visibilidade diferente",
       "elements": "Comparar elementos…",
       "elementsHint": "Escolha os IFC antigos desta federação para os abrir na comparação de revisões como versão antiga; depois largue os atuais como a nova.",
-      "noOldMatch": "Nenhum dos ficheiros escolhidos pertence a esta federação."
+      "noOldMatch": "Nenhum dos ficheiros escolhidos pertence a esta federação.",
+      "sizeUnknown": "tamanho desconhecido"
     }
   }
 }
