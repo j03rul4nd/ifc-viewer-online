@@ -35,6 +35,7 @@ export const FEATURE_TIERS = {
   rooms: 'free',
   tour: 'starter',
   planset: 'starter',
+  compat: 'starter',
   planview: 'starter',
 }
 /** Features that must stay free whatever the plan table says. */

@@ -1,0 +1,104 @@
+{% comment %}
+  Compatibility, file weight and Health badge, for sellers of BIM objects.
+  Server-rendered first: the apps the merchant lists in the product metafield
+  `<ns>.compatible_with` (list of single line text, or one per line) and the
+  size in `<ns>.ifc_size_mb`. ifcvo-compat.js then reads the IFC header (schema,
+  model view, authoring app) from the first 4 KB of the file, the element count
+  and the Health Score from the page's viewer. Every probe may fail quietly.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.ns | strip | default: 'bim'
+  assign cw = product.metafields[ns].compatible_with
+  assign size_mb = product.metafields[ns].ifc_size_mb.value | default: ''
+  assign t_works = 'ifcvo.compat.works_with' | t
+  assign t_weight = 'ifcvo.compat.weight' | t
+  assign t_health = 'ifcvo.compat.health' | t
+  assign t_waiting = 'ifcvo.compat.waiting' | t
+  assign t_unavailable = 'ifcvo.compat.unavailable' | t
+  assign rule_keys = 'duplicate_name,empty_name,duplicate_guid,missing_type,missing_material,empty_property_value,empty_longname,invalid_ifc_version,file_author_missing,iso19650_filename,clash_mep_structural' | split: ','
+  assign label_keys = 'schema,mvd,app,worksWith,typical,weight,size,elements,light,medium,heavy,thresholds,health,issues,noIssues,unknown,unavailable' | split: ','
+  assign apps = ''
+  if cw != blank
+    if cw.type contains 'list'
+      assign apps = cw.value | join: '
+'
+    else
+      assign apps = cw.value
+    endif
+  endif
+  assign app_list = apps | newline_to_br | split: '<br />'
+-%}
+{%- capture ifcvo_style -%}
+  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+  --ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{%- capture rule_labels -%}
+  {%- for k in rule_keys -%}{%- assign key = 'ifcvo.compat.rules.' | append: k -%}{{ k | json }}:{{ key | t | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
+{%- endcapture -%}
+{%- capture ui_labels -%}
+  {%- for k in label_keys -%}{%- assign key = 'ifcvo.compat.labels.' | append: k -%}{{ k | json }}:{{ key | t | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
+{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<section
+  class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-compat
+  data-ifcvo-tier="compat"
+  data-size-mb="{{ size_mb | escape }}"
+  data-health="{{ s.show_health }}"
+  data-rule-labels="{{ '{' | append: rule_labels | append: '}' | escape }}"
+  data-labels="{{ '{' | append: ui_labels | append: '}' | escape }}"
+  data-unavailable="{{ t_unavailable | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  style="{{ ifcvo_style }}"
+  {% if s.title != blank %}aria-label="{{ s.title | escape }}"{% endif %}
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body" data-ifcvo-compat-body>
+    {%- if s.show_compat -%}
+      <div data-ifcvo-compat-header aria-live="polite"><p class="ifcvo-muted">{{ t_waiting | escape }}</p></div>
+      <div data-ifcvo-compat-apps{% if apps != blank %} data-merchant="1"{% endif %}>
+        {%- if apps != blank -%}
+          <h4>{{ t_works | escape }}</h4>
+          <ul class="ifcvo-compat-apps">
+            {%- for a in app_list -%}{%- assign a = a | strip -%}{%- if a != blank -%}<li>{{ a | escape }}</li>{%- endif -%}{%- endfor -%}
+          </ul>
+        {%- elsif request.design_mode -%}
+          <p class="ifcvo-muted">Add a "{{ ns | escape }}.compatible_with" product metafield to list the apps and versions you tested.</p>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+    {%- if s.show_weight -%}
+      <div data-ifcvo-compat-weight aria-live="polite">
+        {%- if size_mb != blank -%}<h4>{{ t_weight | escape }}</h4><p>{{ size_mb | escape }} MB</p>{%- endif -%}
+      </div>
+    {%- endif -%}
+    {%- if s.show_health -%}
+      <div data-ifcvo-compat-health aria-live="polite"></div>
+    {%- endif -%}
+  </div>
+</section>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-compat.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC compatibility",
+  "target": "section",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Heading", "default": "Compatibility" },
+    { "type": "text", "id": "ns", "label": "Metafield namespace", "default": "bim", "info": "compatible_with (apps and versions you tested) wins over the typical list; ifc_size_mb gives the size." },
+    { "type": "checkbox", "id": "show_compat", "label": "Schema and apps", "default": true },
+    { "type": "checkbox", "id": "show_weight", "label": "File weight", "default": true, "info": "Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more." },
+    { "type": "checkbox", "id": "show_health", "label": "Health badge", "default": true },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown." },
+    { "type": "header", "content": "Brand" },
+    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
+    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
+    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+  ]
+}
+{% endschema %}
