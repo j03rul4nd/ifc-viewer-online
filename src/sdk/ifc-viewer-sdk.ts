@@ -326,6 +326,48 @@ export interface ProductData {
   rooms?: ProductRoomSchedule | null
   /** Classification codes (Uniclass 2015, OmniClass, MasterFormat…) by system (since 1.19); null when none. */
   classifications?: ProductClassifications | null
+  /** Bill of quantities and a steel table by profile. */
+  takeoff?: ProductTakeoff
+}
+
+/** Where a takeoff length / weight came from; volume = volume x 7850 (steel only). */
+export type ProductTakeoffSource = 'qto' | 'tekla' | 'revit' | 'advance' | 'volume' | 'geometry'
+
+/** One BOQ row: elements of one class, type, material, steel profile and storey. SI units. */
+export interface ProductTakeoffRow extends ProductQuantities {
+  key: string
+  ifcClass: string
+  type: string
+  material: string | null
+  profile: string | null
+  storey: string | null
+  count: number
+  /** Elements of the row with no value for each quantity. */
+  missing: { length: number; area: number; volume: number; weight: number }
+  sources: { length: ProductTakeoffSource[]; weight: ProductTakeoffSource[] }
+}
+
+/** Steel parts of one profile: count, metres, kg/m, kg. */
+export interface ProductSteelProfileRow {
+  /** null: no readable profile. */
+  profile: string | null
+  count: number
+  length: number
+  kgPerM: number | null
+  weight: number
+  missingWeight: number
+  missingLength: number
+  /** Some weight is volume x 7850. */
+  estimated: boolean
+}
+
+export interface ProductTakeoff {
+  rows: ProductTakeoffRow[]
+  steel: ProductSteelProfileRow[]
+  totals: ProductQuantities & { count: number }
+  /** Rows past the cap (1000) are folded into one "(other)" row, or the element read was truncated. */
+  truncated: boolean
+  units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
 }
 
 /** One code in getProductData().classifications. */

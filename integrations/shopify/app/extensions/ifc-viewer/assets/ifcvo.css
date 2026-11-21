@@ -101,6 +101,10 @@
 .ifcvo-chips .ifcvo-chip { cursor: default; }
 .ifcvo-rooms .ifcvo-row { padding: 2px 4px; }
 .ifcvo-rooms-total { margin: 6px 0; }
+/* Takeoff / BOQ (ifc-takeoff block) */
+.ifcvo-takeoff .ifcvo-sort { all: unset; cursor: pointer; font-weight: inherit; }
+.ifcvo-takeoff .ifcvo-sort:focus-visible { outline: 2px solid var(--ifcvo-accent); }
+.ifcvo-takeoff-tools, .ifcvo-takeoff-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 
 .ifcvo-planview-body { position: relative; }
 .ifcvo-planview-block [role="tab"][aria-selected="true"] { border-color: var(--ifcvo-accent); background: var(--ifcvo-soft); }
