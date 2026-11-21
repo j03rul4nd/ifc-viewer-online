@@ -37,7 +37,9 @@ export const FEATURE_TIERS = {
   planset: 'starter',
   compat: 'starter',
   planview: 'starter',
+  ar: 'starter',
   classification: 'starter',
+  takeoff: 'business',
   compliance: 'business',
 }
 /** Features that must stay free whatever the plan table says. */

@@ -1,0 +1,89 @@
+{% comment %}
+  Takeoff / bill of quantities: elements grouped by type, material or storey
+  with count, length, area, volume and weight (metric or imperial), and a
+  steel table by profile (count, length, weight per length, total weight),
+  read from the model in the visitor's browser. Optional product metafield
+  `bim.unit_prices` (JSON, key -> price or {"price","per"}) adds an
+  indicative total in the shop's base currency: never a quote. `bim.boq` (text, one
+  line per row, cells split by |, first line = headings) is rendered here as
+  a plain table for crawlers and visitors without JavaScript. Reads the
+  model of the first "Product IFC model" block on the page.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.specs_ns | strip | default: 'bim'
+  assign mf = product.metafields[ns]
+-%}
+{%- capture ifcvo_style -%}
+  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+  --ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{%- capture takeoff_labels -%}{"title":{{ 'ifcvo.takeoff.title' | t | json }},"group":{{ 'ifcvo.takeoff.group' | t | json }},"type":{{ 'ifcvo.takeoff.type' | t | json }},"material":{{ 'ifcvo.takeoff.material' | t | json }},"storey":{{ 'ifcvo.takeoff.storey' | t | json }},"profile":{{ 'ifcvo.takeoff.profile' | t | json }},"count":{{ 'ifcvo.takeoff.count' | t | json }},"length":{{ 'ifcvo.takeoff.length' | t | json }},"area":{{ 'ifcvo.takeoff.area' | t | json }},"volume":{{ 'ifcvo.takeoff.volume' | t | json }},"weight":{{ 'ifcvo.takeoff.weight' | t | json }},"kgPerM":{{ 'ifcvo.takeoff.kgPerM' | t | json }},"price":{{ 'ifcvo.takeoff.price' | t | json }},"total":{{ 'ifcvo.takeoff.total' | t | json }},"steel":{{ 'ifcvo.takeoff.steel' | t | json }},"groupBy":{{ 'ifcvo.takeoff.groupBy' | t | json }},"csv":{{ 'ifcvo.takeoff.csv' | t | json }},"quote":{{ 'ifcvo.takeoff.quote' | t | json }},"quoteDone":{{ 'ifcvo.takeoff.quoteDone' | t | json }},"noForm":{{ 'ifcvo.takeoff.noForm' | t | json }},"indicative":{{ 'ifcvo.takeoff.indicative' | t | json }},"inCurrency":{{ 'ifcvo.takeoff.inCurrency' | t | json }},"waiting":{{ 'ifcvo.takeoff.waiting' | t | json }},"loading":{{ 'ifcvo.takeoff.loading' | t | json }},"none":{{ 'ifcvo.takeoff.none' | t | json }},"error":{{ 'ifcvo.takeoff.error' | t | json }},"missing":{{ 'ifcvo.takeoff.missing' | t | json }},"estimated":{{ 'ifcvo.takeoff.estimated' | t | json }},"noProfile":{{ 'ifcvo.takeoff.noProfile' | t | json }},"other":{{ 'ifcvo.takeoff.other' | t | json }},"truncated":{{ 'ifcvo.takeoff.truncated' | t | json }}}{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div
+  class="ifcvo-panel ifcvo-takeoff-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-takeoff
+  data-ifcvo-tier="takeoff"
+  data-block-id="{{ block.id | escape }}"
+  data-units="{{ s.units | escape }}"
+  data-group="{{ s.group | escape }}"
+  data-show-steel="{{ s.show_steel }}"
+  data-csv="{{ s.csv }}"
+  data-quote="{{ s.quote }}"
+  data-form="{{ s.form | escape }}"
+  data-prices="{{ mf.unit_prices.value | json | escape }}"
+  data-currency="{{ shop.currency | escape }}"
+  data-cart-currency="{{ cart.currency.iso_code | escape }}"
+  data-product="{{ product.title | escape }}"
+  data-labels="{{ takeoff_labels | escape }}"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  style="{{ ifcvo_style }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  {%- if mf.boq != blank -%}
+    {%- assign boq_lines = mf.boq.value | newline_to_br | split: '<br />' -%}
+    <table class="ifcvo-specs ifcvo-takeoff" data-ifcvo-boq-static>
+      <caption>{{ 'ifcvo.takeoff.title' | t | escape }}</caption>
+      {%- for line in boq_lines -%}
+        {%- assign row = line | strip -%}
+        {%- if row == blank -%}{%- continue -%}{%- endif -%}
+        {%- assign cells = row | split: '|' -%}
+        <tr>
+          {%- for c in cells -%}
+            {%- if forloop.parentloop.first -%}<th scope="col">{{ c | strip | escape }}</th>{%- elsif forloop.first -%}<th scope="row">{{ c | strip | escape }}</th>{%- else -%}<td>{{ c | strip | escape }}</td>{%- endif -%}
+          {%- endfor -%}
+        </tr>
+      {%- endfor -%}
+    </table>
+  {%- elsif request.design_mode -%}
+    <p class="ifcvo-muted">Add a product metafield "{{ ns | escape }}.boq" (one row per line, cells split by |) for a table that shows before the 3D model loads, and "{{ ns | escape }}.unit_prices" (JSON) for an indicative total.</p>
+  {%- endif -%}
+  <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-takeoff.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC takeoff / BOQ",
+  "target": "section",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Heading", "default": "Quantities" },
+    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "boq (text, cells split by |) is shown as HTML. unit_prices (JSON) maps a profile, type, material or IFC class to a price, or to {\"price\": 2.1, \"per\": \"kg\"} with per = each, m, m2, m3 or kg; it adds an indicative total." },
+    { "type": "select", "id": "units", "label": "Units", "default": "metric", "options": [ { "value": "metric", "label": "Metric (m, m², m³, kg)" }, { "value": "imperial", "label": "Imperial (ft, ft², ft³, lb)" } ] },
+    { "type": "select", "id": "group", "label": "Group by", "default": "type", "options": [ { "value": "type", "label": "Type" }, { "value": "material", "label": "Material" }, { "value": "storey", "label": "Storey" } ] },
+    { "type": "checkbox", "id": "show_steel", "label": "Steel table by profile", "default": true },
+    { "type": "checkbox", "id": "csv", "label": "CSV download", "default": true },
+    { "type": "checkbox", "id": "quote", "label": "Add quantities to a quote request", "default": true, "info": "Fills the page's contact form." },
+    { "type": "text", "id": "form", "label": "Contact form selector", "info": "Empty finds the first contact form." },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated." },
+    { "type": "header", "content": "Brand" },
+    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
+    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
+    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+  ]
+}
+{% endschema %}

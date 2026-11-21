@@ -101,6 +101,10 @@
 .ifcvo-chips .ifcvo-chip { cursor: default; }
 .ifcvo-rooms .ifcvo-row { padding: 2px 4px; }
 .ifcvo-rooms-total { margin: 6px 0; }
+/* Takeoff / BOQ (ifc-takeoff block) */
+.ifcvo-takeoff .ifcvo-sort { all: unset; cursor: pointer; font-weight: inherit; }
+.ifcvo-takeoff .ifcvo-sort:focus-visible { outline: 2px solid var(--ifcvo-accent); }
+.ifcvo-takeoff-tools, .ifcvo-takeoff-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 
 .ifcvo-planview-body { position: relative; }
 .ifcvo-planview-block [role="tab"][aria-selected="true"] { border-color: var(--ifcvo-accent); background: var(--ifcvo-soft); }
@@ -111,6 +115,8 @@
 }
 .ifcvo-noselect { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .ifcvo-protected .ifcvo-downloads, .ifcvo-protected .ifcvo-full, .ifcvo-protected .ifcvo-make, .ifcvo-protected [data-ifcvo-downloads-block] { display: none !important; }
+.ifcvo-ar-qr { margin: 0; display: grid; gap: 8px; justify-items: start; }
+.ifcvo-ar-qr svg { width: 148px; height: 148px; }
 /* Classification (ifc-classification block) */
 .ifcvo-cls code { font-size: .92em; white-space: nowrap; }
 /* Compliance (ifc-compliance block) */

@@ -326,6 +326,48 @@ export interface ProductData {
   rooms?: ProductRoomSchedule | null
   /** Classification codes (Uniclass 2015, OmniClass, MasterFormat…) by system (since 1.19); null when none. */
   classifications?: ProductClassifications | null
+  /** Bill of quantities and a steel table by profile. */
+  takeoff?: ProductTakeoff
+}
+
+/** Where a takeoff length / weight came from; volume = volume x 7850 (steel only). */
+export type ProductTakeoffSource = 'qto' | 'tekla' | 'revit' | 'advance' | 'volume' | 'geometry'
+
+/** One BOQ row: elements of one class, type, material, steel profile and storey. SI units. */
+export interface ProductTakeoffRow extends ProductQuantities {
+  key: string
+  ifcClass: string
+  type: string
+  material: string | null
+  profile: string | null
+  storey: string | null
+  count: number
+  /** Elements of the row with no value for each quantity. */
+  missing: { length: number; area: number; volume: number; weight: number }
+  sources: { length: ProductTakeoffSource[]; weight: ProductTakeoffSource[] }
+}
+
+/** Steel parts of one profile: count, metres, kg/m, kg. */
+export interface ProductSteelProfileRow {
+  /** null: no readable profile. */
+  profile: string | null
+  count: number
+  length: number
+  kgPerM: number | null
+  weight: number
+  missingWeight: number
+  missingLength: number
+  /** Some weight is volume x 7850. */
+  estimated: boolean
+}
+
+export interface ProductTakeoff {
+  rows: ProductTakeoffRow[]
+  steel: ProductSteelProfileRow[]
+  totals: ProductQuantities & { count: number }
+  /** Rows past the cap (1000) are folded into one "(other)" row, or the element read was truncated. */
+  truncated: boolean
+  units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
 }
 
 /** One code in getProductData().classifications. */
@@ -1009,6 +1051,24 @@ export interface ModelFile {
   sizeBytes: number
   /** The model's file name with the new extension, e.g. `chair.glb`. */
   fileName: string
+  /** For AR exports: meshes after merging by material, triangles, parts left out by the cap. */
+  stats?: { meshes: number; triangles: number; droppedParts: number }
+}
+
+/** Options of exportModel(). `ar` and `usdz` since v1.19.0. */
+export interface ExportModelOptions {
+  /** `glb` (default) or `usdz` (iOS Quick Look; always the AR model). */
+  format?: 'glb' | 'usdz'
+  modelId?: string
+  /**
+   * AR model for phones: visible physical elements only (no spaces/openings),
+   * one mesh per material, y-up metres, base centre at the origin.
+   */
+  ar?: boolean
+  /** AR only: leave out the smallest parts until the model fits this many triangles. */
+  maxTriangles?: number
+  /** AR only: keep IfcSite geometry (terrain). Default false. */
+  includeSite?: boolean
 }
 
 export interface PresentationProgressEvent {
@@ -2706,11 +2766,16 @@ export class IfcViewer {
   /**
    * Export a loaded model as GLB, built in the visitor's browser from the IFC
    * geometry (no server). Defaults to the first model. Since v1.19.0.
+   * `{ ar: true }` makes a phone-sized AR model; `{ format: 'usdz' }` the iOS
+   * Quick Look file of it.
    *
    *   const { bytes, fileName } = await viewer.exportModel()
    */
-  exportModel(opts: { format?: 'glb'; modelId?: string } = {}): Promise<ModelFile> {
-    return this.request<ModelFile>('ifcviewer:export-model', { format: opts.format ?? 'glb', modelId: opts.modelId }, 5 * 60_000)
+  exportModel(opts: ExportModelOptions = {}): Promise<ModelFile> {
+    const format = opts.format ?? 'glb'
+    return this.request<ModelFile>('ifcviewer:export-model', {
+      format, modelId: opts.modelId, ar: format === 'usdz' || opts.ar === true, maxTriangles: opts.maxTriangles, includeSite: opts.includeSite === true,
+    }, 5 * 60_000)
   }
 
   /** Close Clip Studio (the generated project is kept until the next one). */
@@ -3377,7 +3442,7 @@ export class IfcViewerElement extends HTMLElement {
   stopTour(): Promise<TourState> { return this._viewer!.stopTour() }
   createPresentation(recipe?: string, options?: PresentationOptions): Promise<PresentationState> { return this._viewer!.createPresentation(recipe, options) }
   exportPresentation(opts?: { resolution?: 720 | 1080 | 1440; music?: boolean }): Promise<PresentationVideo> { return this._viewer!.exportPresentation(opts) }
-  exportModel(opts?: { format?: 'glb'; modelId?: string }): Promise<ModelFile> { return this._viewer!.exportModel(opts) }
+  exportModel(opts?: ExportModelOptions): Promise<ModelFile> { return this._viewer!.exportModel(opts) }
   createCover(opts?: CoverOptions): Promise<CoverState> { return this._viewer!.createCover(opts) }
   exportCover(opts?: { type?: 'png' | 'jpeg' | 'pdf' | 'pptx' | 'zip'; slide?: number }): Promise<CoverFile> { return this._viewer!.exportCover(opts) }
   getGroups(): Promise<SceneGroupsState> { return this._viewer!.getGroups() }
