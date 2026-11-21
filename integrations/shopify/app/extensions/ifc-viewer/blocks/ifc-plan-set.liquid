@@ -1,0 +1,200 @@
+{% comment %}
+  Plan set & license: for house-plan and drawing sellers. Each variant is a
+  license (single-build, multi-build, CAD set, PDF set…). Variant metafields
+  in the chosen namespace (default `custom`):
+    license_type   single line text  "Single-build license"
+    license_terms  multi-line text   what the buyer may do
+    plan_set       JSON [{ "name", "format", "count", "size" }] or a list of
+                   single line text "Floor plans|PDF|4|2.1 MB"
+    ifc_model      the variant's IFC (read by the "Product IFC model" block)
+  Everything is rendered here as HTML (crawlable, works without JavaScript):
+  one card per variant, the selected one visible, and a license comparison
+  table. ifcvo-planset.js only switches the card when the variant changes.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.namespace | strip | default: 'custom'
+  assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  assign current = product.selected_or_first_available_variant
+  assign shop_labels = shop.metafields.ifcvo.labels.value
+  assign iso = request.locale.iso_code | downcase
+  assign lang = iso | split: '-' | first
+  assign L = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
+
+  assign t_heading = 'ifcvo.planset.heading' | t
+  assign t_license = 'ifcvo.planset.license' | t
+  assign t_terms = 'ifcvo.planset.terms' | t
+  assign t_included = 'ifcvo.planset.included' | t
+  assign t_compare = 'ifcvo.planset.compare' | t
+  assign t_files = 'ifcvo.planset.files' | t
+  assign t_sheets = 'ifcvo.planset.sheets' | t
+  assign t_model = 'ifcvo.planset.model' | t
+  assign t_yes = 'ifcvo.planset.yes' | t
+  assign t_no = 'ifcvo.planset.no' | t
+  assign t_selected = 'ifcvo.planset.selected' | t
+  assign l_heading = s.title | default: L.planset_heading | default: t_heading
+  assign l_license = L.planset_license | default: t_license
+  assign l_terms = L.planset_terms | default: t_terms
+  assign l_included = L.planset_included | default: t_included
+  assign l_compare = L.planset_compare | default: t_compare
+  assign l_files = L.planset_files | default: t_files
+  assign l_sheets = L.planset_sheets | default: t_sheets
+  assign l_model = L.planset_model | default: t_model
+  assign l_yes = L.planset_yes | default: t_yes
+  assign l_no = L.planset_no | default: t_no
+  assign l_selected = L.planset_selected | default: t_selected
+
+  assign default_items = s.default_set | newline_to_br | split: '<br />'
+
+  comment
+    Union of file names over all variants, in first-seen order, for the matrix.
+  endcomment
+  assign sep = '§§'
+  assign names = ''
+  for v in product.variants
+    assign vset = v.metafields[ns].plan_set.value | default: default_items
+    for item in vset
+      if item.name != blank
+        assign nm = item.name | strip
+      else
+        assign nm = item | split: '|' | first | strip
+      endif
+      if nm != blank
+        assign probe = sep | append: nm | append: sep
+        assign hay = sep | append: names | append: sep
+        unless hay contains probe
+          if names != ''
+            assign names = names | append: sep
+          endif
+          assign names = names | append: nm
+        endunless
+      endif
+    endfor
+  endfor
+  assign name_list = names | split: sep
+-%}
+{%- capture ifcvo_style -%}
+  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+  --ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+{%- if plan == 'free' -%}
+  {%- if request.design_mode -%}
+    <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>"planset" needs the starter plan. Visitors do not see it.</p>
+  {%- endif -%}
+{%- else -%}
+<div
+  class="ifcvo-panel ifcvo-planset-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-planset
+  data-ifcvo-tier="planset"
+  data-ifcvo-plan="{{ plan | escape }}"
+  data-variant-id="{{ current.id | escape }}"
+  style="{{ ifcvo_style }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body" data-ifcvo-planset-body>
+    <div class="ifcvo-planset-cards">
+      {%- for v in product.variants -%}
+        {%- liquid
+          assign vtitle = v.title
+          if product.has_only_default_variant
+            assign vtitle = ''
+          endif
+          assign vtype = v.metafields[ns].license_type.value | default: vtitle | default: s.default_license
+          assign vterms = v.metafields[ns].license_terms.value | default: s.default_terms
+          assign vset = v.metafields[ns].plan_set.value | default: default_items
+          assign vmodel_field = v.metafields[ns].ifc_model.value
+          assign vmodel = vmodel_field.url | default: vmodel_field | strip
+          assign vmodel_name = vmodel | split: '?' | first | split: '/' | last
+        -%}
+        <section class="ifcvo-planset-card" data-variant-id="{{ v.id | escape }}" aria-label="{{ l_license | escape }}: {{ vtype | escape }}"{% unless v.id == current.id %} hidden{% endunless %}>
+          <p class="ifcvo-planset-type"><strong>{{ l_license | escape }}:</strong> {{ vtype | escape }}</p>
+          {%- if vterms != blank -%}
+            <div class="ifcvo-planset-terms"><strong>{{ l_terms | escape }}:</strong> {{ vterms | escape | newline_to_br }}</div>
+          {%- endif -%}
+          {%- if s.show_model and vmodel_name != blank -%}
+            <p class="ifcvo-muted ifcvo-planset-model">{{ l_model | escape }}: {{ vmodel_name | escape }}</p>
+          {%- endif -%}
+          <h4>{{ l_included | escape }}</h4>
+          <ul class="ifcvo-planset-list">
+            {%- for item in vset -%}{%- render 'ifcvo-planset-item', item: item, sheets_label: l_sheets -%}{%- endfor -%}
+          </ul>
+        </section>
+      {%- endfor -%}
+    </div>
+    {%- if s.show_matrix and product.variants.size > 1 -%}
+      <div class="ifcvo-planset-matrix-wrap" tabindex="0" role="region" aria-label="{{ l_compare | escape }}">
+        <table class="ifcvo-specs ifcvo-planset-matrix">
+          <caption>{{ l_compare | escape }}</caption>
+          <thead>
+            <tr>
+              <td></td>
+              {%- for v in product.variants -%}
+                {%- liquid
+                  assign vtitle = v.title
+                  if product.has_only_default_variant
+                    assign vtitle = ''
+                  endif
+                  assign vtype = v.metafields[ns].license_type.value | default: vtitle | default: s.default_license
+                -%}
+                {%- comment -%} money: the shop's own money format (merchant-controlled, may contain HTML), output as Shopify intends. {%- endcomment -%}
+                <th scope="col" data-variant-id="{{ v.id | escape }}"{% if v.id == current.id %} aria-current="true"{% endif %}>{{ vtype | escape }}<br><span class="ifcvo-muted">{{ v.price | money }}</span></th>
+              {%- endfor -%}
+            </tr>
+          </thead>
+          <tbody>
+            {%- for nm in name_list -%}
+              <tr>
+                <th scope="row">{{ nm | escape }}</th>
+                {%- for v in product.variants -%}
+                  {%- liquid
+                    assign vset = v.metafields[ns].plan_set.value | default: default_items
+                    assign has = false
+                    for item in vset
+                      if item.name != blank
+                        assign inm = item.name | strip
+                      else
+                        assign inm = item | split: '|' | first | strip
+                      endif
+                      if inm == nm
+                        assign has = true
+                        break
+                      endif
+                    endfor
+                  -%}
+                  <td data-variant-id="{{ v.id | escape }}">{% if has %}<span aria-hidden="true">✓</span><span class="ifcvo-sr">{{ l_yes | escape }}</span>{% else %}<span aria-hidden="true">—</span><span class="ifcvo-sr">{{ l_no | escape }}</span>{% endif %}</td>
+                {%- endfor -%}
+              </tr>
+            {%- endfor -%}
+          </tbody>
+        </table>
+      </div>
+    {%- endif -%}
+  </div>
+  <p class="ifcvo-sr" data-ifcvo-planset-status role="status" data-label="{{ l_selected | escape }}"></p>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-planset.js' | asset_url }}"></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "IFC plan set & license",
+  "target": "section",
+  "settings": [
+    { "type": "paragraph", "content": "One card per variant (license). Variant metafields: license_type, license_terms, plan_set (JSON or list), ifc_model." },
+    { "type": "text", "id": "title", "label": "Heading", "info": "Empty uses the translated default." },
+    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
+    { "type": "text", "id": "default_license", "label": "Default license", "default": "Single-build license", "info": "Used when a variant has no license_type." },
+    { "type": "textarea", "id": "default_terms", "label": "Default terms", "info": "Used when a variant has no license_terms." },
+    { "type": "textarea", "id": "default_set", "label": "Default files included", "default": "Floor plans|PDF\nElevations|PDF\nSections|PDF\nFoundation plan|PDF\n3D model|IFC", "info": "One per line: Name|FORMAT|sheets|size. Used when a variant has no plan_set." },
+    { "type": "checkbox", "id": "show_matrix", "label": "License comparison table", "default": true },
+    { "type": "checkbox", "id": "show_model", "label": "Show the 3D model of each license", "default": true },
+    { "type": "header", "content": "Brand" },
+    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
+    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
+    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+  ]
+}
+{% endschema %}

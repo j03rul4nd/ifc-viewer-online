@@ -10,6 +10,19 @@
       "offline": "You are offline. The 3D viewer loads when the connection is back.",
       "too_large": "This model is too large to open on this device. Open it in the full viewer or download it.",
       "no_webgl": "This browser cannot show 3D. Open it in the full viewer or download it."
+    },
+    "planset": {
+      "heading": "What you get",
+      "license": "License",
+      "terms": "Terms",
+      "included": "What's included",
+      "compare": "Compare licenses",
+      "files": "Files",
+      "sheets": "sheets",
+      "model": "3D model",
+      "yes": "Included",
+      "no": "Not included",
+      "selected": "Selected:"
     }
   }
 }
