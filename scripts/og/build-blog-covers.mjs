@@ -89,6 +89,16 @@ const ALL_POSTS = ALL_BLOG_POSTS.map((post) => ({
 // These backgrounds are captures produced by the real repository pipeline,
 // never generated images. The LiDAR capture is explicitly a simulated replay.
 const REAL_CAPTURE_BY_KEY = {
+  'ifc-viewer-wordpress-plugin': {
+    source: 'public/blog/images/wordpress-ifc-block-editor-model-panel.jpg',
+    badge: { en: 'WORDPRESS PLUGIN · FREE', es: 'PLUGIN DE WORDPRESS · GRATIS' },
+    shortTitle: 'IFC ON WORDPRESS',
+  },
+  'bim-models-on-wordpress-website': {
+    source: 'public/blog/images/wordpress-ifc-federated-models-map.jpg',
+    badge: { en: 'WORDPRESS PLUGIN · ON THE MAP', es: 'PLUGIN DE WORDPRESS · EN EL MAPA' },
+    shortTitle: 'BIM ON YOUR WEBSITE',
+  },
   'ifc-point-cloud-scan-to-bim': {
     source: 'public/blog/images/scan-to-bim-ifc-point-cloud-alignment.jpg',
     publicCopy: 'cras-ifc-tls-point-cloud-real-alignment.jpg',
