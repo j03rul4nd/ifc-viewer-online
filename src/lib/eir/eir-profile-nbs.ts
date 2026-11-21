@@ -14,6 +14,9 @@
 //   • Manufacturer data: Pset_ManufacturerTypeInformation.Manufacturer and
 //     ModelReference.
 //
+// The IfcTypeObject clause has no IDS 1.0 facet; the Shopify compliance block
+// counts typed elements itself (getElement().typeId), outside IDS.
+//
 // NOT checkable here (listed in NBS_BOS_MANUAL so a UI can say so):
 //   see the array below. They need a person or a check IDS 1.0 has no facet for.
 
@@ -37,7 +40,6 @@ export const NBS_BOS_CLASSES: ReadonlyArray<{ entity: string; pset: string; labe
 
 /** Clauses of the standard this profile does not decide, in plain language. */
 export const NBS_BOS_MANUAL: readonly string[] = [
-  'Every object is defined by an IfcTypeObject (IDS 1.0 has no facet for the type relationship; type properties are read when present).',
   'Geometry is not overburdened: level of detail fits the use, no hidden or unnecessary detail.',
   'Naming follows the NBS convention (Source_Type_Subtype) and is meaningful.',
   'Property values are true to the real product and in the right units.',
@@ -45,6 +47,9 @@ export const NBS_BOS_MANUAL: readonly string[] = [
   'Behaviour: openings, connections and clearances behave as the product does.',
   'Presentation: preview image and symbols are present and consistent.',
 ]
+
+/** "Uniclass 2015", "Uniclass2015", "Uniclass", "UniClass 2015"… any case. */
+export const UNICLASS_SYSTEM = '[Uu][Nn][Ii][Cc][Ll][Aa][Ss][Ss] ?(2015)?'
 
 function classRules(c: { entity: string; pset: string; label: string }, i: number): EirRule[] {
   const base = { entity: c.entity, optional: true } as const
@@ -55,7 +60,7 @@ function classRules(c: { entity: string; pset: string; label: string }, i: numbe
       message: `${c.label}: ${c.pset}.Reference is filled in (the type reference)` },
     { ...base, id: `nbs-${i}-cls`, type: 'classification', severity: 'error',
       message: `${c.label}: carries a classification code` },
-    { ...base, id: `nbs-${i}-uni`, type: 'classification', system: 'Uniclass 2015', severity: 'warning',
+    { ...base, id: `nbs-${i}-uni`, type: 'classification', system: 'Uniclass 2015', systemPattern: UNICLASS_SYSTEM, severity: 'warning',
       message: `${c.label}: classified with Uniclass 2015` },
     { ...base, id: `nbs-${i}-mfr`, type: 'propertyNotEmpty', pset: 'Pset_ManufacturerTypeInformation', property: 'Manufacturer', severity: 'error',
       message: `${c.label}: names the manufacturer (Pset_ManufacturerTypeInformation.Manufacturer)` },
@@ -72,6 +77,6 @@ export const NBS_BOS: EirProfile = {
     'The information clauses of the NBS BIM Object Standard that can be checked from the IFC file alone: '
     + 'IFC common property set (Pset_<Class>Common, Pset_BuildingElementProxyCommon for proxies) with its Reference, '
     + 'a classification and Uniclass 2015, and manufacturer data. Type properties count. Not checked (manual): '
-    + 'IfcTypeObject relationship, geometry detail, naming convention, value accuracy, materials, behaviour, presentation.',
+    + 'geometry detail, naming convention, value accuracy, materials, behaviour, presentation.',
   rules: NBS_BOS_CLASSES.flatMap(classRules),
 }

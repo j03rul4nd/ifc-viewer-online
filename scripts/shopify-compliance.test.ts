@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  _reset, init, LABELS, NBS_MANUAL, config, refresh, render, runChecks, safeIdsUrl, summarize, withTimeout,
+  _reset, init, LABELS, NBS_MANUAL, NBS_CLASSES, config, typeCheck, withTypeCheck, refresh, render, runChecks, safeIdsUrl, summarize, withTimeout,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compliance.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
@@ -34,6 +34,8 @@ const viewer = (over: Record<string, unknown> = {}) => ({
   checkIds: vi.fn().mockResolvedValue(IDS_OK),
   validate: vi.fn().mockResolvedValue({ qualityScore: 82.4 }),
   getModels: vi.fn().mockResolvedValue([{ id: 'm' }]),
+  findElements: vi.fn().mockResolvedValue([]),
+  getElement: vi.fn().mockResolvedValue(null),
   on: vi.fn(),
   ...over,
 })
@@ -95,6 +97,24 @@ describe('ifcvo-compliance.js', () => {
     expect(safeIdsUrl('javascript:alert(1)')).toBeNull()
     expect(safeIdsUrl('/x.ids')).toBeNull()
     expect(config(mount({ 'ids-url': 'http://x' })).idsUrl).toBeNull()
+  })
+
+  it('IfcTypeObject clause: counted outside IDS and added to the NBS score as its own line', async () => {
+    const v = viewer({
+      findElements: vi.fn().mockResolvedValue([{ expressId: 1, modelId: 'm' }, { expressId: 2, modelId: 'm' }]),
+      getElement: vi.fn().mockImplementation((id: number) => Promise.resolve(id === 1 ? { typeId: 9 } : { typeId: null })),
+    })
+    expect(await typeCheck(v)).toEqual({ typed: 1, total: 2 })
+    expect(v.findElements).toHaveBeenCalledWith({ ifcClass: NBS_CLASSES, limit: 200 })
+    const root = mount({ 'ids-url': '', 'show-score': 'false' })
+    const res = await runChecks(v, config(root))
+    expect(res.nbs.value).toMatchObject({ total: 4, passed: 2, failed: 2 })
+    render(root, res)
+    expect(root.querySelector('[data-badge="nbs"]')!.textContent).toBe('NBS object standard: 2/4 checks')
+    expect(root.querySelector('[data-ifcvo-typecheck]')!.textContent).toBe('Type object (IfcTypeObject): 1/2 product elements (checked outside IDS)')
+    expect(root.querySelector('details')!.textContent).toContain('1 product elements have no type object')
+    expect(withTypeCheck(summarize(NBS), { typed: 3, total: 3 })).toMatchObject({ total: 4, passed: 3, failed: 1 })
+    expect(withTypeCheck(summarize(NBS), null).typeCheck).toBeUndefined()
   })
 
   it('summarize ignores n/a specs', () => {

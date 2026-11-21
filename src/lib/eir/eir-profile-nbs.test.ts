@@ -30,7 +30,7 @@ describe('builtin-nbs-bos', () => {
     expect(compileEirToIds(NBS_BOS).specifications).toHaveLength(NBS_BOS.rules.length)
     expect(NBS_BOS.rules).toHaveLength(NBS_BOS_CLASSES.length * 6)
     expect(NBS_BOS.rules.every((r) => r.optional)).toBe(true)
-    expect(NBS_BOS_MANUAL.some((c) => /IfcTypeObject/.test(c))).toBe(true)
+    expect(NBS_BOS_MANUAL.some((c) => /IfcTypeObject/.test(c))).toBe(false) // counted by the Shopify block
     expect(NBS_BOS_MANUAL.some((c) => /[Gg]eometry/.test(c))).toBe(true)
   })
 
@@ -40,6 +40,15 @@ describe('builtin-nbs-bos', () => {
     expect(r.passedSpecs).toBe(6)
     expect(r.naSpecs).toBe(NBS_BOS.rules.length - 6)
     expect(r.score).toBe(100)
+  })
+
+  it('Uniclass system name variants pass, other systems fail', () => {
+    for (const [system, ok] of [['Uniclass 2015', true], ['Uniclass2015', true], ['Uniclass', true], ['UniClass 2015', true], ['UNICLASS', true], ['OmniClass', false], ['Uniclass 2015 extra', false]] as const) {
+      const d = fullDoor()
+      d.classifications = [{ system, value: 'Pr_30_59_24' }]
+      const st = validateElements([d], NBS_BOS).specs.find((s) => s.name === 'Door: classified with Uniclass 2015')?.status
+      expect(st, system).toBe(ok ? 'pass' : 'fail')
+    }
   })
 
   it('a geometry-only door fails every information clause', () => {

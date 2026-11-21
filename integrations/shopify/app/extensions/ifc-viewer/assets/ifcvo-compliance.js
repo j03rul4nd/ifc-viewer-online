@@ -28,11 +28,12 @@ export const LABELS = {
   manual: 'Not checked automatically (needs a person):',
   note: 'Checked in your browser on {date}. A self-check of the file, not a certification.',
   more: '…and {count} more',
+  typed: 'Type object (IfcTypeObject): {typed}/{total} product elements (checked outside IDS)',
+  untyped: '{count} product elements have no type object (IfcTypeObject)',
 }
 
 /** NBS clauses the profile cannot decide; mirrors NBS_BOS_MANUAL in src/lib/eir/eir-profile-nbs.ts. */
 export const NBS_MANUAL = [
-  'Every object is defined by an IfcTypeObject',
   'Geometry is not overburdened',
   'Naming follows the NBS convention',
   'Property values are true to the real product',
@@ -41,6 +42,40 @@ export const NBS_MANUAL = [
 ]
 
 const MAX_LISTED = 50
+
+/** Product classes of the NBS profile (mirrors NBS_BOS_CLASSES). */
+export const NBS_CLASSES = ['IfcDoor', 'IfcWindow', 'IfcWall', 'IfcSlab', 'IfcCovering', 'IfcRoof', 'IfcStair', 'IfcRailing',
+  'IfcFurniture', 'IfcSanitaryTerminal', 'IfcLightFixture', 'IfcBuildingElementProxy']
+/** Elements read for the type check; an object file has a handful. */
+export const TYPE_SAMPLE = 200
+
+/**
+ * The IfcTypeObject clause, which IDS 1.0 cannot express: how many product
+ * elements of the NBS classes are defined by a type object (getElement().typeId).
+ * Null when the model has none of those classes.
+ */
+export async function typeCheck(viewer) {
+  if (typeof viewer.findElements !== 'function' || typeof viewer.getElement !== 'function') return null
+  const hits = (await viewer.findElements({ ifcClass: NBS_CLASSES, limit: TYPE_SAMPLE })) || []
+  if (!hits.length) return null
+  let typed = 0
+  for (const h of hits) {
+    const d = await viewer.getElement(h.expressId, h.modelId)
+    if (d && (d.typeId != null || d.typeGlobalId || d.typeClass)) typed++
+  }
+  return { typed, total: hits.length }
+}
+
+/** Adds the type check to an NBS summary as one more check. */
+export function withTypeCheck(summary, tc, labels = LABELS) {
+  if (!tc) return summary
+  const ok = tc.typed === tc.total
+  return {
+    ...summary, total: summary.total + 1, passed: summary.passed + (ok ? 1 : 0), failed: summary.failed + (ok ? 0 : 1),
+    failures: ok ? summary.failures : [...summary.failures, fill(labels.untyped, { count: tc.total - tc.typed })],
+    typeCheck: tc,
+  }
+}
 
 function readJson(text) {
   try { const v = JSON.parse(text || 'null'); return v && typeof v === 'object' ? v : null } catch (e) { return null }
@@ -144,7 +179,14 @@ export async function runChecks(viewer, cfg) {
     await idle()
     try { out[key] = { ok: true, value: await withTimeout(fn(), cfg.timeoutMs) } } catch (e) { out[key] = { ok: false } }
   }
-  if (cfg.nbs && typeof viewer.checkEir === 'function') await step('nbs', async () => summarize(await viewer.checkEir('builtin-nbs-bos')))
+  if (cfg.nbs && typeof viewer.checkEir === 'function') {
+    await step('nbs', async () => {
+      const s = summarize(await viewer.checkEir('builtin-nbs-bos'))
+      let tc = null
+      try { tc = await typeCheck(viewer) } catch (e) { tc = null }
+      return withTypeCheck(s, tc, cfg.labels || LABELS)
+    })
+  }
   if (cfg.ids && cfg.idsUrl && typeof viewer.checkIds === 'function') {
     await step('ids', async () => summarize(await viewer.checkIds(await fetchIds(cfg.idsUrl, cfg.timeoutMs))))
   }
@@ -202,6 +244,8 @@ export function render(root, results, date = new Date()) {
     else badges.push(badge('score', r.value >= 75 ? 'pass' : r.value >= 50 ? 'warn' : 'fail', fill(L.score, { score: r.value })))
   }
   const nodes = [el('ul', { class: 'ifcvo-badges', role: 'list' }, ...badges)]
+  const tc = cfg.nbs && results.nbs && results.nbs.ok && results.nbs.value.typeCheck
+  if (tc) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-typecheck': '' }, fill(L.typed, tc)))
   if (cfg.details && (cfg.nbs || cfg.ids)) {
     if (failures.length) {
       const shown = failures.slice(0, MAX_LISTED)
