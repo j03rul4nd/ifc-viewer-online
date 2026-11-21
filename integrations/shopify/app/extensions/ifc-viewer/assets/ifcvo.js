@@ -256,6 +256,12 @@ function mountViewer(root) {
   const timeout = (Number(shop.timeout) > 0 ? Number(shop.timeout) : 20) * 1000
   const capMb = Number(shop.mobileCapMb) > 0 ? Number(shop.mobileCapMb) : 80
   let pending = null
+  // One size lookup per model and block: a retry never waits for HEAD again.
+  const sizes = new Map()
+  const sizeFor = async (url) => {
+    if (!sizes.has(url)) sizes.set(url, await sizeOf(root, url))
+    return sizes.get(url)
+  }
 
   // The viewer mounts in its own layer, so the poster stays for the error states.
   let canvas = stage.querySelector('.ifcvo-canvas')
@@ -293,10 +299,20 @@ function mountViewer(root) {
       v.on(type, (e) => emit(type, e))
     }
     v.on('model-progress', (e) => { if (viewer === v && e && e.percent != null) setState(root, 'loading', ` ${Math.round(e.percent)}%`) })
-    v.on('model-error', (e) => { if (viewer === v) fail(e && e.message ? ': ' + e.message : '') })
+    // A model error ends the attempt at once (no auto-retry); after ready it shows the error state.
+    let loading = true
+    let modelFailed
+    const modelError = new Promise((_, rej) => { modelFailed = rej })
+    modelError.catch(() => {})
+    v.on('model-error', (e) => {
+      if (viewer !== v) return
+      const err = Object.assign(new Error('model'), { detail: e && e.message ? ': ' + e.message : '' })
+      if (loading) modelFailed(err)
+      else fail(err.detail)
+    })
     const frame = canvas.querySelector('iframe')
     if (frame && !frame.title) frame.title = c.title || 'IFC model'
-    await withTimeout(v.whenReady(), timeout)
+    try { await Promise.race([withTimeout(v.whenReady(), timeout), modelError]) } finally { loading = false }
     return v
   }
 
@@ -305,7 +321,7 @@ function mountViewer(root) {
     if (pending) return pending
     pending = (async () => {
       if (navigator.onLine === false) { setState(root, 'offline'); return null }
-      const check = probe({ webgl2: hasWebgl2(), mobile: isMobile(), deviceMemory: navigator.deviceMemory, sizeMb: await sizeOf(root, active.model), capMb })
+      const check = probe({ webgl2: hasWebgl2(), mobile: isMobile(), deviceMemory: navigator.deviceMemory, sizeMb: await sizeFor(active.model), capMb })
       if (!check.ok) { setState(root, check.reason); return null }
       setState(root, 'loading')
       // One retry with a short backoff, then the error state with Retry.
@@ -319,8 +335,10 @@ function mountViewer(root) {
           return v
         } catch (e) {
           dropViewer()
-          if (i === 0) await new Promise((r) => setTimeout(r, RETRY_MS))
-          else fail(e && e.message === 'timeout' ? ' (timeout)' : '')
+          const timedOut = e && e.message === 'timeout'
+          if (i === 0 && timedOut) { await new Promise((r) => setTimeout(r, RETRY_MS)); continue }
+          fail(timedOut ? ' (timeout)' : (e && e.detail) || '')
+          return null
         }
       }
       return null

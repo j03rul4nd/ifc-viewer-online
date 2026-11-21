@@ -277,12 +277,13 @@ describe('Shopify product facade and states', () => {
   /** A fake SDK whose viewers become ready (or never do) as told, by attempt number. */
   const fakeSdk = (ready: (n: number) => Promise<void>) => {
     let n = 0
-    const made: { disposed: boolean }[] = []
+    const made: { disposed: boolean; handlers: Record<string, (e: unknown) => void> }[] = []
     class IfcViewer {
       disposed = false
+      handlers: Record<string, (e: unknown) => void> = {}
       private p: Promise<void>
       constructor(stage: HTMLElement) { stage.append(document.createElement('iframe')); this.p = ready(++n); made.push(this) }
-      on() { /* events unused here */ }
+      on(t: string, cb: (e: unknown) => void) { this.handlers[t] = cb }
       whenReady() { return this.p }
       dispose() { this.disposed = true }
     }
@@ -399,6 +400,51 @@ describe('Shopify product facade and states', () => {
     expect(q('.ifcvo-open').hidden).toBe(false)
     on.mockRestore()
     await flush()
+  })
+
+  it('escapes the poster URL in its attribute', () => {
+    expect(facade).toContain('src="{{ poster_src | escape }}"')
+    expect(facade).not.toMatch(/="\{\{ (?!'ifcvo)[a-z_]+ \}\}"/)
+  })
+
+  it('a model error ends the attempt at once with Retry, and does not auto-retry', async () => {
+    document.body.innerHTML = markup(`data-ifcvo-config='{"timeout":5}'`)
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    const f = fakeSdk(() => new Promise(() => {}))
+    r._setSdk(f.sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(f.count()).toBe(1))
+    f.made[0].handlers['model-error']({ message: 'bad file' })
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    expect(q('.ifcvo-status').textContent).toBe('Failed: bad file')
+    expect(q('.ifcvo-retry').hidden).toBe(false)
+    await new Promise((res) => setTimeout(res, 30))
+    expect(f.count()).toBe(1)
+    expect(rootState()).toBe('error')
+  })
+
+  it('looks the size up once per block, not on every retry; skips it when the metafield has it', async () => {
+    document.body.innerHTML = markup(`data-ifcvo-config='{"timeout":0.01}'`).replace('data-size-mb="10"', '')
+    gl.mockReturnValue({} as never)
+    const fetchMock = vi.fn().mockResolvedValue({ headers: { get: () => '1048576' } })
+    vi.stubGlobal('fetch', fetchMock)
+    const r = await load()
+    r._setSdk(fakeSdk(() => new Promise(() => {})).sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    q<HTMLButtonElement>('.ifcvo-retry').click()
+    await vi.waitFor(() => expect(rootState()).toBe('loading'))
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    document.body.innerHTML = markup()
+    fetchMock.mockClear()
+    const r2 = await load()
+    r2._setSdk(fakeSdk(() => Promise.resolve()).sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('ready'))
+    expect(fetchMock).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
   })
 
   it('shop labels override the facade texts', async () => {
