@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { IFCItemData, IFCPropertySet, IFCQuantitySet } from '../ifc-item-data'
-import { buildProductData, elementQuantities, MAX_PROPS, UNTYPED } from './extract'
+import { buildProductData, elementQuantities, ifcDimensions, pickDimensions, MAX_PROPS, UNTYPED } from './extract'
 import { collectProductData, NOT_PRODUCT, PRODUCT_BATCH } from './collect'
 
 function item(over: Partial<IFCItemData> & { psets?: IFCPropertySet[] } = {}): IFCItemData {
@@ -130,5 +130,32 @@ describe('collectProductData', () => {
   it('excludes non-product categories', () => {
     for (const c of ['IFCPROPERTYSET', 'IFCRELAGGREGATES', 'IFCBUILDINGSTOREY', 'IFCDOORTYPE', 'IFCOPENINGELEMENT', 'IFCSIUNIT']) expect(NOT_PRODUCT.test(c)).toBe(true)
     for (const c of ['IFCDOOR', 'IFCWALLSTANDARDCASE', 'IFCBEAM', 'IFCFURNISHINGELEMENT', 'IFCPLATE']) expect(NOT_PRODUCT.test(c)).toBe(false)
+  })
+})
+
+describe('dimensions cascade', () => {
+  it('IFC base quantities in project units', () => {
+    const d = ifcDimensions(item({ quantitySets: [qset('Qto_DoorBaseQuantities', [['Width', 900, 'Length'], ['Height', 2100, 'Length']])] }), { LENGTHUNIT: 'mm' })
+    expect(d).toEqual({ w: 0.9, d: null, h: 2.1, unit: 'm', source: 'ifc' })
+  })
+  it('falls back to tool psets; one number alone is not a size', () => {
+    expect(ifcDimensions(item({ psets: [pset('Dimensions', [['Width', '1200 mm'], ['Depth', '600 mm'], ['Height', '2 m']])] })))
+      .toMatchObject({ w: 1.2, d: 0.6, h: 2, source: 'ifc' })
+    expect(ifcDimensions(item({ psets: [pset('Dimensions', [['Width', 1]])] }))).toBeNull()
+  })
+  it('a single element uses its IFC dimensions; a model uses the box', () => {
+    const one = item({ quantitySets: [qset('Qto_X', [['Width', 1, 'Length', 'm'], ['Height', 2, 'Length', 'm']])] })
+    expect(buildProductData([one]).dimensions?.source).toBe('ifc')
+    expect(pickDimensions(buildProductData([one, one]).types, { w: 3, d: 2, h: 1 })).toEqual({ w: 3, d: 2, h: 1, unit: 'm', source: 'bbox' })
+    expect(pickDimensions([], null)).toBeNull()
+  })
+  it('collect computes the box from fragments boxes, after the data', async () => {
+    const fragments = {
+      async getItemsOfCategories(cats: RegExp[]): Promise<Record<string, number[]>> { return cats[0].test('IFCDOOR') ? { IFCDOOR: [1, 2] } : {} },
+      async getItemsData(ids: number[]) { return ids.map(() => ({ _category: { value: 'IFCDOOR' } })) },
+      async getBoxes(ids: number[]) { return ids.map((i) => ({ min: { x: 0, y: 0, z: 0 }, max: { x: i * 2, y: 3, z: 1 } })) },
+    }
+    const d = await collectProductData([{ id: 'm', fragments }])
+    expect(d.dimensions).toEqual({ w: 4, d: 1, h: 3, unit: 'm', source: 'bbox' })
   })
 })

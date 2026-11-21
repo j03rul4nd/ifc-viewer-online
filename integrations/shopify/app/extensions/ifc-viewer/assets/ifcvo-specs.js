@@ -7,12 +7,13 @@
 // Finds the viewer through the public runtime (window.IFCVO.viewer) or the
 // `ifcvo:loaded` / `ifcvo:viewer` DOM events (detail.viewer), never globals.
 
-export const COLUMNS = ['class', 'type', 'count', 'length', 'area', 'volume', 'weight', 'materials', 'properties']
-export const GROUPS = ['types', 'classes', 'materials', 'totals']
+export const COLUMNS = ['class', 'type', 'count', 'dimensions', 'length', 'area', 'volume', 'weight', 'materials', 'properties']
+export const GROUPS = ['dimensions', 'types', 'classes', 'materials', 'totals']
 
 export const LABELS = {
   class: 'IFC class', type: 'Type', count: 'Count', length: 'Length', area: 'Area', volume: 'Volume',
   weight: 'Weight', materials: 'Materials', properties: 'Properties', total: 'Total', csv: 'Download CSV',
+  dimensions: 'Dimensions', source: 'Source', manufacturer: 'manufacturer', model: 'model', calculated: 'calculated',
   types: 'By type', classes: 'By IFC class', totals: 'Totals', name: 'Material',
   waiting: 'Open the 3D model to read quantities from it.', loading: 'Reading the model…',
   truncated: 'Large model: only the first elements were read.', error: 'The model data could not be read.',
@@ -53,6 +54,42 @@ export function className(cls) {
   return s ? s[0].toUpperCase() + s.slice(1) : ''
 }
 
+/** "1200 x 600 x 2100 mm", "1.2×0.6×2.1 m", "47 in x 24 in x 83 in" → metres. */
+export function parseDimensions(text) {
+  const t = String(text || '').trim()
+  const unitOf = (u) => ({ mm: 0.001, cm: 0.01, m: 1, in: 0.0254, '"': 0.0254, ft: 0.3048, "'": 0.3048 })[String(u || '').toLowerCase()]
+  const tail = /(mm|cm|m|in|ft|"|')\s*$/i.exec(t)
+  const parts = t.split(/\s*[x×*]\s*/i)
+  if (parts.length < 2 || parts.length > 3) return null
+  const out = []
+  for (const p of parts) {
+    const m = /^([\d.,]+)\s*(mm|cm|m|in|ft|"|')?$/i.exec(p.trim())
+    if (!m) return null
+    const f = unitOf(m[2] || (tail && tail[1]) || 'm')
+    const n = Number(m[1].replace(',', '.'))
+    if (!Number.isFinite(n) || !f) return null
+    out.push(Math.round(n * f * 1e6) / 1e6)
+  }
+  return { w: out[0], d: out.length === 3 ? out[1] : null, h: out[out.length - 1], unit: 'm', source: 'metafield' }
+}
+
+/** Metafield `dimensions` wins over the model. */
+export function resolveDimensions(data, overrides = {}) {
+  return (overrides.dimensions && parseDimensions(overrides.dimensions)) || (data && data.dimensions) || null
+}
+
+/** W × D × H in the chosen units; a missing side is a dash. */
+export function dimText(dim, system = 'metric') {
+  if (!dim) return null
+  const imperial = system === 'imperial'
+  const f = imperial ? 39.3700787 : 1000
+  const u = imperial ? 'in' : 'mm'
+  const n = (v) => (v === null || v === undefined ? '—' : String(imperial ? Math.round(v * f * 10) / 10 : Math.round(v * f)))
+  return `${n(dim.w)} × ${n(dim.d)} × ${n(dim.h)} ${u}`
+}
+
+const SOURCE = { metafield: 'manufacturer', ifc: 'model', bbox: 'calculated' }
+
 /** Metafield rows (key → value) as rendered by Liquid. */
 export function readOverrides(root) {
   const out = {}
@@ -85,11 +122,15 @@ export function tables(data, cfg = {}) {
   const qty = (row, c) => convert(row[c], c, system)[0]
   const out = []
   for (const g of groups) {
-    if (g === 'types') {
+    if (g === 'dimensions') {
+      const dim = resolveDimensions(data, overrides)
+      if (dim) out.push({ group: g, title: labels.dimensions, head: [labels.dimensions, labels.source], rows: [[dimText(dim, system), labels[SOURCE[dim.source]]]] })
+    } else if (g === 'types') {
       out.push({ group: g, title: labels.types, head: cols.map(head), rows: (data.types || []).map((t) => cols.map((c) =>
         c === 'class' ? className(t.ifcClass)
           : c === 'type' ? t.type
             : c === 'count' ? t.count
+              : c === 'dimensions' ? dimText(t.dimensions, system)
               : c === 'materials' ? (t.materials || []).join(', ')
                 : c === 'properties' ? propsText(t.properties, overrides)
                   : qty(t, c))) })
@@ -186,7 +227,7 @@ async function readData(viewer, properties) {
   const counts = new Map()
   for (const e of els) if (e.ifcClass) counts.set(e.ifcClass, (counts.get(e.ifcClass) || 0) + 1)
   return {
-    elementCount: els.length, truncated: false, types: [], materials: [], totals: null,
+    elementCount: els.length, truncated: false, types: [], materials: [], totals: null, dimensions: null,
     classes: [...counts].map(([ifcClass, count]) => ({ ifcClass, count })).sort((a, b) => b.count - a.count),
   }
 }

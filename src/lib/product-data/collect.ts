@@ -6,6 +6,7 @@
 
 import { ITEM_DATA_CONFIG, parseItemData } from '../ifc-item-data'
 import { raceAbort, unitsOf, type SteelCollectModel } from '../steel/collect'
+import { FootprintAccumulator, type BoxLike } from './bbox'
 import { ProductDataBuilder, type ProductData, type ProductDataOptions } from './extract'
 
 export const PRODUCT_BATCH = 500
@@ -22,10 +23,16 @@ export interface CollectProductOptions extends ProductDataOptions {
 
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
-export async function collectProductData(models: SteelCollectModel[], opts: CollectProductOptions = {}): Promise<ProductData> {
+/** A fragments model that can also give world boxes (FragmentsModel.getBoxes). */
+export interface ProductCollectModel extends SteelCollectModel {
+  fragments: SteelCollectModel['fragments'] & { getBoxes?(ids: number[]): Promise<Array<BoxLike | null>> }
+}
+
+export async function collectProductData(models: ProductCollectModel[], opts: CollectProductOptions = {}): Promise<ProductData> {
   const max = opts.maxElements && opts.maxElements > 0 ? opts.maxElements : PRODUCT_MAX_ELEMENTS
   const builder = new ProductDataBuilder(opts)
-  const plan: Array<{ model: SteelCollectModel; ids: number[] }> = []
+  const foot = new FootprintAccumulator()
+  const plan: Array<{ model: ProductCollectModel; ids: number[] }> = []
   let total = 0
   for (const model of models) {
     let byCat: Record<string, number[]> = {}
@@ -54,10 +61,17 @@ export async function collectProductData(models: SteelCollectModel[], opts: Coll
       for (const raw of data) {
         if (raw && typeof raw === 'object') builder.add(parseItemData(raw as Record<string, unknown>, units), units)
       }
+      // Boxes per batch, after load; only the corners' hull is kept, the Box3s are dropped.
+      if (model.fragments.getBoxes) {
+        try { foot.add(await raceAbort(model.fragments.getBoxes(batch), opts.signal)) } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') throw e
+        }
+      }
       done += batch.length
       opts.onProgress?.(done, total)
       await tick()
     }
   }
+  builder.bbox = foot.dimensions()
   return builder.result()
 }

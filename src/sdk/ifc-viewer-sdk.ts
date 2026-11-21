@@ -296,6 +296,9 @@ export interface ElementSelectedEvent {
 /** Quantities in SI: metres, square metres, cubic metres, kilograms; null when the model gives none. */
 export interface ProductQuantities { length: number | null; area: number | null; volume: number | null; weight: number | null }
 
+/** Outer width x depth x height in metres, and where it came from. */
+export interface ProductDimensions { w: number | null; d: number | null; h: number | null; unit: 'm'; source: 'metafield' | 'ifc' | 'bbox' }
+
 /** One row of getProductData(): the elements of one IFC class and type. */
 export interface ProductDataType extends ProductQuantities {
   ifcClass: string
@@ -305,6 +308,7 @@ export interface ProductDataType extends ProductQuantities {
   materials: string[]
   /** "Pset.Property" → value. */
   properties: Record<string, string>
+  dimensions: ProductDimensions | null
 }
 
 /** What getProductData() returns: specs and quantities of the loaded model(s). */
@@ -315,6 +319,8 @@ export interface ProductData {
   types: ProductDataType[]
   materials: Array<{ name: string; count: number }>
   totals: ProductQuantities & { count: number }
+  /** IFC base quantities / psets for a single element, else an oriented box of the geometry. */
+  dimensions: ProductDimensions | null
   units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
 }
 

@@ -20,6 +20,9 @@
   if s.col_count
     assign columns = columns | append: 'count,'
   endif
+  if s.col_dimensions
+    assign columns = columns | append: 'dimensions,'
+  endif
   if s.col_length
     assign columns = columns | append: 'length,'
   endif
@@ -39,6 +42,9 @@
     assign columns = columns | append: 'properties,'
   endif
   assign groups = ''
+  if s.group_dimensions
+    assign groups = groups | append: 'dimensions,'
+  endif
   if s.group_types
     assign groups = groups | append: 'types,'
   endif
@@ -101,6 +107,7 @@
     { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "Product metafields in this namespace are shown as HTML and override values read from the model." },
     { "type": "select", "id": "units", "label": "Units", "default": "metric", "options": [ { "value": "metric", "label": "Metric" }, { "value": "imperial", "label": "Imperial" } ] },
     { "type": "header", "content": "Tables" },
+    { "type": "checkbox", "id": "group_dimensions", "label": "Outer dimensions", "default": true, "info": "Metafield dimensions (e.g. 1200 x 600 x 2100 mm) win; then the model's quantities; then a box calculated from the geometry." },
     { "type": "checkbox", "id": "group_types", "label": "Per type", "default": true },
     { "type": "checkbox", "id": "group_classes", "label": "Per IFC class", "default": false },
     { "type": "checkbox", "id": "group_materials", "label": "Materials", "default": true },
@@ -109,6 +116,7 @@
     { "type": "checkbox", "id": "col_class", "label": "IFC class", "default": true },
     { "type": "checkbox", "id": "col_type", "label": "Type", "default": true },
     { "type": "checkbox", "id": "col_count", "label": "Count", "default": true },
+    { "type": "checkbox", "id": "col_dimensions", "label": "Dimensions per type", "default": false },
     { "type": "checkbox", "id": "col_length", "label": "Length", "default": true },
     { "type": "checkbox", "id": "col_area", "label": "Area", "default": true },
     { "type": "checkbox", "id": "col_volume", "label": "Volume", "default": false },
@@ -116,7 +124,7 @@
     { "type": "checkbox", "id": "col_materials", "label": "Materials", "default": true },
     { "type": "checkbox", "id": "col_properties", "label": "Key properties", "default": false },
     { "type": "textarea", "id": "properties", "label": "Properties to show", "info": "One per line, e.g. FireRating or Pset_DoorCommon.FireRating. Empty: common and manufacturer property sets." },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: class, type, count, length, area, volume, weight, materials, properties, total, csv, waiting." },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: class, type, count, length, area, volume, weight, materials, properties, dimensions, manufacturer, model, calculated, total, csv, waiting." },
     { "type": "checkbox", "id": "csv", "label": "CSV download", "default": true },
     { "type": "header", "content": "Brand" },
     { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },

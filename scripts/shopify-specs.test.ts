@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  COLUMNS, _reset, attach, config, convert, csvCell, init, list, onViewer, parseLabels, refresh, render, tables, toCsv,
+  COLUMNS, _reset, attach, config, convert, csvCell, dimText, init, list, onViewer, parseDimensions, parseLabels, refresh, render, tables, toCsv,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-specs.js'
 
@@ -166,5 +166,28 @@ describe('runtime (jsdom)', () => {
     attach(viewer)
     await refresh(viewer)
     expect(r.textContent).toMatch(/could not be read/)
+  })
+})
+
+describe('dimensions', () => {
+  it('parses merchant metafield text to metres', () => {
+    expect(parseDimensions('1200 x 600 x 2100 mm')).toEqual({ w: 1.2, d: 0.6, h: 2.1, unit: 'm', source: 'metafield' })
+    expect(parseDimensions('1,2×0,6×2,1 m')).toMatchObject({ w: 1.2, d: 0.6, h: 2.1 })
+    expect(parseDimensions('47in x 83in')).toMatchObject({ w: 1.1938, d: null, h: 2.1082 })
+    expect(parseDimensions('large')).toBeNull()
+  })
+  it('metafield wins over the model, with a source label, metric or imperial, and in the CSV', () => {
+    const data = { ...DATA, dimensions: { w: 1, d: 0.5, h: 2, unit: 'm', source: 'bbox' } }
+    const calc = tables(data, { groups: ['dimensions'] })[0]
+    expect(calc.rows[0]).toEqual(['1000 × 500 × 2000 mm', 'calculated'])
+    const meta = tables(data, { groups: ['dimensions'], overrides: { dimensions: '900 x 400 x 2100 mm' }, units: 'imperial' })[0]
+    expect(meta.rows[0]).toEqual(['35.4 × 15.7 × 82.7 in', 'manufacturer'])
+    expect(tables({ ...DATA, dimensions: { w: 1, d: 1, h: 1, unit: 'm', source: 'ifc' } }, { groups: ['dimensions'] })[0].rows[0][1]).toBe('model')
+    expect(toCsv([calc])).toContain('1000 × 500 × 2000 mm,calculated')
+    expect(dimText(null)).toBeNull()
+  })
+  it('the block offers the dimensions group and column', () => {
+    expect(block).toMatch(/"id": "group_dimensions"/)
+    expect(block).toMatch(/"id": "col_dimensions"/)
   })
 })

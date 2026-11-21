@@ -22,6 +22,16 @@ export interface ProductDataQuantities {
   weight: number | null
 }
 
+/** Outer dimensions in metres: width x depth x height, and where they came from. */
+export interface ProductDimensions {
+  w: number | null
+  d: number | null
+  h: number | null
+  unit: 'm'
+  /** metafield: the merchant's bim.dimensions (set by the shop block); ifc: base quantities / psets; bbox: computed from geometry. */
+  source: 'metafield' | 'ifc' | 'bbox'
+}
+
 export interface ProductDataType extends ProductDataQuantities {
   ifcClass: string
   /** Type name, else ObjectType, else the element name. */
@@ -32,6 +42,8 @@ export interface ProductDataType extends ProductDataQuantities {
   materials: string[]
   /** "Pset.Property" → value, from the first element of the row that has it. */
   properties: Record<string, string>
+  /** From the first element of the row with IFC dimensions; null when none. */
+  dimensions: ProductDimensions | null
 }
 
 export interface ProductData {
@@ -42,6 +54,8 @@ export interface ProductData {
   types: ProductDataType[]
   materials: Array<{ name: string; count: number }>
   totals: ProductDataQuantities & { count: number }
+  /** Whole product: IFC dimensions when the model is a single element, else the geometry's oriented box. */
+  dimensions: ProductDimensions | null
   units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
 }
 
@@ -68,6 +82,8 @@ const VOLUME_TO_M3: Record<string, number> = {
   'm³': 1, m3: 1, 'mm³': 1e-9, mm3: 1e-9, 'cm³': 1e-6, cm3: 1e-6, 'dm³': 1e-3, dm3: 1e-3, l: 1e-3,
   'ft³': 0.028316846592, 'in³': 1.6387064e-5,
 }
+
+const LENGTH_TO_M: Record<string, number> = { m: 1, mm: 0.001, cm: 0.01, dm: 0.1, in: 0.0254, ft: 0.3048 }
 
 const norm = (s: string): string => s.toLowerCase().replace(/[\s_-]+/g, '')
 
@@ -108,6 +124,45 @@ function measure(
     if (v !== null && v > 0) return v
   }
   return null
+}
+
+const DIM_NAMES = {
+  w: ['Width', 'OverallWidth', 'NominalWidth', 'Breite'],
+  d: ['Depth', 'Thickness', 'NominalDepth', 'OverallDepth', 'Length', 'Tiefe'],
+  h: ['Height', 'OverallHeight', 'NominalHeight', 'Höhe'],
+}
+
+/** Width/depth/height from base quantities, then from any pset (Revit Dimensions, Tekla, manufacturer). */
+export function ifcDimensions(item: IFCItemData, units: ProjectUnits = {}): ProductDimensions | null {
+  const props = allProps(item)
+  const qsets = (item.quantitySets ?? []).filter((s) => /^(Qto_.*|BaseQuantities)$/i.test(s.name))
+  const one = (names: string[]): number | null => {
+    for (const n of names) for (const s of qsets) {
+      const q = s.quantities.find((x) => norm(x.name) === norm(n) && x.value !== null && (x.quantityType === 'Length' || x.quantityType === 'Unknown'))
+      const v = q ? toSI(LENGTH_TO_M, q.value, q.unit, units.LENGTHUNIT) : null
+      if (v !== null && v > 0) return v
+    }
+    for (const n of names) {
+      const p = props.find((x) => norm(x.name) === norm(n) && x.value !== null && x.value !== '')
+      const v = p ? toSI(LENGTH_TO_M, p.value, p.unit, units.LENGTHUNIT) : null
+      if (v !== null && v > 0) return v
+    }
+    return null
+  }
+  const w = one(DIM_NAMES.w)
+  const h = one(DIM_NAMES.h)
+  const d = one(DIM_NAMES.d)
+  // A single number is a length, not a size: two of three or nothing.
+  if ([w, d, h].filter((x) => x !== null).length < 2) return null
+  const r = (n: number | null) => (n === null ? null : Math.round(n * 1000) / 1000)
+  return { w: r(w), d: r(d), h: r(h), unit: 'm', source: 'ifc' }
+}
+
+/** Cascade: a single element with IFC dimensions → those; else the geometry's box. (The shop block puts bim.dimensions on top.) */
+export function pickDimensions(types: ProductDataType[], bbox: { w: number; d: number; h: number } | null): ProductDimensions | null {
+  const only = types.length === 1 && types[0].count === 1 ? types[0].dimensions : null
+  if (only) return only
+  return bbox ? { ...bbox, unit: 'm', source: 'bbox' } : null
 }
 
 const AREA_NAMES = ['NetSideArea', 'NetArea', 'NetSurfaceArea', 'GrossSideArea', 'GrossArea', 'OuterSurfaceArea', 'GrossSurfaceArea', 'Area', 'Net area']
@@ -162,7 +217,7 @@ export class ProductDataBuilder {
     const key = `${cls}\u0000${type}`
     let row = this.types.get(key)
     if (!row) {
-      row = { ifcClass: cls, type, count: 0, length: null, area: null, volume: null, weight: null, missingWeight: 0, materials: [], properties: {} }
+      row = { ifcClass: cls, type, count: 0, length: null, area: null, volume: null, weight: null, missingWeight: 0, materials: [], properties: {}, dimensions: null }
       this.types.set(key, row)
     }
     row.count++
@@ -175,6 +230,7 @@ export class ProductDataBuilder {
       if (!row.materials.includes(q.material)) row.materials.push(q.material)
       this.materials.set(q.material, (this.materials.get(q.material) ?? 0) + 1)
     }
+    if (!row.dimensions) row.dimensions = ifcDimensions(item, units)
     for (const p of allProps(item)) {
       if (Object.keys(row.properties).length >= MAX_PROPS) break
       if (p.value === null || p.value === '' || !this.keep(p)) continue
@@ -189,6 +245,9 @@ export class ProductDataBuilder {
     t.weight = add(t.weight, q.weight)
   }
 
+  /** Computed from geometry by the caller; used when the IFC does not say. */
+  bbox: { w: number; d: number; h: number } | null = null
+
   result(): ProductData {
     const r = (q: ProductDataQuantities): ProductDataQuantities => ({ length: round(q.length), area: round(q.area), volume: round(q.volume), weight: round(q.weight) })
     return {
@@ -199,6 +258,7 @@ export class ProductDataBuilder {
         .sort((a, b) => a.ifcClass.localeCompare(b.ifcClass) || b.count - a.count || a.type.localeCompare(b.type)),
       materials: [...this.materials].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
       totals: { count: this.totals.count, ...r(this.totals) },
+      dimensions: pickDimensions([...this.types.values()], this.bbox),
       units: { length: 'm', area: 'm2', volume: 'm3', weight: 'kg' },
     }
   }
