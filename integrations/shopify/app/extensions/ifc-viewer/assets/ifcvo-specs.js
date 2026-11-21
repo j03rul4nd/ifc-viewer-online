@@ -275,6 +275,11 @@ export async function refresh(viewer = current) {
   const props = [...new Set(roots.flatMap((r) => config(r).properties))]
   try {
     const data = await readData(viewer, props)
+    // Announced before its model is in: keep waiting, model-loaded reads again.
+    if (!data || !data.elementCount) {
+      for (const r of roots) r.querySelector('[data-ifcvo-live]').replaceChildren(el('p', { class: 'ifcvo-muted' }, { ...LABELS, ...config(r).labels }.waiting))
+      return
+    }
     for (const r of roots) render(r, data)
   } catch (e) {
     for (const r of roots) r.querySelector('[data-ifcvo-live]').replaceChildren(el('p', { class: 'ifcvo-muted', role: 'status' }, { ...LABELS, ...config(r).labels }.error))
@@ -311,7 +316,8 @@ export function _reset() { mounted.clear(); current = null }
 
 /** A viewer announced by the runtime: attach once; re-read only when it cannot tell us itself. */
 export function onViewer(e) {
-  const v = e.detail && e.detail.viewer
+  // ifcvo:viewer carries the viewer; ifcvo:loaded (T-322f) only stats, so ask the runtime.
+  const v = (e.detail && e.detail.viewer) || (window.IFCVO && window.IFCVO.viewer)
   if (!v) return
   const fresh = v !== current
   attach(v)
