@@ -32,6 +32,7 @@ export const FEATURE_TIERS = {
   explorer: 'free',
   views: 'free',
   score: 'free',
+  rooms: 'free',
   tour: 'starter',
   planset: 'starter',
 }
