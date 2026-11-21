@@ -254,6 +254,9 @@ export function protect(root, doc = document) {
     t.addEventListener('dragstart', noMenu)
     t.classList.add('ifcvo-noselect')
   }
+  // Every download on the page: the viewer's links, the "IFC downloads" block, GLB/CSV buttons.
+  doc.documentElement.classList.add('ifcvo-protected')
+  for (const d of doc.querySelectorAll('[data-ifcvo-downloads], [data-ifcvo-downloads-block], .ifcvo-make')) d.remove()
   for (const img of (viewerRoot || root).querySelectorAll('img')) img.setAttribute('draggable', 'false')
   return viewerRoot
 }

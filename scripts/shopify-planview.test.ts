@@ -24,7 +24,9 @@ function mount(attrs = ''): HTMLElement {
   <div data-ifcvo-planview data-ifcvo-plan="business" data-l-all="Todo" ${attrs}>
     <div data-ifcvo-planview-body><div role="tablist" data-ifcvo-planview-tabs></div><div role="tabpanel" data-ifcvo-planview-panel></div></div>
     <p data-ifcvo-planview-status role="status"></p>
-  </div>`
+  </div>
+  <div data-ifcvo-downloads-block><div data-ifcvo-downloads><a download href="m.ifc">IFC</a><button class="ifcvo-make" data-ifcvo-make="glb">GLB</button></div></div>
+  <div data-ifcvo-panel="details"><button class="ifcvo-make" data-ifcvo-make="csv">CSV</button></div>`
   return document.querySelector('[data-ifcvo-planview]') as HTMLElement
 }
 
@@ -41,7 +43,7 @@ function fakeViewer(rooms?: unknown[]) {
 
 const flush = () => new Promise((r) => setTimeout(r, 0))
 
-beforeEach(() => { pv._reset(); delete (window as unknown as Win).IFCVO })
+beforeEach(() => { pv._reset(); document.documentElement.classList.remove('ifcvo-protected'); delete (window as unknown as Win).IFCVO })
 
 describe('ifc-plan-view block (Liquid)', () => {
   it('has a valid schema: unique ids, ≤ 25 settings, section target', () => {
@@ -175,5 +177,37 @@ describe('preview mode', () => {
     pv.init()
     expect(document.querySelector('[data-ifcvo-watermark]')).toBeNull()
     expect(document.querySelector('[data-ifcvo-protected]')).toBeNull()
+  })
+})
+
+const viewerBlock = fs.readFileSync(path.join(EXT, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+const dlBlock = fs.readFileSync(path.join(EXT, 'blocks/ifc-downloads.liquid'), 'utf8')
+const quote = fs.readFileSync(path.join(EXT, 'assets/ifcvo-quote.js'), 'utf8')
+
+describe('preview mode across the product page', () => {
+  it('removes every download: viewer links, IFC downloads block, GLB/CSV buttons', () => {
+    mount('data-ifcvo-protect="on"')
+    pv.init()
+    expect(document.documentElement.classList.contains('ifcvo-protected')).toBe(true)
+    expect(document.querySelectorAll('[data-ifcvo-downloads], [data-ifcvo-downloads-block], .ifcvo-make, a[download]').length).toBe(0)
+  })
+
+  it('keeps downloads without preview mode', () => {
+    mount()
+    pv.init()
+    expect(document.querySelectorAll('.ifcvo-make').length).toBe(2)
+  })
+
+  it('server-side: product and downloads blocks drop links (and the noscript link) when a protected plan view is in the section', () => {
+    for (const src of [viewerBlock, dlBlock]) {
+      expect(src).toMatch(/for b in section\.blocks[\s\S]*'\/blocks\/ifc-plan-view\/' and b\.settings\.protect/)
+      expect(src).toMatch(/unless ifcvo_protected -%\}\{%- render 'ifcvo-downloads'/)
+    }
+    expect(viewerBlock).toMatch(/if ifcvo_protected -%\}\{%- assign ns_model = ''[\s\S]*render 'ifcvo-noscript', product: product, model: ns_model/)
+  })
+
+  it('GLB/CSV makers refuse in preview mode and the help says the URL stays reachable', () => {
+    expect(quote).toMatch(/querySelector\('\[data-ifcvo-protect\]'\)\) return/)
+    expect(block).toMatch(/URL stays reachable/)
   })
 })
