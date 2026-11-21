@@ -66,12 +66,26 @@ describe('takeoff', () => {
 
   it('caps rows into one (other) row and keeps totals whole', () => {
     const b = new TakeoffBuilder(2)
-    for (let i = 0; i < 5; i++) b.add(item({ typeName: `T${i}` }), { ifcClass: 'IFCDOOR', type: `T${i}`, material: null, storey: null, length: null, area: 1, volume: null, weight: null })
+    for (let i = 0; i < 5; i++) b.add({ ifcClass: 'IFCDOOR', type: `T${i}`, material: null, storey: null, length: null, area: 1, volume: null, weight: null })
     const r = b.result()
     expect(r.truncated).toBe(true)
     expect(r.rows).toHaveLength(3)
     expect(r.rows[2]).toMatchObject({ key: TAKEOFF_OTHER, count: 3, area: 3 })
     expect(r.totals).toMatchObject({ count: 5, area: 5 })
+  })
+
+  it('folds steel profiles past the cap into one (other) row that sums to the parts', () => {
+    const b = new TakeoffBuilder(2)
+    for (let i = 0; i < 5; i++) b.add({ ifcClass: 'IFCBEAM', type: `P${i}`, material: null, storey: null, length: 1, area: null, volume: null, weight: 10, steel: { profile: `P${i}`, lengthSource: 'qto', weightSource: 'qto' } })
+    const r = b.result()
+    expect(r.steel).toHaveLength(3)
+    expect(r.steel[2]).toMatchObject({ profile: TAKEOFF_OTHER, count: 3, weight: 30 })
+    expect(r.steel.reduce((a, s) => a + s.weight, 0)).toBe(r.totals.weight)
+  })
+
+  it('takes the source label from the chain that produced the number', () => {
+    const t2 = buildProductData([item({ ifcClass: 'IFCBEAM', typeName: 'X', psets: [pset('Tekla Quantity', [['Weight', '12 kg'], ['Length', 3000, 'mm']])] })]).takeoff!
+    expect(t2.rows[0].sources).toEqual({ length: ['tekla'], weight: ['tekla'] })
   })
 
   it('marks steel weight from volume x 7850 as estimated', () => {

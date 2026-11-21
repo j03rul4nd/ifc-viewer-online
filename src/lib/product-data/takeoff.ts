@@ -8,8 +8,7 @@
 // a guess as a measured figure. Accumulates one element at a time (batched by
 // the caller) and caps the number of rows.
 
-import type { IFCItemData, ProjectUnits } from '../ifc-item-data'
-import { extractSteelPart, NO_PROFILE, type SteelSource } from '../steel/takeoff'
+import { NO_PROFILE, type SteelSource } from '../steel/takeoff'
 
 export type TakeoffSource = Exclude<SteelSource, 'none'>
 
@@ -76,6 +75,8 @@ export interface TakeoffInput extends TakeoffQuantities {
   type: string
   material: string | null
   storey: string | null
+  /** Profile and sources from the same extractSteelPart() call that produced length / weight. */
+  steel?: { profile: string; lengthSource: SteelSource; weightSource: SteelSource } | null
 }
 
 const add = (a: number | null, b: number | null): number | null => (b === null ? a : (a ?? 0) + b)
@@ -91,9 +92,9 @@ export class TakeoffBuilder {
   truncated = false
   constructor(private maxRows = TAKEOFF_MAX_ROWS) {}
 
-  add(item: IFCItemData, q: TakeoffInput, units: ProjectUnits = {}): void {
+  add(q: TakeoffInput): void {
     const isSteel = STEEL_CLASS.test(q.ifcClass)
-    const part = extractSteelPart(item, units)
+    const part = q.steel ?? { profile: NO_PROFILE, lengthSource: 'none' as SteelSource, weightSource: 'none' as SteelSource }
     const profile = isSteel && part.profile !== NO_PROFILE ? part.profile : null
     let key = [q.ifcClass, q.type, q.material ?? '', profile ?? '', q.storey ?? ''].join('|')
     let row = this.rows.get(key)
@@ -131,10 +132,15 @@ export class TakeoffBuilder {
     t.weight = add(t.weight, q.weight)
 
     if (isSteel) {
-      const p = part.profile
+      let p = part.profile
       let s = this.steel.get(p)
+      if (!s && this.steel.size >= this.maxRows) {
+        // Past the cap: one (other) row, so the table still sums every steel part.
+        this.truncated = true
+        p = TAKEOFF_OTHER
+        s = this.steel.get(p)
+      }
       if (!s) {
-        if (this.steel.size >= this.maxRows) { this.truncated = true; return }
         s = { profile: p, count: 0, length: 0, kgPerM: null, weight: 0, missingWeight: 0, missingLength: 0, estimated: false, lw: 0, lwLen: 0 }
         this.steel.set(p, s)
       }
@@ -153,7 +159,7 @@ export class TakeoffBuilder {
     const steel: SteelProfileRow[] = [...this.steel.values()].map(({ lw, lwLen, ...s }) => ({
       ...s, profile: s.profile === NO_PROFILE ? null : s.profile, length: round(s.length) ?? 0, weight: round(s.weight) ?? 0,
       kgPerM: lwLen > 0 ? Math.round((lw / lwLen) * 100) / 100 : null,
-    })).sort((a, b) => b.weight - a.weight || (a.profile ?? '').localeCompare(b.profile ?? ''))
+    })).sort((a, b) => (a.profile === TAKEOFF_OTHER ? 1 : 0) - (b.profile === TAKEOFF_OTHER ? 1 : 0) || b.weight - a.weight || (a.profile ?? '').localeCompare(b.profile ?? ''))
     const t = this.totals
     return {
       rows, steel,

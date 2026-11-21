@@ -112,6 +112,7 @@ describe('pure helpers', () => {
     expect(rowPrice(TAKEOFF.rows[2], parsePrices({ IFCSLAB: 5 }))).toBe(15)
     expect(parsePrices('not json')).toEqual({})
     expect(moneyText(12.5, 'USD')).toBe('$12.50')
+    expect(moneyText(1, 'EUR', 'not a locale')).toBe('€1.00')
   })
 
   it('CSV is formula-injection safe and in the chosen units', () => {
@@ -155,6 +156,11 @@ describe('DOM', () => {
     sel.value = 'storey'
     sel.dispatchEvent(new Event('change'))
     expect(root.querySelector('table')!.getAttribute('data-group')).toBe('storey')
+    const usd = mount({ prices: '{"HEA200":{"price":2,"per":"kg"}}', 'cart-currency': 'USD', locale: 'de' })
+    render(usd, DATA)
+    const txt = usd.querySelector('[data-ifcvo-indicative]')!.textContent!
+    expect(txt).toContain('Indicative, in EUR.')
+    expect(txt).toMatch(/1\.184,00\s€/)
     const plain = mount()
     render(plain, DATA)
     expect(plain.querySelector('[data-ifcvo-indicative]')).toBeNull()

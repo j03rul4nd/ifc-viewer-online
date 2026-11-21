@@ -4,7 +4,7 @@
   steel table by profile (count, length, weight per length, total weight),
   read from the model in the visitor's browser. Optional product metafield
   `bim.unit_prices` (JSON, key -> price or {"price","per"}) adds an
-  indicative total in the shop currency: never a quote. `bim.boq` (text, one
+  indicative total in the shop's base currency: never a quote. `bim.boq` (text, one
   line per row, cells split by |, first line = headings) is rendered here as
   a plain table for crawlers and visitors without JavaScript. Reads the
   model of the first "Product IFC model" block on the page.
@@ -18,7 +18,7 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{%- capture takeoff_labels -%}{"title":{{ 'ifcvo.takeoff.title' | t | json }},"group":{{ 'ifcvo.takeoff.group' | t | json }},"type":{{ 'ifcvo.takeoff.type' | t | json }},"material":{{ 'ifcvo.takeoff.material' | t | json }},"storey":{{ 'ifcvo.takeoff.storey' | t | json }},"profile":{{ 'ifcvo.takeoff.profile' | t | json }},"count":{{ 'ifcvo.takeoff.count' | t | json }},"length":{{ 'ifcvo.takeoff.length' | t | json }},"area":{{ 'ifcvo.takeoff.area' | t | json }},"volume":{{ 'ifcvo.takeoff.volume' | t | json }},"weight":{{ 'ifcvo.takeoff.weight' | t | json }},"kgPerM":{{ 'ifcvo.takeoff.kgPerM' | t | json }},"price":{{ 'ifcvo.takeoff.price' | t | json }},"total":{{ 'ifcvo.takeoff.total' | t | json }},"steel":{{ 'ifcvo.takeoff.steel' | t | json }},"groupBy":{{ 'ifcvo.takeoff.groupBy' | t | json }},"csv":{{ 'ifcvo.takeoff.csv' | t | json }},"quote":{{ 'ifcvo.takeoff.quote' | t | json }},"quoteDone":{{ 'ifcvo.takeoff.quoteDone' | t | json }},"noForm":{{ 'ifcvo.takeoff.noForm' | t | json }},"indicative":{{ 'ifcvo.takeoff.indicative' | t | json }},"waiting":{{ 'ifcvo.takeoff.waiting' | t | json }},"loading":{{ 'ifcvo.takeoff.loading' | t | json }},"none":{{ 'ifcvo.takeoff.none' | t | json }},"error":{{ 'ifcvo.takeoff.error' | t | json }},"missing":{{ 'ifcvo.takeoff.missing' | t | json }},"estimated":{{ 'ifcvo.takeoff.estimated' | t | json }},"noProfile":{{ 'ifcvo.takeoff.noProfile' | t | json }},"other":{{ 'ifcvo.takeoff.other' | t | json }},"truncated":{{ 'ifcvo.takeoff.truncated' | t | json }}}{%- endcapture -%}
+{%- capture takeoff_labels -%}{"title":{{ 'ifcvo.takeoff.title' | t | json }},"group":{{ 'ifcvo.takeoff.group' | t | json }},"type":{{ 'ifcvo.takeoff.type' | t | json }},"material":{{ 'ifcvo.takeoff.material' | t | json }},"storey":{{ 'ifcvo.takeoff.storey' | t | json }},"profile":{{ 'ifcvo.takeoff.profile' | t | json }},"count":{{ 'ifcvo.takeoff.count' | t | json }},"length":{{ 'ifcvo.takeoff.length' | t | json }},"area":{{ 'ifcvo.takeoff.area' | t | json }},"volume":{{ 'ifcvo.takeoff.volume' | t | json }},"weight":{{ 'ifcvo.takeoff.weight' | t | json }},"kgPerM":{{ 'ifcvo.takeoff.kgPerM' | t | json }},"price":{{ 'ifcvo.takeoff.price' | t | json }},"total":{{ 'ifcvo.takeoff.total' | t | json }},"steel":{{ 'ifcvo.takeoff.steel' | t | json }},"groupBy":{{ 'ifcvo.takeoff.groupBy' | t | json }},"csv":{{ 'ifcvo.takeoff.csv' | t | json }},"quote":{{ 'ifcvo.takeoff.quote' | t | json }},"quoteDone":{{ 'ifcvo.takeoff.quoteDone' | t | json }},"noForm":{{ 'ifcvo.takeoff.noForm' | t | json }},"indicative":{{ 'ifcvo.takeoff.indicative' | t | json }},"inCurrency":{{ 'ifcvo.takeoff.inCurrency' | t | json }},"waiting":{{ 'ifcvo.takeoff.waiting' | t | json }},"loading":{{ 'ifcvo.takeoff.loading' | t | json }},"none":{{ 'ifcvo.takeoff.none' | t | json }},"error":{{ 'ifcvo.takeoff.error' | t | json }},"missing":{{ 'ifcvo.takeoff.missing' | t | json }},"estimated":{{ 'ifcvo.takeoff.estimated' | t | json }},"noProfile":{{ 'ifcvo.takeoff.noProfile' | t | json }},"other":{{ 'ifcvo.takeoff.other' | t | json }},"truncated":{{ 'ifcvo.takeoff.truncated' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-takeoff-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -32,7 +32,8 @@
   data-quote="{{ s.quote }}"
   data-form="{{ s.form | escape }}"
   data-prices="{{ mf.unit_prices.value | json | escape }}"
-  data-currency="{{ cart.currency.iso_code | escape }}"
+  data-currency="{{ shop.currency | escape }}"
+  data-cart-currency="{{ cart.currency.iso_code | escape }}"
   data-product="{{ product.title | escape }}"
   data-labels="{{ takeoff_labels | escape }}"
   data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"

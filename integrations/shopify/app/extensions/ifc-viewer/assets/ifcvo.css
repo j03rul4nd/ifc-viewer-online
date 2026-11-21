@@ -115,5 +115,7 @@
 }
 .ifcvo-noselect { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .ifcvo-protected .ifcvo-downloads, .ifcvo-protected .ifcvo-full, .ifcvo-protected .ifcvo-make, .ifcvo-protected [data-ifcvo-downloads-block] { display: none !important; }
+.ifcvo-ar-qr { margin: 0; display: grid; gap: 8px; justify-items: start; }
+.ifcvo-ar-qr svg { width: 148px; height: 148px; }
 /* Classification (ifc-classification block) */
 .ifcvo-cls code { font-size: .92em; white-space: nowrap; }

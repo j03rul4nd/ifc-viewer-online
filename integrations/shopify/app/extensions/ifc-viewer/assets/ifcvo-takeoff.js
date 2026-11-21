@@ -18,6 +18,7 @@ export const LABELS = {
   csv: 'Download CSV', quote: 'Add these quantities to a quote request', quoteDone: 'The contact form below has the quantities.',
   noForm: 'There is no contact form on this page.',
   indicative: 'Indicative total from unit prices, not a quote. Taxes, delivery and changes are not included.',
+  inCurrency: 'Indicative, in {currency}.',
   waiting: 'Open the 3D model to list its quantities.', loading: 'Reading the quantities…', none: 'This model has no quantities to list.',
   error: 'The quantities could not be read.', missing: 'Some elements have no value for this quantity.',
   estimated: '≈ weight from volume × 7850 kg/m³', noProfile: '(no profile)', other: 'Other',
@@ -120,9 +121,13 @@ export function rowPrice(row, prices) {
   return null
 }
 
-export function moneyText(n, currency) {
+/** Money in the shop's base currency (unit prices are in it), formatted for the page locale. */
+export function moneyText(n, currency, locale = 'en') {
   if (n === null || n === undefined) return null
-  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'EUR' }).format(n) } catch (e) { return n.toFixed(2) }
+  const opts = { style: 'currency', currency: currency || 'EUR' }
+  try { return new Intl.NumberFormat(locale || 'en', opts).format(n) } catch (e) {
+    try { return new Intl.NumberFormat('en', opts).format(n) } catch (e2) { return `${n.toFixed(2)} ${currency || ''}`.trim() }
+  }
 }
 
 // ── Grouping ─────────────────────────────────────────────────────────────────
@@ -233,6 +238,8 @@ export function config(root) {
     quote: d.quote !== 'false',
     prices: parsePrices(d.prices),
     currency: d.currency || '',
+    cartCurrency: d.cartCurrency || '',
+    locale: d.locale || 'en',
     product: d.product || '',
     labels: labelsOf(root),
   }
@@ -293,7 +300,7 @@ function boqTable(root, data, cfg) {
   const cell = (l, c) => {
     if (c === 'name') return el('th', { scope: 'row' }, l.name)
     if (c === 'count') return el('td', {}, String(l.count))
-    if (c === 'price') return el('td', {}, moneyText(l.price, cfg.currency) || '—')
+    if (c === 'price') return el('td', {}, moneyText(l.price, cfg.currency, cfg.locale) || '—')
     const t = qtyText(l[c], c, cfg.system)
     const est = c === 'weight' && l.estimated
     return el('td', est ? { title: L.estimated } : {}, t ? (est ? '≈ ' + t : t) : '—')
@@ -339,7 +346,11 @@ export function render(root, data) {
   select.id = id
   const { table, lines, priced, total } = boqTable(root, data, cfg)
   const nodes = [el('p', { class: 'ifcvo-takeoff-tools' }, el('label', { for: id }, L.groupBy + ' '), select), table]
-  if (priced && total.price !== null) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-indicative': '' }, el('strong', {}, `${L.total}: ${moneyText(total.price, cfg.currency)}`), ' — ', L.indicative))
+  if (priced && total.price !== null) {
+    const other = cfg.cartCurrency && cfg.currency && cfg.cartCurrency !== cfg.currency
+    nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-indicative': '' }, el('strong', {}, `${L.total}: ${moneyText(total.price, cfg.currency, cfg.locale)}`), ' — ',
+      other ? L.inCurrency.replace('{currency}', cfg.currency) + ' ' : '', L.indicative))
+  }
   if (lines.some((l) => l.missing)) nodes.push(el('p', { class: 'ifcvo-muted' }, L.missing))
   if (cfg.steel && t.steel && t.steel.length) nodes.push(steelTable(t.steel, cfg))
   if (t.truncated) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-truncated': '' }, L.truncated))

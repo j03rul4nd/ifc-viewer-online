@@ -9,7 +9,7 @@
 // timber door weighed as steel would be a wrong number on a shop page.
 
 import type { IFCItemData, IFCValue, ProjectUnits } from '../ifc-item-data'
-import { extractSteelPart, parseNumeric, revitTypeName } from '../steel/takeoff'
+import { extractSteelPart, parseNumeric, revitTypeName, type SteelPart } from '../steel/takeoff'
 import type { RoomSchedule } from './rooms'
 import type { ClassificationSummary } from './classification'
 import { TakeoffBuilder, type ProductTakeoff } from './takeoff'
@@ -189,7 +189,7 @@ const AREA_NAMES = ['NetSideArea', 'NetArea', 'NetSurfaceArea', 'GrossSideArea',
 const VOLUME_NAMES = ['NetVolume', 'GrossVolume', 'Volume', 'Net volume']
 
 /** One element's quantities in SI. */
-export function elementQuantities(item: IFCItemData, units: ProjectUnits = {}): ProductDataQuantities & { material: string | null } {
+export function elementQuantities(item: IFCItemData, units: ProjectUnits = {}): ProductDataQuantities & { material: string | null; steel: SteelPart } {
   const steel = extractSteelPart(item, units)
   const props = allProps(item)
   const isSteel = STEEL_CLASS.test(item.ifcClass ?? '') || STEEL_MATERIAL.test(steel.material ?? '')
@@ -200,6 +200,7 @@ export function elementQuantities(item: IFCItemData, units: ProjectUnits = {}): 
     volume: measure(item, props, 'Volume', VOLUME_NAMES, VOLUME_TO_M3, units.VOLUMEUNIT),
     weight,
     material: steel.material,
+    steel,
   }
 }
 
@@ -258,7 +259,7 @@ export class ProductDataBuilder {
       const k = `${p.set}.${p.name}`
       if (!(k in row.properties)) row.properties[k] = p.unit && typeof p.value === 'number' ? `${p.value} ${p.unit}` : String(p.value)
     }
-    this.takeoff.add(item, { ifcClass: cls, type, material: q.material, storey: item.storey ?? null, length: q.length, area: q.area, volume: q.volume, weight: q.weight }, units)
+    this.takeoff.add({ ifcClass: cls, type, material: q.material, storey: item.storey ?? null, length: q.length, area: q.area, volume: q.volume, weight: q.weight, steel: q.steel })
     const t = this.totals
     t.count++
     t.length = add(t.length, q.length)

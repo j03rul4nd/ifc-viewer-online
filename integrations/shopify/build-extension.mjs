@@ -37,6 +37,7 @@ export const FEATURE_TIERS = {
   planset: 'starter',
   compat: 'starter',
   planview: 'starter',
+  ar: 'starter',
   classification: 'starter',
   takeoff: 'business',
 }
