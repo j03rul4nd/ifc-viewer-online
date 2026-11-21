@@ -9,6 +9,7 @@ import { raceAbort, unitsOf, type SteelCollectModel } from '../steel/collect'
 import { FootprintAccumulator, type BoxLike } from './bbox'
 import { ProductDataBuilder, type ProductData, type ProductDataOptions } from './extract'
 import { RoomScheduleBuilder } from './rooms'
+import { ClassificationBuilder } from './classification'
 
 /** Spaces also need their storey (IfcRelAggregates), which elements read from ContainedInStructure. */
 export const SPACE_DATA_CONFIG = {
@@ -40,6 +41,7 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
   const max = opts.maxElements && opts.maxElements > 0 ? opts.maxElements : PRODUCT_MAX_ELEMENTS
   const builder = new ProductDataBuilder(opts)
   const foot = new FootprintAccumulator()
+  const classes = new ClassificationBuilder()
   const plan: Array<{ model: ProductCollectModel; ids: number[] }> = []
   const spaces: Array<{ model: ProductCollectModel; ids: number[] }> = []
   let spaceCount = 0
@@ -74,7 +76,10 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
         data = []
       }
       for (const raw of data) {
-        if (raw && typeof raw === 'object') builder.add(parseItemData(raw as Record<string, unknown>, units), units)
+        if (!raw || typeof raw !== 'object') continue
+        const item = parseItemData(raw as Record<string, unknown>, units)
+        builder.add(item, units)
+        classes.add(item)
       }
       // Boxes per batch, after load; only the corners' hull is kept, the Box3s are dropped.
       if (model.fragments.getBoxes) {
@@ -89,6 +94,8 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
   }
   builder.bbox = foot.dimensions()
   const out = builder.result()
+  classes.truncated = classes.truncated || builder.truncated
+  out.classifications = classes.result()
   out.rooms = spaces.length ? await collectRooms(spaces, spacesCut, opts.signal) : null
   return out
 }

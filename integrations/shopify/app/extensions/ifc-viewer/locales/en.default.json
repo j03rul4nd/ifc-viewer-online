@@ -11,6 +11,21 @@
       "too_large": "This model is too large to open on this device. Open it in the full viewer or download it.",
       "no_webgl": "This browser cannot show 3D. Open it in the full viewer or download it."
     },
+    "classification": {
+      "title": "Classification",
+      "system": "System",
+      "code": "Code",
+      "name": "Title",
+      "elements": "Elements",
+      "waiting": "Open the 3D model to add the classification codes it carries.",
+      "loading": "Reading the classification codes…",
+      "none": "The model carries no classification codes.",
+      "error": "The classification codes could not be read.",
+      "pset": "Codes marked * come from authoring-tool parameters, not IFC classification references.",
+      "truncated": "Large model: only part of it was read, some codes may be missing.",
+      "coverage": "{classified} of {elements} elements are classified.",
+      "inferred": "(inferred)"
+    },
     "rooms": {
       "title": "Rooms",
       "area": "Total area",
