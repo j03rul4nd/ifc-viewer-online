@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain JS asset without types
-import { _reset, init, onChange, select, selectedVariant } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planset.js'
+import { _reset, init, onChange, resolve, select, selectedVariant, urlVariant } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planset.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
@@ -49,7 +49,7 @@ describe('ifc-plan-set block (Liquid)', () => {
     for (const src of [body, item.replace(/\{% comment %\}[\s\S]*?\{% endcomment %\}/g, '')]) {
       const outs = [...src.matchAll(/\{\{-?\s*([^}]*?)\s*-?\}\}/g)].map((m) => m[1])
       const unsafe = outs.filter((o) => !/\| escape|\| json/.test(o)
-        && !/^(block\.shopify_attributes|ifcvo_style|s\.accent|s\.radius|p_color|'[\w.-]+' \| asset_url.*)$/.test(o))
+        && !/^(block\.shopify_attributes|ifcvo_style|s\.accent|s\.radius|p_color|v\.price \| money|'[\w.-]+' \| asset_url.*)$/.test(o))
       expect(unsafe).toEqual([])
     }
   })
@@ -110,6 +110,74 @@ describe('ifcvo-planset.js', () => {
     const root = mount()
     expect(select(root, '99')).toBe(false)
     expect(root.querySelectorAll<HTMLElement>('.ifcvo-planset-card')[0].hidden).toBe(false)
+  })
+
+  it('outputs money unescaped (shop format) and never escapes it into literal tags', () => {
+    expect(body).toContain('{{ v.price | money }}')
+    expect(body).not.toMatch(/money \| escape/)
+  })
+
+  it('has a single live region and one license-name source for card and table', () => {
+    expect((body.match(/aria-live|role="status"/g) || []).length).toBe(1)
+    const sources = [...body.matchAll(/assign vtype = (.*)/g)].map((m) => m[1].trim())
+    expect(sources.length).toBe(2)
+    expect(sources[0]).toBe(sources[1])
+    expect((body.match(/has_only_default_variant/g) || []).length).toBe(2)
+  })
+
+  it('reads ?variant= from the URL', () => {
+    expect(urlVariant({ search: '?variant=42&x=1' })).toBe('42')
+    expect(urlVariant({ search: '' })).toBe(null)
+  })
+
+  it('one resolver: hint, then form, then URL; only ids with a card', () => {
+    const root = mount('99')
+    history.replaceState(null, '', '?variant=2')
+    expect(resolve(root)).toBe('2')
+    expect(resolve(root, '1')).toBe('1')
+    ;(document.querySelector('[name="id"]') as HTMLInputElement).value = '1'
+    expect(resolve(root)).toBe('1')
+    history.replaceState(null, '', location.pathname)
+  })
+
+  it('follows history.replaceState and popstate (?variant=)', () => {
+    vi.useFakeTimers()
+    const root = mount()
+    init()
+    history.replaceState(null, '', '?variant=2')
+    vi.runAllTimers()
+    expect(root.dataset.variantId).toBe('2')
+    history.replaceState(null, '', '?variant=1')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    vi.runAllTimers()
+    expect(root.dataset.variantId).toBe('1')
+    history.replaceState(null, '', location.pathname)
+    vi.useRealTimers()
+  })
+
+  it('re-reads the form after an async update (Dawn-like): debounced second read', () => {
+    vi.useFakeTimers()
+    const root = mount()
+    init()
+    const input = document.querySelector('[name="id"]') as HTMLInputElement
+    onChange(new Event('change'))
+    vi.advanceTimersByTime(60)
+    expect(root.dataset.variantId).toBe('1')
+    input.value = '2' // fetch resolved later, no new change event
+    vi.advanceTimersByTime(400)
+    expect(root.dataset.variantId).toBe('2')
+    vi.useRealTimers()
+  })
+
+  it('observes the form id attribute', async () => {
+    vi.useFakeTimers()
+    const root = mount()
+    init()
+    document.querySelector('[name="id"]')!.setAttribute('value', '2')
+    await Promise.resolve()
+    vi.runAllTimers()
+    expect(root.dataset.variantId).toBe('2')
+    vi.useRealTimers()
   })
 
   it('follows variant changes from the form and from variant:change', () => {

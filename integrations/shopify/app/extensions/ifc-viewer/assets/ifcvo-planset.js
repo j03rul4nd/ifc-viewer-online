@@ -42,17 +42,66 @@ export function init(doc = document) {
     const api = typeof window !== 'undefined' && window.IFCVO
     if (api && typeof api.gate === 'function' && !api.gate('planset', root.querySelector('[data-ifcvo-planset-body]'))) continue
     mounted.add(root)
-    select(root, selectedVariant(doc))
+    select(root, resolve(root, null, doc))
   }
+  if (mounted.size) { observeForm(doc); watchHistory() }
 }
 
-/** Re-reads the form after the theme updated it (same tick trick as the runtime). */
+/** `?variant=` of the current URL, or null. */
+export function urlVariant(loc = typeof location !== 'undefined' ? location : null) {
+  try { return (loc && new URLSearchParams(loc.search).get('variant')) || null } catch (e) { return null }
+}
+
+/**
+ * The one resolver for every path: an explicit hint (event detail, URL after a history change, form after a change), then the
+ * cart form, then the URL. The first one that
+ * names a card of this block wins. Each trigger passes its own source as hint.
+ */
+export function resolve(root, hint = null, doc = document) {
+  const ids = new Set([...root.querySelectorAll('.ifcvo-planset-card')].map((c) => c.dataset.variantId))
+  const has = (id) => id && ids.has(String(id))
+  return [hint, selectedVariant(doc), urlVariant()].find(has) || null
+}
+
+let hinted = null
+let timer = null
+/** Debounced sync: themes like Dawn update the form/URL after an async fetch, so read twice. */
+export function sync(hint = null, delays = [50, 400]) {
+  if (hint) hinted = String(hint)
+  clearTimeout(timer)
+  const run = (rest) => {
+    for (const r of mounted) if (r.isConnected) select(r, resolve(r, hinted))
+    if (rest.length) timer = setTimeout(() => run(rest.slice(1)), rest[0])
+    else hinted = null
+  }
+  timer = setTimeout(() => run(delays.slice(1)), delays[0])
+}
+
 export function onChange(e) {
-  const fromEvent = e && e.detail && e.detail.variant && e.detail.variant.id
-  setTimeout(() => {
-    const id = fromEvent || selectedVariant()
-    for (const r of mounted) if (r.isConnected) select(r, id)
-  }, 0)
+  sync(e && e.detail && e.detail.variant && e.detail.variant.id)
+}
+
+let observer = null
+/** Watches the cart form's id input (some themes set the attribute without a change event). */
+function observeForm(doc = document) {
+  if (observer || typeof MutationObserver === 'undefined') return
+  const input = doc.querySelector('form[action*="/cart/add"] [name="id"]')
+  if (!input) return
+  observer = new MutationObserver(() => sync(selectedVariant(doc)))
+  observer.observe(input, { attributes: true, attributeFilter: ['value'] })
+}
+
+let patched = false
+/** URL changes: popstate plus wrapped pushState/replaceState (wrapped once, original still called). */
+function watchHistory() {
+  if (patched || typeof history === 'undefined') return
+  patched = true
+  for (const k of ['pushState', 'replaceState']) {
+    const orig = history[k]
+    if (typeof orig !== 'function') continue
+    history[k] = function (...args) { const out = orig.apply(this, args); sync(urlVariant()); return out }
+  }
+  window.addEventListener('popstate', () => sync(urlVariant()))
 }
 
 export function destroy(container) {
@@ -60,7 +109,10 @@ export function destroy(container) {
 }
 
 /** For tests. */
-export function _reset() { mounted.clear() }
+export function _reset() {
+  mounted.clear(); clearTimeout(timer); hinted = null
+  if (observer) { observer.disconnect(); observer = null }
+}
 
 if (typeof document !== 'undefined') {
   document.addEventListener('change', onChange)

@@ -94,13 +94,14 @@
 >
   {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body" data-ifcvo-planset-body>
-    <div class="ifcvo-planset-cards" aria-live="polite">
+    <div class="ifcvo-planset-cards">
       {%- for v in product.variants -%}
         {%- liquid
-          assign vtype = v.metafields[ns].license_type.value | default: v.title | default: s.default_license
+          assign vtitle = v.title
           if product.has_only_default_variant
-            assign vtype = v.metafields[ns].license_type.value | default: s.default_license
+            assign vtitle = ''
           endif
+          assign vtype = v.metafields[ns].license_type.value | default: vtitle | default: s.default_license
           assign vterms = v.metafields[ns].license_terms.value | default: s.default_terms
           assign vset = v.metafields[ns].plan_set.value | default: default_items
           assign vmodel_field = v.metafields[ns].ifc_model.value
@@ -130,8 +131,15 @@
             <tr>
               <td></td>
               {%- for v in product.variants -%}
-                {%- assign vtype = v.metafields[ns].license_type.value | default: v.title -%}
-                <th scope="col" data-variant-id="{{ v.id | escape }}"{% if v.id == current.id %} aria-current="true"{% endif %}>{{ vtype | escape }}<br><span class="ifcvo-muted">{{ v.price | money | escape }}</span></th>
+                {%- liquid
+                  assign vtitle = v.title
+                  if product.has_only_default_variant
+                    assign vtitle = ''
+                  endif
+                  assign vtype = v.metafields[ns].license_type.value | default: vtitle | default: s.default_license
+                -%}
+                {%- comment -%} money: the shop's own money format (merchant-controlled, may contain HTML), output as Shopify intends. {%- endcomment -%}
+                <th scope="col" data-variant-id="{{ v.id | escape }}"{% if v.id == current.id %} aria-current="true"{% endif %}>{{ vtype | escape }}<br><span class="ifcvo-muted">{{ v.price | money }}</span></th>
               {%- endfor -%}
             </tr>
           </thead>
