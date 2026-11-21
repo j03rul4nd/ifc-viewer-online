@@ -38,6 +38,11 @@ const KNOWN_UNDOCUMENTED = new Set<string>([
   // Empty, and worth keeping that way. The point cloud and mesh surfaces that
   // seeded this list were documented in v1.10.0; anything added here again is a
   // deliberate decision to ship a method nobody can find.
+  // getProductData: added for the Shopify specs block; the reference entry
+  // (ten languages) lands with the release that publishes it.
+  'getProductData',
+  // exportModel: documented with the 1.19 release.
+  'exportModel',
 ])
 
 /** Plumbing, not API. */

@@ -30,7 +30,7 @@ export interface SteelPartRef { modelId: string; expressId: number }
 
 export interface SteelRow extends SteelTakeoffRow { refs: SteelPartRef[] }
 
-async function unitsOf(f: SteelFragmentsLike): Promise<ProjectUnits> {
+export async function unitsOf(f: SteelFragmentsLike): Promise<ProjectUnits> {
   try {
     const ids = Object.values(await f.getItemsOfCategories([/^IFCPROJECT$/])).flat()
     if (!ids.length) return {}

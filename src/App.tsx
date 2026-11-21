@@ -172,6 +172,8 @@ import { useVectorLayerStore, hasPersistedVectorLayers } from './stores/vectorLa
 import { useClashStore } from './stores/clashStore'
 import { useSteelStore } from './stores/steelStore'
 import { bootSteelDemo } from './lib/steel/demo'
+import { collectProductData } from './lib/product-data/collect'
+import type { SteelCollectModel } from './lib/steel/collect'
 import { useDrawingStore } from './stores/drawingStore'
 import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
@@ -3374,6 +3376,24 @@ export default function App() {
               modelId: typeof msg.modelId === 'string' ? msg.modelId : undefined,
               limit: Number.isFinite(limit) && limit > 0 ? limit : undefined,
             })
+          })
+          break
+        }
+        case 'ifcviewer:get-product-data': {
+          // Specs and quantities for a product page (Shopify ifc-specs block).
+          // Batched read with a yield between batches: big models stay responsive.
+          const names = Array.isArray(msg.properties) ? msg.properties.filter((x): x is string => typeof x === 'string') : undefined
+          const max = Number(msg.maxElements)
+          void respond(async () => {
+            const api = viewerApiRef.current
+            if (!api) throw new Error('Viewer not ready')
+            const wanted = typeof msg.modelId === 'string' ? msg.modelId : null
+            const list = useSceneStore.getState().models.flatMap((m) => {
+              if (wanted && m.id !== wanted) return []
+              const fragments = api.getFragmentsModel(m.id) as SteelCollectModel['fragments'] | null
+              return fragments ? [{ id: m.id, fragments }] : []
+            })
+            return collectProductData(list, { properties: names, maxElements: Number.isFinite(max) && max > 0 ? max : undefined })
           })
           break
         }

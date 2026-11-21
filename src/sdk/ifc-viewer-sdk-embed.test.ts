@@ -216,6 +216,21 @@ describe('SDK 1.18 — finding the product', () => {
     v.dispose()
   })
 
+  it('getProductData() is a query the viewer answers with specs and quantities', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    const p = v.getProductData({ properties: ['FireRating'], maxElements: 500 })
+    await tick()
+    const q = postsOfType(post, 'ifcviewer:get-product-data')[0]
+    expect(q).toMatchObject({ properties: ['FireRating'], maxElements: 500 })
+    const data = { elementCount: 1, truncated: false, classes: [{ ifcClass: 'IFCDOOR', count: 1 }], types: [], materials: [],
+      totals: { count: 1, length: null, area: 1.9, volume: null, weight: null }, units: { length: 'm', area: 'm2', volume: 'm3', weight: 'kg' } }
+    emitFromIframe(v, { type: 'result', requestId: q.requestId, ok: true, data })
+    await expect(p).resolves.toEqual(data)
+    v.dispose()
+  })
+
   it('getElement() and select() take a GlobalId as well as an expressID', async () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
     const post = spyPost(v)
