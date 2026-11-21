@@ -27,7 +27,9 @@
   assign systems = ''
   for line in rows
     assign parts = line | split: '|'
-    assign sys = parts[0] | strip
+    capture sys
+      render 'ifcvo-cls-system', name: parts[0]
+    endcapture
     if sys != blank and parts[1] != blank
       assign systems = systems | append: sys | append: '~~~'
     endif
@@ -38,7 +40,7 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{%- capture cls_labels -%}{"title":{{ 'ifcvo.classification.title' | t | json }},"system":{{ 'ifcvo.classification.system' | t | json }},"code":{{ 'ifcvo.classification.code' | t | json }},"name":{{ 'ifcvo.classification.name' | t | json }},"elements":{{ 'ifcvo.classification.elements' | t | json }},"waiting":{{ 'ifcvo.classification.waiting' | t | json }},"loading":{{ 'ifcvo.classification.loading' | t | json }},"none":{{ 'ifcvo.classification.none' | t | json }},"error":{{ 'ifcvo.classification.error' | t | json }},"pset":{{ 'ifcvo.classification.pset' | t | json }},"truncated":{{ 'ifcvo.classification.truncated' | t | json }},"coverage":{{ 'ifcvo.classification.coverage' | t | json }}}{%- endcapture -%}
+{%- capture cls_labels -%}{"title":{{ 'ifcvo.classification.title' | t | json }},"system":{{ 'ifcvo.classification.system' | t | json }},"code":{{ 'ifcvo.classification.code' | t | json }},"name":{{ 'ifcvo.classification.name' | t | json }},"elements":{{ 'ifcvo.classification.elements' | t | json }},"waiting":{{ 'ifcvo.classification.waiting' | t | json }},"loading":{{ 'ifcvo.classification.loading' | t | json }},"none":{{ 'ifcvo.classification.none' | t | json }},"error":{{ 'ifcvo.classification.error' | t | json }},"pset":{{ 'ifcvo.classification.pset' | t | json }},"truncated":{{ 'ifcvo.classification.truncated' | t | json }},"coverage":{{ 'ifcvo.classification.coverage' | t | json }},"inferred":{{ 'ifcvo.classification.inferred' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-classification-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -62,9 +64,10 @@
         <tbody>
           {%- for line in rows -%}
             {%- assign parts = line | split: '|' -%}
-            {%- assign lsys = parts[0] | strip -%}
+            {%- capture lsys -%}{%- render 'ifcvo-cls-system', name: parts[0] -%}{%- endcapture -%}
             {%- if lsys == sys and parts[1] != blank -%}
-              <tr data-source="metafield" data-system="{{ lsys | escape }}" data-code="{{ parts[1] | strip | escape }}"><td><code>{{ parts[1] | strip | escape }}</code></td><td>{{ parts[2] | strip | escape }}</td></tr>
+              {%- assign ltitle = parts | slice: 2, 99 | join: '|' -%}
+              <tr data-source="metafield" data-system="{{ lsys | escape }}" data-code="{{ parts[1] | strip | escape }}"><td><code>{{ parts[1] | strip | escape }}</code></td><td>{{ ltitle | strip | escape }}</td></tr>
             {%- endif -%}
           {%- endfor -%}
         </tbody>

@@ -20,6 +20,8 @@ export interface ClassificationEntry {
   count: number
   /** ifc: IfcClassificationReference; pset: a tool parameter (less reliable). */
   source: 'ifc' | 'pset'
+  /** The system was guessed from the code's shape (no system name in the file). */
+  systemGuessed?: boolean
 }
 
 export interface ClassificationSystem {
@@ -75,7 +77,7 @@ export function normalizeSystem(name: string | null, code: string | null = null)
   return 'Other'
 }
 
-interface Found { system: string; edition: string | null; code: string | null; title: string | null; source: 'ifc' | 'pset' }
+interface Found { system: string; edition: string | null; code: string | null; title: string | null; source: 'ifc' | 'pset'; systemGuessed?: boolean }
 
 /** The root IfcClassification above a reference (references can nest). */
 function rootSource(ref: Raw): Raw | null {
@@ -109,7 +111,8 @@ export function referencesOf(hasAssociations: unknown): Found[] {
     const code = str(e.Identification) ?? str(e.ItemReference)
     const title = str(e.Name) ?? str(e.Description)
     const src = rootSource(e)
-    out.push({ system: normalizeSystem(src ? str(src.Name) : null, code), edition: src ? str(src.Edition) : null, code, title, source: 'ifc' })
+    const sysName = src ? str(src.Name) : null
+    out.push({ system: normalizeSystem(sysName, code), edition: src ? str(src.Edition) : null, code, title, source: 'ifc', ...(sysName ? {} : { systemGuessed: true }) })
   }
   return out
 }
@@ -151,7 +154,7 @@ export function paramsOf(item: Pick<IFCItemData, 'effectivePropertySets'>): Foun
   const out: Found[] = []
   for (const g of groups.values()) {
     if (!g.code) continue
-    out.push({ system: g.system ?? normalizeSystem(null, g.code), edition: null, code: g.code, title: g.title, source: 'pset' })
+    out.push({ system: g.system ?? normalizeSystem(null, g.code), edition: null, code: g.code, title: g.title, source: 'pset', ...(g.system ? {} : { systemGuessed: true }) })
   }
   return out
 }
@@ -199,12 +202,13 @@ export class ClassificationBuilder {
       let e = sys.entries.get(k)
       if (!e) {
         if (this.entryCount >= CLASSIFICATION_MAX_ENTRIES) { this.truncated = true; continue }
-        e = { system: f.system, code: f.code, title: f.title, count: 0, source: f.source }
+        e = { system: f.system, code: f.code, title: f.title, count: 0, source: f.source, ...(f.systemGuessed ? { systemGuessed: true } : {}) }
         sys.entries.set(k, e)
         this.entryCount++
       }
       if (!e.title && f.title) e.title = f.title
       if (f.source === 'ifc') e.source = 'ifc'
+      if (!f.systemGuessed) delete e.systemGuessed
       e.count++
     }
   }

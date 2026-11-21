@@ -337,6 +337,8 @@ export interface ProductClassificationEntry {
   count: number
   /** ifc: IfcClassificationReference; pset: a tool parameter such as Revit "Assembly Code". */
   source: 'ifc' | 'pset'
+  /** The system was guessed from the code's shape. */
+  systemGuessed?: boolean
 }
 
 export interface ProductClassifications {

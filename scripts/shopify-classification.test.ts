@@ -146,3 +146,36 @@ describe('viewer wiring', () => {
     expect(gated.querySelector('table[data-system]')).toBeNull()
   })
 })
+
+describe('verifier fixes', () => {
+  const jsonld = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-jsonld.liquid'), 'utf8')
+  const sysSnippet = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-cls-system.liquid'), 'utf8')
+
+  it('metafield system names use the model normaliser, so codes dedupe', () => {
+    expect(parseMetafield('Uniclass|Ss_25_10_30|x')[0].system).toBe('Uniclass 2015')
+    expect(parseMetafield('omniclass table 23|23-17|y')[0].system).toBe('OmniClass')
+    const groups = merge(parseMetafield('uniclass|Ss_25_10_30|Merchant'), DATA.classifications)
+    expect(groups[0].system).toBe('Uniclass 2015')
+    expect(groups[0].rows.filter((r: { code: string }) => r.code === 'Ss_25_10_30')).toHaveLength(1)
+    expect(block).toContain("render 'ifcvo-cls-system', name: parts[0]")
+    for (const k of ['uniclass', 'omniclass', 'masterformat', 'uniformat']) expect(sysSnippet).toContain(`contains '${k}'`)
+  })
+
+  it('codes with a guessed system show "(inferred)"', () => {
+    const data = { elementCount: 1, classifications: { ...DATA.classifications, systems: [{ system: 'Uniclass 2015', edition: null, count: 1, entries: [{ system: 'Uniclass 2015', code: 'Pr_1', title: null, count: 1, source: 'ifc', systemGuessed: true }] }] } }
+    const root = mount()
+    render(root, data)
+    expect(root.querySelector('[data-ifcvo-inferred]')!.textContent).toBe(' (inferred)')
+    expect(locale.ifcvo.classification.inferred).toBe('(inferred)')
+  })
+
+  it('Liquid keeps titles containing "|"', () => {
+    expect(block).toContain("assign ltitle = parts | slice: 2, 99 | join: '|'")
+    expect(block).toContain('{{ ltitle | strip | escape }}')
+  })
+
+  it('JSON-LD joins list metafields with ", "', () => {
+    expect(jsonld).toMatch(/if pair\[1\]\.type contains 'list\.'.*\| join: ', '/)
+    expect(jsonld).toContain('{{ ifcvo_pv | json }}')
+  })
+})

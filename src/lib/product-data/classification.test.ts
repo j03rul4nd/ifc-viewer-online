@@ -84,3 +84,13 @@ describe('ClassificationBuilder', () => {
     expect(r.systems[0].entries).toHaveLength(CLASSIFICATION_MAX_ENTRIES)
   })
 })
+
+describe('systemGuessed', () => {
+  it('flags codes whose system came from the code shape only', () => {
+    const guessed = buildClassifications([el({ HasAssociations: [{ _category: v('IFCCLASSIFICATIONREFERENCE'), Identification: v('Pr_30_59_24') }] })])!
+    expect(guessed.systems[0].entries[0].systemGuessed).toBe(true)
+    const named = buildClassifications([el({ HasAssociations: [ref4('Pr_30_59_24', 'Doorsets', 'Uniclass 2015')] })])!
+    expect(named.systems[0].entries[0].systemGuessed).toBeUndefined()
+    expect(classificationsOf(el({}, pset([['Classification Code', 'Ss_25_10']])))[0]).toMatchObject({ system: 'Uniclass 2015', systemGuessed: true })
+  })
+})

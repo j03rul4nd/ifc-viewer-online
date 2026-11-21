@@ -15,6 +15,19 @@ export const LABELS = {
   pset: 'Codes marked * come from authoring-tool parameters, not IFC classification references.',
   truncated: 'Large model: only part of it was read, some codes may be missing.',
   coverage: '{classified} of {elements} elements are classified.',
+  inferred: '(inferred)',
+}
+
+/** Canonical system name; same rules as the viewer's product-data normaliser and snippets/ifcvo-cls-system. */
+export function normalizeSystem(name) {
+  const n = String(name || '').trim()
+  if (/uniclass/i.test(n)) return 'Uniclass 2015'
+  if (/omni\s*class/i.test(n)) return 'OmniClass'
+  if (/master\s*format/i.test(n)) return 'MasterFormat'
+  if (/uni\s*format/i.test(n)) return 'UniFormat'
+  if (/^cci\b|coclass/i.test(n)) return 'CCI'
+  if (/^nrm\b/i.test(n)) return 'NRM'
+  return n
 }
 
 function readJson(text) {
@@ -54,7 +67,7 @@ export function parseMetafield(text) {
   const out = []
   for (const line of lines) {
     const [system, code, ...rest] = String(line).split('|').map((p) => p.trim())
-    if (system && code) out.push({ system, code, title: rest.join('|').trim() || null, count: null, source: 'metafield' })
+    if (system && code) out.push({ system: normalizeSystem(system), code, title: rest.join('|').trim() || null, count: null, source: 'metafield' })
   }
   return out
 }
@@ -62,7 +75,7 @@ export function parseMetafield(text) {
 /** Rows Liquid rendered from the metafield. */
 export function serverRows(root) {
   return [...root.querySelectorAll('tr[data-source="metafield"]')].map((tr) => ({
-    system: tr.dataset.system, code: tr.dataset.code,
+    system: normalizeSystem(tr.dataset.system), code: tr.dataset.code,
     title: (tr.children[1] && tr.children[1].textContent.trim()) || null, count: null, source: 'metafield',
   }))
 }
@@ -79,7 +92,7 @@ export function merge(metafield, model) {
     groups.get(row.system).push(row)
   }
   for (const r of metafield || []) add(r)
-  for (const s of (model && model.systems) || []) for (const e of s.entries) add({ system: s.system, code: e.code, title: e.title, count: e.count, source: e.source })
+  for (const s of (model && model.systems) || []) for (const e of s.entries) add({ system: normalizeSystem(s.system) || s.system, code: e.code, title: e.title, count: e.count, source: e.source, systemGuessed: !!e.systemGuessed })
   return [...groups].map(([system, rows]) => ({ system, rows }))
 }
 
@@ -114,7 +127,8 @@ export function render(root, data) {
       const attrs = { 'data-source': r.source, 'data-system': r.system }
       if (r.code) attrs['data-code'] = r.code
       return el('tr', attrs,
-        el('td', {}, el('code', {}, r.code || '—'), r.source === 'pset' ? ' *' : null),
+        el('td', {}, el('code', {}, r.code || '—'), r.source === 'pset' ? ' *' : null,
+          r.systemGuessed ? el('span', { class: 'ifcvo-muted', 'data-ifcvo-inferred': '' }, ' ' + labels.inferred) : null),
         el('td', {}, r.title || '—'),
         cfg.counts ? el('td', {}, r.count === null || r.count === undefined ? '—' : String(r.count)) : null)
     })))))
