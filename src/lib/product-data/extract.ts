@@ -128,8 +128,10 @@ function measure(
 
 const DIM_NAMES = {
   w: ['Width', 'OverallWidth', 'NominalWidth', 'Breite'],
-  d: ['Depth', 'Thickness', 'NominalDepth', 'OverallDepth', 'Length', 'Tiefe'],
+  d: ['Depth', 'NominalDepth', 'OverallDepth', 'Tiefe'],
   h: ['Height', 'OverallHeight', 'NominalHeight', 'Höhe'],
+  length: ['Length', 'NominalLength', 'Länge'],
+  thickness: ['Thickness', 'NominalThickness', 'Dicke'],
 }
 
 /** Width/depth/height from base quantities, then from any pset (Revit Dimensions, Tekla, manufacturer). */
@@ -149,9 +151,18 @@ export function ifcDimensions(item: IFCItemData, units: ProjectUnits = {}): Prod
     }
     return null
   }
-  const w = one(DIM_NAMES.w)
+  const width = one(DIM_NAMES.w)
   const h = one(DIM_NAMES.h)
-  const d = one(DIM_NAMES.d)
+  const depth = one(DIM_NAMES.d)
+  const length = one(DIM_NAMES.length)
+  const thick = one(DIM_NAMES.thickness)
+  let w: number | null
+  let d: number | null
+  if (depth !== null) { w = width ?? length; d = depth }
+  else if (length !== null && (width !== null || thick !== null)) {
+    // Wall / slab / beam: Qto Width is the thickness; it reads W = length, D = thickness.
+    w = length; d = width ?? thick
+  } else { w = width ?? length; d = thick }
   // A single number is a length, not a size: two of three or nothing.
   if ([w, d, h].filter((x) => x !== null).length < 2) return null
   const r = (n: number | null) => (n === null ? null : Math.round(n * 1000) / 1000)

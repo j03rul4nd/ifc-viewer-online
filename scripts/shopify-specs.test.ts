@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  COLUMNS, _reset, attach, config, convert, csvCell, dimText, init, list, onViewer, parseDimensions, parseLabels, refresh, render, tables, toCsv,
+  COLUMNS, _reset, attach, config, convert, csvCell, dimText, init, list, onViewer, parseDimensions, parseLabels, parseNumber, refresh, render, tables, toCsv,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-specs.js'
 
@@ -175,6 +175,25 @@ describe('dimensions', () => {
     expect(parseDimensions('1,2×0,6×2,1 m')).toMatchObject({ w: 1.2, d: 0.6, h: 2.1 })
     expect(parseDimensions('47in x 83in')).toMatchObject({ w: 1.1938, d: null, h: 2.1082 })
     expect(parseDimensions('large')).toBeNull()
+  })
+  it('no unit: > 50 is mm, ≤ 10 is m, in between shows the raw text', () => {
+    expect(parseDimensions('1200 x 600 x 2100')).toMatchObject({ w: 1.2, d: 0.6, h: 2.1, assumed: 'mm' })
+    expect(parseDimensions('1.2 x 0.6 x 2.1')).toMatchObject({ w: 1.2, h: 2.1, assumed: 'm' })
+    const amb = parseDimensions('30 x 20 x 40')
+    expect(amb).toMatchObject({ w: null, raw: '30 x 20 x 40' })
+    expect(dimText(amb)).toBe('30 x 20 x 40')
+  })
+  it('thousands vs decimal separators', () => {
+    expect(parseDimensions('1,200 x 600 x 2,100 mm')).toMatchObject({ w: 1.2, d: 0.6, h: 2.1 })
+    expect(parseDimensions('1.200,5 x 600 x 2.100 mm')).toMatchObject({ w: 1.2005, h: 2.1 })
+    expect(parseDimensions('0,9 × 0,4 × 2,1 m')).toMatchObject({ w: 0.9, d: 0.4, h: 2.1 })
+    expect(parseNumber('1,200')).toBe(1200)
+    expect(parseNumber('12,5')).toBe(12.5)
+    expect(parseNumber('1,234.5')).toBe(1234.5)
+  })
+  it('labelled sides', () => {
+    expect(parseDimensions('W 1200 x D 600 x H 2100 mm')).toMatchObject({ w: 1.2, d: 0.6, h: 2.1 })
+    expect(parseDimensions('W: 1200 × D: 600 × H: 2100 mm')).toMatchObject({ w: 1.2, d: 0.6, h: 2.1 })
   })
   it('metafield wins over the model, with a source label, metric or imperial, and in the CSV', () => {
     const data = { ...DATA, dimensions: { w: 1, d: 0.5, h: 2, unit: 'm', source: 'bbox' } }

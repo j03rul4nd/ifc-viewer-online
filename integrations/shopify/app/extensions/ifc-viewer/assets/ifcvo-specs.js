@@ -54,23 +54,53 @@ export function className(cls) {
   return s ? s[0].toUpperCase() + s.slice(1) : ''
 }
 
-/** "1200 x 600 x 2100 mm", "1.2×0.6×2.1 m", "47 in x 24 in x 83 in" → metres. */
+/**
+ * "1,200" / "1.200,5" / "12,5" → number. Both marks: the last one is the
+ * decimal. A lone ',' or '.' followed by exactly 3 digits (several of them, or
+ * "1,200") is a thousands separator; otherwise a lone ',' is a decimal comma.
+ */
+export function parseNumber(raw) {
+  let s = String(raw)
+  const dot = s.lastIndexOf('.'); const comma = s.lastIndexOf(',')
+  if (dot >= 0 && comma >= 0) s = comma > dot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '')
+  else if (comma >= 0) s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.')
+  else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '')
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+}
+
+/**
+ * Merchant text → metres. Accepts "1200 x 600 x 2100 mm", "1,2×0,6×2,1 m",
+ * "W 1200 x D 600 x H 2100 mm", "47in x 83in". Without any unit: every value
+ * above 50 → millimetres (no product is 50 m wide), every value up to 10 →
+ * metres; anything in between is ambiguous and the raw text is shown as is
+ * (`{ raw }`), never a guessed number.
+ */
 export function parseDimensions(text) {
   const t = String(text || '').trim()
   const unitOf = (u) => ({ mm: 0.001, cm: 0.01, m: 1, in: 0.0254, '"': 0.0254, ft: 0.3048, "'": 0.3048 })[String(u || '').toLowerCase()]
-  const tail = /(mm|cm|m|in|ft|"|')\s*$/i.exec(t)
-  const parts = t.split(/\s*[x×*]\s*/i)
+  const tail = /\d\s*(mm|cm|m|in|ft|"|')\s*$/i.exec(t)
+  const parts = t.split(/\s*[x×*]\s*(?=[a-z]{0,6}\.?\s*[:=]?\s*\d)/i)
   if (parts.length < 2 || parts.length > 3) return null
-  const out = []
+  const nums = []
   for (const p of parts) {
-    const m = /^([\d.,]+)\s*(mm|cm|m|in|ft|"|')?$/i.exec(p.trim())
+    const m = /^(?:[a-zäöü]{1,6}\.?\s*[:=]?\s*)?(\d[\d.,]*)\s*(mm|cm|m|in|ft|"|')?$/i.exec(p.trim())
     if (!m) return null
-    const f = unitOf(m[2] || (tail && tail[1]) || 'm')
-    const n = Number(m[1].replace(',', '.'))
-    if (!Number.isFinite(n) || !f) return null
-    out.push(Math.round(n * f * 1e6) / 1e6)
+    const unit = m[2] || (tail && tail[1]) || null
+    // "2.100 mm": nobody writes millimetres to three decimals — a thousands dot.
+    const n = unit && unit.toLowerCase() === 'mm' && /^\d{1,3}\.\d{3}$/.test(m[1]) ? Number(m[1].replace('.', '')) : parseNumber(m[1])
+    if (n === null) return null
+    nums.push([n, unit])
   }
-  return { w: out[0], d: out.length === 3 ? out[1] : null, h: out[out.length - 1], unit: 'm', source: 'metafield' }
+  let fallback = null
+  if (nums.some(([, u]) => !u)) {
+    const bare = nums.map(([n]) => n)
+    if (bare.every((n) => n > 50)) fallback = 'mm'
+    else if (bare.every((n) => n <= 10)) fallback = 'm'
+    else return { w: null, d: null, h: null, unit: 'm', source: 'metafield', raw: t }
+  }
+  const out = nums.map(([n, u]) => Math.round(n * unitOf(u || fallback) * 1e6) / 1e6)
+  return { w: out[0], d: out.length === 3 ? out[1] : null, h: out[out.length - 1], unit: 'm', source: 'metafield', ...(fallback ? { assumed: fallback } : {}) }
 }
 
 /** Metafield `dimensions` wins over the model. */
@@ -78,9 +108,10 @@ export function resolveDimensions(data, overrides = {}) {
   return (overrides.dimensions && parseDimensions(overrides.dimensions)) || (data && data.dimensions) || null
 }
 
-/** W × D × H in the chosen units; a missing side is a dash. */
+/** W × D × H in the chosen units; a missing side is a dash; ambiguous merchant text as written. */
 export function dimText(dim, system = 'metric') {
   if (!dim) return null
+  if (dim.raw) return dim.raw
   const imperial = system === 'imperial'
   const f = imperial ? 39.3700787 : 1000
   const u = imperial ? 'in' : 'mm'

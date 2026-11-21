@@ -143,6 +143,14 @@ describe('dimensions cascade', () => {
       .toMatchObject({ w: 1.2, d: 0.6, h: 2, source: 'ifc' })
     expect(ifcDimensions(item({ psets: [pset('Dimensions', [['Width', 1]])] }))).toBeNull()
   })
+  it('a wall reads W = length, D = thickness (Qto Width), H = height', () => {
+    const wall = item({ ifcClass: 'IFCWALL', quantitySets: [qset('Qto_WallBaseQuantities', [['Length', 5000, 'Length'], ['Width', 200, 'Length'], ['Height', 2700, 'Length']])] })
+    expect(ifcDimensions(wall, { LENGTHUNIT: 'mm' })).toMatchObject({ w: 5, d: 0.2, h: 2.7 })
+    const slab = item({ ifcClass: 'IFCSLAB', psets: [pset('Dimensions', [['Length', '6 m'], ['Thickness', '250 mm']])] })
+    expect(ifcDimensions(slab)).toMatchObject({ w: 6, d: 0.25, h: null })
+    const box = item({ quantitySets: [qset('Qto_X', [['Width', 1, 'Length', 'm'], ['Depth', 0.6, 'Length', 'm'], ['Length', 9, 'Length', 'm']])] })
+    expect(ifcDimensions(box)).toMatchObject({ w: 1, d: 0.6 })
+  })
   it('a single element uses its IFC dimensions; a model uses the box', () => {
     const one = item({ quantitySets: [qset('Qto_X', [['Width', 1, 'Length', 'm'], ['Height', 2, 'Length', 'm']])] })
     expect(buildProductData([one]).dimensions?.source).toBe('ifc')
