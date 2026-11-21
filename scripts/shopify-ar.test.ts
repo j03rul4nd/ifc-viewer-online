@@ -44,7 +44,7 @@ describe('ifc-ar block (Liquid)', () => {
 
   it('escapes every value written into attributes and text', () => {
     for (const m of block.matchAll(/="\{\{\s*([^}]*?)\s*\}\}"/g)) {
-      if (!/^s\.generate$|asset_url$/.test(m[1])) expect(m[1], m[1]).toMatch(/\| escape$/)
+      if (!/^s\.(generate|include_site)$|asset_url$/.test(m[1])) expect(m[1], m[1]).toMatch(/\| escape$/)
     }
     for (const m of block.matchAll(/\{\{\s*('ifcvo\.ar\.[a-z_]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| (escape|json)$/)
   })
@@ -171,31 +171,61 @@ describe('mount', () => {
     expect(navigate.mock.calls[0][0]).toMatch(/^intent:\/\/arvr\.google\.com/)
   })
 
-  it('iOS makes a USDZ from the IFC and opens Quick Look with <a rel="ar"><img>', async () => {
-    const r = mountBlock({ 'max-triangles': '1000' })
+  it('iOS with a merchant USDZ renders a real <a rel="ar"><img> link', () => {
+    const r = mountBlock({ usdz: 'https://cdn.shopify.com/a.usdz' })
+    mount(r, null, { device: 'ios', quickLook: true })
+    const a = r.querySelector('a[rel="ar"]') as HTMLAnchorElement
+    expect(a.getAttribute('href')).toBe('https://cdn.shopify.com/a.usdz')
+    expect(a.firstElementChild!.tagName).toBe('IMG')
+  })
+
+  it('iOS made USDZ: idle -> making -> ready link on first tap, never clicked from script', async () => {
+    const r = mountBlock({ 'max-triangles': '1000', 'include-site': 'true' })
     document.body.insertAdjacentHTML('beforeend', '<div data-ifcvo-viewer></div>')
-    const bytes = new ArrayBuffer(16)
-    const viewer = { exportModel: vi.fn(async () => ({ bytes, sizeBytes: 16, mimeType: 'model/vnd.usdz+zip' })) }
+    const viewer = { exportModel: vi.fn(async () => ({ bytes: new ArrayBuffer(16), sizeBytes: 16 })) }
     ;(URL as unknown as { createObjectURL: () => string }).createObjectURL = () => 'blob:https://shop/1'
-    const clicks: HTMLAnchorElement[] = []
-    const spy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { clicks.push(this) })
-    mount(r, { gate: () => true, viewer, open: async () => viewer }, { device: 'ios', quickLook: true })
-    const btn = r.querySelector('button') as HTMLButtonElement
-    expect(btn.textContent).toBe(LABELS.button)
-    btn.click()
-    await vi.waitFor(() => expect(clicks).toHaveLength(1))
-    expect(viewer.exportModel).toHaveBeenCalledWith({ format: 'usdz', ar: true, maxTriangles: 1000 })
-    expect(clicks[0].getAttribute('rel')).toBe('ar')
-    expect(clicks[0].getAttribute('href')).toBe('blob:https://shop/1')
-    expect(clicks[0].firstElementChild!.tagName).toBe('IMG')
-    spy.mockRestore()
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click')
+    mount(r, { gate: () => true, viewer: null, open: async () => viewer }, { device: 'ios', quickLook: true, idle: () => {} })
+    expect(r.dataset.ifcvoArState).toBe('idle')
+    ;(r.querySelector('button') as HTMLButtonElement).click()
+    expect(r.dataset.ifcvoArState).toBe('making')
+    expect(r.querySelector('[role="status"]')!.textContent).toBe(LABELS.making)
+    await vi.waitFor(() => expect(r.dataset.ifcvoArState).toBe('ready'))
+    expect(viewer.exportModel).toHaveBeenCalledWith({ format: 'usdz', ar: true, maxTriangles: 1000, includeSite: true })
+    const a = r.querySelector('a[rel="ar"]') as HTMLAnchorElement
+    expect(a.getAttribute('href')).toBe('blob:https://shop/1')
+    expect(a.firstElementChild!.tagName).toBe('IMG')
+    expect(a.textContent).toBe(LABELS.button)
+    expect(click).not.toHaveBeenCalled()
+    click.mockRestore()
+  })
+
+  it('iOS pre-makes when the viewer has the model (idle), and errors allow a retry', async () => {
+    const r = mountBlock()
+    document.body.insertAdjacentHTML('beforeend', '<div data-ifcvo-viewer></div>')
+    let fail = true
+    const viewer = { exportModel: vi.fn(async () => { if (fail) throw new Error('boom'); return { bytes: new ArrayBuffer(4), sizeBytes: 4 } }) }
+    ;(URL as unknown as { createObjectURL: () => string }).createObjectURL = () => 'blob:https://shop/2'
+    let cb: ((t: string) => void) | null = null
+    const idles: Array<() => void> = []
+    mount(r, { gate: () => true, viewer, subscribe: (_: unknown, f: (t: string) => void) => { cb = f } }, { device: 'ios', quickLook: true, idle: (f: () => void) => idles.push(f) })
+    expect(idles).toHaveLength(1)
+    idles[0]()
+    await vi.waitFor(() => expect(r.dataset.ifcvoArState).toBe('error'))
+    expect(r.querySelector('[role="status"]')!.textContent).toContain('boom')
+    fail = false
+    cb!('model-loaded')
+    idles[1]()
+    expect(r.dataset.ifcvoArState).toBe('error')
+    ;(r.querySelector('button') as HTMLButtonElement).click()
+    await vi.waitFor(() => expect(r.dataset.ifcvoArState).toBe('ready'))
   })
 
   it('iOS refuses a made model over the size limit', async () => {
     const r = mountBlock({ 'limit-mb': '10' })
     document.body.insertAdjacentHTML('beforeend', '<div data-ifcvo-viewer></div>')
     const viewer = { exportModel: vi.fn(async () => ({ bytes: new ArrayBuffer(1), sizeBytes: 20 * 1024 * 1024 })) }
-    mount(r, { gate: () => true, viewer }, { device: 'ios', quickLook: true })
+    mount(r, { gate: () => true, viewer }, { device: 'ios', quickLook: true, idle: () => {} })
     ;(r.querySelector('button') as HTMLButtonElement).click()
     await vi.waitFor(() => expect(r.querySelector('[role="status"]')!.textContent).toBe('This model is too large for AR on a phone (20 MB).'))
   })

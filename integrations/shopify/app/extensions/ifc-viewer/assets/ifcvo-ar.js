@@ -1,7 +1,8 @@
 // "View in your space" block: augmented reality of the product, no server.
 // Source, in order: the merchant's files (USDZ / GLB metafields or the product's
 // Shopify 3D model), then a model made from the IFC in the visitor's browser.
-//  - iPhone / iPad: Quick Look (`<a rel="ar">` to a USDZ; a made one is a blob: URL, which Quick Look accepts).
+//  - iPhone / iPad: Quick Look via a real `<a rel="ar">` the visitor taps (a made USDZ is a blob: URL,
+//    made ahead when the viewer has the model, or on a first tap that then turns the button into the link).
 //  - Android: Scene Viewer, which downloads the GLB itself, so it needs a
 //    public https file: the merchant's GLB or the Shopify 3D model. A GLB made
 //    in the browser has no such URL, so then the block says so (no remote
@@ -305,13 +306,14 @@ function quickLookSupported() {
   try { return document.createElement('a').relList.supports('ar') } catch (e) { return false }
 }
 
-/** Opens Quick Look: an `<a rel="ar">` with an `<img>` child, clicked (Safari requires both). */
-export function openQuickLook(href, root) {
-  const a = el('a', { rel: 'ar', href, hidden: '' }, el('img', { alt: '', src: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' }))
-  root.append(a)
-  a.click()
-  setTimeout(() => a.remove(), 0)
-  return a
+/**
+ * A real Quick Look link: `<a rel="ar">` whose first child is an `<img>` (Safari
+ * requires both). The visitor taps it, so the tap is the user activation Quick
+ * Look needs; it is never clicked from script after an await.
+ */
+export function arLink(href, label) {
+  return el('a', { rel: 'ar', href, class: 'ifcvo-btn ifcvo-ar-btn' },
+    el('img', { alt: '', width: '1', height: '1', src: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' }), label)
 }
 
 const objectUrls = new Map()
@@ -344,41 +346,61 @@ export function mount(root, api = typeof window !== 'undefined' ? window.IFCVO :
   }
   if (p.kind === 'hosted') { body.replaceChildren(el('p', { class: 'ifcvo-muted' }, labels.hosted)); return }
 
+  if (p.kind === 'quicklook') { body.replaceChildren(arLink(p.href, labels.button)); return }
   const btn = el('button', { type: 'button', class: 'ifcvo-btn ifcvo-ar-btn' }, labels.button)
   body.replaceChildren(btn, status)
   if (p.kind === 'sceneviewer') {
     btn.addEventListener('click', () => { (env.navigate || ((u) => { location.href = u }))(p.href) })
     return
   }
-  if (p.kind === 'quicklook') {
-    btn.addEventListener('click', () => openQuickLook(p.href, root))
-    return
+  // quicklook-make: a USDZ made from the IFC on this phone. States (data-ifcvo-ar-state):
+  // idle -> making -> ready (the button becomes a real <a rel="ar"> the visitor taps) | error (tap retries).
+  const setState = (st) => { root.dataset.ifcvoArState = st }
+  setState('idle')
+  const ready = (url) => {
+    setState('ready')
+    status.classList.remove('ifcvo-error')
+    status.textContent = ''
+    body.replaceChildren(arLink(url, labels.button), status)
   }
-  // quicklook-make: USDZ made from the IFC on this phone.
-  btn.addEventListener('click', async () => {
+  let job = null
+  const make = () => {
+    if (job) return job
     const cached = objectUrls.get(root)
-    if (cached) { openQuickLook(cached, root); return }
+    if (cached) { ready(cached); return Promise.resolve() }
+    setState('making')
     btn.setAttribute('disabled', ''); btn.setAttribute('aria-busy', 'true')
     status.classList.remove('ifcvo-error')
     status.textContent = labels.making
-    try {
-      const v = (api && api.viewer) || (api && await api.open())
-      if (!v) throw new Error(labels.no_viewer)
-      if (typeof v.exportModel !== 'function') throw new Error(labels.error)
-      const f = await v.exportModel({ format: 'usdz', ar: true, maxTriangles: Number(root.dataset.maxTriangles) || undefined })
-      const tooBig = sizeCheck(f.sizeBytes || (f.bytes && f.bytes.byteLength) || 0, limit, labels, device)
-      if (tooBig) throw Object.assign(new Error(tooBig), { plain: true })
-      const url = URL.createObjectURL(new Blob([f.bytes], { type: 'model/vnd.usdz+zip' }))
-      objectUrls.set(root, url)
-      status.textContent = ''
-      openQuickLook(url, root)
-    } catch (e) {
-      status.classList.add('ifcvo-error')
-      status.textContent = e && e.plain ? e.message : labels.error + (e && e.message && e.message !== labels.error ? ' ' + e.message : '')
-    } finally {
-      btn.removeAttribute('disabled'); btn.removeAttribute('aria-busy')
-    }
-  })
+    job = (async () => {
+      try {
+        const v = (api && api.viewer) || (api && typeof api.open === 'function' && await api.open())
+        if (!v) throw new Error(labels.no_viewer)
+        if (typeof v.exportModel !== 'function') throw new Error(labels.error)
+        const f = await v.exportModel({ format: 'usdz', ar: true, maxTriangles: Number(root.dataset.maxTriangles) || undefined, includeSite: root.dataset.includeSite === 'true' })
+        const tooBig = sizeCheck(f.sizeBytes || (f.bytes && f.bytes.byteLength) || 0, limit, labels, device)
+        if (tooBig) throw Object.assign(new Error(tooBig), { plain: true })
+        const url = URL.createObjectURL(new Blob([f.bytes], { type: 'model/vnd.usdz+zip' }))
+        objectUrls.set(root, url)
+        ready(url)
+      } catch (e) {
+        setState('error')
+        status.classList.add('ifcvo-error')
+        status.textContent = e && e.plain ? e.message : labels.error + (e && e.message && e.message !== labels.error ? ' ' + e.message : '')
+      } finally {
+        btn.removeAttribute('disabled'); btn.removeAttribute('aria-busy')
+        job = null
+      }
+    })()
+    return job
+  }
+  btn.addEventListener('click', () => { make() })
+  // Pre-make once the page's viewer has the model, while the phone is idle, so the first tap opens AR.
+  const idle = env.idle || ((fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 4000 }) : setTimeout(fn, 1500)))
+  const soon = () => idle(() => { if (root.isConnected && root.dataset.ifcvoArState === 'idle') make() })
+  if (api && typeof api.subscribe === 'function') api.subscribe(root, (type) => { if (type === 'model-loaded') soon() })
+  if (api && api.viewer) soon()
+  return { make }
 }
 
 export function initAll(api) {

@@ -4408,7 +4408,7 @@ export default function App() {
               if (ar) {
                 const { exportForAr } = await import('./lib/arExport')
                 const maxTriangles = typeof msg.maxTriangles === 'number' && msg.maxTriangles > 0 ? msg.maxTriangles : undefined
-                const out = await exportForAr(obj, api.getFragmentsModel(model.id), format, { maxTriangles })
+                const out = await exportForAr(obj, api.getFragmentsModel(model.id), format, { maxTriangles, includeSite: msg.includeSite === true })
                 blob = out.blob
                 stats = out.stats
               } else {

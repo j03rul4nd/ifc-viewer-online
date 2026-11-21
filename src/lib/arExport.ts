@@ -20,11 +20,18 @@ export const AR_EXCLUDED_CATEGORIES: RegExp[] = [
   /^IFCANNOTATION$/i, /^IFCGRID$/i, /^IFCSPATIALZONE$/i, /^IFCSITE$/i,
 ]
 
+/** The excluded classes, with IfcSite (terrain) kept when asked. */
+export function excludedCategories(includeSite = false): RegExp[] {
+  return includeSite ? AR_EXCLUDED_CATEGORIES.filter((r) => !r.test('IFCSITE')) : AR_EXCLUDED_CATEGORIES
+}
+
 export interface ArOptions {
   /** Leave out the smallest parts until the model is at most this many triangles. 0/undefined = no cap. */
   maxTriangles?: number
   /** Multiplier to metres, when the scene is not already in metres. Default 1. */
   unitScale?: number
+  /** Keep IfcSite geometry (terrain). Default false: the building stands on the real floor. */
+  includeSite?: boolean
 }
 
 export interface ArStats {
@@ -108,13 +115,14 @@ function arMaterial(THREE: Three, color: THREE_NS.Color | null, opacity: number,
  * (a hidden parent hides its children), world transform baked in, and parts
  * whose `userData.ifcType` is a non-physical class left out.
  */
-export function partsFromObject(THREE: Three, root: THREE_NS.Object3D): ArPart[] {
+export function partsFromObject(THREE: Three, root: THREE_NS.Object3D, includeSite = false): ArPart[] {
+  const excluded = excludedCategories(includeSite)
   root.updateWorldMatrix(true, true)
   const out: ArPart[] = []
   const walk = (node: THREE_NS.Object3D) => {
     if (!node.visible) return
     const type = String((node.userData as { ifcType?: string })?.ifcType ?? '')
-    if (type && AR_EXCLUDED_CATEGORIES.some((r) => r.test(type))) return
+    if (type && excluded.some((r) => r.test(type))) return
     const mesh = node as THREE_NS.Mesh
     if (mesh.isMesh && mesh.geometry?.getAttribute('position')) {
       const src = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
@@ -146,7 +154,7 @@ export interface FragmentsLike {
 }
 
 /** Parts of a fragments model (geometry read back from the library), filtered and grouped by material. */
-export async function partsFromFragments(THREE: Three, model: FragmentsLike, placement: THREE_NS.Matrix4 | null): Promise<ArPart[]> {
+export async function partsFromFragments(THREE: Three, model: FragmentsLike, placement: THREE_NS.Matrix4 | null, includeSite = false): Promise<ArPart[]> {
   let ids = await model.getLocalIds()
   if (model.getItemsByVisibility) {
     try {
@@ -156,7 +164,7 @@ export async function partsFromFragments(THREE: Three, model: FragmentsLike, pla
   }
   if (model.getItemsOfCategories) {
     try {
-      const byCat = await model.getItemsOfCategories(AR_EXCLUDED_CATEGORIES)
+      const byCat = await model.getItemsOfCategories(excludedCategories(includeSite))
       const drop = new Set(Object.values(byCat).flat())
       if (drop.size) ids = ids.filter((i) => !drop.has(i))
     } catch { /* keep all */ }
@@ -208,6 +216,12 @@ export async function partsFromFragments(THREE: Three, model: FragmentsLike, pla
  */
 export async function buildArGroup(THREE: Three, parts: ArPart[], opts: ArOptions = {}): Promise<{ group: THREE_NS.Group; stats: ArStats }> {
   const { mergeGeometries } = await import('three/addons/utils/BufferGeometryUtils.js')
+  // Whatever does not end up in the returned group is released here, on success or failure.
+  const usedGeoms = new Set<THREE_NS.BufferGeometry>()
+  const usedMats = new Set<THREE_NS.Material>()
+  let ok = false
+  const group = new THREE.Group()
+  try {
   const sizes = parts.map((p) => {
     p.geometry.computeBoundingBox()
     const b = p.geometry.boundingBox!
@@ -216,18 +230,18 @@ export async function buildArGroup(THREE: Three, parts: ArPart[], opts: ArOption
   const kept = new Set(pickParts(sizes, opts.maxTriangles))
   const byKey = new Map<string, { material: THREE_NS.Material; geoms: THREE_NS.BufferGeometry[] }>()
   parts.forEach((p, i) => {
-    if (!kept.has(i)) { p.geometry.dispose(); return }
+    if (!kept.has(i)) return
     const e = byKey.get(p.materialKey) ?? { material: p.material, geoms: [] }
     e.geoms.push(p.geometry)
     byKey.set(p.materialKey, e)
   })
-  const group = new THREE.Group()
   group.name = 'ar-model'
   let triangles = 0
   for (const [key, e] of byKey) {
     const merged = e.geoms.length === 1 ? e.geoms[0] : mergeGeometries(e.geoms, false)
-    if (e.geoms.length > 1) for (const g of e.geoms) g.dispose()
     if (!merged) continue
+    usedGeoms.add(merged)
+    usedMats.add(e.material)
     triangles += triangleCount(merged)
     const mesh = new THREE.Mesh(merged, e.material)
     mesh.name = `material-${key.split('|')[0]}`
@@ -243,7 +257,15 @@ export async function buildArGroup(THREE: Three, parts: ArPart[], opts: ArOption
   // Baked into the vertices: some AR viewers ignore node transforms on load.
   const m = new THREE.Matrix4().makeScale(scale, scale, scale).multiply(new THREE.Matrix4().makeTranslation(-cx, -box.min.y, -cz))
   for (const c of group.children) { const g = (c as THREE_NS.Mesh).geometry; g.applyMatrix4(m); g.computeBoundingBox(); g.computeBoundingSphere() }
+  ok = true
   return { group, stats: { meshes: group.children.length, triangles, droppedParts: parts.length - kept.size } }
+  } finally {
+    for (const p of parts) {
+      if (!ok || !usedGeoms.has(p.geometry)) p.geometry.dispose()
+      if (!ok || !usedMats.has(p.material)) p.material.dispose()
+    }
+    if (!ok) disposeGroup(group)
+  }
 }
 
 export function disposeGroup(group: THREE_NS.Object3D): void {
@@ -278,12 +300,12 @@ export async function exportForAr(
 ): Promise<{ blob: Blob; stats: ArStats }> {
   const THREE = await import('three')
   let parts: ArPart[]
-  if (readable(obj)) parts = partsFromObject(THREE, obj)
+  if (readable(obj)) parts = partsFromObject(THREE, obj, opts.includeSite)
   else {
     const model = fragmentsModel as FragmentsLike | undefined
     if (!model?.getItemsGeometry || !model?.getLocalIds) throw new Error('This model keeps its geometry on the GPU, and no source was supplied to read it back from.')
     obj.updateWorldMatrix(true, false)
-    parts = await partsFromFragments(THREE, model, obj.matrixWorld)
+    parts = await partsFromFragments(THREE, model, obj.matrixWorld, opts.includeSite)
   }
   const { group, stats } = await buildArGroup(THREE, parts, opts)
   try {

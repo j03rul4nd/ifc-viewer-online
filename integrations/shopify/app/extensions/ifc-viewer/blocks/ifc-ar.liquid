@@ -39,6 +39,7 @@
   data-generate="{{ s.generate }}"
   data-limit-mb="{{ s.limit_mb | escape }}"
   data-max-triangles="{{ s.max_triangles | escape }}"
+  data-include-site="{{ s.include_site }}"
   data-title="{{ product.title | escape }}"
   data-page="{{ canonical_url | escape }}"
   data-labels="{{ ar_labels | escape }}"
@@ -70,6 +71,7 @@
     { "type": "checkbox", "id": "generate", "label": "Make the AR model from the IFC when there is no file", "default": true, "info": "Made on the visitor's iPhone or iPad from the \"Product IFC model\" block. Android needs a hosted file." },
     { "type": "range", "id": "limit_mb", "label": "Largest made model on phones", "min": 10, "max": 50, "step": 5, "unit": "MB", "default": 50 },
     { "type": "number", "id": "max_triangles", "label": "Triangle limit for made models", "default": 500000, "info": "The smallest parts are left out above it." },
+    { "type": "checkbox", "id": "include_site", "label": "Include the site and terrain in made models", "default": false },
     { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: button, making, error, too_large, scan, no_ar, hosted, no_viewer." },
     { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": false }
   ]

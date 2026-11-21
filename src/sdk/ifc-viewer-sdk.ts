@@ -997,6 +997,8 @@ export interface ExportModelOptions {
   ar?: boolean
   /** AR only: leave out the smallest parts until the model fits this many triangles. */
   maxTriangles?: number
+  /** AR only: keep IfcSite geometry (terrain). Default false. */
+  includeSite?: boolean
 }
 
 export interface PresentationProgressEvent {
@@ -2702,7 +2704,7 @@ export class IfcViewer {
   exportModel(opts: ExportModelOptions = {}): Promise<ModelFile> {
     const format = opts.format ?? 'glb'
     return this.request<ModelFile>('ifcviewer:export-model', {
-      format, modelId: opts.modelId, ar: format === 'usdz' || opts.ar === true, maxTriangles: opts.maxTriangles,
+      format, modelId: opts.modelId, ar: format === 'usdz' || opts.ar === true, maxTriangles: opts.maxTriangles, includeSite: opts.includeSite === true,
     }, 5 * 60_000)
   }
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import * as THREE from 'three'
-import { describe, expect, it } from 'vitest'
-import { buildArGroup, exportForAr, partsFromFragments, partsFromObject, pickParts, type FragmentsLike } from './arExport'
+import { describe, expect, it, vi } from 'vitest'
+import { buildArGroup, excludedCategories, exportForAr, partsFromFragments, partsFromObject, pickParts, type FragmentsLike } from './arExport'
 
 function box(x: number, y: number, z: number, size: number, color: number, ifcType?: string): THREE.Mesh {
   const m = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), new THREE.MeshStandardMaterial({ color }))
@@ -77,5 +77,40 @@ describe('AR scene', () => {
     expect(usdz.blob.type).toBe('model/vnd.usdz+zip')
     const zip = new Uint8Array(await usdz.blob.arrayBuffer()).slice(0, 2)
     expect(String.fromCharCode(...zip)).toBe('PK')
+  })
+})
+
+describe('cleanup and site option', () => {
+  it('disposes unused materials and merged-away input geometries; keeps what the group uses', async () => {
+    const root = new THREE.Group()
+    root.add(box(0, 0, 0, 1, 0xff0000), box(3, 0, 0, 1, 0xff0000))
+    const parts = partsFromObject(THREE, root)
+    const gSpies = parts.map((p) => vi.spyOn(p.geometry, 'dispose'))
+    const mSpies = parts.map((p) => vi.spyOn(p.material, 'dispose'))
+    const { group } = await buildArGroup(THREE, parts)
+    expect(gSpies.every((s) => s.mock.calls.length === 1)).toBe(true)
+    expect(mSpies[0]).not.toHaveBeenCalled()
+    expect(mSpies[1]).toHaveBeenCalledTimes(1)
+    expect((group.children[0] as THREE.Mesh).material).toBe(parts[0].material)
+  })
+
+  it('disposes every input when building throws', async () => {
+    const root = new THREE.Group()
+    root.add(box(0, 0, 0, 1, 0xff0000))
+    const parts = partsFromObject(THREE, root)
+    const g = vi.spyOn(parts[0].geometry, 'dispose')
+    const m = vi.spyOn(parts[0].material, 'dispose')
+    await expect(buildArGroup(THREE, parts, { maxTriangles: 1 })).rejects.toThrow()
+    expect(g).toHaveBeenCalled()
+    expect(m).toHaveBeenCalled()
+  })
+
+  it('IfcSite is left out unless includeSite', () => {
+    const root = new THREE.Group()
+    root.add(box(0, 0, 0, 1, 0xff0000), box(0, -1, 0, 20, 0x00ff00, 'IFCSITE'))
+    expect(partsFromObject(THREE, root)).toHaveLength(1)
+    expect(partsFromObject(THREE, root, true)).toHaveLength(2)
+    expect(excludedCategories(true).some((r) => r.test('IFCSITE'))).toBe(false)
+    expect(excludedCategories(true).some((r) => r.test('IFCSPACE'))).toBe(true)
   })
 })
