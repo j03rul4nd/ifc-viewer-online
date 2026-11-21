@@ -90,3 +90,9 @@
 .ifcvo-good { color: var(--ifcvo-accent); }
 .ifcvo-fair { color: #b7791f; }
 .ifcvo-poor { color: #c0392b; }
+.ifcvo-compat-list { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0 0 8px; }
+.ifcvo-compat-list dt { font-weight: 600; }
+.ifcvo-compat-list dd { margin: 0; }
+.ifcvo-compat-row { display: contents; }
+.ifcvo-compat-apps { margin: 0 0 4px; padding-left: 1.2em; }
+.ifcvo-compat-weight meter { width: 6em; vertical-align: middle; }

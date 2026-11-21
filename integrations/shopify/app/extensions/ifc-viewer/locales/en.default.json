@@ -23,6 +23,12 @@
       "yes": "Included",
       "no": "Not included",
       "selected": "Selected:"
+    },
+    "compat": {
+      "works_with": "Opens in",
+      "weight": "File weight",
+      "health": "Health Score",
+      "waiting": "Reading the file header…"
     }
   }
 }
