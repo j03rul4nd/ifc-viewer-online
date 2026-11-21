@@ -14,8 +14,18 @@ export const LABELS = {
   elements: 'Elements', light: 'Light', medium: 'Medium', heavy: 'Heavy',
   thresholds: 'Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more.',
   health: 'Health Score', issues: 'Main issues', noIssues: 'No issues found',
-  unknown: 'Not stated in the file',
+  unknown: 'Not stated in the file', unavailable: 'Not available for this file',
 }
+
+/** Validator ruleId → English label; the block passes translated ones (data-rule-labels, keyed without RULE_ in lower case). */
+export const RULE_LABELS = {
+  duplicate_name: 'Duplicate names', empty_name: 'Missing names', duplicate_guid: 'Duplicate GUIDs', missing_type: 'Missing types',
+  missing_material: 'Missing materials', empty_property_value: 'Empty property values', empty_longname: 'Missing long names',
+  invalid_ifc_version: 'IFC version', file_author_missing: 'File author missing', iso19650_filename: 'File name (ISO 19650)',
+  clash_mep_structural: 'MEP / structure clashes',
+}
+
+export const ruleKey = (id) => String(id || '').replace(/^RULE_/i, '').toLowerCase()
 
 /** Conservative, per schema. Shown only when the merchant lists nothing, and labelled "typical". */
 export const DEFAULT_APPS = {
@@ -98,17 +108,20 @@ export function weightBand(sizeMb, elements, th = THRESHOLDS) {
 }
 
 /** "missing-name" / "IFC_GUID_DUPLICATE" → "Missing name" / "Ifc guid duplicate". */
-export function ruleLabel(id) {
-  const s = String(id || '').replace(/[_.:-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim().toLowerCase()
+export function ruleLabel(id, map = RULE_LABELS) {
+  const k = ruleKey(id)
+  if (map && map[k]) return map[k]
+  if (RULE_LABELS[k]) return RULE_LABELS[k]
+  const s = String(id || '').replace(/^RULE_/i, '').replace(/[_.:-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim().toLowerCase()
   return s ? s[0].toUpperCase() + s.slice(1) : ''
 }
 
 /** Issues → top N categories by count (errors weigh before warnings on ties). */
-export function topCategories(issues, n = 3) {
+export function topCategories(issues, n = 3, map = RULE_LABELS) {
   const by = new Map()
   for (const i of issues || []) {
     if (!i || !i.ruleId) continue
-    const c = by.get(i.ruleId) || { id: i.ruleId, label: ruleLabel(i.ruleId), count: 0, errors: 0 }
+    const c = by.get(i.ruleId) || { id: i.ruleId, label: ruleLabel(i.ruleId, map), count: 0, errors: 0 }
     c.count++
     if (i.severity === 'error') c.errors++
     by.set(i.ruleId, c)
@@ -202,6 +215,14 @@ export function renderCompat(root, header, labels = labelsOf(root)) {
   }
 }
 
+/** The header could not be read: a final state, never the waiting text. Merchant / typical apps stay. */
+export function renderUnavailable(root, labels = labelsOf(root)) {
+  const box = root.querySelector('[data-ifcvo-compat-header]')
+  if (!box) return
+  box.dataset.state = 'unavailable'
+  box.replaceChildren(el('p', { class: 'ifcvo-muted' }, root.dataset.unavailable || labels.unavailable))
+}
+
 export function renderWeight(root, state, labels = labelsOf(root)) {
   const box = root.querySelector('[data-ifcvo-compat-weight]')
   if (!box) return
@@ -260,7 +281,9 @@ async function onHealth(root, score) {
     const v = window.IFCVO && window.IFCVO.viewer
     if (!v || typeof v.getIssues !== 'function') return
     const r = await v.getIssues({ limit: 500 })
-    renderHealth(root, r && r.qualityScore != null ? r.qualityScore : score, topCategories(r && r.issues))
+    let map = null
+    try { map = JSON.parse(root.dataset.ruleLabels || 'null') } catch (e) { /* defaults */ }
+    renderHealth(root, r && r.qualityScore != null ? r.qualityScore : score, topCategories(r && r.issues, 3, map || RULE_LABELS))
   } catch (e) { /* keep the score alone */ }
 }
 
@@ -269,7 +292,11 @@ async function mount(root) {
   mounted.set(root, state)
   const url = modelUrl(root)
   renderWeight(root, state)
-  fetchHeader(url).then((text) => { if (text) renderCompat(root, parseHeader(text)) })
+  fetchHeader(url).then((text) => {
+    const h = text ? parseHeader(text) : null
+    if (h && (h.schema || h.schemaRaw || h.app || h.mvd.length)) renderCompat(root, h)
+    else renderUnavailable(root)
+  }, () => renderUnavailable(root))
   if (!state.sizeMb) headSize(url).then((mb) => { if (mb) { state.sizeMb = mb; renderWeight(root, state) } })
 }
 

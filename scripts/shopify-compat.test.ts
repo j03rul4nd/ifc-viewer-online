@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  DEFAULT_APPS, _reset, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
+  DEFAULT_APPS, RULE_LABELS, _reset, ruleLabel, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
   // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compat.js'
 import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
@@ -79,7 +79,7 @@ describe('weight and health helpers', () => {
       { ruleId: 'other', severity: 'info' }, { severity: 'error' },
     ]
     const top = topCategories(issues)
-    expect(top.map((c: { label: string }) => c.label)).toEqual(['Missing name', 'Duplicate guid', 'No storey'])
+    expect(top.map((c: { label: string }) => c.label)).toEqual(['Missing name', 'Duplicate GUIDs', 'No storey'])
     expect(top[0].count).toBe(4)
   })
 })
@@ -150,6 +150,53 @@ describe('rendering', () => {
   })
 })
 
+describe('header fetch failures end in a final state', () => {
+  const waitingRoot = () => {
+    document.body.innerHTML = `<section data-ifcvo-compat data-model="https://cdn.example/a.ifc" data-unavailable="Not available"><div data-ifcvo-compat-body>
+      <div data-ifcvo-compat-header><p>Reading the file header…</p></div><div data-ifcvo-compat-apps data-merchant="1"><li>Revit 2023</li></div></div></section>`
+    return document.querySelector('[data-ifcvo-compat]') as HTMLElement
+  }
+  const cases: Array<[string, () => Promise<Response>]> = [
+    ['CORS', async () => { throw new TypeError('Failed to fetch') }],
+    ['404', async () => new Response('nope', { status: 404 })],
+    ['non-STEP', async () => new Response('PK zip')],
+    ['empty header', async () => new Response('ISO-10303-21;HEADER;ENDSEC;')],
+  ]
+  for (const [name, impl] of cases) {
+    it(name, async () => {
+      vi.stubGlobal('fetch', vi.fn((_u: string, o?: RequestInit) => (o && o.method === 'HEAD' ? Promise.reject(new Error('x')) : impl())))
+      const root = waitingRoot(); init()
+      const box = root.querySelector('[data-ifcvo-compat-header]') as HTMLElement
+      await vi.waitFor(() => expect(box.dataset.state).toBe('unavailable'))
+      expect(root.textContent).not.toContain('Reading the file header')
+      expect(box.textContent).toBe('Not available')
+      expect(root.textContent).toContain('Revit 2023')
+      vi.unstubAllGlobals()
+    })
+  }
+  it('timeout', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn((_u: string, o?: RequestInit) => new Promise((_, rej) => o?.signal?.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))))))
+    const root = waitingRoot(); init()
+    await vi.advanceTimersByTimeAsync(4100)
+    vi.useRealTimers()
+    await vi.waitFor(() => expect((root.querySelector('[data-ifcvo-compat-header]') as HTMLElement).dataset.state).toBe('unavailable'))
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('rule labels', () => {
+  it('maps known ruleIds, translated map wins, unknown ids humanised', () => {
+    expect(ruleLabel('RULE_DUPLICATE_GUID')).toBe(RULE_LABELS.duplicate_guid)
+    expect(ruleLabel('RULE_EMPTY_NAME', { empty_name: 'Nombres vacíos' })).toBe('Nombres vacíos')
+    expect(ruleLabel('RULE_SOMETHING_NEW')).toBe('Something new')
+  })
+  it('every mapped rule has a locale key', () => {
+    for (const k of Object.keys(RULE_LABELS)) expect(locales.ifcvo.compat.rules[k], k).toBeTruthy()
+    expect(block).toContain(Object.keys(RULE_LABELS).join(','))
+  })
+})
+
 describe('block, plan and locales', () => {
   it('schema ≤ 25 settings, unique ids, section target', () => {
     const ids = schema.settings.filter((s: { id?: string }) => s.id).map((s: { id: string }) => s.id)
@@ -160,7 +207,7 @@ describe('block, plan and locales', () => {
   it('every Liquid output is escaped (except style/asset/attributes)', () => {
     const outs = body.match(/\{\{[^}]*\}\}/g) || []
     for (const o of outs) {
-      if (/ifcvo_style|asset_url|shopify_attributes|s\.radius|s\.accent|s\.show_health/.test(o)) continue
+      if (/| json|ifcvo_style|asset_url|shopify_attributes|s\.radius|s\.accent|s\.show_health/.test(o)) continue
       expect(o, o).toMatch(/\|\s*escape/)
     }
   })

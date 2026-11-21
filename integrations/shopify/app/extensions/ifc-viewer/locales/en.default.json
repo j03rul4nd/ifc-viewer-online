@@ -28,7 +28,21 @@
       "works_with": "Opens in",
       "weight": "File weight",
       "health": "Health Score",
-      "waiting": "Reading the file header…"
+      "waiting": "Reading the file header…",
+      "unavailable": "Not available for this file",
+      "rules": {
+        "duplicate_name": "Duplicate names",
+        "empty_name": "Missing names",
+        "duplicate_guid": "Duplicate GUIDs",
+        "missing_type": "Missing types",
+        "missing_material": "Missing materials",
+        "empty_property_value": "Empty property values",
+        "empty_longname": "Missing long names",
+        "invalid_ifc_version": "IFC version",
+        "file_author_missing": "File author missing",
+        "iso19650_filename": "File name (ISO 19650)",
+        "clash_mep_structural": "MEP / structure clashes"
+      }
     }
   }
 }

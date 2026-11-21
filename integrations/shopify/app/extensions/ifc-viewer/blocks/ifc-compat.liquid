@@ -15,6 +15,8 @@
   assign t_weight = 'ifcvo.compat.weight' | t
   assign t_health = 'ifcvo.compat.health' | t
   assign t_waiting = 'ifcvo.compat.waiting' | t
+  assign t_unavailable = 'ifcvo.compat.unavailable' | t
+  assign rule_keys = 'duplicate_name,empty_name,duplicate_guid,missing_type,missing_material,empty_property_value,empty_longname,invalid_ifc_version,file_author_missing,iso19650_filename,clash_mep_structural' | split: ','
   assign apps = ''
   if cw != blank
     if cw.type contains 'list'
@@ -30,6 +32,9 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
+{%- capture rule_labels -%}
+  {%- for k in rule_keys -%}{%- assign key = 'ifcvo.compat.rules.' | append: k -%}{{ k | json }}:{{ key | t | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
+{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <section
   class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -37,6 +42,8 @@
   data-ifcvo-tier="compat"
   data-size-mb="{{ size_mb | escape }}"
   data-health="{{ s.show_health }}"
+  data-rule-labels="{{ '{' | append: rule_labels | append: '}' | escape }}"
+  data-unavailable="{{ t_unavailable | escape }}"
   data-labels-override="{{ s.labels | escape }}"
   data-locale="{{ request.locale.iso_code | escape }}"
   data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
