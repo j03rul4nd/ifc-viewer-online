@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "bimo-ifc-viewer/step",
+	"title": "IFC Viewer Step",
+	"category": "embed",
+	"icon": "location",
+	"description": "A paragraph of a guided story: while the reader scrolls past it, the nearest IFC Viewer shows a view, an element or a category.",
+	"keywords": [ "ifc", "bim", "story", "scroll", "step" ],
+	"textdomain": "bimo-ifc-viewer",
+	"supports": { "html": false },
+	"attributes": {
+		"view": { "type": "string", "default": "" },
+		"select": { "type": "string", "default": "" },
+		"isolate": { "type": "string", "default": "" },
+		"azimuth": { "type": "string", "default": "" },
+		"elevation": { "type": "string", "default": "" },
+		"fill": { "type": "string", "default": "" }
+	},
+	"editorScript": "ifcvo-block-editor"
+}

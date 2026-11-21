@@ -14,7 +14,7 @@
 		"model": { "type": "string", "default": "" },
 		"name": { "type": "string", "default": "" },
 		"height": { "type": "number", "default": 600 },
-		"ui": { "type": "string", "default": "article" },
+		"ui": { "type": "string", "default": "" },
 		"view": { "type": "string", "default": "iso" },
 		"wheel": { "type": "string", "default": "ctrl" },
 		"validate": { "type": "string", "default": "1" },
@@ -33,7 +33,22 @@
 		"analysis": { "type": "string", "default": "" },
 		"site": { "type": "string", "default": "" },
 		"drawings": { "type": "string", "default": "" },
-		"explore": { "type": "string", "default": "" }
+		"explore": { "type": "string", "default": "" },
+		"toolbar": { "type": "string", "default": "" },
+		"tools": { "type": "string", "default": "" },
+		"panels": { "type": "string", "default": "" },
+		"autoframe": { "type": "string", "default": "" },
+		"fill": { "type": "string", "default": "" },
+		"layers": { "type": "string", "default": "" },
+		"rule": { "type": "string", "default": "" },
+		"flood": { "type": "string", "default": "" },
+		"fullscreen": { "type": "string", "default": "" },
+		"load": { "type": "string", "default": "" },
+		"poster": { "type": [ "number", "string" ], "default": "" },
+		"poster_title": { "type": "string", "default": "" },
+		"poster_text": { "type": "string", "default": "" },
+		"launch_label": { "type": "string", "default": "" },
+		"form_field": { "type": "string", "default": "" }
 	},
 	"editorScript": "ifcvo-block-editor"
 }
