@@ -90,3 +90,13 @@
 .ifcvo-good { color: var(--ifcvo-accent); }
 .ifcvo-fair { color: #b7791f; }
 .ifcvo-poor { color: #c0392b; }
+
+.ifcvo-planview-body { position: relative; }
+.ifcvo-planview-block [role="tab"][aria-selected="true"] { border-color: var(--ifcvo-accent); background: var(--ifcvo-soft); }
+.ifcvo-watermark {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; user-select: none;
+  display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; gap: 48px 64px;
+  transform: rotate(-24deg) scale(1.4); font-weight: 700; font-size: 1.1em; color: #000; mix-blend-mode: multiply;
+}
+.ifcvo-noselect { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ifcvo-protected .ifcvo-downloads, .ifcvo-protected .ifcvo-full { display: none !important; }
