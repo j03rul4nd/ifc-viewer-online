@@ -44,6 +44,21 @@
       "yes": "Included",
       "no": "Not included",
       "selected": "Selected:"
+    },
+    "planview": {
+      "heading": "Floor plans",
+      "tabs": "Floor plans by storey",
+      "all": "3D",
+      "waiting": "Open the 3D model to see its floor plans.",
+      "open": "Show floor plans",
+      "loading": "Reading the storeys…",
+      "none": "This model has no storeys.",
+      "error": "The floor plans could not be read.",
+      "rooms": "Rooms",
+      "room": "Room",
+      "area": "Area",
+      "showing": "Showing:",
+      "preview": "Preview only. The full plan set comes with your purchase."
     }
   }
 }

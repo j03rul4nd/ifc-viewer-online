@@ -21,11 +21,29 @@
   if files_key != ''
     assign files = product.metafields[ns][files_key].value
   endif
+  comment
+    Preview mode of an "IFC plan view" block in this section: no download links (also not in noscript).
+  endcomment
+  assign ifcvo_protected = false
+  assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  comment
+    planview is a starter feature: only a plan that includes it may hide downloads.
+  endcomment
+  if pv_plan == 'free'
+    assign pv_ok = false
+  else
+    assign pv_ok = true
+  endif
+  for b in section.blocks
+    if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
+      assign ifcvo_protected = true
+    endif
+  endfor
 -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
-  {%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}
+  {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
 </div>
 {%- comment -%} Always loaded: GLB/CSV need the viewer, and link clicks are reported to the viewer's customer events. {%- endcomment -%}
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>

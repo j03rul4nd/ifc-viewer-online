@@ -232,6 +232,8 @@ export function mountDownloads(box, api) {
 
   for (const btn of box.querySelectorAll('[data-ifcvo-make]')) {
     btn.addEventListener('click', async () => {
+      // Preview mode of the "IFC plan view" block: no browser-made files.
+      if (document.querySelector('[data-ifcvo-protect]')) return
       const kind = btn.dataset.ifcvoMake
       btn.setAttribute('disabled', '')
       btn.setAttribute('aria-busy', 'true')

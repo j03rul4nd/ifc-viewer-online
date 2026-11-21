@@ -104,7 +104,7 @@ describe('Shopify product block (app only)', () => {
   })
 
   it('wires the SEO and customer-events snippets (T-322f)', () => {
-    expect(source).toContain("render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns, download_label: s.download_label")
+    expect(source).toContain("render 'ifcvo-noscript', product: product, model: ns_model, specs_ns: specs_ns, download_label: s.download_label")
     expect(source).toContain("render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true")
     expect(source).toContain("'ifcvo-events.js' | asset_url")
     expect(source).toContain('data-product-id="{{ product.id | escape }}"')
