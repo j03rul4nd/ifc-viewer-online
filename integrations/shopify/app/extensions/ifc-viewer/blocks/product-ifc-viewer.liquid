@@ -63,6 +63,24 @@
     when 'brand'
       assign stage_bg = s.bg_bottom | default: s.bg_top
   endcase
+  comment
+    Preview mode of an "IFC plan view" block in this section: no download links (also not in noscript).
+  endcomment
+  assign ifcvo_protected = false
+  assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  comment
+    planview is a starter feature: only a plan that includes it may hide downloads.
+  endcomment
+  if pv_plan == 'free'
+    assign pv_ok = false
+  else
+    assign pv_ok = true
+  endif
+  for b in section.blocks
+    if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
+      assign ifcvo_protected = true
+    endif
+  endfor
 -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if current_model != '' -%}
@@ -77,7 +95,7 @@
     data-product-id="{{ product.id | escape }}" data-variant-id="{{ current.id | escape }}" data-block-id="{{ block.id | escape }}">
     {%- render 'ifcvo-facade', ns: ns, model: current_model, title: title, aspect: s.aspect, height: s.height, radius: s.radius, stage_bg: stage_bg, open_label: s.open_label, eager: eager -%}
     {%- comment -%} Gate and browser-made formats come from the shop's ifcvo.config (this block is at the 25-setting limit), or use the "IFC downloads" block. {%- endcomment -%}
-    {%- render 'ifcvo-downloads', model: current_model, files: files, show_ifc: s.download, ifc_label: s.download_label, glb: shop_cfg.downloadsGlb, csv: shop_cfg.downloadsCsv, gate: shop_cfg.downloadsGate, tag: shop_cfg.downloadsTag -%}
+    {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: current_model, files: files, show_ifc: s.download, ifc_label: s.download_label, glb: shop_cfg.downloadsGlb, csv: shop_cfg.downloadsCsv, gate: shop_cfg.downloadsGate, tag: shop_cfg.downloadsTag -%}{%- endunless -%}
     {%- if specs_ns != '' and product.metafields[specs_ns] != blank -%}
       <table class="ifcvo-specs" style="margin:12px 0 0;border-collapse:collapse;width:100%">
         <caption style="text-align:left;font-weight:600;padding-bottom:4px">{{ s.specs_label | escape }}</caption>
@@ -86,7 +104,8 @@
         {%- endfor -%}
       </table>
     {%- endif -%}
-    {% render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns, download_label: s.download_label %}
+    {%- assign ns_model = current_model -%}{%- if ifcvo_protected -%}{%- assign ns_model = '' -%}{%- endif -%}
+    {% render 'ifcvo-noscript', product: product, model: ns_model, specs_ns: specs_ns, download_label: s.download_label %}
   </div>
   <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
   {% render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true %}
