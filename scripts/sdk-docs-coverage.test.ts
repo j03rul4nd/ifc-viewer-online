@@ -41,6 +41,8 @@ const KNOWN_UNDOCUMENTED = new Set<string>([
   // getProductData: added for the Shopify specs block; the reference entry
   // (ten languages) lands with the release that publishes it.
   'getProductData',
+  // exportModel: documented with the 1.19 release.
+  'exportModel',
 ])
 
 /** Plumbing, not API. */
