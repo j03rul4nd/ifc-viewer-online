@@ -11,6 +11,7 @@
 import type { IFCItemData, IFCValue, ProjectUnits } from '../ifc-item-data'
 import { extractSteelPart, parseNumeric, revitTypeName } from '../steel/takeoff'
 import type { RoomSchedule } from './rooms'
+import type { ClassificationSummary } from './classification'
 
 export interface ProductDataQuantities {
   /** metres */
@@ -60,6 +61,8 @@ export interface ProductData {
   units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
   /** IfcSpace schedule per storey; null when the model has no spaces. Filled by collectProductData. */
   rooms?: RoomSchedule | null
+  /** Classification codes by system; null when none. Filled by collectProductData. */
+  classifications?: ClassificationSummary | null
 }
 
 export interface ProductDataOptions {

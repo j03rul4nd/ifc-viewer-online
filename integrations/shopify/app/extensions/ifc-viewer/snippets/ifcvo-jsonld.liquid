@@ -56,7 +56,8 @@
   "additionalProperty": [
     {%- for pair in product.metafields[specs_ns] -%}
     {%- unless forloop.first -%},{%- endunless %}
-    { "@type": "PropertyValue", "name": {{ pair[0] | replace: '_', ' ' | capitalize | json }}, "value": {{ pair[1].value | append: '' | json }} }
+    {%- if pair[1].type contains 'list.' -%}{%- assign ifcvo_pv = pair[1].value | join: ', ' -%}{%- else -%}{%- assign ifcvo_pv = pair[1].value | append: '' -%}{%- endif %}
+    { "@type": "PropertyValue", "name": {{ pair[0] | replace: '_', ' ' | capitalize | json }}, "value": {{ ifcvo_pv | json }} }
     {%- endfor %}
   ]
 }

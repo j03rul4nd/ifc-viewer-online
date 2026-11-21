@@ -1,0 +1,26 @@
+{%- comment -%}
+  Canonical classification system name (same rules as ifcvo-classification.js
+  normalizeSystem and the viewer), so "Uniclass" and "Uniclass 2015" share a table.
+  Params: name – the system as the merchant typed it.
+{%- endcomment -%}
+{%- liquid
+  assign n = name | strip
+  assign d = n | downcase
+  assign d_nospace = d | remove: ' '
+  assign first = d | split: ' ' | first
+  if d_nospace contains 'uniclass'
+    echo 'Uniclass 2015'
+  elsif d_nospace contains 'omniclass'
+    echo 'OmniClass'
+  elsif d_nospace contains 'masterformat'
+    echo 'MasterFormat'
+  elsif d_nospace contains 'uniformat'
+    echo 'UniFormat'
+  elsif first == 'cci' or d contains 'coclass'
+    echo 'CCI'
+  elsif first == 'nrm'
+    echo 'NRM'
+  else
+    echo n
+  endif
+-%}

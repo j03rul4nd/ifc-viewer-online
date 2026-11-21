@@ -201,8 +201,7 @@ describe('preview mode across the product page', () => {
   it('server-side: product and downloads blocks drop links (and the noscript link) when a protected plan view is in the section', () => {
     for (const src of [viewerBlock, dlBlock]) {
       expect(src).toMatch(/for b in section\.blocks[\s\S]*if pv_ok and b\.type contains '\/blocks\/ifc-plan-view\/' and b\.settings\.protect/)
-      expect(src).toMatch(/if pv_plan == 'free'
-\s*assign pv_ok = false/)
+      expect(src).toMatch(/if pv_plan == 'free'\s*assign pv_ok = false/)
       expect(src).toMatch(/unless ifcvo_protected -%\}\{%- render 'ifcvo-downloads'/)
     }
     expect(viewerBlock).toMatch(/if ifcvo_protected -%\}\{%- assign ns_model = ''[\s\S]*render 'ifcvo-noscript', product: product, model: ns_model/)
