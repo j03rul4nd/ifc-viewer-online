@@ -113,6 +113,16 @@
       "area": "Area",
       "showing": "Showing:",
       "preview": "Preview only. The full plan set comes with your purchase."
+    },
+    "ar": {
+      "button": "View in your space",
+      "making": "Preparing the AR model on your device…",
+      "error": "The AR model could not be prepared.",
+      "too_large": "This model is too large for AR on a phone ({size} MB).",
+      "scan": "Scan with your phone to see it in your space",
+      "no_ar": "This device cannot show AR.",
+      "hosted": "AR on Android needs a 3D file hosted by the shop. Open this page on an iPhone, or ask the shop for the AR file.",
+      "no_viewer": "The 3D viewer is not available on this device."
     }
   }
 }
