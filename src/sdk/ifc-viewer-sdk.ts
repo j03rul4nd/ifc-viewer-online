@@ -293,6 +293,40 @@ export interface ElementSelectedEvent {
   globalId?: string | null
 }
 
+/** Quantities in SI: metres, square metres, cubic metres, kilograms; null when the model gives none. */
+export interface ProductQuantities { length: number | null; area: number | null; volume: number | null; weight: number | null }
+
+/** One row of getProductData(): the elements of one IFC class and type. */
+export interface ProductDataType extends ProductQuantities {
+  ifcClass: string
+  type: string
+  count: number
+  missingWeight: number
+  materials: string[]
+  /** "Pset.Property" → value. */
+  properties: Record<string, string>
+}
+
+/** What getProductData() returns: specs and quantities of the loaded model(s). */
+export interface ProductData {
+  elementCount: number
+  truncated: boolean
+  classes: Array<{ ifcClass: string; count: number }>
+  types: ProductDataType[]
+  materials: Array<{ name: string; count: number }>
+  totals: ProductQuantities & { count: number }
+  units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
+}
+
+export interface ProductDataQuery {
+  /** One model; default all loaded. */
+  modelId?: string
+  /** Properties to keep per type, by name or "Pset.Name"; default Pset_*Common and manufacturer psets. */
+  properties?: string[]
+  /** Read at most this many elements (default 20000); `truncated` says when it cut. */
+  maxElements?: number
+}
+
 /** An element as findElements() lists it. Since v1.18.0. */
 export interface ElementSummary {
   expressId: number
@@ -1881,6 +1915,20 @@ export class IfcViewer {
   }
 
   /**
+   * Specs and quantities of the loaded model(s) for a product page: counts per
+   * IFC class, one row per type with key properties, materials, and length /
+   * area / volume / weight (base quantities, then authoring-tool psets, then
+   * volume x 7850 for steel only). Read in batches inside the viewer.
+   *
+   * ```js
+   * const data = await viewer.getProductData({ properties: ['FireRating'] })
+   * ```
+   */
+  getProductData(query: ProductDataQuery = {}): Promise<ProductData> {
+    return this.request<ProductData>('ifcviewer:get-product-data', { ...query }, 120_000)
+  }
+
+  /**
    * The validation result on screen, or null.
    *
    * - Before any run has produced a result — including while the FIRST run
@@ -3189,6 +3237,7 @@ export class IfcViewerElement extends HTMLElement {
   addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent> { return this._viewer!.addFromUrl(url, name) }
   select(element: number | string, modelId?: string): void { this._viewer?.select(element, modelId) }
   findElements(query?: ElementQuery): Promise<ElementSummary[]> { return this._viewer!.findElements(query) }
+  getProductData(query?: ProductDataQuery): Promise<ProductData> { return this._viewer!.getProductData(query) }
   isolate(ifcType?: string): void { this._viewer?.isolate(ifcType) }
   activate(): void { this._viewer?.activate() }
   frame(options?: FrameOptions): Promise<{ scope: CameraScope | 'element' }> { return this._viewer!.frame(options) }
