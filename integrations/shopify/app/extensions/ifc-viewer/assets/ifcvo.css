@@ -20,6 +20,14 @@
   font: inherit; font-size: .9em; margin: 0 0 var(--ifcvo-gap, 8px); padding: 8px 12px;
   border: 1px dashed currentColor; border-radius: 8px; opacity: .8;
 }
+/* Plan set & license */
+.ifcvo-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ifcvo-planset-list { list-style: none; padding: 0; margin: .5em 0; }
+.ifcvo-planset-item { display: flex; align-items: center; gap: .4em; padding: .2em 0; flex-wrap: wrap; }
+.ifcvo-planset-icon { flex: none; }
+.ifcvo-planset-matrix-wrap { overflow-x: auto; margin-top: 1em; }
+.ifcvo-planset-matrix-wrap:focus-visible { outline: 2px solid var(--ifcvo-accent, currentColor); }
+.ifcvo-planset-matrix [aria-current="true"], .ifcvo-planset-matrix td.ifcvo-current { background: color-mix(in srgb, var(--ifcvo-accent, currentColor) 10%, transparent); }
 .ifcvo-panel {
   background: var(--ifcvo-bg-1);
   font: inherit;

@@ -31,6 +31,19 @@
       "geometry": "≈ calculated from the room's shape",
       "truncated": "Large model: only the first rooms were read, totals may be incomplete.",
       "units": "Some lengths use a unit that could not be read and are not shown."
+    },
+    "planset": {
+      "heading": "What you get",
+      "license": "License",
+      "terms": "Terms",
+      "included": "What's included",
+      "compare": "Compare licenses",
+      "files": "Files",
+      "sheets": "sheets",
+      "model": "3D model",
+      "yes": "Included",
+      "no": "Not included",
+      "selected": "Selected:"
     }
   }
 }
