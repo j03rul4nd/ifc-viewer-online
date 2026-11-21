@@ -40,6 +40,11 @@
     endif
   endfor
   assign title = s.title | default: product.title
+  assign size_mb = product.metafields[ns].ifc_size_mb.value | default: ''
+  assign eager = false
+  if section.index == 1
+    assign eager = true
+  endif
 
   assign files_key = s.files_key | strip
   assign files = ''
@@ -66,13 +71,9 @@
     data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}"
     data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | default: 'business' | escape }}"
     data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
-    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code }}">
-    <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:{{ s.radius }}px;overflow:hidden;background:{{ stage_bg }}">
-      {%- if product.featured_media -%}
-        {{ product.featured_media | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '', style: 'width:100%;height:100%;object-fit:contain;opacity:.55' }}
-      {%- endif -%}
-      <button type="button" class="ifcvo-open" style="position:absolute;inset:0;margin:auto;width:max-content;height:max-content;padding:12px 20px;border:0;border-radius:999px;background:#fff;color:#11161a;font:inherit;font-weight:600;cursor:pointer">{{ s.open_label | escape }}</button>
-    </div>
+    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code }}"
+    data-size-mb="{{ size_mb | escape }}">
+    {%- render 'ifcvo-facade', ns: ns, model: current_model, title: title, aspect: s.aspect, height: s.height, radius: s.radius, stage_bg: stage_bg, open_label: s.open_label, eager: eager -%}
     {%- if s.download -%}
       <p style="margin:8px 0 0"><a class="ifcvo-download" href="{{ current_model | escape }}" download rel="noopener">{{ s.download_label | escape }}</a></p>
     {%- endif -%}
@@ -109,10 +110,17 @@
     { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
     { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
     { "type": "text", "id": "title", "label": "Accessible title", "info": "Defaults to the product title." },
-    { "type": "range", "id": "height", "label": "Height", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
+    { "type": "select", "id": "aspect", "label": "Shape", "default": "height", "info": "A fixed shape keeps the page from moving while it loads. Phones above the size limit (shop setting mobileCapMb, default 80 MB) get a link to the full viewer.", "options": [
+      { "value": "height", "label": "Fixed height" },
+      { "value": "1/1", "label": "Square 1:1" },
+      { "value": "4/3", "label": "4:3" },
+      { "value": "16/9", "label": "16:9" }
+    ] },
+    { "type": "range", "id": "height", "label": "Height (fixed height shape)", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
     { "type": "select", "id": "load", "label": "Load the 3D viewer", "default": "click", "info": "On click keeps the product page as fast as without the viewer.", "options": [
       { "value": "click", "label": "When the visitor clicks" },
-      { "value": "visible", "label": "When it scrolls into view" }
+      { "value": "visible", "label": "When it scrolls into view" },
+      { "value": "idle", "label": "After the page has loaded, when in view" }
     ] },
     { "type": "text", "id": "open_label", "label": "Button text", "default": "View in 3D" },
     { "type": "select", "id": "ui", "label": "Viewer layout", "default": "article", "options": [
