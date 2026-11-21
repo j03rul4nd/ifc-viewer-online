@@ -324,6 +324,28 @@ export interface ProductData {
   units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
   /** IfcSpace schedule per storey (since 1.19); null when the model has no spaces. */
   rooms?: ProductRoomSchedule | null
+  /** Classification codes (Uniclass 2015, OmniClass, MasterFormat…) by system (since 1.19); null when none. */
+  classifications?: ProductClassifications | null
+}
+
+/** One code in getProductData().classifications. */
+export interface ProductClassificationEntry {
+  system: string
+  code: string | null
+  title: string | null
+  /** Elements carrying this code. */
+  count: number
+  /** ifc: IfcClassificationReference; pset: a tool parameter such as Revit "Assembly Code". */
+  source: 'ifc' | 'pset'
+}
+
+export interface ProductClassifications {
+  systems: Array<{ system: string; edition: string | null; count: number; entries: ProductClassificationEntry[] }>
+  classified: number
+  elements: number
+  fromPsets: boolean
+  /** More codes than kept (cap 1000) or the element read was truncated. */
+  truncated: boolean
 }
 
 /** One IfcSpace in getProductData().rooms. Areas in m², heights in m. */

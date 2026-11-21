@@ -1,0 +1,98 @@
+{% comment %}
+  Classification: the product's classification codes (Uniclass 2015,
+  OmniClass, MasterFormat, UniFormat, CCI…) in one table per system, so
+  specifiers can match it to their spec. Rendered here first from the product
+  metafield `bim.classification` (a list, or one line each, of
+  "System|Code|Title"), so the codes are in the page for crawlers and for
+  visitors without JavaScript; a metafield code always wins. Once the 3D
+  model loads, the codes found in the IFC (IfcClassificationReference, then
+  tool parameters such as Revit "Assembly Code") are added below them.
+  Reads the model of the first "Product IFC model" block on the page.
+  JSON-LD: with the viewer block's "augment" option the whole `bim`
+  namespace, this metafield included, already goes out as additionalProperty.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.specs_ns | strip | default: 'bim'
+  assign mf = product.metafields[ns].classification
+  assign lines = ''
+  if mf != blank
+    if mf.type contains 'list.'
+      assign lines = mf.value | join: '~~~'
+    else
+      assign lines = mf.value | newline_to_br | strip_newlines | replace: '<br />', '~~~'
+    endif
+  endif
+  assign rows = lines | split: '~~~'
+  assign systems = ''
+  for line in rows
+    assign parts = line | split: '|'
+    assign sys = parts[0] | strip
+    if sys != blank and parts[1] != blank
+      assign systems = systems | append: sys | append: '~~~'
+    endif
+  endfor
+  assign systems = systems | split: '~~~' | uniq
+-%}
+{%- capture ifcvo_style -%}
+  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+  --ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{%- capture cls_labels -%}{"title":{{ 'ifcvo.classification.title' | t | json }},"system":{{ 'ifcvo.classification.system' | t | json }},"code":{{ 'ifcvo.classification.code' | t | json }},"name":{{ 'ifcvo.classification.name' | t | json }},"elements":{{ 'ifcvo.classification.elements' | t | json }},"waiting":{{ 'ifcvo.classification.waiting' | t | json }},"loading":{{ 'ifcvo.classification.loading' | t | json }},"none":{{ 'ifcvo.classification.none' | t | json }},"error":{{ 'ifcvo.classification.error' | t | json }},"pset":{{ 'ifcvo.classification.pset' | t | json }},"truncated":{{ 'ifcvo.classification.truncated' | t | json }},"coverage":{{ 'ifcvo.classification.coverage' | t | json }}}{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div
+  class="ifcvo-panel ifcvo-classification-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-classification
+  data-ifcvo-tier="classification"
+  data-show-model="{{ s.show_model }}"
+  data-show-counts="{{ s.show_counts }}"
+  data-labels="{{ cls_labels | escape }}"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  style="{{ ifcvo_style }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-cls-tables" data-ifcvo-cls-tables>
+    {%- for sys in systems -%}
+      <table class="ifcvo-specs ifcvo-cls" data-system="{{ sys | escape }}">
+        <caption>{{ sys | escape }}</caption>
+        <thead><tr><th scope="col">{{ 'ifcvo.classification.code' | t | escape }}</th><th scope="col">{{ 'ifcvo.classification.name' | t | escape }}</th></tr></thead>
+        <tbody>
+          {%- for line in rows -%}
+            {%- assign parts = line | split: '|' -%}
+            {%- assign lsys = parts[0] | strip -%}
+            {%- if lsys == sys and parts[1] != blank -%}
+              <tr data-source="metafield" data-system="{{ lsys | escape }}" data-code="{{ parts[1] | strip | escape }}"><td><code>{{ parts[1] | strip | escape }}</code></td><td>{{ parts[2] | strip | escape }}</td></tr>
+            {%- endif -%}
+          {%- endfor -%}
+        </tbody>
+      </table>
+    {%- endfor -%}
+  </div>
+  {%- if mf == blank and request.design_mode -%}
+    <p class="ifcvo-muted">Add a product metafield "{{ ns | escape }}.classification" (one "System|Code|Title" per line or list item) for codes that show before the 3D model loads.</p>
+  {%- endif -%}
+  <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-classification.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC classification",
+  "target": "section",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Heading", "default": "Classification" },
+    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "\"classification\" in this namespace (System|Code|Title per line) is shown as HTML and wins over the model." },
+    { "type": "checkbox", "id": "show_model", "label": "Add the codes found in the 3D model", "default": true },
+    { "type": "checkbox", "id": "show_counts", "label": "Show how many elements carry each code", "default": false },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage." },
+    { "type": "header", "content": "Brand" },
+    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
+    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
+    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+  ]
+}
+{% endschema %}
