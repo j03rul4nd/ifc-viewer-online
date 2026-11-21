@@ -200,7 +200,9 @@ describe('preview mode across the product page', () => {
 
   it('server-side: product and downloads blocks drop links (and the noscript link) when a protected plan view is in the section', () => {
     for (const src of [viewerBlock, dlBlock]) {
-      expect(src).toMatch(/for b in section\.blocks[\s\S]*'\/blocks\/ifc-plan-view\/' and b\.settings\.protect/)
+      expect(src).toMatch(/for b in section\.blocks[\s\S]*if pv_ok and b\.type contains '\/blocks\/ifc-plan-view\/' and b\.settings\.protect/)
+      expect(src).toMatch(/if pv_plan == 'free'
+\s*assign pv_ok = false/)
       expect(src).toMatch(/unless ifcvo_protected -%\}\{%- render 'ifcvo-downloads'/)
     }
     expect(viewerBlock).toMatch(/if ifcvo_protected -%\}\{%- assign ns_model = ''[\s\S]*render 'ifcvo-noscript', product: product, model: ns_model/)
@@ -209,5 +211,51 @@ describe('preview mode across the product page', () => {
   it('GLB/CSV makers refuse in preview mode and the help says the URL stays reachable', () => {
     expect(quote).toMatch(/querySelector\('\[data-ifcvo-protect\]'\)\) return/)
     expect(block).toMatch(/URL stays reachable/)
+  })
+})
+
+describe('rooms schedule and listener lifecycle', () => {
+  const schedule = { rooms: { storeys: [
+    { name: 'Ground', rooms: [{ label: 'Kitchen', name: '01', area: 12.5 }, { label: 'Hall', area: null }] },
+    { name: 'First', rooms: [] },
+  ], totals: { count: 2 } } }
+
+  it('reads the SDK 1.19 room schedule by storey', () => {
+    expect(pv.roomsFor(schedule, 'ground')).toEqual([{ name: 'Kitchen', area: 12.5 }, { name: 'Hall', area: null }])
+    expect(pv.roomsFor(schedule, 'First')).toEqual([])
+    expect(pv.roomsFor({ rooms: null }, 'Ground')).toEqual([])
+  })
+
+  it('renders the schedule rooms with a total in the storey tab', async () => {
+    const root = mount()
+    pv.init()
+    const v = fakeViewer()
+    v.getProductData = vi.fn(async () => schedule as never)
+    document.dispatchEvent(new CustomEvent('ifcvo:viewer', { detail: { viewer: v } }))
+    await flush(); await flush()
+    ;(root.querySelectorAll('[role="tab"]')[1] as HTMLElement).click()
+    await flush()
+    const cells = [...root.querySelectorAll('[role="tabpanel"] tbody td')].map((t) => t.textContent)
+    expect(cells[0]).toBe('Kitchen')
+    expect(cells[1]).toMatch(/12[.,]5 m²/)
+    expect(cells[2]).toBe('Hall')
+    expect(root.querySelector('[role="tabpanel"] tfoot td')!.textContent).toMatch(/12[.,]5 m²/)
+  })
+
+  it('removes the model-loaded listener on a new viewer and on destroy', () => {
+    mount()
+    pv.init()
+    const offA = vi.fn(); const offB = vi.fn()
+    const a = { ...fakeViewer(), on: vi.fn(() => offA) }
+    const b = { ...fakeViewer(), on: vi.fn(() => offB) }
+    pv.attach(a)
+    pv.attach(b)
+    expect(offA).toHaveBeenCalledTimes(1)
+    pv.destroy(document.body)
+    expect(offB).toHaveBeenCalledTimes(1)
+    // A stale model-loaded from the old viewer reads nothing.
+    const fn = (a.on.mock.calls[0] as unknown[])[1] as () => void
+    fn()
+    expect(a.getSections).not.toHaveBeenCalled()
   })
 })

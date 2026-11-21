@@ -49,13 +49,23 @@ export function levelsOf(sections) {
     .map((l, i) => ({ index: i, name: String((l && l.name) || '').trim() || `#${i + 1}`, y: Number(l && l.y) || 0 }))
 }
 
-/** Rooms of one storey from getProductData().rooms, if present: [{ name, area }]. */
+/**
+ * Rooms of one storey from getProductData().rooms: the SDK schedule
+ * ({ storeys: [{ name, rooms: [{ label, longName, name, area }] }] }, since 1.19)
+ * or a flat list of { name, area, storey }. Nothing when the viewer has none.
+ */
 export function roomsFor(data, levelName) {
-  const rooms = data && Array.isArray(data.rooms) ? data.rooms : []
   const want = String(levelName || '').trim().toLowerCase()
-  return rooms
-    .filter((r) => r && String(r.storey ?? r.level ?? '').trim().toLowerCase() === want)
-    .map((r) => ({ name: String(r.longName || r.name || '').trim() || '—', area: Number(r.area) > 0 ? Number(r.area) : null }))
+  const src = data && data.rooms
+  let rooms = []
+  if (src && Array.isArray(src.storeys)) {
+    const st = src.storeys.find((x) => x && String(x.name || '').trim().toLowerCase() === want)
+    rooms = st && Array.isArray(st.rooms) ? st.rooms : []
+  } else if (Array.isArray(src)) {
+    rooms = src.filter((r) => r && String(r.storey ?? r.level ?? '').trim().toLowerCase() === want)
+  }
+  return rooms.filter(Boolean)
+    .map((r) => ({ name: String(r.label || r.longName || r.name || '').trim() || '—', area: Number(r.area) > 0 ? Number(r.area) : null }))
 }
 
 export function formatArea(m2, locale) {
@@ -201,10 +211,26 @@ export async function refresh(viewer = current) {
 }
 
 /** Use this viewer; re-read on every model it loads. */
+let unsubscribe = null
 export function attach(viewer) {
   if (!viewer || viewer === current) return
+  detach()
   current = viewer
-  if (typeof viewer.on === 'function') viewer.on('model-loaded', () => refresh(viewer))
+  if (typeof viewer.on === 'function') {
+    const fn = () => { if (current === viewer) refresh(viewer) }
+    const off = viewer.on('model-loaded', fn)
+    unsubscribe = () => {
+      if (typeof off === 'function') off()
+      else if (typeof viewer.off === 'function') viewer.off('model-loaded', fn)
+    }
+  }
+}
+
+/** Drops the current viewer and its model-loaded listener. */
+export function detach() {
+  if (unsubscribe) { try { unsubscribe() } catch (e) { /* viewer gone */ } }
+  unsubscribe = null
+  current = null
 }
 
 function onClick(e) {
@@ -279,6 +305,7 @@ export function init(doc = document) {
 
 export function destroy(container) {
   for (const r of mounted) if (container.contains(r)) mounted.delete(r)
+  if (!mounted.size) detach()
 }
 
 /** A viewer announced by the runtime. */
@@ -291,7 +318,7 @@ export function onViewer(e) {
 }
 
 /** For tests. */
-export function _reset() { mounted.clear(); current = null }
+export function _reset() { mounted.clear(); detach() }
 
 if (typeof document !== 'undefined') {
   document.addEventListener('click', onClick)

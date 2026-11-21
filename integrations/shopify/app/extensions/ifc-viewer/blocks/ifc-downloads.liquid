@@ -25,8 +25,17 @@
     Preview mode of an "IFC plan view" block in this section: no download links (also not in noscript).
   endcomment
   assign ifcvo_protected = false
+  assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  comment
+    planview is a starter feature: only a plan that includes it may hide downloads.
+  endcomment
+  if pv_plan == 'free'
+    assign pv_ok = false
+  else
+    assign pv_ok = true
+  endif
   for b in section.blocks
-    if b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
+    if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
       assign ifcvo_protected = true
     endif
   endfor

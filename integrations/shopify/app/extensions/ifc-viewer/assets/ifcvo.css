@@ -90,6 +90,11 @@
 .ifcvo-good { color: var(--ifcvo-accent); }
 .ifcvo-fair { color: #b7791f; }
 .ifcvo-poor { color: #c0392b; }
+/* Rooms & key specs (ifc-rooms block) */
+.ifcvo-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; }
+.ifcvo-chips .ifcvo-chip { cursor: default; }
+.ifcvo-rooms .ifcvo-row { padding: 2px 4px; }
+.ifcvo-rooms-total { margin: 6px 0; }
 
 .ifcvo-planview-body { position: relative; }
 .ifcvo-planview-block [role="tab"][aria-selected="true"] { border-color: var(--ifcvo-accent); background: var(--ifcvo-soft); }
