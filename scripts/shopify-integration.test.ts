@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { parseAppUrlParams } from '../src/lib/url-params'
 // @ts-expect-error plain .mjs build script without types
-import { SECTIONS, blockPath, toAppBlock } from '../integrations/shopify/build-extension.mjs'
+import { SECTIONS, blockPath, toAppBlock, withTiers, FEATURE_TIERS, ALWAYS_FREE, PLANS, DEFAULT_PLAN, assetPath } from '../integrations/shopify/build-extension.mjs'
 
 const dir = path.resolve(__dirname, '../integrations/shopify')
 
@@ -145,5 +145,112 @@ describe('Shopify companion blocks (app only)', () => {
     const pattern = new RegExp(runtime.match(/const NOT_ELEMENTS = \/(.+)\/i/)![1], 'i')
     for (const c of ['IFCPROPERTYSINGLEVALUE', 'IFCPROPERTYSET', 'IFCWALLTYPE', 'IFCMATERIALLAYERSETUSAGE', 'IFCELEMENTQUANTITY', 'IFCRELAGGREGATES']) expect(pattern.test(c)).toBe(true)
     for (const c of ['IFCWALL', 'IFCCURTAINWALL', 'IFCSPACE', 'IFCDOOR', 'IFCBUILDINGSTOREY']) expect(pattern.test(c)).toBe(false)
+  })
+})
+
+describe('Shopify config and plan gate', () => {
+  const tiers = FEATURE_TIERS as Record<string, string>
+  const css = fs.readFileSync(path.join(ext, 'assets/ifcvo.css'), 'utf8')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type Runtime = Record<string, (...a: any[]) => any>
+  const runtimePath = '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo.js'
+  /** A fresh copy of the runtime, so module state does not leak between tests. */
+  const load = async (): Promise<Runtime> => {
+    delete (window as unknown as { IFCVO?: unknown }).IFCVO
+    vi.resetModules()
+    return import(/* @vite-ignore */ runtimePath)
+  }
+  const win = window as unknown as { Shopify?: { designMode: boolean } }
+
+  it('the runtime carries the current plan table (run build-extension.mjs)', () => {
+    const lf = (t: string) => t.replace(/\r\n/g, '\n')
+    expect(lf(runtime)).toBe(lf(withTiers(runtime)))
+    expect(fs.existsSync(assetPath('ifcvo.js'))).toBe(true)
+  })
+
+  it('every feature has a known tier, every panel a feature, and loading stays free', () => {
+    for (const t of Object.values(tiers)) expect(PLANS).toContain(t)
+    expect(DEFAULT_PLAN).toBe('business')
+    for (const f of ALWAYS_FREE as string[]) expect(tiers[f]).toBe('free')
+    const panels = runtime.match(/const PANELS = \{ ([^}]+) \}/)![1].split(', ')
+    for (const p of panels) expect(tiers[p]).toBeDefined()
+  })
+
+  it('the stylesheet only styles its own classes and documents its custom properties', () => {
+    const selectors = css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]+(?=\{)/g)!
+    for (const group of selectors) for (const sel of group.split(',')) expect(sel.trim()).toMatch(/^\.ifcvo/)
+    for (const v of ['--ifcvo-accent', '--ifcvo-radius', '--ifcvo-bg-1', '--ifcvo-bg-2', '--ifcvo-font', '--ifcvo-gap']) expect(css).toContain(v)
+  })
+
+  it('the product block hands the plan, shop config and labels to the runtime', () => {
+    const source = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+    expect(source).toContain("app.metafields.ifcvo.plan.value | default: 'business'")
+    expect(source).toContain('shop.metafields.ifcvo.config.value | json')
+    expect(source).toContain('shop.metafields.ifcvo.labels.value | json')
+  })
+
+  it('config precedence: block over shop JSON over defaults; empty values do not count', async () => {
+    const r = await load()
+    expect(r.mergeConfig({ ui: 'product', validate: true }, { ui: 'article', lang: 'es' }, { ui: 'kiosk', lang: '' }))
+      .toEqual({ ui: 'kiosk', lang: 'es', validate: true })
+    expect(r.readJson('not json')).toBeNull()
+    expect(r.readJson('null')).toBeNull()
+    const root = document.createElement('div')
+    root.dataset.ifcvoConfig = '{"view":"top","lang":"de"}'
+    root.dataset.view = 'iso'
+    root.dataset.validate = '0'
+    expect(r.viewerConfig(root)).toMatchObject({ view: 'iso', lang: 'de', validate: false })
+  })
+
+  it('label overrides and locale fallback', async () => {
+    const r = await load()
+    expect(r.parseLabels('# c\nopen = Ver en 3D\n\nbad\n=x\ndownload=Descargar')).toEqual({ open: 'Ver en 3D', download: 'Descargar' })
+    expect(r.labelsFor({ en: { a: 'A', b: 'B' }, es: { a: 'Á' }, 'es-mx': { b: 'Bé' } }, 'es-MX')).toEqual({ a: 'Á', b: 'Bé' })
+  })
+
+  it('gate(): the default plan allows all; a lower plan hides the block, with a note only in the editor', async () => {
+    const r = await load()
+    document.body.innerHTML = '<div id="x"></div>'
+    const x = document.getElementById('x')!
+    expect(r.normalizePlan('weird')).toBe('business')
+    expect(r.gate('tour', x)).toBe(true)
+    expect(r.allowed('tour', 'free')).toBe(false)
+    expect(r.allowed('viewer', 'free')).toBe(true)
+    expect(r.allowed('unknown-feature', 'free')).toBe(true)
+    expect(r.gate('tour', x, 'free')).toBe(false)
+    expect(x.hidden).toBe(true)
+    expect(document.querySelector('[data-ifcvo-upsell]')).toBeNull()
+    win.Shopify = { designMode: true }
+    const y = document.createElement('div')
+    document.body.append(y)
+    r.gate('tour', y, 'free')
+    r.gate('tour', y, 'free')
+    expect(document.querySelectorAll('[data-ifcvo-upsell="tour"]').length).toBe(1)
+    delete win.Shopify
+  })
+
+  it('reads the plan from the app metafield the block renders', async () => {
+    document.body.innerHTML = '<div data-ifcvo-viewer data-ifcvo-plan="free"><div class="ifcvo-stage"></div></div><div data-ifcvo-panel="views"><button data-tour></button></div>'
+    await load()
+    expect((window as unknown as { IFCVO: { plan: string } }).IFCVO.plan).toBe('free')
+    expect((document.querySelector('[data-tour]') as HTMLElement).hidden).toBe(true)
+  })
+
+  it('re-running init or reloading a section never mounts twice, and unload frees listeners', async () => {
+    const block = '<div data-ifcvo-viewer data-model="https://a.com/x.ifc"><div class="ifcvo-stage"></div></div><div data-ifcvo-panel="details"><div class="ifcvo-body"></div></div>'
+    document.body.innerHTML = `<section id="s1">${block}</section>`
+    const r = await load()
+    expect(r._state().listeners).toBe(1)
+    r.init()
+    r.init()
+    expect(r._state().listeners).toBe(1)
+    const s1 = document.getElementById('s1')!
+    s1.dispatchEvent(new Event('shopify:section:unload', { bubbles: true }))
+    s1.remove()
+    expect(r._state().listeners).toBe(0)
+    document.body.innerHTML = `<section id="s2">${block}</section>`
+    r.init()
+    expect(r._state().listeners).toBe(1)
+    expect(document.querySelectorAll('iframe').length).toBe(0)
   })
 })
