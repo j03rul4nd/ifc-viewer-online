@@ -104,9 +104,14 @@ export function gate(feature, node, plan = currentPlan()) {
   return false
 }
 
-/** Customer events, so the merchant's analytics pixels can count use. */
+/** Customer events, so the merchant's analytics pixels can count use. Opened/loaded/error/download go through ifcvo-events.js. */
 function track(name, data) {
   try { window.Shopify && Shopify.analytics && Shopify.analytics.publish(name, data) } catch (e) { /* no pixels */ }
+}
+
+/** DOM events on a viewer root; ifcvo-events.js turns them into customer events. */
+function signal(root, type, detail) {
+  try { root.dispatchEvent(new CustomEvent(type, { detail })) } catch (e) { /* old browser */ }
 }
 
 function emit(type, detail) {
@@ -166,21 +171,127 @@ export function viewerConfig(root) {
   return mergeConfig({ validate: true }, readJson(d.ifcvoConfig), block)
 }
 
+// ── Facade: capability probe, states, timeout and retry ─────────────────────
+
+let RETRY_MS = 1500
+let loadSdk = () => import(SDK)
+/** For tests: replace the SDK loader. */
+export function _setSdk(fn, retryMs = RETRY_MS) { loadSdk = fn; RETRY_MS = retryMs }
+
+/**
+ * Whether this device should open the model here. Phones (or devices with
+ * little memory) above the size cap get the full viewer link instead of a crash.
+ */
+export function probe({ webgl2, mobile, deviceMemory, sizeMb, capMb = 80 }) {
+  if (!webgl2) return { ok: false, reason: 'webgl' }
+  const cap = deviceMemory && deviceMemory <= 2 ? capMb / 2 : capMb
+  if ((mobile || (deviceMemory && deviceMemory <= 4)) && sizeMb > cap) return { ok: false, reason: 'large' }
+  return { ok: true }
+}
+
+function hasWebgl2() {
+  try { return !!document.createElement('canvas').getContext('webgl2') } catch (e) { return false }
+}
+
+function isMobile() {
+  try { return window.matchMedia('(pointer: coarse)').matches } catch (e) { return false }
+}
+
+/** The file size in MB: the ifc_size_mb metafield, else a HEAD request when the host allows it. */
+async function sizeOf(root, url) {
+  const known = parseFloat(root.dataset.sizeMb)
+  if (known > 0) return known
+  try {
+    const ctl = new AbortController()
+    const t = setTimeout(() => ctl.abort(), 3000)
+    const res = await fetch(url, { method: 'HEAD', signal: ctl.signal })
+    clearTimeout(t)
+    const n = Number(res.headers.get('content-length'))
+    return n > 0 ? n / 1048576 : 0
+  } catch (e) { return 0 }
+}
+
+/** Resolves with the promise, or rejects after `ms`. */
+export function withTimeout(promise, ms) {
+  let t
+  return Promise.race([promise, new Promise((_, rej) => { t = setTimeout(() => rej(new Error('timeout')), ms) })])
+    .finally(() => clearTimeout(t))
+}
+
+const show = (node, on) => { if (node) node.hidden = !on }
+
+function labelsOf(root) {
+  return { ...labelsFor(readJson(root.dataset.ifcvoLabels), root.dataset.locale), ...parseLabels(root.dataset.labelsOverride) }
+}
+
+const MSG = { loading: 'msgLoading', ready: 'msgReady', error: 'msgError', offline: 'msgOffline', large: 'msgLarge', webgl: 'msgWebgl' }
+
+/** Switches the facade: idle, loading, ready, error, offline, large, webgl. Shop labels override the texts. */
+export function setState(root, state, extra = '') {
+  const stage = root.querySelector('.ifcvo-stage')
+  if (!stage) return
+  stage.dataset.ifcvoState = state
+  root.dataset.ifcvoState = state
+  const status = root.querySelector('.ifcvo-status')
+  if (status) {
+    const key = MSG[state]
+    const base = key ? labelsOf(root)[state] || stage.dataset[key] || '' : ''
+    status.textContent = state === 'loading' || state === 'error' ? base + extra : base
+  }
+  show(root.querySelector('.ifcvo-facade'), state !== 'ready')
+  show(root.querySelector('.ifcvo-open'), state === 'idle')
+  show(root.querySelector('.ifcvo-retry'), state === 'error')
+  show(root.querySelector('.ifcvo-full'), state === 'error' || state === 'large' || state === 'webgl')
+  if (state === 'error') signal(root, 'ifcvo:error', { code: String(extra).replace(/^[\s:]+/, '').slice(0, 60) || 'error' })
+  if (state === 'offline' || state === 'large' || state === 'webgl') signal(root, 'ifcvo:error', { code: state })
+}
+
+function dropViewer() {
+  try { viewer && viewer.dispose() } catch (e) { /* already gone */ }
+  viewer = null
+}
+
+const onlineHandlers = new Map()
+
 function mountViewer(root) {
   const stage = root.querySelector('.ifcvo-stage')
   const link = root.querySelector('.ifcvo-download')
   const models = JSON.parse('{' + (root.dataset.models || '') + '}')
   active = { root, models, model: root.dataset.model, link }
+  const shop = readJson(root.dataset.ifcvoConfig) || {}
+  const timeout = (Number(shop.timeout) > 0 ? Number(shop.timeout) : 20) * 1000
+  const capMb = Number(shop.mobileCapMb) > 0 ? Number(shop.mobileCapMb) : 80
+  let pending = null
+  // One size lookup per model and block: a retry never waits for HEAD again.
+  const sizes = new Map()
+  const sizeFor = async (url) => {
+    if (!sizes.has(url)) sizes.set(url, await sizeOf(root, url))
+    return sizes.get(url)
+  }
 
-  const open = async () => {
-    if (viewer) return viewer
-    const { IfcViewer } = await import(SDK)
+  // The viewer mounts in its own layer, so the poster stays for the error states.
+  let canvas = stage.querySelector('.ifcvo-canvas')
+  if (!canvas) {
+    canvas = el('div', { class: 'ifcvo-canvas', style: 'position:absolute;inset:0' })
+    stage.prepend(canvas)
+  }
+
+  const fail = (why) => {
+    dropViewer()
+    canvas.replaceChildren()
+    setState(root, navigator.onLine === false ? 'offline' : 'error', why)
+  }
+
+  let started = Date.now()
+  const attempt = async () => {
+    started = Date.now()
+    const { IfcViewer } = await loadSdk()
     if (!root.isConnected) return null
-    stage.replaceChildren()
+    canvas.replaceChildren()
     const c = viewerConfig(root)
     const model = active.model
     viewerRoot = root
-    viewer = new IfcViewer(stage, {
+    const v = new IfcViewer(canvas, {
       model,
       ui: c.ui,
       view: c.view,
@@ -191,27 +302,85 @@ function mountViewer(root) {
       title: c.title,
       height: '100%',
     })
+    viewer = v
     for (const type of ['model-loaded', 'element-selected', 'validation-completed', 'tour-started', 'tour-step', 'tour-ended']) {
-      viewer.on(type, (e) => emit(type, e))
+      v.on(type, (e) => {
+        if (type === 'model-loaded' && viewer === v) signal(root, 'ifcvo:loaded', { elements: (e && Number(e.elementCount)) || 0, ms: Math.round(Date.now() - started) })
+        emit(type, e)
+      })
     }
-    track('ifc_viewer_opened', { model })
-    emit('viewer', viewer)
-    return viewer
+    v.on('model-progress', (e) => { if (viewer === v && e && e.percent != null) setState(root, 'loading', ` ${Math.round(e.percent)}%`) })
+    // A model error ends the attempt at once (no auto-retry); after ready it shows the error state.
+    let loading = true
+    let modelFailed
+    const modelError = new Promise((_, rej) => { modelFailed = rej })
+    modelError.catch(() => {})
+    v.on('model-error', (e) => {
+      if (viewer !== v) return
+      const err = Object.assign(new Error('model'), { detail: e && e.message ? ': ' + e.message : '' })
+      if (loading) modelFailed(err)
+      else fail(err.detail)
+    })
+    const frame = canvas.querySelector('iframe')
+    if (frame && !frame.title) frame.title = c.title || 'IFC model'
+    try { await Promise.race([withTimeout(v.whenReady(), timeout), modelError]) } finally { loading = false }
+    return v
+  }
+
+  const open = () => {
+    if (viewer && viewerRoot === root && root.dataset.ifcvoState === 'ready') return Promise.resolve(viewer)
+    if (pending) return pending
+    pending = (async () => {
+      if (navigator.onLine === false) { setState(root, 'offline'); return null }
+      const check = probe({ webgl2: hasWebgl2(), mobile: isMobile(), deviceMemory: navigator.deviceMemory, sizeMb: await sizeFor(active.model), capMb })
+      if (!check.ok) { setState(root, check.reason); return null }
+      setState(root, 'loading')
+      // One retry with a short backoff, then the error state with Retry.
+      for (let i = 0; i < 2; i++) {
+        try {
+          const v = await attempt()
+          if (!v) return null
+          setState(root, 'ready')
+          emit('viewer', v)
+          document.dispatchEvent(new CustomEvent('ifcvo:viewer', { detail: { viewer: v, root } }))
+          return v
+        } catch (e) {
+          dropViewer()
+          const timedOut = e && e.message === 'timeout'
+          if (i === 0 && timedOut) { await new Promise((r) => setTimeout(r, RETRY_MS)); continue }
+          fail(timedOut ? ' (timeout)' : (e && e.detail) || '')
+          return null
+        }
+      }
+      return null
+    })().finally(() => { pending = null })
+    return pending
   }
   opener = open
 
   root.querySelector('.ifcvo-open')?.addEventListener('click', open)
-  if (root.dataset.load === 'visible' && 'IntersectionObserver' in window) {
-    const io = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) { io.disconnect(); open() }
-    }, { rootMargin: '200px' })
-    io.observe(root)
-  }
+  root.querySelector('.ifcvo-retry')?.addEventListener('click', open)
+  // Back online: offer the button again.
+  const online = () => { if (root.dataset.ifcvoState === 'offline') setState(root, 'idle') }
+  window.addEventListener('online', online)
+  onlineHandlers.set(root, online)
 
-  root.addEventListener('click', (e) => {
-    const a = e.target.closest('a[download]')
-    if (a) track('ifc_model_downloaded', { file: a.dataset.file || active.model })
-  })
+  const lazy = root.dataset.load
+  if ((lazy === 'visible' || lazy === 'idle') && 'IntersectionObserver' in window) {
+    const watch = () => {
+      const io = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) { io.disconnect(); open() }
+      }, { rootMargin: lazy === 'idle' ? '0px' : '200px' })
+      io.observe(root)
+    }
+    if (lazy === 'visible') watch()
+    else {
+      // Never before the page's own load event, and only when the browser is idle.
+      const idle = () => (window.requestIdleCallback || ((cb) => setTimeout(cb, 200)))(watch)
+      if (document.readyState === 'complete') idle()
+      else window.addEventListener('load', idle, { once: true })
+    }
+  }
 }
 
 // Themes update the cart form's variant id after the picker changes. One
@@ -224,6 +393,8 @@ function onVariantChange() {
     if (!url || url === active.model) return
     active.model = url
     if (active.link) active.link.href = url
+    const full = active.root.querySelector('.ifcvo-full')
+    if (full) full.href = 'https://www.ifcvieweronline.eu/?model=' + encodeURIComponent(url)
     if (viewer) { viewer.clear(); viewer.addFromUrl(url) }
   }, 0)
 }
@@ -383,6 +554,9 @@ export function destroy(container) {
   for (const [root, cbs] of owned) {
     if (container.contains(root)) { for (const cb of cbs) listeners.delete(cb); owned.delete(root) }
   }
+  for (const [root, fn] of onlineHandlers) {
+    if (container.contains(root)) { window.removeEventListener('online', fn); onlineHandlers.delete(root) }
+  }
   if (active && container.contains(active.root)) active = null
   if (viewerRoot && container.contains(viewerRoot)) {
     try { viewer.dispose() } catch (e) { /* already gone */ }
@@ -399,8 +573,11 @@ export function _state() {
 
 if (typeof window !== 'undefined' && !window.IFCVO) {
   window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS,
-    labels: (root) => ({ ...labelsFor(readJson(root.dataset.ifcvoLabels), root.dataset.locale), ...parseLabels(root.dataset.labelsOverride) }) }
+    labels: labelsOf, probe,
+    // For the companion modules (quote, downloads): the live viewer, opening it, and its events.
+    get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen }
   init()
+  document.dispatchEvent(new CustomEvent('ifcvo:ready'))
   document.addEventListener('change', onVariantChange)
   // The theme editor adds, re-renders and removes sections without a page load.
   document.addEventListener('shopify:section:load', init)

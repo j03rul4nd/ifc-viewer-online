@@ -65,6 +65,9 @@ export function bind(root) {
   })
   // Contract for the runtime: dispatch these on the root when the viewer reports.
   root.addEventListener('ifcvo:loaded', (ev) => publish('ifcvo_model_loaded', { ...context(root), ...(ev.detail || {}) }))
+  // Companion blocks outside the root (quote list, browser-made downloads) report here.
+  root.addEventListener('ifcvo:download', (ev) => publish('ifcvo_download', { ...context(root), file: ev.detail && ev.detail.file }))
+  root.addEventListener('ifcvo:quote', () => publish('ifcvo_quote_click', context(root)))
   root.addEventListener('ifcvo:error', (ev) => publish('ifcvo_error', { ...context(root), code: (ev.detail && ev.detail.code) || 'unknown' }))
 }
 

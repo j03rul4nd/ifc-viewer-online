@@ -40,6 +40,11 @@
     endif
   endfor
   assign title = s.title | default: product.title
+  assign size_mb = product.metafields[ns].ifc_size_mb.value | default: ''
+  assign eager = false
+  if section.index == 1
+    assign eager = true
+  endif
 
   assign files_key = s.files_key | strip
   assign files = ''
@@ -47,6 +52,7 @@
     assign files = product.metafields[ns][files_key].value
   endif
   assign specs_ns = s.specs_namespace | strip
+  assign shop_cfg = shop.metafields.ifcvo.config.value
 
   assign stage_bg = '#11161a'
   case s.background
@@ -61,30 +67,17 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if current_model != '' -%}
   <div class="ifcvo-product" data-ifcvo-viewer data-models="{{ map | escape }}" data-model="{{ current_model | escape }}"
-    data-load="{{ s.load }}" data-title="{{ title | escape }}" data-ui="{{ s.ui }}" data-view="{{ s.view }}"
+    data-load="{{ s.load | escape }}" data-title="{{ title | escape }}" data-ui="{{ s.ui | escape }}" data-view="{{ s.view | escape }}"
     data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
-    data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}"
+    data-accent="{{ s.accent | remove: '#' | escape }}" data-bg="{{ s.background | escape }}" data-bg-top="{{ s.bg_top | escape }}" data-bg-bottom="{{ s.bg_bottom | escape }}"
     data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | default: 'business' | escape }}"
     data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
-    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code }}">
-    <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:{{ s.radius }}px;overflow:hidden;background:{{ stage_bg }}">
-      {%- if product.featured_media -%}
-        {{ product.featured_media | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '', style: 'width:100%;height:100%;object-fit:contain;opacity:.55' }}
-      {%- endif -%}
-      <button type="button" class="ifcvo-open" style="position:absolute;inset:0;margin:auto;width:max-content;height:max-content;padding:12px 20px;border:0;border-radius:999px;background:#fff;color:#11161a;font:inherit;font-weight:600;cursor:pointer">{{ s.open_label | escape }}</button>
-    </div>
-    {%- if s.download -%}
-      <p style="margin:8px 0 0"><a class="ifcvo-download" href="{{ current_model | escape }}" download rel="noopener">{{ s.download_label | escape }}</a></p>
-    {%- endif -%}
-    {%- if files != blank -%}
-      <ul class="ifcvo-files" style="margin:8px 0 0;padding-left:18px">
-        {%- for f in files -%}
-          {%- assign furl = f.url | default: f | strip -%}
-          {%- assign fname = furl | split: '?' | first | split: '/' | last -%}
-          <li><a href="{{ furl | escape }}" download rel="noopener" data-file="{{ fname | escape }}">{{ fname | escape }}</a></li>
-        {%- endfor -%}
-      </ul>
-    {%- endif -%}
+    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+    data-size-mb="{{ size_mb | escape }}"
+    data-product-id="{{ product.id | escape }}" data-variant-id="{{ current.id | escape }}" data-block-id="{{ block.id | escape }}">
+    {%- render 'ifcvo-facade', ns: ns, model: current_model, title: title, aspect: s.aspect, height: s.height, radius: s.radius, stage_bg: stage_bg, open_label: s.open_label, eager: eager -%}
+    {%- comment -%} Gate and browser-made formats come from the shop's ifcvo.config (this block is at the 25-setting limit), or use the "IFC downloads" block. {%- endcomment -%}
+    {%- render 'ifcvo-downloads', model: current_model, files: files, show_ifc: s.download, ifc_label: s.download_label, glb: shop_cfg.downloadsGlb, csv: shop_cfg.downloadsCsv, gate: shop_cfg.downloadsGate, tag: shop_cfg.downloadsTag -%}
     {%- if specs_ns != '' and product.metafields[specs_ns] != blank -%}
       <table class="ifcvo-specs" style="margin:12px 0 0;border-collapse:collapse;width:100%">
         <caption style="text-align:left;font-weight:600;padding-bottom:4px">{{ s.specs_label | escape }}</caption>
@@ -93,8 +86,12 @@
         {%- endfor -%}
       </table>
     {%- endif -%}
+    {% render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns, download_label: s.download_label %}
   </div>
   <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+  {% render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true %}
+  <script type="module" src="{{ 'ifcvo-events.js' | asset_url }}"></script>
+  {%- if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
 {%- elsif request.design_mode -%}
   <p>IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file).</p>
 {%- endif -%}
@@ -109,10 +106,17 @@
     { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
     { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
     { "type": "text", "id": "title", "label": "Accessible title", "info": "Defaults to the product title." },
-    { "type": "range", "id": "height", "label": "Height", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
+    { "type": "select", "id": "aspect", "label": "Shape", "default": "height", "info": "A fixed shape keeps the page from moving while it loads. Phones above the size limit (shop setting mobileCapMb, default 80 MB) get a link to the full viewer.", "options": [
+      { "value": "height", "label": "Fixed height" },
+      { "value": "1/1", "label": "Square 1:1" },
+      { "value": "4/3", "label": "4:3" },
+      { "value": "16/9", "label": "16:9" }
+    ] },
+    { "type": "range", "id": "height", "label": "Height (fixed height shape)", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
     { "type": "select", "id": "load", "label": "Load the 3D viewer", "default": "click", "info": "On click keeps the product page as fast as without the viewer.", "options": [
       { "value": "click", "label": "When the visitor clicks" },
-      { "value": "visible", "label": "When it scrolls into view" }
+      { "value": "visible", "label": "When it scrolls into view" },
+      { "value": "idle", "label": "After the page has loaded, when in view" }
     ] },
     { "type": "text", "id": "open_label", "label": "Button text", "default": "View in 3D" },
     { "type": "select", "id": "ui", "label": "Viewer layout", "default": "article", "options": [

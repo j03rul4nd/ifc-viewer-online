@@ -103,9 +103,21 @@ describe('Shopify product block (app only)', () => {
     expect(schema.settings.find((s) => s.id === 'load')!.default).toBe('click')
   })
 
-  it('publishes customer events for opens and downloads', () => {
-    expect(runtime).toContain("track('ifc_viewer_opened'")
-    expect(runtime).toContain("track('ifc_model_downloaded'")
+  it('wires the SEO and customer-events snippets (T-322f)', () => {
+    expect(source).toContain("render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns, download_label: s.download_label")
+    expect(source).toContain("render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true")
+    expect(source).toContain("'ifcvo-events.js' | asset_url")
+    expect(source).toContain('data-product-id="{{ product.id | escape }}"')
+    expect(source).toContain('data-variant-id="{{ current.id | escape }}"')
+    expect(source).toContain('data-block-id="{{ block.id | escape }}"')
+    // The noscript fallback sits inside the viewer root.
+    expect(source.indexOf("render 'ifcvo-noscript'")).toBeLessThan(source.indexOf("'ifcvo.js' | asset_url"))
+  })
+
+  it('leaves opens, loads, errors and downloads to ifcvo-events.js (no double counting)', () => {
+    for (const name of ['ifc_viewer_opened', 'ifc_model_downloaded', 'ifc_viewer_error']) expect(runtime).not.toContain(`track('${name}'`)
+    expect(runtime).toContain("'ifcvo:loaded'")
+    expect(runtime).toContain("'ifcvo:error'")
   })
 })
 
@@ -252,5 +264,226 @@ describe('Shopify config and plan gate', () => {
     r.init()
     expect(r._state().listeners).toBe(1)
     expect(document.querySelectorAll('iframe').length).toBe(0)
+  })
+})
+
+describe('Shopify product facade and states', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type Runtime = Record<string, (...a: any[]) => any>
+  const runtimePath = '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo.js'
+  const load = async (): Promise<Runtime> => {
+    delete (window as unknown as { IFCVO?: unknown }).IFCVO
+    vi.resetModules()
+    return import(/* @vite-ignore */ runtimePath)
+  }
+  const block = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+  const facade = fs.readFileSync(path.join(ext, 'snippets/ifcvo-facade.liquid'), 'utf8')
+  const locale = JSON.parse(fs.readFileSync(path.join(ext, 'locales/en.default.json'), 'utf8'))
+  const schema = schemaOf(block)
+
+  const markup = (extra = '') => `<div data-ifcvo-viewer data-model="https://a.com/x.ifc" data-size-mb="10" ${extra}>
+    <div class="ifcvo-stage" data-ifcvo-state="idle" data-msg-loading="Loading" data-msg-error="Failed" data-msg-offline="Offline" data-msg-large="Too large" data-msg-webgl="No 3D" data-msg-ready="Ready">
+      <div class="ifcvo-facade"><button class="ifcvo-open"></button><button class="ifcvo-retry" hidden></button><a class="ifcvo-full" hidden></a></div>
+    </div><p class="ifcvo-status"></p></div>`
+
+  /** A fake SDK whose viewers become ready (or never do) as told, by attempt number. */
+  const fakeSdk = (ready: (n: number) => Promise<void>) => {
+    let n = 0
+    const made: { disposed: boolean; handlers: Record<string, (e: unknown) => void> }[] = []
+    class IfcViewer {
+      disposed = false
+      handlers: Record<string, (e: unknown) => void> = {}
+      private p: Promise<void>
+      constructor(stage: HTMLElement) { stage.append(document.createElement('iframe')); this.p = ready(++n); made.push(this) }
+      on(t: string, cb: (e: unknown) => void) { this.handlers[t] = cb }
+      whenReady() { return this.p }
+      dispose() { this.disposed = true }
+    }
+    return { sdk: async () => ({ IfcViewer }), made, count: () => n }
+  }
+
+  const gl = vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
+  const flush = () => new Promise((r) => setTimeout(r, 0))
+  const q = <T extends HTMLElement>(s: string) => document.querySelector(s) as T
+  const rootState = () => q('[data-ifcvo-viewer]').dataset.ifcvoState
+
+  it('keeps 25 settings at most, and blocks already placed keep their fixed height', () => {
+    expect(schema.settings.length).toBeLessThanOrEqual(25)
+    expect(schema.settings.find((s) => s.id === 'aspect')!.default).toBe('height')
+    expect(schema.settings.find((s) => s.id === 'height')).toBeDefined()
+    expect(schema.settings.find((s) => s.id === 'load')!.options!.map((o) => o.value)).toEqual(['click', 'visible', 'idle'])
+  })
+
+  it('renders a fixed-size poster facade with a poster chain and no iframe', () => {
+    expect(block).toContain("render 'ifcvo-facade'")
+    expect(facade).toContain('aspect-ratio:')
+    expect(facade).toMatch(/product\.metafields\[ns\]\.ifc_poster[\s\S]*product\.featured_media[\s\S]*<svg/)
+    expect(facade).toContain('fetchpriority="low"')
+    expect(facade).toContain('role="status"')
+    expect(facade).not.toContain('<iframe')
+    expect(facade).not.toMatch(/\{\{[^}]*'[{}]'/)
+  })
+
+  it('every facade text exists in the default locale', () => {
+    const keys = [...facade.matchAll(/'ifcvo\.facade\.([a-z_]+)' \| t/g)].map((m) => m[1])
+    expect(keys.length).toBeGreaterThan(5)
+    for (const k of keys) expect(locale.ifcvo.facade[k]).toBeTruthy()
+  })
+
+  it('probe: no WebGL2, and phones above the size cap, do not load here', async () => {
+    const r = await load()
+    expect(r.probe({ webgl2: false, sizeMb: 1 })).toEqual({ ok: false, reason: 'webgl' })
+    expect(r.probe({ webgl2: true, mobile: true, sizeMb: 200 })).toEqual({ ok: false, reason: 'large' })
+    expect(r.probe({ webgl2: true, mobile: false, sizeMb: 200, deviceMemory: 8 })).toEqual({ ok: true })
+    expect(r.probe({ webgl2: true, mobile: false, sizeMb: 50, deviceMemory: 2 })).toEqual({ ok: false, reason: 'large' })
+    expect(r.probe({ webgl2: true, mobile: true, sizeMb: 50, capMb: 80 })).toEqual({ ok: true })
+  })
+
+  it('no iframe until click; then loading to ready, status announced', async () => {
+    document.body.innerHTML = markup()
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    r._setSdk(fakeSdk(() => Promise.resolve()).sdk, 0)
+    expect(document.querySelectorAll('iframe').length).toBe(0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('ready'))
+    expect(q('.ifcvo-status').textContent).toBe('Ready')
+    expect(q('.ifcvo-facade').hidden).toBe(true)
+    expect(q<HTMLIFrameElement>('iframe').title).toBeTruthy()
+    expect(r._state().viewer).toBeTruthy()
+  })
+
+  it('hands the viewer to other modules: ifcvo:viewer event, IFCVO.viewer, ifcvo:loaded on the root', async () => {
+    document.body.innerHTML = markup()
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    const fake = fakeSdk(() => Promise.resolve())
+    r._setSdk(fake.sdk, 0)
+    const got = vi.fn()
+    document.addEventListener('ifcvo:viewer', (e) => got((e as CustomEvent).detail), { once: true })
+    const loaded = vi.fn()
+    q('[data-ifcvo-viewer]').addEventListener('ifcvo:loaded', (e) => loaded((e as CustomEvent).detail))
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(got).toHaveBeenCalled())
+    const { viewer, root } = got.mock.calls[0][0]
+    expect(root).toBe(q('[data-ifcvo-viewer]'))
+    expect(viewer).toBe(r._state().viewer)
+    const api = (window as unknown as { IFCVO: { viewer: unknown } }).IFCVO
+    expect(api.viewer).toBe(viewer)
+    fake.made[0].handlers['model-loaded']({ elementCount: 12 })
+    expect(loaded.mock.calls[0][0].elements).toBe(12)
+  })
+
+  it('timeout: one retry, then error with Retry and Open full viewer; Retry recovers', async () => {
+    document.body.innerHTML = markup(`data-ifcvo-config='{"timeout":0.01}'`)
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    const f = fakeSdk((n) => (n <= 2 ? new Promise(() => {}) : Promise.resolve()))
+    r._setSdk(f.sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    expect(f.count()).toBe(2)
+    expect(f.made.every((v) => v.disposed)).toBe(true)
+    expect(q('.ifcvo-retry').hidden).toBe(false)
+    expect(q('.ifcvo-full').hidden).toBe(false)
+    expect(q('.ifcvo-status').textContent).toContain('Failed')
+    q<HTMLButtonElement>('.ifcvo-retry').click()
+    await vi.waitFor(() => expect(rootState()).toBe('ready'))
+  })
+
+  it('too large on a phone: full viewer link, no viewer created', async () => {
+    document.body.innerHTML = markup().replace('data-size-mb="10"', 'data-size-mb="200"')
+    gl.mockReturnValue({} as never)
+    const mm = vi.fn().mockReturnValue({ matches: true })
+    const prev = window.matchMedia
+    window.matchMedia = mm as unknown as typeof window.matchMedia
+    const r = await load()
+    const f = fakeSdk(() => Promise.resolve())
+    r._setSdk(f.sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('large'))
+    expect(f.count()).toBe(0)
+    expect(q('.ifcvo-full').hidden).toBe(false)
+    expect(q('.ifcvo-open').hidden).toBe(true)
+    window.matchMedia = prev
+  })
+
+  it('no WebGL2: full viewer link instead of a broken viewer', async () => {
+    document.body.innerHTML = markup()
+    gl.mockReturnValue(null)
+    const r = await load()
+    r._setSdk(fakeSdk(() => Promise.resolve()).sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('webgl'))
+    expect(q('.ifcvo-status').textContent).toBe('No 3D')
+  })
+
+  it('offline: waits, and offers the button again when back online', async () => {
+    document.body.innerHTML = markup()
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    r._setSdk(fakeSdk(() => Promise.resolve()).sdk, 0)
+    const on = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('offline'))
+    expect(q('.ifcvo-status').textContent).toBe('Offline')
+    on.mockReturnValue(true)
+    window.dispatchEvent(new Event('online'))
+    expect(rootState()).toBe('idle')
+    expect(q('.ifcvo-open').hidden).toBe(false)
+    on.mockRestore()
+    await flush()
+  })
+
+  it('escapes the poster URL in its attribute', () => {
+    expect(facade).toContain('src="{{ poster_src | escape }}"')
+    expect(facade).not.toMatch(/="\{\{ (?!'ifcvo)[a-z_]+ \}\}"/)
+  })
+
+  it('a model error ends the attempt at once with Retry, and does not auto-retry', async () => {
+    document.body.innerHTML = markup(`data-ifcvo-config='{"timeout":5}'`)
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    const f = fakeSdk(() => new Promise(() => {}))
+    r._setSdk(f.sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(f.count()).toBe(1))
+    f.made[0].handlers['model-error']({ message: 'bad file' })
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    expect(q('.ifcvo-status').textContent).toBe('Failed: bad file')
+    expect(q('.ifcvo-retry').hidden).toBe(false)
+    await new Promise((res) => setTimeout(res, 30))
+    expect(f.count()).toBe(1)
+    expect(rootState()).toBe('error')
+  })
+
+  it('looks the size up once per block, not on every retry; skips it when the metafield has it', async () => {
+    document.body.innerHTML = markup(`data-ifcvo-config='{"timeout":0.01}'`).replace('data-size-mb="10"', '')
+    gl.mockReturnValue({} as never)
+    const fetchMock = vi.fn().mockResolvedValue({ headers: { get: () => '1048576' } })
+    vi.stubGlobal('fetch', fetchMock)
+    const r = await load()
+    r._setSdk(fakeSdk(() => new Promise(() => {})).sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    q<HTMLButtonElement>('.ifcvo-retry').click()
+    await vi.waitFor(() => expect(rootState()).toBe('loading'))
+    await vi.waitFor(() => expect(rootState()).toBe('error'))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    document.body.innerHTML = markup()
+    fetchMock.mockClear()
+    const r2 = await load()
+    r2._setSdk(fakeSdk(() => Promise.resolve()).sdk, 0)
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(rootState()).toBe('ready'))
+    expect(fetchMock).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
+  it('shop labels override the facade texts', async () => {
+    document.body.innerHTML = markup(`data-locale="es" data-ifcvo-labels='{"es":{"offline":"Sin conexión"}}'`)
+    const r = await load()
+    r.setState(q('[data-ifcvo-viewer]'), 'offline')
+    expect(q('.ifcvo-status').textContent).toBe('Sin conexión')
   })
 })

@@ -933,6 +933,20 @@ describe('IfcViewer — tours and director (1.12)', () => {
     v.dispose()
   })
 
+  it('sends exportModel as export-model with glb by default', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    quiet(v.exportModel())
+    quiet(v.exportModel({ modelId: 'm2' }))
+    await tick()
+    const sent = postsOfType(post, 'ifcviewer:export-model')
+    expect(sent[0]).toMatchObject({ format: 'glb' })
+    expect(sent[1]).toMatchObject({ format: 'glb', modelId: 'm2' })
+    v.dispose()
+  })
+
   it('relays tour and presentation events', async () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
     const steps = vi.fn(); const ended = vi.fn(); const prog = vi.fn()
