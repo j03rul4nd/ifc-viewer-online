@@ -4368,6 +4368,29 @@ export default function App() {
           })
           break
         }
+        case 'ifcviewer:export-model': {
+          // GLB of a loaded model, built in the visitor's browser (shop downloads).
+          const reqId = requestId
+          void (async () => {
+            try {
+              if (msg.format !== undefined && msg.format !== 'glb') throw new Error(`Unsupported format: ${String(msg.format)}`)
+              const models = useSceneStore.getState().models
+              const model = (typeof msg.modelId === 'string' && models.find((m) => m.id === msg.modelId)) || models[0]
+              if (!model) throw new Error('No model is loaded')
+              const api = viewerApiRef.current
+              const obj = api?.getModelObject(model.id)
+              if (!api || !obj) throw new Error('Model object not found in the 3D scene')
+              const { exportAsGlb } = await import('./lib/diffStore')
+              const blob = await exportAsGlb(obj, api.getFragmentsModel(model.id))
+              const bytes = await blob.arrayBuffer()
+              const fileName = model.fileName.replace(/\.[^.]+$/, '') + '.glb'
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType: 'model/gltf-binary', sizeBytes: bytes.byteLength, fileName } }, [bytes])
+            } catch (err) {
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: false, error: err instanceof Error ? err.message : String(err) })
+            }
+          })()
+          break
+        }
         case 'ifcviewer:export-presentation': {
           const reqId = requestId
           void (async () => {

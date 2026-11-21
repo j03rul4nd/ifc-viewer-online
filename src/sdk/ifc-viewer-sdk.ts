@@ -894,6 +894,16 @@ export interface PresentationVideo {
   sizeBytes: number
 }
 
+/** A model exported by exportModel(): built in the visitor's browser. Since v1.19.0. */
+export interface ModelFile {
+  /** The file bytes. Transferred, not copied. */
+  bytes: ArrayBuffer
+  mimeType: string
+  sizeBytes: number
+  /** The model's file name with the new extension, e.g. `chair.glb`. */
+  fileName: string
+}
+
 export interface PresentationProgressEvent {
   stage: 'generate' | 'export'
   label?: string
@@ -2572,6 +2582,16 @@ export class IfcViewer {
     return this.request<PresentationVideo>('ifcviewer:export-presentation', { ...opts }, 30 * 60_000)
   }
 
+  /**
+   * Export a loaded model as GLB, built in the visitor's browser from the IFC
+   * geometry (no server). Defaults to the first model. Since v1.19.0.
+   *
+   *   const { bytes, fileName } = await viewer.exportModel()
+   */
+  exportModel(opts: { format?: 'glb'; modelId?: string } = {}): Promise<ModelFile> {
+    return this.request<ModelFile>('ifcviewer:export-model', { format: opts.format ?? 'glb', modelId: opts.modelId }, 5 * 60_000)
+  }
+
   /** Close Clip Studio (the generated project is kept until the next one). */
   closePresentation(): Promise<void> {
     return this.request<unknown>('ifcviewer:close-presentation').then(() => undefined)
@@ -3235,6 +3255,7 @@ export class IfcViewerElement extends HTMLElement {
   stopTour(): Promise<TourState> { return this._viewer!.stopTour() }
   createPresentation(recipe?: string, options?: PresentationOptions): Promise<PresentationState> { return this._viewer!.createPresentation(recipe, options) }
   exportPresentation(opts?: { resolution?: 720 | 1080 | 1440; music?: boolean }): Promise<PresentationVideo> { return this._viewer!.exportPresentation(opts) }
+  exportModel(opts?: { format?: 'glb'; modelId?: string }): Promise<ModelFile> { return this._viewer!.exportModel(opts) }
   createCover(opts?: CoverOptions): Promise<CoverState> { return this._viewer!.createCover(opts) }
   exportCover(opts?: { type?: 'png' | 'jpeg' | 'pdf' | 'pptx' | 'zip'; slide?: number }): Promise<CoverFile> { return this._viewer!.exportCover(opts) }
   getGroups(): Promise<SceneGroupsState> { return this._viewer!.getGroups() }

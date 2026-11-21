@@ -103,9 +103,21 @@ describe('Shopify product block (app only)', () => {
     expect(schema.settings.find((s) => s.id === 'load')!.default).toBe('click')
   })
 
-  it('publishes customer events for opens and downloads', () => {
-    expect(runtime).toContain("track('ifc_viewer_opened'")
-    expect(runtime).toContain("track('ifc_model_downloaded'")
+  it('wires the SEO and customer-events snippets (T-322f)', () => {
+    expect(source).toContain("render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns, download_label: s.download_label")
+    expect(source).toContain("render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true")
+    expect(source).toContain("'ifcvo-events.js' | asset_url")
+    expect(source).toContain('data-product-id="{{ product.id | escape }}"')
+    expect(source).toContain('data-variant-id="{{ current.id | escape }}"')
+    expect(source).toContain('data-block-id="{{ block.id | escape }}"')
+    // The noscript fallback sits inside the viewer root.
+    expect(source.indexOf("render 'ifcvo-noscript'")).toBeLessThan(source.indexOf("'ifcvo.js' | asset_url"))
+  })
+
+  it('leaves opens, loads, errors and downloads to ifcvo-events.js (no double counting)', () => {
+    for (const name of ['ifc_viewer_opened', 'ifc_model_downloaded', 'ifc_viewer_error']) expect(runtime).not.toContain(`track('${name}'`)
+    expect(runtime).toContain("'ifcvo:loaded'")
+    expect(runtime).toContain("'ifcvo:error'")
   })
 })
 
@@ -339,6 +351,27 @@ describe('Shopify product facade and states', () => {
     expect(q('.ifcvo-facade').hidden).toBe(true)
     expect(q<HTMLIFrameElement>('iframe').title).toBeTruthy()
     expect(r._state().viewer).toBeTruthy()
+  })
+
+  it('hands the viewer to other modules: ifcvo:viewer event, IFCVO.viewer, ifcvo:loaded on the root', async () => {
+    document.body.innerHTML = markup()
+    gl.mockReturnValue({} as never)
+    const r = await load()
+    const fake = fakeSdk(() => Promise.resolve())
+    r._setSdk(fake.sdk, 0)
+    const got = vi.fn()
+    document.addEventListener('ifcvo:viewer', (e) => got((e as CustomEvent).detail), { once: true })
+    const loaded = vi.fn()
+    q('[data-ifcvo-viewer]').addEventListener('ifcvo:loaded', (e) => loaded((e as CustomEvent).detail))
+    q<HTMLButtonElement>('.ifcvo-open').click()
+    await vi.waitFor(() => expect(got).toHaveBeenCalled())
+    const { viewer, root } = got.mock.calls[0][0]
+    expect(root).toBe(q('[data-ifcvo-viewer]'))
+    expect(viewer).toBe(r._state().viewer)
+    const api = (window as unknown as { IFCVO: { viewer: unknown } }).IFCVO
+    expect(api.viewer).toBe(viewer)
+    fake.made[0].handlers['model-loaded']({ elementCount: 12 })
+    expect(loaded.mock.calls[0][0].elements).toBe(12)
   })
 
   it('timeout: one retry, then error with Retry and Open full viewer; Retry recovers', async () => {
