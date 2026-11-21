@@ -112,6 +112,15 @@ function cartUrl() {
   return base.replace(/\/?$/, '/') + 'cart/add.js'
 }
 
+/** The variant selected now (not at page render), by the cart form's id. "Default Title" means no variants. */
+export function variantTitle(d) {
+  let map = {}
+  try { map = JSON.parse('{' + (d.variants || '') + '}') } catch (e) { /* bad map */ }
+  const id = currentVariant()
+  const t = (id && map[id]) || d.variant || ''
+  return t === 'Default Title' ? '' : t
+}
+
 /** Mounts one quote list. `api` is window.IFCVO (or a stand-in in tests). */
 export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
   if (!root || root.dataset.ifcvoQuoteReady) return
@@ -162,7 +171,7 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
       const form = document.querySelector(d.form || 'form[action*="/contact"]')
       const body = form && form.querySelector('[name="contact[body]"]')
       if (!body) { say(d.noForm || 'There is no contact form on this page.', true); return }
-      body.value = quoteBody({ product: d.product, variant: d.variant, url: location.href.split('#')[0], intro: d.intro }, items)
+      body.value = quoteBody({ product: d.product, variant: variantTitle(d),  url: location.href.split('#')[0], intro: d.intro }, items)
       body.dispatchEvent(new Event('input', { bubbles: true }))
       try { body.scrollIntoView({ block: 'center' }) } catch (e) { /* old browser */ }
       body.focus()
@@ -253,6 +262,14 @@ export function mountDownloads(box, api) {
   }
 }
 
+/** IFC and extra-file links outside the viewer root (the IFC downloads block) count as downloads too. */
+export function onDownloadClick(ev) {
+  const a = ev.target && ev.target.closest ? ev.target.closest('[data-ifcvo-downloads] a[download]') : null
+  if (!a || a.closest('[data-ifcvo-viewer]')) return
+  const file = a.dataset.file || (a.getAttribute('href') || '').split(/[?#]/)[0].split('/').pop()
+  signal('ifcvo:download', { file })
+}
+
 export function initAll(api = typeof window !== 'undefined' ? window.IFCVO : null) {
   if (!api) return
   for (const r of document.querySelectorAll('[data-ifcvo-quote-list]')) mountQuote(r, api)
@@ -263,4 +280,5 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   if (window.IFCVO) initAll()
   else document.addEventListener('ifcvo:ready', () => initAll(), { once: true })
   document.addEventListener('shopify:section:load', () => initAll())
+  if (!window.__ifcvoDlClicks) { window.__ifcvoDlClicks = true; document.addEventListener('click', onDownloadClick) }
 }

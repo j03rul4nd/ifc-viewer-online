@@ -14,8 +14,9 @@
   <div class="ifcvo-body" style="--ifcvo-max-height:{{ block.settings.max_height }}px"></div>
   {%- if block.settings.quote != 'off' -%}
     {%- assign q_variant = product.selected_or_first_available_variant -%}
+    {%- capture q_variants -%}{%- for v in product.variants -%}{%- unless forloop.first -%},{%- endunless -%}"{{ v.id }}":{{ v.title | json }}{%- endfor -%}{%- endcapture -%}
     <div class="ifcvo-quote" data-ifcvo-quote-list data-mode="{{ block.settings.quote | escape }}"
-      data-product="{{ product.title | escape }}" data-variant="{% unless q_variant.title == 'Default Title' %}{{ q_variant.title | escape }}{% endunless %}"
+      data-variants="{{ q_variants | escape }}" data-product="{{ product.title | escape }}" data-variant="{% unless q_variant.title == 'Default Title' %}{{ q_variant.title | escape }}{% endunless %}"
       data-form="{{ block.settings.quote_form | escape }}" data-intro="{{ block.settings.quote_intro | escape }}"
       data-pick-label="{{ block.settings.quote_pick_label | escape }}" data-cart-label="{{ block.settings.quote_cart_label | escape }}"
       data-contact-label="{{ block.settings.quote_contact_label | escape }}" data-empty="{{ block.settings.quote_empty | escape }}">

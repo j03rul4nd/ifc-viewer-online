@@ -175,6 +175,33 @@ describe('quote list in the page', () => {
     expect(fetchImpl).not.toHaveBeenCalled()
   })
 
+  it('contact body uses the variant selected at send time', async () => {
+    const m = await load()
+    document.body.innerHTML = markup('contact', '<form action="/contact"><textarea name="contact[body]"></textarea></form>')
+    q('[data-ifcvo-quote-list]').dataset.variants = '"42":"Oak","43":"Walnut"'
+    q('[data-ifcvo-quote-list]').dataset.variant = 'Oak'
+    const api = fakeApi()
+    m.mountQuote(q('[data-ifcvo-quote-list]'), api)
+    q<HTMLInputElement>('[name="id"]').value = '43'
+    select(api)
+    q<HTMLButtonElement>('.ifcvo-quote-pick').click()
+    q<HTMLButtonElement>('.ifcvo-quote-go').click()
+    await flush()
+    expect(q<HTMLTextAreaElement>('textarea').value).toContain('Variant: Walnut')
+  })
+
+  it('counts IFC link clicks in a downloads list outside the viewer root', async () => {
+    const m = await load()
+    document.body.innerHTML = '<div data-ifcvo-viewer></div><div data-ifcvo-downloads><a download href="https://cdn.x/a.ifc?t=1" data-file="a.ifc">x</a></div>'
+    const got = vi.fn()
+    q('[data-ifcvo-viewer]').addEventListener('ifcvo:download', (e) => got((e as CustomEvent).detail.file))
+    const a = q('a')
+    a.addEventListener('click', (e) => e.preventDefault())
+    a.addEventListener('click', m.onDownloadClick)
+    a.click()
+    expect(got).toHaveBeenCalledWith('a.ifc')
+  })
+
   it('says so when there is no contact form', async () => {
     const m = await load()
     document.body.innerHTML = markup('contact')
