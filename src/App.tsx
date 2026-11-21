@@ -4393,18 +4393,32 @@ export default function App() {
           const reqId = requestId
           void (async () => {
             try {
-              if (msg.format !== undefined && msg.format !== 'glb') throw new Error(`Unsupported format: ${String(msg.format)}`)
+              const format = msg.format === undefined ? 'glb' : msg.format
+              if (format !== 'glb' && format !== 'usdz') throw new Error(`Unsupported format: ${String(msg.format)}`)
+              // USDZ only exists as the AR model (iOS Quick Look); GLB is AR-optimised on request.
+              const ar = format === 'usdz' || msg.ar === true
               const models = useSceneStore.getState().models
               const model = (typeof msg.modelId === 'string' && models.find((m) => m.id === msg.modelId)) || models[0]
               if (!model) throw new Error('No model is loaded')
               const api = viewerApiRef.current
               const obj = api?.getModelObject(model.id)
               if (!api || !obj) throw new Error('Model object not found in the 3D scene')
-              const { exportAsGlb } = await import('./lib/diffStore')
-              const blob = await exportAsGlb(obj, api.getFragmentsModel(model.id))
+              let blob: Blob
+              let stats: unknown
+              if (ar) {
+                const { exportForAr } = await import('./lib/arExport')
+                const maxTriangles = typeof msg.maxTriangles === 'number' && msg.maxTriangles > 0 ? msg.maxTriangles : undefined
+                const out = await exportForAr(obj, api.getFragmentsModel(model.id), format, { maxTriangles })
+                blob = out.blob
+                stats = out.stats
+              } else {
+                const { exportAsGlb } = await import('./lib/diffStore')
+                blob = await exportAsGlb(obj, api.getFragmentsModel(model.id))
+              }
               const bytes = await blob.arrayBuffer()
-              const fileName = model.fileName.replace(/\.[^.]+$/, '') + '.glb'
-              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType: 'model/gltf-binary', sizeBytes: bytes.byteLength, fileName } }, [bytes])
+              const fileName = model.fileName.replace(/\.[^.]+$/, '') + '.' + format
+              const mimeType = format === 'usdz' ? 'model/vnd.usdz+zip' : 'model/gltf-binary'
+              if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: true, data: { bytes, mimeType, sizeBytes: bytes.byteLength, fileName, ...(stats ? { stats } : {}) } }, [bytes])
             } catch (err) {
               if (reqId) emitEmbedEvent('result', { requestId: reqId, ok: false, error: err instanceof Error ? err.message : String(err) })
             }

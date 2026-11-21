@@ -947,6 +947,22 @@ describe('IfcViewer — tours and director (1.12)', () => {
     v.dispose()
   })
 
+  it('exportModel sends ar for usdz and on request, with a triangle cap', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+    await v.whenReady()
+    quiet(v.exportModel({ format: 'usdz' }))
+    quiet(v.exportModel({ ar: true, maxTriangles: 200000 }))
+    quiet(v.exportModel())
+    await tick()
+    const sent = postsOfType(post, 'ifcviewer:export-model')
+    expect(sent[0]).toMatchObject({ format: 'usdz', ar: true })
+    expect(sent[1]).toMatchObject({ format: 'glb', ar: true, maxTriangles: 200000 })
+    expect(sent[2]).toMatchObject({ format: 'glb', ar: false })
+    v.dispose()
+  })
+
   it('relays tour and presentation events', async () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
     const steps = vi.fn(); const ended = vi.fn(); const prog = vi.fn()

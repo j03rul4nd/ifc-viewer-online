@@ -1,0 +1,77 @@
+{% comment %}
+  View in your space (AR). Uses, in order: the merchant's AR files
+  (metafields `custom.ar_usdz` / `custom.ar_glb`, a file or an https URL), then
+  the product's Shopify 3D model media, then — if turned on — a model made from
+  the IFC in the visitor's browser (iPhone/iPad only: Android's Scene Viewer
+  needs a file hosted on the web). On a computer it shows a QR code of the page.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.namespace | strip | default: 'custom'
+  assign glb_field = product.metafields[ns].ar_glb.value
+  assign ar_glb = glb_field.url | default: glb_field | strip
+  assign usdz_field = product.metafields[ns].ar_usdz.value
+  assign ar_usdz = usdz_field.url | default: usdz_field | strip
+  if s.use_media
+    for m in product.media
+      if m.media_type == 'model'
+        for src in m.sources
+          if src.format == 'glb' and ar_glb == ''
+            assign ar_glb = src.url
+          endif
+          if src.format == 'usdz' and ar_usdz == ''
+            assign ar_usdz = src.url
+          endif
+        endfor
+        break
+      endif
+    endfor
+  endif
+-%}
+{%- capture ar_labels -%}{"button":{{ 'ifcvo.ar.button' | t | json }},"making":{{ 'ifcvo.ar.making' | t | json }},"error":{{ 'ifcvo.ar.error' | t | json }},"too_large":{{ 'ifcvo.ar.too_large' | t | json }},"scan":{{ 'ifcvo.ar.scan' | t | json }},"no_ar":{{ 'ifcvo.ar.no_ar' | t | json }},"hosted":{{ 'ifcvo.ar.hosted' | t | json }},"no_viewer":{{ 'ifcvo.ar.no_viewer' | t | json }}}{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div
+  class="ifcvo-panel ifcvo-ar{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-ar
+  data-ifcvo-tier="ar"
+  data-glb="{{ ar_glb | escape }}"
+  data-usdz="{{ ar_usdz | escape }}"
+  data-generate="{{ s.generate }}"
+  data-limit-mb="{{ s.limit_mb | escape }}"
+  data-max-triangles="{{ s.max_triangles | escape }}"
+  data-title="{{ product.title | escape }}"
+  data-page="{{ canonical_url | escape }}"
+  data-labels="{{ ar_labels | escape }}"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body" data-ifcvo-ar-body>
+    <noscript><p class="ifcvo-muted">{{ 'ifcvo.ar.no_ar' | t | escape }}</p></noscript>
+  </div>
+  {%- if ar_glb == '' and ar_usdz == '' and request.design_mode -%}
+    <p class="ifcvo-muted">Add "{{ ns | escape }}.ar_usdz" / "{{ ns | escape }}.ar_glb" metafields or a 3D model to the product for AR on every phone. A model made from the IFC works on iPhone and iPad only.</p>
+  {%- endif -%}
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-ar.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "IFC view in your space (AR)",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "title", "label": "Heading" },
+    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom", "info": "ar_usdz (iPhone/iPad) and ar_glb (Android) in this namespace: a file or an https link." },
+    { "type": "checkbox", "id": "use_media", "label": "Use the product's 3D model media", "default": true },
+    { "type": "checkbox", "id": "generate", "label": "Make the AR model from the IFC when there is no file", "default": true, "info": "Made on the visitor's iPhone or iPad from the \"Product IFC model\" block. Android needs a hosted file." },
+    { "type": "range", "id": "limit_mb", "label": "Largest made model on phones", "min": 10, "max": 50, "step": 5, "unit": "MB", "default": 50 },
+    { "type": "number", "id": "max_triangles", "label": "Triangle limit for made models", "default": 500000, "info": "The smallest parts are left out above it." },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: button, making, error, too_large, scan, no_ar, hosted, no_viewer." },
+    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": false }
+  ]
+}
+{% endschema %}
