@@ -8,6 +8,14 @@ import { ITEM_DATA_CONFIG, parseItemData } from '../ifc-item-data'
 import { raceAbort, unitsOf, type SteelCollectModel } from '../steel/collect'
 import { FootprintAccumulator, type BoxLike } from './bbox'
 import { ProductDataBuilder, type ProductData, type ProductDataOptions } from './extract'
+import { RoomScheduleBuilder } from './rooms'
+
+/** Spaces also need their storey (IfcRelAggregates), which elements read from ContainedInStructure. */
+export const SPACE_DATA_CONFIG = {
+  ...ITEM_DATA_CONFIG,
+  relations: { ...ITEM_DATA_CONFIG.relations, Decomposes: { attributes: true, relations: false } },
+}
+export const ROOMS_MAX = 2000
 
 export const PRODUCT_BATCH = 500
 export const PRODUCT_MAX_ELEMENTS = 20000
@@ -33,6 +41,9 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
   const builder = new ProductDataBuilder(opts)
   const foot = new FootprintAccumulator()
   const plan: Array<{ model: ProductCollectModel; ids: number[] }> = []
+  const spaces: Array<{ model: ProductCollectModel; ids: number[] }> = []
+  let spaceCount = 0
+  let spacesCut = false
   let total = 0
   for (const model of models) {
     let byCat: Record<string, number[]> = {}
@@ -40,6 +51,10 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
       if (e instanceof DOMException && e.name === 'AbortError') throw e
       continue
     }
+    const sp = [...new Set(Object.entries(byCat).filter(([cat]) => /^IFCSPACE$/i.test(cat)).flatMap(([, v]) => v))]
+    if (sp.length > ROOMS_MAX - spaceCount) spacesCut = true
+    const spTake = sp.slice(0, Math.max(0, ROOMS_MAX - spaceCount))
+    if (spTake.length) { spaces.push({ model, ids: spTake }); spaceCount += spTake.length }
     const ids = [...new Set(Object.entries(byCat).filter(([cat]) => !NOT_PRODUCT.test(cat)).flatMap(([, v]) => v))]
     const room = max - total
     if (ids.length > room) builder.truncated = true
@@ -73,5 +88,38 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
     }
   }
   builder.bbox = foot.dimensions()
-  return builder.result()
+  const out = builder.result()
+  out.rooms = spaces.length ? await collectRooms(spaces, spacesCut, opts.signal) : null
+  return out
+}
+
+/** IfcSpace rows, in batches; a failed batch is skipped, never the whole read. */
+async function collectRooms(spaces: Array<{ model: ProductCollectModel; ids: number[] }>, truncated: boolean, signal?: AbortSignal) {
+  const rooms = new RoomScheduleBuilder()
+  rooms.truncated = truncated
+  for (const { model, ids } of spaces) {
+    const units = await unitsOf(model.fragments)
+    for (let b = 0; b < ids.length; b += PRODUCT_BATCH) {
+      if (signal?.aborted) throw new DOMException('aborted', 'AbortError')
+      const batch = ids.slice(b, b + PRODUCT_BATCH)
+      let data: unknown[] = []
+      let boxes: Array<BoxLike | null> = []
+      try { data = await raceAbort(model.fragments.getItemsData(batch, SPACE_DATA_CONFIG), signal) } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') throw e
+      }
+      if (model.fragments.getBoxes) {
+        try { boxes = await raceAbort(model.fragments.getBoxes(batch), signal) } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') throw e
+        }
+      }
+      data.forEach((raw, i) => {
+        if (!raw || typeof raw !== 'object') return
+        const bx = boxes[i]
+        const box = bx ? { w: bx.max.x - bx.min.x, d: bx.max.z - bx.min.z, h: bx.max.y - bx.min.y } : null
+        rooms.add(parseItemData(raw as Record<string, unknown>, units), units, { modelId: model.id, expressId: batch[i] }, box)
+      })
+      await tick()
+    }
+  }
+  return rooms.result()
 }

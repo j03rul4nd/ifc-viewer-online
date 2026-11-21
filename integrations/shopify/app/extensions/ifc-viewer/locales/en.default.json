@@ -11,6 +11,27 @@
       "too_large": "This model is too large to open on this device. Open it in the full viewer or download it.",
       "no_webgl": "This browser cannot show 3D. Open it in the full viewer or download it."
     },
+    "rooms": {
+      "title": "Rooms",
+      "area": "Total area",
+      "storeys": "Storeys",
+      "bedrooms": "Bedrooms",
+      "bathrooms": "Bathrooms",
+      "footprint": "Footprint",
+      "room": "Room",
+      "number": "No.",
+      "height": "Height",
+      "total": "Total",
+      "storey": "Storey",
+      "waiting": "Open the 3D model to list its rooms.",
+      "loading": "Reading the rooms…",
+      "none": "This model has no rooms (IfcSpace).",
+      "error": "The rooms could not be read.",
+      "inferred": "Bedrooms and bathrooms are counted from the room names.",
+      "geometry": "≈ calculated from the room's shape",
+      "truncated": "Large model: only the first rooms were read, totals may be incomplete.",
+      "units": "Some lengths use a unit that could not be read and are not shown."
+    },
     "planset": {
       "heading": "What you get",
       "license": "License",
@@ -42,6 +63,25 @@
         "file_author_missing": "File author missing",
         "iso19650_filename": "File name (ISO 19650)",
         "clash_mep_structural": "MEP / structure clashes"
+      },
+      "labels": {
+        "schema": "IFC schema",
+        "mvd": "Model view",
+        "app": "Made with",
+        "worksWith": "Opens in",
+        "typical": "typical for this schema; check your version",
+        "weight": "File weight",
+        "size": "Size",
+        "elements": "Elements",
+        "light": "Light",
+        "medium": "Medium",
+        "heavy": "Heavy",
+        "thresholds": "Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more.",
+        "health": "Health Score",
+        "issues": "Main issues",
+        "noIssues": "No issues found",
+        "unknown": "Not stated in the file",
+        "unavailable": "Not available for this file"
       }
     }
   }

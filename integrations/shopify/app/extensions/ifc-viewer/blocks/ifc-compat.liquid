@@ -17,6 +17,7 @@
   assign t_waiting = 'ifcvo.compat.waiting' | t
   assign t_unavailable = 'ifcvo.compat.unavailable' | t
   assign rule_keys = 'duplicate_name,empty_name,duplicate_guid,missing_type,missing_material,empty_property_value,empty_longname,invalid_ifc_version,file_author_missing,iso19650_filename,clash_mep_structural' | split: ','
+  assign label_keys = 'schema,mvd,app,worksWith,typical,weight,size,elements,light,medium,heavy,thresholds,health,issues,noIssues,unknown,unavailable' | split: ','
   assign apps = ''
   if cw != blank
     if cw.type contains 'list'
@@ -35,6 +36,9 @@
 {%- capture rule_labels -%}
   {%- for k in rule_keys -%}{%- assign key = 'ifcvo.compat.rules.' | append: k -%}{{ k | json }}:{{ key | t | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
 {%- endcapture -%}
+{%- capture ui_labels -%}
+  {%- for k in label_keys -%}{%- assign key = 'ifcvo.compat.labels.' | append: k -%}{{ k | json }}:{{ key | t | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
+{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <section
   class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -43,6 +47,7 @@
   data-size-mb="{{ size_mb | escape }}"
   data-health="{{ s.show_health }}"
   data-rule-labels="{{ '{' | append: rule_labels | append: '}' | escape }}"
+  data-labels="{{ '{' | append: ui_labels | append: '}' | escape }}"
   data-unavailable="{{ t_unavailable | escape }}"
   data-labels-override="{{ s.labels | escape }}"
   data-locale="{{ request.locale.iso_code | escape }}"

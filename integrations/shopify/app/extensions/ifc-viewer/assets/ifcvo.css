@@ -96,3 +96,8 @@
 .ifcvo-compat-row { display: contents; }
 .ifcvo-compat-apps { margin: 0 0 4px; padding-left: 1.2em; }
 .ifcvo-compat-weight meter { width: 6em; vertical-align: middle; }
+/* Rooms & key specs (ifc-rooms block) */
+.ifcvo-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; }
+.ifcvo-chips .ifcvo-chip { cursor: default; }
+.ifcvo-rooms .ifcvo-row { padding: 2px 4px; }
+.ifcvo-rooms-total { margin: 6px 0; }

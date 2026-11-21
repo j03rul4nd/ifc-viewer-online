@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  DEFAULT_APPS, RULE_LABELS, _reset, ruleLabel, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
+  DEFAULT_APPS, RULE_LABELS, authoringApp, decodeStep, stripComments, _reset, ruleLabel, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
   // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compat.js'
 import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
@@ -62,6 +62,57 @@ FILE_NAME('a.ifc','t',(''),(''),'IFC Engine','ARCHICAD-64 26.0.0 INT FULL',$);FI
   })
 })
 
+const ROOT = path.resolve(__dirname, '..')
+function head4k(p: string): string {
+  const fd = fs.openSync(path.join(ROOT, p), 'r')
+  const b = Buffer.alloc(4096)
+  const n = fs.readSync(fd, b, 0, 4096, 0)
+  fs.closeSync(fd)
+  return b.subarray(0, n).toString('utf8')
+}
+
+describe('real file headers', () => {
+  it('Duplex (Revit 2011): app from preprocessor, not the build stamp', () => {
+    expect(parseHeader(head4k('public/Ifc2x3_Duplex_Architecture.ifc'))).toMatchObject({ schema: 'IFC2x3', mvd: ['CoordinationView'], app: 'Autodesk Revit Architecture 2011' })
+  })
+  it('cras (Revit exporter 23.x): Revit 2023', () => {
+    expect(parseHeader(head4k('public/models/cras/model.ifc'))).toMatchObject({ schema: 'IFC2x3', mvd: ['CoordinationView_V2.0'], app: 'Autodesk Revit 2023' })
+  })
+  it('oriental-pearl / swfc: \\X2\\ decoded', () => {
+    for (const p of ['public/models/oriental-pearl/SHA-IVO-ORIENTAL-PEARL-A-0001.ifc', 'public/models/swfc/SHA-IVO-SWFC-A-0001.ifc']) {
+      const h = parseHeader(head4k(p))
+      expect(h.schema).toBe('IFC4')
+      expect(h.mvd).toEqual(['DesignTransferView'])
+      expect(h.app).toBe('IfcOpenShell API / Blender — reference reconstruction')
+    }
+  })
+})
+
+describe('STEP strings and comments', () => {
+  it('decodes X2, X4, X, S, P and backslash escapes', () => {
+    expect(decodeStep('Ma\\X2\\00DF\\X0\\stab')).toBe('Maßstab')
+    expect(decodeStep('\\X2\\4E0A6D77\\X0\\')).toBe('上海')
+    expect(decodeStep('\\X4\\0001F600\\X0\\')).toBe('\u{1F600}')
+    expect(decodeStep('Caf\\X\\E9')).toBe('Café')
+    expect(decodeStep('\\PA\\\\S\\i')).toBe('é')
+    expect(decodeStep('a\\\\b')).toBe('a\\b')
+  })
+  it("'' quotes and encodings inside FILE_NAME", () => {
+    const h = parseHeader("FILE_NAME('a','t',(''),(''),'pp','Studio d''Arch\\X\\E9 v2','');FILE_SCHEMA(('IFC4'));ENDSEC;")
+    expect(h.app).toBe("Studio d'Arché v2")
+  })
+  it('strips comments, but not inside strings', () => {
+    const h = parseHeader("/* exported */ FILE_DESCRIPTION(/* c */('ViewDefinition [ReferenceView]'),'2;1');\nFILE_NAME('a','t',(''),(''),'x','App /* 1 */ 2024','');/* FILE_SCHEMA(('IFC2X3')); */FILE_SCHEMA(('IFC4X3_ADD2'));ENDSEC;")
+    expect(h).toMatchObject({ schema: 'IFC4x3', mvd: ['ReferenceView'], app: 'App /* 1 */ 2024' })
+    expect(stripComments('a/* x */b')).toBe('a b')
+  })
+  it('authoringApp fallbacks', () => {
+    expect(authoringApp('ARCHICAD-64 26.0.0', 'IFC Engine')).toBe('ARCHICAD-64 26.0.0')
+    expect(authoringApp('', 'Tekla Structures 2023')).toBe('Tekla Structures 2023')
+    expect(authoringApp('20100326_1700', '')).toBe('20100326_1700')
+  })
+})
+
 describe('weight and health helpers', () => {
   it('bands by size and element count', () => {
     expect(weightBand(0, 0)).toBeNull()
@@ -85,6 +136,24 @@ describe('weight and health helpers', () => {
 })
 
 describe('fetchHeader', () => {
+  it('fetches the next 12 KB once when ENDSEC is not in the first 4 KB', async () => {
+    const big = "ISO-10303-21;\nHEADER;\n/*" + 'x'.repeat(5000) + "*/\nFILE_SCHEMA(('IFC4'));\nENDSEC;\nDATA;" + 'y'.repeat(30000)
+    const f = vi.fn(async (_u: string, o: RequestInit) => {
+      const [a, b] = /bytes=(\d+)-(\d+)/.exec((o.headers as Record<string, string>).Range)!.slice(1).map(Number)
+      return new Response(big.slice(a, b + 1), { status: 206 })
+    })
+    const text = await fetchHeader('https://x/a.ifc', { fetchImpl: f })
+    expect(f).toHaveBeenCalledTimes(2)
+    expect((f.mock.calls[1][1].headers as Record<string, string>).Range).toBe('bytes=4096-16383')
+    expect(text!.length).toBeLessThanOrEqual(16384)
+    expect(parseHeader(text).schema).toBe('IFC4')
+  })
+  it('a host that ignores Range: at most 16 KB of the 200 body, one request', async () => {
+    const f = vi.fn(async () => new Response('ISO-10303-21;' + 'z'.repeat(100000), { status: 200 }))
+    const text = await fetchHeader('https://x/a.ifc', { fetchImpl: f })
+    expect(f).toHaveBeenCalledTimes(1)
+    expect(text!.length).toBeLessThanOrEqual(16384)
+  })
   it('sends a 4 KB Range and returns STEP text', async () => {
     const f = vi.fn(async () => new Response(IFC4, { status: 206 }))
     expect(await fetchHeader('https://cdn.example/a.ifc', { fetchImpl: f })).toContain('FILE_SCHEMA')

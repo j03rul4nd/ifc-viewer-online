@@ -322,6 +322,45 @@ export interface ProductData {
   /** IFC base quantities / psets for a single element, else an oriented box of the geometry. */
   dimensions: ProductDimensions | null
   units: { length: 'm'; area: 'm2'; volume: 'm3'; weight: 'kg' }
+  /** IfcSpace schedule per storey (since 1.19); null when the model has no spaces. */
+  rooms?: ProductRoomSchedule | null
+}
+
+/** One IfcSpace in getProductData().rooms. Areas in m², heights in m. */
+export interface ProductRoom {
+  modelId: string | null
+  expressId: number | null
+  globalId: string | null
+  name: string | null
+  longName: string | null
+  number: string | null
+  label: string
+  area: number | null
+  /** net / gross: base quantities; pset: a property; geometry: the space's box footprint (an upper bound). */
+  areaSource: 'net' | 'gross' | 'pset' | 'geometry' | null
+  netArea: number | null
+  grossArea: number | null
+  height: number | null
+  storey: string | null
+  /** Guessed from the names. */
+  kind: 'bedroom' | 'bathroom' | null
+}
+
+export interface ProductRoomTotals { count: number; area: number | null; netArea: number | null; grossArea: number | null }
+
+export interface ProductRoomSchedule {
+  storeys: Array<ProductRoomTotals & { name: string | null; elevation: number | null; rooms: ProductRoom[] }>
+  totals: ProductRoomTotals
+  bedrooms: number
+  bathrooms: number
+  /** The bedroom / bathroom counts are inferred from room names. */
+  inferred: true
+  geometryAreas: boolean
+  /** More spaces than were read (cap 2000). */
+  truncated: boolean
+  /** A length unit could not be read; those values were left out rather than taken as metres. */
+  unknownUnits: boolean
+  units: { area: 'm2'; length: 'm' }
 }
 
 export interface ProductDataQuery {
