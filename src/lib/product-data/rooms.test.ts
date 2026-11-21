@@ -67,6 +67,13 @@ describe('roomKind (10 languages)', () => {
     for (const n of ['Living', 'Kitchen', 'Badminton hall', 'Bathurst office', 'Chambers street', 'Garage', 'Cuarto de máquinas', '']) expect(roomKind(n)).toBeNull()
     expect(roomKind('Bedroom 1 en-suite')).toBe('bedroom')
   })
+
+  it.each(['Bathroom cabinet store', 'Bath store', 'WC riser', 'Toilet core shaft', 'Chambre froide', 'Quarto técnico', 'Suite lobby',
+    'Almacén baño', 'Badlager', 'Gaine WC', 'Cavedio bagno', 'Armari bany', '卫生间管井', 'トイレ倉庫', 'ช่องท่อห้องน้ำ', 'Corridor bedroom wing'])(
+    'service / storage space "%s" is neither', (n) => expect(roomKind(n)).toBeNull())
+
+  it.each([['Bedroom 2', 'bedroom'], ['Dormitorio principal', 'bedroom'], ['Baño', 'bathroom'], ['Master suite', 'bedroom'], ['En-suite', 'bathroom'],
+    ['Dormitorio planta 1', 'bedroom']])('true positive %s → %s', (n, k) => expect(roomKind(n)).toBe(k))
 })
 
 describe('buildRoomSchedule', () => {
@@ -85,6 +92,18 @@ describe('buildRoomSchedule', () => {
 
   it('counts bedrooms / bathrooms, flagged as inferred', () => {
     expect(d).toMatchObject({ bedrooms: 1, bathrooms: 1, inferred: true, geometryAreas: false })
+  })
+
+  it('unknown length units are never taken as metres; common names are mapped', () => {
+    const odd = buildRoomSchedule([space({ raw: storey('L1', 3000) })], { LENGTHUNIT: 'furlong' })
+    expect(odd.storeys[0].elevation).toBeNull()
+    expect(odd.unknownUnits).toBe(true)
+    expect(d.unknownUnits).toBe(false)
+    for (const u of ['millimetre', 'Millimeter', 'mm']) expect(spaceStorey(space({ raw: storey('L', 3000) }), { LENGTHUNIT: u }).elevation).toBe(3)
+    expect(spaceStorey(space({ raw: storey('L', 10) }), { LENGTHUNIT: 'foot' }).elevation).toBe(3.048)
+    expect(spaceStorey(space({ raw: storey('L', 10) }), { LENGTHUNIT: 'inch' }).elevation).toBe(0.254)
+    expect(spaceStorey(space({ raw: storey('L', 2.5) })).elevation).toBe(2.5)
+    expect(roomOf(space({ quantitySets: [qset('Qto_SpaceBaseQuantities', [['Height', 9, 'Length', 'cubit']])] })).height).toBeNull()
   })
 
   it('falls back to the contained storey name', () => {

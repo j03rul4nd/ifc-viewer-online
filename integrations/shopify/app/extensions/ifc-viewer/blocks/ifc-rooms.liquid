@@ -17,7 +17,7 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{%- capture rooms_labels -%}{"title":{{ 'ifcvo.rooms.title' | t | json }},"area":{{ 'ifcvo.rooms.area' | t | json }},"storeys":{{ 'ifcvo.rooms.storeys' | t | json }},"bedrooms":{{ 'ifcvo.rooms.bedrooms' | t | json }},"bathrooms":{{ 'ifcvo.rooms.bathrooms' | t | json }},"footprint":{{ 'ifcvo.rooms.footprint' | t | json }},"room":{{ 'ifcvo.rooms.room' | t | json }},"number":{{ 'ifcvo.rooms.number' | t | json }},"height":{{ 'ifcvo.rooms.height' | t | json }},"total":{{ 'ifcvo.rooms.total' | t | json }},"storey":{{ 'ifcvo.rooms.storey' | t | json }},"waiting":{{ 'ifcvo.rooms.waiting' | t | json }},"loading":{{ 'ifcvo.rooms.loading' | t | json }},"none":{{ 'ifcvo.rooms.none' | t | json }},"error":{{ 'ifcvo.rooms.error' | t | json }},"inferred":{{ 'ifcvo.rooms.inferred' | t | json }},"geometry":{{ 'ifcvo.rooms.geometry' | t | json }}}{%- endcapture -%}
+{%- capture rooms_labels -%}{"title":{{ 'ifcvo.rooms.title' | t | json }},"area":{{ 'ifcvo.rooms.area' | t | json }},"storeys":{{ 'ifcvo.rooms.storeys' | t | json }},"bedrooms":{{ 'ifcvo.rooms.bedrooms' | t | json }},"bathrooms":{{ 'ifcvo.rooms.bathrooms' | t | json }},"footprint":{{ 'ifcvo.rooms.footprint' | t | json }},"room":{{ 'ifcvo.rooms.room' | t | json }},"number":{{ 'ifcvo.rooms.number' | t | json }},"height":{{ 'ifcvo.rooms.height' | t | json }},"total":{{ 'ifcvo.rooms.total' | t | json }},"storey":{{ 'ifcvo.rooms.storey' | t | json }},"waiting":{{ 'ifcvo.rooms.waiting' | t | json }},"loading":{{ 'ifcvo.rooms.loading' | t | json }},"none":{{ 'ifcvo.rooms.none' | t | json }},"error":{{ 'ifcvo.rooms.error' | t | json }},"inferred":{{ 'ifcvo.rooms.inferred' | t | json }},"geometry":{{ 'ifcvo.rooms.geometry' | t | json }},"truncated":{{ 'ifcvo.rooms.truncated' | t | json }},"units":{{ 'ifcvo.rooms.units' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-rooms-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -63,7 +63,7 @@
     { "type": "checkbox", "id": "show_chips", "label": "Key specs chips", "default": true },
     { "type": "checkbox", "id": "show_table", "label": "Room schedule", "default": true },
     { "type": "checkbox", "id": "highlight", "label": "Highlight a room in 3D when clicked", "default": true },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, area, storeys, bedrooms, bathrooms, footprint, room, number, height, total, storey, waiting, none, inferred, geometry." },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, area, storeys, bedrooms, bathrooms, footprint, room, number, height, total, storey, waiting, none, inferred, geometry, truncated, units." },
     { "type": "header", "content": "Brand" },
     { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
     { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },

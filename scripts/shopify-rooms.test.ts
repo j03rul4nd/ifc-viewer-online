@@ -135,6 +135,16 @@ describe('render', () => {
     expect(plain.querySelector('tbody .ifcvo-row')).toBeNull()
   })
 
+  it('shows truncated and unknown-unit notes', () => {
+    const r = mount()
+    render(r, { ...DATA, rooms: { ...DATA.rooms, truncated: true, unknownUnits: true } }, null)
+    expect(r.querySelector('[data-ifcvo-truncated]')!.textContent).toContain('only the first rooms')
+    expect(r.querySelector('[data-ifcvo-units]')).not.toBeNull()
+    const plain = mount()
+    render(plain, DATA, null)
+    expect(plain.querySelector('[data-ifcvo-truncated]')).toBeNull()
+  })
+
   it('a model without spaces says so', () => {
     const r = mount()
     render(r, { ...DATA, rooms: null }, null)

@@ -15,6 +15,8 @@ export const LABELS = {
   waiting: 'Open the 3D model to list its rooms.', loading: 'Reading the rooms…', none: 'This model has no rooms (IfcSpace).',
   error: 'The rooms could not be read.', inferred: 'Bedrooms and bathrooms are counted from the room names.',
   geometry: '≈ calculated from the room\'s shape',
+  truncated: 'Large model: only the first rooms were read, totals may be incomplete.',
+  units: 'Some lengths use a unit that could not be read and are not shown.',
 }
 export const CHIPS = ['area', 'storeys', 'bedrooms', 'bathrooms', 'footprint']
 
@@ -173,6 +175,8 @@ export function render(root, data, viewer = current) {
     })),
     el('tfoot', {}, el('tr', {}, el('th', { scope: 'row', colspan: '2' }, labels.total), el('td', {}, g.total || '—'), el('td', {})))))
   if (groups.length > 1) nodes.push(el('p', { class: 'ifcvo-rooms-total' }, el('strong', {}, `${labels.total}: ${areaText(rooms.totals.area, cfg.unit) || '—'}`)))
+  if (rooms.truncated) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-truncated': '' }, labels.truncated))
+  if (rooms.unknownUnits) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-units': '' }, labels.units))
   if (rooms.bedrooms || rooms.bathrooms) nodes.push(el('p', { class: 'ifcvo-muted' }, labels.inferred))
   body.replaceChildren(...nodes)
   return groups

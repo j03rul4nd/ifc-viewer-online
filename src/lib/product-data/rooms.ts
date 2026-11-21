@@ -60,11 +60,26 @@ export interface RoomSchedule {
   /** True when some room's area came from its geometry box. */
   geometryAreas: boolean
   truncated: boolean
+  /** True when a length unit of the model could not be read: those values were left out, never taken as metres. */
+  unknownUnits: boolean
   units: { area: 'm2'; length: 'm' }
 }
 
 const AREA_TO_M2: Record<string, number> = { 'm²': 1, m2: 1, 'mm²': 1e-6, mm2: 1e-6, 'cm²': 1e-4, cm2: 1e-4, 'ft²': 0.09290304, ft2: 0.09290304 }
-const LENGTH_TO_M: Record<string, number> = { m: 1, mm: 0.001, cm: 0.01, dm: 0.1, in: 0.0254, ft: 0.3048 }
+const LENGTH_TO_M: Record<string, number> = {
+  m: 1, metre: 1, meter: 1, metres: 1, meters: 1,
+  mm: 0.001, millimetre: 0.001, millimeter: 0.001, millimetres: 0.001, millimeters: 0.001,
+  cm: 0.01, centimetre: 0.01, centimeter: 0.01, centimetres: 0.01, centimeters: 0.01,
+  dm: 0.1, decimetre: 0.1, decimeter: 0.1,
+  in: 0.0254, inch: 0.0254, inches: 0.0254, '"': 0.0254,
+  ft: 0.3048, foot: 0.3048, feet: 0.3048, "'": 0.3048,
+}
+
+/** Metres per unit; undefined for a unit we do not know (never assumed to be metres). */
+export function lengthFactor(unit: string | null | undefined): number | undefined {
+  if (unit === null || unit === undefined || unit.trim() === '') return undefined
+  return LENGTH_TO_M[unit.trim().toLowerCase().replace(/\.$/, '')]
+}
 const norm = (s: string): string => s.toLowerCase().replace(/[\s_-]+/g, '')
 
 function toSI(table: Record<string, number>, value: IFCValue | undefined, unit: string | undefined, projectUnit: string | undefined): number | null {
@@ -72,7 +87,7 @@ function toSI(table: Record<string, number>, value: IFCValue | undefined, unit: 
   if (!p) return null
   const u = p.unit ?? unit ?? projectUnit
   if (!u) return p.n
-  const f = table[u.trim()] ?? table[u.trim().toLowerCase()]
+  const f = table === LENGTH_TO_M ? lengthFactor(u) : table[u.trim()] ?? table[u.trim().toLowerCase()]
   return f === undefined ? null : p.n * f
 }
 
@@ -121,7 +136,8 @@ const BEDROOM_LATIN = WORD([
   'schlafzimmer', 'schlafraum', 'kinderzimmer', 'elternschlafzimmer', // de
   'chambres?', // fr
   'camera da letto', 'camere da letto', 'camera matrimoniale', 'camera singola', // it
-  'quartos?', 'dormit[oó]rios?', 'su[ií]te', // pt
+  'quartos?', 'dormit[oó]rios?', 'su[ií]tes?', // pt
+  'master ?suites?', // en
 ])
 const BEDROOM_CJK = /寝室|ベッドルーム|主寝室|卧室|臥室|主卧|次卧|ห้องนอน/u
 const BATHROOM_LATIN = WORD([
@@ -135,11 +151,37 @@ const BATHROOM_LATIN = WORD([
 ])
 const BATHROOM_CJK = /浴室|バスルーム|トイレ|洗面所|卫生间|衛生間|厕所|廁所|洗手间|ห้องน้ำ|ห้องส้วม/u
 
-/** Bedroom, bathroom or neither, from the room's names. Bedroom wins a tie ("Bedroom 1 en-suite"). */
+// Service, storage and technical spaces that carry a room word ("Bath store",
+// "WC riser", "Chambre froide", "Quarto técnico", "Suite lobby"): never counted.
+const NOT_A_ROOM_LATIN = WORD([
+  'stores?', 'storage', 'storerooms?', 'cabinets?', 'cupboards?', 'closets?', 'risers?', 'shafts?', 'ducts?', 'plant', 'plantroom',
+  'technical', 'cold', 'lobby', 'lobbies', 'corridors?', 'cleaners?', "cleaner's", 'cleaning', 'janitor', 'services?', 'mechanical',
+  'electrical', 'voids?', 'maintenance', 'cores?', // en
+  'almac[eé]n', 'almacenes', 'trasteros?', 'armarios?', 'patinillos?', 'conductos?', 't[eé]cnicos?', 't[eé]cnicas?', 'fr[ií]os?',
+  'vest[ií]bulos?', 'pasillos?', 'limpieza', 'instalaciones', 'mantenimiento', // es
+  'magatzems?', 'armaris?', 'patinets?', 't[eè]cnics?', 't[eè]cnica', 'freds?', 'vest[ií]buls?', 'passad[ií]s', 'neteja',
+  'instal·lacions', // ca
+  'lagers?', 'schr[aä]nke?', 'sch[aä]chte?', 'kan[aä]le?', 'technik', 'flure?', 'korridore?', 'foyer', // de
+  'stockage', 'r[eé]serves?', 'placards?', 'gaines?', 'conduits?', 'techniques?', 'froides?', 'froids?', 'halls?', 'couloirs?',
+  'd[eé]gagements?', 'm[eé]nage', 'locaux', 'local', // fr
+  'depositi', 'deposito', 'magazzini?', 'armadi', 'armadio', 'cavedi', 'cavedio', 'condotti', 'condotto', 'tecnici', 'tecnico',
+  'tecnica', 'fredda', 'freddo', 'atrio', 'corridoi', 'corridoio', 'pulizie', 'ripostiglio', // it
+  'dep[oó]sitos?', 'armaz[eé]ns?', 'arm[aá]rios?', 'dutos?', 'condutas?', 'corredor(?:es)?', 'limpeza', 'arrumos?', // pt
+])
+// German compounds and unspaced scripts (ja / zh / th): substrings.
+const NOT_A_ROOM_SUBSTR = /lager|schacht|technik|k[uü]hlraum|putzraum|倉庫|収納|物置|シャフト|ダクト|機械室|電気室|廊下|ロビー|冷蔵|仓库|储藏|储物|柜|管井|竖井|风井|管道|设备|機房|机房|冷库|大堂|走廊|清洁|ห้องเก็บ|คลัง|ตู้|ช่องท่อ|ท่อ|ห้องเครื่อง|ห้องเย็น|ล็อบบี้|ทางเดิน/iu
+const ENSUITE = /(?:^|[^\p{L}])en-?suite(?=$|[^\p{L}])/giu
+
+/**
+ * Bedroom, bathroom or neither, from the room's names. Bedroom wins a tie
+ * ("Bedroom 1 en-suite"); "En-suite" alone is a bathroom, not a "suite".
+ * Any service / storage / technical word makes it neither.
+ */
 export function roomKind(...names: Array<string | null | undefined>): RoomKind {
   const text = names.filter(Boolean).join(' ')
   if (!text) return null
-  if (BEDROOM_LATIN.test(text) || BEDROOM_CJK.test(text)) return 'bedroom'
+  if (NOT_A_ROOM_LATIN.test(text) || NOT_A_ROOM_SUBSTR.test(text)) return null
+  if (BEDROOM_LATIN.test(text.replace(ENSUITE, ' ')) || BEDROOM_CJK.test(text)) return 'bedroom'
   if (BATHROOM_LATIN.test(text) || BATHROOM_CJK.test(text)) return 'bathroom'
   return null
 }
@@ -150,14 +192,18 @@ const asList = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter(isObj) : isOb
 const val = (a: unknown): unknown => (isObj(a) && 'value' in a ? a.value : a)
 
 /** Storey of a space: fragments resolves Decomposes (IfcRelAggregates) to the storey itself. */
-export function spaceStorey(item: IFCItemData, units: ProjectUnits = {}): { name: string | null; elevation: number | null } {
+export function spaceStorey(item: IFCItemData, units: ProjectUnits = {}): { name: string | null; elevation: number | null; unknownUnit?: true } {
   for (const s of asList(item.raw?.Decomposes)) {
     const name = val(s.Name)
     const cat = String(val(s._category) ?? '')
     if (cat && !/STOREY/i.test(cat)) continue
     const e = val(s.Elevation)
-    const f = LENGTH_TO_M[units.LENGTHUNIT ?? 'm'] ?? 1
-    if (typeof name === 'string' && name) return { name, elevation: typeof e === 'number' && Number.isFinite(e) ? Math.round(e * f * 1000) / 1000 : null }
+    // No project unit: IFC's default is metres. A unit we cannot read: no elevation, flagged.
+    const f = units.LENGTHUNIT ? lengthFactor(units.LENGTHUNIT) : 1
+    if (typeof name === 'string' && name) {
+      const has = typeof e === 'number' && Number.isFinite(e)
+      return { name, elevation: has && f !== undefined ? Math.round(e * f * 1000) / 1000 : null, ...(has && f === undefined ? { unknownUnit: true as const } : {}) }
+    }
   }
   return { name: item.storey ?? null, elevation: null }
 }
@@ -206,10 +252,13 @@ function totals(rooms: Room[]): RoomTotals {
 /** Feed rooms in batches; result() groups and sums them. */
 export class RoomScheduleBuilder {
   private rooms: Array<{ room: Room; elevation: number | null }> = []
+  private unknownUnits = false
   truncated = false
 
   add(item: IFCItemData, units: ProjectUnits = {}, ref: { modelId?: string | null; expressId?: number | null } = {}, box: { w: number; d: number; h: number } | null = null): void {
-    this.rooms.push({ room: roomOf(item, units, ref, box), elevation: spaceStorey(item, units).elevation })
+    const st = spaceStorey(item, units)
+    if (st.unknownUnit || (units.LENGTHUNIT && lengthFactor(units.LENGTHUNIT) === undefined)) this.unknownUnits = true
+    this.rooms.push({ room: roomOf(item, units, ref, box), elevation: st.elevation })
   }
 
   result(): RoomSchedule {
@@ -235,6 +284,7 @@ export class RoomScheduleBuilder {
       inferred: true,
       geometryAreas: all.some((r) => r.areaSource === 'geometry'),
       truncated: this.truncated,
+      unknownUnits: this.unknownUnits,
       units: { area: 'm2', length: 'm' },
     }
   }

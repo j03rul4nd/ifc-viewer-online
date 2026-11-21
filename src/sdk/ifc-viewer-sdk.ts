@@ -356,7 +356,10 @@ export interface ProductRoomSchedule {
   /** The bedroom / bathroom counts are inferred from room names. */
   inferred: true
   geometryAreas: boolean
+  /** More spaces than were read (cap 2000). */
   truncated: boolean
+  /** A length unit could not be read; those values were left out rather than taken as metres. */
+  unknownUnits: boolean
   units: { area: 'm2'; length: 'm' }
 }
 

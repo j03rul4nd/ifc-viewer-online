@@ -28,7 +28,9 @@
       "none": "This model has no rooms (IfcSpace).",
       "error": "The rooms could not be read.",
       "inferred": "Bedrooms and bathrooms are counted from the room names.",
-      "geometry": "≈ calculated from the room's shape"
+      "geometry": "≈ calculated from the room's shape",
+      "truncated": "Large model: only the first rooms were read, totals may be incomplete.",
+      "units": "Some lengths use a unit that could not be read and are not shown."
     }
   }
 }
