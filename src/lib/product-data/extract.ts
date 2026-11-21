@@ -9,9 +9,10 @@
 // timber door weighed as steel would be a wrong number on a shop page.
 
 import type { IFCItemData, IFCValue, ProjectUnits } from '../ifc-item-data'
-import { extractSteelPart, parseNumeric, revitTypeName } from '../steel/takeoff'
+import { extractSteelPart, parseNumeric, revitTypeName, type SteelPart } from '../steel/takeoff'
 import type { RoomSchedule } from './rooms'
 import type { ClassificationSummary } from './classification'
+import { TakeoffBuilder, type ProductTakeoff } from './takeoff'
 
 export interface ProductDataQuantities {
   /** metres */
@@ -63,6 +64,8 @@ export interface ProductData {
   rooms?: RoomSchedule | null
   /** Classification codes by system; null when none. Filled by collectProductData. */
   classifications?: ClassificationSummary | null
+  /** Bill of quantities by class + type + material (+ steel profile, + storey) and a steel table by profile. */
+  takeoff?: ProductTakeoff
 }
 
 export interface ProductDataOptions {
@@ -186,7 +189,7 @@ const AREA_NAMES = ['NetSideArea', 'NetArea', 'NetSurfaceArea', 'GrossSideArea',
 const VOLUME_NAMES = ['NetVolume', 'GrossVolume', 'Volume', 'Net volume']
 
 /** One element's quantities in SI. */
-export function elementQuantities(item: IFCItemData, units: ProjectUnits = {}): ProductDataQuantities & { material: string | null } {
+export function elementQuantities(item: IFCItemData, units: ProjectUnits = {}): ProductDataQuantities & { material: string | null; steel: SteelPart } {
   const steel = extractSteelPart(item, units)
   const props = allProps(item)
   const isSteel = STEEL_CLASS.test(item.ifcClass ?? '') || STEEL_MATERIAL.test(steel.material ?? '')
@@ -197,6 +200,7 @@ export function elementQuantities(item: IFCItemData, units: ProjectUnits = {}): 
     volume: measure(item, props, 'Volume', VOLUME_NAMES, VOLUME_TO_M3, units.VOLUMEUNIT),
     weight,
     material: steel.material,
+    steel,
   }
 }
 
@@ -222,6 +226,7 @@ export class ProductDataBuilder {
   private materials = new Map<string, number>()
   private totals: ProductDataQuantities & { count: number } = { count: 0, length: null, area: null, volume: null, weight: null }
   private keep: (p: Prop) => boolean
+  private takeoff = new TakeoffBuilder()
   truncated = false
 
   constructor(opts: ProductDataOptions = {}) { this.keep = wanted(opts.properties) }
@@ -254,6 +259,7 @@ export class ProductDataBuilder {
       const k = `${p.set}.${p.name}`
       if (!(k in row.properties)) row.properties[k] = p.unit && typeof p.value === 'number' ? `${p.value} ${p.unit}` : String(p.value)
     }
+    this.takeoff.add({ ifcClass: cls, type, material: q.material, storey: item.storey ?? null, length: q.length, area: q.area, volume: q.volume, weight: q.weight, steel: q.steel })
     const t = this.totals
     t.count++
     t.length = add(t.length, q.length)
@@ -266,6 +272,7 @@ export class ProductDataBuilder {
   bbox: { w: number; d: number; h: number } | null = null
 
   result(): ProductData {
+    const takeoff = this.takeoff.result()
     const r = (q: ProductDataQuantities): ProductDataQuantities => ({ length: round(q.length), area: round(q.area), volume: round(q.volume), weight: round(q.weight) })
     return {
       elementCount: this.totals.count,
@@ -277,6 +284,7 @@ export class ProductDataBuilder {
       totals: { count: this.totals.count, ...r(this.totals) },
       dimensions: pickDimensions([...this.types.values()], this.bbox),
       units: { length: 'm', area: 'm2', volume: 'm3', weight: 'kg' },
+      takeoff: { ...takeoff, truncated: takeoff.truncated || this.truncated },
     }
   }
 }
