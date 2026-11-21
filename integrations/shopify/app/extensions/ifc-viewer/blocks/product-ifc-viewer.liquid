@@ -52,6 +52,7 @@
     assign files = product.metafields[ns][files_key].value
   endif
   assign specs_ns = s.specs_namespace | strip
+  assign shop_cfg = shop.metafields.ifcvo.config.value
 
   assign stage_bg = '#11161a'
   case s.background
@@ -66,26 +67,17 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if current_model != '' -%}
   <div class="ifcvo-product" data-ifcvo-viewer data-models="{{ map | escape }}" data-model="{{ current_model | escape }}"
-    data-load="{{ s.load }}" data-title="{{ title | escape }}" data-ui="{{ s.ui }}" data-view="{{ s.view }}"
+    data-load="{{ s.load | escape }}" data-title="{{ title | escape }}" data-ui="{{ s.ui | escape }}" data-view="{{ s.view | escape }}"
     data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
-    data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}"
+    data-accent="{{ s.accent | remove: '#' | escape }}" data-bg="{{ s.background | escape }}" data-bg-top="{{ s.bg_top | escape }}" data-bg-bottom="{{ s.bg_bottom | escape }}"
     data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | default: 'business' | escape }}"
     data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
-    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code }}"
-    data-size-mb="{{ size_mb | escape }}">
+    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+    data-size-mb="{{ size_mb | escape }}"
+    data-product-id="{{ product.id | escape }}" data-variant-id="{{ current.id | escape }}" data-block-id="{{ block.id | escape }}">
     {%- render 'ifcvo-facade', ns: ns, model: current_model, title: title, aspect: s.aspect, height: s.height, radius: s.radius, stage_bg: stage_bg, open_label: s.open_label, eager: eager -%}
-    {%- if s.download -%}
-      <p style="margin:8px 0 0"><a class="ifcvo-download" href="{{ current_model | escape }}" download rel="noopener">{{ s.download_label | escape }}</a></p>
-    {%- endif -%}
-    {%- if files != blank -%}
-      <ul class="ifcvo-files" style="margin:8px 0 0;padding-left:18px">
-        {%- for f in files -%}
-          {%- assign furl = f.url | default: f | strip -%}
-          {%- assign fname = furl | split: '?' | first | split: '/' | last -%}
-          <li><a href="{{ furl | escape }}" download rel="noopener" data-file="{{ fname | escape }}">{{ fname | escape }}</a></li>
-        {%- endfor -%}
-      </ul>
-    {%- endif -%}
+    {%- comment -%} Gate and browser-made formats come from the shop's ifcvo.config (this block is at the 25-setting limit), or use the "IFC downloads" block. {%- endcomment -%}
+    {%- render 'ifcvo-downloads', model: current_model, files: files, show_ifc: s.download, ifc_label: s.download_label, glb: shop_cfg.downloadsGlb, csv: shop_cfg.downloadsCsv, gate: shop_cfg.downloadsGate, tag: shop_cfg.downloadsTag -%}
     {%- if specs_ns != '' and product.metafields[specs_ns] != blank -%}
       <table class="ifcvo-specs" style="margin:12px 0 0;border-collapse:collapse;width:100%">
         <caption style="text-align:left;font-weight:600;padding-bottom:4px">{{ s.specs_label | escape }}</caption>
@@ -94,8 +86,12 @@
         {%- endfor -%}
       </table>
     {%- endif -%}
+    {% render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns, download_label: s.download_label %}
   </div>
   <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+  {% render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true %}
+  <script type="module" src="{{ 'ifcvo-events.js' | asset_url }}"></script>
+  {%- if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
 {%- elsif request.design_mode -%}
   <p>IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file).</p>
 {%- endif -%}

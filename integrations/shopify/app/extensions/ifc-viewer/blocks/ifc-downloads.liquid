@@ -1,0 +1,61 @@
+{% comment %}
+  Downloads for the product's IFC model, anywhere on the product page: the
+  original IFC, a GLB and a CSV made in the visitor's browser from it, and the
+  extra files metafield. "Logged-in customers only" hides the links from
+  guests; it does not protect the files (their links are not secret).
+  Turn off the download link in the "Product IFC model" block to avoid two lists.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.namespace | strip | default: 'custom'
+  assign key = s.key | strip | default: 'ifc_model'
+  assign current = product.selected_or_first_available_variant
+  assign vfield = current.metafields[ns][key].value
+  assign dl_model = vfield.url | default: vfield | strip
+  if dl_model == ''
+    assign field = product.metafields[ns][key].value
+    assign dl_model = field.url | default: field | strip
+  endif
+  assign files = ''
+  assign files_key = s.files_key | strip
+  if files_key != ''
+    assign files = product.metafields[ns][files_key].value
+  endif
+-%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  {%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}
+</div>
+{%- if s.glb or s.csv -%}
+  <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+  <script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "IFC downloads",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "title", "label": "Heading", "default": "Downloads" },
+    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
+    { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
+    { "type": "checkbox", "id": "ifc", "label": "Original IFC file", "default": true },
+    { "type": "text", "id": "ifc_label", "label": "IFC link text", "default": "Download BIM model (IFC)" },
+    { "type": "checkbox", "id": "glb", "label": "GLB made in the browser", "default": false, "info": "Opens the 3D viewer to build the file on the visitor's device." },
+    { "type": "text", "id": "glb_label", "label": "GLB button text", "default": "3D model (GLB)" },
+    { "type": "checkbox", "id": "csv", "label": "CSV element list made in the browser", "default": false },
+    { "type": "text", "id": "csv_label", "label": "CSV button text", "default": "Element list (CSV)" },
+    { "type": "text", "id": "files_key", "label": "More files metafield key", "default": "bim_files" },
+    { "type": "header", "content": "Who sees them" },
+    { "type": "select", "id": "gate", "label": "Show the downloads to", "default": "none", "info": "This hides the links, it does not protect the files: anyone with a file's link can still download it.", "options": [
+      { "value": "none", "label": "Everyone" },
+      { "value": "customer", "label": "Logged-in customers only" },
+      { "value": "tag", "label": "Customers with a tag" }
+    ] },
+    { "type": "text", "id": "tag", "label": "Customer tag", "default": "trade", "visible_if": "{{ block.settings.gate == 'tag' }}" },
+    { "type": "text", "id": "login_label", "label": "Text for guests", "default": "Log in to see the downloads" }
+  ]
+}
+{% endschema %}

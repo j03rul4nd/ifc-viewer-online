@@ -104,9 +104,14 @@ export function gate(feature, node, plan = currentPlan()) {
   return false
 }
 
-/** Customer events, so the merchant's analytics pixels can count use. */
+/** Customer events, so the merchant's analytics pixels can count use. Opened/loaded/error/download go through ifcvo-events.js. */
 function track(name, data) {
   try { window.Shopify && Shopify.analytics && Shopify.analytics.publish(name, data) } catch (e) { /* no pixels */ }
+}
+
+/** DOM events on a viewer root; ifcvo-events.js turns them into customer events. */
+function signal(root, type, detail) {
+  try { root.dispatchEvent(new CustomEvent(type, { detail })) } catch (e) { /* old browser */ }
 }
 
 function emit(type, detail) {
@@ -237,7 +242,8 @@ export function setState(root, state, extra = '') {
   show(root.querySelector('.ifcvo-open'), state === 'idle')
   show(root.querySelector('.ifcvo-retry'), state === 'error')
   show(root.querySelector('.ifcvo-full'), state === 'error' || state === 'large' || state === 'webgl')
-  if (state === 'error') track('ifc_viewer_error', { reason: extra.trim() })
+  if (state === 'error') signal(root, 'ifcvo:error', { code: String(extra).replace(/^[\s:]+/, '').slice(0, 60) || 'error' })
+  if (state === 'offline' || state === 'large' || state === 'webgl') signal(root, 'ifcvo:error', { code: state })
 }
 
 function dropViewer() {
@@ -276,7 +282,9 @@ function mountViewer(root) {
     setState(root, navigator.onLine === false ? 'offline' : 'error', why)
   }
 
+  let started = Date.now()
   const attempt = async () => {
+    started = Date.now()
     const { IfcViewer } = await loadSdk()
     if (!root.isConnected) return null
     canvas.replaceChildren()
@@ -296,7 +304,10 @@ function mountViewer(root) {
     })
     viewer = v
     for (const type of ['model-loaded', 'element-selected', 'validation-completed', 'tour-started', 'tour-step', 'tour-ended']) {
-      v.on(type, (e) => emit(type, e))
+      v.on(type, (e) => {
+        if (type === 'model-loaded' && viewer === v) signal(root, 'ifcvo:loaded', { elements: (e && Number(e.elementCount)) || 0, ms: Math.round(Date.now() - started) })
+        emit(type, e)
+      })
     }
     v.on('model-progress', (e) => { if (viewer === v && e && e.percent != null) setState(root, 'loading', ` ${Math.round(e.percent)}%`) })
     // A model error ends the attempt at once (no auto-retry); after ready it shows the error state.
@@ -330,8 +341,8 @@ function mountViewer(root) {
           const v = await attempt()
           if (!v) return null
           setState(root, 'ready')
-          track('ifc_viewer_opened', { model: active.model })
           emit('viewer', v)
+          document.dispatchEvent(new CustomEvent('ifcvo:viewer', { detail: { viewer: v, root } }))
           return v
         } catch (e) {
           dropViewer()
@@ -370,11 +381,6 @@ function mountViewer(root) {
       else window.addEventListener('load', idle, { once: true })
     }
   }
-
-  root.addEventListener('click', (e) => {
-    const a = e.target.closest('a[download]')
-    if (a) track('ifc_model_downloaded', { file: a.dataset.file || active.model })
-  })
 }
 
 // Themes update the cart form's variant id after the picker changes. One
@@ -567,8 +573,11 @@ export function _state() {
 
 if (typeof window !== 'undefined' && !window.IFCVO) {
   window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS,
-    labels: labelsOf, probe }
+    labels: labelsOf, probe,
+    // For the companion modules (quote, downloads): the live viewer, opening it, and its events.
+    get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen }
   init()
+  document.dispatchEvent(new CustomEvent('ifcvo:ready'))
   document.addEventListener('change', onVariantChange)
   // The theme editor adds, re-renders and removes sections without a page load.
   document.addEventListener('shopify:section:load', init)
