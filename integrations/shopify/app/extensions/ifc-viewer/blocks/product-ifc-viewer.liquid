@@ -63,7 +63,10 @@
   <div class="ifcvo-product" data-ifcvo-viewer data-models="{{ map | escape }}" data-model="{{ current_model | escape }}"
     data-load="{{ s.load }}" data-title="{{ title | escape }}" data-ui="{{ s.ui }}" data-view="{{ s.view }}"
     data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
-    data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}">
+    data-accent="{{ s.accent | remove: '#' }}" data-bg="{{ s.background }}" data-bg-top="{{ s.bg_top }}" data-bg-bottom="{{ s.bg_bottom }}"
+    data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | default: 'business' | escape }}"
+    data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
+    data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code }}">
     <div class="ifcvo-stage" style="position:relative;height:{{ s.height }}px;border-radius:{{ s.radius }}px;overflow:hidden;background:{{ stage_bg }}">
       {%- if product.featured_media -%}
         {{ product.featured_media | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '', style: 'width:100%;height:100%;object-fit:contain;opacity:.55' }}

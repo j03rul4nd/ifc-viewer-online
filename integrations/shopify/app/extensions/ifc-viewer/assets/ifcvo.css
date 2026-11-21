@@ -1,12 +1,29 @@
 /* IFC Viewer Online theme blocks. They inherit the theme's font and text
    colour; the accent and corner radius come from each block's settings and
-   default to the theme's own button colour where the theme defines one. */
-.ifcvo-panel {
+   default to the theme's own button colour where the theme defines one.
+   Custom properties a theme's custom CSS can set on any block:
+   --ifcvo-accent, --ifcvo-radius, --ifcvo-bg-1, --ifcvo-bg-2, --ifcvo-font, --ifcvo-gap.
+   Every selector here starts with .ifcvo, so nothing leaks into the theme. */
+.ifcvo-panel, .ifcvo-product {
   --ifcvo-accent: rgb(var(--color-button, 10 132 129));
   --ifcvo-radius: 12px;
+  --ifcvo-bg-1: transparent;
+  --ifcvo-bg-2: color-mix(in srgb, currentColor 6%, transparent);
+  --ifcvo-font: inherit;
+  --ifcvo-gap: 8px;
   --ifcvo-line: color-mix(in srgb, currentColor 14%, transparent);
-  --ifcvo-soft: color-mix(in srgb, currentColor 6%, transparent);
+  --ifcvo-soft: var(--ifcvo-bg-2);
   font: inherit;
+  font-family: var(--ifcvo-font);
+}
+.ifcvo-upsell {
+  font: inherit; font-size: .9em; margin: 0 0 var(--ifcvo-gap, 8px); padding: 8px 12px;
+  border: 1px dashed currentColor; border-radius: 8px; opacity: .8;
+}
+.ifcvo-panel {
+  background: var(--ifcvo-bg-1);
+  font: inherit;
+  font-family: var(--ifcvo-font);
   color: inherit;
   border: 1px solid var(--ifcvo-line);
   border-radius: var(--ifcvo-radius);
