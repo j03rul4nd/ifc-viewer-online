@@ -10,6 +10,25 @@
       "offline": "You are offline. The 3D viewer loads when the connection is back.",
       "too_large": "This model is too large to open on this device. Open it in the full viewer or download it.",
       "no_webgl": "This browser cannot show 3D. Open it in the full viewer or download it."
+    },
+    "rooms": {
+      "title": "Rooms",
+      "area": "Total area",
+      "storeys": "Storeys",
+      "bedrooms": "Bedrooms",
+      "bathrooms": "Bathrooms",
+      "footprint": "Footprint",
+      "room": "Room",
+      "number": "No.",
+      "height": "Height",
+      "total": "Total",
+      "storey": "Storey",
+      "waiting": "Open the 3D model to list its rooms.",
+      "loading": "Reading the rooms…",
+      "none": "This model has no rooms (IfcSpace).",
+      "error": "The rooms could not be read.",
+      "inferred": "Bedrooms and bathrooms are counted from the room names.",
+      "geometry": "≈ calculated from the room's shape"
     }
   }
 }

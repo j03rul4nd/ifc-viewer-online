@@ -32,6 +32,7 @@ export const FEATURE_TIERS = {
   explorer: 'free',
   views: 'free',
   score: 'free',
+  rooms: 'free',
   tour: 'starter',
 }
 /** Features that must stay free whatever the plan table says. */
