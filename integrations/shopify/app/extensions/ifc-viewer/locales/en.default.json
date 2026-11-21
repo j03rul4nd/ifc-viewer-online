@@ -1,1 +1,15 @@
-{}
+{
+  "ifcvo": {
+    "facade": {
+      "poster_alt": "3D BIM model of {{ title }}",
+      "loading": "Loading the 3D model",
+      "ready": "3D model ready",
+      "retry": "Try again",
+      "open_full": "Open full viewer",
+      "error": "The 3D viewer could not load.",
+      "offline": "You are offline. The 3D viewer loads when the connection is back.",
+      "too_large": "This model is too large to open on this device. Open it in the full viewer or download it.",
+      "no_webgl": "This browser cannot show 3D. Open it in the full viewer or download it."
+    }
+  }
+}
