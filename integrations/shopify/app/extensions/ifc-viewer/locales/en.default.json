@@ -113,6 +113,23 @@
       "area": "Area",
       "showing": "Showing:",
       "preview": "Preview only. The full plan set comes with your purchase."
+    },
+    "compliance": {
+      "title": "Compliance",
+      "nbs": "NBS object standard: {passed}/{total} checks",
+      "nbs_none": "NBS object standard: no product class to check",
+      "ids_pass": "IDS: pass ({passed}/{total})",
+      "ids_fail": "IDS: fail ({failed} of {total} not met)",
+      "ids_none": "IDS: nothing in the model to check",
+      "score": "Health Score: {score}/100",
+      "waiting": "Open the 3D model to check it.",
+      "running": "Checking the model in your browser…",
+      "error": "could not be checked",
+      "details": "What did not pass ({count})",
+      "all_pass": "Every checked requirement passes.",
+      "manual": "Not checked automatically (needs a person):",
+      "note": "Checked in your browser on {date}. A self-check of the file, not a certification.",
+      "more": "…and {count} more"
     }
   }
 }

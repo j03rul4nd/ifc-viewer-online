@@ -113,3 +113,8 @@
 .ifcvo-protected .ifcvo-downloads, .ifcvo-protected .ifcvo-full, .ifcvo-protected .ifcvo-make, .ifcvo-protected [data-ifcvo-downloads-block] { display: none !important; }
 /* Classification (ifc-classification block) */
 .ifcvo-cls code { font-size: .92em; white-space: nowrap; }
+/* Compliance (ifc-compliance block) */
+.ifcvo-badges { list-style: none; margin: 0 0 .6em; padding: 0; display: flex; flex-wrap: wrap; gap: .4em; }
+.ifcvo-badge { padding: .3em .7em; border-radius: 999px; border: 1px solid currentColor; font-size: .9em; }
+.ifcvo-badge-pass { color: #1a7f37; } .ifcvo-badge-fail { color: #b42318; } .ifcvo-badge-warn { color: #9a6700; } .ifcvo-badge-error, .ifcvo-badge-na { opacity: .75; }
+.ifcvo-compliance-details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
