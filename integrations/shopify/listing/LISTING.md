@@ -37,7 +37,7 @@ BIM. Give them the model itself on the product page, not a render.
 | Plan | Price | Blocks |
 |---|---|---|
 | Free | $0 | Product IFC model (per product and variant), poster image, IFC and extra file downloads, specs and quantities, element details, model explorer, camera views, Health Score, rooms and key specs |
-| Starter | $4.99/month, 14-day trial | Everything in Free, plus guided tour, plan set and licence, compatibility (schema, authoring app, file weight), floor plan view with preview mode, view in your space (AR), classification (Uniclass / OmniClass / MasterFormat) |
+| Starter | $4.99/month, 14-day trial | Everything in Free, plus guided tour, plan set and licence, compatibility (schema, authoring app, file weight), floor plan view with preview mode, view in your space (AR), classification (Uniclass / OmniClass / MasterFormat), per-variant 3D views (camera, highlighted elements, shareable view links) |
 | Business | $19/month | Everything in Starter, plus takeoff / bill of quantities with steel by profile, EPD and product passport readiness, sun and lot fit, NBS / IDS compliance self-check |
 
 Notes for the submission form:

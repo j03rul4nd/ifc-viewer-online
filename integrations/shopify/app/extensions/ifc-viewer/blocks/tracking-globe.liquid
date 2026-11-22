@@ -14,6 +14,8 @@
 </div>
 <script src="{{ s.base | escape }}tracker.js" async></script>
 
+{%- render 'ifcvo-diag', feature: 'tracking', block: 'tracking-globe' -%}
+
 {% schema %}
 {
   "name": "t:blocks.tracking_globe.name",

@@ -79,6 +79,8 @@
   {%- endif -%}
 </div>
 
+{%- render 'ifcvo-diag', feature: 'viewer', block: 'ifc-viewer', model: block.settings.model -%}
+
 {% schema %}
 {
   "name": "t:blocks.ifc_viewer.name",
