@@ -115,7 +115,8 @@ export function ruleToSpec(rule: EirRule): IdsSpecification | null {
     case 'classification': {
       const facet: ClassificationFacet = {
         kind: 'classification',
-        ...(rule.system ? { system: { simpleValue: rule.system } } : {}),
+        ...(rule.systemPattern ? { system: { restriction: { pattern: rule.systemPattern } } }
+          : rule.system ? { system: { simpleValue: rule.system } } : {}),
         ...(rule.value ? { value: { simpleValue: rule.value } } : {}),
       }
       req(facet)

@@ -4,6 +4,7 @@
 // examples, not an exhaustive EIR.
 
 import type { EirProfile } from './eir-types'
+import { NBS_BOS } from './eir-profile-nbs'
 
 /** The worked example from the feature spec — a hospital LOD300 information check. */
 const HOSPITAL_LOD300: EirProfile = {
@@ -215,7 +216,7 @@ const EN14351_1: EirProfile = {
 
 export const BUILTIN_EIR_PROFILES: readonly EirProfile[] = [
   HOSPITAL_LOD300, ISO19650_DELIVERY, LOD200_SCHEMATIC, LOD400_FABRICATION, COBIE_HANDOVER,
-  SIMBA21_GENERAL, EN14351_1,
+  SIMBA21_GENERAL, EN14351_1, NBS_BOS,
 ]
 
 /** A blank profile seed for the "new profile" action in the editor. */

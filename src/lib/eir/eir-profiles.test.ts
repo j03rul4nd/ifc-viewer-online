@@ -74,7 +74,7 @@ describe('built-in profile ids in the SDK', () => {
     // Type-checked: a stale or misspelt id fails tsc here, a missing one fails the run.
     const sdkIds: BuiltinEirProfileId[] = [
       'builtin-hospital-lod300', 'builtin-iso19650-delivery', 'builtin-lod200', 'builtin-lod400',
-      'builtin-cobie', 'builtin-simba21-general', 'builtin-en14351-1',
+      'builtin-cobie', 'builtin-simba21-general', 'builtin-en14351-1', 'builtin-nbs-bos',
     ]
     expect([...sdkIds].sort()).toEqual(BUILTIN_EIR_PROFILES.map((p) => p.id).sort())
   })

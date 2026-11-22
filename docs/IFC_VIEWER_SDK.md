@@ -122,7 +122,7 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `getStats()` | `Promise<StatsResult>` — per-category element counts per model (for charts). |
 | `getIssues(opts?)` | `Promise<IssuesResult>` — validation issues for a table (`{ severity?, limit?, modelId? }`). |
 | `checkIds(idsXml)` | `Promise<IdsResult>` — check the model against a buildingSMART **IDS** (`.ids` XML). |
-| `checkEir(profile)` | `Promise<IdsResult>` — check the model against an **EIR** profile: an object, its JSON, or a built-in id such as `'builtin-en14351-1'` (v1.18; see [Declared performance](#declared-performance-en-14351-1-v118)). Same result shape as `checkIds`. |
+| `checkEir(profile)` | `Promise<IdsResult>` — check the model against an **EIR** profile: an object, its JSON, or a built-in id such as `'builtin-en14351-1'` (v1.18; see [Declared performance](#declared-performance-en-14351-1-v118)), or `'builtin-nbs-bos'` for the NBS BIM Object Standard (v1.19). Same result shape as `checkIds`. |
 | `screenshot()` | `Promise<string>` — the current 3D view as a PNG data URL. |
 | `removeModel(modelId)` | Unload a specific model (see `getModels()`). |
 | `hideElements(ids, modelId?)` / `showElements(ids, modelId?)` | Hide / show a set of elements by expressID (defaults to the active model). |

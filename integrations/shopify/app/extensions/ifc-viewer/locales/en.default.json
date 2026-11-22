@@ -156,6 +156,26 @@
       "no_ar": "This device cannot show AR.",
       "hosted": "AR on Android needs a 3D file hosted by the shop. Open this page on an iPhone, or ask the shop for the AR file.",
       "no_viewer": "The 3D viewer is not available on this device."
+    },
+    "compliance": {
+      "title": "Compliance",
+      "nbs": "NBS object standard: {passed}/{total} checks",
+      "nbs_none": "NBS object standard: no product class to check",
+      "ids_pass": "IDS: pass ({passed}/{total})",
+      "ids_fail": "IDS: fail ({failed} of {total} not met)",
+      "ids_none": "IDS: nothing in the model to check",
+      "score": "Health Score: {score}/100",
+      "waiting": "Open the 3D model to check it.",
+      "running": "Checking the model in your browser…",
+      "error": "could not be checked",
+      "details": "What did not pass ({count})",
+      "all_pass": "Every checked requirement passes.",
+      "manual": "Not checked automatically (needs a person):",
+      "note": "Checked in your browser on {date}. A self-check of the file, not a certification.",
+      "more": "…and {count} more",
+      "typed": "Type object (IfcTypeObject): {typed}/{total} product elements (checked outside IDS)",
+      "untyped": "{count} product elements have no type object (IfcTypeObject)",
+      "sampled": "Checked {total} of {all} elements."
     }
   }
 }
