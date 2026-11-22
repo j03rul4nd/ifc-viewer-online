@@ -122,3 +122,8 @@
 /* EPD and product passport (ifc-dpp block) */
 .ifcvo-dpp-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; }
 .ifcvo-dpp-list [data-state="ready"] > [aria-hidden] { color: var(--ifcvo-accent, currentColor); }
+/* Compliance (ifc-compliance block) */
+.ifcvo-badges { list-style: none; margin: 0 0 .6em; padding: 0; display: flex; flex-wrap: wrap; gap: .4em; }
+.ifcvo-badge { padding: .3em .7em; border-radius: 999px; border: 1px solid currentColor; font-size: .9em; }
+.ifcvo-badge-pass { color: #1a7f37; } .ifcvo-badge-fail { color: #b42318; } .ifcvo-badge-warn { color: #9a6700; } .ifcvo-badge-error, .ifcvo-badge-na { opacity: .75; }
+.ifcvo-compliance-details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }

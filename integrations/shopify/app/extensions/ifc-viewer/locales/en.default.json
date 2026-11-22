@@ -196,6 +196,26 @@
       "loading": "Reading the environmental data in the 3D model…",
       "error": "The environmental data in the model could not be read.",
       "disclaimer": "Readiness guide, not legal advice. It shows which information this page already gives; it does not certify the product or say it meets any regulation. Under the EU Construction Products Regulation (EU) 2024/3110 the detailed requirements and dates for each product family are set by delegated acts that are still being adopted."
+    },
+    "compliance": {
+      "title": "Compliance",
+      "nbs": "NBS object standard: {passed}/{total} checks",
+      "nbs_none": "NBS object standard: no product class to check",
+      "ids_pass": "IDS: pass ({passed}/{total})",
+      "ids_fail": "IDS: fail ({failed} of {total} not met)",
+      "ids_none": "IDS: nothing in the model to check",
+      "score": "Health Score: {score}/100",
+      "waiting": "Open the 3D model to check it.",
+      "running": "Checking the model in your browser…",
+      "error": "could not be checked",
+      "details": "What did not pass ({count})",
+      "all_pass": "Every checked requirement passes.",
+      "manual": "Not checked automatically (needs a person):",
+      "note": "Checked in your browser on {date}. A self-check of the file, not a certification.",
+      "more": "…and {count} more",
+      "typed": "Type object (IfcTypeObject): {typed}/{total} product elements (checked outside IDS)",
+      "untyped": "{count} product elements have no type object (IfcTypeObject)",
+      "sampled": "Checked {total} of {all} elements."
     }
   }
 }

@@ -32,7 +32,7 @@ export const eirRuleSchema = z.discriminatedUnion('type', [
   z.object({ ...ruleBase, type: z.literal('numeric'), pset: z.string().optional(), property: z.string().min(1), operator: operatorSchema, value: z.number() }),
   z.object({ ...ruleBase, type: z.literal('allowedValues'), pset: z.string().optional(), property: z.string().min(1), values: z.array(z.string()).min(1) }),
   z.object({ ...ruleBase, type: z.literal('regex'), target: z.enum(['property', 'attribute']).optional(), pset: z.string().optional(), property: z.string().min(1), pattern: z.string().min(1) }),
-  z.object({ ...ruleBase, type: z.literal('classification'), system: z.string().optional(), value: z.string().optional() }),
+  z.object({ ...ruleBase, type: z.literal('classification'), system: z.string().optional(), systemPattern: z.string().optional(), value: z.string().optional() }),
 ])
 
 export const eirProfileSchema = z.object({

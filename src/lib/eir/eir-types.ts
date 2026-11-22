@@ -136,6 +136,8 @@ export interface RegexRule extends EirRuleBase {
 export interface ClassificationRule extends EirRuleBase {
   type: 'classification'
   system?: string
+  /** XSD pattern the classification system name must match (wins over `system`). */
+  systemPattern?: string
   value?: string
 }
 
