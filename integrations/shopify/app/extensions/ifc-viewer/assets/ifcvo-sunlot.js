@@ -31,6 +31,7 @@ export const LABELS = {
   waiting: 'Open the 3D model to compare its footprint.', diagram: 'Lot diagram',
   diagramDesc: 'The lot, its setback lines and the house footprint seen from above. The front of the lot is at the bottom.',
   rotateNote: 'The rotation turns the house on the drawing; the 3D model keeps its own north.',
+  negative: 'Values must be positive.', swap: 'Turn 90°', turnedFits: 'It fits if the house is turned 90° (to {deg}).',
 }
 
 export const FT = 0.3048
@@ -127,6 +128,19 @@ export function fitLot(footprint, lot, deg = 0) {
   return { fits: marginSide >= -eps && marginDepth >= -eps, marginSide, marginDepth, box, area }
 }
 
+/** Lot fields typed below zero (names), from raw input text. */
+export function negatives(raw) {
+  return Object.entries(raw).filter(([, v]) => v !== '' && v != null && Number(v) < 0).map(([k]) => k)
+}
+
+/** Fit at deg; when that fails, also tries deg + 90 and says so (`turned`). */
+export function bestFit(footprint, lot, deg = 0) {
+  const fit = fitLot(footprint, lot, deg)
+  if (!fit || fit.fits) return fit && { ...fit, deg: normDeg(deg), turned: false }
+  const alt = fitLot(footprint, lot, deg + 90)
+  return alt && alt.fits ? { ...alt, deg: normDeg(deg + 90), turned: true } : { ...fit, deg: normDeg(deg), turned: false }
+}
+
 /** Corner points (metres, y down = towards the rear) of the footprint centred in the buildable area. */
 export function footprintPoints(footprint, lot, deg = 0) {
   const cx = (lot.side || 0) + (lot.width - 2 * (lot.side || 0)) / 2
@@ -217,17 +231,19 @@ export function renderLot(root) {
   const u = s.unit.value
   const deg = normDeg(s.rot.value)
   const lot = lotOf(s)
+  const raw = Object.fromEntries(['width', 'depth', 'front', 'side', 'rear'].map((k) => [k, s[k].value]))
+  if (negatives(raw).length) { s.out.replaceChildren(el('p', { class: 'ifcvo-muted', 'data-ifcvo-negative': '' }, L.negative)); return null }
   if (!footprint) { s.out.replaceChildren(el('p', { class: 'ifcvo-muted' }, current ? L.noFootprint : L.waiting)); return null }
-  const fit = fitLot(footprint, lot, deg)
+  const fit = bestFit(footprint, lot, deg)
   if (!fit) { s.out.replaceChildren(el('p', { class: 'ifcvo-muted' }, L.badLot)); return null }
   s.out.replaceChildren(
-    el('p', { class: 'ifcvo-sunlot-verdict', 'data-fits': String(fit.fits) }, el('strong', {}, fit.fits ? L.fits : L.noFit)),
+    el('p', { class: 'ifcvo-sunlot-verdict', 'data-fits': String(fit.fits) }, el('strong', {}, fit.turned ? fmt(L.turnedFits, { deg: fit.deg + '°' }) : fit.fits ? L.fits : L.noFit)),
     el('ul', { class: 'ifcvo-sunlot-figures' },
       el('li', {}, fmt(L.footprint, { w: lengthText(footprint.w, u), d: lengthText(footprint.d, u) })),
       el('li', {}, fmt(L.buildable, { w: lengthText(fit.area.w, u), d: lengthText(fit.area.d, u) })),
       el('li', {}, fmt(L.marginSide, { v: lengthText(fit.marginSide, u) })),
       el('li', {}, fmt(L.marginDepth, { v: lengthText(fit.marginDepth, u) }))),
-    diagram(footprint, lot, deg, fit, L))
+    diagram(footprint, lot, fit.deg, fit, L))
   return fit
 }
 
@@ -323,7 +339,8 @@ export function build(root) {
       el('p', { class: 'ifcvo-sunlot-field' }, el('label', { for: s.unit.id }, L.units), ' ', s.unit),
       ...[['width', L.lotWidth], ['depth', L.lotDepth], ['front', L.front], ['side', L.side], ['rear', L.rear]].map(([k, l]) =>
         el('p', { class: 'ifcvo-sunlot-field' }, el('label', { for: s[k].id }, l), ' ', s[k])),
-      el('p', { class: 'ifcvo-sunlot-field' }, el('label', { for: s.rot.id }, L.orientation), ' ', s.rot, ' ', rOut),
+      el('p', { class: 'ifcvo-sunlot-field' }, el('label', { for: s.rot.id }, L.orientation), ' ', s.rot, ' ', rOut, ' ',
+        el('button', { type: 'button', class: 'ifcvo-btn', 'data-ifcvo-swap': '', onclick: () => { s.rot.value = String(normDeg(Number(s.rot.value) + 90)); onLot() } }, L.swap)),
       el('p', { class: 'ifcvo-muted' }, L.rotateNote), s.out))
   }
   body.replaceChildren(...nodes)

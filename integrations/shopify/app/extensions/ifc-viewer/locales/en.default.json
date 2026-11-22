@@ -194,7 +194,10 @@
       "waiting": "Open the 3D model to compare its footprint.",
       "diagram": "Lot diagram",
       "diagramDesc": "The lot, its setback lines and the house footprint seen from above. The front of the lot is at the bottom.",
-      "rotateNote": "The rotation turns the house on the drawing; the 3D model keeps its own north."
+      "rotateNote": "The rotation turns the house on the drawing; the 3D model keeps its own north.",
+      "negative": "Values must be positive.",
+      "swap": "Turn 90°",
+      "turnedFits": "It fits if the house is turned 90° (to {deg})."
     }
   }
 }

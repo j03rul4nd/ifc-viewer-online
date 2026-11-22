@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  _reset, applySun, buildable, fitLot, footprintOf, footprintPoints, fromMetres, init, labelsOf, lengthText, locate, normDeg, onViewer, parseSite, rotatedBox, toMetres, LABELS,
+  _reset, applySun, bestFit, buildable, negatives, fitLot, footprintOf, footprintPoints, fromMetres, init, labelsOf, lengthText, locate, normDeg, onViewer, parseSite, rotatedBox, toMetres, LABELS,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-sunlot.js'
 import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
@@ -59,6 +59,14 @@ describe('fit maths', () => {
     expect(fitLot({ w: 10, d: 22 }, lot, 0).fits).toBe(true) // exact fit
     expect(fitLot({ w: 9, d: 9 }, lot, 45).fits).toBe(false) // diagonal ≈ 12.7
     expect(fitLot(null, lot, 0)).toBeNull()
+  })
+  it('negatives are reported, and both orientations are tried', () => {
+    expect(negatives({ width: '10', side: '-1', rear: '' })).toEqual(['side'])
+    const lot = { width: 14, depth: 30, front: 5, side: 2, rear: 3 }
+    const t = bestFit({ w: 12, d: 8 }, lot, 0)
+    expect(t).toMatchObject({ fits: true, turned: true, deg: 90 })
+    expect(bestFit({ w: 8, d: 12 }, lot, 0)).toMatchObject({ fits: true, turned: false })
+    expect(bestFit({ w: 30, d: 30 }, lot, 0)).toMatchObject({ fits: false, turned: false })
   })
   it('a lot typed in feet', () => {
     const ft = (v: number) => toMetres(v, 'ft')
@@ -117,7 +125,15 @@ describe('DOM', () => {
     const rot = root.querySelector<HTMLInputElement>('input[type="range"][max="359"]')!
     rot.value = '90'
     rot.dispatchEvent(new Event('input'))
-    expect(root.querySelector('.ifcvo-sunlot-verdict')!.getAttribute('data-fits')).toBe('false')
+    // 90° fails, so it tries 180° (fits) and says so.
+    expect(root.querySelector('.ifcvo-sunlot-verdict')!.textContent).toContain('turned 90° (to 180°)')
+    root.querySelector<HTMLButtonElement>('[data-ifcvo-swap]')!.click()
+    expect(rot.value).toBe('180')
+    expect(root.querySelector('.ifcvo-sunlot-verdict')!.textContent).toBe(LABELS.fits)
+    const w = root.querySelector<HTMLInputElement>('input[id$="-side"]')!
+    w.value = '-2'
+    w.dispatchEvent(new Event('input'))
+    expect(root.querySelector('[data-ifcvo-negative]')!.textContent).toBe('Values must be positive.')
     await vi.waitFor(() => expect(viewer.setSolar).toHaveBeenCalled())
     expect(viewer.setSolar.mock.calls[0][0]).toMatchObject({ active: true, date: '06-21', time: '12:00', location: { lat: 40.4, lon: -3.7 } })
   })
