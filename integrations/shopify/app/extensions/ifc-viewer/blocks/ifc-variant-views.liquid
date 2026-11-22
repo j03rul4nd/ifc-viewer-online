@@ -91,7 +91,7 @@
 <script type="module" src="{{ 'ifcvo-variants.js' | asset_url }}"></script>
 {%- endif -%}
 
-{%- if request.design_mode -%}{%- capture dg_keys -%}{{ view_key }},{{ hl_key }}{%- endcapture -%}{%- render 'ifcvo-diag', feature: 'variantviews', block: 'ifc-variant-views', ns: ns, keys: dg_keys, scope: 'variant' -%}{%- endif -%}
+{%- if request.design_mode -%}{%- assign dg_keys = view_key | append: "," | append: hl_key -%}{%- render 'ifcvo-diag', feature: 'variantviews', block: 'ifc-variant-views', ns: ns, keys: dg_keys, scope: 'variant' -%}{%- endif -%}
 
 {% schema %}
 {
