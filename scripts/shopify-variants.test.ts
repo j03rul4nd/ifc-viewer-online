@@ -30,9 +30,8 @@ function fakeViewer() {
     isolate: vi.fn(),
     select: vi.fn(),
     hideElements: vi.fn(),
-    findElements: vi.fn(async (q: { globalId?: string[] }) => q.globalId
-      ? [{ expressId: 1, modelId: 'm' }]
-      : [{ expressId: 1, modelId: 'm' }, { expressId: 2, modelId: 'm' }, { expressId: 3, modelId: 'm' }]),
+    showElements: vi.fn(),
+    findElements: vi.fn(async (_q: { ifcClass?: string[]; globalId?: string[] }) => [] as { expressId: number; modelId: string; ifcClass: string }[]),
     getCamera: vi.fn(async () => ({ position: [1.23456, 2, 3], target: [0, 0, 0], direction: [0, 0, 1], fovDeg: 50 })),
     screenshot: vi.fn(async () => 'data:image/png;base64,AAAA'),
   }
@@ -45,6 +44,7 @@ function setApi(viewer: unknown, plan = 'business') {
     viewer,
     open: vi.fn(async () => viewer),
     subscribe: (_root: unknown, cb: Listener) => { subs.push(cb) },
+    unsubscribe: (cb: Listener) => { subs = subs.filter((x) => x !== cb) },
     gate: (f: string) => plan !== 'free' || FEATURE_TIERS[f as keyof typeof FEATURE_TIERS] === 'free',
   }
 }
@@ -98,11 +98,46 @@ describe('parsing', () => {
 })
 
 describe('applying to the viewer', () => {
-  it('isolates several classes/GUIDs by hiding the rest', async () => {
+  it('isolates classes + GUIDs without scanning the whole model, cached per variant', async () => {
     const v = fakeViewer()
-    await vv.applyHighlight(v, { classes: [], guids: [GUID], mode: 'isolate' })
-    expect(v.showAll).toHaveBeenCalled()
-    expect(v.hideElements).toHaveBeenCalledWith([2, 3], 'm')
+    v.findElements.mockImplementation(async (q: { ifcClass?: string[]; globalId?: string[] }) => {
+      if (q.globalId) return [{ expressId: 1, modelId: 'm', ifcClass: 'IFCPLATE' }]
+      if (q.ifcClass?.includes('IfcBeam')) return [{ expressId: 5, modelId: 'm', ifcClass: 'IFCBEAM' }, { expressId: 6, modelId: 'm', ifcClass: 'IFCCOLUMN' }]
+      if (q.ifcClass?.includes('IFCPLATE')) return [{ expressId: 1, modelId: 'm', ifcClass: 'IFCPLATE' }, { expressId: 2, modelId: 'm', ifcClass: 'IFCPLATE' }]
+      return []
+    })
+    const h = { classes: ['IfcBeam', 'IfcColumn'], guids: [GUID], mode: 'isolate' }
+    await vv.applyHighlight(v, h, '22')
+    expect(v.findElements.mock.calls.every(([q]) => q && (q.ifcClass || q.globalId))).toBe(true)
+    expect(v.isolate).toHaveBeenCalledWith('IfcBeam', { frame: false })
+    expect(v.showElements).toHaveBeenCalledWith([6, 1], 'm')
+    expect(v.hideElements).toHaveBeenCalledWith([2], 'm')
+    const calls = v.findElements.mock.calls.length
+    await vv.applyHighlight(v, h, '22')
+    expect(v.findElements.mock.calls.length).toBe(calls)
+  })
+
+  it('a malformed hash is ignored and the variant view still applies', async () => {
+    expect(vv.decodeCamera('#ifcvo-cam=%E0')).toBeNull()
+    history.replaceState(null, '', '/products/chair#ifcvo-cam=%E0')
+    const v = fakeViewer()
+    setApi(v)
+    mount()
+    vv.init()
+    await flush()
+    expect(v.setView).toHaveBeenCalledWith('top')
+    expect(v.lookAt).not.toHaveBeenCalled()
+  })
+
+  it('destroy() removes its viewer listener', () => {
+    const v = fakeViewer()
+    setApi(v)
+    const root = mount()
+    vv.init()
+    expect(subs).toHaveLength(1)
+    vv.destroy(document.body)
+    expect(subs).toHaveLength(0)
+    expect(root.isConnected).toBe(true)
   })
 
   it('applies the current variant on model ready and the new one on change', async () => {
@@ -185,6 +220,22 @@ describe('shared resolver', () => {
     expect(planset.selectedVariant).toBe(shared.selectedVariant)
     expect(planset.urlVariant).toBe(shared.urlVariant)
     expect(shared.urlVariant({ search: '?variant=7' })).toBe('7')
+  })
+
+  it('patches history once for every block, idempotently', () => {
+    const patched = history.pushState
+    const a = vi.fn()
+    const b = vi.fn()
+    const offA = shared.onUrlChange(a)
+    const offB = shared.onUrlChange(b)
+    expect(history.pushState).toBe(patched)
+    history.pushState(null, '', '?variant=9')
+    expect(a).toHaveBeenCalledTimes(1)
+    expect(b).toHaveBeenCalledTimes(1)
+    offA(); offB()
+    history.replaceState(null, '', location.pathname)
+    expect(a).toHaveBeenCalledTimes(1)
+    expect((window as unknown as { __ifcvoUrlSubs: Set<unknown> }).__ifcvoUrlSubs).toBeInstanceOf(Set)
   })
 })
 

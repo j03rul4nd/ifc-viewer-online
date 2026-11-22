@@ -4,7 +4,7 @@
 // same way as the runtime does: the cart form's `id` after a `change`, plus
 // the `variant:change` event some themes dispatch.
 
-import { selectedVariant, urlVariant } from './ifcvo-variant.js'
+import { selectedVariant, urlVariant, onUrlChange } from './ifcvo-variant.js'
 
 // The variant readers are shared with the other blocks (ifcvo-variant.js).
 export { selectedVariant, urlVariant }
@@ -86,16 +86,11 @@ function observeForm(doc = document) {
 }
 
 let patched = false
-/** URL changes: popstate plus wrapped pushState/replaceState (wrapped once, original still called). */
+/** URL changes: the page-wide history patch shared with the other blocks (ifcvo-variant.js). */
 function watchHistory() {
-  if (patched || typeof history === 'undefined') return
+  if (patched) return
   patched = true
-  for (const k of ['pushState', 'replaceState']) {
-    const orig = history[k]
-    if (typeof orig !== 'function') continue
-    history[k] = function (...args) { const out = orig.apply(this, args); sync(urlVariant()); return out }
-  }
-  window.addEventListener('popstate', () => sync(urlVariant()))
+  onUrlChange(() => sync(urlVariant()))
 }
 
 export function destroy(container) {

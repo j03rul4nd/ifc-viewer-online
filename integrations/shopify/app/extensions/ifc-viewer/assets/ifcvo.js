@@ -587,7 +587,8 @@ if (typeof window !== 'undefined' && !window.IFCVO) {
   window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS,
     labels: labelsOf, probe,
     // For the companion modules (quote, downloads): the live viewer, opening it, and its events.
-    get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen }
+    get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen,
+    unsubscribe: (cb) => { listeners.delete(cb); for (const cbs of owned.values()) { const i = cbs.indexOf(cb); if (i >= 0) cbs.splice(i, 1) } } }
   init()
   document.dispatchEvent(new CustomEvent('ifcvo:ready'))
   document.addEventListener('change', onVariantChange)

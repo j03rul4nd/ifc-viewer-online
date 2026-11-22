@@ -51,14 +51,29 @@ function install(doc) {
       observer.observe(input, { attributes: true, attributeFilter: ['value'] })
     }
   }
-  if (typeof history !== 'undefined') {
+  onUrlChange(() => notify(urlVariant(), DELAYS))
+}
+
+/**
+ * Calls `cb()` after pushState/replaceState/popstate. One patch per page, shared
+ * by every block (registry on window, so even a second copy of this module reuses it).
+ * Returns the unsubscribe function.
+ */
+export function onUrlChange(cb) {
+  if (typeof window === 'undefined' || typeof history === 'undefined') return () => {}
+  let reg = window.__ifcvoUrlSubs
+  if (!reg) {
+    reg = window.__ifcvoUrlSubs = new Set()
+    const fire = () => { for (const f of reg) { try { f() } catch (e) { /* isolated */ } } }
     for (const k of ['pushState', 'replaceState']) {
       const orig = history[k]
       if (typeof orig !== 'function') continue
-      history[k] = function (...args) { const out = orig.apply(this, args); notify(urlVariant(), DELAYS); return out }
+      history[k] = function (...args) { const out = orig.apply(this, args); fire(); return out }
     }
-    window.addEventListener('popstate', () => notify(urlVariant(), DELAYS))
+    window.addEventListener('popstate', fire)
   }
+  reg.add(cb)
+  return () => reg.delete(cb)
 }
 
 /** Calls `cb(hint)` after every variant change. Returns the unsubscribe function. */

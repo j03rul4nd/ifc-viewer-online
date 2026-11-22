@@ -103,7 +103,8 @@ export function encodeCamera(cam) {
 export function decodeCamera(hash) {
   const m = new RegExp('(?:^#?|&)' + HASH_KEY + '=([^&]+)').exec(String(hash || ''))
   if (!m) return null
-  const n = decodeURIComponent(m[1]).split(',').map(Number)
+  let n
+  try { n = decodeURIComponent(m[1]).split(',').map(Number) } catch (e) { return null }
   if (n.length !== 6 || !n.every(Number.isFinite)) return null
   return { position: n.slice(0, 3), target: n.slice(3) }
 }
@@ -127,25 +128,57 @@ export async function applyView(viewer, view) {
   return true
 }
 
-/** Shows only the highlighted elements (or selects the first GlobalId); null shows everything again. */
-export async function applyHighlight(viewer, h) {
+/**
+ * Plan for a multi-class / GlobalId highlight, without walking the whole model:
+ * isolate the first class, show the kept elements of the other classes, and
+ * inside the classes of the GlobalIds hide what is not one of them.
+ * Only the highlighted classes are queried.
+ */
+export async function planHighlight(viewer, h) {
+  const key = (e) => e.modelId + ':' + e.expressId
+  const up = (e) => String(e.ifcClass || '').toUpperCase()
+  const byClass = h.classes.length ? await viewer.findElements({ ifcClass: h.classes }) : []
+  const byGuid = h.guids.length ? await viewer.findElements({ globalId: h.guids }) : []
+  if (!byClass.length && !byGuid.length) return null
+  const wanted = new Set(h.classes.map((c) => c.toUpperCase()))
+  const guidClasses = [...new Set(byGuid.map(up).filter((c) => c && !wanted.has(c)))]
+  const first = h.classes[0] || guidClasses[0]
+  if (!first) return null
+  const kept = new Set([...byClass, ...byGuid].map(key))
+  const group = (list) => {
+    const m = new Map()
+    for (const e of list) { if (!m.has(e.modelId)) m.set(e.modelId, []); m.get(e.modelId).push(e.expressId) }
+    return m
+  }
+  const firstU = first.toUpperCase()
+  const show = group([...byClass, ...byGuid].filter((e) => up(e) !== firstU))
+  const siblings = guidClasses.length ? await viewer.findElements({ ifcClass: guidClasses }) : []
+  const hide = group(siblings.filter((e) => !kept.has(key(e))))
+  return { isolate: first, show, hide }
+}
+
+const plans = new WeakMap()
+
+/** Shows only the highlighted elements (or selects the first GlobalId); null shows everything again. `cacheKey` (the variant) reuses the plan. */
+export async function applyHighlight(viewer, h, cacheKey = null) {
   if (!viewer) return false
   viewer.showAll()
   if (!h) return false
   if (h.mode === 'select' && h.guids.length) { viewer.select(h.guids[0]); return true }
   if (!h.guids.length && h.classes.length === 1) { viewer.isolate(h.classes[0], { frame: false }); return true }
-  const keep = await viewer.findElements({ ...(h.classes.length ? { ifcClass: h.classes } : {}), ...(h.guids.length ? { globalId: h.guids } : {}) })
-  if (!keep.length) return false
-  const kept = new Set(keep.map((e) => e.modelId + ':' + e.expressId))
-  const hide = new Map()
-  for (const e of await viewer.findElements({})) {
-    if (kept.has(e.modelId + ':' + e.expressId)) continue
-    if (!hide.has(e.modelId)) hide.set(e.modelId, [])
-    hide.get(e.modelId).push(e.expressId)
-  }
-  for (const [modelId, ids] of hide) viewer.hideElements(ids, modelId)
+  if (!plans.has(viewer)) plans.set(viewer, new Map())
+  const cache = plans.get(viewer)
+  let plan = cacheKey != null ? cache.get(cacheKey) : undefined
+  if (plan === undefined) { plan = await planHighlight(viewer, h); if (cacheKey != null) cache.set(cacheKey, plan) }
+  if (!plan) return false
+  viewer.isolate(plan.isolate, { frame: false })
+  for (const [modelId, ids] of plan.show) viewer.showElements(ids, modelId)
+  for (const [modelId, ids] of plan.hide) viewer.hideElements(ids, modelId)
   return true
 }
+
+/** Forgets the cached plans (a new model was loaded). */
+export function clearPlans(viewer) { if (viewer) plans.delete(viewer) }
 
 /** Saves a data: URL as a file. */
 function download(dataUrl, name) {
@@ -189,14 +222,16 @@ export async function update(root, hint = null, force = false) {
   root._ifcvoApplied = key
   const entry = id ? root._ifcvoMap[id] : null
   await v.whenReady()
-  await applyHighlight(v, entry && entry.highlight)
+  await applyHighlight(v, entry && entry.highlight, id)
   if (entry && entry.view) await applyView(v, entry.view)
   return true
 }
 
 /** A shared link wins over the variant view, once, on the first model. */
 async function onModel(root, first) {
-  const cam = first && typeof location !== 'undefined' ? decodeCamera(location.hash) : null
+  let cam = null
+  try { cam = first && typeof location !== 'undefined' ? decodeCamera(location.hash) : null } catch (e) { cam = null }
+  clearPlans(api().viewer)
   await update(root, null, true)
   if (cam) { const v = api().viewer; await v.lookAt(cam.position, cam.target, false) }
 }
@@ -204,11 +239,13 @@ async function onModel(root, first) {
 function mount(root) {
   root._ifcvoMap = readMap(root.dataset.views)
   let first = true
-  api().subscribe(root, (type) => {
+  const onEvent = (type) => {
     if (type !== 'model-loaded') return
     onModel(root, first).catch(() => {})
     first = false
-  })
+  }
+  root._ifcvoListener = onEvent
+  api().subscribe(root, onEvent)
   // The viewer may already have its model (this script loaded late).
   if (api().viewer) { onModel(root, first).catch(() => {}); first = false }
   const copy = root.querySelector('[data-ifcvo-copy-view]')
@@ -252,7 +289,14 @@ export function init(doc = document) {
 }
 
 export function destroy(container) {
-  for (const r of mounted) if (container.contains(r)) mounted.delete(r)
+  const a = api()
+  for (const r of mounted) {
+    if (!container.contains(r)) continue
+    mounted.delete(r)
+    if (r._ifcvoListener && a && typeof a.unsubscribe === 'function') a.unsubscribe(r._ifcvoListener)
+    r._ifcvoListener = null
+  }
+  if (!mounted.size && unwatch) { unwatch(); unwatch = null }
 }
 
 /** For tests. */
