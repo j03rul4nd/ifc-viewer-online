@@ -43,6 +43,7 @@ export const FEATURE_TIERS = {
   planview: 'starter',
   ar: 'starter',
   classification: 'starter',
+  variantviews: 'starter',
   takeoff: 'business',
   dpp: 'business',
   sunlot: 'business',

@@ -4,11 +4,10 @@
 // same way as the runtime does: the cart form's `id` after a `change`, plus
 // the `variant:change` event some themes dispatch.
 
-/** The variant currently in the product form, or null. */
-export function selectedVariant(doc = document) {
-  const input = doc.querySelector('form[action*="/cart/add"] [name="id"]')
-  return input && input.value ? String(input.value) : null
-}
+import { selectedVariant, urlVariant, onUrlChange } from './ifcvo-variant.js'
+
+// The variant readers are shared with the other blocks (ifcvo-variant.js).
+export { selectedVariant, urlVariant }
 
 /** Shows the card of `variantId` (if it exists) and marks its matrix column. Returns whether it switched. */
 export function select(root, variantId) {
@@ -45,11 +44,6 @@ export function init(doc = document) {
     select(root, resolve(root, null, doc))
   }
   if (mounted.size) { observeForm(doc); watchHistory() }
-}
-
-/** `?variant=` of the current URL, or null. */
-export function urlVariant(loc = typeof location !== 'undefined' ? location : null) {
-  try { return (loc && new URLSearchParams(loc.search).get('variant')) || null } catch (e) { return null }
 }
 
 /**
@@ -92,16 +86,11 @@ function observeForm(doc = document) {
 }
 
 let patched = false
-/** URL changes: popstate plus wrapped pushState/replaceState (wrapped once, original still called). */
+/** URL changes: the page-wide history patch shared with the other blocks (ifcvo-variant.js). */
 function watchHistory() {
-  if (patched || typeof history === 'undefined') return
+  if (patched) return
   patched = true
-  for (const k of ['pushState', 'replaceState']) {
-    const orig = history[k]
-    if (typeof orig !== 'function') continue
-    history[k] = function (...args) { const out = orig.apply(this, args); sync(urlVariant()); return out }
-  }
-  window.addEventListener('popstate', () => sync(urlVariant()))
+  onUrlChange(() => sync(urlVariant()))
 }
 
 export function destroy(container) {
