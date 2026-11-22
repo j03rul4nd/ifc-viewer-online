@@ -302,6 +302,22 @@
       "saved": "Bild gespeichert.",
       "error": "Diese Ansicht konnte nicht gelesen werden.",
       "link": "Link zu dieser Ansicht"
+    },
+    "editor": {
+      "gated": "„{{ feature }}“ benötigt den Plan {{ plan }}. Besucher sehen es nicht.",
+      "contact_form": "„Kontaktformular ausfüllen“ braucht ein Kontaktformular auf dieser Seite (Abschnitt Kontaktformular hinzufügen). Shopify schickt Ihnen per E-Mail, was der Käufer sendet.",
+      "gated_downloads": "Eingeschränkte Downloads sind für Gäste ausgeblendet, aber nicht geschützt: Wer den Link einer Datei hat, kann sie weiterhin herunterladen.",
+      "gated_downloads_tag": "Eingeschränkte Downloads sind für Gäste und Kunden ohne das Tag „{{ tag }}“ ausgeblendet, aber nicht geschützt: Wer den Link einer Datei hat, kann sie weiterhin herunterladen.",
+      "ar": "Fügen Sie die Metafields „{{ ns }}.ar_usdz“ / „{{ ns }}.ar_glb“ oder ein 3D-Modell zum Produkt hinzu, damit AR auf jedem Smartphone funktioniert. Ein aus dem IFC erstelltes Modell funktioniert nur auf iPhone und iPad.",
+      "classification": "Fügen Sie ein Produkt-Metafield „{{ ns }}.classification“ hinzu (ein „System|Code|Bezeichnung“ pro Zeile oder Listeneintrag) für Codes, die vor dem Laden des 3D-Modells sichtbar sind.",
+      "compat": "Fügen Sie ein Produkt-Metafield „{{ ns }}.compatible_with“ hinzu, um die getesteten Programme und Versionen aufzulisten.",
+      "compliance": "Fügen Sie in diesem Block oder im Produkt-Metafield „{{ ns }}.ids_url“ einen https-Link zu einer .ids-Datei hinzu, um das IDS-Abzeichen anzuzeigen.",
+      "dpp": "Fügen Sie Produkt-Metafields in „{{ ns }}“ hinzu (epd_url, gwp_a1a3, declared_unit, dop_url, ce_marking, instructions_languages, substances_of_concern, gtin, manufacturer_contact…), um diesen Bereich vor dem Laden des 3D-Modells zu füllen.",
+      "rooms": "Fügen Sie die Produkt-Metafields „{{ ns }}.area“, „{{ ns }}.bedrooms“, „{{ ns }}.bathrooms“ und „{{ ns }}.storeys“ für Eckdaten hinzu, die vor dem Laden des 3D-Modells sichtbar sind.",
+      "specs": "Fügen Sie Produkt-Metafields im Namespace „{{ ns }}“ für Spezifikationen hinzu, die vor dem Laden des 3D-Modells sichtbar sind.",
+      "takeoff": "Fügen Sie ein Produkt-Metafield „{{ ns }}.boq“ (eine Zeile pro Position, Zellen durch | getrennt) für eine Tabelle vor dem Laden des 3D-Modells hinzu und „{{ ns }}.unit_prices“ (JSON) für eine Richtsumme.",
+      "viewer_link": "IFC Viewer Online: Fügen Sie einen https-Link zu einer .ifc-Datei (Inhalte > Dateien) oder zu einer Szene ein.",
+      "product_link": "IFC Viewer Online: Fügen Sie im Produkt-Metafield {{ ns }}.{{ key }} einen https-Link zu einer .ifc-Datei hinzu (URL oder Datei)."
     }
   }
 }

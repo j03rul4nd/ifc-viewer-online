@@ -302,6 +302,22 @@
       "saved": "Imatge desada.",
       "error": "No s'ha pogut llegir aquesta vista.",
       "link": "Enllaç a aquesta vista"
+    },
+    "editor": {
+      "gated": "\"{{ feature }}\" necessita el pla {{ plan }}. Els visitants no ho veuen.",
+      "contact_form": "\"Omple el formulari de contacte\" necessita un formulari de contacte en aquesta pàgina (afegeix la secció Formulari de contacte). Shopify t'envia per correu el que envia el comprador.",
+      "gated_downloads": "Les descàrregues restringides s'amaguen als convidats, però no estan protegides: qualsevol amb l'enllaç d'un fitxer el pot descarregar.",
+      "gated_downloads_tag": "Les descàrregues restringides s'amaguen als convidats i als clients sense l'etiqueta \"{{ tag }}\", però no estan protegides: qualsevol amb l'enllaç d'un fitxer el pot descarregar.",
+      "ar": "Afegeix els metafields \"{{ ns }}.ar_usdz\" / \"{{ ns }}.ar_glb\" o un model 3D al producte per tenir RA a tots els mòbils. Un model fet a partir de l'IFC només funciona a iPhone i iPad.",
+      "classification": "Afegeix un metafield de producte \"{{ ns }}.classification\" (un \"Sistema|Codi|Títol\" per línia o element de llista) per a codis visibles abans de carregar el model 3D.",
+      "compat": "Afegeix un metafield de producte \"{{ ns }}.compatible_with\" per llistar les aplicacions i versions que has provat.",
+      "compliance": "Afegeix un enllaç https a un fitxer .ids en aquest bloc o al metafield de producte \"{{ ns }}.ids_url\" per mostrar el distintiu IDS.",
+      "dpp": "Afegeix metafields de producte a \"{{ ns }}\" (epd_url, gwp_a1a3, declared_unit, dop_url, ce_marking, instructions_languages, substances_of_concern, gtin, manufacturer_contact…) per omplir aquest panell abans de carregar el model 3D.",
+      "rooms": "Afegeix els metafields de producte \"{{ ns }}.area\", \"{{ ns }}.bedrooms\", \"{{ ns }}.bathrooms\" i \"{{ ns }}.storeys\" per a dades clau visibles abans de carregar el model 3D.",
+      "specs": "Afegeix metafields de producte al namespace \"{{ ns }}\" per a especificacions visibles abans de carregar el model 3D.",
+      "takeoff": "Afegeix un metafield de producte \"{{ ns }}.boq\" (una fila per línia, cel·les separades per |) per a una taula visible abans de carregar el model 3D, i \"{{ ns }}.unit_prices\" (JSON) per a un total orientatiu.",
+      "viewer_link": "IFC Viewer Online: enganxa un enllaç https a un fitxer .ifc (Contingut > Fitxers) o a una escena.",
+      "product_link": "IFC Viewer Online: afegeix un enllaç https a un fitxer .ifc al metafield de producte {{ ns }}.{{ key }} (URL o fitxer)."
     }
   }
 }

@@ -45,7 +45,7 @@
     </ul>
   {%- endif -%}
   {%- if mf == blank and request.design_mode -%}
-    <p class="ifcvo-muted">Add product metafields "{{ ns | escape }}.area", "{{ ns | escape }}.bedrooms", "{{ ns | escape }}.bathrooms" and "{{ ns | escape }}.storeys" for key specs that show before the 3D model loads.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.rooms' | t: ns: ns | escape }}</p>
   {%- endif -%}
   <div class="ifcvo-body ifcvo-rooms-live" data-ifcvo-live aria-live="polite"></div>
 </div>

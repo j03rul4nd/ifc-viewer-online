@@ -59,7 +59,7 @@
       {%- endfor -%}
     </table>
   {%- elsif request.design_mode -%}
-    <p class="ifcvo-muted">Add a product metafield "{{ ns | escape }}.boq" (one row per line, cells split by |) for a table that shows before the 3D model loads, and "{{ ns | escape }}.unit_prices" (JSON) for an indicative total.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.takeoff' | t: ns: ns | escape }}</p>
   {%- endif -%}
   <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
 </div>

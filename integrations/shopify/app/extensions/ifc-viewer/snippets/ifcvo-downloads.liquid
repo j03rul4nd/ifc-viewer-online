@@ -85,7 +85,7 @@
       <p class="ifcvo-muted" style="margin:8px 0 0"><a href="{{ routes.account_login_url | escape }}">{%- assign dl_t = 'ifcvo.downloads.login' | t -%}{{ login_label | default: dl_t | escape }}</a></p>
     {%- endif -%}
     {%- if request.design_mode and dl_gate != 'none' -%}
-      <p class="ifcvo-upsell">Gated downloads are hidden from guests{% if dl_gate == 'tag' %} and customers without the tag "{{ dl_tag | escape }}"{% endif %}, not protected: anyone with a file's link can still download it.</p>
+      <p class="ifcvo-upsell">{% if dl_gate == 'tag' %}{{ 'ifcvo.editor.gated_downloads_tag' | t: tag: dl_tag | escape }}{% else %}{{ 'ifcvo.editor.gated_downloads' | t | escape }}{% endif %}</p>
     {%- endif -%}
   </div>
 {%- endif -%}

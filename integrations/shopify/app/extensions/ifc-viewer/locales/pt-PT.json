@@ -302,6 +302,22 @@
       "saved": "Imagem guardada.",
       "error": "Não foi possível ler esta vista.",
       "link": "Ligação para esta vista"
+    },
+    "editor": {
+      "gated": "\"{{ feature }}\" precisa do plano {{ plan }}. Os visitantes não o veem.",
+      "contact_form": "\"Preencher o formulário de contacto\" precisa de um formulário de contacto nesta página (adicione a secção Formulário de contacto). O Shopify envia-lhe por e-mail o que o comprador mandar.",
+      "gated_downloads": "As transferências restritas ficam ocultas para visitantes sem sessão, mas não protegidas: quem tiver a ligação de um ficheiro pode descarregá-lo.",
+      "gated_downloads_tag": "As transferências restritas ficam ocultas para visitantes sem sessão e clientes sem a etiqueta \"{{ tag }}\", mas não protegidas: quem tiver a ligação de um ficheiro pode descarregá-lo.",
+      "ar": "Adicione os metafields \"{{ ns }}.ar_usdz\" / \"{{ ns }}.ar_glb\" ou um modelo 3D ao produto para ter RA em todos os telemóveis. Um modelo criado a partir do IFC só funciona em iPhone e iPad.",
+      "classification": "Adicione um metafield de produto \"{{ ns }}.classification\" (um \"Sistema|Código|Título\" por linha ou item de lista) para códigos visíveis antes de o modelo 3D carregar.",
+      "compat": "Adicione um metafield de produto \"{{ ns }}.compatible_with\" para listar as aplicações e versões que testou.",
+      "compliance": "Adicione uma ligação https para um ficheiro .ids neste bloco ou no metafield de produto \"{{ ns }}.ids_url\" para mostrar o selo IDS.",
+      "dpp": "Adicione metafields de produto em \"{{ ns }}\" (epd_url, gwp_a1a3, declared_unit, dop_url, ce_marking, instructions_languages, substances_of_concern, gtin, manufacturer_contact…) para preencher este painel antes de o modelo 3D carregar.",
+      "rooms": "Adicione os metafields de produto \"{{ ns }}.area\", \"{{ ns }}.bedrooms\", \"{{ ns }}.bathrooms\" e \"{{ ns }}.storeys\" para dados principais visíveis antes de o modelo 3D carregar.",
+      "specs": "Adicione metafields de produto no namespace \"{{ ns }}\" para especificações visíveis antes de o modelo 3D carregar.",
+      "takeoff": "Adicione um metafield de produto \"{{ ns }}.boq\" (uma linha por artigo, células separadas por |) para uma tabela visível antes de o modelo 3D carregar, e \"{{ ns }}.unit_prices\" (JSON) para um total indicativo.",
+      "viewer_link": "IFC Viewer Online: cole uma ligação https para um ficheiro .ifc (Conteúdo > Ficheiros) ou para uma cena.",
+      "product_link": "IFC Viewer Online: adicione uma ligação https para um ficheiro .ifc no metafield de produto {{ ns }}.{{ key }} (URL ou ficheiro)."
     }
   }
 }

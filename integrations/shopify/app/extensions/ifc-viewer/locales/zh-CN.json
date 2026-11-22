@@ -302,6 +302,22 @@
       "saved": "图片已保存。",
       "error": "无法读取此视图。",
       "link": "此视图的链接"
+    },
+    "editor": {
+      "gated": "\"{{ feature }}\" 需要 {{ plan }} 套餐。访客看不到。",
+      "contact_form": "\"填写联系表单\" 需要本页有联系表单（请添加\"联系表单\"分区）。买家提交的内容会由 Shopify 通过邮件发送给您。",
+      "gated_downloads": "受限下载会对访客隐藏，但不受保护：任何拥有文件链接的人仍可下载。",
+      "gated_downloads_tag": "受限下载会对访客和没有标签 \"{{ tag }}\" 的客户隐藏，但不受保护：任何拥有文件链接的人仍可下载。",
+      "ar": "请为产品添加 \"{{ ns }}.ar_usdz\" / \"{{ ns }}.ar_glb\" 元字段或 3D 模型，以便在所有手机上使用 AR。由 IFC 生成的模型仅适用于 iPhone 和 iPad。",
+      "classification": "请添加产品元字段 \"{{ ns }}.classification\"（每行或每个列表项一个 \"体系|编码|名称\"），使编码在 3D 模型加载前即可显示。",
+      "compat": "请添加产品元字段 \"{{ ns }}.compatible_with\"，列出您测试过的软件和版本。",
+      "compliance": "请在此区块或产品元字段 \"{{ ns }}.ids_url\" 中添加指向 .ids 文件的 https 链接，以显示 IDS 徽章。",
+      "dpp": "请在 \"{{ ns }}\" 中添加产品元字段（epd_url、gwp_a1a3、declared_unit、dop_url、ce_marking、instructions_languages、substances_of_concern、gtin、manufacturer_contact…），在 3D 模型加载前填充此面板。",
+      "rooms": "请添加产品元字段 \"{{ ns }}.area\"、\"{{ ns }}.bedrooms\"、\"{{ ns }}.bathrooms\" 和 \"{{ ns }}.storeys\"，使关键参数在 3D 模型加载前即可显示。",
+      "specs": "请在命名空间 \"{{ ns }}\" 中添加产品元字段，使规格在 3D 模型加载前即可显示。",
+      "takeoff": "请添加产品元字段 \"{{ ns }}.boq\"（每行一项，单元格用 | 分隔）以在 3D 模型加载前显示表格，并添加 \"{{ ns }}.unit_prices\"（JSON）以显示参考合计。",
+      "viewer_link": "IFC Viewer Online：请粘贴指向 .ifc 文件（内容 > 文件）或场景的 https 链接。",
+      "product_link": "IFC Viewer Online：请在产品元字段 {{ ns }}.{{ key }}（URL 或文件）中添加指向 .ifc 文件的 https 链接。"
     }
   }
 }

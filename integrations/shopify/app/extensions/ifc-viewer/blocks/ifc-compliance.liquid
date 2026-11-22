@@ -51,7 +51,7 @@
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
   {%- if s.show_ids and ids_url == blank and request.design_mode -%}
-    <p class="ifcvo-muted">Add an https link to an .ids file in this block or in the product metafield "{{ ns | escape }}.ids_url" to show the IDS badge.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns | escape }}</p>
   {%- endif -%}
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>

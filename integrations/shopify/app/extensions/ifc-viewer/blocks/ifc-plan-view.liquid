@@ -55,7 +55,7 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>"planview" needs the starter plan. Visitors do not see it.</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planview', plan: 'starter' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <div

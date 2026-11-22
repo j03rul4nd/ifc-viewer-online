@@ -53,7 +53,7 @@
     <noscript><p class="ifcvo-muted">{{ 'ifcvo.ar.no_ar' | t | escape }}</p></noscript>
   </div>
   {%- if ar_glb == '' and ar_usdz == '' and request.design_mode -%}
-    <p class="ifcvo-muted">Add "{{ ns | escape }}.ar_usdz" / "{{ ns | escape }}.ar_glb" metafields or a 3D model to the product for AR on every phone. A model made from the IFC works on iPhone and iPad only.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.ar' | t: ns: ns | escape }}</p>
   {%- endif -%}
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>

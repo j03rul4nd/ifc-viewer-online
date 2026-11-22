@@ -75,7 +75,7 @@
   {%- if models != '' or scene != '' -%}
     <iframe src="{{ viewer_src | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
   {%- elsif request.design_mode -%}
-    <p>IFC Viewer Online: paste an https link to an .ifc file (Content &gt; Files) or to a scene.</p>
+    <p>{{ 'ifcvo.editor.viewer_link' | t | escape }}</p>
   {%- endif -%}
 </div>
 

@@ -89,7 +89,7 @@
         </tbody>
       </table>
     {%- elsif request.design_mode -%}
-      <p class="ifcvo-muted">Add product metafields in the "{{ specs_ns | escape }}" namespace for specs that show before the 3D model loads.</p>
+      <p class="ifcvo-muted">{{ 'ifcvo.editor.specs' | t: ns: specs_ns | escape }}</p>
     {%- endif -%}
   </div>
   <div class="ifcvo-body ifcvo-specs-live" data-ifcvo-live aria-live="polite">

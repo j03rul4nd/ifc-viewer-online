@@ -23,6 +23,9 @@ function settingKeys() {
 
 /** An app block is the section with `target` instead of `presets`, and a translated name. */
 export function toAppBlock(source) {
+  // Theme-editor note: the app block has the extension's locales, the copy-paste section does not.
+  source = source.replace('<p>IFC Viewer Online: paste an https link to an .ifc file (Content &gt; Files) or to a scene.</p>',
+    "<p>{{ 'ifcvo.editor.viewer_link' | t | escape }}</p>")
   return source.replace(/\{% schema %\}([\s\S]*?)\{% endschema %\}/, (_, json) => {
     const { presets, ...schema } = JSON.parse(json)
     if (BLOCK_NAME_KEYS[schema.name]) schema.name = BLOCK_NAME_KEYS[schema.name]

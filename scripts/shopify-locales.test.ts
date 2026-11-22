@@ -78,6 +78,21 @@ describe('schema locales (theme editor)', () => {
   }
 })
 
+describe('theme editor notes in Liquid', () => {
+  it('upsell and setup notes come from ifcvo.editor.* locale keys', () => {
+    const files = ['blocks', 'snippets'].flatMap((d) => fs.readdirSync(path.join(ext, d)).map((f) => path.join(ext, d, f)))
+    const left: string[] = []
+    for (const f of files) {
+      const src = fs.readFileSync(f, 'utf8')
+      for (const m of src.matchAll(/<p class="ifcvo-(?:upsell|muted)"[^>]*>([A-Za-z"][^<{]{12,})/g)) left.push(`${path.basename(f)}: ${m[1].slice(0, 50)}`)
+      if (/needs the \w+ plan/.test(src)) left.push(`${path.basename(f)}: plan note`)
+    }
+    expect(left).toEqual([])
+    const en = JSON.parse(fs.readFileSync(path.join(locales, 'en.default.json'), 'utf8'))
+    expect(Object.keys(en.ifcvo.editor).length).toBeGreaterThan(10)
+  })
+})
+
 describe('asset texts', () => {
   // Default tables (English fallbacks) are allowed; everything else must come from the locale data.
   const TABLES = /^(export )?const (LABELS|[A-Z_]+_LABELS|NAMES|NBS_MANUAL|DEFAULT_APPS) = [{[][\s\S]*?^[}\]]/gm

@@ -25,7 +25,7 @@
       <div class="ifcvo-quote-body"></div>
     </div>
     {%- if request.design_mode and block.settings.quote == 'contact' -%}
-      <p class="ifcvo-upsell">"Fill the contact form" needs a contact form on this page (add the Contact form section). Shopify emails you what the buyer sends.</p>
+      <p class="ifcvo-upsell">{{ 'ifcvo.editor.contact_form' | t | escape }}</p>
     {%- endif -%}
   {%- endif -%}
 </div>
