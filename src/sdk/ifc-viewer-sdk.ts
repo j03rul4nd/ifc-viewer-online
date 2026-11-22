@@ -605,10 +605,14 @@ export interface EirCondition { pset?: string; property: string; value: string }
  * the declared performance of EN 14351-1 windows and external doors (wind
  * load, watertightness, acoustics, U-value, g / τv, manufacturer and product
  * code) on standard IFC property sets; type properties count. Since v1.18.0.
+ * `builtin-nbs-bos` checks the machine-checkable information clauses of the
+ * NBS BIM Object Standard (Pset_<Class>Common + Reference, classification and
+ * Uniclass 2015, manufacturer data) per product class. Since v1.19.0.
  */
 export type BuiltinEirProfileId =
   | 'builtin-hospital-lod300' | 'builtin-iso19650-delivery' | 'builtin-lod200' | 'builtin-lod400'
   | 'builtin-cobie' | 'builtin-simba21-general' | 'builtin-en14351-1'
+  | 'builtin-nbs-bos'
 
 /**
  * A single EIR validation rule. `entity` is the IFC class it applies to;

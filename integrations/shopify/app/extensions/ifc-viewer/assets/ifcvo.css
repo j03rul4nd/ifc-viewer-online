@@ -126,3 +126,8 @@
 .ifcvo-sunlot-field input[type="number"] { width: 7em; }
 .ifcvo-sunlot-svg { display: block; width: 100%; max-width: 420px; height: auto; margin-top: 8px; }
 .ifcvo-sunlot-verdict[data-fits="false"] { color: #c0392b; }
+/* Compliance (ifc-compliance block) */
+.ifcvo-badges { list-style: none; margin: 0 0 .6em; padding: 0; display: flex; flex-wrap: wrap; gap: .4em; }
+.ifcvo-badge { padding: .3em .7em; border-radius: 999px; border: 1px solid currentColor; font-size: .9em; }
+.ifcvo-badge-pass { color: #1a7f37; } .ifcvo-badge-fail { color: #b42318; } .ifcvo-badge-warn { color: #9a6700; } .ifcvo-badge-error, .ifcvo-badge-na { opacity: .75; }
+.ifcvo-compliance-details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
