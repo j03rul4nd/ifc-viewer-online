@@ -40,6 +40,7 @@ export const FEATURE_TIERS = {
   ar: 'starter',
   classification: 'starter',
   takeoff: 'business',
+  dpp: 'business',
   sunlot: 'business',
   compliance: 'business',
 }

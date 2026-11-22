@@ -119,6 +119,9 @@
 .ifcvo-ar-qr svg { width: 148px; height: 148px; }
 /* Classification (ifc-classification block) */
 .ifcvo-cls code { font-size: .92em; white-space: nowrap; }
+/* EPD and product passport (ifc-dpp block) */
+.ifcvo-dpp-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; }
+.ifcvo-dpp-list [data-state="ready"] > [aria-hidden] { color: var(--ifcvo-accent, currentColor); }
 
 /* Sun & lot fit (ifc-sun-lot block) */
 .ifcvo-sunlot-block fieldset { border: 1px solid currentColor; border-radius: var(--ifcvo-radius); margin: 8px 0; padding: 8px 12px; }

@@ -1,0 +1,12 @@
+{% comment %}
+  One EPD value with its unit, escaped. A bare number gets the companion
+  metafield unit (e.g. bim.gwp_unit), else the default label; a value that
+  already carries a unit ("12.5 kg CO2e/m2") is printed as given.
+  Params: value, unit (companion metafield, optional), fallback (default unit).
+{% endcomment %}
+{%- liquid
+  assign ifcvo_v = value | append: '' | strip
+  assign ifcvo_rest = ifcvo_v | remove: '0' | remove: '1' | remove: '2' | remove: '3' | remove: '4' | remove: '5' | remove: '6' | remove: '7' | remove: '8' | remove: '9' | remove: '.' | remove: ',' | remove: '-' | remove: '+' | remove: ' '
+  assign ifcvo_u = unit | append: '' | strip | default: fallback
+-%}
+{%- if ifcvo_v == blank -%}—{%- elsif ifcvo_rest == blank -%}{{ ifcvo_v | escape }} {{ ifcvo_u | escape }}{%- else -%}{{ ifcvo_v | escape }}{%- endif -%}
