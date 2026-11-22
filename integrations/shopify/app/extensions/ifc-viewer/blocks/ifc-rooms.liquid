@@ -59,17 +59,85 @@
   "name": "t:blocks.rooms.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Rooms" },
-    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "area, bedrooms, bathrooms, storeys and dimensions in this namespace are shown as HTML and win over the model." },
-    { "type": "select", "id": "units", "label": "Area unit", "default": "m2", "options": [ { "value": "m2", "label": "m²" }, { "value": "ft2", "label": "ft²" } ] },
-    { "type": "checkbox", "id": "show_chips", "label": "Key specs chips", "default": true },
-    { "type": "checkbox", "id": "show_table", "label": "Room schedule", "default": true },
-    { "type": "checkbox", "id": "highlight", "label": "Highlight a room in 3D when clicked", "default": true },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, area, storeys, bedrooms, bathrooms, footprint, room, number, height, total, storey, waiting, none, inferred, geometry, truncated, units." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Rooms"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.area_bedrooms_bathrooms_storeys_and_dime"
+    },
+    {
+      "type": "select",
+      "id": "units",
+      "label": "t:settings.area_unit",
+      "default": "m2",
+      "options": [
+        {
+          "value": "m2",
+          "label": "t:settings.m"
+        },
+        {
+          "value": "ft2",
+          "label": "t:settings.ft"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_chips",
+      "label": "t:settings.key_specs_chips",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_table",
+      "label": "t:settings.room_schedule",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "highlight",
+      "label": "t:settings.highlight_a_room_in_3d_when_clicked",
+      "default": true
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_area_storeys_be"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

@@ -42,25 +42,25 @@
     {
       "type": "text",
       "id": "title",
-      "label": "Heading",
+      "label": "t:settings.heading",
       "default": "Element data"
     },
     {
       "type": "text",
       "id": "open_label",
-      "label": "Button before the 3D view opens",
+      "label": "t:settings.button_before_the_3d_view_opens",
       "default": "Open the 3D model"
     },
     {
       "type": "text",
       "id": "empty_label",
-      "label": "Text before a selection",
+      "label": "t:settings.text_before_a_selection",
       "default": "Select an element in the 3D view or the explorer."
     },
     {
       "type": "range",
       "id": "max_height",
-      "label": "Panel height",
+      "label": "t:settings.panel_height",
       "min": 200,
       "max": 900,
       "step": 20,
@@ -69,82 +69,91 @@
     },
     {
       "type": "header",
-      "content": "Quote"
+      "content": "t:settings.quote"
     },
     {
       "type": "select",
       "id": "quote",
-      "label": "Let buyers list elements",
+      "label": "t:settings.let_buyers_list_elements",
       "default": "off",
-      "info": "Buyers pick elements in the 3D view and set quantities. The cart keeps each element's GlobalId as a line item property.",
+      "info": "t:settings.buyers_pick_elements_in_the_3d_view_and",
       "options": [
-        { "value": "off", "label": "Off" },
-        { "value": "cart", "label": "Add them to the cart (current variant)" },
-        { "value": "contact", "label": "Fill the contact form on this page" }
+        {
+          "value": "off",
+          "label": "t:settings.off"
+        },
+        {
+          "value": "cart",
+          "label": "t:settings.add_them_to_the_cart_current_variant"
+        },
+        {
+          "value": "contact",
+          "label": "t:settings.fill_the_contact_form_on_this_page"
+        }
       ]
     },
     {
       "type": "text",
       "id": "quote_title",
-      "label": "Quote list heading",
-      "placeholder": "Your selection",
-      "info": "Blank: the store language text."
+      "label": "t:settings.quote_list_heading",
+      "placeholder": "t:settings.your_selection",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_pick_label",
-      "label": "Add element button",
-      "placeholder": "Add the selected element",
-      "info": "Blank: the store language text."
+      "label": "t:settings.add_element_button",
+      "placeholder": "t:settings.add_the_selected_element",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_cart_label",
-      "label": "Cart button",
-      "placeholder": "Add to cart",
-      "info": "Blank: the store language text."
+      "label": "t:settings.cart_button",
+      "placeholder": "t:settings.add_to_cart",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_contact_label",
-      "label": "Contact button",
-      "placeholder": "Request a quote",
-      "info": "Blank: the store language text."
+      "label": "t:settings.contact_button",
+      "placeholder": "t:settings.request_a_quote",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_empty",
-      "label": "Text when the list is empty",
-      "placeholder": "No elements yet. Select one in the 3D view.",
-      "info": "Blank: the store language text."
+      "label": "t:settings.text_when_the_list_is_empty",
+      "placeholder": "t:settings.no_elements_yet_select_one_in_the_3d_vie",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_intro",
-      "label": "First line of the message",
-      "placeholder": "Please send me a quote for these elements:",
-      "info": "Blank: the store language text."
+      "label": "t:settings.first_line_of_the_message",
+      "placeholder": "t:settings.please_send_me_a_quote_for_these_element",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_form",
-      "label": "Contact form selector (advanced)",
-      "info": "Empty finds the page's contact form."
+      "label": "t:settings.contact_form_selector_advanced",
+      "info": "t:settings.empty_finds_the_page_s_contact_form"
     },
     {
       "type": "header",
-      "content": "Brand"
+      "content": "t:settings.brand"
     },
     {
       "type": "color",
       "id": "accent",
-      "label": "Accent colour",
-      "info": "Empty uses the theme's button colour."
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
     },
     {
       "type": "range",
       "id": "radius",
-      "label": "Corner radius",
+      "label": "t:settings.corner_radius",
       "min": 0,
       "max": 24,
       "step": 2,
@@ -154,7 +163,7 @@
     {
       "type": "checkbox",
       "id": "frame",
-      "label": "Show a frame around the block",
+      "label": "t:settings.show_a_frame_around_the_block",
       "default": true
     }
   ]

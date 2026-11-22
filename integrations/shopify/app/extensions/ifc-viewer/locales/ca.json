@@ -292,6 +292,16 @@
       "make_error": "No s'ha pogut preparar el fitxer.",
       "no_viewer": "El visor 3D no està disponible en aquest dispositiu.",
       "no_glb": "L'exportació a GLB necessita una versió més recent del visor."
+    },
+    "variantviews": {
+      "heading": "Aquesta variant en 3D",
+      "copy": "Copia l'enllaç a aquesta vista",
+      "image": "Desa la imatge",
+      "copied": "Enllaç copiat. Obre el model en aquesta vista.",
+      "manual": "Copia aquest enllaç:",
+      "saved": "Imatge desada.",
+      "error": "No s'ha pogut llegir aquesta vista.",
+      "link": "Enllaç a aquesta vista"
     }
   }
 }

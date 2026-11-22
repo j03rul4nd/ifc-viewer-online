@@ -292,6 +292,16 @@
       "make_error": "No se pudo preparar el archivo.",
       "no_viewer": "El visor 3D no está disponible en este dispositivo.",
       "no_glb": "La exportación a GLB necesita una versión más reciente del visor."
+    },
+    "variantviews": {
+      "heading": "Esta variante en 3D",
+      "copy": "Copiar enlace a esta vista",
+      "image": "Guardar imagen",
+      "copied": "Enlace copiado. Abre el modelo en esta vista.",
+      "manual": "Copia este enlace:",
+      "saved": "Imagen guardada.",
+      "error": "No se pudo leer esta vista.",
+      "link": "Enlace a esta vista"
     }
   }
 }

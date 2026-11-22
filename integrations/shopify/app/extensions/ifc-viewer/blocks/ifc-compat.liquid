@@ -91,16 +91,70 @@
   "name": "t:blocks.compat.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Compatibility" },
-    { "type": "text", "id": "ns", "label": "Metafield namespace", "default": "bim", "info": "compatible_with (apps and versions you tested) wins over the typical list; ifc_size_mb gives the size." },
-    { "type": "checkbox", "id": "show_compat", "label": "Schema and apps", "default": true },
-    { "type": "checkbox", "id": "show_weight", "label": "File weight", "default": true, "info": "Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more." },
-    { "type": "checkbox", "id": "show_health", "label": "Health badge", "default": true },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Compatibility"
+    },
+    {
+      "type": "text",
+      "id": "ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.compatible_with_apps_and_versions_you_te"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_compat",
+      "label": "t:settings.schema_and_apps",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_weight",
+      "label": "t:settings.file_weight",
+      "default": true,
+      "info": "t:settings.light_under_20_mb_and_5_000_elements_hea"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_health",
+      "label": "t:settings.health_badge",
+      "default": true
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_schema_mvd_app_worksw"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

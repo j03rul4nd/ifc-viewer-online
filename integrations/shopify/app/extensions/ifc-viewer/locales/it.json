@@ -292,6 +292,16 @@
       "make_error": "Non è stato possibile preparare il file.",
       "no_viewer": "Il visualizzatore 3D non è disponibile su questo dispositivo.",
       "no_glb": "L'esportazione GLB richiede una versione più recente del visualizzatore."
+    },
+    "variantviews": {
+      "heading": "Questa variante in 3D",
+      "copy": "Copia il link a questa vista",
+      "image": "Salva l'immagine",
+      "copied": "Link copiato. Apre il modello in questa vista.",
+      "manual": "Copia questo link:",
+      "saved": "Immagine salvata.",
+      "error": "Non è stato possibile leggere questa vista.",
+      "link": "Link a questa vista"
     }
   }
 }

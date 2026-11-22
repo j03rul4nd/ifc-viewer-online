@@ -89,15 +89,63 @@
   "name": "t:blocks.classification.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Classification" },
-    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "\"classification\" in this namespace (System|Code|Title per line) is shown as HTML and wins over the model." },
-    { "type": "checkbox", "id": "show_model", "label": "Add the codes found in the 3D model", "default": true },
-    { "type": "checkbox", "id": "show_counts", "label": "Show how many elements carry each code", "default": false },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Classification"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.classification_in_this_namespace_system"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_model",
+      "label": "t:settings.add_the_codes_found_in_the_3d_model",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_counts",
+      "label": "t:settings.show_how_many_elements_carry_each_code",
+      "default": false
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_system_code_nam"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

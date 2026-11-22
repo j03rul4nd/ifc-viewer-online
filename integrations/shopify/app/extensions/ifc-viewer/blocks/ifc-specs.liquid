@@ -105,33 +105,178 @@
   "name": "t:blocks.specs.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Specifications" },
-    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "Product metafields in this namespace are shown as HTML and override values read from the model." },
-    { "type": "select", "id": "units", "label": "Units", "default": "metric", "options": [ { "value": "metric", "label": "Metric" }, { "value": "imperial", "label": "Imperial" } ] },
-    { "type": "header", "content": "Tables" },
-    { "type": "checkbox", "id": "group_dimensions", "label": "Outer dimensions", "default": true, "info": "Metafield dimensions (e.g. 1200 x 600 x 2100 mm) win; then the model's quantities; then a box calculated from the geometry." },
-    { "type": "checkbox", "id": "group_types", "label": "Per type", "default": true },
-    { "type": "checkbox", "id": "group_classes", "label": "Per IFC class", "default": false },
-    { "type": "checkbox", "id": "group_materials", "label": "Materials", "default": true },
-    { "type": "checkbox", "id": "group_totals", "label": "Totals", "default": true },
-    { "type": "header", "content": "Columns" },
-    { "type": "checkbox", "id": "col_class", "label": "IFC class", "default": true },
-    { "type": "checkbox", "id": "col_type", "label": "Type", "default": true },
-    { "type": "checkbox", "id": "col_count", "label": "Count", "default": true },
-    { "type": "checkbox", "id": "col_dimensions", "label": "Dimensions per type", "default": false },
-    { "type": "checkbox", "id": "col_length", "label": "Length", "default": true },
-    { "type": "checkbox", "id": "col_area", "label": "Area", "default": true },
-    { "type": "checkbox", "id": "col_volume", "label": "Volume", "default": false },
-    { "type": "checkbox", "id": "col_weight", "label": "Weight", "default": true },
-    { "type": "checkbox", "id": "col_materials", "label": "Materials", "default": true },
-    { "type": "checkbox", "id": "col_properties", "label": "Key properties", "default": false },
-    { "type": "textarea", "id": "properties", "label": "Properties to show", "info": "One per line, e.g. FireRating or Pset_DoorCommon.FireRating. Empty: common and manufacturer property sets." },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: class, type, count, length, area, volume, weight, materials, properties, dimensions, manufacturer, model, calculated, total, csv, waiting." },
-    { "type": "checkbox", "id": "csv", "label": "CSV download", "default": true },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Specifications"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.product_metafields_in_this_namespace_are"
+    },
+    {
+      "type": "select",
+      "id": "units",
+      "label": "t:settings.units",
+      "default": "metric",
+      "options": [
+        {
+          "value": "metric",
+          "label": "t:settings.metric"
+        },
+        {
+          "value": "imperial",
+          "label": "t:settings.imperial"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "t:settings.tables"
+    },
+    {
+      "type": "checkbox",
+      "id": "group_dimensions",
+      "label": "t:settings.outer_dimensions",
+      "default": true,
+      "info": "t:settings.metafield_dimensions_e_g_1200_x_600_x_21"
+    },
+    {
+      "type": "checkbox",
+      "id": "group_types",
+      "label": "t:settings.per_type",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "group_classes",
+      "label": "t:settings.per_ifc_class",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "group_materials",
+      "label": "t:settings.materials",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "group_totals",
+      "label": "t:settings.totals",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:settings.columns"
+    },
+    {
+      "type": "checkbox",
+      "id": "col_class",
+      "label": "t:settings.ifc_class",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_type",
+      "label": "t:settings.type",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_count",
+      "label": "t:settings.count",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_dimensions",
+      "label": "t:settings.dimensions_per_type",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "col_length",
+      "label": "t:settings.length",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_area",
+      "label": "t:settings.area",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_volume",
+      "label": "t:settings.volume",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "col_weight",
+      "label": "t:settings.weight",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_materials",
+      "label": "t:settings.materials",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "col_properties",
+      "label": "t:settings.key_properties",
+      "default": false
+    },
+    {
+      "type": "textarea",
+      "id": "properties",
+      "label": "t:settings.properties_to_show",
+      "info": "t:settings.one_per_line_e_g_firerating_or_pset_door"
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_class_type_count_leng"
+    },
+    {
+      "type": "checkbox",
+      "id": "csv",
+      "label": "t:settings.csv_download",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

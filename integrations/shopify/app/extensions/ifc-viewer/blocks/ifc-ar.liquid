@@ -65,17 +65,72 @@
 {
   "name": "t:blocks.ar.name",
   "target": "section",
-  "enabled_on": { "templates": ["product"] },
+  "enabled_on": {
+    "templates": [
+      "product"
+    ]
+  },
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading" },
-    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom", "info": "ar_usdz (iPhone/iPad) and ar_glb (Android) in this namespace: a file or an https link." },
-    { "type": "checkbox", "id": "use_media", "label": "Use the product's 3D model media", "default": true },
-    { "type": "checkbox", "id": "generate", "label": "Make the AR model from the IFC when there is no file", "default": true, "info": "Made on the visitor's iPhone or iPad from the \"Product IFC model\" block. Android needs a hosted file." },
-    { "type": "range", "id": "limit_mb", "label": "Largest made model on phones", "min": 10, "max": 50, "step": 5, "unit": "MB", "default": 50 },
-    { "type": "number", "id": "max_triangles", "label": "Triangle limit for made models", "default": 500000, "info": "The smallest parts are left out above it." },
-    { "type": "checkbox", "id": "include_site", "label": "Include the site and terrain in made models", "default": false },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: button, making, error, too_large, scan, no_ar, hosted, no_viewer." },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": false }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "t:settings.metafield_namespace",
+      "default": "custom",
+      "info": "t:settings.ar_usdz_iphone_ipad_and_ar_glb_android_i"
+    },
+    {
+      "type": "checkbox",
+      "id": "use_media",
+      "label": "t:settings.use_the_product_s_3d_model_media",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "generate",
+      "label": "t:settings.make_the_ar_model_from_the_ifc_when_ther",
+      "default": true,
+      "info": "t:settings.made_on_the_visitor_s_iphone_or_ipad_fro"
+    },
+    {
+      "type": "range",
+      "id": "limit_mb",
+      "label": "t:settings.largest_made_model_on_phones",
+      "min": 10,
+      "max": 50,
+      "step": 5,
+      "unit": "MB",
+      "default": 50
+    },
+    {
+      "type": "number",
+      "id": "max_triangles",
+      "label": "t:settings.triangle_limit_for_made_models",
+      "default": 500000,
+      "info": "t:settings.the_smallest_parts_are_left_out_above_it"
+    },
+    {
+      "type": "checkbox",
+      "id": "include_site",
+      "label": "t:settings.include_the_site_and_terrain_in_made_mod",
+      "default": false
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_button_making_error_t"
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": false
+    }
   ]
 }
 {% endschema %}

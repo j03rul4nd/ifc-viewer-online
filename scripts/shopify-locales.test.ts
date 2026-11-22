@@ -52,6 +52,23 @@ describe('schema locales (theme editor)', () => {
     }
   })
 
+  it('no literal text left in any block schema: labels, info, headers, placeholders and options are t: keys', () => {
+    const left: string[] = []
+    type St = { type?: string; label?: unknown; info?: unknown; content?: unknown; placeholder?: unknown; options?: { label?: unknown }[] }
+    for (const b of blocks) {
+      const src = fs.readFileSync(path.join(ext, 'blocks', b), 'utf8')
+      const schema = JSON.parse(src.match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)![1])
+      for (const st of [...(schema.settings || []), ...(schema.blocks || [])] as St[]) {
+        for (const k of ['label', 'info', 'content', 'placeholder'] as const) {
+          const v = st[k]
+          if (typeof v === 'string' && !v.startsWith('t:')) left.push(`${b} ${k}: ${v.slice(0, 40)}`)
+        }
+        for (const o of st.options || []) if (typeof o.label === 'string' && !o.label.startsWith('t:')) left.push(`${b} option: ${o.label}`)
+      }
+    }
+    expect(left).toEqual([])
+  })
+
   for (const lang of LANGS) {
     it(`${lang}.schema.json: exactly the English keys, no empty values`, () => {
       const t = flat(read(`${lang}.schema.json`))
