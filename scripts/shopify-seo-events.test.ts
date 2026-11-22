@@ -14,6 +14,7 @@ function fakeRender(src: string): string {
     .replace(/\{%-?\s*comment\s*-?%\}[\s\S]*?\{%-?\s*endcomment\s*-?%\}/g, '')
     .replace(/\{%-?\s*liquid[\s\S]*?-?%\}/, '')
     .replace(/\{%-?\s*unless forloop\.first\s*-?%\},\{%-?\s*endunless\s*-?%\}/g, '')
+    .replace(/\{%-?\s*if ifcvo_sep != ''\s*-?%\},\{%-?\s*endif\s*-?%\}/g, '')
     .replace(/\{\{[\s\S]*?\}\}/g, '"x"')
     .replace(/\{%[\s\S]*?%\}/g, '')
 }

@@ -10,6 +10,7 @@ import { FootprintAccumulator, type BoxLike } from './bbox'
 import { ProductDataBuilder, type ProductData, type ProductDataOptions } from './extract'
 import { RoomScheduleBuilder } from './rooms'
 import { ClassificationBuilder } from './classification'
+import { SustainabilityBuilder } from './sustainability'
 
 /** Spaces also need their storey (IfcRelAggregates), which elements read from ContainedInStructure. */
 export const SPACE_DATA_CONFIG = {
@@ -42,6 +43,7 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
   const builder = new ProductDataBuilder(opts)
   const foot = new FootprintAccumulator()
   const classes = new ClassificationBuilder()
+  const green = new SustainabilityBuilder()
   const plan: Array<{ model: ProductCollectModel; ids: number[] }> = []
   const spaces: Array<{ model: ProductCollectModel; ids: number[] }> = []
   let spaceCount = 0
@@ -80,6 +82,7 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
         const item = parseItemData(raw as Record<string, unknown>, units)
         builder.add(item, units)
         classes.add(item)
+        green.add(item)
       }
       // Boxes per batch, after load; only the corners' hull is kept, the Box3s are dropped.
       if (model.fragments.getBoxes) {
@@ -96,6 +99,8 @@ export async function collectProductData(models: ProductCollectModel[], opts: Co
   const out = builder.result()
   classes.truncated = classes.truncated || builder.truncated
   out.classifications = classes.result()
+  green.truncated = builder.truncated
+  out.sustainability = green.result()
   out.rooms = spaces.length ? await collectRooms(spaces, spacesCut, opts.signal) : null
   return out
 }

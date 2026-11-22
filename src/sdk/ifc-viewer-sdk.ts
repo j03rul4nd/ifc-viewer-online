@@ -326,6 +326,8 @@ export interface ProductData {
   rooms?: ProductRoomSchedule | null
   /** Classification codes (Uniclass 2015, OmniClass, MasterFormat…) by system (since 1.19); null when none. */
   classifications?: ProductClassifications | null
+  /** EPD / carbon indicators the model declares (Pset_EnvironmentalImpact*, manufacturer psets); null when none. */
+  sustainability?: ProductSustainability | null
   /** Bill of quantities and a steel table by profile. */
   takeoff?: ProductTakeoff
 }
@@ -381,6 +383,33 @@ export interface ProductClassificationEntry {
   source: 'ifc' | 'pset'
   /** The system was guessed from the code's shape. */
   systemGuessed?: boolean
+}
+
+/** One indicator in getProductData().sustainability, as the file declares it (never estimated). */
+export interface ProductSustainabilityIndicator {
+  key: 'gwp' | 'gwpA1A3' | 'energy' | 'energyRenewable' | 'energyNonRenewable' | 'water' | 'wasteHazardous' | 'wasteNonHazardous' | 'acidification' | 'eutrophication' | 'ozoneDepletion'
+  value: number
+  unit: string | null
+  basis: 'perUnit' | 'element' | 'unknown'
+  stage: string | null
+  /** ifc: Pset_EnvironmentalImpactIndicators/Values; pset: a manufacturer or LCA-tool parameter. */
+  source: 'ifc' | 'pset'
+  pset: string
+  property: string
+  count: number
+  varies: boolean
+}
+
+export interface ProductSustainability {
+  indicators: ProductSustainabilityIndicator[]
+  declaredUnit: string | null
+  /** url is https-only. */
+  epd: { number: string | null; programme: string | null; url: string | null; validUntil: string | null; source: 'ifc' | 'pset' } | null
+  materials: string[]
+  withData: number
+  elements: number
+  fromPsets: boolean
+  truncated: boolean
 }
 
 export interface ProductClassifications {
