@@ -83,6 +83,9 @@ function currentPlan() {
   return normalizePlan(src && src.dataset.ifcvoPlan)
 }
 
+/** Theme-editor-only texts (merchant facing; visitors never see them). */
+const GATE_LABELS = { upsell: '"{feature}" needs the {plan} plan. Visitors do not see it.' }
+
 function designMode() {
   return !!(window.Shopify && window.Shopify.designMode)
 }
@@ -98,7 +101,7 @@ export function gate(feature, node, plan = currentPlan()) {
     const prev = node.previousElementSibling
     if (designMode() && !(prev && prev.dataset.ifcvoUpsell === feature)) {
       node.before(el('p', { class: 'ifcvo-upsell', 'data-ifcvo-upsell': feature },
-        `"${feature}" needs the ${FEATURE_TIERS[feature]} plan. Visitors do not see it.`))
+        GATE_LABELS.upsell.replace('{feature}', feature).replace('{plan}', FEATURE_TIERS[feature])))
     }
   }
   return false
@@ -584,7 +587,7 @@ export function _state() {
 }
 
 if (typeof window !== 'undefined' && !window.IFCVO) {
-  window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS,
+  window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS, sdk: SDK,
     labels: labelsOf, probe,
     // For the companion modules (quote, downloads): the live viewer, opening it, and its events.
     get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen,

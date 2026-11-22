@@ -80,7 +80,7 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>"planset" needs the starter plan. Visitors do not see it.</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'starter' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <div
@@ -178,23 +178,87 @@
 <script type="module" src="{{ 'ifcvo-planset.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'planset', block: 'ifc-plan-set', ns: ns, keys: 'plan_set,license_type,license_terms', scope: 'variant' -%}
+
 {% schema %}
 {
-  "name": "IFC plan set & license",
+  "name": "t:blocks.plan_set.name",
   "target": "section",
   "settings": [
-    { "type": "paragraph", "content": "One card per variant (license). Variant metafields: license_type, license_terms, plan_set (JSON or list), ifc_model." },
-    { "type": "text", "id": "title", "label": "Heading", "info": "Empty uses the translated default." },
-    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
-    { "type": "text", "id": "default_license", "label": "Default license", "default": "Single-build license", "info": "Used when a variant has no license_type." },
-    { "type": "textarea", "id": "default_terms", "label": "Default terms", "info": "Used when a variant has no license_terms." },
-    { "type": "textarea", "id": "default_set", "label": "Default files included", "default": "Floor plans|PDF\nElevations|PDF\nSections|PDF\nFoundation plan|PDF\n3D model|IFC", "info": "One per line: Name|FORMAT|sheets|size. Used when a variant has no plan_set." },
-    { "type": "checkbox", "id": "show_matrix", "label": "License comparison table", "default": true },
-    { "type": "checkbox", "id": "show_model", "label": "Show the 3D model of each license", "default": true },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "paragraph",
+      "content": "t:settings.one_card_per_variant_license_variant_met"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "info": "t:settings.empty_uses_the_translated_default"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "t:settings.metafield_namespace",
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "default_license",
+      "label": "t:settings.default_license",
+      "default": "Single-build license",
+      "info": "t:settings.used_when_a_variant_has_no_license_type"
+    },
+    {
+      "type": "textarea",
+      "id": "default_terms",
+      "label": "t:settings.default_terms",
+      "info": "t:settings.used_when_a_variant_has_no_license_terms"
+    },
+    {
+      "type": "textarea",
+      "id": "default_set",
+      "label": "t:settings.default_files_included",
+      "default": "Floor plans|PDF\nElevations|PDF\nSections|PDF\nFoundation plan|PDF\n3D model|IFC",
+      "info": "t:settings.one_per_line_name_format_sheets_size_use"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_matrix",
+      "label": "t:settings.license_comparison_table",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_model",
+      "label": "t:settings.show_the_3d_model_of_each_license",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

@@ -47,28 +47,145 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-sunlot.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'sunlot', block: 'ifc-sun-lot', ns: '', keys: '' -%}
+
 {% schema %}
 {
-  "name": "IFC sun & lot fit",
+  "name": "t:blocks.sun_lot.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Sun and lot fit" },
-    { "type": "checkbox", "id": "show_sun", "label": "Sun study", "default": true },
-    { "type": "text", "id": "lat", "label": "Default latitude", "info": "Decimal degrees, e.g. 40.4168. Empty uses the model's own location, or the buyer's." },
-    { "type": "text", "id": "lon", "label": "Default longitude", "info": "Decimal degrees, e.g. -3.7038." },
-    { "type": "select", "id": "date", "label": "Default date", "default": "06-21", "options": [ { "value": "03-20", "label": "March equinox" }, { "value": "06-21", "label": "June solstice" }, { "value": "09-22", "label": "September equinox" }, { "value": "12-21", "label": "December solstice" } ] },
-    { "type": "checkbox", "id": "show_lot", "label": "Lot fit", "default": true },
-    { "type": "select", "id": "units", "label": "Lot units", "default": "m", "options": [ { "value": "m", "label": "Metres" }, { "value": "ft", "label": "Feet" } ] },
-    { "type": "text", "id": "lot_width", "label": "Example lot (m) width", "info": "Always in metres, whatever the lot units. The buyer can change it." },
-    { "type": "text", "id": "lot_depth", "label": "Example lot (m) depth", "info": "Always in metres, whatever the lot units." },
-    { "type": "text", "id": "front", "label": "Front setback (m)", "info": "Always in metres, whatever the lot units." },
-    { "type": "text", "id": "side", "label": "Side setback, each side (m)", "info": "Always in metres, whatever the lot units." },
-    { "type": "text", "id": "rear", "label": "Rear setback (m)", "info": "Always in metres, whatever the lot units." },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, sun, lat, lon, locate, date, time, lot, lotWidth, lotDepth, front, side, rear, orientation, fits, noFit, waiting." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Sun and lot fit"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_sun",
+      "label": "t:settings.sun_study",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "lat",
+      "label": "t:settings.default_latitude",
+      "info": "t:settings.decimal_degrees_e_g_40_4168_empty_uses_t"
+    },
+    {
+      "type": "text",
+      "id": "lon",
+      "label": "t:settings.default_longitude",
+      "info": "t:settings.decimal_degrees_e_g_3_7038"
+    },
+    {
+      "type": "select",
+      "id": "date",
+      "label": "t:settings.default_date",
+      "default": "06-21",
+      "options": [
+        {
+          "value": "03-20",
+          "label": "t:settings.march_equinox"
+        },
+        {
+          "value": "06-21",
+          "label": "t:settings.june_solstice"
+        },
+        {
+          "value": "09-22",
+          "label": "t:settings.september_equinox"
+        },
+        {
+          "value": "12-21",
+          "label": "t:settings.december_solstice"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_lot",
+      "label": "t:settings.lot_fit",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "units",
+      "label": "t:settings.lot_units",
+      "default": "m",
+      "options": [
+        {
+          "value": "m",
+          "label": "t:settings.metres"
+        },
+        {
+          "value": "ft",
+          "label": "t:settings.feet"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "lot_width",
+      "label": "t:settings.example_lot_m_width",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units_2"
+    },
+    {
+      "type": "text",
+      "id": "lot_depth",
+      "label": "t:settings.example_lot_m_depth",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "text",
+      "id": "front",
+      "label": "t:settings.front_setback_m",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "text",
+      "id": "side",
+      "label": "t:settings.side_setback_each_side_m",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "text",
+      "id": "rear",
+      "label": "t:settings.rear_setback_m",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_sun_lat_lon_loc"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

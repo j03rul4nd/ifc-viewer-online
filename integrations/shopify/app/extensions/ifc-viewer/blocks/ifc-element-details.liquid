@@ -15,49 +15,52 @@
   {%- if block.settings.quote != 'off' -%}
     {%- assign q_variant = product.selected_or_first_available_variant -%}
     {%- capture q_variants -%}{%- for v in product.variants -%}{%- unless forloop.first -%},{%- endunless -%}"{{ v.id }}":{{ v.title | json }}{%- endfor -%}{%- endcapture -%}
-    <div class="ifcvo-quote" data-ifcvo-quote-list data-mode="{{ block.settings.quote | escape }}"
+    {%- capture q_labels -%}{"title":{{ 'ifcvo.quote.title' | t | json }},"pick":{{ 'ifcvo.quote.pick' | t | json }},"list":{{ 'ifcvo.quote.list' | t | json }},"cart":{{ 'ifcvo.quote.cart' | t | json }},"contact":{{ 'ifcvo.quote.contact' | t | json }},"empty":{{ 'ifcvo.quote.empty' | t | json }},"qty":{{ 'ifcvo.quote.qty' | t | json }},"remove":{{ 'ifcvo.quote.remove' | t | json }},"full":{{ 'ifcvo.quote.full' | t | json }},"no_form":{{ 'ifcvo.quote.no_form' | t | json }},"filled":{{ 'ifcvo.quote.filled' | t | json }},"added":{{ 'ifcvo.quote.added' | t | json }},"error":{{ 'ifcvo.quote.error' | t | json }},"intro":{{ 'ifcvo.quote.intro' | t | json }},"element":{{ 'ifcvo.quote.element' | t | json }},"product":{{ 'ifcvo.quote.product' | t | json }},"variant":{{ 'ifcvo.quote.variant' | t | json }},"page":{{ 'ifcvo.quote.page' | t | json }}}{%- endcapture -%}
+    <div class="ifcvo-quote" data-ifcvo-quote-list data-labels="{{ q_labels | escape }}" data-mode="{{ block.settings.quote | escape }}"
       data-variants="{{ q_variants | escape }}" data-product="{{ product.title | escape }}" data-variant="{% unless q_variant.title == 'Default Title' %}{{ q_variant.title | escape }}{% endunless %}"
       data-form="{{ block.settings.quote_form | escape }}" data-intro="{{ block.settings.quote_intro | escape }}"
       data-pick-label="{{ block.settings.quote_pick_label | escape }}" data-cart-label="{{ block.settings.quote_cart_label | escape }}"
       data-contact-label="{{ block.settings.quote_contact_label | escape }}" data-empty="{{ block.settings.quote_empty | escape }}">
-      {%- if block.settings.quote_title != blank -%}<h4>{{ block.settings.quote_title | escape }}</h4>{%- endif -%}
+      {%- assign q_title = 'ifcvo.quote.title' | t -%}<h4>{{ block.settings.quote_title | default: q_title | escape }}</h4>
       <div class="ifcvo-quote-body"></div>
     </div>
     {%- if request.design_mode and block.settings.quote == 'contact' -%}
-      <p class="ifcvo-upsell">"Fill the contact form" needs a contact form on this page (add the Contact form section). Shopify emails you what the buyer sends.</p>
+      <p class="ifcvo-upsell">{{ 'ifcvo.editor.contact_form' | t | escape }}</p>
     {%- endif -%}
   {%- endif -%}
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 {%- if block.settings.quote != 'off' -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'details', block: 'ifc-element-details', ns: '', keys: '' -%}
+
 {% schema %}
 {
-  "name": "IFC element details",
+  "name": "t:blocks.element_details.name",
   "target": "section",
   "settings": [
     {
       "type": "text",
       "id": "title",
-      "label": "Heading",
+      "label": "t:settings.heading",
       "default": "Element data"
     },
     {
       "type": "text",
       "id": "open_label",
-      "label": "Button before the 3D view opens",
+      "label": "t:settings.button_before_the_3d_view_opens",
       "default": "Open the 3D model"
     },
     {
       "type": "text",
       "id": "empty_label",
-      "label": "Text before a selection",
+      "label": "t:settings.text_before_a_selection",
       "default": "Select an element in the 3D view or the explorer."
     },
     {
       "type": "range",
       "id": "max_height",
-      "label": "Panel height",
+      "label": "t:settings.panel_height",
       "min": 200,
       "max": 900,
       "step": 20,
@@ -66,76 +69,91 @@
     },
     {
       "type": "header",
-      "content": "Quote"
+      "content": "t:settings.quote"
     },
     {
       "type": "select",
       "id": "quote",
-      "label": "Let buyers list elements",
+      "label": "t:settings.let_buyers_list_elements",
       "default": "off",
-      "info": "Buyers pick elements in the 3D view and set quantities. The cart keeps each element's GlobalId as a line item property.",
+      "info": "t:settings.buyers_pick_elements_in_the_3d_view_and",
       "options": [
-        { "value": "off", "label": "Off" },
-        { "value": "cart", "label": "Add them to the cart (current variant)" },
-        { "value": "contact", "label": "Fill the contact form on this page" }
+        {
+          "value": "off",
+          "label": "t:settings.off"
+        },
+        {
+          "value": "cart",
+          "label": "t:settings.add_them_to_the_cart_current_variant"
+        },
+        {
+          "value": "contact",
+          "label": "t:settings.fill_the_contact_form_on_this_page"
+        }
       ]
     },
     {
       "type": "text",
       "id": "quote_title",
-      "label": "Quote list heading",
-      "default": "Your selection"
+      "label": "t:settings.quote_list_heading",
+      "placeholder": "t:settings.your_selection",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_pick_label",
-      "label": "Add element button",
-      "default": "Add the selected element"
+      "label": "t:settings.add_element_button",
+      "placeholder": "t:settings.add_the_selected_element",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_cart_label",
-      "label": "Cart button",
-      "default": "Add to cart"
+      "label": "t:settings.cart_button",
+      "placeholder": "t:settings.add_to_cart",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_contact_label",
-      "label": "Contact button",
-      "default": "Request a quote"
+      "label": "t:settings.contact_button",
+      "placeholder": "t:settings.request_a_quote",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_empty",
-      "label": "Text when the list is empty",
-      "default": "No elements yet. Select one in the 3D view."
+      "label": "t:settings.text_when_the_list_is_empty",
+      "placeholder": "t:settings.no_elements_yet_select_one_in_the_3d_vie",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_intro",
-      "label": "First line of the message",
-      "default": "Please send me a quote for these elements:"
+      "label": "t:settings.first_line_of_the_message",
+      "placeholder": "t:settings.please_send_me_a_quote_for_these_element",
+      "info": "t:settings.blank_the_store_language_text"
     },
     {
       "type": "text",
       "id": "quote_form",
-      "label": "Contact form selector (advanced)",
-      "info": "Empty finds the page's contact form."
+      "label": "t:settings.contact_form_selector_advanced",
+      "info": "t:settings.empty_finds_the_page_s_contact_form"
     },
     {
       "type": "header",
-      "content": "Brand"
+      "content": "t:settings.brand"
     },
     {
       "type": "color",
       "id": "accent",
-      "label": "Accent colour",
-      "info": "Empty uses the theme's button colour."
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
     },
     {
       "type": "range",
       "id": "radius",
-      "label": "Corner radius",
+      "label": "t:settings.corner_radius",
       "min": 0,
       "max": 24,
       "step": 2,
@@ -145,7 +163,7 @@
     {
       "type": "checkbox",
       "id": "frame",
-      "label": "Show a frame around the block",
+      "label": "t:settings.show_a_frame_around_the_block",
       "default": true
     }
   ]

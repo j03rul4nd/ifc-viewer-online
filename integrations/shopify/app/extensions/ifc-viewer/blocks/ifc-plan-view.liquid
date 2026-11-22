@@ -55,7 +55,7 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>"planview" needs the starter plan. Visitors do not see it.</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planview', plan: 'starter' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <div
@@ -86,29 +86,114 @@
 <script type="module" src="{{ 'ifcvo-planview.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'planview', block: 'ifc-plan-view', ns: '', keys: '' -%}
+
 {% schema %}
 {
-  "name": "IFC plan view",
+  "name": "t:blocks.plan_view.name",
   "target": "section",
   "settings": [
-    { "type": "paragraph", "content": "Floor plans per storey of the model in the \"Product IFC model\" block. One tab per storey; rooms and areas when the model has spaces." },
-    { "type": "text", "id": "title", "label": "Heading", "info": "Empty uses the translated default." },
-    { "type": "select", "id": "start", "label": "Start with", "default": "3d", "options": [
-      { "value": "3d", "label": "The 3D model" },
-      { "value": "first", "label": "The first floor plan" }
-    ] },
-    { "type": "checkbox", "id": "show_rooms", "label": "List rooms and areas", "default": true },
-    { "type": "header", "content": "Preview mode" },
-    { "type": "paragraph", "content": "For plan sellers. Adds a watermark, opens the viewer without toolbar, measuring or exports, and hides every model download (viewer links, IFC downloads block, GLB/CSV buttons) and the full-viewer link on this page. Honest limit: this stops casual copying, not a determined person. The model file's URL stays reachable in the page and a model shown in a browser is sent to that browser, so it can be extracted. For plans you must not leak, upload a simplified preview model and deliver the full set after purchase." },
-    { "type": "checkbox", "id": "protect", "label": "Preview mode", "default": false },
-    { "type": "checkbox", "id": "show_watermark", "label": "Show a watermark", "default": true },
-    { "type": "text", "id": "watermark", "label": "Watermark text", "info": "Empty uses the shop name." },
-    { "type": "range", "id": "watermark_opacity", "label": "Watermark opacity", "min": 5, "max": 60, "step": 5, "unit": "%", "default": 20 },
-    { "type": "checkbox", "id": "allow_properties", "label": "Allow element properties", "default": false, "info": "Off: visitors cannot open the properties of an element." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "paragraph",
+      "content": "t:settings.floor_plans_per_storey_of_the_model_in_t"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "info": "t:settings.empty_uses_the_translated_default"
+    },
+    {
+      "type": "select",
+      "id": "start",
+      "label": "t:settings.start_with",
+      "default": "3d",
+      "options": [
+        {
+          "value": "3d",
+          "label": "t:settings.the_3d_model"
+        },
+        {
+          "value": "first",
+          "label": "t:settings.the_first_floor_plan"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_rooms",
+      "label": "t:settings.list_rooms_and_areas",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:settings.preview_mode"
+    },
+    {
+      "type": "paragraph",
+      "content": "t:settings.for_plan_sellers_adds_a_watermark_opens"
+    },
+    {
+      "type": "checkbox",
+      "id": "protect",
+      "label": "t:settings.preview_mode",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_watermark",
+      "label": "t:settings.show_a_watermark",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "watermark",
+      "label": "t:settings.watermark_text",
+      "info": "t:settings.empty_uses_the_shop_name"
+    },
+    {
+      "type": "range",
+      "id": "watermark_opacity",
+      "label": "t:settings.watermark_opacity",
+      "min": 5,
+      "max": 60,
+      "step": 5,
+      "unit": "%",
+      "default": 20
+    },
+    {
+      "type": "checkbox",
+      "id": "allow_properties",
+      "label": "t:settings.allow_element_properties",
+      "default": false,
+      "info": "t:settings.off_visitors_cannot_open_the_properties"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

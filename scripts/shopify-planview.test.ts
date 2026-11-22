@@ -209,7 +209,10 @@ describe('preview mode across the product page', () => {
 
   it('GLB/CSV makers refuse in preview mode and the help says the URL stays reachable', () => {
     expect(quote).toMatch(/querySelector\('\[data-ifcvo-protect\]'\)\) return/)
-    expect(block).toMatch(/URL stays reachable/)
+    // The help text is a t: key; its English lives in the schema locale.
+    const key = (block.match(/"(?:info|content)": "t:settings\.(for_plan_sellers[\w]*)"/) || [])[1]
+    const en = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.schema.json'), 'utf8'))
+    expect(en.settings[key as string]).toMatch(/URL stays reachable/)
   })
 })
 

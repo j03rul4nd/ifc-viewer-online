@@ -155,7 +155,10 @@
       "estimated": "≈ weight from volume × 7850 kg/m³",
       "noProfile": "(no profile)",
       "other": "Other",
-      "truncated": "Large model: only part of it was read, totals may be incomplete."
+      "truncated": "Large model: only part of it was read, totals may be incomplete.",
+      "quoteHead": "Quantities from the model:",
+      "quoteProduct": "Product",
+      "quotePage": "Page"
     },
     "ar": {
       "button": "View in your space",
@@ -268,6 +271,53 @@
       "negative": "Values must be positive.",
       "swap": "Turn 90°",
       "turnedFits": "It fits if the house is turned 90° (to {deg})."
+    },
+    "quote": {
+      "title": "Your selection",
+      "pick": "Add the selected element",
+      "list": "Selected elements",
+      "cart": "Add to cart",
+      "contact": "Request a quote",
+      "empty": "No elements yet. Select one in the 3D view.",
+      "qty": "Quantity",
+      "remove": "Remove",
+      "full": "Up to {n} elements.",
+      "no_form": "There is no contact form on this page.",
+      "filled": "The contact form below has the list. Add your details and send it.",
+      "added": "Added to the cart: {n}",
+      "error": "Could not add to the cart.",
+      "intro": "Please send me a quote for these elements:",
+      "element": "Element",
+      "product": "Product",
+      "variant": "Variant",
+      "page": "Page"
+    },
+    "downloads": {
+      "ifc": "Download BIM model (IFC)",
+      "glb": "3D model (GLB)",
+      "csv": "Element list (CSV)",
+      "login": "Log in to see the downloads",
+      "making": "Preparing the file in your browser…",
+      "made": "Done.",
+      "make_error": "Could not prepare the file.",
+      "no_viewer": "The 3D viewer is not available on this device.",
+      "no_glb": "GLB export needs a newer viewer version."
+    },
+    "editor": {
+      "gated": "\"{{ feature }}\" needs the {{ plan }} plan. Visitors do not see it.",
+      "contact_form": "\"Fill the contact form\" needs a contact form on this page (add the Contact form section). Shopify emails you what the buyer sends.",
+      "gated_downloads": "Gated downloads are hidden from guests, not protected: anyone with a file's link can still download it.",
+      "gated_downloads_tag": "Gated downloads are hidden from guests and customers without the tag \"{{ tag }}\", not protected: anyone with a file's link can still download it.",
+      "ar": "Add \"{{ ns }}.ar_usdz\" / \"{{ ns }}.ar_glb\" metafields or a 3D model to the product for AR on every phone. A model made from the IFC works on iPhone and iPad only.",
+      "classification": "Add a product metafield \"{{ ns }}.classification\" (one \"System|Code|Title\" per line or list item) for codes that show before the 3D model loads.",
+      "compat": "Add a \"{{ ns }}.compatible_with\" product metafield to list the apps and versions you tested.",
+      "compliance": "Add an https link to an .ids file in this block or in the product metafield \"{{ ns }}.ids_url\" to show the IDS badge.",
+      "dpp": "Add product metafields in \"{{ ns }}\" (epd_url, gwp_a1a3, declared_unit, dop_url, ce_marking, instructions_languages, substances_of_concern, gtin, manufacturer_contact…) to fill this panel before the 3D model loads.",
+      "rooms": "Add product metafields \"{{ ns }}.area\", \"{{ ns }}.bedrooms\", \"{{ ns }}.bathrooms\" and \"{{ ns }}.storeys\" for key specs that show before the 3D model loads.",
+      "specs": "Add product metafields in the \"{{ ns }}\" namespace for specs that show before the 3D model loads.",
+      "takeoff": "Add a product metafield \"{{ ns }}.boq\" (one row per line, cells split by |) for a table that shows before the 3D model loads, and \"{{ ns }}.unit_prices\" (JSON) for an indicative total.",
+      "viewer_link": "IFC Viewer Online: paste an https link to an .ifc file (Content > Files) or to a scene.",
+      "product_link": "IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file)."
     }
   }
 }

@@ -60,18 +60,19 @@
   endif
 -%}
 {%- if dl_any -%}
-  <div class="ifcvo-downloads" data-ifcvo-downloads data-gate="{{ dl_gate | escape }}">
+  {%- capture dl_labels -%}{"making":{{ 'ifcvo.downloads.making' | t | json }},"made":{{ 'ifcvo.downloads.made' | t | json }},"makeError":{{ 'ifcvo.downloads.make_error' | t | json }},"noViewer":{{ 'ifcvo.downloads.no_viewer' | t | json }},"noGlb":{{ 'ifcvo.downloads.no_glb' | t | json }}}{%- endcapture -%}
+  <div class="ifcvo-downloads" data-ifcvo-downloads data-gate="{{ dl_gate | escape }}" data-labels="{{ dl_labels | escape }}">
     {%- if dl_open -%}
       <ul class="ifcvo-files" style="margin:8px 0 0;padding-left:18px">
         {%- if dl_model != '' and dl_show_ifc -%}
           {%- assign dl_name = dl_model | split: '?' | first | split: '/' | last -%}
-          <li><a class="ifcvo-download" href="{{ dl_model | escape }}" download rel="noopener" data-file="{{ dl_name | escape }}">{{ ifc_label | default: 'Download BIM model (IFC)' | escape }}</a></li>
+          <li><a class="ifcvo-download" href="{{ dl_model | escape }}" download rel="noopener" data-file="{{ dl_name | escape }}">{%- assign dl_t = 'ifcvo.downloads.ifc' | t -%}{{ ifc_label | default: dl_t | escape }}</a></li>
         {%- endif -%}
         {%- if dl_model != '' and glb -%}
-          <li><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="glb">{{ glb_label | default: '3D model (GLB)' | escape }}</button></li>
+          <li><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="glb">{%- assign dl_t = 'ifcvo.downloads.glb' | t -%}{{ glb_label | default: dl_t | escape }}</button></li>
         {%- endif -%}
         {%- if dl_model != '' and csv -%}
-          <li><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="csv">{{ csv_label | default: 'Element list (CSV)' | escape }}</button></li>
+          <li><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="csv">{%- assign dl_t = 'ifcvo.downloads.csv' | t -%}{{ csv_label | default: dl_t | escape }}</button></li>
         {%- endif -%}
         {%- for f in files -%}
           {%- assign furl = f.url | default: f | strip -%}
@@ -81,10 +82,10 @@
       </ul>
       <p class="ifcvo-make-status ifcvo-muted" role="status" aria-live="polite"></p>
     {%- else -%}
-      <p class="ifcvo-muted" style="margin:8px 0 0"><a href="{{ routes.account_login_url | escape }}">{{ login_label | default: 'Log in to see the downloads' | escape }}</a></p>
+      <p class="ifcvo-muted" style="margin:8px 0 0"><a href="{{ routes.account_login_url | escape }}">{%- assign dl_t = 'ifcvo.downloads.login' | t -%}{{ login_label | default: dl_t | escape }}</a></p>
     {%- endif -%}
     {%- if request.design_mode and dl_gate != 'none' -%}
-      <p class="ifcvo-upsell">Gated downloads are hidden from guests{% if dl_gate == 'tag' %} and customers without the tag "{{ dl_tag | escape }}"{% endif %}, not protected: anyone with a file's link can still download it.</p>
+      <p class="ifcvo-upsell">{% if dl_gate == 'tag' %}{{ 'ifcvo.editor.gated_downloads_tag' | t: tag: dl_tag | escape }}{% else %}{{ 'ifcvo.editor.gated_downloads' | t | escape }}{% endif %}</p>
     {%- endif -%}
   </div>
 {%- endif -%}

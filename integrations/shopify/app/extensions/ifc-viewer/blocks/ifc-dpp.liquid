@@ -93,7 +93,7 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan != 'business' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>"dpp" needs the business plan. Visitors do not see it.</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'business' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <section
@@ -146,7 +146,7 @@
   {%- endif -%}
   <p class="ifcvo-muted ifcvo-dpp-disclaimer">{{ 'ifcvo.dpp.disclaimer' | t | escape }}</p>
   {%- if request.design_mode and m == blank -%}
-    <p class="ifcvo-muted">Add product metafields in "{{ ns | escape }}" (epd_url, gwp_a1a3, declared_unit, dop_url, ce_marking, instructions_languages, substances_of_concern, gtin, manufacturer_contact…) to fill this panel before the 3D model loads.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.dpp' | t: ns: ns | escape }}</p>
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </section>
@@ -154,21 +154,76 @@
 <script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'dpp', block: 'ifc-dpp', ns: ns, keys: 'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}
+
 {% schema %}
 {
-  "name": "IFC EPD and product passport",
+  "name": "t:blocks.dpp.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Sustainability and product passport" },
-    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… in this namespace are shown as HTML and win over the model." },
-    { "type": "checkbox", "id": "show_epd", "label": "Show the EPD / carbon panel", "default": true },
-    { "type": "checkbox", "id": "show_checklist", "label": "Show the product passport readiness checklist", "default": true },
-    { "type": "checkbox", "id": "show_model", "label": "Fill gaps with values found in the 3D model", "default": true },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, epd, gwp_a1a3, gwp, energy, water, declared_unit, epd_number, epd_link, from_model, from_pset, score, missing, ready, not_ready, loading, error, varies." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Sustainability and product passport"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.epd_url_epd_number_gwp_a1a3_declared_uni"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_epd",
+      "label": "t:settings.show_the_epd_carbon_panel",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_checklist",
+      "label": "t:settings.show_the_product_passport_readiness_chec",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_model",
+      "label": "t:settings.fill_gaps_with_values_found_in_the_3d_mo",
+      "default": true
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_epd_gwp_a1a3_gw"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

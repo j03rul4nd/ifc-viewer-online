@@ -49,30 +49,122 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>
 
+{%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},{{ block.settings.files_key }}{%- endcapture -%}
+{%- render 'ifcvo-diag', feature: 'files', block: 'ifc-downloads', ns: ns, keys: dg_keys -%}{%- endif -%}
+
 {% schema %}
 {
-  "name": "IFC downloads",
+  "name": "t:blocks.downloads.name",
   "target": "section",
-  "enabled_on": { "templates": ["product"] },
+  "enabled_on": {
+    "templates": [
+      "product"
+    ]
+  },
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Downloads" },
-    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
-    { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
-    { "type": "checkbox", "id": "ifc", "label": "Original IFC file", "default": true },
-    { "type": "text", "id": "ifc_label", "label": "IFC link text", "default": "Download BIM model (IFC)" },
-    { "type": "checkbox", "id": "glb", "label": "GLB made in the browser", "default": false, "info": "Opens the 3D viewer to build the file on the visitor's device." },
-    { "type": "text", "id": "glb_label", "label": "GLB button text", "default": "3D model (GLB)" },
-    { "type": "checkbox", "id": "csv", "label": "CSV element list made in the browser", "default": false },
-    { "type": "text", "id": "csv_label", "label": "CSV button text", "default": "Element list (CSV)" },
-    { "type": "text", "id": "files_key", "label": "More files metafield key", "default": "bim_files" },
-    { "type": "header", "content": "Who sees them" },
-    { "type": "select", "id": "gate", "label": "Show the downloads to", "default": "none", "info": "This hides the links, it does not protect the files: anyone with a file's link can still download it.", "options": [
-      { "value": "none", "label": "Everyone" },
-      { "value": "customer", "label": "Logged-in customers only" },
-      { "value": "tag", "label": "Customers with a tag" }
-    ] },
-    { "type": "text", "id": "tag", "label": "Customer tag", "default": "trade", "visible_if": "{{ block.settings.gate == 'tag' }}" },
-    { "type": "text", "id": "login_label", "label": "Text for guests", "default": "Log in to see the downloads" }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Downloads"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "t:settings.metafield_namespace",
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "key",
+      "label": "t:settings.metafield_key",
+      "default": "ifc_model"
+    },
+    {
+      "type": "checkbox",
+      "id": "ifc",
+      "label": "t:settings.original_ifc_file",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "ifc_label",
+      "label": "t:settings.ifc_link_text",
+      "placeholder": "t:settings.download_bim_model_ifc",
+      "info": "t:settings.blank_the_store_language_text"
+    },
+    {
+      "type": "checkbox",
+      "id": "glb",
+      "label": "t:settings.glb_made_in_the_browser",
+      "default": false,
+      "info": "t:settings.opens_the_3d_viewer_to_build_the_file_on"
+    },
+    {
+      "type": "text",
+      "id": "glb_label",
+      "label": "t:settings.glb_button_text",
+      "placeholder": "t:settings.3d_model_glb",
+      "info": "t:settings.blank_the_store_language_text"
+    },
+    {
+      "type": "checkbox",
+      "id": "csv",
+      "label": "t:settings.csv_element_list_made_in_the_browser",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "csv_label",
+      "label": "t:settings.csv_button_text",
+      "placeholder": "t:settings.element_list_csv",
+      "info": "t:settings.blank_the_store_language_text"
+    },
+    {
+      "type": "text",
+      "id": "files_key",
+      "label": "t:settings.more_files_metafield_key",
+      "default": "bim_files"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.who_sees_them"
+    },
+    {
+      "type": "select",
+      "id": "gate",
+      "label": "t:settings.show_the_downloads_to",
+      "default": "none",
+      "info": "t:settings.this_hides_the_links_it_does_not_protect",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:settings.everyone"
+        },
+        {
+          "value": "customer",
+          "label": "t:settings.logged_in_customers_only"
+        },
+        {
+          "value": "tag",
+          "label": "t:settings.customers_with_a_tag"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "tag",
+      "label": "t:settings.customer_tag",
+      "default": "trade",
+      "visible_if": "{{ block.settings.gate == 'tag' }}"
+    },
+    {
+      "type": "text",
+      "id": "login_label",
+      "label": "t:settings.text_for_guests",
+      "placeholder": "t:settings.log_in_to_see_the_downloads",
+      "info": "t:settings.blank_the_store_language_text"
+    }
   ]
 }
 {% endschema %}

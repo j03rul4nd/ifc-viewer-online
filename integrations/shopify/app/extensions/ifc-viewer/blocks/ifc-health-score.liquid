@@ -16,79 +16,81 @@
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'score', block: 'ifc-health-score', ns: '', keys: '' -%}
+
 {% schema %}
 {
-  "name": "IFC Health Score",
+  "name": "t:blocks.health_score.name",
   "target": "section",
   "settings": [
     {
       "type": "text",
       "id": "title",
-      "label": "Heading",
+      "label": "t:settings.heading",
       "default": "Model quality"
     },
     {
       "type": "text",
       "id": "open_label",
-      "label": "Button before the 3D view opens",
+      "label": "t:settings.button_before_the_3d_view_opens",
       "default": "Open the 3D model"
     },
     {
       "type": "text",
       "id": "l_excellent",
-      "label": "Score 90 to 100",
+      "label": "t:settings.score_90_to_100",
       "default": "Excellent"
     },
     {
       "type": "text",
       "id": "l_good",
-      "label": "Score 75 to 89",
+      "label": "t:settings.score_75_to_89",
       "default": "Good"
     },
     {
       "type": "text",
       "id": "l_fair",
-      "label": "Score 50 to 74",
+      "label": "t:settings.score_50_to_74",
       "default": "Fair"
     },
     {
       "type": "text",
       "id": "l_poor",
-      "label": "Score below 50",
+      "label": "t:settings.score_below_50",
       "default": "Needs work"
     },
     {
       "type": "text",
       "id": "l_errors",
-      "label": "Errors word",
+      "label": "t:settings.errors_word",
       "default": "errors"
     },
     {
       "type": "text",
       "id": "l_warnings",
-      "label": "Warnings word",
+      "label": "t:settings.warnings_word",
       "default": "warnings"
     },
     {
       "type": "text",
       "id": "note",
-      "label": "Note",
+      "label": "t:settings.note",
       "default": "Checked in your browser by IFC Viewer Online."
     },
     {
       "type": "header",
-      "content": "Brand"
+      "content": "t:settings.brand"
     },
     {
       "type": "color",
       "id": "accent",
-      "label": "Accent colour",
-      "info": "Empty uses the theme's button colour."
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
     },
     {
       "type": "range",
       "id": "radius",
-      "label": "Corner radius",
+      "label": "t:settings.corner_radius",
       "min": 0,
       "max": 24,
       "step": 2,
@@ -98,7 +100,7 @@
     {
       "type": "checkbox",
       "id": "frame",
-      "label": "Show a frame around the block",
+      "label": "t:settings.show_a_frame_around_the_block",
       "default": true
     }
   ]

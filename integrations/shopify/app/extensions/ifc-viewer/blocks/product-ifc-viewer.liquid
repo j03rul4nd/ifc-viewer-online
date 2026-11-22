@@ -112,76 +112,310 @@
   <script type="module" src="{{ 'ifcvo-events.js' | asset_url }}"></script>
   {%- if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
 {%- elsif request.design_mode -%}
-  <p>IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file).</p>
+  <p>{{ 'ifcvo.editor.product_link' | t: ns: ns, key: key | escape }}</p>
 {%- endif -%}
+
+{%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},ifc_size_mb,ifc_poster,{{ block.settings.files_key }}{%- endcapture -%}
+{%- render 'ifcvo-diag', feature: 'viewer', block: 'product-ifc-viewer', ns: ns, keys: dg_keys, model: current_model -%}{%- endif -%}
 
 {% schema %}
 {
-  "name": "Product IFC model",
+  "name": "t:blocks.product_viewer.name",
   "target": "section",
-  "enabled_on": { "templates": ["product"] },
+  "enabled_on": {
+    "templates": [
+      "product"
+    ]
+  },
   "settings": [
-    { "type": "paragraph", "content": "Reads the IFC file from a product or variant metafield (URL or file). A variant without its own file shows the product's." },
-    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
-    { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
-    { "type": "text", "id": "title", "label": "Accessible title", "info": "Defaults to the product title." },
-    { "type": "select", "id": "aspect", "label": "Shape", "default": "height", "info": "A fixed shape keeps the page from moving while it loads. Phones above the size limit (shop setting mobileCapMb, default 80 MB) get a link to the full viewer.", "options": [
-      { "value": "height", "label": "Fixed height" },
-      { "value": "1/1", "label": "Square 1:1" },
-      { "value": "4/3", "label": "4:3" },
-      { "value": "16/9", "label": "16:9" }
-    ] },
-    { "type": "range", "id": "height", "label": "Height (fixed height shape)", "min": 300, "max": 900, "step": 20, "unit": "px", "default": 560 },
-    { "type": "select", "id": "load", "label": "Load the 3D viewer", "default": "click", "info": "On click keeps the product page as fast as without the viewer.", "options": [
-      { "value": "click", "label": "When the visitor clicks" },
-      { "value": "visible", "label": "When it scrolls into view" },
-      { "value": "idle", "label": "After the page has loaded, when in view" }
-    ] },
-    { "type": "text", "id": "open_label", "label": "Button text", "default": "View in 3D" },
-    { "type": "select", "id": "ui", "label": "Viewer layout", "default": "article", "options": [
-      { "value": "article", "label": "Article (clean, scroll-friendly)" },
-      { "value": "minimal", "label": "Minimal" },
-      { "value": "client", "label": "Client review" },
-      { "value": "kiosk", "label": "Kiosk (model only, pair with the explorer block)" }
-    ] },
-    { "type": "select", "id": "view", "label": "Starting view", "default": "iso", "options": [
-      { "value": "iso", "label": "Isometric" },
-      { "value": "front", "label": "Front" },
-      { "value": "top", "label": "Top" }
-    ] },
-    { "type": "checkbox", "id": "validate", "label": "Show the Health Score", "default": true },
-    { "type": "select", "id": "lang", "label": "Language", "default": "auto", "options": [
-      { "value": "auto", "label": "Visitor's language" },
-      { "value": "en", "label": "English" },
-      { "value": "es", "label": "Español" },
-      { "value": "ca", "label": "Català" },
-      { "value": "de", "label": "Deutsch" },
-      { "value": "fr", "label": "Français" },
-      { "value": "it", "label": "Italiano" },
-      { "value": "pt", "label": "Português" },
-      { "value": "ja", "label": "日本語" },
-      { "value": "zh", "label": "中文" },
-      { "value": "th", "label": "ไทย" }
-    ] },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Selection and buttons inside the viewer." },
-    { "type": "select", "id": "background", "label": "Scene background", "default": "studio", "options": [
-      { "value": "studio", "label": "Studio (dark)" },
-      { "value": "white", "label": "White" },
-      { "value": "paper", "label": "Paper" },
-      { "value": "sky", "label": "Sky" },
-      { "value": "brand", "label": "My brand colours" }
-    ] },
-    { "type": "color", "id": "bg_top", "label": "Background top", "default": "#ffffff", "visible_if": "{{ block.settings.background == 'brand' }}" },
-    { "type": "color", "id": "bg_bottom", "label": "Background bottom", "default": "#e9e7e1", "visible_if": "{{ block.settings.background == 'brand' }}" },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "header", "content": "Downloads" },
-    { "type": "checkbox", "id": "download", "label": "Show a download link for the IFC file", "default": true },
-    { "type": "text", "id": "download_label", "label": "Download link text", "default": "Download BIM model (IFC)" },
-    { "type": "text", "id": "files_key", "label": "More files metafield key", "default": "bim_files", "info": "List of files or URLs in the same namespace: RFA, DWG, datasheet PDF…" },
-    { "type": "header", "content": "Technical data" },
-    { "type": "text", "id": "specs_namespace", "label": "Specification metafield namespace", "default": "bim", "info": "Every metafield in this namespace shows as a row (dimensions, U-value, fire rating…). Leave empty to hide." },
-    { "type": "text", "id": "specs_label", "label": "Table title", "default": "Technical data" }
+    {
+      "type": "paragraph",
+      "content": "t:settings.reads_the_ifc_file_from_a_product_or_var"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "t:settings.metafield_namespace",
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "key",
+      "label": "t:settings.metafield_key",
+      "default": "ifc_model"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.accessible_title",
+      "info": "t:settings.defaults_to_the_product_title"
+    },
+    {
+      "type": "select",
+      "id": "aspect",
+      "label": "t:settings.shape",
+      "default": "height",
+      "info": "t:settings.a_fixed_shape_keeps_the_page_from_moving",
+      "options": [
+        {
+          "value": "height",
+          "label": "t:settings.fixed_height"
+        },
+        {
+          "value": "1/1",
+          "label": "t:settings.square_1_1"
+        },
+        {
+          "value": "4/3",
+          "label": "t:settings.4_3"
+        },
+        {
+          "value": "16/9",
+          "label": "t:settings.16_9"
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "height",
+      "label": "t:settings.height_fixed_height_shape",
+      "min": 300,
+      "max": 900,
+      "step": 20,
+      "unit": "px",
+      "default": 560
+    },
+    {
+      "type": "select",
+      "id": "load",
+      "label": "t:settings.load_the_3d_viewer",
+      "default": "click",
+      "info": "t:settings.on_click_keeps_the_product_page_as_fast",
+      "options": [
+        {
+          "value": "click",
+          "label": "t:settings.when_the_visitor_clicks"
+        },
+        {
+          "value": "visible",
+          "label": "t:settings.when_it_scrolls_into_view"
+        },
+        {
+          "value": "idle",
+          "label": "t:settings.after_the_page_has_loaded_when_in_view"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "open_label",
+      "label": "t:settings.button_text",
+      "default": "View in 3D"
+    },
+    {
+      "type": "select",
+      "id": "ui",
+      "label": "t:settings.viewer_layout",
+      "default": "article",
+      "options": [
+        {
+          "value": "article",
+          "label": "t:settings.article_clean_scroll_friendly"
+        },
+        {
+          "value": "minimal",
+          "label": "t:settings.minimal"
+        },
+        {
+          "value": "client",
+          "label": "t:settings.client_review"
+        },
+        {
+          "value": "kiosk",
+          "label": "t:settings.kiosk_model_only_pair_with_the_explorer"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "view",
+      "label": "t:settings.starting_view",
+      "default": "iso",
+      "options": [
+        {
+          "value": "iso",
+          "label": "t:settings.isometric"
+        },
+        {
+          "value": "front",
+          "label": "t:settings.front"
+        },
+        {
+          "value": "top",
+          "label": "t:settings.top"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "validate",
+      "label": "t:settings.show_the_health_score",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "lang",
+      "label": "t:settings.language",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "t:settings.visitor_s_language"
+        },
+        {
+          "value": "en",
+          "label": "t:settings.english"
+        },
+        {
+          "value": "es",
+          "label": "t:settings.espa_ol"
+        },
+        {
+          "value": "ca",
+          "label": "t:settings.catal"
+        },
+        {
+          "value": "de",
+          "label": "t:settings.deutsch"
+        },
+        {
+          "value": "fr",
+          "label": "t:settings.fran_ais"
+        },
+        {
+          "value": "it",
+          "label": "t:settings.italiano"
+        },
+        {
+          "value": "pt",
+          "label": "t:settings.portugu_s"
+        },
+        {
+          "value": "ja",
+          "label": "t:settings.x_3"
+        },
+        {
+          "value": "zh",
+          "label": "t:settings.x_2"
+        },
+        {
+          "value": "th",
+          "label": "t:settings.x"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.selection_and_buttons_inside_the_viewer"
+    },
+    {
+      "type": "select",
+      "id": "background",
+      "label": "t:settings.scene_background",
+      "default": "studio",
+      "options": [
+        {
+          "value": "studio",
+          "label": "t:settings.studio_dark"
+        },
+        {
+          "value": "white",
+          "label": "t:settings.white"
+        },
+        {
+          "value": "paper",
+          "label": "t:settings.paper"
+        },
+        {
+          "value": "sky",
+          "label": "t:settings.sky"
+        },
+        {
+          "value": "brand",
+          "label": "t:settings.my_brand_colours"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "bg_top",
+      "label": "t:settings.background_top",
+      "default": "#ffffff",
+      "visible_if": "{{ block.settings.background == 'brand' }}"
+    },
+    {
+      "type": "color",
+      "id": "bg_bottom",
+      "label": "t:settings.background_bottom",
+      "default": "#e9e7e1",
+      "visible_if": "{{ block.settings.background == 'brand' }}"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "header",
+      "content": "t:settings.downloads"
+    },
+    {
+      "type": "checkbox",
+      "id": "download",
+      "label": "t:settings.show_a_download_link_for_the_ifc_file",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "download_label",
+      "label": "t:settings.download_link_text",
+      "default": "Download BIM model (IFC)"
+    },
+    {
+      "type": "text",
+      "id": "files_key",
+      "label": "t:settings.more_files_metafield_key",
+      "default": "bim_files",
+      "info": "t:settings.list_of_files_or_urls_in_the_same_namesp"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.technical_data"
+    },
+    {
+      "type": "text",
+      "id": "specs_namespace",
+      "label": "t:settings.specification_metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.every_metafield_in_this_namespace_shows"
+    },
+    {
+      "type": "text",
+      "id": "specs_label",
+      "label": "t:settings.table_title",
+      "default": "Technical data"
+    }
   ]
 }
 {% endschema %}

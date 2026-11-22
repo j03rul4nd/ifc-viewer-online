@@ -64,7 +64,7 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{ block.shopify_attributes }}>"variantviews" needs the starter plan. Visitors do not see it.</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'variantviews', plan: 'starter' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <div
@@ -91,22 +91,79 @@
 <script type="module" src="{{ 'ifcvo-variants.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- if request.design_mode -%}{%- assign dg_keys = view_key | append: "," | append: hl_key -%}{%- render 'ifcvo-diag', feature: 'variantviews', block: 'ifc-variant-views', ns: ns, keys: dg_keys, scope: 'variant' -%}{%- endif -%}
+
 {% schema %}
 {
-  "name": "IFC variant views",
+  "name": "t:blocks.variant_views.name",
   "target": "section",
   "settings": [
-    { "type": "paragraph", "content": "Per-variant camera and highlighted elements for the \"Product IFC model\" block. Variant metafields: custom.ifc_view (\"top\", {\"view\":\"iso\"} or {\"position\":[x,y,z],\"target\":[x,y,z]}) and custom.ifc_highlight (\"IfcBeam\", GlobalIds or {\"classes\":[],\"guids\":[]})." },
-    { "type": "text", "id": "title", "label": "Heading", "info": "Empty uses the translated default." },
-    { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
-    { "type": "text", "id": "view_key", "label": "View metafield key", "info": "Empty uses ifcvo.config variantViewKey, then ifc_view." },
-    { "type": "text", "id": "highlight_key", "label": "Highlight metafield key", "info": "Empty uses ifcvo.config variantHighlightKey, then ifc_highlight." },
-    { "type": "checkbox", "id": "show_copy", "label": "Show \"Copy link to this view\"", "default": true },
-    { "type": "checkbox", "id": "show_image", "label": "Show \"Save image\"", "default": true },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "paragraph",
+      "content": "t:settings.per_variant_camera_and_highlighted_eleme"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "info": "t:settings.empty_uses_the_translated_default"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "t:settings.metafield_namespace",
+      "default": "custom"
+    },
+    {
+      "type": "text",
+      "id": "view_key",
+      "label": "t:settings.view_metafield_key",
+      "info": "t:settings.empty_uses_ifcvo_config_variantviewkey_t"
+    },
+    {
+      "type": "text",
+      "id": "highlight_key",
+      "label": "t:settings.highlight_metafield_key",
+      "info": "t:settings.empty_uses_ifcvo_config_varianthighlight"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_copy",
+      "label": "t:settings.show_copy_link_to_this_view",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_image",
+      "label": "t:settings.show_save_image",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

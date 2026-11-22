@@ -51,31 +51,109 @@
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
   {%- if s.show_ids and ids_url == blank and request.design_mode -%}
-    <p class="ifcvo-muted">Add an https link to an .ids file in this block or in the product metafield "{{ ns | escape }}.ids_url" to show the IDS badge.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns | escape }}</p>
   {%- endif -%}
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-compliance.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'compliance', block: 'ifc-compliance', ns: ns, keys: 'ids_url' -%}
+
 {% schema %}
 {
-  "name": "IFC compliance",
+  "name": "t:blocks.compliance.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Compliance" },
-    { "type": "checkbox", "id": "show_nbs", "label": "Show the NBS BIM Object Standard badge", "default": true },
-    { "type": "checkbox", "id": "show_ids", "label": "Show the IDS badge", "default": true },
-    { "type": "text", "id": "ids_url", "label": "IDS file link (https)", "info": "Empty uses the product metafield \"ids_url\" in the namespace below." },
-    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim" },
-    { "type": "checkbox", "id": "show_score", "label": "Show the Health Score badge", "default": true },
-    { "type": "checkbox", "id": "show_details", "label": "List what did not pass", "default": true },
-    { "type": "checkbox", "id": "show_manual", "label": "List the NBS clauses that need a manual check", "default": false },
-    { "type": "range", "id": "timeout", "label": "Time limit per check", "min": 10, "max": 120, "step": 10, "unit": "s", "default": 30 },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Compliance"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_nbs",
+      "label": "t:settings.show_the_nbs_bim_object_standard_badge",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_ids",
+      "label": "t:settings.show_the_ids_badge",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "ids_url",
+      "label": "t:settings.ids_file_link_https",
+      "info": "t:settings.empty_uses_the_product_metafield_ids_url"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_score",
+      "label": "t:settings.show_the_health_score_badge",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_details",
+      "label": "t:settings.list_what_did_not_pass",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_manual",
+      "label": "t:settings.list_the_nbs_clauses_that_need_a_manual",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "timeout",
+      "label": "t:settings.time_limit_per_check",
+      "min": 10,
+      "max": 120,
+      "step": 10,
+      "unit": "s",
+      "default": 30
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_nbs_nbsnone_ids"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}

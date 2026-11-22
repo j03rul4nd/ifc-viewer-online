@@ -23,6 +23,7 @@ export const LABELS = {
   error: 'The quantities could not be read.', missing: 'Some elements have no value for this quantity.',
   estimated: '≈ weight from volume × 7850 kg/m³', noProfile: '(no profile)', other: 'Other',
   truncated: 'Large model: only part of it was read, totals may be incomplete.',
+  quoteHead: 'Quantities from the model:', quoteProduct: 'Product', quotePage: 'Page',
 }
 
 const FT = 3.280839895
@@ -202,12 +203,13 @@ export function takeoffCsv(lines, steel, { system = 'metric', labels = LABELS, c
 }
 
 /** Plain text for a quote request: one line per item. */
-export function quoteText(lines, { system = 'metric', product = '', url = '' } = {}) {
+export function quoteText(lines, { system = 'metric', product = '', url = '', labels = LABELS } = {}) {
+  const L = { ...LABELS, ...labels }
   const out = []
-  if (product) out.push(`Product: ${product}`)
-  if (url) out.push(`Page: ${url}`)
+  if (product) out.push(`${L.quoteProduct}: ${product}`)
+  if (url) out.push(`${L.quotePage}: ${url}`)
   if (out.length) out.push('')
-  out.push('Quantities from the model:')
+  out.push(L.quoteHead)
   for (const l of lines) {
     const q = QTY.map((k) => qtyText(l[k], k, system)).filter(Boolean)
     out.push(`- ${l.count} x ${l.name}${q.length ? ' (' + q.join(', ') + ')' : ''}`)
@@ -263,7 +265,7 @@ function signal(type, detail) {
 
 /** Fills the contact form with the quantities; tells the quote/events modules. False when there is no form. */
 export function sendToQuote(root, lines, cfg) {
-  const text = quoteText(lines, { system: cfg.system, product: cfg.product, url: location.href.split('#')[0] })
+  const text = quoteText(lines, { system: cfg.system, product: cfg.product, url: location.href.split('#')[0], labels: labelsOf(root) })
   document.dispatchEvent(new CustomEvent('ifcvo:takeoff-quote', { detail: { lines, text, units: cfg.system } }))
   signal('ifcvo:quote', { source: 'takeoff' })
   const form = document.querySelector(root.dataset.form || 'form[action*="/contact"]')

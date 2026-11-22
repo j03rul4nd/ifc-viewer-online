@@ -18,7 +18,7 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{%- capture takeoff_labels -%}{"title":{{ 'ifcvo.takeoff.title' | t | json }},"group":{{ 'ifcvo.takeoff.group' | t | json }},"type":{{ 'ifcvo.takeoff.type' | t | json }},"material":{{ 'ifcvo.takeoff.material' | t | json }},"storey":{{ 'ifcvo.takeoff.storey' | t | json }},"profile":{{ 'ifcvo.takeoff.profile' | t | json }},"count":{{ 'ifcvo.takeoff.count' | t | json }},"length":{{ 'ifcvo.takeoff.length' | t | json }},"area":{{ 'ifcvo.takeoff.area' | t | json }},"volume":{{ 'ifcvo.takeoff.volume' | t | json }},"weight":{{ 'ifcvo.takeoff.weight' | t | json }},"kgPerM":{{ 'ifcvo.takeoff.kgPerM' | t | json }},"price":{{ 'ifcvo.takeoff.price' | t | json }},"total":{{ 'ifcvo.takeoff.total' | t | json }},"steel":{{ 'ifcvo.takeoff.steel' | t | json }},"groupBy":{{ 'ifcvo.takeoff.groupBy' | t | json }},"csv":{{ 'ifcvo.takeoff.csv' | t | json }},"quote":{{ 'ifcvo.takeoff.quote' | t | json }},"quoteDone":{{ 'ifcvo.takeoff.quoteDone' | t | json }},"noForm":{{ 'ifcvo.takeoff.noForm' | t | json }},"indicative":{{ 'ifcvo.takeoff.indicative' | t | json }},"inCurrency":{{ 'ifcvo.takeoff.inCurrency' | t | json }},"waiting":{{ 'ifcvo.takeoff.waiting' | t | json }},"loading":{{ 'ifcvo.takeoff.loading' | t | json }},"none":{{ 'ifcvo.takeoff.none' | t | json }},"error":{{ 'ifcvo.takeoff.error' | t | json }},"missing":{{ 'ifcvo.takeoff.missing' | t | json }},"estimated":{{ 'ifcvo.takeoff.estimated' | t | json }},"noProfile":{{ 'ifcvo.takeoff.noProfile' | t | json }},"other":{{ 'ifcvo.takeoff.other' | t | json }},"truncated":{{ 'ifcvo.takeoff.truncated' | t | json }}}{%- endcapture -%}
+{%- capture takeoff_labels -%}{"title":{{ 'ifcvo.takeoff.title' | t | json }},"group":{{ 'ifcvo.takeoff.group' | t | json }},"type":{{ 'ifcvo.takeoff.type' | t | json }},"material":{{ 'ifcvo.takeoff.material' | t | json }},"storey":{{ 'ifcvo.takeoff.storey' | t | json }},"profile":{{ 'ifcvo.takeoff.profile' | t | json }},"count":{{ 'ifcvo.takeoff.count' | t | json }},"length":{{ 'ifcvo.takeoff.length' | t | json }},"area":{{ 'ifcvo.takeoff.area' | t | json }},"volume":{{ 'ifcvo.takeoff.volume' | t | json }},"weight":{{ 'ifcvo.takeoff.weight' | t | json }},"kgPerM":{{ 'ifcvo.takeoff.kgPerM' | t | json }},"price":{{ 'ifcvo.takeoff.price' | t | json }},"total":{{ 'ifcvo.takeoff.total' | t | json }},"steel":{{ 'ifcvo.takeoff.steel' | t | json }},"groupBy":{{ 'ifcvo.takeoff.groupBy' | t | json }},"csv":{{ 'ifcvo.takeoff.csv' | t | json }},"quote":{{ 'ifcvo.takeoff.quote' | t | json }},"quoteDone":{{ 'ifcvo.takeoff.quoteDone' | t | json }},"noForm":{{ 'ifcvo.takeoff.noForm' | t | json }},"indicative":{{ 'ifcvo.takeoff.indicative' | t | json }},"inCurrency":{{ 'ifcvo.takeoff.inCurrency' | t | json }},"waiting":{{ 'ifcvo.takeoff.waiting' | t | json }},"loading":{{ 'ifcvo.takeoff.loading' | t | json }},"none":{{ 'ifcvo.takeoff.none' | t | json }},"error":{{ 'ifcvo.takeoff.error' | t | json }},"missing":{{ 'ifcvo.takeoff.missing' | t | json }},"estimated":{{ 'ifcvo.takeoff.estimated' | t | json }},"noProfile":{{ 'ifcvo.takeoff.noProfile' | t | json }},"other":{{ 'ifcvo.takeoff.other' | t | json }},"truncated":{{ 'ifcvo.takeoff.truncated' | t | json }},"quoteHead":{{ 'ifcvo.takeoff.quoteHead' | t | json }},"quoteProduct":{{ 'ifcvo.takeoff.quoteProduct' | t | json }},"quotePage":{{ 'ifcvo.takeoff.quotePage' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-takeoff-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -59,31 +59,126 @@
       {%- endfor -%}
     </table>
   {%- elsif request.design_mode -%}
-    <p class="ifcvo-muted">Add a product metafield "{{ ns | escape }}.boq" (one row per line, cells split by |) for a table that shows before the 3D model loads, and "{{ ns | escape }}.unit_prices" (JSON) for an indicative total.</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.takeoff' | t: ns: ns | escape }}</p>
   {%- endif -%}
   <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-takeoff.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'takeoff', block: 'ifc-takeoff', ns: ns, keys: 'boq,unit_prices' -%}
+
 {% schema %}
 {
-  "name": "IFC takeoff / BOQ",
+  "name": "t:blocks.takeoff.name",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "title", "label": "Heading", "default": "Quantities" },
-    { "type": "text", "id": "specs_ns", "label": "Metafield namespace", "default": "bim", "info": "boq (text, cells split by |) is shown as HTML. unit_prices (JSON) maps a profile, type, material or IFC class to a price, or to {\"price\": 2.1, \"per\": \"kg\"} with per = each, m, m2, m3 or kg; it adds an indicative total." },
-    { "type": "select", "id": "units", "label": "Units", "default": "metric", "options": [ { "value": "metric", "label": "Metric (m, m², m³, kg)" }, { "value": "imperial", "label": "Imperial (ft, ft², ft³, lb)" } ] },
-    { "type": "select", "id": "group", "label": "Group by", "default": "type", "options": [ { "value": "type", "label": "Type" }, { "value": "material", "label": "Material" }, { "value": "storey", "label": "Storey" } ] },
-    { "type": "checkbox", "id": "show_steel", "label": "Steel table by profile", "default": true },
-    { "type": "checkbox", "id": "csv", "label": "CSV download", "default": true },
-    { "type": "checkbox", "id": "quote", "label": "Add quantities to a quote request", "default": true, "info": "Fills the page's contact form." },
-    { "type": "text", "id": "form", "label": "Contact form selector", "info": "Empty finds the first contact form." },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated." },
-    { "type": "header", "content": "Brand" },
-    { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
-    { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
-    { "type": "checkbox", "id": "frame", "label": "Show a frame around the block", "default": true }
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Quantities"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim",
+      "info": "t:settings.boq_text_cells_split_by_is_shown_as_html"
+    },
+    {
+      "type": "select",
+      "id": "units",
+      "label": "t:settings.units",
+      "default": "metric",
+      "options": [
+        {
+          "value": "metric",
+          "label": "t:settings.metric_m_m_m_kg"
+        },
+        {
+          "value": "imperial",
+          "label": "t:settings.imperial_ft_ft_ft_lb"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "group",
+      "label": "t:settings.group_by",
+      "default": "type",
+      "options": [
+        {
+          "value": "type",
+          "label": "t:settings.type"
+        },
+        {
+          "value": "material",
+          "label": "t:settings.material"
+        },
+        {
+          "value": "storey",
+          "label": "t:settings.storey"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_steel",
+      "label": "t:settings.steel_table_by_profile",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "csv",
+      "label": "t:settings.csv_download",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "quote",
+      "label": "t:settings.add_quantities_to_a_quote_request",
+      "default": true,
+      "info": "t:settings.fills_the_page_s_contact_form"
+    },
+    {
+      "type": "text",
+      "id": "form",
+      "label": "t:settings.contact_form_selector",
+      "info": "t:settings.empty_finds_the_first_contact_form"
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_group_type_mate"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
   ]
 }
 {% endschema %}
