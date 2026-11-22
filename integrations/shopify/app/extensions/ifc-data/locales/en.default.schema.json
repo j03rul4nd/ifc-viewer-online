@@ -1,0 +1,84 @@
+{
+  "blocks": {
+    "classification": {
+      "name": "IFC classification"
+    },
+    "compat": {
+      "name": "IFC compatibility"
+    },
+    "rooms": {
+      "name": "IFC rooms & key specs"
+    },
+    "specs": {
+      "name": "IFC specs & quantities"
+    },
+    "takeoff": {
+      "name": "IFC takeoff / BOQ"
+    }
+  },
+  "settings": {
+    "classification_in_this_namespace_system": "\"classification\" in this namespace (System|Code|Title per line) is shown as HTML and wins over the model.",
+    "accent_colour": "Accent colour",
+    "add_quantities_to_a_quote_request": "Add quantities to a quote request",
+    "add_the_codes_found_in_the_3d_model": "Add the codes found in the 3D model",
+    "area": "Area",
+    "area_unit": "Area unit",
+    "brand": "Brand",
+    "csv_download": "CSV download",
+    "columns": "Columns",
+    "contact_form_selector": "Contact form selector",
+    "corner_radius": "Corner radius",
+    "count": "Count",
+    "dimensions_per_type": "Dimensions per type",
+    "empty_finds_the_first_contact_form": "Empty finds the first contact form.",
+    "empty_uses_the_theme_s_button_colour": "Empty uses the theme's button colour.",
+    "file_weight": "File weight",
+    "fills_the_page_s_contact_form": "Fills the page's contact form.",
+    "group_by": "Group by",
+    "heading": "Heading",
+    "health_badge": "Health badge",
+    "highlight_a_room_in_3d_when_clicked": "Highlight a room in 3D when clicked",
+    "ifc_class": "IFC class",
+    "imperial": "Imperial",
+    "imperial_ft_ft_ft_lb": "Imperial (ft, ft², ft³, lb)",
+    "key_properties": "Key properties",
+    "key_specs_chips": "Key specs chips",
+    "labels": "Labels",
+    "length": "Length",
+    "light_under_20_mb_and_5_000_elements_hea": "Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more.",
+    "material": "Material",
+    "materials": "Materials",
+    "metafield_dimensions_e_g_1200_x_600_x_21": "Metafield dimensions (e.g. 1200 x 600 x 2100 mm) win; then the model's quantities; then a box calculated from the geometry.",
+    "metafield_namespace": "Metafield namespace",
+    "metric": "Metric",
+    "metric_m_m_m_kg": "Metric (m, m², m³, kg)",
+    "one_per_line_e_g_firerating_or_pset_door": "One per line, e.g. FireRating or Pset_DoorCommon.FireRating. Empty: common and manufacturer property sets.",
+    "outer_dimensions": "Outer dimensions",
+    "per_ifc_class": "Per IFC class",
+    "per_type": "Per type",
+    "product_metafields_in_this_namespace_are": "Product metafields in this namespace are shown as HTML and override values read from the model.",
+    "properties_to_show": "Properties to show",
+    "room_schedule": "Room schedule",
+    "schema_and_apps": "Schema and apps",
+    "show_a_frame_around_the_block": "Show a frame around the block",
+    "show_how_many_elements_carry_each_code": "Show how many elements carry each code",
+    "steel_table_by_profile": "Steel table by profile",
+    "storey": "Storey",
+    "tables": "Tables",
+    "totals": "Totals",
+    "type": "Type",
+    "units": "Units",
+    "volume": "Volume",
+    "weight": "Weight",
+    "area_bedrooms_bathrooms_storeys_and_dime": "area, bedrooms, bathrooms, storeys and dimensions in this namespace are shown as HTML and win over the model.",
+    "boq_text_cells_split_by_is_shown_as_html": "boq (text, cells split by |) is shown as HTML. unit_prices (JSON) maps a profile, type, material or IFC class to a price, or to {\"price\": 2.1, \"per\": \"kg\"} with per = each, m, m2, m3 or kg; it adds an indicative total.",
+    "compatible_with_apps_and_versions_you_te": "compatible_with (apps and versions you tested) wins over the typical list; ifc_size_mb gives the size.",
+    "ft": "ft²",
+    "key_value_per_line_class_type_count_leng": "key=value per line: class, type, count, length, area, volume, weight, materials, properties, dimensions, manufacturer, model, calculated, total, csv, waiting.",
+    "key_value_per_line_schema_mvd_app_worksw": "key=value per line: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown.",
+    "key_value_per_line_title_area_storeys_be": "key=value per line: title, area, storeys, bedrooms, bathrooms, footprint, room, number, height, total, storey, waiting, none, inferred, geometry, truncated, units.",
+    "key_value_per_line_title_group_type_mate": "key=value per line: title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated.",
+    "key_value_per_line_title_system_code_nam": "key=value per line: title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage.",
+    "m": "m²"
+  }
+}

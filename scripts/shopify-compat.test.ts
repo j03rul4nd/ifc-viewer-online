@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_APPS, RULE_LABELS, authoringApp, decodeStep, stripComments, _reset, ruleLabel, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
   // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compat.js'
+} from '../integrations/shopify/app/extensions/ifc-data/assets/ifcvo-compat.js'
 import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-data')
 const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-compat.liquid'), 'utf8')
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 const locales = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))

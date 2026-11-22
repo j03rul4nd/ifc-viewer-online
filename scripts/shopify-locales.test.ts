@@ -2,8 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const ext = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
-const locales = path.join(ext, 'locales')
+// Full translations live in integrations/shopify/locales; each extension gets a cut copy
+// with only the keys its Liquid uses (checked in shopify-extensions.test.ts).
+const shopify = path.resolve(__dirname, '../integrations/shopify')
+const locales = path.join(shopify, 'locales')
+const EXTS = ['ifc-viewer', 'ifc-data', 'ifc-plans'].map((e) => path.join(shopify, 'app/extensions', e))
+const filesIn = (d: string, ext = '') => EXTS.flatMap((e) => (fs.existsSync(path.join(e, d)) ? fs.readdirSync(path.join(e, d)) : []).filter((f) => f.endsWith(ext)).map((f) => path.join(e, d, f)))
 const LANGS = ['es', 'ca', 'de', 'fr', 'it', 'pt-PT', 'pt-BR', 'ja', 'zh-CN', 'th']
 
 type Tree = { [k: string]: string | Tree }
@@ -41,11 +45,11 @@ describe('storefront locales', () => {
 
 describe('schema locales (theme editor)', () => {
   const en = flat(read('en.default.schema.json'))
-  const blocks = fs.readdirSync(path.join(ext, 'blocks')).filter((f) => f.endsWith('.liquid'))
+  const blocks = filesIn('blocks', '.liquid')
 
   it('every block name is a t: key present in en.default.schema.json', () => {
     for (const b of blocks) {
-      const src = fs.readFileSync(path.join(ext, 'blocks', b), 'utf8')
+      const src = fs.readFileSync(b, 'utf8')
       const schema = JSON.parse(src.match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)![1])
       expect(schema.name, b).toMatch(/^t:/)
       for (const key of src.match(/"t:[\w.]+"/g) || []) expect(en[key.slice(3, -1)], `${b} ${key}`).toBeTruthy()
@@ -56,7 +60,7 @@ describe('schema locales (theme editor)', () => {
     const left: string[] = []
     type St = { type?: string; label?: unknown; info?: unknown; content?: unknown; placeholder?: unknown; options?: { label?: unknown }[] }
     for (const b of blocks) {
-      const src = fs.readFileSync(path.join(ext, 'blocks', b), 'utf8')
+      const src = fs.readFileSync(b, 'utf8')
       const schema = JSON.parse(src.match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)![1])
       for (const st of [...(schema.settings || []), ...(schema.blocks || [])] as St[]) {
         for (const k of ['label', 'info', 'content', 'placeholder'] as const) {
@@ -80,7 +84,7 @@ describe('schema locales (theme editor)', () => {
 
 describe('theme editor notes in Liquid', () => {
   it('upsell and setup notes come from ifcvo.editor.* locale keys', () => {
-    const files = ['blocks', 'snippets'].flatMap((d) => fs.readdirSync(path.join(ext, d)).map((f) => path.join(ext, d, f)))
+    const files = [...filesIn('blocks'), ...filesIn('snippets')]
     const left: string[] = []
     for (const f of files) {
       const src = fs.readFileSync(f, 'utf8')
@@ -96,12 +100,12 @@ describe('theme editor notes in Liquid', () => {
 describe('asset texts', () => {
   // Default tables (English fallbacks) are allowed; everything else must come from the locale data.
   const TABLES = /^(export )?const (LABELS|[A-Z_]+_LABELS|NAMES|NBS_MANUAL|DEFAULT_APPS) = [{[][\s\S]*?^[}\]]/gm
-  const assets = fs.readdirSync(path.join(ext, 'assets')).filter((f) => f.endsWith('.js'))
+  const assets = filesIn('assets', '.js')
 
   it('no user-facing English literal outside the default label tables', () => {
     const found: string[] = []
     for (const f of assets) {
-      const src = fs.readFileSync(path.join(ext, 'assets', f), 'utf8')
+      const src = fs.readFileSync(f, 'utf8')
         .replace(TABLES, '')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/^\s*\/\/.*$/gm, '')

@@ -1,0 +1,84 @@
+{
+  "blocks": {
+    "classification": {
+      "name": "IFC: การจัดหมวดหมู่"
+    },
+    "compat": {
+      "name": "IFC: ความเข้ากันได้"
+    },
+    "rooms": {
+      "name": "IFC: ห้องและข้อมูลหลัก"
+    },
+    "specs": {
+      "name": "IFC: สเปกและปริมาณ"
+    },
+    "takeoff": {
+      "name": "IFC: บัญชีปริมาณงาน"
+    }
+  },
+  "settings": {
+    "classification_in_this_namespace_system": "\"classification\" ในเนมสเปซนี้ (ระบบ|รหัส|ชื่อ ต่อบรรทัด) จะแสดงเป็น HTML และมีผลเหนือโมเดล",
+    "accent_colour": "สีเน้น",
+    "add_quantities_to_a_quote_request": "เพิ่มปริมาณลงในคำขอใบเสนอราคา",
+    "add_the_codes_found_in_the_3d_model": "เพิ่มรหัสที่พบในโมเดล 3 มิติ",
+    "area": "พื้นที่",
+    "area_unit": "หน่วยพื้นที่",
+    "brand": "แบรนด์",
+    "csv_download": "ดาวน์โหลด CSV",
+    "columns": "คอลัมน์",
+    "contact_form_selector": "ตัวเลือกแบบฟอร์มติดต่อ",
+    "corner_radius": "รัศมีมุม",
+    "count": "จำนวน",
+    "dimensions_per_type": "ขนาดตามชนิด",
+    "empty_finds_the_first_contact_form": "เว้นว่างจะหาแบบฟอร์มติดต่อแรก",
+    "empty_uses_the_theme_s_button_colour": "เว้นว่างจะใช้สีปุ่มของธีม",
+    "file_weight": "ขนาดไฟล์",
+    "fills_the_page_s_contact_form": "กรอกแบบฟอร์มติดต่อของหน้า",
+    "group_by": "จัดกลุ่มตาม",
+    "heading": "หัวข้อ",
+    "health_badge": "ป้ายสุขภาพไฟล์",
+    "highlight_a_room_in_3d_when_clicked": "ไฮไลต์ห้องในแบบ 3 มิติเมื่อคลิก",
+    "ifc_class": "คลาส IFC",
+    "imperial": "อิมพีเรียล",
+    "imperial_ft_ft_ft_lb": "อิมพีเรียล (ft, ft², ft³, lb)",
+    "key_properties": "คุณสมบัติหลัก",
+    "key_specs_chips": "ชิปข้อมูลหลัก",
+    "labels": "ข้อความ",
+    "length": "ความยาว",
+    "light_under_20_mb_and_5_000_elements_hea": "เบา: ต่ำกว่า 20 MB และ 5,000 ชิ้นส่วน หนัก: ตั้งแต่ 100 MB หรือ 50,000 ชิ้นส่วนขึ้นไป",
+    "material": "วัสดุ",
+    "materials": "วัสดุ",
+    "metafield_dimensions_e_g_1200_x_600_x_21": "ใช้ขนาดจากเมตาฟิลด์ก่อน (เช่น 1200 x 600 x 2100 mm) ต่อด้วยปริมาณจากโมเดล แล้วจึงกล่องที่คำนวณจากรูปทรง",
+    "metafield_namespace": "เนมสเปซเมตาฟิลด์",
+    "metric": "เมตริก",
+    "metric_m_m_m_kg": "เมตริก (m, m², m³, kg)",
+    "one_per_line_e_g_firerating_or_pset_door": "หนึ่งรายการต่อบรรทัด เช่น FireRating หรือ Pset_DoorCommon.FireRating เว้นว่าง: ชุดคุณสมบัติทั่วไปและของผู้ผลิต",
+    "outer_dimensions": "ขนาดภายนอก",
+    "per_ifc_class": "ตามคลาส IFC",
+    "per_type": "ตามชนิด",
+    "product_metafields_in_this_namespace_are": "เมตาฟิลด์สินค้าในเนมสเปซนี้แสดงเป็น HTML และมีผลเหนือค่าที่อ่านจากโมเดล",
+    "properties_to_show": "คุณสมบัติที่จะแสดง",
+    "room_schedule": "ตารางห้อง",
+    "schema_and_apps": "สคีมาและโปรแกรม",
+    "show_a_frame_around_the_block": "แสดงกรอบรอบบล็อก",
+    "show_how_many_elements_carry_each_code": "แสดงจำนวนชิ้นส่วนที่มีแต่ละรหัส",
+    "steel_table_by_profile": "ตารางเหล็กตามหน้าตัด",
+    "storey": "ชั้น",
+    "tables": "ตาราง",
+    "totals": "ยอดรวม",
+    "type": "ชนิด",
+    "units": "หน่วย",
+    "volume": "ปริมาตร",
+    "weight": "น้ำหนัก",
+    "area_bedrooms_bathrooms_storeys_and_dime": "area, bedrooms, bathrooms, storeys และ dimensions ในเนมสเปซนี้แสดงเป็น HTML และมีผลเหนือโมเดล",
+    "boq_text_cells_split_by_is_shown_as_html": "boq (ข้อความ แยกเซลล์ด้วย |) แสดงเป็น HTML unit_prices (JSON) จับคู่หน้าตัด ชนิด วัสดุ หรือคลาส IFC กับราคา หรือ {\"price\": 2.1, \"per\": \"kg\"} โดย per = each, m, m2, m3 หรือ kg และเพิ่มยอดรวมโดยประมาณ",
+    "compatible_with_apps_and_versions_you_te": "compatible_with (โปรแกรมและเวอร์ชันที่คุณทดสอบ) มีผลเหนือรายการทั่วไป ifc_size_mb ระบุขนาด",
+    "ft": "ft²",
+    "key_value_per_line_class_type_count_leng": "คีย์=ค่า ต่อบรรทัด: class, type, count, length, area, volume, weight, materials, properties, dimensions, manufacturer, model, calculated, total, csv, waiting",
+    "key_value_per_line_schema_mvd_app_worksw": "คีย์=ค่า ต่อบรรทัด: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown",
+    "key_value_per_line_title_area_storeys_be": "คีย์=ค่า ต่อบรรทัด: title, area, storeys, bedrooms, bathrooms, footprint, room, number, height, total, storey, waiting, none, inferred, geometry, truncated, units",
+    "key_value_per_line_title_group_type_mate": "คีย์=ค่า ต่อบรรทัด: title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated",
+    "key_value_per_line_title_system_code_nam": "คีย์=ค่า ต่อบรรทัด: title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage",
+    "m": "m²"
+  }
+}

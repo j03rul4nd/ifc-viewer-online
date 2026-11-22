@@ -1,10 +1,30 @@
-// Builds the theme app extension's app blocks from the copy-paste sections, so
-// both ways of installing render the same markup. Run: node integrations/shopify/build-extension.mjs
+// Builds the theme app extensions. Shopify caps each extension at 100 KB of Liquid
+// and 15 KB per locale file, so the blocks live in three extensions of one app:
+// - app blocks made from the copy-paste sections (same markup both ways);
+// - shared assets and snippets copied from ifc-viewer into the others;
+// - each extension's locales cut from locales/ down to the keys its Liquid uses.
+// Run: node integrations/shopify/build-extension.mjs
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
+
+/** Full translations (every key, every language). The extensions get cut copies. */
+export const LOCALES_DIR = path.join(here, 'locales')
+export const EXTENSIONS_DIR = path.join(here, 'app', 'extensions')
+/** The extension that owns the shared files; the others get byte-identical copies. */
+export const MAIN_EXTENSION = 'ifc-viewer'
+/** Which blocks each extension holds. Moving a block changes its extension for merchants. */
+export const EXTENSIONS = {
+  'ifc-viewer': ['product-ifc-viewer', 'ifc-element-details', 'ifc-downloads', 'ifc-variant-views', 'ifc-viewer', 'ifc-views', 'ifc-explorer', 'ifc-health-score', 'tracking-globe'],
+  'ifc-data': ['ifc-specs', 'ifc-rooms', 'ifc-classification', 'ifc-takeoff', 'ifc-compat'],
+  'ifc-plans': ['ifc-plan-set', 'ifc-plan-view', 'ifc-ar', 'ifc-compliance', 'ifc-sun-lot', 'ifc-dpp'],
+}
+/** Assets every extension carries (runtime, styles, variant helper, events, setup check). */
+export const SHARED_ASSETS = ['ifcvo.js', 'ifcvo.css', 'ifcvo-variant.js', 'ifcvo-events.js', 'ifcvo-diagnostics.js']
+export const LIQUID_LIMIT = 100 * 1024
+export const LOCALE_LIMIT = 15 * 1024
 export const SECTIONS = ['ifc-viewer.liquid', 'tracking-globe.liquid']
 
 /** Section name → app block name key in locales/*.schema.json (the theme editor shows it in the store's admin language). */
@@ -14,7 +34,7 @@ let settingKeyCache = null
 /** English setting text → `t:settings.<key>` from en.default.schema.json. */
 function settingKeys() {
   if (!settingKeyCache) {
-    const file = path.join(here, 'app/extensions/ifc-viewer/locales/en.default.schema.json')
+    const file = path.join(LOCALES_DIR, 'en.default.schema.json')
     const json = JSON.parse(fs.readFileSync(file, 'utf8'))
     settingKeyCache = Object.fromEntries(Object.entries(json.settings || {}).map(([k, v]) => [v, `t:settings.${k}`]))
   }
@@ -90,19 +110,104 @@ export function withTiers(runtime) {
   return runtime.replace(TIERS_RE, (_, start, end) => start + table + end)
 }
 
-export function assetPath(name) {
-  return path.join(here, 'app', 'extensions', 'ifc-viewer', 'assets', name)
+export function extensionDir(ext = MAIN_EXTENSION) {
+  return path.join(EXTENSIONS_DIR, ext)
 }
 
-export function blockPath(name) {
-  return path.join(here, 'app', 'extensions', 'ifc-viewer', 'blocks', name)
+export function assetPath(name, ext = MAIN_EXTENSION) {
+  return path.join(extensionDir(ext), 'assets', name)
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+export function blockPath(name, ext = MAIN_EXTENSION) {
+  return path.join(extensionDir(ext), 'blocks', name)
+}
+
+const listLiquid = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.liquid')).sort() : [])
+
+/** Snippets the given Liquid renders, followed through nested renders. */
+export function snippetsFor(sources, lookup) {
+  const found = new Set()
+  const queue = [...sources]
+  while (queue.length) {
+    for (const m of queue.pop().matchAll(/\{%-?\s*render\s+'([a-z0-9-]+)'/g)) {
+      if (found.has(m[1])) continue
+      found.add(m[1])
+      queue.push(lookup(m[1]))
+    }
+  }
+  return [...found].sort()
+}
+
+/** Storefront keys (`'ifcvo.x.y' | t`, or a prefix ending in "." for appended keys) and `t:` schema keys. */
+export function keysUsed(liquid) {
+  const storefront = new Set()
+  const schema = new Set()
+  for (const m of liquid.matchAll(/['"](ifcvo\.[A-Za-z0-9_.]+)['"]/g)) if (!/\.(js|css)$/.test(m[1])) storefront.add(m[1])
+  for (const m of liquid.matchAll(/"t:([A-Za-z0-9_.]+)"/g)) schema.add(m[1])
+  return { storefront: [...storefront].sort(), schema: [...schema].sort() }
+}
+
+/** The part of `tree` under the given dotted keys (a key ending in "." keeps its whole subtree). */
+export function pickKeys(tree, keys) {
+  const out = {}
+  for (const key of keys) {
+    const parts = key.replace(/\.$/, '').split('.')
+    let src = tree
+    for (const p of parts) src = src && typeof src === 'object' ? src[p] : undefined
+    if (src === undefined) continue
+    let dst = out
+    for (const p of parts.slice(0, -1)) dst = dst[p] = dst[p] || {}
+    dst[parts[parts.length - 1]] = JSON.parse(JSON.stringify(src))
+  }
+  return orderLike(out, tree)
+}
+
+/** Same key order as the full file, so the cut files diff cleanly. */
+function orderLike(obj, like) {
+  if (!obj || typeof obj !== 'object') return obj
+  const out = {}
+  for (const k of Object.keys(like)) if (k in obj) out[k] = orderLike(obj[k], like[k])
+  return out
+}
+
+/** All Liquid of an extension (blocks + snippets) as written on disk. */
+export function extensionLiquid(ext) {
+  const dir = extensionDir(ext)
+  return ['blocks', 'snippets'].flatMap((d) => listLiquid(path.join(dir, d)).map((f) => fs.readFileSync(path.join(dir, d, f), 'utf8')))
+}
+
+function writeIfChanged(file, text) {
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  if (fs.existsSync(file) && fs.readFileSync(file, 'utf8') === text) return
+  fs.writeFileSync(file, text)
+}
+
+export function build() {
   for (const name of SECTIONS) {
-    fs.mkdirSync(path.dirname(blockPath(name)), { recursive: true })
-    fs.writeFileSync(blockPath(name), toAppBlock(fs.readFileSync(path.join(here, name), 'utf8')))
+    writeIfChanged(blockPath(name), toAppBlock(fs.readFileSync(path.join(here, name), 'utf8')))
   }
   const runtime = assetPath('ifcvo.js')
-  fs.writeFileSync(runtime, withTiers(fs.readFileSync(runtime, 'utf8')))
+  writeIfChanged(runtime, withTiers(fs.readFileSync(runtime, 'utf8').replace(/\r\n/g, '\n')))
+
+  const mainSnippets = path.join(extensionDir(), 'snippets')
+  const mainOwned = new Set(listLiquid(mainSnippets).map((f) => f.replace(/\.liquid$/, '')))
+  for (const [ext, blocks] of Object.entries(EXTENSIONS)) {
+    const dir = extensionDir(ext)
+    if (ext !== MAIN_EXTENSION) {
+      for (const a of SHARED_ASSETS) writeIfChanged(assetPath(a, ext), fs.readFileSync(assetPath(a), 'utf8'))
+      // Snippets this extension renders but the main one owns: copied, never edited here.
+      const own = (n) => path.join(dir, 'snippets', n + '.liquid')
+      const lookup = (n) => fs.readFileSync(mainOwned.has(n) ? path.join(mainSnippets, n + '.liquid') : own(n), 'utf8')
+      const sources = blocks.map((b) => fs.readFileSync(blockPath(b + '.liquid', ext), 'utf8'))
+      for (const n of snippetsFor(sources, lookup)) if (mainOwned.has(n)) writeIfChanged(own(n), lookup(n))
+    }
+    const { storefront, schema } = keysUsed(extensionLiquid(ext).join('\n'))
+    for (const file of fs.readdirSync(LOCALES_DIR).filter((f) => f.endsWith('.json')).sort()) {
+      const tree = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, file), 'utf8'))
+      const cut = pickKeys(tree, file.endsWith('.schema.json') ? schema : storefront)
+      writeIfChanged(path.join(dir, 'locales', file), JSON.stringify(cut, null, 2) + '\n')
+    }
+  }
 }
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) build()

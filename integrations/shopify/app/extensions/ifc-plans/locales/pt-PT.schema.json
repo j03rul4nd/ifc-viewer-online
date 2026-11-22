@@ -1,0 +1,100 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC: ver no seu espaço (RA)"
+    },
+    "compliance": {
+      "name": "IFC: conformidade"
+    },
+    "dpp": {
+      "name": "IFC: EPD e passaporte do produto"
+    },
+    "plan_set": {
+      "name": "IFC: conjunto de desenhos e licença"
+    },
+    "plan_view": {
+      "name": "IFC: vista em planta"
+    },
+    "sun_lot": {
+      "name": "IFC: sol e lote"
+    }
+  },
+  "settings": {
+    "accent_colour": "Cor de destaque",
+    "allow_element_properties": "Permitir propriedades dos elementos",
+    "always_in_metres_whatever_the_lot_units": "Sempre em metros, sejam quais forem as unidades do lote.",
+    "always_in_metres_whatever_the_lot_units_2": "Sempre em metros, sejam quais forem as unidades do lote. O comprador pode alterar.",
+    "brand": "Marca",
+    "corner_radius": "Raio dos cantos",
+    "december_solstice": "Solstício de dezembro",
+    "decimal_degrees_e_g_3_7038": "Graus decimais, p. ex. -3.7038.",
+    "decimal_degrees_e_g_40_4168_empty_uses_t": "Graus decimais, p. ex. 40.4168. Vazio usa a localização do modelo ou a do comprador.",
+    "default_date": "Data por omissão",
+    "default_files_included": "Ficheiros incluídos por omissão",
+    "default_latitude": "Latitude por omissão",
+    "default_license": "Licença por omissão",
+    "default_longitude": "Longitude por omissão",
+    "default_terms": "Condições por omissão",
+    "empty_uses_the_product_metafield_ids_url": "Vazio usa o metafield de produto \"ids_url\" no namespace abaixo.",
+    "empty_uses_the_shop_name": "Vazio usa o nome da loja.",
+    "empty_uses_the_theme_s_button_colour": "Vazio usa a cor dos botões do tema.",
+    "empty_uses_the_translated_default": "Vazio usa o texto traduzido por omissão.",
+    "example_lot_m_depth": "Lote de exemplo (m): profundidade",
+    "example_lot_m_width": "Lote de exemplo (m): largura",
+    "feet": "Pés",
+    "fill_gaps_with_values_found_in_the_3d_mo": "Preencher lacunas com valores do modelo 3D",
+    "floor_plans_per_storey_of_the_model_in_t": "Plantas de cada piso do modelo do bloco \"Product IFC model\". Um separador por piso; divisões e áreas quando o modelo tem espaços.",
+    "for_plan_sellers_adds_a_watermark_opens": "Para vendedores de projetos. Adiciona uma marca de água, abre o visualizador sem barra de ferramentas, medições nem exportações, e oculta nesta página todas as transferências do modelo (ligações do visualizador, bloco de transferências IFC, botões GLB/CSV) e a ligação para o visualizador completo. Limite real: trava a cópia casual, não uma pessoa determinada. O URL do ficheiro continua acessível na página e um modelo mostrado num navegador é enviado para esse navegador, pelo que pode ser extraído. Para projetos que não podem ser divulgados, carregue um modelo de pré-visualização simplificado e entregue o conjunto completo após a compra.",
+    "front_setback_m": "Afastamento frontal (m)",
+    "heading": "Título",
+    "ids_file_link_https": "Ligação para o ficheiro IDS (https)",
+    "include_the_site_and_terrain_in_made_mod": "Incluir o local e o terreno nos modelos criados",
+    "june_solstice": "Solstício de junho",
+    "labels": "Textos",
+    "largest_made_model_on_phones": "Maior modelo criado em telemóveis",
+    "license_comparison_table": "Tabela comparativa de licenças",
+    "list_rooms_and_areas": "Listar divisões e áreas",
+    "list_the_nbs_clauses_that_need_a_manual": "Listar as cláusulas NBS que precisam de verificação manual",
+    "list_what_did_not_pass": "Listar o que não passou",
+    "lot_fit": "Implantação no lote",
+    "lot_units": "Unidades do lote",
+    "made_on_the_visitor_s_iphone_or_ipad_fro": "Criado no iPhone ou iPad do visitante a partir do bloco \"Product IFC model\". O Android precisa de um ficheiro alojado.",
+    "make_the_ar_model_from_the_ifc_when_ther": "Criar o modelo de RA a partir do IFC quando não há ficheiro",
+    "march_equinox": "Equinócio de março",
+    "metafield_namespace": "Namespace do metafield",
+    "metres": "Metros",
+    "off_visitors_cannot_open_the_properties": "Desligado: os visitantes não podem abrir as propriedades de um elemento.",
+    "one_card_per_variant_license_variant_met": "Um cartão por variante (licença). Metafields de variante: license_type, license_terms, plan_set (JSON ou lista), ifc_model.",
+    "one_per_line_name_format_sheets_size_use": "Um por linha: Nome|FORMATO|desenhos|tamanho. Usado quando uma variante não tem plan_set.",
+    "preview_mode": "Modo de pré-visualização",
+    "rear_setback_m": "Afastamento posterior (m)",
+    "september_equinox": "Equinócio de setembro",
+    "show_a_frame_around_the_block": "Mostrar uma moldura à volta do bloco",
+    "show_a_watermark": "Mostrar uma marca de água",
+    "show_the_3d_model_of_each_license": "Mostrar o modelo 3D de cada licença",
+    "show_the_epd_carbon_panel": "Mostrar o painel de EPD / carbono",
+    "show_the_health_score_badge": "Mostrar o selo do Health Score",
+    "show_the_ids_badge": "Mostrar o selo IDS",
+    "show_the_nbs_bim_object_standard_badge": "Mostrar o selo do NBS BIM Object Standard",
+    "show_the_product_passport_readiness_chec": "Mostrar a lista de preparação do passaporte do produto",
+    "side_setback_each_side_m": "Afastamento lateral, cada lado (m)",
+    "start_with": "Começar com",
+    "sun_study": "Estudo solar",
+    "the_3d_model": "O modelo 3D",
+    "the_first_floor_plan": "A primeira planta",
+    "time_limit_per_check": "Tempo máximo por verificação",
+    "use_the_product_s_3d_model_media": "Usar o modelo 3D dos suportes multimédia do produto",
+    "used_when_a_variant_has_no_license_terms": "Usado quando uma variante não tem license_terms.",
+    "used_when_a_variant_has_no_license_type": "Usado quando uma variante não tem license_type.",
+    "watermark_opacity": "Opacidade da marca de água",
+    "watermark_text": "Texto da marca de água",
+    "ar_usdz_iphone_ipad_and_ar_glb_android_i": "ar_usdz (iPhone/iPad) e ar_glb (Android) neste namespace: um ficheiro ou uma ligação https.",
+    "epd_url_epd_number_gwp_a1a3_declared_uni": "epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… neste namespace são mostrados como HTML e prevalecem sobre o modelo.",
+    "key_value_per_line_button_making_error_t": "chave=valor por linha: button, making, error, too_large, scan, no_ar, hosted, no_viewer.",
+    "key_value_per_line_title_epd_gwp_a1a3_gw": "chave=valor por linha: title, epd, gwp_a1a3, gwp, energy, water, declared_unit, epd_number, epd_link, from_model, from_pset, score, missing, ready, not_ready, loading, error, varies.",
+    "key_value_per_line_title_nbs_nbsnone_ids": "chave=valor por linha: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled.",
+    "key_value_per_line_title_sun_lat_lon_loc": "chave=valor por linha: title, sun, lat, lon, locate, date, time, lot, lotWidth, lotDepth, front, side, rear, orientation, fits, noFit, waiting.",
+    "triangle_limit_for_made_models": "Limite de triângulos dos modelos criados",
+    "the_smallest_parts_are_left_out_above_it": "Acima dele, as peças mais pequenas são omitidas."
+  }
+}

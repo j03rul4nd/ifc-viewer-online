@@ -1,0 +1,84 @@
+{
+  "blocks": {
+    "classification": {
+      "name": "IFC : classification"
+    },
+    "compat": {
+      "name": "IFC : compatibilité"
+    },
+    "rooms": {
+      "name": "IFC : pièces et chiffres clés"
+    },
+    "specs": {
+      "name": "IFC : caractéristiques et quantités"
+    },
+    "takeoff": {
+      "name": "IFC : métré"
+    }
+  },
+  "settings": {
+    "classification_in_this_namespace_system": "\"classification\" dans ce namespace (Système|Code|Intitulé par ligne) s'affiche en HTML et l'emporte sur la maquette.",
+    "accent_colour": "Couleur d'accent",
+    "add_quantities_to_a_quote_request": "Ajouter les quantités à une demande de devis",
+    "add_the_codes_found_in_the_3d_model": "Ajouter les codes trouvés dans la maquette 3D",
+    "area": "Surface",
+    "area_unit": "Unité de surface",
+    "brand": "Marque",
+    "csv_download": "Téléchargement CSV",
+    "columns": "Colonnes",
+    "contact_form_selector": "Sélecteur du formulaire de contact",
+    "corner_radius": "Rayon des coins",
+    "count": "Nombre",
+    "dimensions_per_type": "Dimensions par type",
+    "empty_finds_the_first_contact_form": "Vide cherche le premier formulaire de contact.",
+    "empty_uses_the_theme_s_button_colour": "Vide utilise la couleur des boutons du thème.",
+    "file_weight": "Poids du fichier",
+    "fills_the_page_s_contact_form": "Remplit le formulaire de contact de la page.",
+    "group_by": "Regrouper par",
+    "heading": "Titre",
+    "health_badge": "Badge de santé",
+    "highlight_a_room_in_3d_when_clicked": "Mettre une pièce en évidence en 3D au clic",
+    "ifc_class": "Classe IFC",
+    "imperial": "Impérial",
+    "imperial_ft_ft_ft_lb": "Impérial (ft, ft², ft³, lb)",
+    "key_properties": "Propriétés clés",
+    "key_specs_chips": "Pastilles de chiffres clés",
+    "labels": "Textes",
+    "length": "Longueur",
+    "light_under_20_mb_and_5_000_elements_hea": "Léger : moins de 20 Mo et 5 000 éléments. Lourd : 100 Mo ou 50 000 éléments et plus.",
+    "material": "Matériau",
+    "materials": "Matériaux",
+    "metafield_dimensions_e_g_1200_x_600_x_21": "Les dimensions du metafield (ex. 1200 x 600 x 2100 mm) l'emportent ; puis les quantités de la maquette ; puis une boîte calculée à partir de la géométrie.",
+    "metafield_namespace": "Namespace du metafield",
+    "metric": "Métrique",
+    "metric_m_m_m_kg": "Métrique (m, m², m³, kg)",
+    "one_per_line_e_g_firerating_or_pset_door": "Un par ligne, ex. FireRating ou Pset_DoorCommon.FireRating. Vide : jeux de propriétés communs et fabricant.",
+    "outer_dimensions": "Dimensions extérieures",
+    "per_ifc_class": "Par classe IFC",
+    "per_type": "Par type",
+    "product_metafields_in_this_namespace_are": "Les metafields produit de ce namespace s'affichent en HTML et l'emportent sur les valeurs lues dans la maquette.",
+    "properties_to_show": "Propriétés à afficher",
+    "room_schedule": "Tableau des pièces",
+    "schema_and_apps": "Schéma et logiciels",
+    "show_a_frame_around_the_block": "Afficher un cadre autour du bloc",
+    "show_how_many_elements_carry_each_code": "Afficher combien d'éléments portent chaque code",
+    "steel_table_by_profile": "Tableau de l'acier par profilé",
+    "storey": "Niveau",
+    "tables": "Tableaux",
+    "totals": "Totaux",
+    "type": "Type",
+    "units": "Unités",
+    "volume": "Volume",
+    "weight": "Poids",
+    "area_bedrooms_bathrooms_storeys_and_dime": "area, bedrooms, bathrooms, storeys et dimensions dans ce namespace s'affichent en HTML et l'emportent sur la maquette.",
+    "boq_text_cells_split_by_is_shown_as_html": "boq (texte, cellules séparées par |) s'affiche en HTML. unit_prices (JSON) associe à un profilé, type, matériau ou classe IFC un prix, ou {\"price\": 2.1, \"per\": \"kg\"} avec per = each, m, m2, m3 ou kg ; ajoute un total indicatif.",
+    "compatible_with_apps_and_versions_you_te": "compatible_with (logiciels et versions testés) l'emporte sur la liste habituelle ; ifc_size_mb donne la taille.",
+    "ft": "ft²",
+    "key_value_per_line_class_type_count_leng": "clé=valeur par ligne : class, type, count, length, area, volume, weight, materials, properties, dimensions, manufacturer, model, calculated, total, csv, waiting.",
+    "key_value_per_line_schema_mvd_app_worksw": "clé=valeur par ligne : schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown.",
+    "key_value_per_line_title_area_storeys_be": "clé=valeur par ligne : title, area, storeys, bedrooms, bathrooms, footprint, room, number, height, total, storey, waiting, none, inferred, geometry, truncated, units.",
+    "key_value_per_line_title_group_type_mate": "clé=valeur par ligne : title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated.",
+    "key_value_per_line_title_system_code_nam": "clé=valeur par ligne : title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage.",
+    "m": "m²"
+  }
+}

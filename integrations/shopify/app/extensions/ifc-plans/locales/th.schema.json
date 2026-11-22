@@ -1,0 +1,100 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC: ดูในพื้นที่ของคุณ (AR)"
+    },
+    "compliance": {
+      "name": "IFC: การปฏิบัติตามข้อกำหนด"
+    },
+    "dpp": {
+      "name": "IFC: EPD และหนังสือเดินทางผลิตภัณฑ์"
+    },
+    "plan_set": {
+      "name": "IFC: ชุดแบบและสัญญาอนุญาต"
+    },
+    "plan_view": {
+      "name": "IFC: มุมมองแปลน"
+    },
+    "sun_lot": {
+      "name": "IFC: แสงแดดและที่ดิน"
+    }
+  },
+  "settings": {
+    "accent_colour": "สีเน้น",
+    "allow_element_properties": "อนุญาตให้ดูคุณสมบัติของชิ้นส่วน",
+    "always_in_metres_whatever_the_lot_units": "เป็นเมตรเสมอ ไม่ว่าหน่วยของที่ดินจะเป็นอะไร",
+    "always_in_metres_whatever_the_lot_units_2": "เป็นเมตรเสมอ ไม่ว่าหน่วยของที่ดินจะเป็นอะไร ผู้ซื้อเปลี่ยนได้",
+    "brand": "แบรนด์",
+    "corner_radius": "รัศมีมุม",
+    "december_solstice": "เหมายันเดือนธันวาคม",
+    "decimal_degrees_e_g_3_7038": "องศาทศนิยม เช่น -3.7038",
+    "decimal_degrees_e_g_40_4168_empty_uses_t": "องศาทศนิยม เช่น 40.4168 เว้นว่างจะใช้ตำแหน่งของโมเดลเองหรือของผู้ซื้อ",
+    "default_date": "วันที่เริ่มต้น",
+    "default_files_included": "ไฟล์ที่รวมไว้ตามค่าเริ่มต้น",
+    "default_latitude": "ละติจูดเริ่มต้น",
+    "default_license": "สัญญาอนุญาตเริ่มต้น",
+    "default_longitude": "ลองจิจูดเริ่มต้น",
+    "default_terms": "เงื่อนไขเริ่มต้น",
+    "empty_uses_the_product_metafield_ids_url": "เว้นว่างจะใช้เมตาฟิลด์สินค้า \"ids_url\" ในเนมสเปซด้านล่าง",
+    "empty_uses_the_shop_name": "เว้นว่างจะใช้ชื่อร้านค้า",
+    "empty_uses_the_theme_s_button_colour": "เว้นว่างจะใช้สีปุ่มของธีม",
+    "empty_uses_the_translated_default": "เว้นว่างจะใช้ข้อความเริ่มต้นที่แปลแล้ว",
+    "example_lot_m_depth": "ที่ดินตัวอย่าง (ม.): ความลึก",
+    "example_lot_m_width": "ที่ดินตัวอย่าง (ม.): ความกว้าง",
+    "feet": "ฟุต",
+    "fill_gaps_with_values_found_in_the_3d_mo": "เติมช่องว่างด้วยค่าจากโมเดล 3 มิติ",
+    "floor_plans_per_storey_of_the_model_in_t": "แปลนพื้นของแต่ละชั้นจากโมเดลในบล็อก \"Product IFC model\" หนึ่งแท็บต่อชั้น แสดงห้องและพื้นที่เมื่อโมเดลมีพื้นที่ใช้สอย",
+    "for_plan_sellers_adds_a_watermark_opens": "สำหรับผู้ขายแบบ เพิ่มลายน้ำ เปิดโปรแกรมดูโดยไม่มีแถบเครื่องมือ การวัด หรือการส่งออก และซ่อนการดาวน์โหลดโมเดลทั้งหมดในหน้านี้ (ลิงก์ในโปรแกรมดู บล็อกดาวน์โหลด IFC ปุ่ม GLB/CSV) รวมถึงลิงก์ไปยังโปรแกรมดูแบบเต็ม ข้อจำกัดตามจริง: กันการคัดลอกทั่วไปได้ แต่กันคนที่ตั้งใจไม่ได้ URL ของไฟล์โมเดลยังเข้าถึงได้จากหน้า และโมเดลที่แสดงในเบราว์เซอร์จะถูกส่งไปยังเบราว์เซอร์นั้น จึงดึงออกมาได้ สำหรับแบบที่ต้องไม่รั่วไหล ให้อัปโหลดโมเดลตัวอย่างแบบย่อ และส่งชุดเต็มหลังการซื้อ",
+    "front_setback_m": "ระยะร่นด้านหน้า (ม.)",
+    "heading": "หัวข้อ",
+    "ids_file_link_https": "ลิงก์ไฟล์ IDS (https)",
+    "include_the_site_and_terrain_in_made_mod": "รวมพื้นที่โครงการและภูมิประเทศในโมเดลที่สร้าง",
+    "june_solstice": "ครีษมายันเดือนมิถุนายน",
+    "labels": "ข้อความ",
+    "largest_made_model_on_phones": "ขนาดโมเดลที่สร้างได้สูงสุดบนโทรศัพท์",
+    "license_comparison_table": "ตารางเปรียบเทียบสัญญาอนุญาต",
+    "list_rooms_and_areas": "แสดงรายการห้องและพื้นที่",
+    "list_the_nbs_clauses_that_need_a_manual": "แสดงข้อกำหนด NBS ที่ต้องตรวจด้วยคน",
+    "list_what_did_not_pass": "แสดงรายการที่ไม่ผ่าน",
+    "lot_fit": "การวางบนที่ดิน",
+    "lot_units": "หน่วยของที่ดิน",
+    "made_on_the_visitor_s_iphone_or_ipad_fro": "สร้างบน iPhone หรือ iPad ของผู้เยี่ยมชมจากบล็อก \"Product IFC model\" Android ต้องใช้ไฟล์ที่โฮสต์ไว้",
+    "make_the_ar_model_from_the_ifc_when_ther": "สร้างโมเดล AR จาก IFC เมื่อไม่มีไฟล์",
+    "march_equinox": "วิษุวัตเดือนมีนาคม",
+    "metafield_namespace": "เนมสเปซเมตาฟิลด์",
+    "metres": "เมตร",
+    "off_visitors_cannot_open_the_properties": "ปิด: ผู้เยี่ยมชมเปิดคุณสมบัติของชิ้นส่วนไม่ได้",
+    "one_card_per_variant_license_variant_met": "หนึ่งการ์ดต่อตัวเลือกสินค้า (สัญญาอนุญาต) เมตาฟิลด์ของตัวเลือก: license_type, license_terms, plan_set (JSON หรือรายการ), ifc_model",
+    "one_per_line_name_format_sheets_size_use": "หนึ่งรายการต่อบรรทัด: ชื่อ|รูปแบบ|จำนวนแผ่น|ขนาด ใช้เมื่อตัวเลือกไม่มี plan_set",
+    "preview_mode": "โหมดตัวอย่าง",
+    "rear_setback_m": "ระยะร่นด้านหลัง (ม.)",
+    "september_equinox": "วิษุวัตเดือนกันยายน",
+    "show_a_frame_around_the_block": "แสดงกรอบรอบบล็อก",
+    "show_a_watermark": "แสดงลายน้ำ",
+    "show_the_3d_model_of_each_license": "แสดงโมเดล 3 มิติของแต่ละสัญญาอนุญาต",
+    "show_the_epd_carbon_panel": "แสดงแผง EPD / คาร์บอน",
+    "show_the_health_score_badge": "แสดงป้าย Health Score",
+    "show_the_ids_badge": "แสดงป้าย IDS",
+    "show_the_nbs_bim_object_standard_badge": "แสดงป้าย NBS BIM Object Standard",
+    "show_the_product_passport_readiness_chec": "แสดงรายการตรวจความพร้อมหนังสือเดินทางผลิตภัณฑ์",
+    "side_setback_each_side_m": "ระยะร่นด้านข้าง แต่ละด้าน (ม.)",
+    "start_with": "เริ่มด้วย",
+    "sun_study": "การศึกษาแสงแดด",
+    "the_3d_model": "โมเดล 3 มิติ",
+    "the_first_floor_plan": "แปลนพื้นแรก",
+    "time_limit_per_check": "เวลาสูงสุดต่อการตรวจ",
+    "use_the_product_s_3d_model_media": "ใช้โมเดล 3 มิติจากสื่อของสินค้า",
+    "used_when_a_variant_has_no_license_terms": "ใช้เมื่อตัวเลือกไม่มี license_terms",
+    "used_when_a_variant_has_no_license_type": "ใช้เมื่อตัวเลือกไม่มี license_type",
+    "watermark_opacity": "ความทึบของลายน้ำ",
+    "watermark_text": "ข้อความลายน้ำ",
+    "ar_usdz_iphone_ipad_and_ar_glb_android_i": "ar_usdz (iPhone/iPad) และ ar_glb (Android) ในเนมสเปซนี้: ไฟล์หรือลิงก์ https",
+    "epd_url_epd_number_gwp_a1a3_declared_uni": "epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… ในเนมสเปซนี้แสดงเป็น HTML และมีผลเหนือโมเดล",
+    "key_value_per_line_button_making_error_t": "คีย์=ค่า ต่อบรรทัด: button, making, error, too_large, scan, no_ar, hosted, no_viewer",
+    "key_value_per_line_title_epd_gwp_a1a3_gw": "คีย์=ค่า ต่อบรรทัด: title, epd, gwp_a1a3, gwp, energy, water, declared_unit, epd_number, epd_link, from_model, from_pset, score, missing, ready, not_ready, loading, error, varies",
+    "key_value_per_line_title_nbs_nbsnone_ids": "คีย์=ค่า ต่อบรรทัด: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled",
+    "key_value_per_line_title_sun_lat_lon_loc": "คีย์=ค่า ต่อบรรทัด: title, sun, lat, lon, locate, date, time, lot, lotWidth, lotDepth, front, side, rear, orientation, fits, noFit, waiting",
+    "triangle_limit_for_made_models": "จำนวนสามเหลี่ยมสูงสุดของโมเดลที่สร้าง",
+    "the_smallest_parts_are_left_out_above_it": "หากเกินจะตัดชิ้นส่วนที่เล็กที่สุดออก"
+  }
+}

@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, csvCell, groupRows, init, labelsOf, moneyText, onViewer, parsePrices, qtyText, quoteText, render, rowPrice, sendToQuote, sortRows, takeoffCsv, LABELS,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-takeoff.js'
+} from '../integrations/shopify/app/extensions/ifc-data/assets/ifcvo-takeoff.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-data')
 const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-takeoff.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
