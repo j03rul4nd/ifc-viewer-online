@@ -12,6 +12,7 @@ import type { IFCItemData, IFCValue, ProjectUnits } from '../ifc-item-data'
 import { extractSteelPart, parseNumeric, revitTypeName, type SteelPart } from '../steel/takeoff'
 import type { RoomSchedule } from './rooms'
 import type { ClassificationSummary } from './classification'
+import type { SustainabilitySummary } from './sustainability'
 import { TakeoffBuilder, type ProductTakeoff } from './takeoff'
 
 export interface ProductDataQuantities {
@@ -64,6 +65,8 @@ export interface ProductData {
   rooms?: RoomSchedule | null
   /** Classification codes by system; null when none. Filled by collectProductData. */
   classifications?: ClassificationSummary | null
+  /** EPD / carbon indicators read from the model; null when none. Filled by collectProductData. */
+  sustainability?: SustainabilitySummary | null
   /** Bill of quantities by class + type + material (+ steel profile, + storey) and a steel table by profile. */
   takeoff?: ProductTakeoff
 }
