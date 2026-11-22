@@ -84,6 +84,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-compat.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'compat', block: 'ifc-compat', ns: ns, keys: 'compatible_with,ifc_size_mb' -%}
+
 {% schema %}
 {
   "name": "t:blocks.compat.name",

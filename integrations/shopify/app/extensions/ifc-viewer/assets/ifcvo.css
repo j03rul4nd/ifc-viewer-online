@@ -134,3 +134,12 @@
 .ifcvo-badge { padding: .3em .7em; border-radius: 999px; border: 1px solid currentColor; font-size: .9em; }
 .ifcvo-badge-pass { color: #1a7f37; } .ifcvo-badge-fail { color: #b42318; } .ifcvo-badge-warn { color: #9a6700; } .ifcvo-badge-error, .ifcvo-badge-na { opacity: .75; }
 .ifcvo-compliance-details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+/* Setup check (theme editor only) */
+.ifcvo-diag { position: fixed; right: 12px; bottom: 12px; z-index: 2147483000; max-width: min(420px, calc(100vw - 24px)); max-height: 70vh; overflow: auto;
+  font: 13px/1.4 system-ui, sans-serif; color: #111; background: #fff; border: 1px solid rgba(0,0,0,.2); border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.ifcvo-diag-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ifcvo-diag h4 { margin: 10px 0 4px; font-size: 13px; }
+.ifcvo-diag-lines { list-style: none; margin: 0; padding: 0; }
+.ifcvo-diag-lines li { margin: 2px 0; overflow-wrap: anywhere; }
+.ifcvo-diag-lines li[data-kind="warn"] { color: #8a3b00; }
+.ifcvo-diag-lines li[data-kind="hint"] { color: #444; padding-left: 1em; }

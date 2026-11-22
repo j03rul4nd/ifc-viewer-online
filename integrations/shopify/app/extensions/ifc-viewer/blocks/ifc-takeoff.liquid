@@ -66,6 +66,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-takeoff.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'takeoff', block: 'ifc-takeoff', ns: ns, keys: 'boq,unit_prices' -%}
+
 {% schema %}
 {
   "name": "t:blocks.takeoff.name",

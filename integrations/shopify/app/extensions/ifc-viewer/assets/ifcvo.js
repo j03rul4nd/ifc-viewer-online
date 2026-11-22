@@ -587,7 +587,7 @@ export function _state() {
 }
 
 if (typeof window !== 'undefined' && !window.IFCVO) {
-  window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS,
+  window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS, sdk: SDK,
     labels: labelsOf, probe,
     // For the companion modules (quote, downloads): the live viewer, opening it, and its events.
     get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen }

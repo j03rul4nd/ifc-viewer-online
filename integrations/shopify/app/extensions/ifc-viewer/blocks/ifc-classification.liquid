@@ -82,6 +82,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-classification.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'classification', block: 'ifc-classification', ns: ns, keys: 'classification' -%}
+
 {% schema %}
 {
   "name": "t:blocks.classification.name",

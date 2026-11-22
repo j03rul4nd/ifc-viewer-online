@@ -52,6 +52,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-rooms.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'rooms', block: 'ifc-rooms', ns: ns, keys: 'area,storeys,bedrooms,bathrooms,dimensions' -%}
+
 {% schema %}
 {
   "name": "t:blocks.rooms.name",

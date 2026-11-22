@@ -154,6 +154,8 @@
 <script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'dpp', block: 'ifc-dpp', ns: ns, keys: 'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}
+
 {% schema %}
 {
   "name": "t:blocks.dpp.name",

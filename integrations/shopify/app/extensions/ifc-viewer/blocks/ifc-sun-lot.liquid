@@ -47,6 +47,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-sunlot.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'sunlot', block: 'ifc-sun-lot', ns: '', keys: '' -%}
+
 {% schema %}
 {
   "name": "t:blocks.sun_lot.name",

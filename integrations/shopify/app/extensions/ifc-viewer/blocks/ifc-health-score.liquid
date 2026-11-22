@@ -16,6 +16,8 @@
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'score', block: 'ifc-health-score', ns: '', keys: '' -%}
+
 {% schema %}
 {
   "name": "t:blocks.health_score.name",

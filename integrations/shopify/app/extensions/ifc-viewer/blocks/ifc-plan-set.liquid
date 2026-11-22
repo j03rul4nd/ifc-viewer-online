@@ -178,6 +178,8 @@
 <script type="module" src="{{ 'ifcvo-planset.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'planset', block: 'ifc-plan-set', ns: ns, keys: 'plan_set,license_type,license_terms' -%}
+
 {% schema %}
 {
   "name": "t:blocks.plan_set.name",

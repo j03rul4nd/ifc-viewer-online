@@ -86,6 +86,8 @@
 <script type="module" src="{{ 'ifcvo-planview.js' | asset_url }}"></script>
 {%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'planview', block: 'ifc-plan-view', ns: '', keys: '' -%}
+
 {% schema %}
 {
   "name": "t:blocks.plan_view.name",

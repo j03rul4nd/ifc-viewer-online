@@ -32,6 +32,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 {%- if block.settings.quote != 'off' -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
 
+{%- render 'ifcvo-diag', feature: 'details', block: 'ifc-element-details', ns: '', keys: '' -%}
+
 {% schema %}
 {
   "name": "t:blocks.element_details.name",

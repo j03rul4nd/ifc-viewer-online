@@ -25,6 +25,8 @@
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'views', block: 'ifc-views', ns: '', keys: '' -%}
+
 {% schema %}
 {
   "name": "t:blocks.views.name",

@@ -57,6 +57,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-compliance.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'compliance', block: 'ifc-compliance', ns: ns, keys: 'ids_url' -%}
+
 {% schema %}
 {
   "name": "t:blocks.compliance.name",

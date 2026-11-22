@@ -16,6 +16,8 @@
 </div>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'explorer', block: 'ifc-explorer', ns: '', keys: '' -%}
+
 {% schema %}
 {
   "name": "t:blocks.explorer.name",

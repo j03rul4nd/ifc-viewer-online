@@ -59,6 +59,8 @@
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-ar.js' | asset_url }}"></script>
 
+{%- render 'ifcvo-diag', feature: 'ar', block: 'ifc-ar', ns: ns, keys: 'ar_glb,ar_usdz' -%}
+
 {% schema %}
 {
   "name": "t:blocks.ar.name",
