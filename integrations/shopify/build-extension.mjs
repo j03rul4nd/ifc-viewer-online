@@ -40,6 +40,7 @@ export const FEATURE_TIERS = {
   ar: 'starter',
   classification: 'starter',
   takeoff: 'business',
+  sunlot: 'business',
   compliance: 'business',
 }
 /** Features that must stay free whatever the plan table says. */
