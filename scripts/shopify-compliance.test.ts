@@ -5,11 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, init, LABELS, NBS_MANUAL, NBS_CLASSES, config, typeCheck, withTypeCheck, refresh, render, runChecks, safeIdsUrl, summarize, withTimeout,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compliance.js'
+} from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-compliance.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 import { NBS_BOS_MANUAL } from '../src/lib/eir/eir-profile-nbs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
 const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-compliance.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))

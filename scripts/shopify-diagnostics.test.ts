@@ -145,7 +145,8 @@ describe('diagnostics: Liquid wiring', () => {
 
   it('every metafield-reading block reports to the panel', () => {
     for (const b of ['product-ifc-viewer', 'ifc-rooms', 'ifc-takeoff', 'ifc-dpp', 'ifc-ar', 'ifc-compat', 'ifc-compliance', 'ifc-classification', 'ifc-plan-set', 'ifc-downloads', 'ifc-specs']) {
-      expect(read(`blocks/${b}.liquid`), b).toMatch(/render 'ifcvo-diag', feature: '\w+'/)
+      const file = ['ifc-viewer', 'ifc-data', 'ifc-plans'].map((e) => path.join(ext, '..', e, 'blocks', b + '.liquid')).find((f) => fs.existsSync(f))!
+      expect(fs.readFileSync(file, 'utf8'), b).toMatch(/render 'ifcvo-diag', feature: '\w+'/)
     }
   })
 })

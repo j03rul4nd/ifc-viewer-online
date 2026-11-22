@@ -7,7 +7,8 @@ import * as vv from '../integrations/shopify/app/extensions/ifc-viewer/assets/if
 // @ts-expect-error plain JS asset without types
 import * as shared from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-variant.js'
 // @ts-expect-error plain JS asset without types
-import * as planset from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planset.js'
+import * as planset from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-planset.js'
+import * as plansShared from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-variant.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
@@ -217,8 +218,9 @@ describe('applying to the viewer', () => {
 
 describe('shared resolver', () => {
   it('planset re-exports the shared readers', () => {
-    expect(planset.selectedVariant).toBe(shared.selectedVariant)
-    expect(planset.urlVariant).toBe(shared.urlVariant)
+    // Each extension ships its own copy of ifcvo-variant.js; planset uses the one beside it.
+    expect(planset.selectedVariant).toBe(plansShared.selectedVariant)
+    expect(planset.urlVariant).toBe(plansShared.urlVariant)
     expect(shared.urlVariant({ search: '?variant=7' })).toBe('7')
   })
 

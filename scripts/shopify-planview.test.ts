@@ -3,12 +3,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain JS asset without types
-import * as pv from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planview.js'
+import * as pv from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-planview.js'
 // @ts-expect-error plain JS asset without types
-import { protectOptions } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo.js'
+import { protectOptions } from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
 const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-plan-view.liquid'), 'utf8')
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 const locales = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
@@ -180,9 +180,9 @@ describe('preview mode', () => {
   })
 })
 
-const viewerBlock = fs.readFileSync(path.join(EXT, 'blocks/product-ifc-viewer.liquid'), 'utf8')
-const dlBlock = fs.readFileSync(path.join(EXT, 'blocks/ifc-downloads.liquid'), 'utf8')
-const quote = fs.readFileSync(path.join(EXT, 'assets/ifcvo-quote.js'), 'utf8')
+const viewerBlock = fs.readFileSync(path.join(EXT, '../ifc-viewer/blocks/product-ifc-viewer.liquid'), 'utf8')
+const dlBlock = fs.readFileSync(path.join(EXT, '../ifc-viewer/blocks/ifc-downloads.liquid'), 'utf8')
+const quote = fs.readFileSync(path.join(EXT, '../ifc-viewer/assets/ifcvo-quote.js'), 'utf8')
 
 describe('preview mode across the product page', () => {
   it('removes every download: viewer links, IFC downloads block, GLB/CSV buttons', () => {

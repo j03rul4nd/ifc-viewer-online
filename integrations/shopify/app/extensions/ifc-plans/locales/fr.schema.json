@@ -1,0 +1,100 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC : voir chez vous (RA)"
+    },
+    "compliance": {
+      "name": "IFC : conformité"
+    },
+    "dpp": {
+      "name": "IFC : EPD et passeport produit"
+    },
+    "plan_set": {
+      "name": "IFC : jeu de plans et licence"
+    },
+    "plan_view": {
+      "name": "IFC : vue en plan"
+    },
+    "sun_lot": {
+      "name": "IFC : soleil et terrain"
+    }
+  },
+  "settings": {
+    "accent_colour": "Couleur d'accent",
+    "allow_element_properties": "Autoriser les propriétés des éléments",
+    "always_in_metres_whatever_the_lot_units": "Toujours en mètres, quelles que soient les unités du terrain.",
+    "always_in_metres_whatever_the_lot_units_2": "Toujours en mètres, quelles que soient les unités du terrain. L'acheteur peut le changer.",
+    "brand": "Marque",
+    "corner_radius": "Rayon des coins",
+    "december_solstice": "Solstice de décembre",
+    "decimal_degrees_e_g_3_7038": "Degrés décimaux, ex. -3.7038.",
+    "decimal_degrees_e_g_40_4168_empty_uses_t": "Degrés décimaux, ex. 40.4168. Vide utilise la position de la maquette ou celle de l'acheteur.",
+    "default_date": "Date par défaut",
+    "default_files_included": "Fichiers inclus par défaut",
+    "default_latitude": "Latitude par défaut",
+    "default_license": "Licence par défaut",
+    "default_longitude": "Longitude par défaut",
+    "default_terms": "Conditions par défaut",
+    "empty_uses_the_product_metafield_ids_url": "Vide utilise le metafield produit \"ids_url\" du namespace ci-dessous.",
+    "empty_uses_the_shop_name": "Vide utilise le nom de la boutique.",
+    "empty_uses_the_theme_s_button_colour": "Vide utilise la couleur des boutons du thème.",
+    "empty_uses_the_translated_default": "Vide utilise le texte traduit par défaut.",
+    "example_lot_m_depth": "Terrain d'exemple (m) : profondeur",
+    "example_lot_m_width": "Terrain d'exemple (m) : largeur",
+    "feet": "Pieds",
+    "fill_gaps_with_values_found_in_the_3d_mo": "Compléter avec les valeurs trouvées dans la maquette 3D",
+    "floor_plans_per_storey_of_the_model_in_t": "Plans de chaque niveau de la maquette du bloc \"Product IFC model\". Un onglet par niveau ; pièces et surfaces si la maquette contient des espaces.",
+    "for_plan_sellers_adds_a_watermark_opens": "Pour les vendeurs de plans. Ajoute un filigrane, ouvre la visionneuse sans barre d'outils, mesures ni exports, et masque sur cette page tous les téléchargements de la maquette (liens de la visionneuse, bloc de téléchargements IFC, boutons GLB/CSV) et le lien vers la visionneuse complète. Limite honnête : cela freine la copie occasionnelle, pas une personne déterminée. L'URL du fichier reste accessible dans la page et une maquette affichée dans un navigateur est envoyée à ce navigateur, elle peut donc être extraite. Pour des plans qui ne doivent pas fuiter, téléversez une maquette d'aperçu simplifiée et livrez le jeu complet après l'achat.",
+    "front_setback_m": "Recul avant (m)",
+    "heading": "Titre",
+    "ids_file_link_https": "Lien vers le fichier IDS (https)",
+    "include_the_site_and_terrain_in_made_mod": "Inclure le site et le terrain dans les modèles créés",
+    "june_solstice": "Solstice de juin",
+    "labels": "Textes",
+    "largest_made_model_on_phones": "Plus grand modèle créé sur téléphone",
+    "license_comparison_table": "Tableau comparatif des licences",
+    "list_rooms_and_areas": "Lister les pièces et les surfaces",
+    "list_the_nbs_clauses_that_need_a_manual": "Lister les clauses NBS à vérifier manuellement",
+    "list_what_did_not_pass": "Lister ce qui n'est pas conforme",
+    "lot_fit": "Implantation sur le terrain",
+    "lot_units": "Unités du terrain",
+    "made_on_the_visitor_s_iphone_or_ipad_fro": "Créé sur l'iPhone ou l'iPad du visiteur à partir du bloc \"Product IFC model\". Android a besoin d'un fichier hébergé.",
+    "make_the_ar_model_from_the_ifc_when_ther": "Créer le modèle RA à partir de l'IFC en l'absence de fichier",
+    "march_equinox": "Équinoxe de mars",
+    "metafield_namespace": "Namespace du metafield",
+    "metres": "Mètres",
+    "off_visitors_cannot_open_the_properties": "Désactivé : les visiteurs ne peuvent pas ouvrir les propriétés d'un élément.",
+    "one_card_per_variant_license_variant_met": "Une carte par variante (licence). Metafields de variante : license_type, license_terms, plan_set (JSON ou liste), ifc_model.",
+    "one_per_line_name_format_sheets_size_use": "Un par ligne : Nom|FORMAT|planches|taille. Utilisé quand une variante n'a pas de plan_set.",
+    "preview_mode": "Mode aperçu",
+    "rear_setback_m": "Recul arrière (m)",
+    "september_equinox": "Équinoxe de septembre",
+    "show_a_frame_around_the_block": "Afficher un cadre autour du bloc",
+    "show_a_watermark": "Afficher un filigrane",
+    "show_the_3d_model_of_each_license": "Afficher la maquette 3D de chaque licence",
+    "show_the_epd_carbon_panel": "Afficher le panneau EPD / carbone",
+    "show_the_health_score_badge": "Afficher le badge du Health Score",
+    "show_the_ids_badge": "Afficher le badge IDS",
+    "show_the_nbs_bim_object_standard_badge": "Afficher le badge NBS BIM Object Standard",
+    "show_the_product_passport_readiness_chec": "Afficher la liste de préparation du passeport produit",
+    "side_setback_each_side_m": "Recul latéral, chaque côté (m)",
+    "start_with": "Commencer par",
+    "sun_study": "Étude d'ensoleillement",
+    "the_3d_model": "La maquette 3D",
+    "the_first_floor_plan": "Le premier plan d'étage",
+    "time_limit_per_check": "Durée maximale par contrôle",
+    "use_the_product_s_3d_model_media": "Utiliser le modèle 3D des médias du produit",
+    "used_when_a_variant_has_no_license_terms": "Utilisé quand une variante n'a pas de license_terms.",
+    "used_when_a_variant_has_no_license_type": "Utilisé quand une variante n'a pas de license_type.",
+    "watermark_opacity": "Opacité du filigrane",
+    "watermark_text": "Texte du filigrane",
+    "ar_usdz_iphone_ipad_and_ar_glb_android_i": "ar_usdz (iPhone/iPad) et ar_glb (Android) dans ce namespace : un fichier ou un lien https.",
+    "epd_url_epd_number_gwp_a1a3_declared_uni": "epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… dans ce namespace s'affichent en HTML et l'emportent sur la maquette.",
+    "key_value_per_line_button_making_error_t": "clé=valeur par ligne : button, making, error, too_large, scan, no_ar, hosted, no_viewer.",
+    "key_value_per_line_title_epd_gwp_a1a3_gw": "clé=valeur par ligne : title, epd, gwp_a1a3, gwp, energy, water, declared_unit, epd_number, epd_link, from_model, from_pset, score, missing, ready, not_ready, loading, error, varies.",
+    "key_value_per_line_title_nbs_nbsnone_ids": "clé=valeur par ligne : title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled.",
+    "key_value_per_line_title_sun_lat_lon_loc": "clé=valeur par ligne : title, sun, lat, lon, locate, date, time, lot, lotWidth, lotDepth, front, side, rear, orientation, fits, noFit, waiting.",
+    "triangle_limit_for_made_models": "Limite de triangles des modèles créés",
+    "the_smallest_parts_are_left_out_above_it": "Au-delà, les plus petites pièces sont omises."
+  }
+}

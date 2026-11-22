@@ -6,7 +6,7 @@
     "config:link": "shopify app config link",
     "dev": "npm run build:blocks && shopify app dev",
     "deploy": "npm run build:blocks && shopify app deploy",
-    "check": "npm run build:blocks && shopify theme check --path extensions/ifc-viewer"
+    "check": "npm run build:blocks && shopify theme check --path extensions/ifc-viewer && shopify theme check --path extensions/ifc-data && shopify theme check --path extensions/ifc-plans"
   },
   "devDependencies": {
     "@shopify/cli": "^5.0.0"

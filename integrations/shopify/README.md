@@ -22,14 +22,26 @@ Two ways to put IFC Viewer Online on a Shopify store.
 
 ## 2. Theme app extension (for the Shopify App Store)
 
-`app/` is a theme-only Shopify CLI app (no backend, no scopes). Its extension
-`app/extensions/ifc-viewer/` holds the same two blocks as app blocks, built from the sections:
+`app/` is a theme-only Shopify CLI app (no backend, no scopes) with three theme app
+extensions, because Shopify allows at most 100 KB of Liquid per extension and 15 KB
+per locale file:
+
+- `app/extensions/ifc-viewer/`: product viewer, element details, downloads, variant views,
+  explorer, views, health score, and the two blocks built from the sections above;
+- `app/extensions/ifc-data/`: specs, rooms, classification, takeoff, compatibility;
+- `app/extensions/ifc-plans/`: plan set, plan view, AR, compliance, sun and lot, product passport.
+
+The full translations live in `locales/`; never edit an extension's `locales/` by hand.
+The generator builds the section blocks, copies the shared assets (`ifcvo.js`, `ifcvo.css`,
+`ifcvo-variant.js`, `ifcvo-events.js`, `ifcvo-diagnostics.js`) and shared snippets from
+`ifc-viewer` into the other two, and cuts each extension's locales to the keys its Liquid uses:
 
 ```bash
 node integrations/shopify/build-extension.mjs
 ```
 
-`scripts/shopify-integration.test.ts` checks the blocks are up to date.
+`scripts/shopify-integration.test.ts` checks the blocks are up to date; `scripts/shopify-extensions.test.ts`
+checks the size limits, the locale keys and that the shared files match.
 
 ### Product block (app only)
 
