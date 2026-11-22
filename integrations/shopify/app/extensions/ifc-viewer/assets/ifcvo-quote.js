@@ -9,7 +9,46 @@
 const MAX_ITEMS = 50
 const NOT_ELEMENTS = /^IFC(PROPERTY|QUANTITY|ELEMENTQUANTITY|MATERIAL|REL|OWNERHISTORY|PERSON|ORGANIZATION|APPLICATION|PROJECT$|OPENINGELEMENT|COMPLEXPROPERTY|.*TYPE$|.*STYLE$|.*PROFILE|.*CONTEXT|.*REPRESENTATION|.*UNIT)/i
 
+/** English defaults. The blocks pass the theme-locale texts in data-labels; shop ifcvo.labels (`quote.*`, `downloads.*`) and block settings override. */
+export const QUOTE_LABELS = {
+  title: 'Your selection', pick: 'Add the selected element', list: 'Selected elements', cart: 'Add to cart',
+  contact: 'Request a quote', empty: 'No elements yet. Select one in the 3D view.', qty: 'Quantity', remove: 'Remove',
+  full: 'Up to {n} elements.', no_form: 'There is no contact form on this page.',
+  filled: 'The contact form below has the list. Add your details and send it.', added: 'Added to the cart: {n}',
+  error: 'Could not add to the cart.', intro: 'Please send me a quote for these elements:', element: 'Element',
+  product: 'Product', variant: 'Variant', page: 'Page',
+}
+export const DOWNLOAD_LABELS = {
+  making: 'Preparing the file in your browser…', made: 'Done.', makeError: 'Could not prepare the file.',
+  noViewer: 'The 3D viewer is not available on this device.', noGlb: 'GLB export needs a newer viewer version.',
+}
+
 // ── Pure helpers ─────────────────────────────────────────────────────────────
+
+function readJson(text) {
+  if (!text) return null
+  try { return JSON.parse(text) } catch (e) { return null }
+}
+
+/** Shop ifcvo.labels for a locale (`{ "es": {...} }`): English, then the language, then the exact locale. */
+export function shopLabelsFor(all, locale) {
+  if (!all || typeof all !== 'object') return {}
+  const lang = String(locale || '').toLowerCase()
+  return { ...(all.en || {}), ...(all[lang.split('-')[0]] || {}), ...(all[lang] || {}) }
+}
+
+/**
+ * Defaults ← theme locale (data-labels) ← shop ifcvo.labels (`<prefix>.<key>`) ← block settings.
+ * Only known keys; empty values and "translation missing" are skipped.
+ */
+export function resolveLabels(defaults, { locale = null, shop = null, prefix = '', settings = null } = {}) {
+  const out = { ...defaults }
+  const put = (k, v) => { if (k in defaults && typeof v === 'string' && v.trim() && !/^translation missing/i.test(v)) out[k] = v }
+  for (const [k, v] of Object.entries(locale || {})) put(k, v)
+  for (const [k, v] of Object.entries(shop || {})) if (k.startsWith(prefix + '.')) put(k.slice(prefix.length + 1), v)
+  for (const [k, v] of Object.entries(settings || {})) put(k, v)
+  return out
+}
 
 /** A quantity from user input: whole number, 1 to 9999. */
 export function clampQty(v) {
@@ -27,7 +66,7 @@ export function addItem(items, el) {
 }
 
 /** The /cart/add.js payload: one line per element, on the current variant. */
-export function cartItems(variantId, items) {
+export function cartItems(variantId, items, element = QUOTE_LABELS.element) {
   return {
     items: items.map((i) => ({
       id: Number(variantId),
@@ -35,7 +74,7 @@ export function cartItems(variantId, items) {
       properties: {
         // Leading underscore: themes hide it from the buyer, the order keeps it.
         _ifc_guid: i.guid || `#${i.expressId}`,
-        Element: (i.name || i.ifcClass || 'Element').slice(0, 250),
+        Element: (i.name || i.ifcClass || element).slice(0, 250),
         'IFC class': i.ifcClass || '',
       },
     })),
@@ -43,14 +82,15 @@ export function cartItems(variantId, items) {
 }
 
 /** The contact form body: product, variant, then one line per element. */
-export function quoteBody({ product = '', variant = '', url = '', intro = '' }, items) {
+export function quoteBody({ product = '', variant = '', url = '', intro = '' }, items, labels = QUOTE_LABELS) {
+  const L = { ...QUOTE_LABELS, ...labels }
   const lines = []
   if (intro) lines.push(intro, '')
-  lines.push(`Product: ${product}`)
-  if (variant) lines.push(`Variant: ${variant}`)
-  if (url) lines.push(`Page: ${url}`)
+  lines.push(`${L.product}: ${product}`)
+  if (variant) lines.push(`${L.variant}: ${variant}`)
+  if (url) lines.push(`${L.page}: ${url}`)
   lines.push('')
-  for (const i of items) lines.push(`- ${clampQty(i.qty)} x ${i.name || i.ifcClass || 'Element'} (${i.ifcClass || 'IFC'}, GlobalId ${i.guid || '#' + i.expressId})`)
+  for (const i of items) lines.push(`- ${clampQty(i.qty)} x ${i.name || i.ifcClass || L.element} (${i.ifcClass || 'IFC'}, GlobalId ${i.guid || '#' + i.expressId})`)
   return lines.join('\n')
 }
 
@@ -85,6 +125,25 @@ function el(tag, attrs = {}, ...children) {
 }
 
 const viewerRoot = () => document.querySelector('[data-ifcvo-viewer]')
+
+function shopLabels() {
+  const r = viewerRoot()
+  return r ? shopLabelsFor(readJson(r.dataset.ifcvoLabels), r.dataset.locale) : {}
+}
+
+/** The quote list texts for one block root. */
+export function quoteLabels(root) {
+  const d = root.dataset
+  return resolveLabels(QUOTE_LABELS, {
+    locale: readJson(d.labels), shop: shopLabels(), prefix: 'quote',
+    settings: { pick: d.pickLabel, cart: d.cartLabel, contact: d.contactLabel, empty: d.empty, intro: d.intro },
+  })
+}
+
+/** The downloads status texts for one downloads box. */
+export function downloadLabels(box) {
+  return resolveLabels(DOWNLOAD_LABELS, { locale: readJson(box.dataset.labels), shop: shopLabels(), prefix: 'downloads' })
+}
 
 /** Tells ifcvo-events.js (bound to the viewer root) what happened here. */
 function signal(type, detail) {
@@ -127,29 +186,30 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
   root.dataset.ifcvoQuoteReady = '1'
   const d = root.dataset
   const mode = d.mode === 'contact' ? 'contact' : 'cart'
+  const L = quoteLabels(root)
   let items = []
   let picked = null
 
-  const pick = el('button', { type: 'button', class: 'ifcvo-btn ifcvo-quote-pick', disabled: '' }, d.pickLabel || 'Add the selected element')
-  const list = el('ul', { class: 'ifcvo-rows ifcvo-quote-list', 'aria-label': d.listLabel || 'Selected elements' })
+  const pick = el('button', { type: 'button', class: 'ifcvo-btn ifcvo-quote-pick', disabled: '' }, L.pick)
+  const list = el('ul', { class: 'ifcvo-rows ifcvo-quote-list', 'aria-label': L.list })
   const action = el('button', { type: 'button', class: 'ifcvo-btn ifcvo-quote-go', 'data-ifcvo-quote': '', disabled: '' },
-    mode === 'cart' ? d.cartLabel || 'Add to cart' : d.contactLabel || 'Request a quote')
+    mode === 'cart' ? L.cart : L.contact)
   const status = el('p', { class: 'ifcvo-muted ifcvo-quote-status', role: 'status', 'aria-live': 'polite' })
   const say = (text, error = false) => { status.textContent = text || ''; status.classList.toggle('ifcvo-error', !!error) }
 
   const render = () => {
     list.replaceChildren()
-    if (!items.length) list.append(el('li', { class: 'ifcvo-muted' }, d.empty || 'No elements yet. Select one in the 3D view.'))
+    if (!items.length) list.append(el('li', { class: 'ifcvo-muted' }, L.empty))
     items.forEach((it, idx) => {
-      const label = it.name || it.ifcClass || 'Element'
-      const qty = el('input', { type: 'number', min: '1', max: '9999', step: '1', value: String(it.qty), class: 'ifcvo-qty', 'aria-label': `${d.qtyLabel || 'Quantity'}: ${label}` })
+      const label = it.name || it.ifcClass || L.element
+      const qty = el('input', { type: 'number', min: '1', max: '9999', step: '1', value: String(it.qty), class: 'ifcvo-qty', 'aria-label': `${L.qty}: ${label}` })
       qty.addEventListener('change', () => { items = items.map((x, j) => (j === idx ? { ...x, qty: clampQty(qty.value) } : x)); qty.value = String(items[idx].qty) })
       list.append(el('li', { class: 'ifcvo-quote-row' },
         el('span', { class: 'ifcvo-name' }, label),
         el('span', { class: 'ifcvo-muted' }, ` ${it.ifcClass}${it.guid ? ' · ' + it.guid : ''} `),
         qty,
-        el('button', { type: 'button', class: 'ifcvo-chip', 'aria-label': `${d.removeLabel || 'Remove'}: ${label}`,
-          onclick: () => { items = items.filter((_, j) => j !== idx); render(); pick.focus() } }, d.removeLabel || 'Remove')))
+        el('button', { type: 'button', class: 'ifcvo-chip', 'aria-label': `${L.remove}: ${label}`,
+          onclick: () => { items = items.filter((_, j) => j !== idx); render(); pick.focus() } }, L.remove)))
     })
     if (items.length) action.removeAttribute('disabled')
     else action.setAttribute('disabled', '')
@@ -159,7 +219,7 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
     if (!picked) return
     const before = items.length
     items = addItem(items, picked)
-    if (items.length === before && before >= MAX_ITEMS) say(d.full || `Up to ${MAX_ITEMS} elements.`, true)
+    if (items.length === before && before >= MAX_ITEMS) say(L.full.replace('{n}', String(MAX_ITEMS)), true)
     else say('')
     render()
   })
@@ -170,21 +230,21 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
     if (mode === 'contact') {
       const form = document.querySelector(d.form || 'form[action*="/contact"]')
       const body = form && form.querySelector('[name="contact[body]"]')
-      if (!body) { say(d.noForm || 'There is no contact form on this page.', true); return }
-      body.value = quoteBody({ product: d.product, variant: variantTitle(d),  url: location.href.split('#')[0], intro: d.intro }, items)
+      if (!body) { say(L.no_form, true); return }
+      body.value = quoteBody({ product: d.product, variant: variantTitle(d),  url: location.href.split('#')[0], intro: L.intro }, items, L)
       body.dispatchEvent(new Event('input', { bubbles: true }))
       try { body.scrollIntoView({ block: 'center' }) } catch (e) { /* old browser */ }
       body.focus()
-      say(d.filled || 'The contact form below has the list. Add your details and send it.')
+      say(L.filled)
       return
     }
     const variant = currentVariant()
-    if (!variant) { say(d.error || 'Could not add to the cart.', true); return }
+    if (!variant) { say(L.error, true); return }
     action.setAttribute('disabled', '')
     try {
       const res = await fetchImpl(cartUrl(), {
         method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(cartItems(variant, items)),
+        body: JSON.stringify(cartItems(variant, items, L.element)),
       })
       if (!res.ok) {
         let msg = ''
@@ -194,10 +254,10 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
       const n = items.length
       items = []
       render()
-      say((d.added || 'Added to the cart: {n}').replace('{n}', String(n)))
+      say(L.added.replace('{n}', String(n)))
       document.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }))
     } catch (e) {
-      say((d.error || 'Could not add to the cart.') + (e && e.message ? ' ' + e.message : ''), true)
+      say(L.error + (e && e.message ? ' ' + e.message : ''), true)
       render()
     }
   })
@@ -212,7 +272,7 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
     if (e.expressId == null) { picked = null; pick.setAttribute('disabled', ''); return }
     picked = { guid: e.globalId || '', expressId: e.expressId, name: e.name || '', ifcClass: e.ifcType || '' }
     pick.removeAttribute('disabled')
-    pick.textContent = `${d.pickLabel || 'Add the selected element'}: ${picked.name || picked.ifcClass || '#' + picked.expressId}`
+    pick.textContent = `${L.pick}: ${picked.name || picked.ifcClass || '#' + picked.expressId}`
   })
 }
 
@@ -220,6 +280,7 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
 export function mountDownloads(box, api) {
   if (!box || box.dataset.ifcvoMakeReady) return
   box.dataset.ifcvoMakeReady = '1'
+  const L = downloadLabels(box)
   let loaded = !!api.viewer
   let waiters = []
   api.subscribe(box, (type) => { if (type === 'model-loaded') { loaded = true; waiters.forEach((w) => w()); waiters = [] } })
@@ -237,14 +298,14 @@ export function mountDownloads(box, api) {
       const kind = btn.dataset.ifcvoMake
       btn.setAttribute('disabled', '')
       btn.setAttribute('aria-busy', 'true')
-      say(box.dataset.making || 'Preparing the file in your browser…')
+      say(L.making)
       try {
         const v = api.viewer || await api.open()
-        if (!v) throw new Error(box.dataset.noViewer || 'The 3D viewer is not available on this device.')
+        if (!v) throw new Error(L.noViewer)
         await whenLoaded()
         const base = (viewerRoot()?.dataset.model || 'model').split(/[?#]/)[0].split('/').pop().replace(/\.[^.]+$/, '') || 'model'
         if (kind === 'glb') {
-          if (typeof v.exportModel !== 'function') throw new Error(box.dataset.noGlb || 'GLB export needs a newer viewer version.')
+          if (typeof v.exportModel !== 'function') throw new Error(L.noGlb)
           const f = await v.exportModel({ format: 'glb' })
           saveFile(new Blob([f.bytes], { type: f.mimeType || 'model/gltf-binary' }), f.fileName || base + '.glb')
           signal('ifcvo:download', { file: f.fileName || base + '.glb' })
@@ -253,9 +314,9 @@ export function mountDownloads(box, api) {
           saveFile(new Blob([elementsCsv(list)], { type: 'text/csv;charset=utf-8' }), base + '-elements.csv')
           signal('ifcvo:download', { file: base + '-elements.csv' })
         }
-        say(box.dataset.made || 'Done.')
+        say(L.made)
       } catch (e) {
-        say((box.dataset.makeError || 'Could not prepare the file.') + (e && e.message && e.message !== 'timeout' ? ' ' + e.message : ''), true)
+        say(L.makeError + (e && e.message && e.message !== 'timeout' ? ' ' + e.message : ''), true)
       } finally {
         btn.removeAttribute('disabled')
         btn.removeAttribute('aria-busy')

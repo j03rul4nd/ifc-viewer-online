@@ -59,11 +59,11 @@
     { "type": "text", "id": "namespace", "label": "Metafield namespace", "default": "custom" },
     { "type": "text", "id": "key", "label": "Metafield key", "default": "ifc_model" },
     { "type": "checkbox", "id": "ifc", "label": "Original IFC file", "default": true },
-    { "type": "text", "id": "ifc_label", "label": "IFC link text", "default": "Download BIM model (IFC)" },
+    { "type": "text", "id": "ifc_label", "label": "IFC link text", "placeholder": "Download BIM model (IFC)", "info": "Blank: the store language text." },
     { "type": "checkbox", "id": "glb", "label": "GLB made in the browser", "default": false, "info": "Opens the 3D viewer to build the file on the visitor's device." },
-    { "type": "text", "id": "glb_label", "label": "GLB button text", "default": "3D model (GLB)" },
+    { "type": "text", "id": "glb_label", "label": "GLB button text", "placeholder": "3D model (GLB)", "info": "Blank: the store language text." },
     { "type": "checkbox", "id": "csv", "label": "CSV element list made in the browser", "default": false },
-    { "type": "text", "id": "csv_label", "label": "CSV button text", "default": "Element list (CSV)" },
+    { "type": "text", "id": "csv_label", "label": "CSV button text", "placeholder": "Element list (CSV)", "info": "Blank: the store language text." },
     { "type": "text", "id": "files_key", "label": "More files metafield key", "default": "bim_files" },
     { "type": "header", "content": "Who sees them" },
     { "type": "select", "id": "gate", "label": "Show the downloads to", "default": "none", "info": "This hides the links, it does not protect the files: anyone with a file's link can still download it.", "options": [
@@ -72,7 +72,7 @@
       { "value": "tag", "label": "Customers with a tag" }
     ] },
     { "type": "text", "id": "tag", "label": "Customer tag", "default": "trade", "visible_if": "{{ block.settings.gate == 'tag' }}" },
-    { "type": "text", "id": "login_label", "label": "Text for guests", "default": "Log in to see the downloads" }
+    { "type": "text", "id": "login_label", "label": "Text for guests", "placeholder": "Log in to see the downloads", "info": "Blank: the store language text." }
   ]
 }
 {% endschema %}
