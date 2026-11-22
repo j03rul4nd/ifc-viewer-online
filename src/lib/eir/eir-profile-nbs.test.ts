@@ -28,7 +28,7 @@ describe('builtin-nbs-bos', () => {
     expect(BUILTIN_EIR_PROFILES.find((p) => p.id === 'builtin-nbs-bos')).toBe(NBS_BOS)
     expect(() => parseEirProfile(JSON.stringify(NBS_BOS))).not.toThrow()
     expect(compileEirToIds(NBS_BOS).specifications).toHaveLength(NBS_BOS.rules.length)
-    expect(NBS_BOS.rules).toHaveLength(NBS_BOS_CLASSES.length * 6)
+    expect(NBS_BOS.rules).toHaveLength(NBS_BOS_CLASSES.reduce((n, c) => n + (c.pset ? 6 : 4), 0))
     expect(NBS_BOS.rules.every((r) => r.optional)).toBe(true)
     expect(NBS_BOS_MANUAL.some((c) => /IfcTypeObject/.test(c))).toBe(false) // counted by the Shopify block
     expect(NBS_BOS_MANUAL.some((c) => /[Gg]eometry/.test(c))).toBe(true)
@@ -89,5 +89,26 @@ describe('builtin-nbs-bos on IDS test-case IFC fixtures', () => {
     expect(status(r, 'Wall: carries a classification code')).toBe('fail')
     expect(status(r, 'Door: carries a classification code')).toBe('na')
     expect(r.passedSpecs).toBe(1)
+  })
+
+  // IFC2x3: furniture is IfcFurnishingElement, sanitary/light terminals IfcFlowTerminal.
+  const IFC2X3 = `ISO-10303-21;
+HEADER;FILE_DESCRIPTION((''),'2;1');FILE_NAME('','',(''),(''),'','','');FILE_SCHEMA(('IFC2X3'));ENDSEC;
+DATA;
+#1=IFCFURNISHINGELEMENT('3Agm079vPIYBL4JExVrhD5',$,'Chair',$,$,$,$,$);
+#2=IFCFLOWTERMINAL('0BbkGoC6vPvRW13UT7D8zH',$,'Basin',$,$,$,$,$);
+#3=IFCCLASSIFICATION($,$,$,'Uniclass2015');
+#4=IFCCLASSIFICATIONREFERENCE($,'Pr_40_30_29',$,#3);
+#5=IFCRELASSOCIATESCLASSIFICATION('05rScmOVzMoQXOfbYdtLYj',$,$,$,(#1,#2),#4);
+ENDSEC;
+END-ISO-10303-21;
+`
+  it('IFC2x3 furniture and flow terminals are checked, not n/a', async () => {
+    const r = await run(IFC2X3)
+    expect(status(r, 'Furniture (IFC2x3): carries a classification code')).toBe('pass')
+    expect(status(r, 'Furniture (IFC2x3): classified with Uniclass 2015')).toBe('pass')
+    expect(status(r, 'Furniture (IFC2x3): has the IFC common property set Pset_FurnitureTypeCommon')).toBe('fail')
+    expect(status(r, 'Sanitary terminal or light fixture (IFC2x3): carries a classification code')).toBe('pass')
+    expect(status(r, 'Sanitary terminal or light fixture (IFC2x3): names the manufacturer (Pset_ManufacturerTypeInformation.Manufacturer)')).toBe('fail')
   })
 })

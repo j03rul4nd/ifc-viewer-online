@@ -23,7 +23,11 @@
 import type { EirProfile, EirRule } from './eir-types'
 
 /** Product classes a building-product object usually is, with their IFC common property set. */
-export const NBS_BOS_CLASSES: ReadonlyArray<{ entity: string; pset: string; label: string }> = [
+// IFC2x3 has no IfcFurniture, IfcSanitaryTerminal or IfcLightFixture: furniture
+// is IfcFurnishingElement, sanitary terminals and light fixtures are
+// IfcFlowTerminal (told apart only by their type object, so no common pset is
+// asked of it). Entity facets match the exact class, hence the extra rows.
+export const NBS_BOS_CLASSES: ReadonlyArray<{ entity: string; pset: string | null; label: string }> = [
   { entity: 'IfcDoor', pset: 'Pset_DoorCommon', label: 'Door' },
   { entity: 'IfcWindow', pset: 'Pset_WindowCommon', label: 'Window' },
   { entity: 'IfcWall', pset: 'Pset_WallCommon', label: 'Wall' },
@@ -36,6 +40,8 @@ export const NBS_BOS_CLASSES: ReadonlyArray<{ entity: string; pset: string; labe
   { entity: 'IfcSanitaryTerminal', pset: 'Pset_SanitaryTerminalTypeCommon', label: 'Sanitary terminal' },
   { entity: 'IfcLightFixture', pset: 'Pset_LightFixtureTypeCommon', label: 'Light fixture' },
   { entity: 'IfcBuildingElementProxy', pset: 'Pset_BuildingElementProxyCommon', label: 'Generic object (proxy)' },
+  { entity: 'IfcFurnishingElement', pset: 'Pset_FurnitureTypeCommon', label: 'Furniture (IFC2x3)' },
+  { entity: 'IfcFlowTerminal', pset: null, label: 'Sanitary terminal or light fixture (IFC2x3)' },
 ]
 
 /** Clauses of the standard this profile does not decide, in plain language. */
@@ -51,13 +57,16 @@ export const NBS_BOS_MANUAL: readonly string[] = [
 /** "Uniclass 2015", "Uniclass2015", "Uniclass", "UniClass 2015"… any case. */
 export const UNICLASS_SYSTEM = '[Uu][Nn][Ii][Cc][Ll][Aa][Ss][Ss] ?(2015)?'
 
-function classRules(c: { entity: string; pset: string; label: string }, i: number): EirRule[] {
+function classRules(c: { entity: string; pset: string | null; label: string }, i: number): EirRule[] {
   const base = { entity: c.entity, optional: true } as const
-  return [
+  const psetRules: EirRule[] = c.pset ? [
     { ...base, id: `nbs-${i}-pset`, type: 'requiredPropertySet', pset: c.pset, severity: 'error',
       message: `${c.label}: has the IFC common property set ${c.pset}` },
     { ...base, id: `nbs-${i}-ref`, type: 'propertyNotEmpty', pset: c.pset, property: 'Reference', severity: 'error',
       message: `${c.label}: ${c.pset}.Reference is filled in (the type reference)` },
+  ] : []
+  return [
+    ...psetRules,
     { ...base, id: `nbs-${i}-cls`, type: 'classification', severity: 'error',
       message: `${c.label}: carries a classification code` },
     { ...base, id: `nbs-${i}-uni`, type: 'classification', system: 'Uniclass 2015', systemPattern: UNICLASS_SYSTEM, severity: 'warning',

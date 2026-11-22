@@ -29,6 +29,7 @@ export const LABELS = {
   note: 'Checked in your browser on {date}. A self-check of the file, not a certification.',
   more: '…and {count} more',
   typed: 'Type object (IfcTypeObject): {typed}/{total} product elements (checked outside IDS)',
+  sampled: 'Checked {total} of {all} elements.',
   untyped: '{count} product elements have no type object (IfcTypeObject)',
 }
 
@@ -45,9 +46,10 @@ const MAX_LISTED = 50
 
 /** Product classes of the NBS profile (mirrors NBS_BOS_CLASSES). */
 export const NBS_CLASSES = ['IfcDoor', 'IfcWindow', 'IfcWall', 'IfcSlab', 'IfcCovering', 'IfcRoof', 'IfcStair', 'IfcRailing',
-  'IfcFurniture', 'IfcSanitaryTerminal', 'IfcLightFixture', 'IfcBuildingElementProxy']
+  'IfcFurniture', 'IfcSanitaryTerminal', 'IfcLightFixture', 'IfcBuildingElementProxy', 'IfcFurnishingElement', 'IfcFlowTerminal']
 /** Elements read for the type check; an object file has a handful. */
 export const TYPE_SAMPLE = 200
+const FIND_LIMIT = 5000
 
 /**
  * The IfcTypeObject clause, which IDS 1.0 cannot express: how many product
@@ -56,14 +58,16 @@ export const TYPE_SAMPLE = 200
  */
 export async function typeCheck(viewer) {
   if (typeof viewer.findElements !== 'function' || typeof viewer.getElement !== 'function') return null
-  const hits = (await viewer.findElements({ ifcClass: NBS_CLASSES, limit: TYPE_SAMPLE })) || []
-  if (!hits.length) return null
+  const found = (await viewer.findElements({ ifcClass: NBS_CLASSES, limit: FIND_LIMIT })) || []
+  if (!found.length) return null
+  const hits = found.slice(0, TYPE_SAMPLE)
   let typed = 0
   for (const h of hits) {
     const d = await viewer.getElement(h.expressId, h.modelId)
     if (d && (d.typeId != null || d.typeGlobalId || d.typeClass)) typed++
   }
-  return { typed, total: hits.length }
+  // `all` is a lower bound when findElements hit its own limit (shown as N+).
+  return { typed, total: hits.length, all: found.length >= FIND_LIMIT ? `${FIND_LIMIT}+` : found.length, capped: found.length > hits.length }
 }
 
 /** Adds the type check to an NBS summary as one more check. */
@@ -187,8 +191,15 @@ export async function runChecks(viewer, cfg) {
       return withTypeCheck(s, tc, cfg.labels || LABELS)
     })
   }
-  if (cfg.ids && cfg.idsUrl && typeof viewer.checkIds === 'function') {
-    await step('ids', async () => summarize(await viewer.checkIds(await fetchIds(cfg.idsUrl, cfg.timeoutMs))))
+  // One IDS run per distinct URL; each block reads its own (results.idsByUrl).
+  const urls = [...new Set(cfg.idsUrls || (cfg.ids && cfg.idsUrl ? [cfg.idsUrl] : []))]
+  if (urls.length && typeof viewer.checkIds === 'function') {
+    out.idsByUrl = {}
+    for (const url of urls) {
+      await step('ids', async () => summarize(await viewer.checkIds(await fetchIds(url, cfg.timeoutMs))))
+      out.idsByUrl[url] = out.ids
+    }
+    if (cfg.idsUrl) out.ids = out.idsByUrl[cfg.idsUrl]
   }
   if (cfg.score && typeof viewer.validate === 'function') {
     await step('score', async () => {
@@ -229,8 +240,9 @@ export function render(root, results, date = new Date()) {
       failures.push(...r.value.failures.map((f) => ({ src: 'nbs', text: f })))
     }
   }
-  if (cfg.ids && cfg.idsUrl && results.ids) {
-    const r = results.ids
+  const idsRes = cfg.idsUrl && (results.idsByUrl ? results.idsByUrl[cfg.idsUrl] : results.ids)
+  if (cfg.ids && cfg.idsUrl && idsRes) {
+    const r = idsRes
     if (!r.ok) badges.push(badge('ids', 'error', 'IDS — ' + L.error))
     else if (!r.value.total) badges.push(badge('ids', 'na', L.idsNone))
     else {
@@ -245,7 +257,7 @@ export function render(root, results, date = new Date()) {
   }
   const nodes = [el('ul', { class: 'ifcvo-badges', role: 'list' }, ...badges)]
   const tc = cfg.nbs && results.nbs && results.nbs.ok && results.nbs.value.typeCheck
-  if (tc) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-typecheck': '' }, fill(L.typed, tc)))
+  if (tc) nodes.push(el('p', { class: 'ifcvo-muted', 'data-ifcvo-typecheck': '' }, fill(L.typed, tc), tc.capped ? ' ' + fill(L.sampled, tc) : null))
   if (cfg.details && (cfg.nbs || cfg.ids)) {
     if (failures.length) {
       const shown = failures.slice(0, MAX_LISTED)
@@ -269,6 +281,8 @@ export function render(root, results, date = new Date()) {
 const mounted = new Set()
 let current = null
 let running = null
+/** Bumped on every model load: a run started for an older model never paints. */
+let generation = 0
 
 function message(root, key) {
   root.querySelector('[data-ifcvo-live]').replaceChildren(el('p', { class: 'ifcvo-muted', role: 'status' }, labelsOf(root)[key]))
@@ -279,20 +293,24 @@ export async function refresh(viewer = current) {
   if (!viewer) return
   const roots = [...mounted].filter((r) => r.isConnected)
   if (!roots.length) return
-  if (running) return running
+  const gen = ++generation
+  // A run still going (e.g. a hung check past its cap) is not awaited for the
+  // new model: the SDK has no cancel for checkIds/checkEir, so its late result
+  // is dropped by the generation check below instead of overwriting newer badges.
   for (const r of roots) message(r, 'running')
   // One run for the page: the union of what the blocks ask for.
   const cfgs = roots.map(config)
   const union = {
     nbs: cfgs.some((c) => c.nbs), score: cfgs.some((c) => c.score), ids: cfgs.some((c) => c.ids && c.idsUrl),
-    idsUrl: (cfgs.find((c) => c.ids && c.idsUrl) || {}).idsUrl || null,
+    idsUrls: cfgs.filter((c) => c.ids && c.idsUrl).map((c) => c.idsUrl),
     timeoutMs: Math.max(...cfgs.map((c) => c.timeoutMs)),
   }
-  running = runChecks(viewer, union)
-    .then((results) => { for (const r of roots) render(r, results) })
-    .catch(() => { for (const r of roots) message(r, 'waiting') })
-    .finally(() => { running = null })
-  return running
+  const run = runChecks(viewer, union)
+    .then((results) => { if (gen === generation) for (const r of roots) render(r, results) })
+    .catch(() => { if (gen === generation) for (const r of roots) message(r, 'waiting') })
+    .finally(() => { if (running === run) running = null })
+  running = run
+  return run
 }
 
 export function attach(viewer) {
@@ -323,7 +341,7 @@ export function destroy(container) {
 }
 
 /** For tests. */
-export function _reset() { mounted.clear(); current = null; running = null }
+export function _reset() { mounted.clear(); current = null; running = null; generation = 0 }
 
 export function onViewer(e) {
   const v = (e.detail && e.detail.viewer) || (window.IFCVO && window.IFCVO.viewer)

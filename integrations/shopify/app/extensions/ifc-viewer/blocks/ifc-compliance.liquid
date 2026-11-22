@@ -28,7 +28,7 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{%- capture comp_labels -%}{"title":{{ 'ifcvo.compliance.title' | t | json }},"nbs":{{ 'ifcvo.compliance.nbs' | t | json }},"nbsNone":{{ 'ifcvo.compliance.nbs_none' | t | json }},"idsPass":{{ 'ifcvo.compliance.ids_pass' | t | json }},"idsFail":{{ 'ifcvo.compliance.ids_fail' | t | json }},"idsNone":{{ 'ifcvo.compliance.ids_none' | t | json }},"score":{{ 'ifcvo.compliance.score' | t | json }},"waiting":{{ 'ifcvo.compliance.waiting' | t | json }},"running":{{ 'ifcvo.compliance.running' | t | json }},"error":{{ 'ifcvo.compliance.error' | t | json }},"details":{{ 'ifcvo.compliance.details' | t | json }},"allPass":{{ 'ifcvo.compliance.all_pass' | t | json }},"manual":{{ 'ifcvo.compliance.manual' | t | json }},"note":{{ 'ifcvo.compliance.note' | t | json }},"more":{{ 'ifcvo.compliance.more' | t | json }},"typed":{{ 'ifcvo.compliance.typed' | t | json }},"untyped":{{ 'ifcvo.compliance.untyped' | t | json }}}{%- endcapture -%}
+{%- capture comp_labels -%}{"title":{{ 'ifcvo.compliance.title' | t | json }},"nbs":{{ 'ifcvo.compliance.nbs' | t | json }},"nbsNone":{{ 'ifcvo.compliance.nbs_none' | t | json }},"idsPass":{{ 'ifcvo.compliance.ids_pass' | t | json }},"idsFail":{{ 'ifcvo.compliance.ids_fail' | t | json }},"idsNone":{{ 'ifcvo.compliance.ids_none' | t | json }},"score":{{ 'ifcvo.compliance.score' | t | json }},"waiting":{{ 'ifcvo.compliance.waiting' | t | json }},"running":{{ 'ifcvo.compliance.running' | t | json }},"error":{{ 'ifcvo.compliance.error' | t | json }},"details":{{ 'ifcvo.compliance.details' | t | json }},"allPass":{{ 'ifcvo.compliance.all_pass' | t | json }},"manual":{{ 'ifcvo.compliance.manual' | t | json }},"note":{{ 'ifcvo.compliance.note' | t | json }},"more":{{ 'ifcvo.compliance.more' | t | json }},"typed":{{ 'ifcvo.compliance.typed' | t | json }},"untyped":{{ 'ifcvo.compliance.untyped' | t | json }},"sampled":{{ 'ifcvo.compliance.sampled' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-compliance-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -71,7 +71,7 @@
     { "type": "checkbox", "id": "show_details", "label": "List what did not pass", "default": true },
     { "type": "checkbox", "id": "show_manual", "label": "List the NBS clauses that need a manual check", "default": false },
     { "type": "range", "id": "timeout", "label": "Time limit per check", "min": 10, "max": 120, "step": 10, "unit": "s", "default": 30 },
-    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped." },
+    { "type": "textarea", "id": "labels", "label": "Labels", "info": "key=value per line: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled." },
     { "type": "header", "content": "Brand" },
     { "type": "color", "id": "accent", "label": "Accent colour", "info": "Empty uses the theme's button colour." },
     { "type": "range", "id": "radius", "label": "Corner radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },

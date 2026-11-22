@@ -104,8 +104,9 @@ describe('ifcvo-compliance.js', () => {
       findElements: vi.fn().mockResolvedValue([{ expressId: 1, modelId: 'm' }, { expressId: 2, modelId: 'm' }]),
       getElement: vi.fn().mockImplementation((id: number) => Promise.resolve(id === 1 ? { typeId: 9 } : { typeId: null })),
     })
-    expect(await typeCheck(v)).toEqual({ typed: 1, total: 2 })
-    expect(v.findElements).toHaveBeenCalledWith({ ifcClass: NBS_CLASSES, limit: 200 })
+    expect(await typeCheck(v)).toEqual({ typed: 1, total: 2, all: 2, capped: false })
+    expect(v.findElements).toHaveBeenCalledWith({ ifcClass: NBS_CLASSES, limit: 5000 })
+    expect(NBS_CLASSES).toContain('IfcFurnishingElement')
     const root = mount({ 'ids-url': '', 'show-score': 'false' })
     const res = await runChecks(v, config(root))
     expect(res.nbs.value).toMatchObject({ total: 4, passed: 2, failed: 2 })
@@ -201,5 +202,48 @@ describe('ifcvo-compliance.js', () => {
     expect(v.checkEir).not.toHaveBeenCalled()
     await refresh(v)
     expect(v.checkEir).toHaveBeenCalledTimes(1)
+  })
+
+  it('type check over the cap says "checked 200 of N"', async () => {
+    const hits = Array.from({ length: 350 }, (_, i) => ({ expressId: i + 1, modelId: 'm' }))
+    const v = viewer({ findElements: vi.fn().mockResolvedValue(hits), getElement: vi.fn().mockResolvedValue({ typeId: 1 }) })
+    const tc = await typeCheck(v)
+    expect(tc).toEqual({ typed: 200, total: 200, all: 350, capped: true })
+    expect(v.getElement).toHaveBeenCalledTimes(200)
+    const root = mount({ 'ids-url': '', 'show-score': 'false' })
+    render(root, { nbs: { ok: true, value: withTypeCheck(summarize(NBS), tc) } })
+    expect(root.querySelector('[data-ifcvo-typecheck]')!.textContent).toContain('Checked 200 of 350 elements.')
+  })
+
+  it('each block shows the result of its own IDS URL', async () => {
+    const v = viewer({
+      checkIds: vi.fn().mockImplementation((xml: string) => Promise.resolve(xml === 'A' ? IDS_OK : { ...IDS_OK, specs: [spec('X', 'fail')] })),
+    })
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((u: string) => Promise.resolve({ ok: true, text: () => Promise.resolve(u.includes('a.ids') ? 'A' : 'B') })))
+    const a = mount({ 'ids-url': 'https://x.example/a.ids', 'show-score': 'false', 'show-nbs': 'false' })
+    const b = mount({ 'ids-url': 'https://x.example/b.ids', 'show-score': 'false', 'show-nbs': 'false' })
+    ;(window as unknown as { IFCVO: unknown }).IFCVO = { gate: () => true }
+    init()
+    await refresh(v)
+    expect(v.checkIds).toHaveBeenCalledTimes(2)
+    expect((a.querySelector('[data-badge="ids"]') as HTMLElement).dataset.state).toBe('pass')
+    expect((b.querySelector('[data-badge="ids"]') as HTMLElement).dataset.state).toBe('fail')
+  })
+
+  it('a late result from an older run never overwrites the newer one', async () => {
+    let release: (r: unknown) => void = () => {}
+    const slow = new Promise((r) => { release = r })
+    const checkEir = vi.fn().mockReturnValueOnce(slow).mockResolvedValue(NBS)
+    const v = viewer({ checkEir })
+    const root = mount({ 'ids-url': '', 'show-score': 'false' })
+    ;(window as unknown as { IFCVO: unknown }).IFCVO = { gate: () => true }
+    init()
+    const first = refresh(v)
+    await new Promise((r) => setTimeout(r, 80))
+    await refresh(v)
+    expect(root.querySelector('[data-badge="nbs"]')!.textContent).toBe('NBS object standard: 2/3 checks')
+    release({ specs: [spec('Old', 'pass')] })
+    await first
+    expect(root.querySelector('[data-badge="nbs"]')!.textContent).toBe('NBS object standard: 2/3 checks')
   })
 })

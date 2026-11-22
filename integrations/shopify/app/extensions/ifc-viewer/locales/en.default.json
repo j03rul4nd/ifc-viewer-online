@@ -174,7 +174,8 @@
       "note": "Checked in your browser on {date}. A self-check of the file, not a certification.",
       "more": "…and {count} more",
       "typed": "Type object (IfcTypeObject): {typed}/{total} product elements (checked outside IDS)",
-      "untyped": "{count} product elements have no type object (IfcTypeObject)"
+      "untyped": "{count} product elements have no type object (IfcTypeObject)",
+      "sampled": "Checked {total} of {all} elements."
     }
   }
 }
