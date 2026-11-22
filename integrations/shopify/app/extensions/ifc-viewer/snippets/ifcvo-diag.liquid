@@ -8,6 +8,7 @@
     ns      – metafield namespace the block reads (optional)
     keys    – comma list of metafield keys the block reads (optional)
     model   – the model URL this block found (optional)
+    scope   – 'variant' to check the selected variant's metafields (default: product)
 {% endcomment %}
 {%- if request.design_mode -%}
   {%- liquid
@@ -20,7 +21,11 @@
       if kk == blank or dg_ns == blank
         continue
       endif
-      if product.metafields[dg_ns][kk] != blank
+      assign dg_val = product.metafields[dg_ns][kk]
+      if scope == 'variant'
+        assign dg_val = product.selected_or_first_available_variant.metafields[dg_ns][kk]
+      endif
+      if dg_val != blank
         assign dg_present = dg_present | append: kk | append: ','
       else
         assign dg_missing = dg_missing | append: kk | append: ','
@@ -35,6 +40,6 @@
       assign dg_product = true
     endif
   -%}
-  <script type="application/json" data-ifcvo-diag>{"feature":{{ feature | json }},"block":{{ block | json }},"ns":{{ dg_ns | json }},"present":{{ dg_present | split: ',' | json }},"missing":{{ dg_missing | split: ',' | json }},"any":{{ dg_any }},"model":{{ model | default: '' | json }},"product":{{ dg_product }}}</script>
+  <script type="application/json" data-ifcvo-diag>{"feature":{{ feature | json }},"block":{{ block | json }},"ns":{{ dg_ns | json }},"present":{{ dg_present | split: ',' | json }},"missing":{{ dg_missing | split: ',' | json }},"any":{{ dg_any }},"model":{{ model | default: '' | json }},"product":{{ dg_product }},"scope":{{ scope | default: 'product' | json }}}</script>
   <script type="module" src="{{ 'ifcvo-diagnostics.js' | asset_url }}"></script>
 {%- endif -%}

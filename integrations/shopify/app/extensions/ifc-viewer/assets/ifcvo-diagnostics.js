@@ -28,7 +28,9 @@ export const DIAG_LABELS = {
   notIfc: 'The file does not start like an IFC (STEP) file.',
   present: 'Found: {keys}',
   missing: 'Missing: {keys}',
-  missingHint: 'Add product metafields in namespace "{ns}". Definitions: integrations/shopify/app/METAFIELDS.md.',
+  missingHint: 'Add {owner} metafields in namespace "{ns}". Definitions: integrations/shopify/app/METAFIELDS.md.',
+  product: 'product',
+  variant: 'variant (selected variant checked)',
   noKeys: 'Needs no metafields; reads the 3D model.',
   specsNone: 'No metafields in namespace "{ns}": the table shows nothing until the 3D model opens.',
   gated: 'Needs the {tier} plan: hidden from visitors on {plan}.',
@@ -130,7 +132,7 @@ export function blockReport(diag, { plan = 'business', tiers = {}, labels = DIAG
   if (present.length) lines.push({ kind: 'ok', text: fill(L.present, { keys: present.map((k) => `${diag.ns}.${k}`).join(', ') }) })
   if (missing.length) {
     lines.push({ kind: 'warn', text: fill(L.missing, { keys: missing.map((k) => `${diag.ns}.${k}`).join(', ') }) })
-    lines.push({ kind: 'hint', text: fill(L.missingHint, { ns: diag.ns }) })
+    lines.push({ kind: 'hint', text: fill(L.missingHint, { ns: diag.ns, owner: diag.scope === 'variant' ? L.variant : L.product }) })
   }
   if (diag.feature === 'specs' && diag.ns && !diag.any) lines.push({ kind: 'hint', text: fill(L.specsNone, { ns: diag.ns }) })
   if (!present.length && !missing.length && diag.feature !== 'specs') lines.push({ kind: 'info', text: L.noKeys })

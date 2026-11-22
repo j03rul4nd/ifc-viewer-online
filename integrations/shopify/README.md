@@ -76,15 +76,13 @@ one-time app developer registration fee. Per the project rule of no paid listing
 this is **on hold until there is revenue**. What is ready:
 
 - App name: **IFC Viewer Online — 3D BIM models**
-- Tagline: Show interactive 3D IFC models and their Health Score on product pages.
-- Description: Give every building product its BIM page. Each product and variant
-  shows its own 3D IFC model from a metafield, with a download link for architects and
-  engineers and the model's Health Score. Add a 3D IFC (BIM) model to any page with a theme block. Visitors orbit,
-  section and inspect the model in the browser; the file is opened by the visitor's
-  browser, not by a server. Federated models, floor plan beside the model, map placement,
-  10 languages. Also includes the shipment tracking globe block.
+- Tagline: Sell the model, not a picture of it.
+- Description, plan table and notes: [`listing/LISTING.md`](listing/LISTING.md).
+- Plans: Free (viewer, downloads, specs, details, explorer, views, Health Score, rooms),
+  Starter $4.99/month with a 14-day trial, Business $19/month. The source of truth is
+  `FEATURE_TIERS` in `build-extension.mjs`.
+- Metafields and shop settings: [`app/METAFIELDS.md`](app/METAFIELDS.md).
 - Category: Store design → Product display / 3D & AR.
-- Pricing: Starter plan with a 14-day trial (proposed, see the planning notes).
 - Privacy policy: https://www.ifcvieweronline.eu/privacy
 - Support: the contact in https://www.ifcvieweronline.eu/terms
 - Images: `listing/` (icon 1200×1200, feature image and two screenshots 1600×900), made by `node integrations/shopify/listing/make-assets.mjs`.
