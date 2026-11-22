@@ -114,6 +114,16 @@
       "showing": "Showing:",
       "preview": "Preview only. The full plan set comes with your purchase."
     },
+    "variantviews": {
+      "heading": "This variant in 3D",
+      "copy": "Copy link to this view",
+      "image": "Save image",
+      "copied": "Link copied. It opens the model at this view.",
+      "manual": "Copy this link:",
+      "saved": "Image saved.",
+      "error": "This view could not be read.",
+      "link": "Link to this view"
+    },
     "takeoff": {
       "title": "Bill of quantities",
       "group": "Item",
