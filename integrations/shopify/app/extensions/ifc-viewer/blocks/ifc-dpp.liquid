@@ -17,12 +17,16 @@
   dop_url, ce_marking, instructions_languages, substances_of_concern, gtin,
   manufacturer_contact. Links are shown only when they start with https://.
   The GTIN falls back to the first variant's barcode.
+  Units: a bare number gets bim.gwp_unit / energy_unit / water_unit, else
+  kg CO₂e / MJ / m³; a value with its own unit is printed as given.
+  Plan: business only; free/starter visitors see nothing (server-side).
   JSON-LD: with the viewer block's "augment" option every metafield of the
   namespace (epd_url and gwp_a1a3 included) already goes out as
   additionalProperty; nothing is printed here.
 {% endcomment %}
 {%- liquid
   assign s = block.settings
+  assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
   assign ns = s.specs_ns | strip | default: 'bim'
   assign m = product.metafields[ns]
   assign epd_url = m.epd_url.value | append: '' | strip
@@ -87,6 +91,11 @@
 {%- endcapture -%}
 {%- capture dpp_labels -%}{"title":{{ 'ifcvo.dpp.title' | t | json }},"epd":{{ 'ifcvo.dpp.epd' | t | json }},"gwp_a1a3":{{ 'ifcvo.dpp.gwp_a1a3' | t | json }},"gwp":{{ 'ifcvo.dpp.gwp' | t | json }},"energy":{{ 'ifcvo.dpp.energy' | t | json }},"water":{{ 'ifcvo.dpp.water' | t | json }},"declared_unit":{{ 'ifcvo.dpp.declared_unit' | t | json }},"epd_number":{{ 'ifcvo.dpp.epd_number' | t | json }},"epd_link":{{ 'ifcvo.dpp.epd_link' | t | json }},"from_model":{{ 'ifcvo.dpp.from_model' | t | json }},"from_pset":{{ 'ifcvo.dpp.from_pset' | t | json }},"score":{{ 'ifcvo.dpp.score' | t | json }},"missing":{{ 'ifcvo.dpp.missing' | t | json }},"ready":{{ 'ifcvo.dpp.ready' | t | json }},"not_ready":{{ 'ifcvo.dpp.not_ready' | t | json }},"loading":{{ 'ifcvo.dpp.loading' | t | json }},"error":{{ 'ifcvo.dpp.error' | t | json }},"varies":{{ 'ifcvo.dpp.varies' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+{%- if plan != 'business' -%}
+  {%- if request.design_mode -%}
+    <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>"dpp" needs the business plan. Visitors do not see it.</p>
+  {%- endif -%}
+{%- else -%}
 <section
   class="ifcvo-panel ifcvo-dpp-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-dpp
@@ -105,12 +114,12 @@
   <h4>{{ 'ifcvo.dpp.epd' | t | escape }}</h4>
   <table class="ifcvo-specs ifcvo-dpp-epd" data-ifcvo-epd>
     <tbody>
-      <tr data-key="gwp_a1a3" data-source="{% if gwp_a != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp_a1a3' | t | escape }}</th><td>{% if gwp_a != blank %}{{ gwp_a | escape }} kg CO₂e{% else %}—{% endif %}</td></tr>
-      <tr data-key="gwp" data-source="{% if gwp_t != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp' | t | escape }}</th><td>{% if gwp_t != blank %}{{ gwp_t | escape }} kg CO₂e{% else %}—{% endif %}</td></tr>
+      <tr data-key="gwp_a1a3" data-source="{% if gwp_a != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp_a1a3' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e' %}</td></tr>
+      <tr data-key="gwp" data-source="{% if gwp_t != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: gwp_t, unit: m.gwp_unit.value, fallback: 'kg CO₂e' %}</td></tr>
       {%- assign v = m.energy.value | append: '' | strip -%}
-      <tr data-key="energy" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.energy' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }} MJ{% else %}—{% endif %}</td></tr>
+      <tr data-key="energy" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.energy' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: v, unit: m.energy_unit.value, fallback: 'MJ' %}</td></tr>
       {%- assign v = m.water.value | append: '' | strip -%}
-      <tr data-key="water" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.water' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }} m³{% else %}—{% endif %}</td></tr>
+      <tr data-key="water" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.water' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: v, unit: m.water_unit.value, fallback: 'm³' %}</td></tr>
       <tr data-key="declared_unit" data-source="{% if unit != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.declared_unit' | t | escape }}</th><td>{% if unit != blank %}{{ unit | escape }}{% else %}—{% endif %}</td></tr>
       {%- assign v = m.epd_programme.value | append: '' | strip -%}
       <tr data-key="epd_programme" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_programme' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
@@ -143,6 +152,7 @@
 </section>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
+{%- endif -%}
 
 {% schema %}
 {

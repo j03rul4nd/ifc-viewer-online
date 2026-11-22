@@ -14,6 +14,16 @@ const js = fs.readFileSync(path.join(EXT, 'assets/ifcvo-dpp.js'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
+const valueSnippet = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-dpp-value.liquid'), 'utf8')
+const jsonld = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-jsonld.liquid'), 'utf8')
+
+/** Mirror of snippets/ifcvo-dpp-value.liquid (Liquid cannot run here): kept honest by the structure test below. */
+function liquidValue(value: string, unit: string | null, fallback: string): string {
+  const v = value.trim()
+  const rest = v.replace(/[0-9.,+\- ]/g, '')
+  const u = (unit || '').trim() || fallback
+  return !v ? '—' : !rest ? `${v} ${u}` : v
+}
 
 const DATA = {
   elementCount: 3,
@@ -96,6 +106,37 @@ describe('ifc-dpp block (Liquid)', () => {
   it('gated business, in the build table and the runtime copy', () => {
     expect(FEATURE_TIERS.dpp).toBe('business')
     expect(runtime).toContain('"dpp":"business"')
+  })
+})
+
+describe('plan gate, units, JSON-LD', () => {
+  it('whole panel is server-gated to business; editor sees the upsell note', () => {
+    expect(block).toMatch(/assign plan = app\.metafields\.ifcvo\.plan\.value \| default: 'business'/)
+    const gate = block.indexOf("{%- if plan != 'business' -%}")
+    expect(gate).toBeGreaterThan(0)
+    expect(gate).toBeLessThan(block.indexOf('<section'))
+    expect(block).toMatch(/request\.design_mode -%\}\s*<p class="ifcvo-upsell" data-ifcvo-upsell="dpp"/)
+    expect(block.indexOf('{%- else -%}', gate)).toBeLessThan(block.indexOf('<section'))
+    expect(block.lastIndexOf('{%- endif -%}')).toBeGreaterThan(block.indexOf("'ifcvo-dpp.js' | asset_url"))
+  })
+
+  it('units: companion metafields, default only for bare numbers, value with unit as given', () => {
+    expect(block).toContain("render 'ifcvo-dpp-value', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e'")
+    expect(block).toContain("unit: m.energy_unit.value, fallback: 'MJ'")
+    expect(block).toContain("unit: m.water_unit.value, fallback: 'm³'")
+    for (const c of '0123456789.,-+ ') expect(valueSnippet).toContain(`remove: '${c}'`)
+    expect(valueSnippet).toMatch(/elsif ifcvo_rest == blank -%\}\{\{ ifcvo_v \| escape \}\} \{\{ ifcvo_u \| escape \}\}/)
+    expect(liquidValue('12.5', null, 'kg CO₂e')).toBe('12.5 kg CO₂e')
+    expect(liquidValue('12,5', 'kg CO2e/m2', 'kg CO₂e')).toBe('12,5 kg CO2e/m2')
+    expect(liquidValue('12.5 kg CO2e per m2', 'ignored', 'kg CO₂e')).toBe('12.5 kg CO2e per m2')
+    expect(liquidValue('', null, 'MJ')).toBe('—')
+  })
+
+  it('JSON-LD drops URL-like bim.* values unless https://', () => {
+    expect(jsonld).toMatch(/ifcvo_k_end == '_url' or ifcvo_k_end5 == '_link'/)
+    expect(jsonld).toMatch(/ifcvo_pvl contains 'javascript:'/)
+    expect(jsonld).toMatch(/if ifcvo_urlish and ifcvo_head != 'https:\/\/' -%\}\{%- continue -%\}/)
+    expect(jsonld).not.toMatch(/unless forloop\.first/)
   })
 })
 
