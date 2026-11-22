@@ -4,11 +4,10 @@
 // same way as the runtime does: the cart form's `id` after a `change`, plus
 // the `variant:change` event some themes dispatch.
 
-/** The variant currently in the product form, or null. */
-export function selectedVariant(doc = document) {
-  const input = doc.querySelector('form[action*="/cart/add"] [name="id"]')
-  return input && input.value ? String(input.value) : null
-}
+import { selectedVariant, urlVariant } from './ifcvo-variant.js'
+
+// The variant readers are shared with the other blocks (ifcvo-variant.js).
+export { selectedVariant, urlVariant }
 
 /** Shows the card of `variantId` (if it exists) and marks its matrix column. Returns whether it switched. */
 export function select(root, variantId) {
@@ -45,11 +44,6 @@ export function init(doc = document) {
     select(root, resolve(root, null, doc))
   }
   if (mounted.size) { observeForm(doc); watchHistory() }
-}
-
-/** `?variant=` of the current URL, or null. */
-export function urlVariant(loc = typeof location !== 'undefined' ? location : null) {
-  try { return (loc && new URLSearchParams(loc.search).get('variant')) || null } catch (e) { return null }
 }
 
 /**
