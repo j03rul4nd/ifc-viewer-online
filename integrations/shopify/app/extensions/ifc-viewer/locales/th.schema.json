@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC: ดูในพื้นที่ของคุณ (AR)"
+    },
+    "classification": {
+      "name": "IFC: การจัดหมวดหมู่"
+    },
+    "compat": {
+      "name": "IFC: ความเข้ากันได้"
+    },
+    "compliance": {
+      "name": "IFC: การปฏิบัติตามข้อกำหนด"
+    },
+    "downloads": {
+      "name": "IFC: ดาวน์โหลด"
+    },
+    "dpp": {
+      "name": "IFC: EPD และหนังสือเดินทางผลิตภัณฑ์"
+    },
+    "element_details": {
+      "name": "IFC: รายละเอียดชิ้นส่วน"
+    },
+    "explorer": {
+      "name": "IFC: ตัวสำรวจโมเดล"
+    },
+    "health_score": {
+      "name": "IFC: Health Score"
+    },
+    "plan_set": {
+      "name": "IFC: ชุดแบบและสัญญาอนุญาต"
+    },
+    "plan_view": {
+      "name": "IFC: มุมมองแปลน"
+    },
+    "rooms": {
+      "name": "IFC: ห้องและข้อมูลหลัก"
+    },
+    "specs": {
+      "name": "IFC: สเปกและปริมาณ"
+    },
+    "sun_lot": {
+      "name": "IFC: แสงแดดและที่ดิน"
+    },
+    "takeoff": {
+      "name": "IFC: บัญชีปริมาณงาน"
+    },
+    "ifc_viewer": {
+      "name": "โมเดล IFC 3 มิติ"
+    },
+    "views": {
+      "name": "IFC: มุมมองและทัวร์"
+    },
+    "product_viewer": {
+      "name": "โมเดล IFC ของสินค้า"
+    },
+    "tracking_globe": {
+      "name": "ลูกโลกติดตาม"
+    }
+  }
+}

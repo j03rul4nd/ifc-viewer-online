@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC: ver no seu espaço (RA)"
+    },
+    "classification": {
+      "name": "IFC: classificação"
+    },
+    "compat": {
+      "name": "IFC: compatibilidade"
+    },
+    "compliance": {
+      "name": "IFC: conformidade"
+    },
+    "downloads": {
+      "name": "IFC: downloads"
+    },
+    "dpp": {
+      "name": "IFC: EPD e passaporte do produto"
+    },
+    "element_details": {
+      "name": "IFC: dados do elemento"
+    },
+    "explorer": {
+      "name": "IFC: explorador do modelo"
+    },
+    "health_score": {
+      "name": "IFC: Health Score"
+    },
+    "plan_set": {
+      "name": "IFC: conjunto de pranchas e licença"
+    },
+    "plan_view": {
+      "name": "IFC: vista em planta"
+    },
+    "rooms": {
+      "name": "IFC: cômodos e dados principais"
+    },
+    "specs": {
+      "name": "IFC: especificações e quantidades"
+    },
+    "sun_lot": {
+      "name": "IFC: sol e lote"
+    },
+    "takeoff": {
+      "name": "IFC: levantamento de quantitativos"
+    },
+    "ifc_viewer": {
+      "name": "Modelo IFC 3D"
+    },
+    "views": {
+      "name": "IFC: vistas e tour"
+    },
+    "product_viewer": {
+      "name": "Modelo IFC do produto"
+    },
+    "tracking_globe": {
+      "name": "Globo de rastreamento"
+    }
+  }
+}

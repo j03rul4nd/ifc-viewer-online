@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC：在您的空间中查看（AR）"
+    },
+    "classification": {
+      "name": "IFC：分类"
+    },
+    "compat": {
+      "name": "IFC：兼容性"
+    },
+    "compliance": {
+      "name": "IFC：合规"
+    },
+    "downloads": {
+      "name": "IFC：下载"
+    },
+    "dpp": {
+      "name": "IFC：EPD 与产品护照"
+    },
+    "element_details": {
+      "name": "IFC：构件详情"
+    },
+    "explorer": {
+      "name": "IFC：模型浏览器"
+    },
+    "health_score": {
+      "name": "IFC：Health Score"
+    },
+    "plan_set": {
+      "name": "IFC：图纸集与许可"
+    },
+    "plan_view": {
+      "name": "IFC：平面视图"
+    },
+    "rooms": {
+      "name": "IFC：房间与关键参数"
+    },
+    "specs": {
+      "name": "IFC：规格与工程量"
+    },
+    "sun_lot": {
+      "name": "IFC：日照与地块"
+    },
+    "takeoff": {
+      "name": "IFC：工程量清单"
+    },
+    "ifc_viewer": {
+      "name": "3D IFC 模型"
+    },
+    "views": {
+      "name": "IFC：视图与漫游"
+    },
+    "product_viewer": {
+      "name": "产品 IFC 模型"
+    },
+    "tracking_globe": {
+      "name": "追踪地球仪"
+    }
+  }
+}

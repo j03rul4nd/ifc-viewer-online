@@ -7,10 +7,14 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 export const SECTIONS = ['ifc-viewer.liquid', 'tracking-globe.liquid']
 
-/** An app block is the section with `target` instead of `presets`. */
+/** Section name → app block name key in locales/*.schema.json (the theme editor shows it in the store's admin language). */
+export const BLOCK_NAME_KEYS = { '3D IFC model': 't:blocks.ifc_viewer.name', 'Tracking globe': 't:blocks.tracking_globe.name' }
+
+/** An app block is the section with `target` instead of `presets`, and a translated name. */
 export function toAppBlock(source) {
   return source.replace(/\{% schema %\}([\s\S]*?)\{% endschema %\}/, (_, json) => {
     const { presets, ...schema } = JSON.parse(json)
+    if (BLOCK_NAME_KEYS[schema.name]) schema.name = BLOCK_NAME_KEYS[schema.name]
     return `{% schema %}\n${JSON.stringify({ ...schema, target: 'section' }, null, 2)}\n{% endschema %}`
   })
 }

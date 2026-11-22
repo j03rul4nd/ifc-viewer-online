@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC: mira-ho al teu espai (RA)"
+    },
+    "classification": {
+      "name": "IFC: classificació"
+    },
+    "compat": {
+      "name": "IFC: compatibilitat"
+    },
+    "compliance": {
+      "name": "IFC: compliment"
+    },
+    "downloads": {
+      "name": "IFC: descàrregues"
+    },
+    "dpp": {
+      "name": "IFC: EPD i passaport de producte"
+    },
+    "element_details": {
+      "name": "IFC: dades de l'element"
+    },
+    "explorer": {
+      "name": "IFC: explorador del model"
+    },
+    "health_score": {
+      "name": "IFC: Health Score"
+    },
+    "plan_set": {
+      "name": "IFC: joc de plànols i llicència"
+    },
+    "plan_view": {
+      "name": "IFC: vista en planta"
+    },
+    "rooms": {
+      "name": "IFC: estances i dades clau"
+    },
+    "specs": {
+      "name": "IFC: especificacions i quantitats"
+    },
+    "sun_lot": {
+      "name": "IFC: sol i encaix a la parcel·la"
+    },
+    "takeoff": {
+      "name": "IFC: amidaments"
+    },
+    "ifc_viewer": {
+      "name": "Model IFC 3D"
+    },
+    "views": {
+      "name": "IFC: vistes i recorregut"
+    },
+    "product_viewer": {
+      "name": "Model IFC del producte"
+    },
+    "tracking_globe": {
+      "name": "Globus de seguiment"
+    }
+  }
+}

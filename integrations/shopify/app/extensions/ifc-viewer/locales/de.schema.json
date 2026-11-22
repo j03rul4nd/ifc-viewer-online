@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC: im eigenen Raum ansehen (AR)"
+    },
+    "classification": {
+      "name": "IFC: Klassifikation"
+    },
+    "compat": {
+      "name": "IFC: Kompatibilität"
+    },
+    "compliance": {
+      "name": "IFC: Konformität"
+    },
+    "downloads": {
+      "name": "IFC: Downloads"
+    },
+    "dpp": {
+      "name": "IFC: EPD und Produktpass"
+    },
+    "element_details": {
+      "name": "IFC: Elementdaten"
+    },
+    "explorer": {
+      "name": "IFC: Modell-Explorer"
+    },
+    "health_score": {
+      "name": "IFC: Health Score"
+    },
+    "plan_set": {
+      "name": "IFC: Plansatz und Lizenz"
+    },
+    "plan_view": {
+      "name": "IFC: Grundrissansicht"
+    },
+    "rooms": {
+      "name": "IFC: Räume und Eckdaten"
+    },
+    "specs": {
+      "name": "IFC: Spezifikationen und Mengen"
+    },
+    "sun_lot": {
+      "name": "IFC: Sonne und Grundstück"
+    },
+    "takeoff": {
+      "name": "IFC: Mengenermittlung"
+    },
+    "ifc_viewer": {
+      "name": "3D-IFC-Modell"
+    },
+    "views": {
+      "name": "IFC: Ansichten und Rundgang"
+    },
+    "product_viewer": {
+      "name": "Produkt-IFC-Modell"
+    },
+    "tracking_globe": {
+      "name": "Tracking-Globus"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC view in your space (AR)"
+    },
+    "classification": {
+      "name": "IFC classification"
+    },
+    "compat": {
+      "name": "IFC compatibility"
+    },
+    "compliance": {
+      "name": "IFC compliance"
+    },
+    "downloads": {
+      "name": "IFC downloads"
+    },
+    "dpp": {
+      "name": "IFC EPD and product passport"
+    },
+    "element_details": {
+      "name": "IFC element details"
+    },
+    "explorer": {
+      "name": "IFC model explorer"
+    },
+    "health_score": {
+      "name": "IFC Health Score"
+    },
+    "plan_set": {
+      "name": "IFC plan set & license"
+    },
+    "plan_view": {
+      "name": "IFC plan view"
+    },
+    "rooms": {
+      "name": "IFC rooms & key specs"
+    },
+    "specs": {
+      "name": "IFC specs & quantities"
+    },
+    "sun_lot": {
+      "name": "IFC sun & lot fit"
+    },
+    "takeoff": {
+      "name": "IFC takeoff / BOQ"
+    },
+    "ifc_viewer": {
+      "name": "3D IFC model"
+    },
+    "views": {
+      "name": "IFC views and tour"
+    },
+    "product_viewer": {
+      "name": "Product IFC model"
+    },
+    "tracking_globe": {
+      "name": "Tracking globe"
+    }
+  }
+}

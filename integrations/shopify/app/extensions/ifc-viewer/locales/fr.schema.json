@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC : voir chez vous (RA)"
+    },
+    "classification": {
+      "name": "IFC : classification"
+    },
+    "compat": {
+      "name": "IFC : compatibilité"
+    },
+    "compliance": {
+      "name": "IFC : conformité"
+    },
+    "downloads": {
+      "name": "IFC : téléchargements"
+    },
+    "dpp": {
+      "name": "IFC : EPD et passeport produit"
+    },
+    "element_details": {
+      "name": "IFC : données de l'élément"
+    },
+    "explorer": {
+      "name": "IFC : explorateur de maquette"
+    },
+    "health_score": {
+      "name": "IFC : Health Score"
+    },
+    "plan_set": {
+      "name": "IFC : jeu de plans et licence"
+    },
+    "plan_view": {
+      "name": "IFC : vue en plan"
+    },
+    "rooms": {
+      "name": "IFC : pièces et chiffres clés"
+    },
+    "specs": {
+      "name": "IFC : caractéristiques et quantités"
+    },
+    "sun_lot": {
+      "name": "IFC : soleil et terrain"
+    },
+    "takeoff": {
+      "name": "IFC : métré"
+    },
+    "ifc_viewer": {
+      "name": "Maquette IFC 3D"
+    },
+    "views": {
+      "name": "IFC : vues et visite"
+    },
+    "product_viewer": {
+      "name": "Maquette IFC du produit"
+    },
+    "tracking_globe": {
+      "name": "Globe de suivi"
+    }
+  }
+}

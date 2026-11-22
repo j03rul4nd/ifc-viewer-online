@@ -1,0 +1,61 @@
+{
+  "blocks": {
+    "ar": {
+      "name": "IFC：お部屋で見る（AR）"
+    },
+    "classification": {
+      "name": "IFC：分類"
+    },
+    "compat": {
+      "name": "IFC：互換性"
+    },
+    "compliance": {
+      "name": "IFC：適合性"
+    },
+    "downloads": {
+      "name": "IFC：ダウンロード"
+    },
+    "dpp": {
+      "name": "IFC：EPD と製品パスポート"
+    },
+    "element_details": {
+      "name": "IFC：要素の詳細"
+    },
+    "explorer": {
+      "name": "IFC：モデルエクスプローラー"
+    },
+    "health_score": {
+      "name": "IFC：Health Score"
+    },
+    "plan_set": {
+      "name": "IFC：図面セットとライセンス"
+    },
+    "plan_view": {
+      "name": "IFC：平面図ビュー"
+    },
+    "rooms": {
+      "name": "IFC：部屋と主な仕様"
+    },
+    "specs": {
+      "name": "IFC：仕様と数量"
+    },
+    "sun_lot": {
+      "name": "IFC：日照と敷地"
+    },
+    "takeoff": {
+      "name": "IFC：数量明細"
+    },
+    "ifc_viewer": {
+      "name": "3D IFC モデル"
+    },
+    "views": {
+      "name": "IFC：ビューとツアー"
+    },
+    "product_viewer": {
+      "name": "商品の IFC モデル"
+    },
+    "tracking_globe": {
+      "name": "トラッキング地球儀"
+    }
+  }
+}
