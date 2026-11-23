@@ -16,7 +16,6 @@
   unless product.has_only_default_variant
     assign sel = sel | append: ' / ' | append: v.title
   endunless
-  assign roles = 'architect,contractor,owner,reseller' | split: ','
   assign t = 'ifcvo.lead.title' | t
 -%}
 {%- if plan == 'free' -%}
@@ -45,7 +44,7 @@
     <label>{{ 'ifcvo.lead.company' | t | escape }}<input type="text" name="contact[Company]" autocomplete="organization"></label>
     {%- if s.role -%}
       <label>{{ 'ifcvo.lead.role' | t | escape }}<select name="contact[Role]" data-ifcvo-lead-role>
-        {%- for r in roles -%}<option value="{{ r }}">{{ 'ifcvo.lead.role_' | append: r | t | escape }}</option>{%- endfor -%}
+        <option value="architect">{{ 'ifcvo.lead.role_architect' | t | escape }}</option><option value="contractor">{{ 'ifcvo.lead.role_contractor' | t | escape }}</option><option value="owner">{{ 'ifcvo.lead.role_owner' | t | escape }}</option><option value="reseller">{{ 'ifcvo.lead.role_reseller' | t | escape }}</option>
       </select></label>
     {%- endif -%}
     {%- if s.project -%}<label>{{ 'ifcvo.lead.project' | t | escape }}<input type="text" name="contact[Project]"></label>{%- endif -%}
