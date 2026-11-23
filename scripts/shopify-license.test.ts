@@ -79,15 +79,40 @@ describe('Shopify licence token', () => {
     subtle.mockRestore()
   })
 
-  it('on the page: features are let through while checking, then hidden if the token is bad', async () => {
+  it('on the page: gated features stay invisible (space kept) while checking, never shown if the token is bad', async () => {
     document.body.innerHTML = `<div data-ifcvo-viewer data-ifcvo-plan="" data-ifcvo-license="bad.token" data-ifcvo-shop="${shop}"><div class="ifcvo-stage"></div></div>
       <div data-ifcvo-panel="score" data-labels="{}"><div class="ifcvo-body"></div></div><ul><li id="glb" data-ifcvo-gate="files"></li></ul>`
     await load()
     const api = (window as unknown as { IFCVO: { plan: string; license: Promise<string> } }).IFCVO
+    const score = document.querySelector('[data-ifcvo-panel="score"]') as HTMLElement
+    const glb = document.getElementById('glb')!
+    // Before the check settles: not visible, but not removed from layout.
+    for (const n of [score, glb]) expect(n.style.visibility).toBe('hidden') // never visible, even if the check already settled
+    expect(document.querySelector('[data-ifcvo-viewer]')!.getAttribute('style') || '').not.toContain('hidden')
     expect(await api.license).toBe('free')
     expect(api.plan).toBe('free')
     expect((document.querySelector('[data-ifcvo-panel="score"]') as HTMLElement).hidden).toBe(true)
     expect(document.getElementById('glb')!.hidden).toBe(true)
+    expect(glb.style.visibility).toBe('hidden')
+  })
+
+  it('a licence that unlocks the feature reveals it only after the check', async () => {
+    const r = await load()
+    r._resetLicense()
+    document.body.innerHTML = `<div data-ifcvo-license="x.y" data-ifcvo-shop="${shop}"></div><li id="f"></li>`
+    const subtle = vi.spyOn(globalThis.crypto.subtle, 'verify').mockResolvedValue(true as never)
+    vi.spyOn(globalThis.crypto.subtle, 'importKey').mockResolvedValue({} as CryptoKey)
+    const body = Buffer.from(JSON.stringify({ shop, plan: 'starter', exp: future })).toString('base64url')
+    document.querySelector('[data-ifcvo-license]')!.setAttribute('data-ifcvo-license', `${body}.c2ln`)
+    const check = r.checkLicense()
+    const f = document.getElementById('f')!
+    expect(r.gate('files', f)).toBe(true)
+    expect(f.style.visibility).toBe('hidden')
+    expect(await check).toBe('starter')
+    expect(f.style.visibility).toBe('')
+    expect(f.hidden).toBe(false)
+    vi.restoreAllMocks()
+    subtle.mockRestore()
   })
 
   it('the app metafield wins over the licence, and an empty page is free', async () => {

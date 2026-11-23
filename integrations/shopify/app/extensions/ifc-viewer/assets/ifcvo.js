@@ -116,7 +116,10 @@ export function checkLicense(doc = document) {
   if (!token) return Promise.resolve('free')
   licenseCheck = verifyLicense(token, src.dataset.ifcvoShop).then((plan) => {
     licensed = plan
-    for (const [feature, node] of pendingGates.splice(0)) gate(feature, node)
+    for (const [feature, node] of pendingGates.splice(0)) {
+      if (gate(feature, node)) node.style.visibility = ''
+      delete node.dataset.ifcvoPending
+    }
     return plan
   })
   return licenseCheck
@@ -144,8 +147,11 @@ function designMode() {
  */
 export function gate(feature, node, plan) {
   if (plan === undefined) {
-    // A licence still being checked: shown for now, decided when it settles.
-    if (licenseCheck && licensed === null && !allowed(feature, currentPlan())) { if (node) pendingGates.push([feature, node]); return true }
+    // A licence still being checked: mounted but invisible (space kept), revealed only if it unlocks the feature.
+    if (licenseCheck && licensed === null && !allowed(feature, currentPlan())) {
+      if (node) { node.style.visibility = 'hidden'; node.dataset.ifcvoPending = '1'; pendingGates.push([feature, node]) }
+      return true
+    }
     plan = currentPlan()
   }
   if (allowed(feature, plan)) return true
