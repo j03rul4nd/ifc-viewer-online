@@ -209,13 +209,14 @@ en SUBMIT.md.
   subscription notifications"). Por eso ya no se suscribe; `app/uninstalled` sigue.
 - Altas y cambios de plan vuelven por el *welcome link* `/app`, que sincroniza al abrir.
 - Cancelaciones/congelaciones: un **cron horario** recorre las tiendas guardadas en KV,
-  10 por ejecución, con un cursor en KV. Las tiendas Free no gastan nada. Por tienda de
-  pago: refresco del token (1), consulta del plan (1), `metafieldsSet` solo si cambió (1)
-  y guardar el refresh token rotado (1 escritura KV). Máximo ≤ 45 subpeticiones por
+  7 por ejecución, con un cursor en KV. Las tiendas Free no gastan nada (las subidas de
+  plan siempre vuelven por el welcome link `/app`). Por tienda de pago: refresco del
+  token (1), guardar enseguida el refresh token rotado (1 escritura KV), consulta del
+  plan (1) y, solo si cambió, `metafieldsSet` (1) + otra escritura (1). Máximo ≤ 45 subpeticiones por
   ejecución (límite Free: 50).
-- Escrituras KV: ≤ 11 por hora → **≤ 264/día** en el peor caso (límite 1.000).
-- Retraso máximo de una cancelación: `ceil(tiendas / 10)` horas, o sea tiendas/240 días
-  (240 tiendas → 1 día; 2.400 → 10 días). Sin coste por más tiendas: solo más retraso.
+- Escrituras KV: ≤ 15 por hora → **≤ 360/día** en el peor caso (límite 1.000).
+- Retraso máximo de una cancelación: `ceil(tiendas / 7)` horas, o sea tiendas/168 días
+  (168 tiendas → 1 día; 1.680 → 10 días). Sin coste por más tiendas: solo más retraso.
 - Tokens offline **no caducables** no son una opción: las apps públicas están obligadas a
   usar tokens caducables desde 2026-04-01 y las que no, se retiran el 2027-01-01
   (https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/offline-access-tokens).

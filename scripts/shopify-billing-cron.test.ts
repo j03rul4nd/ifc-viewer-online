@@ -82,14 +82,14 @@ describe('rotating cron without the Partner API', () => {
     expect(store.rec(shopName(0))).toMatchObject({ plan: 'starter', refresh: 'r-new' })
   })
 
-  it('plan changed: metafieldsSet + one write (plan and rotated token together)', async () => {
+  it('plan changed: metafieldsSet + two writes (rotated token first, then the plan)', async () => {
     const store = kv()
     await seed(store, [paid('starter')])
     const sh = shopify(business)
     const r = await rotateSync(env(store), { fetchImpl: sh.fetchImpl })
     expect(sh.calls.map((c) => c.kind)).toEqual(['refresh', 'query', 'set'])
-    expect(r).toMatchObject({ changed: 1, writes: 1 })
-    expect(store.writes).toBe(1)
+    expect(r).toMatchObject({ changed: 1, writes: 2 })
+    expect(store.writes).toBe(2)
     expect(store.rec(shopName(0)).plan).toBe('business')
   })
 
@@ -132,6 +132,36 @@ describe('rotating cron without the Partner API', () => {
     expect(store.rec(shopName(0)).refresh).toBe('r0')
   })
 
+  it('refresh OK but the sync fails: the rotated refresh token is already saved, record kept', async () => {
+    const store = kv()
+    await seed(store, [paid('starter')])
+    const sh = shopify()
+    const failing = async (url: string, init: { body: string }) => {
+      if (!url.endsWith('/admin/oauth/access_token')) return new Response('boom', { status: 502 })
+      return sh.fetchImpl(url, init)
+    }
+    const r = await rotateSync(env(store), { fetchImpl: failing })
+    expect(r).toMatchObject({ failed: 1, removed: 0, writes: 1 })
+    expect(store.rec(shopName(0))).toMatchObject({ refresh: 'r-new', plan: 'starter' })
+    // Next run uses the new token and the record survives.
+    const sh2 = shopify()
+    const r2 = await rotateSync(env(store), { fetchImpl: sh2.fetchImpl })
+    expect(r2).toMatchObject({ checked: 1, removed: 0 })
+  })
+
+  it('an invalid cursor is dropped and the run restarts from the first shop', async () => {
+    const store = kv()
+    await seed(store, [paid(), paid()])
+    store.m.set(CURSOR_KEY, { v: 'stale' })
+    const list = store.list
+    store.list = async (o) => { if (o.cursor) throw new Error('invalid cursor'); return list(o) }
+    const sh = shopify()
+    const r = await rotateSync(env(store), { fetchImpl: sh.fetchImpl })
+    expect(r.checked).toBe(2)
+    expect(r.subrequests).toBeLessThanOrEqual(SUBREQ_BUDGET)
+    expect(store.m.has(CURSOR_KEY)).toBe(false)
+  })
+
   it('batches with a KV cursor, covers every shop, then starts again', async () => {
     const n = CRON_BATCH * 2 + 3
     const store = kv()
@@ -169,9 +199,10 @@ describe('rotating cron without the Partner API', () => {
     expect(ops(store, sh)).toBeLessThanOrEqual(SUBREQ_BUDGET)
     expect(r.subrequests).toBe(ops(store, sh))
     expect(r.checked).toBe(CRON_BATCH)
-    // Writes per run ≤ batch + cursor, so 24 hourly runs ≤ 264 writes/day.
-    expect(store.writes).toBeLessThanOrEqual(CRON_BATCH + 1)
-    expect(24 * (CRON_BATCH + 1)).toBeLessThanOrEqual(300)
+    expect(r.writes).toBe(store.writes)
+    // Writes per run ≤ 2 × batch + cursor, so 24 hourly runs stay ≤ ~500 writes/day.
+    expect(store.writes).toBeLessThanOrEqual(2 * CRON_BATCH + 1)
+    expect(24 * (2 * CRON_BATCH + 1)).toBeLessThanOrEqual(500)
   })
 
   it('legacy records (no metadata) need a get each; the budget stops the run and keeps the cursor', async () => {
@@ -195,8 +226,8 @@ describe('rotating cron without the Partner API', () => {
     const store = kv()
     await seed(store, Array.from({ length: CRON_BATCH }, () => paid()))
     const sh = shopify()
-    const r = await rotateSync(env(store), { fetchImpl: sh.fetchImpl, budget: 12 })
-    expect(ops(store, sh)).toBeLessThanOrEqual(12)
-    expect(r.checked).toBe(2) // 2 fixed + 2 × 4 + 1 cursor reserve = 11
+    const r = await rotateSync(env(store), { fetchImpl: sh.fetchImpl, budget: 15 })
+    expect(ops(store, sh)).toBeLessThanOrEqual(15)
+    expect(r.checked).toBe(3) // 2 fixed + 2 × 3 used (unchanged) + 6 reserved + 1 cursor = 15
   })
 })

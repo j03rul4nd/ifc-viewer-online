@@ -24,7 +24,7 @@ const THROTTLE_MS = 15000
 /** Partner-API cron: at most this many shops per run (3 subrequests each; Free plan allows 50). */
 export const MAX_CRON_SHOPS = 15
 /** Rotating cron: KV keys listed per run (one page; the KV cursor rotates over runs). */
-export const CRON_BATCH = 10
+export const CRON_BATCH = 7
 /** Rotating cron: subrequests (fetch + KV ops) per invocation, under the Free limit of 50. */
 export const SUBREQ_BUDGET = 45
 export const CURSOR_KEY = 'cron:cursor'
@@ -97,9 +97,16 @@ export async function backgroundSync(env, shop, { fetchImpl = fetch, now = Date.
     throw e
   }
   const base = { ...rec, refresh: t.refresh_token || rec.refresh, refreshExp: t.refresh_token_expires_in ? now + t.refresh_token_expires_in * 1000 : rec.refreshExp }
-  const r = await syncPlan(env, shop, t.access_token, base, { fetchImpl })
-  // The refresh token rotates, so this is one write even when the plan did not change.
-  await saveShop(env, shop, r.rec)
+  // The refresh token rotated: persist it BEFORE any other call, so a failing sync
+  // (5xx, userErrors) cannot lose it. One write even when the plan did not change.
+  await saveShop(env, shop, base)
+  let r
+  try {
+    r = await syncPlan(env, shop, t.access_token, base, { fetchImpl })
+  } catch (e) {
+    throw Object.assign(e instanceof Error ? e : new Error(String(e)), { saved: true })
+  }
+  if (r.dirty) await saveShop(env, shop, r.rec) // second write only when the plan changed
   return { plan: r.plan, changed: r.dirty }
 }
 
@@ -168,8 +175,9 @@ export const EVENTS_QUERY = `query IfcvoEvents($appId: ID!, $since: DateTime!) {
  * cursor kept in KV, so every stored shop is checked once per ceil(shops / CRON_BATCH) runs.
  * Free shops are skipped without any call: upgrades always come back through the welcome
  * link (/app syncs them), so only paid plans can lapse silently (cancel, freeze, uninstall).
- * Per paid shop: refresh (1) + plan query (1) + metafieldsSet only if changed (1) + the
- * rotated refresh token saved (1 KV write) [+ 1 get for records stored before metadata].
+ * Per paid shop: refresh (1) + rotated refresh token saved at once (1 KV write) + plan
+ * query (1) + only if changed: metafieldsSet (1) + plan saved (1 KV write)
+ * [+ 1 get for records stored before metadata]: at most 6.
  * Fixed: cursor get + list + cursor put. A shop that would cross SUBREQ_BUDGET is left for
  * the next run, and the cursor then stays on this page.
  */
@@ -178,8 +186,21 @@ export async function rotateSync(env, { fetchImpl = fetch, now = Date.now(), bud
   const stats = { listed: 0, checked: 0, changed: 0, removed: 0, skipped: 0, failed: 0, writes: 0, subrequests: 0, complete: false }
   const prev = (await env.SHOPS.get(CURSOR_KEY)) || ''
   used++
-  const page = await env.SHOPS.list({ prefix: 'shop:', limit: batch, ...(prev ? { cursor: prev } : {}) })
-  used++
+  let page
+  let start = prev
+  try {
+    page = await env.SHOPS.list({ prefix: 'shop:', limit: batch, ...(prev ? { cursor: prev } : {}) })
+    used++
+  } catch (e) {
+    if (!prev) throw e
+    // Stale or invalid cursor: forget it and start again from the first shop.
+    console.log('cron cursor reset', String(e))
+    await env.SHOPS.delete(CURSOR_KEY)
+    stats.writes++
+    start = ''
+    page = await env.SHOPS.list({ prefix: 'shop:', limit: batch })
+    used += 3
+  }
   const reserve = 1 // the cursor put at the end
   let stopped = false
   for (const k of page.keys || []) {
@@ -188,7 +209,7 @@ export async function rotateSync(env, { fetchImpl = fetch, now = Date.now(), bud
     let rec = k.metadata && typeof k.metadata === 'object' && k.metadata.refresh ? k.metadata : null
     const needGet = !rec
     if (!isShop(shop) || (rec && (rec.plan === 'free' || !rec.plan))) { stats.skipped++; continue }
-    if (used + (needGet ? 1 : 0) + 4 + reserve > budget) { stopped = true; break }
+    if (used + (needGet ? 1 : 0) + 6 + reserve > budget) { stopped = true; break }
     if (needGet) {
       used++
       rec = await readShop(env, shop)
@@ -197,19 +218,20 @@ export async function rotateSync(env, { fetchImpl = fetch, now = Date.now(), bud
     if (!rec.refresh || (rec.refreshExp && rec.refreshExp < now)) { stats.skipped++; continue }
     try {
       const r = await backgroundSync(env, shop, { fetchImpl, now, rec })
-      used += r.removed ? 2 : 3 + (r.changed ? 1 : 0)
-      stats.writes++
+      used += r.removed ? 2 : 3 + (r.changed ? 2 : 0)
+      stats.writes += r.removed ? 1 : 1 + (r.changed ? 1 : 0)
       if (r.removed) stats.removed++
       else { stats.checked++; if (r.changed) stats.changed++ }
     } catch (e) {
-      used += 3 // refresh, query and at most the metafieldsSet before the failure
+      used += 4 // refresh, token save, query, metafieldsSet at most before the failure
+      if (e && e.saved) stats.writes++ // the rotated token was already saved
       stats.failed++
       console.log('cron sync failed', shop, String(e))
     }
   }
-  const next = stopped ? prev : page.list_complete ? '' : page.cursor || ''
+  const next = stopped ? start : page.list_complete ? '' : page.cursor || ''
   stats.complete = !stopped && !!page.list_complete
-  if (next !== prev) {
+  if (next !== start) {
     used++
     stats.writes++
     if (next) await env.SHOPS.put(CURSOR_KEY, next)

@@ -58,17 +58,23 @@ infrastructure spend before revenue, and nothing that bills on overage.
      delete the shop's KV record (only if present); `customers/data_request` and
      `customers/redact` → 200 (no customer data stored). `app_subscriptions/update` is
      no longer subscribed (App Pricing stopped sending it) and is ignored.
-   - **Hourly cron, no Partner API needed** (`rotateSync`): lists one KV page of 10
+   - **Hourly cron, no Partner API needed** (`rotateSync`): lists one KV page of 7
      `shop:*` keys per run, resuming from a cursor stored in KV (`cron:cursor`, written
      only when it moves). The record is also stored as the key's KV metadata, so no
      `get` per shop. Free shops are skipped with no call (upgrades always come back
-     through the welcome link). Per paid shop: refresh token (1) + plan query (1) +
-     `metafieldsSet` only if the plan changed (1) + save the rotated refresh token
-     (1 KV write; rotation forces it even when the plan is unchanged). Cancelled, frozen
+     through the welcome link: "Shopify passes subscription details as URL parameters when
+     a merchant is redirected from the plan selection or charge confirmation page to your
+     app's redirection URL", shopify.dev/docs/apps/launch/billing/managed-pricing; our
+     welcome link is `/app`, which syncs on load). Per paid shop: refresh token (1) +
+     save the rotated refresh token at once (1 KV write, before any other call, so a
+     failing sync cannot lose it) + plan query (1) + only if the plan changed:
+     `metafieldsSet` (1) and a second write (1). An invalid KV cursor is deleted and the
+     run restarts from the first shop. Cancelled, frozen
      or missing subscriptions → Free. Refresh rejected (400/401) → record deleted.
      Budget: a shop that would take the run over 45 subrequests (fetch + KV ops) is
      left for the next run and the cursor stays on that page. Worst-case staleness:
-     `ceil(shops / 10)` hours (240 shops a day). Writes ≤ 11 per run → ≤ 264/day.
+     `ceil(shops / 7)` hours (168 shops a day). Writes ≤ 15 per run (2 per changed shop +
+     cursor) → ≤ 360/day in the impossible case where every shop changes every hour.
      Non-expiring offline tokens would avoid the rotation write, but public apps must
      use expiring ones (blocked from 2027-01-01), so not an option.
    - Optional: with Partner API secrets the cron instead resyncs the shops with
@@ -82,8 +88,8 @@ infrastructure spend before revenue, and nothing that bills on overage.
 |---|---|---|---|
 | Workers requests | 100,000/day | Requests fail (1027 error), no charge on the Free plan | Only merchants' admin opens, webhooks and 24 cron runs/day; storefront visitors never call it |
 | Workers CPU | 10 ms/request | Request fails | HMAC/JWT only; waiting on Shopify is not CPU time |
-| Subrequests | 50/request | Request fails | ≤ 4 per request; cron ≤ 45 by an explicit budget (10 shops/run) |
-| KV writes / deletes / lists | 1,000/day each | Write fails (sync retried next open) | ≤ 264/day from the cron (worst case) + installs/changes; 24 lists/day |
+| Subrequests | 50/request | Request fails | ≤ 4 per request; cron ≤ 45 by an explicit budget (7 shops/run) |
+| KV writes / deletes / lists | 1,000/day each | Write fails (sync retried next open) | ≤ 360/day from the cron (worst case) + installs/changes; 24 lists/day |
 | KV reads | 100,000/day | Read fails | One read per admin open / webhook |
 | KV storage | 1 GB | Write fails | < 300 bytes per shop |
 | Cron triggers | 5 per account | Deploy fails | 1 used (hourly) |
@@ -98,7 +104,7 @@ rate-limit exposure); Partner API as the only source (needs an extra org token; 
 optional for the cron).
 
 **Risks.** Plan names in the Partner Dashboard must contain "starter"/"business".
-Freezes and cancels without a redirect wait for the hourly cron (up to shops/10 hours) or the next open.
+Freezes and cancels without a redirect wait for the hourly cron (up to shops/7 hours) or the next open.
 `admin.shopify.com/store/<handle>` assumes the store handle equals the myshopify
 subdomain (true unless the merchant renamed the store handle; Shopify then redirects).
 

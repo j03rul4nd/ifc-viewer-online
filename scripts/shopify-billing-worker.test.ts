@@ -158,7 +158,7 @@ describe('webhooks', () => {
     expect(await backgroundSync(env(store), SHOP, { fetchImpl: sh.fetchImpl })).toEqual({ plan: 'business', changed: true })
     expect(new URLSearchParams(sh.calls[0].body).get('grant_type')).toBe('refresh_token')
     expect(JSON.parse(store.m.get(`shop:${SHOP}`)!)).toMatchObject({ plan: 'business', refresh: 'r-1' })
-    expect(store.writes).toBe(1)
+    expect(store.writes).toBe(2) // rotated token saved first, then the new plan
   })
   it('a shop that never opened the app is skipped (no token, no writes)', async () => {
     const store = kv()
