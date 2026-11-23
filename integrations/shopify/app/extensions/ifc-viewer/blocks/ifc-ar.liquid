@@ -34,7 +34,7 @@ data-include-site="{{ s.include_site }}"
 data-title="{{ product.title | escape }}"
 data-page="{{ canonical_url | escape }}"
 data-i18n="ar"
-{% render 'ifcvo-shop-labels' %}
+data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
 data-labels-override="{{ s.labels | escape }}"
 {{ block.shopify_attributes }}
 >

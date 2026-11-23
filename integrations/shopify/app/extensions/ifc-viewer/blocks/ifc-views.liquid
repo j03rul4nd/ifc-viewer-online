@@ -1,4 +1,4 @@
-<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{% render 'ifcvo-style', s: block.settings %}" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}--ifcvo-radius:{{ block.settings.radius }}px;" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
 {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
 <div class="ifcvo-views">
 {%- for i in (1..4) -%}

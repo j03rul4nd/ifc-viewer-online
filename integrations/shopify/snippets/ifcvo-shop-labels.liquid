@@ -1,5 +1,0 @@
-{% comment %}
-  Attributes every panel passes to its script: the shop's own labels
-  (ifcvo.labels metafield) and the storefront locale.
-{% endcomment %}
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"

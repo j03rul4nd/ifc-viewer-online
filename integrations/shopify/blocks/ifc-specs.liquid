@@ -69,7 +69,7 @@
   data-labels-override="{{ s.labels | escape }}"
   data-csv="{{ s.csv }}"
   data-file="{{ product.handle | escape }}-specs.csv"
-  style="{% render 'ifcvo-style', s: s %}"
+  style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}

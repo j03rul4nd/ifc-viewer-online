@@ -2,7 +2,7 @@
 // block mounts the viewer through the SDK; the explorer, element details, views
 // and Health Score blocks can sit anywhere else on the page and drive it.
 // One page, one viewer: the companion blocks attach to the first one.
-const SDK = 'https://www.ifcvieweronline.eu/sdk/1.18.0/ifc-viewer.es.js'
+const SDK = 'https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js'
 
 const listeners = new Set()
 /** Listeners per block root, so a removed section takes its own with it. */
@@ -381,11 +381,14 @@ function mountViewer(root) {
     viewer = v
     for (const type of ['model-loaded', 'element-selected', 'validation-completed', 'tour-started', 'tour-step', 'tour-ended']) {
       v.on(type, (e) => {
+        // A model that finishes after ready ends any loading state left on screen.
+        if (type === 'model-loaded' && viewer === v && !loading && root.dataset.ifcvoState === 'loading') setState(root, 'ready')
         if (type === 'model-loaded' && viewer === v) signal(root, 'ifcvo:loaded', { elements: (e && Number(e.elementCount)) || 0, ms: Math.round(Date.now() - started) })
         emit(type, e)
       })
     }
-    v.on('model-progress', (e) => { if (viewer === v && e && e.percent != null) setState(root, 'loading', ` ${Math.round(e.percent)}%`) })
+    // Progress only while the attempt runs: once ready, a late progress event must not bring the facade back (stuck at 75%).
+    v.on('model-progress', (e) => { if (viewer === v && loading && e && e.percent != null) setState(root, 'loading', ` ${Math.round(e.percent)}%`) })
     // A model error ends the attempt at once (no auto-retry); after ready it shows the error state.
     let loading = true
     let modelFailed

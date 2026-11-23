@@ -66,7 +66,7 @@
   data-l-tabs="{{ l_tabs | escape }}" data-l-all="{{ l_all | escape }}" data-l-waiting="{{ l_waiting | escape }}" data-l-open="{{ l_open | escape }}"
   data-l-loading="{{ l_loading | escape }}" data-l-none="{{ l_none | escape }}" data-l-error="{{ l_error | escape }}" data-l-rooms="{{ l_rooms | escape }}"
   data-l-room="{{ l_room | escape }}" data-l-area="{{ l_area | escape }}" data-l-showing="{{ l_showing | escape }}"
-  style="{% render 'ifcvo-style', s: s %}"
+  style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
 >
   {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
