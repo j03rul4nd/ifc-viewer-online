@@ -384,6 +384,12 @@ export default defineConfig({
     reportCompressedSize: false,
     rollupOptions: {
       maxParallelFileOps: 4,
+      // Second HTML entry: the client-only Shopify bulk import builder
+      // (/shopify/bulk/). It lives outside public/ so Vite bundles its TS.
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        shopifyBulk: path.resolve(__dirname, 'shopify/bulk/index.html'),
+      },
       onwarn(warning, defaultHandler) {
         // The EN locale files are intentionally both statically imported
         // (bundled eagerly so first render has translations) AND referenced
