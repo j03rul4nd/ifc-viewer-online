@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC：按变体的视图"
+    },
+    "quote_form": {
+      "name": "IFC：报价申请"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "生成模型的三角面上限",
-    "the_smallest_parts_are_left_out_above_it": "超过上限时会省略最小的部件。"
+    "the_smallest_parts_are_left_out_above_it": "超过上限时会省略最小的部件。",
+    "ask_for_the_buyer_s_role": "询问买家身份",
+    "ask_for_the_project_name_and_location": "询问项目名称和地点",
+    "ask_for_a_quantity": "询问数量",
+    "also_create_a_customer_with_these_tags": "同时用这些标签创建客户",
+    "show_ask_about_this_element": "显示“咨询此构件”"
   }
 }

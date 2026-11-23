@@ -69,12 +69,24 @@ describe('ifc-plan-view block (Liquid)', () => {
   })
 
   it('every label has an English default and a shop override', () => {
+    // Server-rendered texts (heading, tablist name, noscript, preview note) stay in Liquid.
     const keys = [...body.matchAll(/'ifcvo\.planview\.(\w+)' \| t/g)].map((m) => m[1])
-    expect(keys.length).toBeGreaterThan(8)
+    expect(keys.length).toBeGreaterThanOrEqual(4)
     for (const k of keys) {
       expect(locales.ifcvo.planview[k]).toBeTruthy()
       expect(body).toContain(`shop_l.planview_${k}`)
     }
+    // Script-only texts come from the i18n asset, then the shop's ifcvo.labels.
+    expect(body).toContain('data-i18n="planview"')
+    const root = document.createElement('div')
+    expect(pv.label(root, 'rooms')).toBe('Rooms')
+    root.dataset.labels = JSON.stringify({ rooms: 'Estancias' })
+    expect(pv.label(root, 'rooms')).toBe('Estancias')
+    root.dataset.locale = 'es-ES'
+    root.dataset.ifcvoLabels = JSON.stringify({ es: { planview_rooms: 'Habitaciones' } })
+    expect(pv.label(root, 'rooms')).toBe('Habitaciones')
+    root.dataset.lRooms = 'Salas'
+    expect(pv.label(root, 'rooms')).toBe('Salas')
   })
 
   it('uses an accessible tablist and an honest editor note on preview mode', () => {

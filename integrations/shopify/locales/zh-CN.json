@@ -326,6 +326,26 @@
       "manual": "复制此链接：",
       "error": "无法读取此视图。",
       "updated": "自您购买后已更新"
+    },
+    "lead": {
+      "title": "申请报价",
+      "name": "姓名",
+      "email": "电子邮箱",
+      "company": "公司",
+      "role": "您的身份",
+      "role_architect": "建筑师或工程师",
+      "role_contractor": "施工方或安装商",
+      "role_owner": "业主或开发商",
+      "role_reseller": "经销商或分销商",
+      "project": "项目名称和地点",
+      "quantity": "数量",
+      "message": "留言",
+      "submit": "发送申请",
+      "sent": "谢谢，您的申请已发送。",
+      "ask": "咨询此构件",
+      "question": "咨询对象",
+      "view": "视图",
+      "asking": "您咨询的是 {name}。请在下方填写并发送。"
     }
   }
 }

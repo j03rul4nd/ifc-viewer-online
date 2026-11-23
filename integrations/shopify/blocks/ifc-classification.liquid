@@ -44,7 +44,7 @@
   data-show-model="{{ s.show_model }}"
   data-show-counts="{{ s.show_counts }}"
   data-i18n="classification"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+ 
   data-labels-override="{{ s.labels | escape }}"
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
@@ -73,8 +73,7 @@
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-classification.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-classification.js' -%}
 
 {%- render 'ifcvo-diag', feature: 'classification', block: 'ifc-classification', ns: ns, keys: 'classification' -%}
 

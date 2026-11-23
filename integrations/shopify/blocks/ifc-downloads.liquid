@@ -45,8 +45,7 @@
   {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
 </div>
 {%- comment -%} Always loaded: GLB/CSV need the viewer, and link clicks are reported to the viewer's customer events. {%- endcomment -%}
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-quote.js' -%}
 
 {%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},{{ block.settings.files_key }}{%- endcapture -%}
 {%- render 'ifcvo-diag', feature: 'files', block: 'ifc-downloads', ns: ns, keys: dg_keys -%}{%- endif -%}

@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC: vistas por variante"
+    },
+    "quote_form": {
+      "name": "IFC: pedido de orçamento"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "Limite de triângulos dos modelos criados",
-    "the_smallest_parts_are_left_out_above_it": "Acima dele, as peças mais pequenas são omitidas."
+    "the_smallest_parts_are_left_out_above_it": "Acima dele, as peças mais pequenas são omitidas.",
+    "ask_for_the_buyer_s_role": "Perguntar o perfil do comprador",
+    "ask_for_the_project_name_and_location": "Perguntar nome e localização do projeto",
+    "ask_for_a_quantity": "Perguntar uma quantidade",
+    "also_create_a_customer_with_these_tags": "Criar também um cliente com estas etiquetas",
+    "show_ask_about_this_element": "Mostrar \"Perguntar sobre este elemento\""
   }
 }

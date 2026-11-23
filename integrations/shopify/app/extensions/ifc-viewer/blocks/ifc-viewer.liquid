@@ -1,74 +1,74 @@
-{%- liquid
-assign s = section.settings
+{%-liquid
+assign s=section.settings
 if block
-assign s = block.settings
+assign s=block.settings
 endif
-assign query = 'embed=1'
-assign models = ''
-assign parts = s.model | split: ','
+assign query='embed=1'
+assign models=''
+assign parts=s.model|split:','
 for part in parts
-assign url = part | strip
-assign head = url | slice: 0, 8 | downcase
+assign url=part|strip
+assign head=url|slice:0,8|downcase
 if head == 'https://'
 if models != ''
-assign models = models | append: ','
+assign models=models|append:','
 endif
-assign models = models | append: url
+assign models=models|append:url
 endif
 endfor
-assign scene = s.scene | strip
-assign scene_head = scene | slice: 0, 8 | downcase
+assign scene=s.scene|strip
+assign scene_head=scene|slice:0,8|downcase
 if scene_head != 'https://'
-assign scene = ''
+assign scene=''
 endif
 if models != ''
-assign enc = models | url_encode
-assign query = query | append: '&model=' | append: enc
+assign enc=models|url_encode
+assign query=query|append:'&model='|append:enc
 endif
 if scene != ''
-assign enc = scene | url_encode
-assign query = query | append: '&scene=' | append: enc
+assign enc=scene|url_encode
+assign query=query|append:'&scene='|append:enc
 endif
 if s.ui != 'minimal'
-assign query = query | append: '&ui=' | append: s.ui
+assign query=query|append:'&ui='|append:s.ui
 endif
 if s.view != 'iso' or scene == ''
-assign query = query | append: '&view=' | append: s.view
+assign query=query|append:'&view='|append:s.view
 endif
 if s.validate == false
-assign query = query | append: '&validate=0'
+assign query=query|append:'&validate=0'
 endif
 if s.map != 'off'
-assign query = query | append: '&map=' | append: s.map
+assign query=query|append:'&map='|append:s.map
 endif
 if s.drawings
-assign query = query | append: '&drawings=plan'
+assign query=query|append:'&drawings=plan'
 endif
 if s.lang != 'auto'
-assign query = query | append: '&lang=' | append: s.lang
+assign query=query|append:'&lang='|append:s.lang
 endif
-assign accent = s.accent | remove: '#' | strip | downcase
+assign accent=s.accent|remove:'#'|strip|downcase
 if accent.size == 6
-assign accent_ok = true
-assign chars = accent | split: ''
+assign accent_ok=true
+assign chars=accent|split:''
 for c in chars
 unless '0123456789abcdef' contains c
-assign accent_ok = false
+assign accent_ok=false
 endunless
 endfor
 if accent_ok
-assign query = query | append: '&accent=' | append: accent
+assign query=query|append:'&accent='|append:accent
 endif
 endif
-assign viewer_src = 'https://www.ifcvieweronline.eu/?' | append: query
-assign title = s.title | default: 'Interactive 3D IFC model'
+assign viewer_src='https://www.ifcvieweronline.eu/?'|append:query
+assign title=s.title|default:'Interactive 3D IFC model'
 -%}
 <div class="page-width">
-{%- if models != '' or scene != '' -%}
-<iframe src="{{ viewer_src | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
-{%- elsif request.design_mode -%}
-<p>{{ 'ifcvo.editor.viewer_link' | t | escape }}</p>
-{%- endif -%}
+{%-if models != '' or scene != '' -%}
+<iframe src="{{viewer_src|escape}}" width="100%" height="{{s.height}}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{title|escape}}"></iframe>
+{%-elsif request.design_mode -%}
+<p>{{'ifcvo.editor.viewer_link'|t|escape}}</p>
+{%-endif -%}
 </div>
-{%- render 'ifcvo-diag', feature: 'viewer', block: 'ifc-viewer', model: block.settings.model -%}
-{% schema %}{"name":"t:k.1uug","settings":[{"type":"text","id":"model","label":"t:k.1h9o","info":"https link to an .ifc file. Several links separated by commas load as one federated model."},{"type":"text","id":"scene","label":"t:k.0kdp","info":"Optional. A saved scene brings its own models, camera and layers."},{"type":"text","id":"title","label":"t:k.036e","default":"Interactive 3D IFC model"},{"type":"range","id":"height","label":"t:k.1854","min":300,"max":900,"step":20,"unit":"px","default":600},{"type":"select","id":"ui","label":"t:k.0ma9","default":"article","options":[{"value":"article","label":"t:k.1neg"},{"value":"minimal","label":"t:k.09vy"},{"value":"full","label":"t:k.17mr"},{"value":"client","label":"t:k.06so"},{"value":"kiosk","label":"t:k.15h0"}]},{"type":"select","id":"view","label":"t:k.0ap4","default":"iso","options":[{"value":"iso","label":"t:k.15a6"},{"value":"top","label":"t:k.03q0"},{"value":"front","label":"t:k.16ni"},{"value":"left","label":"t:k.1617"},{"value":"right","label":"t:k.1s4z"}]},{"type":"checkbox","id":"validate","label":"t:k.0218","default":true},{"type":"checkbox","id":"drawings","label":"t:k.1w9a","default":false},{"type":"select","id":"map","label":"t:k.0p9e","default":"off","options":[{"value":"off","label":"t:k.1qhl"},{"value":"1","label":"t:k.1baj"},{"value":"terrain,buildings","label":"t:k.1j70"}]},{"type":"select","id":"lang","label":"t:k.1wrc","default":"auto","options":[{"value":"auto","label":"t:k.16d2"},{"value":"en","label":"t:k.1obb"},{"value":"es","label":"t:k.0s9g"},{"value":"ca","label":"t:k.0y00"},{"value":"de","label":"t:k.1e3g"},{"value":"fr","label":"t:k.04kl"},{"value":"it","label":"t:k.0yx8"},{"value":"pt","label":"t:k.0jjs"},{"value":"ja","label":"t:k.1wet"},{"value":"zh","label":"t:k.1wot"},{"value":"th","label":"t:k.0ebu"}]},{"type":"text","id":"accent","label":"t:k.0j05","info":"Optional hex colour, e.g. #2f6f5e."}],"target":"section"}{% endschema %}
+{%-render 'ifcvo-diag',feature:'viewer',block:'ifc-viewer',model:block.settings.model -%}
+{% schema %}{"name":"t:k.7sd","settings":[{"type":"text","id":"model","label":"t:k.px6","info":"https link to an .ifc file. Several links separated by commas load as one federated model."},{"type":"text","id":"scene","label":"t:k.vjv","info":"Optional. A saved scene brings its own models, camera and layers."},{"type":"text","id":"title","label":"t:k.5gt","default":"Interactive 3D IFC model"},{"type":"range","id":"height","label":"t:k.d41","min":300,"max":900,"step":20,"unit":"px","default":600},{"type":"select","id":"ui","label":"t:k.jun","default":"article","options":[{"value":"article","label":"t:k.y3w"},{"value":"minimal","label":"t:k.lvh"},{"value":"full","label":"t:k.ara"},{"value":"client","label":"t:k.9nm"},{"value":"kiosk","label":"t:k.9iq"}]},{"type":"select","id":"view","label":"t:k.kke","default":"iso","options":[{"value":"iso","label":"t:k.pmv"},{"value":"top","label":"t:k.4et"},{"value":"front","label":"t:k.5bp"},{"value":"left","label":"t:k.phb"},{"value":"right","label":"t:k.3ow"}]},{"type":"checkbox","id":"validate","label":"t:k.jgb","default":true},{"type":"checkbox","id":"drawings","label":"t:k.4ed","default":false},{"type":"select","id":"map","label":"t:k.500","default":"off","options":[{"value":"off","label":"t:k.znz"},{"value":"1","label":"t:k.l18"},{"value":"terrain,buildings","label":"t:k.hzr"}]},{"type":"select","id":"lang","label":"t:k.x4w","default":"auto","options":[{"value":"auto","label":"t:k.iy9"},{"value":"en","label":"t:k.mgi"},{"value":"es","label":"t:k.e6l"},{"value":"ca","label":"t:k.0l7"},{"value":"de","label":"t:k.ah2"},{"value":"fr","label":"t:k.azp"},{"value":"it","label":"t:k.b9b"},{"value":"pt","label":"t:k.oya"},{"value":"ja","label":"t:k.g2o"},{"value":"zh","label":"t:k.1rn"},{"value":"th","label":"t:k.6ji"}]},{"type":"text","id":"accent","label":"t:k.z95","info":"Optional hex colour, e.g. #2f6f5e."}],"target":"section"}{% endschema %}

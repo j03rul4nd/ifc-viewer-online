@@ -1,49 +1,48 @@
-{%- liquid
-assign poster_field = product.metafields[ns].ifc_poster.value
-assign poster_src = ''
+{%-liquid
+assign poster_field=product.metafields[ns].ifc_poster.value
+assign poster_src=''
 if poster_field != blank
 if poster_field.src
-assign poster_src = poster_field | image_url: width: 1200
+assign poster_src=poster_field|image_url:width:1200
 else
-assign phead = poster_field | strip | slice: 0, 8 | downcase
+assign phead=poster_field|strip|slice:0,8|downcase
 if phead == 'https://'
-assign poster_src = poster_field | strip
+assign poster_src=poster_field|strip
 endif
 endif
 endif
 if poster_src == '' and product.featured_media
-assign poster_src = product.featured_media | image_url: width: 1200
+assign poster_src=product.featured_media|image_url:width:1200
 endif
 if aspect == '1/1' or aspect == '4/3' or aspect == '16/9'
-assign box = 'aspect-ratio:' | append: aspect | append: ';height:auto'
+assign box='aspect-ratio:'|append:aspect|append:';height:auto'
 else
-assign box = 'height:' | append: height | append: 'px'
+assign box='height:'|append:height|append:'px'
 endif
-assign enc = model | url_encode
-assign full_url = 'https://www.ifcvieweronline.eu/?model=' | append: enc
-assign alt = 'ifcvo.facade.poster_alt' | t: title: title
+assign enc=model|url_encode
+assign full_url='https://www.ifcvieweronline.eu/?model='|append:enc
+assign alt='ifcvo.facade.poster_alt'|t:title:title
 -%}
-<div class="ifcvo-stage" style="position:relative;width:100%;{{ box }};border-radius:{{ radius }}px;overflow:hidden;background:{{ stage_bg }}"
-data-ifcvo-state="idle" data-full="{{ full_url | escape }}"
-data-msg-loading="{{ 'ifcvo.facade.loading' | t | escape }}"
-data-msg-error="{{ 'ifcvo.facade.error' | t | escape }}"
-data-msg-offline="{{ 'ifcvo.facade.offline' | t | escape }}"
-data-msg-large="{{ 'ifcvo.facade.too_large' | t | escape }}"
-data-msg-webgl="{{ 'ifcvo.facade.no_webgl' | t | escape }}"
-data-msg-ready="{{ 'ifcvo.facade.ready' | t | escape }}">
-<div class="ifcvo-facade" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-{%- if poster_src != '' -%}
-<img src="{{ poster_src | escape }}" alt="{{ alt | escape }}" width="1200" height="900"
-{% if eager %}fetchpriority="high"{% else %}loading="lazy" fetchpriority="low"{% endif %} decoding="async"
-style="position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;opacity:.55">
-{%- else -%}
-<svg role="img" aria-label="{{ alt | escape }}" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:15%;width:70%;height:70%;opacity:.35;color:#8a949c"><path d="M60 12 100 32v36L60 88 20 68V32Z M20 32l40 20 40-20 M60 52v36" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-{%- endif -%}
-<div class="ifcvo-actions" style="position:relative;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;max-width:90%">
-<button type="button" class="ifcvo-open" style="min-height:44px;padding:12px 20px;border:0;border-radius:999px;background:#fff;color:#11161a;font:inherit;font-weight:600;cursor:pointer">{{ open_label | escape }}</button>
-<button type="button" class="ifcvo-retry" hidden style="min-height:44px;padding:12px 20px;border:0;border-radius:999px;background:#fff;color:#11161a;font:inherit;font-weight:600;cursor:pointer">{{ 'ifcvo.facade.retry' | t }}</button>
-<a class="ifcvo-full" hidden href="{{ full_url | escape }}" target="_blank" rel="noopener" style="min-height:44px;line-height:44px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.9);color:#11161a;font:inherit;font-weight:600;text-decoration:none">{{ 'ifcvo.facade.open_full' | t }}</a>
+<div class="ifcvo-stage" style="{{box}};border-radius:{{radius}}px;background:{{stage_bg}}"
+data-ifcvo-state="idle" data-full="{{full_url|escape}}"
+data-msg-loading="{{'ifcvo.facade.loading'|t|escape}}"
+data-msg-error="{{'ifcvo.facade.error'|t|escape}}"
+data-msg-offline="{{'ifcvo.facade.offline'|t|escape}}"
+data-msg-large="{{'ifcvo.facade.too_large'|t|escape}}"
+data-msg-webgl="{{'ifcvo.facade.no_webgl'|t|escape}}"
+data-msg-ready="{{'ifcvo.facade.ready'|t|escape}}">
+<div class="ifcvo-facade">
+{%-if poster_src != '' -%}
+<img src="{{poster_src|escape}}" alt="{{alt|escape}}" width="1200" height="900"
+{%if eager%}fetchpriority="high"{%else%}loading="lazy" fetchpriority="low"{%endif%} decoding="async">
+{%-else -%}
+<svg role="img" aria-label="{{alt|escape}}" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet"><path d="M60 12 100 32v36L60 88 20 68V32Z M20 32l40 20 40-20 M60 52v36" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+{%-endif -%}
+<div class="ifcvo-actions">
+<button type="button" class="ifcvo-open">{{open_label|escape}}</button>
+<button type="button" class="ifcvo-retry" hidden>{{'ifcvo.facade.retry'|t}}</button>
+<a class="ifcvo-full" hidden href="{{full_url|escape}}" target="_blank" rel="noopener">{{'ifcvo.facade.open_full'|t}}</a>
 </div>
 </div>
 </div>
-<p class="ifcvo-status" role="status" aria-live="polite" style="margin:6px 0 0;min-height:1.4em;font:inherit;font-size:.9em"></p>
+<p class="ifcvo-status" role="status" aria-live="polite"></p>

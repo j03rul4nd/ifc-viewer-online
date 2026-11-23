@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC: vistes per variant"
+    },
+    "quote_form": {
+      "name": "IFC: sol·licitud de pressupost"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "Límit de triangles dels models generats",
-    "the_smallest_parts_are_left_out_above_it": "Per sobre s'ometen les peces més petites."
+    "the_smallest_parts_are_left_out_above_it": "Per sobre s'ometen les peces més petites.",
+    "ask_for_the_buyer_s_role": "Preguntar el perfil del comprador",
+    "ask_for_the_project_name_and_location": "Preguntar nom i ubicació del projecte",
+    "ask_for_a_quantity": "Preguntar una quantitat",
+    "also_create_a_customer_with_these_tags": "Crear també un client amb aquestes etiquetes",
+    "show_ask_about_this_element": "Mostrar \"Preguntar per aquest element\""
   }
 }

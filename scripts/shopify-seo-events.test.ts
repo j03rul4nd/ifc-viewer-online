@@ -8,7 +8,7 @@ import { EVENTS, bindAll, fileName, publish, sanitize } from '../integrations/sh
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
 /** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
 const SRC = path.resolve(__dirname, '../integrations/shopify')
-const read = (p: string) => fs.readFileSync(path.join(EXT, p), 'utf8')
+const read = (p: string) => fs.readFileSync(path.join(/^(blocks|snippets)[/]/.test(p) ? path.resolve(__dirname, '../integrations/shopify') : EXT, p), 'utf8')
 
 /** Crude Liquid stand-in: loops run once, output tags become JSON strings, tags vanish. */
 function fakeRender(src: string): string {
@@ -86,7 +86,8 @@ describe('ifcvo-events', () => {
     delete (window as any).Shopify
     expect(publish('ifcvo_download', {})).toBe(false)
     expect(calls).toEqual([['ifcvo_download', { file: 'a.ifc' }]])
-    expect(EVENTS).toHaveLength(5)
+    expect(EVENTS).toHaveLength(6)
+    expect(EVENTS).toContain('ifcvo_quote_submit')
   })
   it('bindAll wires downloads, quotes, load and error once per root', () => {
     document.body.innerHTML = `<div data-ifcvo-viewer data-model="https://x.test/m.ifc?sig=1" data-product-id="9">

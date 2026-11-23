@@ -326,6 +326,26 @@
       "manual": "Copia este enlace:",
       "error": "No se pudo leer esta vista.",
       "updated": "Actualizado desde tu compra"
+    },
+    "lead": {
+      "title": "Solicitar presupuesto",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "company": "Empresa",
+      "role": "Tu perfil",
+      "role_architect": "Arquitectura o ingeniería",
+      "role_contractor": "Constructora o instalador",
+      "role_owner": "Propiedad o promotora",
+      "role_reseller": "Distribuidor o revendedor",
+      "project": "Nombre y ubicación del proyecto",
+      "quantity": "Cantidad",
+      "message": "Mensaje",
+      "submit": "Enviar solicitud",
+      "sent": "Gracias. Hemos recibido tu solicitud.",
+      "ask": "Preguntar por este elemento",
+      "question": "Pregunta sobre",
+      "view": "Vista",
+      "asking": "Tu pregunta es sobre {name}. Escríbela abajo y envíala."
     }
   }
 }

@@ -1,87 +1,55 @@
-{%- liquid
-assign s = block.settings
-assign specs_ns = s.specs_ns | strip | default: 'bim'
-assign columns = ''
-if s.col_class
-assign columns = columns | append: 'class,'
+{%-liquid
+assign s=block.settings
+assign specs_ns=s.specs_ns|strip|default:'bim'
+assign columns=''
+assign list='class,type,count,dimensions,length,area,volume,weight,materials,properties'|split:','
+for c in list
+assign k='col_'|append:c
+if s[k]
+assign columns=columns|append:c|append:','
 endif
-if s.col_type
-assign columns = columns | append: 'type,'
+endfor
+assign groups=''
+assign list='dimensions,types,classes,materials,totals'|split:','
+for c in list
+assign k='group_'|append:c
+if s[k]
+assign groups=groups|append:c|append:','
 endif
-if s.col_count
-assign columns = columns | append: 'count,'
-endif
-if s.col_dimensions
-assign columns = columns | append: 'dimensions,'
-endif
-if s.col_length
-assign columns = columns | append: 'length,'
-endif
-if s.col_area
-assign columns = columns | append: 'area,'
-endif
-if s.col_volume
-assign columns = columns | append: 'volume,'
-endif
-if s.col_weight
-assign columns = columns | append: 'weight,'
-endif
-if s.col_materials
-assign columns = columns | append: 'materials,'
-endif
-if s.col_properties
-assign columns = columns | append: 'properties,'
-endif
-assign groups = ''
-if s.group_dimensions
-assign groups = groups | append: 'dimensions,'
-endif
-if s.group_types
-assign groups = groups | append: 'types,'
-endif
-if s.group_classes
-assign groups = groups | append: 'classes,'
-endif
-if s.group_materials
-assign groups = groups | append: 'materials,'
-endif
-if s.group_totals
-assign groups = groups | append: 'totals,'
-endif
+endfor
 -%}
 <div
-class="ifcvo-panel ifcvo-specs-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+class="ifcvo-panel ifcvo-specs-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-specs
 data-ifcvo-tier="specs"
-data-columns="{{ columns | escape }}"
-data-groups="{{ groups | escape }}"
-data-units="{{ s.units | escape }}"
-data-properties="{{ s.properties | escape }}"
-data-labels-override="{{ s.labels | escape }}"
-data-csv="{{ s.csv }}"
-data-file="{{ product.handle | escape }}-specs.csv"
-style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
-{{ block.shopify_attributes }}
+data-columns="{{columns|escape}}"
+data-groups="{{groups|escape}}"
+data-units="{{s.units|escape}}"
+data-properties="{{s.properties|escape}}"
+data-labels-override="{{s.labels|escape}}"
+data-csv="{{s.csv}}"
+data-file="{{product.handle|escape}}-specs.csv"
+style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+{{block.shopify_attributes}}
 >
-{%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
 <div class="ifcvo-specs-static" data-ifcvo-static>
-{%- if product.metafields[specs_ns] != blank -%}
+{%-if product.metafields[specs_ns] != blank -%}
 <table class="ifcvo-specs">
-<caption>{{ product.title | escape }}</caption>
+<caption>{{product.title|escape}}</caption>
 <tbody>
-{%- for pair in product.metafields[specs_ns] -%}
-<tr data-key="{{ pair[0] | escape }}"><th scope="row">{{ pair[0] | replace: '_', ' ' | capitalize | escape }}</th><td>{{ pair[1].value | escape }}</td></tr>
-{%- endfor -%}
+{%-for pair in product.metafields[specs_ns] -%}
+<tr data-key="{{pair[0]|escape}}"><th scope="row">{{pair[0]|replace:'_',' '|capitalize|escape}}</th><td>{{pair[1].value|escape}}</td></tr>
+{%-endfor -%}
 </tbody>
 </table>
-{%- elsif request.design_mode -%}
-<p class="ifcvo-muted">{{ 'ifcvo.editor.specs' | t: ns: specs_ns | escape }}</p>
-{%- endif -%}
+{%-elsif request.design_mode -%}
+<p class="ifcvo-muted">{{'ifcvo.editor.specs'|t:ns:specs_ns|escape}}</p>
+{%-endif -%}
 </div>
 <div class="ifcvo-body ifcvo-specs-live" data-ifcvo-live aria-live="polite">
 </div>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-specs.js' | asset_url }}"></script>
-{%- render 'ifcvo-diag', feature: 'specs', block: 'ifc-specs', ns: specs_ns, keys: '' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.07qv","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Specifications"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"Product metafields in this namespace are shown as HTML and override values read from the model."},{"type":"select","id":"units","label":"t:k.05kd","default":"metric","options":[{"value":"metric","label":"t:k.1aey"},{"value":"imperial","label":"t:k.1vfd"}]},{"type":"header","content":"Tables"},{"type":"checkbox","id":"group_dimensions","label":"t:k.01sv","default":true,"info":"Metafield dimensions (e.g. 1200 x 600 x 2100 mm) win; then the model's quantities; then a box calculated from the geometry."},{"type":"checkbox","id":"group_types","label":"t:k.0do4","default":true},{"type":"checkbox","id":"group_classes","label":"t:k.1qg7","default":false},{"type":"checkbox","id":"group_materials","label":"t:k.0imw","default":true},{"type":"checkbox","id":"group_totals","label":"t:k.0bgb","default":true},{"type":"header","content":"Columns"},{"type":"checkbox","id":"col_class","label":"t:k.05iv","default":true},{"type":"checkbox","id":"col_type","label":"t:k.1ayx","default":true},{"type":"checkbox","id":"col_count","label":"t:k.13cu","default":true},{"type":"checkbox","id":"col_dimensions","label":"t:k.01eg","default":false},{"type":"checkbox","id":"col_length","label":"t:k.0ky1","default":true},{"type":"checkbox","id":"col_area","label":"t:k.1ck2","default":true},{"type":"checkbox","id":"col_volume","label":"t:k.0tmj","default":false},{"type":"checkbox","id":"col_weight","label":"t:k.1ryv","default":true},{"type":"checkbox","id":"col_materials","label":"t:k.0imw","default":true},{"type":"checkbox","id":"col_properties","label":"t:k.01j2","default":false},{"type":"textarea","id":"properties","label":"t:k.04ct","info":"One per line, e.g. FireRating or Pset_DoorCommon.FireRating. Empty: common and manufacturer property sets."},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.18fb"},{"type":"checkbox","id":"csv","label":"t:k.0ej7","default":true},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{%-render 'ifcvo-runtime',js:'ifcvo-specs.js' -%}
+{%-render 'ifcvo-diag',feature:'specs',block:'ifc-specs',ns:specs_ns,keys:'' -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.k06","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Specifications"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"Product metafields in this namespace are shown as HTML and override values read from the model."},{"type":"select","id":"units","label":"t:k.d9h","default":"metric","options":[{"value":"metric","label":"t:k.386"},{"value":"imperial","label":"t:k.hkb"}]},{"type":"header","content":"Tables"},{"type":"checkbox","id":"group_dimensions","label":"t:k.wjn","default":true,"info":"Metafield dimensions (e.g. 1200 x 600 x 2100 mm) win; then the model's quantities; then a box calculated from the geometry."},{"type":"checkbox","id":"group_types","label":"t:k.7t6","default":true},{"type":"checkbox","id":"group_classes","label":"t:k.gj5","default":false},{"type":"checkbox","id":"group_materials","label":"t:k.c64","default":true},{"type":"checkbox","id":"group_totals","label":"t:k.u8t","default":true},{"type":"header","content":"Columns"},{"type":"checkbox","id":"col_class","label":"t:k.36h","default":true},{"type":"checkbox","id":"col_type","label":"t:k.g1u","default":true},{"type":"checkbox","id":"col_count","label":"t:k.3tl","default":true},{"type":"checkbox","id":"col_dimensions","label":"t:k.zl8","default":false},{"type":"checkbox","id":"col_length","label":"t:k.6me","default":true},{"type":"checkbox","id":"col_area","label":"t:k.orb","default":true},{"type":"checkbox","id":"col_volume","label":"t:k.5ys","default":false},{"type":"checkbox","id":"col_weight","label":"t:k.da2","default":true},{"type":"checkbox","id":"col_materials","label":"t:k.c64","default":true},{"type":"checkbox","id":"col_properties","label":"t:k.ajj","default":false},{"type":"textarea","id":"properties","label":"t:k.q9j","info":"One per line, e.g. FireRating or Pset_DoorCommon.FireRating. Empty: common and manufacturer property sets."},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: class, type, count, length, area, volume, weight, materials, properties, dimensions, manufacturer, model, calculated, total, csv, waiting."},{"type":"checkbox","id":"csv","label":"t:k.a5f","default":true},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

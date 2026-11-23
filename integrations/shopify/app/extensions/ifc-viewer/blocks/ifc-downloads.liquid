@@ -1,38 +1,37 @@
-{%- liquid
-assign s = block.settings
-assign ns = s.namespace | strip | default: 'custom'
-assign key = s.key | strip | default: 'ifc_model'
-assign current = product.selected_or_first_available_variant
-assign vfield = current.metafields[ns][key].value
-assign dl_model = vfield.url | default: vfield | strip
+{%-liquid
+assign s=block.settings
+assign ns=s.namespace|strip|default:'custom'
+assign key=s.key|strip|default:'ifc_model'
+assign current=product.selected_or_first_available_variant
+assign vfield=current.metafields[ns][key].value
+assign dl_model=vfield.url|default:vfield|strip
 if dl_model == ''
-assign field = product.metafields[ns][key].value
-assign dl_model = field.url | default: field | strip
+assign field=product.metafields[ns][key].value
+assign dl_model=field.url|default:field|strip
 endif
-assign files = ''
-assign files_key = s.files_key | strip
+assign files=''
+assign files_key=s.files_key|strip
 if files_key != ''
-assign files = product.metafields[ns][files_key].value
+assign files=product.metafields[ns][files_key].value
 endif
-assign ifcvo_protected = false
-assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
+assign ifcvo_protected=false
+assign pv_plan=app.metafields.ifcvo.plan.value|default:''|strip|downcase
 if pv_plan == 'free'
-assign pv_ok = false
+assign pv_ok=false
 else
-assign pv_ok = true
+assign pv_ok=true
 endif
 for b in section.blocks
 if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
-assign ifcvo_protected = true
+assign ifcvo_protected=true
 endif
 endfor
 -%}
-<div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
-{%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
-{%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
+<div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{block.shopify_attributes}}>
+{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
+{%-unless ifcvo_protected -%}{%-render 'ifcvo-downloads',model:dl_model,files:files,show_ifc:s.ifc,ifc_label:s.ifc_label,glb:s.glb,glb_label:s.glb_label,csv:s.csv,csv_label:s.csv_label,gate:s.gate,tag:s.tag,login_label:s.login_label -%}{%-endunless -%}
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>
-{%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},{{ block.settings.files_key }}{%- endcapture -%}
-{%- render 'ifcvo-diag', feature: 'files', block: 'ifc-downloads', ns: ns, keys: dg_keys -%}{%- endif -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1fms","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Downloads"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"key","label":"t:k.0p0n","default":"ifc_model"},{"type":"checkbox","id":"ifc","label":"t:k.07oz","default":true},{"type":"text","id":"ifc_label","label":"t:k.0l0x","placeholder":"Download BIM model (IFC)","info":"Blank: the store language text."},{"type":"checkbox","id":"glb","label":"t:k.1ytf","default":false,"info":"Opens the 3D viewer to build the file on the visitor's device."},{"type":"text","id":"glb_label","label":"t:k.1cfq","placeholder":"3D model (GLB)","info":"Blank: the store language text."},{"type":"checkbox","id":"csv","label":"t:k.1qov","default":false},{"type":"text","id":"csv_label","label":"t:k.1man","placeholder":"Element list (CSV)","info":"Blank: the store language text."},{"type":"text","id":"files_key","label":"t:k.1lw6","default":"bim_files"},{"type":"header","content":"Who sees them"},{"type":"select","id":"gate","label":"t:k.09ts","default":"none","info":"This hides the links, it does not protect the files: anyone with a file's link can still download it.","options":[{"value":"none","label":"t:k.06gg"},{"value":"customer","label":"t:k.1o96"},{"value":"tag","label":"t:k.0j6b"}]},{"type":"text","id":"tag","label":"t:k.1gu8","default":"trade","visible_if":"{{ block.settings.gate == 'tag' }}"},{"type":"text","id":"login_label","label":"t:k.0ray","placeholder":"Log in to see the downloads","info":"Blank: the store language text."}]}{% endschema %}
+{%-render 'ifcvo-runtime',js:'ifcvo-quote.js' -%}
+{%-if request.design_mode -%}{%-capture dg_keys -%}{{block.settings.key}},{{block.settings.files_key}}{%-endcapture -%}
+{%-render 'ifcvo-diag',feature:'files',block:'ifc-downloads',ns:ns,keys:dg_keys -%}{%-endif -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.cld","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Downloads"},{"type":"text","id":"namespace","label":"t:k.6ld","default":"custom"},{"type":"text","id":"key","label":"t:k.ioh","default":"ifc_model"},{"type":"checkbox","id":"ifc","label":"t:k.ls9","default":true},{"type":"text","id":"ifc_label","label":"t:k.ncr","placeholder":"Download BIM model (IFC)","info":"Blank: the store language text."},{"type":"checkbox","id":"glb","label":"t:k.dnw","default":false,"info":"Opens the 3D viewer to build the file on the visitor's device."},{"type":"text","id":"glb_label","label":"t:k.5hc","placeholder":"3D model (GLB)","info":"Blank: the store language text."},{"type":"checkbox","id":"csv","label":"t:k.p17","default":false},{"type":"text","id":"csv_label","label":"t:k.6a7","placeholder":"Element list (CSV)","info":"Blank: the store language text."},{"type":"text","id":"files_key","label":"t:k.vlf","default":"bim_files"},{"type":"header","content":"Who sees them"},{"type":"select","id":"gate","label":"t:k.qwr","default":"none","info":"This hides the links, it does not protect the files: anyone with a file's link can still download it.","options":[{"value":"none","label":"t:k.jy3"},{"value":"customer","label":"t:k.8zj"},{"value":"tag","label":"t:k.sn7"}]},{"type":"text","id":"tag","label":"t:k.s65","default":"trade","visible_if":"{{block.settings.gate == 'tag'}}"},{"type":"text","id":"login_label","label":"t:k.69z","placeholder":"Log in to see the downloads","info":"Blank: the store language text."}]}{% endschema %}

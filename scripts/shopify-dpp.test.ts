@@ -18,6 +18,7 @@ const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.jso
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 const itemSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-dpp-item.liquid'), 'utf8')
 const valueSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-dpp-value.liquid'), 'utf8')
+const rowSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-dpp-row.liquid'), 'utf8')
 const jsonld = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-jsonld.liquid'), 'utf8')
 
 /** Mirror of snippets/ifcvo-dpp-value.liquid (Liquid cannot run here): kept honest by the structure test below. */
@@ -79,7 +80,8 @@ describe('ifc-dpp block (Liquid)', () => {
   it('links only when they start with https://', () => {
     expect(block).toMatch(/assign h = epd_url \| slice: 0, 8 \| downcase\s+if h != 'https:\/\/'\s+assign epd_url = ''/)
     expect(block).toMatch(/assign h = dop_url \| slice: 0, 8 \| downcase\s+if h != 'https:\/\/'\s+assign dop_url = ''/)
-    expect(block).toMatch(/rel="noopener nofollow"/)
+    expect(rowSnippet).toMatch(/rel="noopener nofollow"/)
+    expect(block).toContain("key: 'epd_url', label: 'ifcvo.dpp.epd_link', value: epd_url, link: true")
   })
 
   it('server-renders the metafields, GTIN falls back to the variant barcode, score server-side', () => {
@@ -122,11 +124,12 @@ describe('plan gate, units, JSON-LD', () => {
     expect(gate).toBeLessThan(block.indexOf('<section'))
     expect(block).toMatch(/request\.design_mode -%\}\s*<p class="ifcvo-upsell" data-ifcvo-upsell="dpp"/)
     expect(block.indexOf('{%- else -%}', gate)).toBeLessThan(block.indexOf('<section'))
-    expect(block.lastIndexOf('{%- endif -%}')).toBeGreaterThan(block.indexOf("'ifcvo-dpp.js' | asset_url"))
+    expect(block.lastIndexOf('{%- endif -%}')).toBeGreaterThan(block.indexOf("js: 'ifcvo-dpp.js'"))
   })
 
   it('units: companion metafields, default only for bare numbers, value with unit as given', () => {
-    expect(block).toContain("render 'ifcvo-dpp-value', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e'")
+    expect(block).toContain("render 'ifcvo-dpp-row', key: 'gwp_a1a3', label: 'ifcvo.dpp.gwp_a1a3', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e'")
+    expect(rowSnippet).toContain("render 'ifcvo-dpp-value', value: ifcvo_v, unit: unit, fallback: fallback")
     expect(block).toContain("unit: m.energy_unit.value, fallback: 'MJ'")
     expect(block).toContain("unit: m.water_unit.value, fallback: 'm³'")
     for (const c of '0123456789.,-+ ') expect(valueSnippet).toContain(`remove: '${c}'`)

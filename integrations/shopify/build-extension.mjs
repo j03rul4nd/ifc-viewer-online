@@ -200,19 +200,39 @@ export function compactLiquid(source) {
     .join('\n')
     // comment … endcomment lines inside a {%- liquid %} tag, and `# …` comment lines there.
     .replace(/^comment\n[\s\S]*?\nendcomment$\n?/gm, '')
-    .replace(/^# .*\n/gm, '') + '\n'
+    .replace(/^# .*\n/gm, '')
+    .replace(/(\{\{-?|\{%-?)([\s\S]*?)(-?\}\}|-?%\})/g, (all, open, markup, close) =>
+      /^\s*(schema|endschema|raw|endraw)\b/.test(markup) ? all : open + tightMarkup(markup, close[0] === '-') + close) + '\n'
+}
+
+/**
+ * Inside a Liquid tag or output, outside quoted strings: no spaces around `|`, `:`,
+ * `,` and an assignment's `=`, none after the opening delimiter and none before the
+ * closing one (one is kept before `-%}` / `-}}` so `x-` is never read as a name).
+ * Operators (`==`, `!=`, `contains`, `and`…) keep their spaces; line breaks stay.
+ */
+export function tightMarkup(markup, dashClose = false) {
+  const parts = markup.split(/('[^']*'|"[^"]*")/)
+  for (let i = 0; i < parts.length; i += 2) {
+    parts[i] = parts[i]
+      .replace(/[ \t]*([|:,])[ \t]*/g, '$1')
+      .replace(/([^=!<> \t])[ \t]+=[ \t]+(?=[^=]|$)/g, '$1=')
+  }
+  let out = parts.join('').replace(/^[ \t]+/, '').replace(/[ \t]+$/, '')
+  if (dashClose && !/\n$/.test(out)) out += ' '
+  return out
 }
 
 /**
  * Short theme-editor key for a long one (`settings.button_before_the_3d_view_opens`
- * → `k.<4+ base-36 chars>`): a stable hash, so adding a key does not rename the
+ * → `k.<last 3+ base-36 chars of a hash>`): stable, so adding a key does not rename the
  * others. The t: keys were a third of the schema bytes, and they count twice
  * (block Liquid and every schema locale file).
  */
-export function shortKey(key, len = 4) {
+export function shortKey(key, len = 3) {
   let h = 2166136261
   for (const c of Buffer.from(key, 'utf8')) { h ^= c; h = Math.imul(h, 16777619) >>> 0 }
-  return 'k.' + h.toString(36).padStart(7, '0').slice(0, len)
+  return 'k.' + h.toString(36).padStart(7, '0').slice(-len)
 }
 
 /** Long schema key → short key for every key given; a clash takes a longer hash. */
@@ -220,7 +240,7 @@ export function shortKeys(keys) {
   const map = {}
   const taken = new Set()
   for (const k of [...new Set(keys)].sort()) {
-    let len = 4
+    let len = 3
     while (taken.has(shortKey(k, len))) if (++len > 7) throw new Error('schema key collision: ' + k)
     map[k] = shortKey(k, len)
     taken.add(map[k])

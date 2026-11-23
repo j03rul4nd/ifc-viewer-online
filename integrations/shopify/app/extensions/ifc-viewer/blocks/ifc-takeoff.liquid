@@ -1,51 +1,49 @@
-{%- liquid
-assign s = block.settings
-assign ns = s.specs_ns | strip | default: 'bim'
-assign mf = product.metafields[ns]
+{%-liquid
+assign s=block.settings
+assign ns=s.specs_ns|strip|default:'bim'
+assign mf=product.metafields[ns]
 -%}
 <div
-class="ifcvo-panel ifcvo-takeoff-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+class="ifcvo-panel ifcvo-takeoff-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-takeoff
 data-ifcvo-tier="takeoff"
-data-block-id="{{ block.id | escape }}"
-data-units="{{ s.units | escape }}"
-data-group="{{ s.group | escape }}"
-data-show-steel="{{ s.show_steel }}"
-data-csv="{{ s.csv }}"
-data-quote="{{ s.quote }}"
-data-form="{{ s.form | escape }}"
-data-prices="{{ mf.unit_prices.value | json | escape }}"
-data-currency="{{ shop.currency | escape }}"
-data-cart-currency="{{ cart.currency.iso_code | escape }}"
-data-product="{{ product.title | escape }}"
+data-block-id="{{block.id|escape}}"
+data-units="{{s.units|escape}}"
+data-group="{{s.group|escape}}"
+data-show-steel="{{s.show_steel}}"
+data-csv="{{s.csv}}"
+data-quote="{{s.quote}}"
+data-form="{{s.form|escape}}"
+data-prices="{{mf.unit_prices.value|json|escape}}"
+data-currency="{{shop.currency|escape}}"
+data-cart-currency="{{cart.currency.iso_code|escape}}"
+data-product="{{product.title|escape}}"
 data-i18n="takeoff"
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
-data-labels-override="{{ s.labels | escape }}"
-style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
-{{ block.shopify_attributes }}
+data-labels-override="{{s.labels|escape}}"
+style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+{{block.shopify_attributes}}
 >
-{%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
-{%- if mf.boq != blank -%}
-{%- assign boq_lines = mf.boq.value | newline_to_br | split: '<br />' -%}
+{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
+{%-if mf.boq != blank -%}
+{%-assign boq_lines=mf.boq.value|newline_to_br|split:'<br />' -%}
 <table class="ifcvo-specs ifcvo-takeoff" data-ifcvo-boq-static>
-<caption>{{ 'ifcvo.takeoff.title' | t | escape }}</caption>
-{%- for line in boq_lines -%}
-{%- assign row = line | strip -%}
-{%- if row == blank -%}{%- continue -%}{%- endif -%}
-{%- assign cells = row | split: '|' -%}
+<caption>{{'ifcvo.takeoff.title'|t|escape}}</caption>
+{%-for line in boq_lines -%}
+{%-assign row=line|strip -%}
+{%-if row == blank -%}{%-continue -%}{%-endif -%}
+{%-assign cells=row|split:'|' -%}
 <tr>
-{%- for c in cells -%}
-{%- if forloop.parentloop.first -%}<th scope="col">{{ c | strip | escape }}</th>{%- elsif forloop.first -%}<th scope="row">{{ c | strip | escape }}</th>{%- else -%}<td>{{ c | strip | escape }}</td>{%- endif -%}
-{%- endfor -%}
+{%-for c in cells -%}
+{%-if forloop.parentloop.first -%}<th scope="col">{{c|strip|escape}}</th>{%-elsif forloop.first -%}<th scope="row">{{c|strip|escape}}</th>{%-else -%}<td>{{c|strip|escape}}</td>{%-endif -%}
+{%-endfor -%}
 </tr>
-{%- endfor -%}
+{%-endfor -%}
 </table>
-{%- elsif request.design_mode -%}
-<p class="ifcvo-muted">{{ 'ifcvo.editor.takeoff' | t: ns: ns | escape }}</p>
-{%- endif -%}
+{%-elsif request.design_mode -%}
+<p class="ifcvo-muted">{{'ifcvo.editor.takeoff'|t:ns:ns|escape}}</p>
+{%-endif -%}
 <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-takeoff.js' | asset_url }}"></script>
-{%- render 'ifcvo-diag', feature: 'takeoff', block: 'ifc-takeoff', ns: ns, keys: 'boq,unit_prices' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1vxx","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Quantities"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.1yx6"},{"type":"select","id":"units","label":"t:k.05kd","default":"metric","options":[{"value":"metric","label":"t:k.0g8s"},{"value":"imperial","label":"t:k.0s7v"}]},{"type":"select","id":"group","label":"t:k.1jm3","default":"type","options":[{"value":"type","label":"t:k.1ayx"},{"value":"material","label":"t:k.1tj7"},{"value":"storey","label":"t:k.140y"}]},{"type":"checkbox","id":"show_steel","label":"t:k.1nob","default":true},{"type":"checkbox","id":"csv","label":"t:k.0ej7","default":true},{"type":"checkbox","id":"quote","label":"t:k.0qqz","default":true,"info":"Fills the page's contact form."},{"type":"text","id":"form","label":"t:k.0phb","info":"Empty finds the first contact form."},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0ycm"},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{%-render 'ifcvo-runtime',js:'ifcvo-takeoff.js' -%}
+{%-render 'ifcvo-diag',feature:'takeoff',block:'ifc-takeoff',ns:ns,keys:'boq,unit_prices' -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.rue","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Quantities"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"t:k.zez"},{"type":"select","id":"units","label":"t:k.d9h","default":"metric","options":[{"value":"metric","label":"t:k.yr5"},{"value":"imperial","label":"t:k.mdv"}]},{"type":"select","id":"group","label":"t:k.f5z","default":"type","options":[{"value":"type","label":"t:k.g1u"},{"value":"material","label":"t:k.8qv"},{"value":"storey","label":"t:k.fum"}]},{"type":"checkbox","id":"show_steel","label":"t:k.i0k","default":true},{"type":"checkbox","id":"csv","label":"t:k.a5f","default":true},{"type":"checkbox","id":"quote","label":"t:k.t4w","default":true,"info":"Fills the page's contact form."},{"type":"text","id":"form","label":"t:k.hqj","info":"Empty finds the first contact form."},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

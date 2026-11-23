@@ -5,8 +5,8 @@
 // Payloads carry no personal data: file names without query strings, product
 // and variant ids, an error code. Never URLs with tokens, never customer data.
 
-export const EVENTS = ['ifcvo_model_viewed', 'ifcvo_model_loaded', 'ifcvo_download', 'ifcvo_quote_click', 'ifcvo_error']
-const ALLOWED_KEYS = ['file', 'productId', 'variantId', 'blockId', 'code', 'elements', 'ms']
+export const EVENTS = ['ifcvo_model_viewed', 'ifcvo_model_loaded', 'ifcvo_download', 'ifcvo_quote_click', 'ifcvo_quote_submit', 'ifcvo_error']
+const ALLOWED_KEYS = ['file', 'productId', 'variantId', 'blockId', 'code', 'elements', 'ms', 'role', 'kind']
 const once = new WeakSet()
 
 /** File name only: no host, path, query or fragment (signed URLs carry tokens). */
@@ -68,6 +68,8 @@ export function bind(root) {
   // Companion blocks outside the root (quote list, browser-made downloads) report here.
   root.addEventListener('ifcvo:download', (ev) => publish('ifcvo_download', { ...context(root), file: ev.detail && ev.detail.file }))
   root.addEventListener('ifcvo:quote', () => publish('ifcvo_quote_click', context(root)))
+  // Quote request form (blocks/ifc-quote.liquid): element count, role and quote|expert. Never name, email or text.
+  root.addEventListener('ifcvo:quote-submit', (ev) => { const x = ev.detail || {}; publish('ifcvo_quote_submit', { ...context(root), elements: x.elements, role: x.role, kind: x.kind }) })
   root.addEventListener('ifcvo:error', (ev) => publish('ifcvo_error', { ...context(root), code: (ev.detail && ev.detail.code) || 'unknown' }))
 }
 

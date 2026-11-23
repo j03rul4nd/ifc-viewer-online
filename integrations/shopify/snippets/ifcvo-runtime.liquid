@@ -1,5 +1,12 @@
 {% comment %}
-  The shared runtime script (assets/ifcvo.js). One line per block instead of the
-  full tag, to stay within Shopify's 100 KB of Liquid per extension.
+  The shared runtime script (assets/ifcvo.js) and, when given, the block's own
+  module (js: 'ifcvo-rooms.js'). One line per block instead of two full tags, to
+  stay within Shopify's 100 KB of Liquid per extension. The shop's ifcvo.labels
+  are printed here once for assets/ifcvo-i18n.js, which hands them (and the
+  theme locale) to every block marked data-i18n.
 {% endcomment %}
+<script type="application/json" data-ifcvo-shop-labels>{{ shop.metafields.ifcvo.labels.value | json | replace: '</', '<\/' }}</script>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- if js != blank %}
+<script type="module" src="{{ js | asset_url }}"></script>
+{%- endif -%}

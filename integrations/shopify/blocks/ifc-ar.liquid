@@ -42,7 +42,7 @@
   data-title="{{ product.title | escape }}"
   data-page="{{ canonical_url | escape }}"
   data-i18n="ar"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+ 
   data-labels-override="{{ s.labels | escape }}"
   {{ block.shopify_attributes }}
 >
@@ -54,8 +54,7 @@
     <p class="ifcvo-muted">{{ 'ifcvo.editor.ar' | t: ns: ns | escape }}</p>
   {%- endif -%}
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-ar.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-ar.js' -%}
 
 {%- render 'ifcvo-diag', feature: 'ar', block: 'ifc-ar', ns: ns, keys: 'ar_glb,ar_usdz' -%}
 

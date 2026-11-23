@@ -28,7 +28,7 @@
   data-side="{{ s.side | escape }}"
   data-rear="{{ s.rear | escape }}"
   data-i18n="sunlot"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+ 
   data-labels-override="{{ s.labels | escape }}"
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
@@ -38,8 +38,7 @@
     <noscript><p class="ifcvo-muted">{{ 'ifcvo.sunlot.waiting' | t | escape }}</p></noscript>
   </div>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-sunlot.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-sunlot.js' -%}
 
 {%- render 'ifcvo-diag', feature: 'sunlot', block: 'ifc-sun-lot', ns: '', keys: '' -%}
 

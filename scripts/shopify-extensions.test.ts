@@ -44,10 +44,10 @@ describe('extension layout', () => {
     expect(fs.readFileSync(path.join(dir, 'shopify.extension.toml'), 'utf8')).toMatch(/type = "theme"/)
   })
 
-  it('holds all 20 blocks: the two sections plus every source block, at most 30', () => {
+  it('holds all 21 blocks: the two sections plus every source block, at most 30', () => {
     const files = list(path.join(dir, 'blocks')).map((f) => f.replace(/\.liquid$/, ''))
     expect(files).toEqual(gen.EXTENSIONS['ifc-viewer'])
-    expect(files.length).toBe(20)
+    expect(files.length).toBe(21)
     expect(files.length).toBeLessThanOrEqual(gen.BLOCK_LIMIT)
   })
 
@@ -172,7 +172,19 @@ describe('every documented bundle limit', () => {
 describe('compact Liquid', () => {
   it('drops comments, indentation and blank lines; minifies the schema', () => {
     const src = "{% comment %}\n  note\n{% endcomment %}\n{%- liquid\n  assign a = 1\n  comment\n  x\n  endcomment\n-%}\n\n  <p>{{ a }}</p>\n{% schema %}\n{\n  \"name\": \"x\"\n}\n{% endschema %}\n"
-    expect(gen.compactLiquid(src)).toBe('{%- liquid\nassign a = 1\n-%}\n<p>{{ a }}</p>\n{% schema %}{"name":"x"}{% endschema %}\n')
+    expect(gen.compactLiquid(src)).toBe('{%-liquid\nassign a=1\n-%}\n<p>{{a}}</p>\n{% schema %}{"name":"x"}{% endschema %}\n')
+  })
+
+  it('tightens tag markup but never inside quotes, and keeps operators and the space before -%}', () => {
+    expect(gen.tightMarkup(" 'a | b: c' | t: n: x, m: 'y , z' ")).toBe("'a | b: c'|t:n:x,m:'y , z'")
+    expect(gen.tightMarkup(' if a != blank and b == 1 or c contains "d" ', true)).toBe('if a != blank and b == 1 or c contains "d" ')
+    expect(gen.tightMarkup('\nassign x = y | plus: 1\nassign z = x >= 2\n')).toBe('\nassign x=y|plus:1\nassign z=x >= 2\n')
+    expect(gen.compactLiquid('<p title="a | b">{{ x | escape }}</p>\n')).toBe('<p title="a | b">{{x|escape}}</p>\n')
+  })
+
+  it('keeps at least 8 KB of the 100 KB Liquid limit free for new blocks', () => {
+    const bytes = liquidFiles().reduce((n, f) => n + fs.statSync(f).size, 0)
+    expect(bytes).toBeLessThanOrEqual(gen.LIQUID_LIMIT - 8 * 1000)
   })
 
   it('no generated block or snippet keeps a comment', () => {

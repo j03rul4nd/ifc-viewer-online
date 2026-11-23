@@ -35,8 +35,8 @@
   data-i18n="compat"
   data-unavailable="{{ t_unavailable | escape }}"
   data-labels-override="{{ s.labels | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+ 
+ 
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {% if s.title != blank %}aria-label="{{ s.title | escape }}"{% endif %}
   {{ block.shopify_attributes }}
@@ -66,8 +66,7 @@
     {%- endif -%}
   </div>
 </section>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-compat.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-compat.js' -%}
 
 {%- render 'ifcvo-diag', feature: 'compat', block: 'ifc-compat', ns: ns, keys: 'compatible_with,ifc_size_mb' -%}
 

@@ -6,6 +6,7 @@
 // No server: Shopify's own cart and contact form do the rest.
 // Talks to ifcvo.js only through window.IFCVO (viewer, open, subscribe).
 import './ifcvo-i18n.js'
+import { shareLink } from './ifcvo-share.js'
 
 const MAX_ITEMS = 50
 const NOT_ELEMENTS = /^IFC(PROPERTY|QUANTITY|ELEMENTQUANTITY|MATERIAL|REL|OWNERHISTORY|PERSON|ORGANIZATION|APPLICATION|PROJECT$|OPENINGELEMENT|COMPLEXPROPERTY|.*TYPE$|.*STYLE$|.*PROFILE|.*CONTEXT|.*REPRESENTATION|.*UNIT)/i
@@ -75,6 +76,8 @@ export function cartItems(variantId, items, element = QUOTE_LABELS.element) {
       properties: {
         // Leading underscore: themes hide it from the buyer, the order keeps it.
         _ifc_guid: i.guid || `#${i.expressId}`,
+        _ifc_type: i.ifcClass || '',
+        _ifc_qty: String(clampQty(i.qty)),
         Element: (i.name || i.ifcClass || element).slice(0, 250),
         'IFC class': i.ifcClass || '',
       },
@@ -186,7 +189,8 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
   if (!root || root.dataset.ifcvoQuoteReady) return
   root.dataset.ifcvoQuoteReady = '1'
   const d = root.dataset
-  const mode = d.mode === 'contact' ? 'contact' : 'cart'
+  // lead: the list feeds the quote request form of blocks/ifc-quote.liquid (no button of its own).
+  const mode = d.mode === 'contact' || d.mode === 'lead' ? d.mode : 'cart'
   const L = quoteLabels(root)
   let items = []
   let picked = null
@@ -214,6 +218,8 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
     })
     if (items.length) action.removeAttribute('disabled')
     else action.setAttribute('disabled', '')
+    root.ifcvoItems = items
+    root.dispatchEvent(new CustomEvent('ifcvo:items'))
   }
 
   pick.addEventListener('click', () => {
@@ -264,7 +270,7 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
   })
 
   const body = root.querySelector('.ifcvo-quote-body') || root
-  body.append(pick, list, action, status)
+  body.append(pick, list, ...(mode === 'lead' ? [] : [action]), status)
   render()
 
   api.subscribe(root, (type, e) => {
@@ -275,6 +281,146 @@ export function mountQuote(root, api, fetchImpl = (...a) => fetch(...a)) {
     pick.removeAttribute('disabled')
     pick.textContent = `${L.pick}: ${picked.name || picked.ifcClass || '#' + picked.expressId}`
   })
+}
+
+// ── Quote request form (blocks/ifc-quote.liquid, T-325 G2 + T-326 F5) ────────
+
+/** English defaults; the theme language (data-labels, group "lead") and shop ifcvo.labels `lead.*` override. */
+export const LEAD_LABELS = {
+  ask: 'Ask about this element',
+  question: 'Question about',
+  view: 'View',
+  asking: 'Your question is about {name}. Write it below and send it.',
+}
+export const LEAD_TAG = 'ifcvo-lead'
+export const EXPERT_TAG = 'ifc-expert-q'
+const MAX_SELECTION = 4000
+
+/** Customer tags: the block's list, then role-<role>, then ifc-expert-q for a question. Shopify-safe, no duplicates. */
+export function leadTags(base, role = '', expert = false) {
+  const tags = String(base || '').split(',').map((t) => t.trim()).filter(Boolean)
+  if (/^[a-z]{1,20}$/.test(role)) tags.push('role-' + role)
+  if (expert) tags.push(EXPERT_TAG)
+  return [...new Set(tags.map((t) => t.replace(/[^\p{L}\p{N} _.:-]/gu, '').slice(0, 40)).filter(Boolean))].join(', ')
+}
+
+/**
+ * The question part for one element (F5): name, class and GlobalId, then type,
+ * storey and tag, then the first property sets (a few values each).
+ */
+export function expertText(data, e = {}, labels = LEAD_LABELS) {
+  const L = { ...LEAD_LABELS, ...labels }
+  const d = data || {}
+  const cls = d.ifcClass || e.ifcType || 'IFC'
+  const guid = d.globalId || e.globalId || (e.expressId != null ? '#' + e.expressId : '')
+  const lines = [`${L.question}: ${d.name || e.name || cls} (${cls}${guid ? ', GlobalId ' + guid : ''})`]
+  const facts = [['Type', d.typeName], ['Storey', d.storey], ['Tag', d.tag]].filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)
+  if (facts.length) lines.push(facts.join('; '))
+  const sets = (d.effectivePropertySets && d.effectivePropertySets.length ? d.effectivePropertySets : d.propertySets) || []
+  for (const set of sets.slice(0, 2)) {
+    const props = (set.properties || []).filter((p) => p && p.value != null && p.value !== '').slice(0, 6)
+    if (props.length) lines.push(`${set.name}: ` + props.map((p) => `${p.name}=${p.value}`).join('; '))
+  }
+  return lines.join('\n')
+}
+
+/** The hidden Selection field: product, variant, view link, the asked element, then the element list. */
+export function leadSelection({ product = '', variant = '', view = '', expert = '' }, items, labels = QUOTE_LABELS) {
+  const text = [expert, quoteBody({ product, variant, url: view }, items, { ...labels, page: (labels && labels.view) || LEAD_LABELS.view })]
+    .filter(Boolean).join('\n\n').replace(/\n+$/, '')
+  return text.length > MAX_SELECTION ? text.slice(0, MAX_SELECTION - 1) + '…' : text
+}
+
+function contactUrl() {
+  const base = (window.Shopify && Shopify.routes && Shopify.routes.root) || '/'
+  return base.replace(/\/?$/, '/') + 'contact'
+}
+
+/** Creates (or tags) the Shopify customer through the storefront customer form, without leaving the page. Best effort. */
+export function createCustomer(email, name, tags, fetchImpl = (...a) => fetch(...a)) {
+  if (!email || !tags) return Promise.resolve(false)
+  const body = new URLSearchParams({ form_type: 'customer', utf8: '✓', 'contact[email]': email, 'contact[first_name]': name || '', 'contact[tags]': tags })
+  return Promise.resolve(fetchImpl(contactUrl(), { method: 'POST', body, credentials: 'same-origin', keepalive: true }))
+    .then((r) => !!(r && r.ok)).catch(() => false)
+}
+
+/** Mounts one quote request form. Never blocks the native submit: the view link is read ahead of time. */
+export function mountLead(root, api, fetchImpl) {
+  if (!root || root.dataset.ifcvoLeadReady) return
+  const form = root.querySelector('form')
+  if (!form) return
+  root.dataset.ifcvoLeadReady = '1'
+  const d = root.dataset
+  const L = resolveLabels(LEAD_LABELS, { locale: readJson(d.labels), shop: shopLabels(), prefix: 'lead' })
+  const list = root.querySelector('[data-ifcvo-quote-list]')
+  const QL = list ? quoteLabels(list) : QUOTE_LABELS
+  const field = (sel) => form.querySelector(sel)
+  let picked = null
+  let asked = null
+  let expert = ''
+  let view = ''
+
+  const write = () => {
+    const sel = field('[data-ifcvo-lead-selection]')
+    if (!sel) return
+    const ld = list ? list.dataset : {}
+    sel.value = leadSelection({ product: ld.product || '', variant: list ? variantTitle(ld) : '', view: view || location.href.split('#')[0], expert },
+      (list && list.ifcvoItems) || [], { ...QL, view: L.view })
+  }
+  /** The link to the current camera (and the asked element), read when the buyer reaches the form. */
+  const refresh = async () => {
+    const v = api && api.viewer
+    if (v && typeof v.getCamera === 'function') {
+      try {
+        const camera = await v.getCamera()
+        view = shareLink(location.href, { camera, selection: asked && asked.modelId ? { modelId: asked.modelId, expressId: asked.expressId } : null }) || view
+      } catch (e) { /* no camera yet */ }
+    }
+    write()
+  }
+
+  if (list) list.addEventListener('ifcvo:items', write)
+  form.addEventListener('focusin', () => { refresh() })
+
+  if (d.ask === 'true') {
+    const status = el('p', { class: 'ifcvo-muted', role: 'status', 'aria-live': 'polite' })
+    const ask = el('button', { type: 'button', class: 'ifcvo-btn ifcvo-lead-ask', disabled: '' }, L.ask)
+    ask.addEventListener('click', async () => {
+      if (!picked) return
+      asked = picked
+      let data = null
+      try { data = api.viewer && await api.viewer.getElement(asked.globalId || asked.expressId, asked.modelId || undefined) } catch (e) { data = null }
+      expert = expertText(data, asked, L)
+      const tag = field('[data-ifcvo-lead-tag]')
+      if (tag) tag.value = EXPERT_TAG
+      status.textContent = L.asking.replace('{name}', (data && data.name) || asked.name || asked.ifcType || '#' + asked.expressId)
+      await refresh()
+      const body = field('[data-ifcvo-lead-body]')
+      if (body) {
+        try { body.scrollIntoView({ block: 'center' }) } catch (e) { /* old browser */ }
+        body.focus()
+      }
+    })
+    form.before(ask, status)
+    if (api) api.subscribe(root, (type, e) => {
+      if (type === 'model-loaded') { picked = null; ask.setAttribute('disabled', '') }
+      if (type !== 'element-selected' || !e) return
+      picked = e.expressId == null ? null : e
+      if (picked) ask.removeAttribute('disabled')
+      else ask.setAttribute('disabled', '')
+    })
+  }
+
+  form.addEventListener('submit', () => {
+    write()
+    const role = (field('[data-ifcvo-lead-role]') || {}).value || ''
+    const items = (list && list.ifcvoItems) || []
+    signal('ifcvo:quote-submit', { elements: items.length + (expert ? 1 : 0), role, kind: expert ? 'expert' : 'quote' })
+    const tags = d.tags ? leadTags(d.tags, role, !!expert) : ''
+    const email = (field('[name="contact[email]"]') || {}).value
+    if (tags) createCustomer(email, (field('[name="contact[name]"]') || {}).value, tags, fetchImpl)
+  })
+  write()
 }
 
 /** Wires the GLB / CSV buttons of one downloads list. */
@@ -336,7 +482,9 @@ export function onDownloadClick(ev) {
 
 export function initAll(api = typeof window !== 'undefined' ? window.IFCVO : null) {
   if (!api) return
+  // Lists first: a quote request form reads the list inside it.
   for (const r of document.querySelectorAll('[data-ifcvo-quote-list]')) mountQuote(r, api)
+  for (const r of document.querySelectorAll('[data-ifcvo-lead]')) mountLead(r, api)
   for (const b of document.querySelectorAll('[data-ifcvo-downloads]')) if (b.querySelector('[data-ifcvo-make]')) mountDownloads(b, api)
 }
 

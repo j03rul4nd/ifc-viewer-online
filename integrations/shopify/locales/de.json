@@ -326,6 +326,26 @@
       "manual": "Diesen Link kopieren:",
       "error": "Diese Ansicht konnte nicht gelesen werden.",
       "updated": "Seit Ihrem Kauf aktualisiert"
+    },
+    "lead": {
+      "title": "Angebot anfordern",
+      "name": "Name",
+      "email": "E-Mail",
+      "company": "Firma",
+      "role": "Ihre Rolle",
+      "role_architect": "Architektur oder Planung",
+      "role_contractor": "Bauunternehmen oder Montage",
+      "role_owner": "Bauherr oder Investor",
+      "role_reseller": "Händler oder Vertrieb",
+      "project": "Projektname und Ort",
+      "quantity": "Menge",
+      "message": "Nachricht",
+      "submit": "Anfrage senden",
+      "sent": "Danke. Ihre Anfrage wurde gesendet.",
+      "ask": "Frage zu diesem Element",
+      "question": "Frage zu",
+      "view": "Ansicht",
+      "asking": "Ihre Frage betrifft {name}. Schreiben Sie sie unten und senden Sie sie ab."
     }
   }
 }

@@ -4,6 +4,7 @@
 // this applies it when the model is ready and on every variant change. It also
 // offers "Copy link to this view" (camera in the URL hash, restored on load)
 // and "Save image" (the SDK's screenshot, downloaded as a PNG). No server.
+import './ifcvo-i18n.js'
 import { resolveVariant, watchVariants, _resetVariants } from './ifcvo-variant.js'
 
 const PRESETS = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right']
@@ -201,9 +202,33 @@ let unwatch = null
 
 function api() { return typeof window !== 'undefined' ? window.IFCVO : null }
 
+/** Status texts in English; the theme language and the shop's labels override them. */
+const STATUS_LABELS = {
+  lCopied: ['copied', 'Link copied. It opens the model at this view.'],
+  lCopyManual: ['manual', 'Copy this link:'],
+  lSaved: ['saved', 'Image saved.'],
+  lError: ['error', 'This view could not be read.'],
+}
+
+function readJson(text) {
+  try { const v = JSON.parse(text || 'null'); return v && typeof v === 'object' ? v : null } catch (e) { return null }
+}
+
+const usable = (v) => typeof v === 'string' && v && !/^translation missing/i.test(v) ? v : ''
+
+/** Status text `key`: a data-l-* attribute, then ifcvo.labels `variantviews_<k>`, then the theme language, else English. */
+export function statusText(root, key) {
+  const d = root.dataset
+  const [k, en] = STATUS_LABELS[key] || [key, '']
+  const all = readJson(d.ifcvoLabels)
+  const lang = String(d.locale || '').toLowerCase()
+  const shop = all ? { ...(all.en || {}), ...(all[lang.split('-')[0]] || {}), ...(all[lang] || {}) } : {}
+  return usable(d[key]) || usable(shop['variantviews_' + k]) || usable((readJson(d.labels) || {})[k]) || en
+}
+
 function say(root, key) {
   const status = root.querySelector('[data-ifcvo-variants-status]')
-  if (status) status.textContent = root.dataset[key] || ''
+  if (status) status.textContent = statusText(root, key)
 }
 
 /** The variant to show for `root`: event hint, form, URL, then the one Liquid rendered as current. */

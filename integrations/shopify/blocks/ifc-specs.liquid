@@ -10,53 +10,23 @@
 {%- liquid
   assign s = block.settings
   assign specs_ns = s.specs_ns | strip | default: 'bim'
+  # Ticked columns and groups, in this order, as 'a,b,' (setting ids col_<x> and group_<x>).
   assign columns = ''
-  if s.col_class
-    assign columns = columns | append: 'class,'
-  endif
-  if s.col_type
-    assign columns = columns | append: 'type,'
-  endif
-  if s.col_count
-    assign columns = columns | append: 'count,'
-  endif
-  if s.col_dimensions
-    assign columns = columns | append: 'dimensions,'
-  endif
-  if s.col_length
-    assign columns = columns | append: 'length,'
-  endif
-  if s.col_area
-    assign columns = columns | append: 'area,'
-  endif
-  if s.col_volume
-    assign columns = columns | append: 'volume,'
-  endif
-  if s.col_weight
-    assign columns = columns | append: 'weight,'
-  endif
-  if s.col_materials
-    assign columns = columns | append: 'materials,'
-  endif
-  if s.col_properties
-    assign columns = columns | append: 'properties,'
-  endif
+  assign list = 'class,type,count,dimensions,length,area,volume,weight,materials,properties' | split: ','
+  for c in list
+    assign k = 'col_' | append: c
+    if s[k]
+      assign columns = columns | append: c | append: ','
+    endif
+  endfor
   assign groups = ''
-  if s.group_dimensions
-    assign groups = groups | append: 'dimensions,'
-  endif
-  if s.group_types
-    assign groups = groups | append: 'types,'
-  endif
-  if s.group_classes
-    assign groups = groups | append: 'classes,'
-  endif
-  if s.group_materials
-    assign groups = groups | append: 'materials,'
-  endif
-  if s.group_totals
-    assign groups = groups | append: 'totals,'
-  endif
+  assign list = 'dimensions,types,classes,materials,totals' | split: ','
+  for c in list
+    assign k = 'group_' | append: c
+    if s[k]
+      assign groups = groups | append: c | append: ','
+    endif
+  endfor
 -%}
 <div
   class="ifcvo-panel ifcvo-specs-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -90,8 +60,7 @@
   <div class="ifcvo-body ifcvo-specs-live" data-ifcvo-live aria-live="polite">
   </div>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-specs.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-specs.js' -%}
 
 {%- render 'ifcvo-diag', feature: 'specs', block: 'ifc-specs', ns: specs_ns, keys: '' -%}
 

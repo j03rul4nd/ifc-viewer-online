@@ -168,8 +168,7 @@
   </div>
   <p class="ifcvo-sr" data-ifcvo-planset-status role="status" data-label="{{ l_selected | escape }}"></p>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-planset.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-planset.js' -%}
 {%- endif -%}
 
 {%- render 'ifcvo-diag', feature: 'planset', block: 'ifc-plan-set', ns: ns, keys: 'plan_set,license_type,license_terms', scope: 'variant' -%}
