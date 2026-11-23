@@ -156,6 +156,7 @@ async function select(root, index) {
   const s = state.get(root)
   if (!s || !current) return
   s.selected = index
+  try { document.dispatchEvent(new CustomEvent('ifcvo:storey', { detail: { index } })) } catch (e) { /* old browser */ }
   markSelected(root, index)
   const level = s.levels.find((l) => l.index === index) || null
   renderPanel(root, level)

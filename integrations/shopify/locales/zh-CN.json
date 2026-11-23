@@ -318,6 +318,14 @@
       "takeoff": "请添加产品元字段 \"{{ ns }}.boq\"（每行一项，单元格用 | 分隔）以在 3D 模型加载前显示表格，并添加 \"{{ ns }}.unit_prices\"（JSON）以显示参考合计。",
       "viewer_link": "IFC Viewer Online：请粘贴指向 .ifc 文件（内容 > 文件）或场景的 https 链接。",
       "product_link": "IFC Viewer Online：请在产品元字段 {{ ns }}.{{ key }}（URL 或文件）中添加指向 .ifc 文件的 https 链接。"
+    },
+    "share": {
+      "share": "分享此视图",
+      "shared": "已分享此视图的链接。",
+      "copied": "链接已复制。它会以此视图打开模型。",
+      "manual": "复制此链接：",
+      "error": "无法读取此视图。",
+      "updated": "自您购买后已更新"
     }
   }
 }

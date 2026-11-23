@@ -664,6 +664,8 @@ if (typeof window !== 'undefined' && !window.IFCVO) {
     unsubscribe: (cb) => { listeners.delete(cb); for (const cbs of owned.values()) { const i = cbs.indexOf(cb); if (i >= 0) cbs.splice(i, 1) } } }
   init()
   document.dispatchEvent(new CustomEvent('ifcvo:ready'))
+  // Share this view, and the after-sale #ifcvo-open links (ifcvo-share.js).
+  import('./ifcvo-share.js').then((m) => m.init()).catch(() => {})
   document.addEventListener('change', onVariantChange)
   // The theme editor adds, re-renders and removes sections without a page load.
   document.addEventListener('shopify:section:load', init)

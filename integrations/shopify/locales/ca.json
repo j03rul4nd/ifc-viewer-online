@@ -318,6 +318,14 @@
       "takeoff": "Afegeix un metafield de producte \"{{ ns }}.boq\" (una fila per línia, cel·les separades per |) per a una taula visible abans de carregar el model 3D, i \"{{ ns }}.unit_prices\" (JSON) per a un total orientatiu.",
       "viewer_link": "IFC Viewer Online: enganxa un enllaç https a un fitxer .ifc (Contingut > Fitxers) o a una escena.",
       "product_link": "IFC Viewer Online: afegeix un enllaç https a un fitxer .ifc al metafield de producte {{ ns }}.{{ key }} (URL o fitxer)."
+    },
+    "share": {
+      "share": "Comparteix aquesta vista",
+      "shared": "Enllaç a aquesta vista compartit.",
+      "copied": "Enllaç copiat. Obre el model en aquesta vista.",
+      "manual": "Copia aquest enllaç:",
+      "error": "No s'ha pogut llegir aquesta vista.",
+      "updated": "Actualitzat des de la teva compra"
     }
   }
 }
