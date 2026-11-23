@@ -125,3 +125,14 @@ describe('locales', () => {
     }
   })
 })
+
+describe('F7 consent', () => {
+  it('writes nothing to storage without marketing consent', async () => {
+    const mod = await import('../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-leads.js')
+    const data: Record<string, string> = {}
+    const storage = { getItem: (k: string) => data[k] ?? null, setItem: (k: string, v: string) => { data[k] = v } }
+    const win = { Shopify: { customerPrivacy: { marketingAllowed: () => false } } }
+    for (let i = 0; i < 4; i++) await mod.onOpen({ handle: 'h', email: '', storage, win, fetchFn: async () => ({}) })
+    expect(Object.keys(data)).toHaveLength(0)
+  })
+})
