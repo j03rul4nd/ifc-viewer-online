@@ -40,7 +40,7 @@
 
   <fieldset>
     <legend>2. Models</legend>
-    <p>Either a CSV with <code>SKU,model_url[,poster_url,files]</code> (SKU or handle; separate files with <code>;</code>)…</p>
+    <p>Either a CSV with <code>SKU,model_url[,poster_url,files,version,release_notes]</code> (SKU or handle; separate files with <code>;</code>; a version also sets the release date to today)…</p>
     <input type="file" id="mapping" accept=".csv,text/csv" />
     <p>…or a folder of models (<code>.ifc</code>, <code>.ifczip</code>, <code>.frag</code>; images with the same name become posters) plus the public address where you host them.</p>
     <input type="file" id="folder" webkitdirectory multiple />

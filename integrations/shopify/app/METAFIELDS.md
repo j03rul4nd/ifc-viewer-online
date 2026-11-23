@@ -99,12 +99,13 @@ namespace cannot be a setting. The `custom.*` keys used by the theme blocks are 
 | `ifcvo.assembly_views` | product, variant | JSON | Assembly steps, in order: `[{"title":"Base frame","view":"<saved view id>","note":"..."}]` (or a list of titles). Each step has Previous / Next and opens the product page with `#…&ifcvo-view=<id>` | Business |
 | `ifcvo.warranty_months` | product, variant | integer (1–600) | "Warranty until <order date + months>", computed on the calendar (no timezone shift; 31 Jan + 1 month = 28 Feb) | Business |
 
-**Publish new version (admin).** The `ifc-admin-releases` action ("More actions →
-Publish new version" on a product) writes `ifcvo.version`, `ifcvo.updated_at` and
-`ifcvo.release_notes` on the **product** with the Admin API (scope `write_products`).
-Upload the new files first. If a variant has its own `ifcvo.version` / `ifcvo.updated_at`,
-the variant value still wins, so edit the variant by hand. Follow-up email and
-maintenance Flow: `listing/recipes/`.
+**Publish a new version.** The app has no Admin API access, so the merchant sets
+`ifcvo.version`, `ifcvo.updated_at` and `ifcvo.release_notes` on the product by hand
+(product page → Metafields) or in bulk with the CSV builder (`/shopify/bulk/`, mapping
+columns `SKU,model_url,poster_url,files,version,release_notes`; a version also sets
+`updated_at` to today). Upload the new files first. If a variant has its own
+`ifcvo.version` / `ifcvo.updated_at`, the variant value still wins, so edit the variant
+too. Follow-up email and maintenance Flow: `listing/recipes/`.
 
 The variant value wins over the product value. An item is shown only when it has
 a model or at least one file.

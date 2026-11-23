@@ -6,8 +6,10 @@ merchant (not the app).
 
 ## 1. Publish the version
 1. Upload the new IFC / PDF files and attach them to the product (`ifcvo.model`, `ifcvo.files`).
-2. On the product page: **More actions → Publish new version**. Enter the version,
-   the release date (default: today) and what changed.
+2. Set the version on the product metafields: `ifcvo.version`, `ifcvo.updated_at`
+   (the release date) and `ifcvo.release_notes` (what changed). By hand on the
+   product page (Metafields), or for many products at once with the bulk CSV
+   builder (`/shopify/bulk/`, columns `version,release_notes`).
 3. Buyers who ordered before that date see a **New version** badge and the notes in
    **My models & files** (customer account). Storefront data is cached, so allow a
    few minutes.

@@ -32,6 +32,29 @@ describe('parseMapping', () => {
     expect(b).toHaveLength(2)
     expect(b[1].files).toEqual(['https://x/1', 'https://x/2'])
   })
+  it('reads optional version and release_notes columns', () => {
+    const m = parseMapping('SKU,model_url,poster_url,files,version,release_notes\nCH-001,https://x/a.ifc,,,2.1,"Fixed roof, new stairs"\nHEA-200,https://x/b.ifc\n')
+    expect(m[0]).toEqual({ key: 'CH-001', modelUrl: 'https://x/a.ifc', version: '2.1', releaseNotes: 'Fixed roof, new stairs' })
+    expect(m[1]).toEqual({ key: 'HEA-200', modelUrl: 'https://x/b.ifc' })
+  })
+})
+
+describe('release metafields', () => {
+  it('writes ifcvo.version, ifcvo.updated_at and ifcvo.release_notes on the first product row', () => {
+    const map = parseMapping('SKU,model_url,poster_url,files,version,release_notes\nCH-001,https://x/a.ifc,,,2.1,New roof\nHEA-200,https://x/b.ifc\n')
+    const r = buildImport(parseCsv(EXPORT), map, { releaseDate: '2026-11-23' })
+    const h = r.table.header
+    const v = h.indexOf('Metafield: ifcvo.version [single_line_text_field]')
+    const d = h.indexOf('Metafield: ifcvo.updated_at [date]')
+    const n = h.indexOf('Metafield: ifcvo.release_notes [multi_line_text_field]')
+    expect(Math.min(v, d, n)).toBeGreaterThan(0)
+    expect([r.table.rows[0][v], r.table.rows[0][d], r.table.rows[0][n]]).toEqual(['2.1', '2026-11-23', 'New roof'])
+    expect([r.table.rows[1][v], r.table.rows[2][v], r.table.rows[2][d]]).toEqual(['', '', ''])
+  })
+  it('adds no release columns when the mapping has none', () => {
+    const r = buildImport(parseCsv(EXPORT), parseMapping('CH-001,https://x/a.ifc'))
+    expect(r.table.header.some((c) => c.includes('ifcvo.'))).toBe(false)
+  })
 })
 
 describe('buildImport', () => {

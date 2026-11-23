@@ -51,12 +51,24 @@ export function toCsv(t: Table): string {
 }
 
 /** One mapping entry: key is a SKU or a handle. */
-export type MappingEntry = { key: string; modelUrl: string; posterUrl?: string; files?: string[] }
+export type MappingEntry = {
+  key: string
+  modelUrl: string
+  posterUrl?: string
+  files?: string[]
+  /** New version label (`ifcvo.version`); also sets `ifcvo.updated_at`. */
+  version?: string
+  /** What changed (`ifcvo.release_notes`). */
+  releaseNotes?: string
+}
 
 const splitList = (v: string): string[] =>
   v.split(/[;|\n]/).map((s) => s.trim()).filter(Boolean)
 
-/** Mapping CSV: `SKU,model_url[,poster_url,files]`, header optional. Files split by `;` or `|`. */
+/**
+ * Mapping CSV: `SKU,model_url[,poster_url,files,version,release_notes]`, header optional.
+ * Files split by `;` or `|`.
+ */
 export function parseMapping(text: string): MappingEntry[] {
   const t = parseCsv(text)
   const all = [t.header, ...t.rows]
@@ -73,6 +85,10 @@ export function parseMapping(text: string): MappingEntry[] {
     if (poster) e.posterUrl = poster
     const files = splitList(r[3] ?? '')
     if (files.length) e.files = files
+    const version = (r[4] ?? '').trim()
+    if (version) e.version = version
+    const notes = (r[5] ?? '').trim()
+    if (notes) e.releaseNotes = notes
     entries.push(e)
   }
   return entries
@@ -111,7 +127,16 @@ export const COLUMNS = {
   model: { key: 'custom.ifc_model', type: 'url' },
   poster: { key: 'custom.ifc_poster', type: 'url' },
   files: { key: 'custom.bim_files', type: 'list.url' },
+  version: { key: 'ifcvo.version', type: 'single_line_text_field' },
+  updatedAt: { key: 'ifcvo.updated_at', type: 'date' },
+  releaseNotes: { key: 'ifcvo.release_notes', type: 'multi_line_text_field' },
 } as const
+
+/** Today as YYYY-MM-DD on the local calendar. */
+export function localDay(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
 
 /** Finds an existing metafield column (old or new export format) or appends one. */
 function ensureColumn(header: string[], key: string, type: string): number {
@@ -137,7 +162,8 @@ export type ImportResult = {
 export function buildImport(
   exportCsv: Table,
   mapping: MappingEntry[],
-  opts: { fuzzy?: boolean } = {},
+  /** releaseDate: `ifcvo.updated_at` for rows with a version (default: today). */
+  opts: { fuzzy?: boolean; releaseDate?: string } = {},
 ): ImportResult {
   const header = [...exportCsv.header]
   const hIdx = header.indexOf('Handle')
@@ -146,6 +172,12 @@ export function buildImport(
   const cMod = ensureColumn(header, COLUMNS.model.key, COLUMNS.model.type)
   const cPos = ensureColumn(header, COLUMNS.poster.key, COLUMNS.poster.type)
   const cFil = ensureColumn(header, COLUMNS.files.key, COLUMNS.files.type)
+  // Release columns only when the mapping uses them, so plain imports stay unchanged.
+  const hasRelease = mapping.some((e) => e.version || e.releaseNotes)
+  const cVer = hasRelease ? ensureColumn(header, COLUMNS.version.key, COLUMNS.version.type) : -1
+  const cDay = hasRelease ? ensureColumn(header, COLUMNS.updatedAt.key, COLUMNS.updatedAt.type) : -1
+  const cNot = hasRelease ? ensureColumn(header, COLUMNS.releaseNotes.key, COLUMNS.releaseNotes.type) : -1
+  const releaseDate = opts.releaseDate ?? localDay()
   const rows = exportCsv.rows.map((r) => {
     const c = r.slice()
     while (c.length < header.length) c.push('')
@@ -208,6 +240,8 @@ export function buildImport(
     r[cMod] = e.modelUrl
     if (e.posterUrl) r[cPos] = e.posterUrl
     if (e.files?.length) r[cFil] = e.files.join('; ')
+    if (e.version) { r[cVer] = e.version; r[cDay] = releaseDate }
+    if (e.releaseNotes) r[cNot] = e.releaseNotes
     matched.push({ handle, key: e.key, by })
     done.add(handle)
   }

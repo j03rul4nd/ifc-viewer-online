@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest'
 import * as f from '../integrations/shopify/app/ui-shared/ifcvo-files.js'
 
 const APP = path.join(__dirname, '../integrations/shopify/app')
-const LANGS = ['en.default', 'es', 'fr', 'de', 'it', 'pt-BR', 'ca']
 const mf = (key: string, extra: Record<string, unknown>) => ({ namespace: 'ifcvo', key, type: 'x', value: '', updatedAt: null, reference: null, references: null, ...extra })
 
 const product = {
@@ -34,26 +33,6 @@ describe('F4 plan updated', () => {
     const cards = f.modelCards(items, { nodes: [product] })
     expect(cards.map((c: { updatedSincePurchase: boolean }) => c.updatedSincePurchase)).toEqual([true, false, false])
     expect(cards[0].releaseNotes).toBe('Fixed stair riser height.')
-  })
-
-  it('releaseInputs builds version + date + notes metafields and rejects bad input', () => {
-    const out = f.releaseInputs('gid://shopify/Product/1', { version: ' 3.1 ', date: '2026-11-23', notes: 'New roof' })
-    expect(out).toEqual([
-      { ownerId: 'gid://shopify/Product/1', namespace: 'ifcvo', key: 'version', type: 'single_line_text_field', value: '3.1' },
-      { ownerId: 'gid://shopify/Product/1', namespace: 'ifcvo', key: 'updated_at', type: 'date', value: '2026-11-23' },
-      { ownerId: 'gid://shopify/Product/1', namespace: 'ifcvo', key: 'release_notes', type: 'multi_line_text_field', value: 'New roof' },
-    ])
-    const ok = { version: '1', date: '2026-01-01', notes: 'x' }
-    expect(() => f.releaseInputs('gid://shopify/Order/1', ok)).toThrow('owner')
-    expect(() => f.releaseInputs('gid://shopify/Product/1', { ...ok, version: '' })).toThrow('version')
-    expect(() => f.releaseInputs('gid://shopify/Product/1', { ...ok, date: '2026-02-30' })).toThrow('date')
-    expect(() => f.releaseInputs('gid://shopify/Product/1', { ...ok, date: '23/11/2026' })).toThrow('date')
-    expect(() => f.releaseInputs('gid://shopify/Product/1', { ...ok, notes: ' ' })).toThrow('notes')
-    expect(f.RELEASE_MUTATION).toMatch(/metafieldsSet\(metafields:\$m\)/)
-  })
-
-  it('localDay uses the local calendar', () => {
-    expect(f.localDay(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05')
   })
 })
 
@@ -99,21 +78,11 @@ describe('F8 handover', () => {
   })
 })
 
-describe('admin release extension', () => {
-  const dir = path.join(APP, 'extensions/ifc-admin-releases')
-  it('is an admin product action and the app has write_products', () => {
-    const toml = fs.readFileSync(path.join(dir, 'shopify.extension.toml'), 'utf8')
-    expect(toml).toMatch(/type = "ui_extension"/)
-    expect(toml).toContain('target = "admin.product-details.action.render"')
-    expect(fs.readFileSync(path.join(APP, 'shopify.app.toml'), 'utf8')).toMatch(/scopes = "[^"]*write_products/)
-    expect(JSON.parse(fs.readFileSync(path.join(APP, 'package.json'), 'utf8')).workspaces).toContain('extensions/ifc-admin-releases')
-  })
-
-  it('has the same translation keys in 7 languages', () => {
-    const flat = (o: Record<string, unknown>, p = ''): string[] => Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? flat(v as Record<string, unknown>, p + k + '.') : [p + k]))
-    const read = (l: string) => JSON.parse(fs.readFileSync(path.join(dir, 'locales', l + '.json'), 'utf8'))
-    const en = flat(read('en.default')).sort()
-    for (const l of LANGS) expect(flat(read(l)).sort(), l).toEqual(en)
-    for (const k of ['owner', 'version', 'date', 'notes', 'save']) expect(en).toContain('error.' + k)
+describe('access scopes (D-326w)', () => {
+  it('requests no Admin API write scope and ships no admin action', () => {
+    expect(fs.readFileSync(path.join(APP, 'shopify.app.toml'), 'utf8')).toMatch(/scopes = "customer_read_orders,unauthenticated_read_product_listings"/)
+    expect(fs.existsSync(path.join(APP, 'extensions/ifc-admin-releases'))).toBe(false)
+    expect(JSON.parse(fs.readFileSync(path.join(APP, 'package.json'), 'utf8')).workspaces).toEqual(['extensions/ifc-order-files', 'extensions/ifc-my-models'])
   })
 })
+
