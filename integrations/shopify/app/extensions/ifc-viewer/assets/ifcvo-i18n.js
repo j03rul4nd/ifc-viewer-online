@@ -35,6 +35,22 @@ export function fill(texts, root = document) {
   }
 }
 
+/**
+ * Gives every [data-i18n] block the shop's ifcvo.labels (data-ifcvo-labels) and the
+ * theme locale (data-locale) when it has none: snippets/ifcvo-runtime.liquid prints
+ * the labels once per page instead of in each block. Never overwrites.
+ */
+export function shareShop(root = document, locale = '') {
+  if (!root || !root.querySelectorAll) return
+  const doc = root.ownerDocument || root
+  const src = doc.querySelector('script[data-ifcvo-shop-labels]')
+  const labels = src ? src.textContent.trim() : ''
+  for (const el of root.querySelectorAll('[data-i18n]')) {
+    if (labels && labels !== 'null' && !el.dataset.ifcvoLabels) el.dataset.ifcvoLabels = labels
+    if (locale && !el.dataset.locale) el.dataset.locale = locale
+  }
+}
+
 let texts = null
 /** Folder of this asset (the i18n files sit next to it on the CDN). */
 const here = import.meta.url
@@ -44,6 +60,8 @@ async function load() {
   const first = document.querySelector('[data-i18n],[data-locale]')
   if (!document.querySelector('[data-i18n]')) return
   const locale = (first && first.dataset.locale) || (window.Shopify && window.Shopify.locale) || document.documentElement.lang
+  shareShop(document, locale)
+  document.addEventListener('shopify:section:load', (e) => shareShop(e.target, locale))
   try {
     const res = await fetch(new URL(`ifcvo-i18n-${pickLang(locale)}.json`, here))
     if (res.ok) texts = await res.json()

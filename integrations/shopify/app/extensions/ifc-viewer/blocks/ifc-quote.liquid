@@ -1,0 +1,51 @@
+{%-liquid
+assign s=block.settings
+assign plan=app.metafields.ifcvo.plan.value|default:''|strip|downcase
+assign v=product.selected_or_first_available_variant
+assign sel=product.title
+unless product.has_only_default_variant
+assign sel=sel|append:' / '|append:v.title
+endunless
+assign roles='architect,contractor,owner,reseller'|split:','
+assign t='ifcvo.lead.title'|t
+-%}
+{%-if plan == 'free' -%}
+{%-if request.design_mode -%}
+<p class="ifcvo-upsell" data-ifcvo-upsell="quote" {{block.shopify_attributes}}>{{'ifcvo.editor.gated'|t:feature:'quote',plan:'Starter'|escape}}</p>
+{%-endif -%}
+{%-else -%}
+<div
+class="ifcvo-panel ifcvo-lead{%unless s.frame%} ifcvo-flat{%endunless%}"
+data-ifcvo-lead
+data-ifcvo-gate="quote"
+data-i18n="lead"
+data-tags="{%if s.customer%}{{s.tags|escape}}{%endif%}"
+data-ask="{{s.ask}}"
+style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+{{block.shopify_attributes}}
+>
+<h3>{{s.title|default:t|escape}}</h3>
+{%-capture q_variants -%}{%-for x in product.variants -%}{%-unless forloop.first -%},{%-endunless -%}"{{x.id}}":{{x.title|json}}{%-endfor -%}{%-endcapture -%}
+<div class="ifcvo-quote" data-ifcvo-quote-list data-i18n="quote" data-mode="lead" data-product="{{product.title|escape}}" data-variants="{{q_variants|escape}}"><div class="ifcvo-quote-body"></div></div>
+{%-form 'contact',id:'ifcvo-lead' -%}
+{%-if form.posted_successfully? -%}<p class="ifcvo-lead-ok" role="status">{{'ifcvo.lead.sent'|t|escape}}</p>{%-endif -%}
+{{form.errors|default_errors}}
+<input type="hidden" name="contact[Selection]" value="{{sel|escape}}" data-ifcvo-lead-selection>
+<input type="hidden" name="contact[Tag]" value="ifcvo-lead" data-ifcvo-lead-tag>
+<label>{{'ifcvo.lead.name'|t|escape}}<input type="text" name="contact[name]" autocomplete="name" required></label>
+<label>{{'ifcvo.lead.email'|t|escape}}<input type="email" name="contact[email]" autocomplete="email" required></label>
+<label>{{'ifcvo.lead.company'|t|escape}}<input type="text" name="contact[Company]" autocomplete="organization"></label>
+{%-if s.role -%}
+<label>{{'ifcvo.lead.role'|t|escape}}<select name="contact[Role]" data-ifcvo-lead-role>
+{%-for r in roles -%}<option value="{{r}}">{{'ifcvo.lead.role_'|append:r|t|escape}}</option>{%-endfor -%}
+</select></label>
+{%-endif -%}
+{%-if s.project -%}<label>{{'ifcvo.lead.project'|t|escape}}<input type="text" name="contact[Project]"></label>{%-endif -%}
+{%-if s.quantity -%}<label>{{'ifcvo.lead.quantity'|t|escape}}<input type="number" name="contact[Quantity]" min="1"></label>{%-endif -%}
+<label>{{'ifcvo.lead.message'|t|escape}}<textarea name="contact[body]" data-ifcvo-lead-body></textarea></label>
+<button type="submit" class="ifcvo-btn" data-ifcvo-quote>{{'ifcvo.lead.submit'|t|escape}}</button>
+{%-endform -%}
+</div>
+{%-render 'ifcvo-runtime',js:'ifcvo-quote.js' -%}
+{%-endif -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.tnp","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.dks","info":"Empty uses the translated default."},{"type":"checkbox","id":"role","label":"t:k.o4e","default":true},{"type":"checkbox","id":"project","label":"t:k.al7","default":true},{"type":"checkbox","id":"quantity","label":"t:k.5rd","default":false},{"type":"checkbox","id":"ask","label":"t:k.bo7","default":true},{"type":"checkbox","id":"customer","label":"t:k.10g","default":false},{"type":"text","id":"tags","label":"t:k.s65","default":"ifcvo-lead"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

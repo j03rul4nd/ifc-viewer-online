@@ -11,6 +11,8 @@
 // ifcvo.js). This deters casual copying; geometry sent to a browser can
 // always be extracted by someone determined.
 
+import './ifcvo-i18n.js'
+
 const LABELS = {
   all: '3D',
   tabs: 'Floor plans',
@@ -25,10 +27,30 @@ const LABELS = {
   showing: 'Showing:',
 }
 
-/** Label `k`: the block's data-l-* (locale or shop override, resolved by Liquid), else English. */
+function readJson(text) {
+  try { const v = JSON.parse(text || 'null'); return v && typeof v === 'object' ? v : null } catch (e) { return null }
+}
+
+/** The shop's ifcvo.labels for a locale: locale, then its language, then English. */
+function shopLabels(all, locale) {
+  if (!all) return {}
+  const lang = String(locale || '').toLowerCase()
+  return { ...(all.en || {}), ...(all[lang.split('-')[0]] || {}), ...(all[lang] || {}) }
+}
+
+const usable = (v) => typeof v === 'string' && v && !/^translation missing/i.test(v) ? v : ''
+
+/**
+ * Label `k`: a data-l-<k> attribute, then the shop's ifcvo.labels `planview_<k>`,
+ * then the theme language (data-labels from ifcvo-i18n.js), else English.
+ */
 export function label(root, k) {
-  const v = root && root.dataset['l' + k.charAt(0).toUpperCase() + k.slice(1)]
-  return v || LABELS[k]
+  if (!root) return LABELS[k]
+  const d = root.dataset
+  return usable(d['l' + k.charAt(0).toUpperCase() + k.slice(1)])
+    || usable(shopLabels(readJson(d.ifcvoLabels), d.locale)['planview_' + k])
+    || usable((readJson(d.labels) || {})[k])
+    || LABELS[k]
 }
 
 function el(tag, attrs = {}, ...children) {

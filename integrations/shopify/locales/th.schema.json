@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC: มุมมองตามตัวเลือกสินค้า"
+    },
+    "quote_form": {
+      "name": "IFC: ขอใบเสนอราคา"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "จำนวนสามเหลี่ยมสูงสุดของโมเดลที่สร้าง",
-    "the_smallest_parts_are_left_out_above_it": "หากเกินจะตัดชิ้นส่วนที่เล็กที่สุดออก"
+    "the_smallest_parts_are_left_out_above_it": "หากเกินจะตัดชิ้นส่วนที่เล็กที่สุดออก",
+    "ask_for_the_buyer_s_role": "ถามบทบาทของผู้ซื้อ",
+    "ask_for_the_project_name_and_location": "ถามชื่อและที่ตั้งโครงการ",
+    "ask_for_a_quantity": "ถามจำนวน",
+    "also_create_a_customer_with_these_tags": "สร้างลูกค้าพร้อมแท็กเหล่านี้ด้วย",
+    "show_ask_about_this_element": "แสดง \"สอบถามเกี่ยวกับชิ้นส่วนนี้\""
   }
 }

@@ -40,16 +40,9 @@
     assign dop_url = ''
   endif
   assign unit = m.declared_unit.value | append: '' | strip
-  if m.instructions_languages.type contains 'list.'
-    assign langs = m.instructions_languages.value | join: ', '
-  else
-    assign langs = m.instructions_languages.value | append: '' | strip
-  endif
-  if m.substances_of_concern.type contains 'list.'
-    assign soc = m.substances_of_concern.value | join: ', '
-  else
-    assign soc = m.substances_of_concern.value | append: '' | strip
-  endif
+  # A list metafield joins with commas; join leaves a single value as it is.
+  assign langs = m.instructions_languages.value | join: ', ' | strip
+  assign soc = m.substances_of_concern.value | join: ', ' | strip
   assign gtin = m.gtin.value | append: '' | strip
   if gtin == blank
     assign gtin = product.selected_or_first_available_variant.barcode | append: '' | strip
@@ -97,7 +90,7 @@
   data-ifcvo-tier="dpp"
   data-show-model="{{ s.show_model }}"
   data-i18n="dpp"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+ 
   data-labels-override="{{ s.labels | escape }}"
   aria-label="{{ s.title | default: 'Sustainability and product passport' | escape }}"
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
@@ -108,20 +101,15 @@
   <h4>{{ 'ifcvo.dpp.epd' | t | escape }}</h4>
   <table class="ifcvo-specs ifcvo-dpp-epd" data-ifcvo-epd>
     <tbody>
-      <tr data-key="gwp_a1a3" data-source="{% if gwp_a != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp_a1a3' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e' %}</td></tr>
-      <tr data-key="gwp" data-source="{% if gwp_t != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: gwp_t, unit: m.gwp_unit.value, fallback: 'kg CO₂e' %}</td></tr>
-      {%- assign v = m.energy.value | append: '' | strip -%}
-      <tr data-key="energy" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.energy' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: v, unit: m.energy_unit.value, fallback: 'MJ' %}</td></tr>
-      {%- assign v = m.water.value | append: '' | strip -%}
-      <tr data-key="water" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.water' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: v, unit: m.water_unit.value, fallback: 'm³' %}</td></tr>
-      <tr data-key="declared_unit" data-source="{% if unit != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.declared_unit' | t | escape }}</th><td>{% if unit != blank %}{{ unit | escape }}{% else %}—{% endif %}</td></tr>
-      {%- assign v = m.epd_programme.value | append: '' | strip -%}
-      <tr data-key="epd_programme" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_programme' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
-      {%- assign v = m.epd_number.value | append: '' | strip -%}
-      <tr data-key="epd_number" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_number' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
-      {%- assign v = m.epd_valid_until.value | append: '' | strip -%}
-      <tr data-key="epd_valid_until" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_valid_until' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
-      <tr data-key="epd_url" data-source="{% if epd_url != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_link' | t | escape }}</th><td>{% if epd_url != blank %}<a href="{{ epd_url | escape }}" rel="noopener nofollow" target="_blank">{{ 'ifcvo.dpp.open_epd' | t | escape }}</a>{% else %}—{% endif %}</td></tr>
+      {%- render 'ifcvo-dpp-row', key: 'gwp_a1a3', label: 'ifcvo.dpp.gwp_a1a3', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e' -%}
+      {%- render 'ifcvo-dpp-row', key: 'gwp', label: 'ifcvo.dpp.gwp', value: gwp_t, unit: m.gwp_unit.value, fallback: 'kg CO₂e' -%}
+      {%- render 'ifcvo-dpp-row', key: 'energy', label: 'ifcvo.dpp.energy', value: m.energy.value, unit: m.energy_unit.value, fallback: 'MJ' -%}
+      {%- render 'ifcvo-dpp-row', key: 'water', label: 'ifcvo.dpp.water', value: m.water.value, unit: m.water_unit.value, fallback: 'm³' -%}
+      {%- render 'ifcvo-dpp-row', key: 'declared_unit', label: 'ifcvo.dpp.declared_unit', value: unit -%}
+      {%- render 'ifcvo-dpp-row', key: 'epd_programme', label: 'ifcvo.dpp.epd_programme', value: m.epd_programme.value -%}
+      {%- render 'ifcvo-dpp-row', key: 'epd_number', label: 'ifcvo.dpp.epd_number', value: m.epd_number.value -%}
+      {%- render 'ifcvo-dpp-row', key: 'epd_valid_until', label: 'ifcvo.dpp.epd_valid_until', value: m.epd_valid_until.value -%}
+      {%- render 'ifcvo-dpp-row', key: 'epd_url', label: 'ifcvo.dpp.epd_link', value: epd_url, link: true -%}
     </tbody>
   </table>
   {%- endif -%}
@@ -145,8 +133,7 @@
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </section>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-dpp.js' -%}
 {%- endif -%}
 
 {%- render 'ifcvo-diag', feature: 'dpp', block: 'ifc-dpp', ns: ns, keys: 'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}

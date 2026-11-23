@@ -5,7 +5,8 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ext = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
-const read = (p: string): string => fs.readFileSync(path.join(ext, p), 'utf8')
+const src = path.resolve(__dirname, '../integrations/shopify')
+const read = (p: string): string => fs.readFileSync(path.join(/^(blocks|snippets)[/]/.test(p) ? src : ext, p), 'utf8')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Mod = Record<string, (...a: any[]) => any>
 const modPath = '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-quote.js'
@@ -53,7 +54,7 @@ describe('quote helpers', () => {
   it('builds /cart/add.js lines on the variant with the GlobalId as a hidden property', async () => {
     const m = await load()
     const body = m.cartItems('42', [{ guid: 'G1', expressId: 1, name: 'Beam', ifcClass: 'IFCBEAM', qty: 3 }, { guid: '', expressId: 9, name: '', ifcClass: 'IFCPLATE', qty: 1 }])
-    expect(body.items[0]).toEqual({ id: 42, quantity: 3, properties: { _ifc_guid: 'G1', Element: 'Beam', 'IFC class': 'IFCBEAM' } })
+    expect(body.items[0]).toEqual({ id: 42, quantity: 3, properties: { _ifc_guid: 'G1', _ifc_type: 'IFCBEAM', _ifc_qty: '3', Element: 'Beam', 'IFC class': 'IFCBEAM' } })
     expect(body.items[1].properties._ifc_guid).toBe('#9')
     expect(body.items[1].properties.Element).toBe('IFCPLATE')
   })
@@ -124,7 +125,7 @@ describe('quote list in the page', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, { body: string }]
     expect(url).toBe('/cart/add.js')
-    expect(JSON.parse(init.body)).toEqual({ items: [{ id: 42, quantity: 6, properties: { _ifc_guid: 'G5', Element: 'HEA 200', 'IFC class': 'IFCBEAM' } }] })
+    expect(JSON.parse(init.body)).toEqual({ items: [{ id: 42, quantity: 6, properties: { _ifc_guid: 'G5', _ifc_type: 'IFCBEAM', _ifc_qty: '6', Element: 'HEA 200', 'IFC class': 'IFCBEAM' } }] })
     expect(q('.ifcvo-quote-status').textContent).toContain('1')
     expect(q('.ifcvo-quote-list').textContent).toContain('Nothing yet')
     expect(quotes).toHaveBeenCalled()

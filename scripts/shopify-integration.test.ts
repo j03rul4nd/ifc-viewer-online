@@ -65,7 +65,7 @@ const ext = path.join(dir, 'app/extensions/ifc-viewer')
 const runtime = fs.readFileSync(path.join(ext, 'assets/ifcvo.js'), 'utf8')
 
 describe('Shopify product block (app only)', () => {
-  const source = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+  const source = fs.readFileSync(path.join(dir, 'blocks/product-ifc-viewer.liquid'), 'utf8')
   const schema = schemaOf(source) as ReturnType<typeof schemaOf> & { enabled_on?: { templates: string[] } }
 
   it('is a product-template app block with valid settings', () => {
@@ -196,7 +196,7 @@ describe('Shopify config and plan gate', () => {
   })
 
   it('the product block hands the plan, shop config and labels to the runtime', () => {
-    const source = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+    const source = fs.readFileSync(path.join(dir, 'blocks/product-ifc-viewer.liquid'), 'utf8')
     expect(source).toContain('data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}"')
     expect(source).toContain('data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"')
     expect(source).toContain('shop.metafields.ifcvo.config.value | json')
@@ -278,8 +278,8 @@ describe('Shopify product facade and states', () => {
     vi.resetModules()
     return import(/* @vite-ignore */ runtimePath)
   }
-  const block = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
-  const facade = fs.readFileSync(path.join(ext, 'snippets/ifcvo-facade.liquid'), 'utf8')
+  const block = fs.readFileSync(path.join(dir, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+  const facade = fs.readFileSync(path.join(dir, 'snippets/ifcvo-facade.liquid'), 'utf8')
   const locale = JSON.parse(fs.readFileSync(path.join(ext, 'locales/en.default.json'), 'utf8'))
   const schema = schemaOf(block)
 

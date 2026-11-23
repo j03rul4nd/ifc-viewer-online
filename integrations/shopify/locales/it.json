@@ -326,6 +326,26 @@
       "manual": "Copia questo link:",
       "error": "Impossibile leggere questa vista.",
       "updated": "Aggiornato dopo il tuo acquisto"
+    },
+    "lead": {
+      "title": "Richiedi un preventivo",
+      "name": "Nome",
+      "email": "E-mail",
+      "company": "Azienda",
+      "role": "Il tuo ruolo",
+      "role_architect": "Architetto o ingegnere",
+      "role_contractor": "Impresa o installatore",
+      "role_owner": "Committente o sviluppatore",
+      "role_reseller": "Rivenditore o distributore",
+      "project": "Nome e luogo del progetto",
+      "quantity": "Quantità",
+      "message": "Messaggio",
+      "submit": "Invia richiesta",
+      "sent": "Grazie. La tua richiesta è stata inviata.",
+      "ask": "Chiedi di questo elemento",
+      "question": "Domanda su",
+      "view": "Vista",
+      "asking": "La tua domanda riguarda {name}. Scrivila qui sotto e inviala."
     }
   }
 }

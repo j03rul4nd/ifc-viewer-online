@@ -31,7 +31,7 @@
   data-cart-currency="{{ cart.currency.iso_code | escape }}"
   data-product="{{ product.title | escape }}"
   data-i18n="takeoff"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
+ 
   data-labels-override="{{ s.labels | escape }}"
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
@@ -57,8 +57,7 @@
   {%- endif -%}
   <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-takeoff.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-takeoff.js' -%}
 
 {%- render 'ifcvo-diag', feature: 'takeoff', block: 'ifc-takeoff', ns: ns, keys: 'boq,unit_prices' -%}
 

@@ -326,6 +326,26 @@
       "manual": "Copiez ce lien :",
       "error": "Impossible de lire cette vue.",
       "updated": "Mis à jour depuis votre achat"
+    },
+    "lead": {
+      "title": "Demander un devis",
+      "name": "Nom",
+      "email": "E-mail",
+      "company": "Entreprise",
+      "role": "Votre profil",
+      "role_architect": "Architecte ou ingénieur",
+      "role_contractor": "Entreprise ou installateur",
+      "role_owner": "Maître d’ouvrage ou promoteur",
+      "role_reseller": "Revendeur ou distributeur",
+      "project": "Nom et lieu du projet",
+      "quantity": "Quantité",
+      "message": "Message",
+      "submit": "Envoyer la demande",
+      "sent": "Merci. Votre demande a été envoyée.",
+      "ask": "Poser une question sur cet élément",
+      "question": "Question sur",
+      "view": "Vue",
+      "asking": "Votre question porte sur {name}. Écrivez-la ci-dessous et envoyez-la."
     }
   }
 }

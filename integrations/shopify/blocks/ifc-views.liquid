@@ -4,17 +4,18 @@
   Attaches to the first "Product IFC model" block on the page; works in any
   section or column, so it can sit beside the product form or below the fold.
 {% endcomment %}
-<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}--ifcvo-radius:{{ block.settings.radius }}px;" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
-  {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
+{%- assign s = block.settings -%}
+<div class="ifcvo-panel{% unless s.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;" data-open-label="{{ s.open_label | escape }}" data-template="{{ s.template }}" data-pace="{{ s.pace }}" data-play="{{ s.tour_label | escape }}" data-stop="{{ s.stop_label | escape }}" {{ block.shopify_attributes }}>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-views">
     {%- for i in (1..4) -%}
       {%- assign v = 'view_' | append: i -%}
       {%- assign l = 'label_' | append: i -%}
-      {%- if block.settings[v] != 'none' -%}
-        <button type="button" class="ifcvo-btn" data-view="{{ block.settings[v] }}">{{ block.settings[l] | escape }}</button>
+      {%- if s[v] != 'none' -%}
+        <button type="button" class="ifcvo-btn" data-view="{{ s[v] }}">{{ s[l] | escape }}</button>
       {%- endif -%}
     {%- endfor -%}
-    {%- if block.settings.tour -%}<button type="button" class="ifcvo-btn" data-tour>{{ block.settings.tour_label | escape }}</button>{%- endif -%}
+    {%- if s.tour -%}<button type="button" class="ifcvo-btn" data-tour>{{ s.tour_label | escape }}</button>{%- endif -%}
   </div>
   <p class="ifcvo-caption" aria-live="polite"></p>
 </div>

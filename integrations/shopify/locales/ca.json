@@ -326,6 +326,26 @@
       "manual": "Copia aquest enllaç:",
       "error": "No s'ha pogut llegir aquesta vista.",
       "updated": "Actualitzat des de la teva compra"
+    },
+    "lead": {
+      "title": "Demanar pressupost",
+      "name": "Nom",
+      "email": "Correu electrònic",
+      "company": "Empresa",
+      "role": "El teu perfil",
+      "role_architect": "Arquitectura o enginyeria",
+      "role_contractor": "Constructora o instal·lador",
+      "role_owner": "Propietat o promotora",
+      "role_reseller": "Distribuïdor o revenedor",
+      "project": "Nom i ubicació del projecte",
+      "quantity": "Quantitat",
+      "message": "Missatge",
+      "submit": "Enviar la sol·licitud",
+      "sent": "Gràcies. Hem rebut la teva sol·licitud.",
+      "ask": "Preguntar per aquest element",
+      "question": "Pregunta sobre",
+      "view": "Vista",
+      "asking": "La teva pregunta és sobre {name}. Escriu-la a sota i envia-la."
     }
   }
 }

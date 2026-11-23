@@ -326,6 +326,26 @@
       "manual": "Copie esta ligação:",
       "error": "Não foi possível ler esta vista.",
       "updated": "Atualizado desde a sua compra"
+    },
+    "lead": {
+      "title": "Pedir orçamento",
+      "name": "Nome",
+      "email": "E-mail",
+      "company": "Empresa",
+      "role": "O seu perfil",
+      "role_architect": "Arquitetura ou engenharia",
+      "role_contractor": "Construtora ou instalador",
+      "role_owner": "Dono de obra ou promotor",
+      "role_reseller": "Revendedor ou distribuidor",
+      "project": "Nome e localização do projeto",
+      "quantity": "Quantidade",
+      "message": "Mensagem",
+      "submit": "Enviar pedido",
+      "sent": "Obrigado. O seu pedido foi enviado.",
+      "ask": "Perguntar sobre este elemento",
+      "question": "Pergunta sobre",
+      "view": "Vista",
+      "asking": "A sua pergunta é sobre {name}. Escreva-a abaixo e envie-a."
     }
   }
 }

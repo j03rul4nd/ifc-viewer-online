@@ -18,28 +18,17 @@
   assign iso = request.locale.iso_code | downcase
   assign lang = iso | split: '-' | first
   assign shop_l = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
-
   assign ns = s.namespace | strip | default: 'custom'
   assign view_key = s.view_key | strip | default: shop_cfg.variantViewKey | default: 'ifc_view'
   assign hl_key = s.highlight_key | strip | default: shop_cfg.variantHighlightKey | default: 'ifc_highlight'
-
   assign t_heading = 'ifcvo.variantviews.heading' | t
   assign t_copy = 'ifcvo.variantviews.copy' | t
   assign t_image = 'ifcvo.variantviews.image' | t
-  assign t_copied = 'ifcvo.variantviews.copied' | t
-  assign t_manual = 'ifcvo.variantviews.manual' | t
-  assign t_saved = 'ifcvo.variantviews.saved' | t
-  assign t_error = 'ifcvo.variantviews.error' | t
   assign t_link = 'ifcvo.variantviews.link' | t
   assign l_heading = s.title | default: shop_l.variantviews_heading | default: t_heading
   assign l_copy = shop_l.variantviews_copy | default: t_copy
   assign l_image = shop_l.variantviews_image | default: t_image
-  assign l_copied = shop_l.variantviews_copied | default: t_copied
-  assign l_manual = shop_l.variantviews_manual | default: t_manual
-  assign l_saved = shop_l.variantviews_saved | default: t_saved
-  assign l_error = shop_l.variantviews_error | default: t_error
   assign l_link = shop_l.variantviews_link | default: t_link
-
   assign map = ''
   for variant in product.variants
     assign vv = variant.metafields[ns][view_key].value
@@ -71,7 +60,7 @@
   data-views="{{ map | escape }}"
   data-current="{{ current.id | escape }}"
   data-filename="{{ filename | escape }}"
-  data-l-copied="{{ l_copied | escape }}" data-l-copy-manual="{{ l_manual | escape }}" data-l-saved="{{ l_saved | escape }}" data-l-error="{{ l_error | escape }}"
+  data-i18n="variantviews"
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
 >
@@ -83,12 +72,9 @@
   <input type="text" class="ifcvo-variants-link" readonly hidden aria-label="{{ l_link | escape }}" data-ifcvo-view-link>
   <p class="ifcvo-caption" data-ifcvo-variants-status role="status" aria-live="polite"></p>
 </div>
-{%- render 'ifcvo-runtime' -%}
-<script type="module" src="{{ 'ifcvo-variants.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime', js: 'ifcvo-variants.js' -%}
 {%- endif -%}
-
 {%- if request.design_mode -%}{%- assign dg_keys = view_key | append: "," | append: hl_key -%}{%- render 'ifcvo-diag', feature: 'variantviews', block: 'ifc-variant-views', ns: ns, keys: dg_keys, scope: 'variant' -%}{%- endif -%}
-
 {% schema %}
 {
   "stylesheet": "ifcvo.css",

@@ -4,7 +4,8 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 const ext = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
-const read = (p: string): string => fs.readFileSync(path.join(ext, p), 'utf8')
+const src = path.resolve(__dirname, '../integrations/shopify')
+const read = (p: string): string => fs.readFileSync(path.join(/^(blocks|snippets)[/]/.test(p) ? src : ext, p), 'utf8')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Mod = Record<string, any>
 const load = async (): Promise<Mod> => import(/* @vite-ignore */ '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-wizard.js')

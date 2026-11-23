@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC：バリエーション別ビュー"
+    },
+    "quote_form": {
+      "name": "IFC: 見積もり依頼"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "作成するモデルの三角形の上限",
-    "the_smallest_parts_are_left_out_above_it": "上限を超えると最も小さい部品を省きます。"
+    "the_smallest_parts_are_left_out_above_it": "上限を超えると最も小さい部品を省きます。",
+    "ask_for_the_buyer_s_role": "購入者の職種を尋ねる",
+    "ask_for_the_project_name_and_location": "プロジェクト名と所在地を尋ねる",
+    "ask_for_a_quantity": "数量を尋ねる",
+    "also_create_a_customer_with_these_tags": "これらのタグで顧客も作成する",
+    "show_ask_about_this_element": "「この部材について質問」を表示"
   }
 }

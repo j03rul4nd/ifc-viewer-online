@@ -326,6 +326,26 @@
       "manual": "Copy this link:",
       "error": "This view could not be read.",
       "updated": "Updated since your purchase"
+    },
+    "lead": {
+      "title": "Request a quote",
+      "name": "Name",
+      "email": "Email",
+      "company": "Company",
+      "role": "Your role",
+      "role_architect": "Architect or engineer",
+      "role_contractor": "Contractor or installer",
+      "role_owner": "Owner or developer",
+      "role_reseller": "Reseller or distributor",
+      "project": "Project name and location",
+      "quantity": "Quantity",
+      "message": "Message",
+      "submit": "Send request",
+      "sent": "Thanks. Your request has been sent.",
+      "ask": "Ask about this element",
+      "question": "Question about",
+      "view": "View",
+      "asking": "Your question is about {name}. Write it below and send it."
     }
   }
 }

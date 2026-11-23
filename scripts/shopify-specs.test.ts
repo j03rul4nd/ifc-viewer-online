@@ -50,8 +50,7 @@ describe('ifc-specs block (Liquid)', () => {
   })
   it('declares the specs tier and loads its own script next to the runtime', () => {
     expect(block).toMatch(/data-ifcvo-tier="specs"/)
-    expect(block).toContain("'ifcvo-specs.js' | asset_url")
-    expect(block).toContain("render 'ifcvo-runtime'")
+    expect(block).toContain("render 'ifcvo-runtime', js: 'ifcvo-specs.js'")
   })
   it('escapes every setting written into an attribute', () => {
     for (const m of block.matchAll(/data-[a-z-]+="\{\{ ([^}]+) \}\}"/g)) {

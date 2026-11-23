@@ -144,3 +144,23 @@
 .ifcvo-diag-lines li { margin: 2px 0; overflow-wrap: anywhere; }
 .ifcvo-diag-lines li[data-kind="warn"] { color: #8a3b00; }
 .ifcvo-diag-lines li[data-kind="hint"] { color: #444; padding-left: 1em; }
+/* Product block facade and spec table (moved out of the Liquid to save bytes). */
+.ifcvo-stage { position: relative; width: 100%; overflow: hidden; }
+.ifcvo-facade { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.ifcvo-facade > img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: contain; opacity: .55; }
+.ifcvo-facade > svg { position: absolute; inset: 15%; width: 70%; height: 70%; opacity: .35; color: #8a949c; }
+.ifcvo-actions { position: relative; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; max-width: 90%; }
+.ifcvo-open, .ifcvo-retry { min-height: 44px; padding: 12px 20px; border: 0; border-radius: 999px; background: #fff; color: #11161a; font: inherit; font-weight: 600; cursor: pointer; }
+.ifcvo-full { min-height: 44px; line-height: 44px; padding: 0 16px; border-radius: 999px; background: rgba(255,255,255,.9); color: #11161a; font: inherit; font-weight: 600; text-decoration: none; }
+.ifcvo-retry[hidden], .ifcvo-full[hidden] { display: none; }
+.ifcvo-status { margin: 6px 0 0; min-height: 1.4em; font: inherit; font-size: .9em; }
+.ifcvo-product > .ifcvo-specs { margin: 12px 0 0; border-collapse: collapse; width: 100%; }
+.ifcvo-product > .ifcvo-specs caption { text-align: left; font-weight: 600; padding-bottom: 4px; }
+.ifcvo-product > .ifcvo-specs th { text-align: left; font-weight: 400; padding: 4px 8px 4px 0; border-top: 1px solid rgba(0,0,0,.1); }
+.ifcvo-product > .ifcvo-specs td { padding: 4px 0; border-top: 1px solid rgba(0,0,0,.1); }
+/* Quote request form (blocks/ifc-quote.liquid). */
+.ifcvo-lead form label { display: block; margin: 8px 0 0; }
+.ifcvo-lead form input:not([type="hidden"]), .ifcvo-lead form select, .ifcvo-lead form textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px; font: inherit; border: 1px solid rgba(0,0,0,.2); border-radius: calc(var(--ifcvo-radius, 12px) / 2); }
+.ifcvo-lead form button[type="submit"] { margin-top: 12px; }
+.ifcvo-lead-ok { font-weight: 600; }
+.ifcvo-lead-ask { margin: 8px 0 0; }

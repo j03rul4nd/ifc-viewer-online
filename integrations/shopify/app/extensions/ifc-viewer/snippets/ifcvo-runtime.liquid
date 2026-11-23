@@ -1,1 +1,5 @@
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="application/json" data-ifcvo-shop-labels>{{shop.metafields.ifcvo.labels.value|json|replace:'</','<\/'}}</script>
+<script type="module" src="{{'ifcvo.js'|asset_url}}"></script>
+{%-if js != blank%}
+<script type="module" src="{{js|asset_url}}"></script>
+{%-endif -%}

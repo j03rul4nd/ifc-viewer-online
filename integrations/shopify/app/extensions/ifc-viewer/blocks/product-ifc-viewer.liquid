@@ -1,101 +1,101 @@
-{%- liquid
-assign s = block.settings
-assign ns = s.namespace | strip | default: 'custom'
-assign key = s.key | strip | default: 'ifc_model'
-assign field = product.metafields[ns][key].value
-assign product_model = field.url | default: field | strip
-assign head = product_model | slice: 0, 8 | downcase
+{%-liquid
+assign s=block.settings
+assign ns=s.namespace|strip|default:'custom'
+assign key=s.key|strip|default:'ifc_model'
+assign field=product.metafields[ns][key].value
+assign product_model=field.url|default:field|strip
+assign head=product_model|slice:0,8|downcase
 if head != 'https://'
-assign product_model = ''
+assign product_model=''
 endif
-assign current = product.selected_or_first_available_variant
-assign map = ''
-assign current_model = product_model
+assign current=product.selected_or_first_available_variant
+assign map=''
+assign current_model=product_model
 for variant in product.variants
-assign vfield = variant.metafields[ns][key].value
-assign vmodel = vfield.url | default: vfield | strip
-assign vhead = vmodel | slice: 0, 8 | downcase
+assign vfield=variant.metafields[ns][key].value
+assign vmodel=vfield.url|default:vfield|strip
+assign vhead=vmodel|slice:0,8|downcase
 if vhead != 'https://'
-assign vmodel = product_model
+assign vmodel=product_model
 endif
 if vmodel != ''
 if map != ''
-assign map = map | append: ','
+assign map=map|append:','
 endif
-assign vjson = vmodel | json
-assign map = map | append: '"' | append: variant.id | append: '":' | append: vjson
+assign vjson=vmodel|json
+assign map=map|append:'"'|append:variant.id|append:'":'|append:vjson
 if variant.id == current.id
-assign current_model = vmodel
+assign current_model=vmodel
 endif
 endif
 endfor
-assign title = s.title | default: product.title
-assign size_mb = product.metafields[ns].ifc_size_mb.value | default: ''
-assign eager = false
+assign title=s.title|default:product.title
+assign size_mb=product.metafields[ns].ifc_size_mb.value|default:''
+assign eager=false
 if section.index == 1
-assign eager = true
+assign eager=true
 endif
-assign files_key = s.files_key | strip
-assign files = ''
+assign files_key=s.files_key|strip
+assign files=''
 if files_key != ''
-assign files = product.metafields[ns][files_key].value
+assign files=product.metafields[ns][files_key].value
 endif
-assign specs_ns = s.specs_namespace | strip
-assign shop_cfg = shop.metafields.ifcvo.config.value
-assign stage_bg = '#11161a'
+assign specs_ns=s.specs_namespace|strip
+assign shop_cfg=shop.metafields.ifcvo.config.value
+assign stage_bg='#11161a'
 case s.background
 when 'white'
-assign stage_bg = '#ffffff'
+assign stage_bg='#ffffff'
 when 'paper'
-assign stage_bg = '#f4f3ef'
+assign stage_bg='#f4f3ef'
 when 'brand'
-assign stage_bg = s.bg_bottom | default: s.bg_top
+assign stage_bg=s.bg_bottom|default:s.bg_top
 endcase
-assign ifcvo_protected = false
-assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
+assign ifcvo_protected=false
+assign pv_plan=app.metafields.ifcvo.plan.value|default:''|strip|downcase
 if pv_plan == 'free'
-assign pv_ok = false
+assign pv_ok=false
 else
-assign pv_ok = true
+assign pv_ok=true
 endif
 for b in section.blocks
 if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
-assign ifcvo_protected = true
+assign ifcvo_protected=true
 endif
 endfor
 -%}
-{%- if current_model != '' -%}
-<div class="ifcvo-product" data-ifcvo-viewer data-models="{{ map | escape }}" data-model="{{ current_model | escape }}"
-data-load="{{ s.load | escape }}" data-title="{{ title | escape }}" data-ui="{{ s.ui | escape }}" data-view="{{ s.view | escape }}"
-data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
-data-accent="{{ s.accent | remove: '#' | escape }}" data-bg="{{ s.background | escape }}" data-bg-top="{{ s.bg_top | escape }}" data-bg-bottom="{{ s.bg_bottom | escape }}"
-data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}" data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
-data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
-data-size-mb="{{ size_mb | escape }}" data-ifcvo-version="{{ current.metafields.ifcvo.version.value | default: product.metafields.ifcvo.version.value | escape }}"
-data-product-id="{{ product.id | escape }}" data-variant-id="{{ current.id | escape }}" data-block-id="{{ block.id | escape }}">
-{%- render 'ifcvo-facade', ns: ns, model: current_model, title: title, aspect: s.aspect, height: s.height, radius: s.radius, stage_bg: stage_bg, open_label: s.open_label, eager: eager -%}
-{%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: current_model, files: files, show_ifc: s.download, ifc_label: s.download_label, glb: shop_cfg.downloadsGlb, csv: shop_cfg.downloadsCsv, gate: shop_cfg.downloadsGate, tag: shop_cfg.downloadsTag -%}{%- endunless -%}
-{%- if specs_ns != '' and product.metafields[specs_ns] != blank -%}
-<table class="ifcvo-specs" style="margin:12px 0 0;border-collapse:collapse;width:100%">
-<caption style="text-align:left;font-weight:600;padding-bottom:4px">{{ s.specs_label | escape }}</caption>
-{%- for pair in product.metafields[specs_ns] -%}
-<tr><th scope="row" style="text-align:left;font-weight:400;padding:4px 8px 4px 0;border-top:1px solid rgba(0,0,0,.1)">{{ pair[0] | replace: '_', ' ' | capitalize | escape }}</th><td style="padding:4px 0;border-top:1px solid rgba(0,0,0,.1)">{{ pair[1].value | escape }}</td></tr>
-{%- endfor -%}
+{%-if current_model != '' -%}
+<div class="ifcvo-product" data-ifcvo-viewer data-models="{{map|escape}}" data-model="{{current_model|escape}}"
+data-load="{{s.load|escape}}" data-title="{{title|escape}}" data-ui="{{s.ui|escape}}" data-view="{{s.view|escape}}"
+data-validate="{%if s.validate%}1{%else%}0{%endif%}" data-lang="{%if s.lang != 'auto'%}{{s.lang}}{%endif%}"
+data-accent="{{s.accent|remove:'#'|escape}}" data-bg="{{s.background|escape}}" data-bg-top="{{s.bg_top|escape}}" data-bg-bottom="{{s.bg_bottom|escape}}"
+data-ifcvo-plan="{{app.metafields.ifcvo.plan.value|escape}}" data-ifcvo-license="{{shop.metafields.ifcvo.license.value|escape}}" data-ifcvo-shop="{{shop.permanent_domain|escape}}"
+data-ifcvo-config="{{shop.metafields.ifcvo.config.value|json|escape}}"
+data-ifcvo-labels="{{shop.metafields.ifcvo.labels.value|json|escape}}" data-locale="{{request.locale.iso_code|escape}}"
+data-size-mb="{{size_mb|escape}}" data-ifcvo-version="{{current.metafields.ifcvo.version.value|default:product.metafields.ifcvo.version.value|escape}}"
+data-product-id="{{product.id|escape}}" data-variant-id="{{current.id|escape}}" data-block-id="{{block.id|escape}}">
+{%-render 'ifcvo-facade',ns:ns,model:current_model,title:title,aspect:s.aspect,height:s.height,radius:s.radius,stage_bg:stage_bg,open_label:s.open_label,eager:eager -%}
+{%-unless ifcvo_protected -%}{%-render 'ifcvo-downloads',model:current_model,files:files,show_ifc:s.download,ifc_label:s.download_label,glb:shop_cfg.downloadsGlb,csv:shop_cfg.downloadsCsv,gate:shop_cfg.downloadsGate,tag:shop_cfg.downloadsTag -%}{%-endunless -%}
+{%-if specs_ns != '' and product.metafields[specs_ns] != blank -%}
+<table class="ifcvo-specs">
+<caption>{{s.specs_label|escape}}</caption>
+{%-for pair in product.metafields[specs_ns] -%}
+<tr><th scope="row">{{pair[0]|replace:'_',' '|capitalize|escape}}</th><td>{{pair[1].value|escape}}</td></tr>
+{%-endfor -%}
 </table>
-{%- endif -%}
-{%- assign ns_model = current_model -%}{%- if ifcvo_protected -%}{%- assign ns_model = '' -%}{%- endif -%}
-{% render 'ifcvo-noscript', product: product, model: ns_model, specs_ns: specs_ns, download_label: s.download_label %}
+{%-endif -%}
+{%-assign ns_model=current_model -%}{%-if ifcvo_protected -%}{%-assign ns_model='' -%}{%-endif -%}
+{%render 'ifcvo-noscript',product:product,model:ns_model,specs_ns:specs_ns,download_label:s.download_label%}
 </div>
-{%- render 'ifcvo-runtime' -%}
-{% render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true %}
-<script type="module" src="{{ 'ifcvo-events.js' | asset_url }}"></script>
-{%- if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
-{%- elsif request.design_mode -%}
-<p>{{ 'ifcvo.editor.product_link' | t: ns: ns, key: key | escape }}</p>
-{%- endif -%}
-{%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},ifc_size_mb,ifc_poster,{{ block.settings.files_key }}{%- endcapture -%}
-{%- render 'ifcvo-diag', feature: 'viewer', block: 'product-ifc-viewer', ns: ns, keys: dg_keys, model: current_model -%}
-<script type="application/json" data-ifcvo-wizard>{"ns":{{ ns | json | replace: '</', '<\/' }},"key":{{ key | json | replace: '</', '<\/' }},"model":{{ current_model | default: '' | json | replace: '</', '<\/' }},"aspect":{{ s.aspect | json | replace: '</', '<\/' }},"product":{{ product.id | json | replace: '</', '<\/' }},"handle":{{ product.handle | json | replace: '</', '<\/' }},"shop":{{ shop.permanent_domain | json | replace: '</', '<\/' }}}</script>
-<script type="module" src="{{ 'ifcvo-wizard.js' | asset_url }}"></script>{%- endif -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.14u2","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"paragraph","content":"Reads the IFC file from a product or variant metafield (URL or file). A variant without its own file shows the product's."},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"key","label":"t:k.0p0n","default":"ifc_model"},{"type":"text","id":"title","label":"t:k.036e","info":"Defaults to the product title."},{"type":"select","id":"aspect","label":"t:k.1hzn","default":"height","info":"t:k.1qzb","options":[{"value":"height","label":"t:k.1qg9"},{"value":"1/1","label":"t:k.093q"},{"value":"4/3","label":"t:k.01ck"},{"value":"16/9","label":"t:k.0epf"}]},{"type":"range","id":"height","label":"t:k.0pkn","min":300,"max":900,"step":20,"unit":"px","default":560},{"type":"select","id":"load","label":"t:k.13p2","default":"click","info":"On click keeps the product page as fast as without the viewer.","options":[{"value":"click","label":"t:k.1uhe"},{"value":"visible","label":"t:k.17bb"},{"value":"idle","label":"t:k.05ts"}]},{"type":"text","id":"open_label","label":"t:k.1w1y","default":"View in 3D"},{"type":"select","id":"ui","label":"t:k.0ma9","default":"article","options":[{"value":"article","label":"t:k.1neg"},{"value":"minimal","label":"t:k.09vy"},{"value":"client","label":"t:k.06so"},{"value":"kiosk","label":"t:k.1idx"}]},{"type":"select","id":"view","label":"t:k.0ap4","default":"iso","options":[{"value":"iso","label":"t:k.15a6"},{"value":"front","label":"t:k.16ni"},{"value":"top","label":"t:k.03q0"}]},{"type":"checkbox","id":"validate","label":"t:k.0218","default":true},{"type":"select","id":"lang","label":"t:k.1wrc","default":"auto","options":[{"value":"auto","label":"t:k.16d2"},{"value":"en","label":"t:k.1obb"},{"value":"es","label":"t:k.0s9g"},{"value":"ca","label":"t:k.0y00"},{"value":"de","label":"t:k.1e3g"},{"value":"fr","label":"t:k.04kl"},{"value":"it","label":"t:k.0yx8"},{"value":"pt","label":"t:k.0jjs"},{"value":"ja","label":"t:k.1wet"},{"value":"zh","label":"t:k.1wot"},{"value":"th","label":"t:k.0ebu"}]},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Selection and buttons inside the viewer."},{"type":"select","id":"background","label":"t:k.11wy","default":"studio","options":[{"value":"studio","label":"t:k.0abz"},{"value":"white","label":"t:k.0rh1"},{"value":"paper","label":"t:k.0x12"},{"value":"sky","label":"t:k.1s5o"},{"value":"brand","label":"t:k.04e0"}]},{"type":"color","id":"bg_top","label":"t:k.064c","default":"#ffffff","visible_if":"{{ block.settings.background == 'brand' }}"},{"type":"color","id":"bg_bottom","label":"t:k.0yj7","default":"#e9e7e1","visible_if":"{{ block.settings.background == 'brand' }}"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"header","content":"Downloads"},{"type":"checkbox","id":"download","label":"t:k.1kea","default":true},{"type":"text","id":"download_label","label":"t:k.1lxp","default":"Download BIM model (IFC)"},{"type":"text","id":"files_key","label":"t:k.1lw6","default":"bim_files","info":"List of files or URLs in the same namespace: RFA, DWG, datasheet PDF…"},{"type":"header","content":"Technical data"},{"type":"text","id":"specs_namespace","label":"t:k.0r5u","default":"bim","info":"Every metafield in this namespace shows as a row (dimensions, U-value, fire rating…). Leave empty to hide."},{"type":"text","id":"specs_label","label":"t:k.1gmn","default":"Technical data"}]}{% endschema %}
+{%-render 'ifcvo-runtime' -%}
+{%render 'ifcvo-jsonld',product:product,model:current_model,specs_ns:specs_ns,augment:true%}
+<script type="module" src="{{'ifcvo-events.js'|asset_url}}"></script>
+{%-if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{'ifcvo-quote.js'|asset_url}}"></script>{%-endif -%}
+{%-elsif request.design_mode -%}
+<p>{{'ifcvo.editor.product_link'|t:ns:ns,key:key|escape}}</p>
+{%-endif -%}
+{%-if request.design_mode -%}{%-capture dg_keys -%}{{block.settings.key}},ifc_size_mb,ifc_poster,{{block.settings.files_key}}{%-endcapture -%}
+{%-render 'ifcvo-diag',feature:'viewer',block:'product-ifc-viewer',ns:ns,keys:dg_keys,model:current_model -%}
+<script type="application/json" data-ifcvo-wizard>{"ns":{{ns|json|replace:'</','<\/'}},"key":{{key|json|replace:'</','<\/'}},"model":{{current_model|default:''|json|replace:'</','<\/'}},"aspect":{{s.aspect|json|replace:'</','<\/'}},"product":{{product.id|json|replace:'</','<\/'}},"handle":{{product.handle|json|replace:'</','<\/'}},"shop":{{shop.permanent_domain|json|replace:'</','<\/'}}}</script>
+<script type="module" src="{{'ifcvo-wizard.js'|asset_url}}"></script>{%-endif -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.4ly","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"paragraph","content":"Reads the IFC file from a product or variant metafield (URL or file). A variant without its own file shows the product's."},{"type":"text","id":"namespace","label":"t:k.6ld","default":"custom"},{"type":"text","id":"key","label":"t:k.ioh","default":"ifc_model"},{"type":"text","id":"title","label":"t:k.5gt","info":"Defaults to the product title."},{"type":"select","id":"aspect","label":"t:k.v9r","default":"height","info":"A fixed shape keeps the page from moving while it loads. Phones above the size limit (shop setting mobileCapMb, default 80 MB) get a link to the full viewer.","options":[{"value":"height","label":"t:k.a1a"},{"value":"1/1","label":"t:k.kw1"},{"value":"4/3","label":"t:k.0gc"},{"value":"16/9","label":"t:k.uy5"}]},{"type":"range","id":"height","label":"t:k.kb8","min":300,"max":900,"step":20,"unit":"px","default":560},{"type":"select","id":"load","label":"t:k.j6f","default":"click","info":"On click keeps the product page as fast as without the viewer.","options":[{"value":"click","label":"t:k.a4h"},{"value":"visible","label":"t:k.rqi"},{"value":"idle","label":"t:k.gri"}]},{"type":"text","id":"open_label","label":"t:k.txk","default":"View in 3D"},{"type":"select","id":"ui","label":"t:k.jun","default":"article","options":[{"value":"article","label":"t:k.y3w"},{"value":"minimal","label":"t:k.lvh"},{"value":"client","label":"t:k.9nm"},{"value":"kiosk","label":"t:k.4g6"}]},{"type":"select","id":"view","label":"t:k.kke","default":"iso","options":[{"value":"iso","label":"t:k.pmv"},{"value":"front","label":"t:k.5bp"},{"value":"top","label":"t:k.4et"}]},{"type":"checkbox","id":"validate","label":"t:k.jgb","default":true},{"type":"select","id":"lang","label":"t:k.x4w","default":"auto","options":[{"value":"auto","label":"t:k.iy9"},{"value":"en","label":"t:k.mgi"},{"value":"es","label":"t:k.e6l"},{"value":"ca","label":"t:k.0l7"},{"value":"de","label":"t:k.ah2"},{"value":"fr","label":"t:k.azp"},{"value":"it","label":"t:k.b9b"},{"value":"pt","label":"t:k.oya"},{"value":"ja","label":"t:k.g2o"},{"value":"zh","label":"t:k.1rn"},{"value":"th","label":"t:k.6ji"}]},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Selection and buttons inside the viewer."},{"type":"select","id":"background","label":"t:k.f57","default":"studio","options":[{"value":"studio","label":"t:k.0l9"},{"value":"white","label":"t:k.e3j"},{"value":"paper","label":"t:k.4xw"},{"value":"sky","label":"t:k.gir"},{"value":"brand","label":"t:k.91o"}]},{"type":"color","id":"bg_top","label":"t:k.ekm","default":"#ffffff","visible_if":"{{block.settings.background == 'brand'}}"},{"type":"color","id":"bg_bottom","label":"t:k.i60","default":"#e9e7e1","visible_if":"{{block.settings.background == 'brand'}}"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"header","content":"Downloads"},{"type":"checkbox","id":"download","label":"t:k.xel","default":true},{"type":"text","id":"download_label","label":"t:k.8qz","default":"Download BIM model (IFC)"},{"type":"text","id":"files_key","label":"t:k.vlf","default":"bim_files","info":"List of files or URLs in the same namespace: RFA, DWG, datasheet PDF…"},{"type":"header","content":"Technical data"},{"type":"text","id":"specs_namespace","label":"t:k.zcb","default":"bim","info":"Every metafield in this namespace shows as a row (dimensions, U-value, fire rating…). Leave empty to hide."},{"type":"text","id":"specs_label","label":"t:k.nrv","default":"Technical data"}]}{% endschema %}

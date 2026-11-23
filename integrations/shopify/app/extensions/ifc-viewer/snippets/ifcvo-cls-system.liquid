@@ -1,8 +1,8 @@
-{%- liquid
-assign n = name | strip
-assign d = n | downcase
-assign d_nospace = d | remove: ' '
-assign first = d | split: ' ' | first
+{%-liquid
+assign n=name|strip
+assign d=n|downcase
+assign d_nospace=d|remove:' '
+assign first=d|split:' '|first
 if d_nospace contains 'uniclass'
 echo 'Uniclass 2015'
 elsif d_nospace contains 'omniclass'

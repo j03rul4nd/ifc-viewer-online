@@ -199,5 +199,30 @@
     "manual": "ifcvo.share.manual",
     "error": "ifcvo.share.error",
     "updated": "ifcvo.share.updated"
+  },
+  "planview": {
+    "tabs": "ifcvo.planview.tabs",
+    "all": "ifcvo.planview.all",
+    "waiting": "ifcvo.planview.waiting",
+    "open": "ifcvo.planview.open",
+    "loading": "ifcvo.planview.loading",
+    "none": "ifcvo.planview.none",
+    "error": "ifcvo.planview.error",
+    "rooms": "ifcvo.planview.rooms",
+    "room": "ifcvo.planview.room",
+    "area": "ifcvo.planview.area",
+    "showing": "ifcvo.planview.showing"
+  },
+  "variantviews": {
+    "copied": "ifcvo.variantviews.copied",
+    "manual": "ifcvo.variantviews.manual",
+    "saved": "ifcvo.variantviews.saved",
+    "error": "ifcvo.variantviews.error"
+  },
+  "lead": {
+    "ask": "ifcvo.lead.ask",
+    "question": "ifcvo.lead.question",
+    "view": "ifcvo.lead.view",
+    "asking": "ifcvo.lead.asking"
   }
 }

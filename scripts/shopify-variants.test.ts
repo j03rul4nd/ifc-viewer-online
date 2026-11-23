@@ -265,6 +265,19 @@ describe('ifc-variant-views block (Liquid)', () => {
     for (const m of body.matchAll(/'ifcvo\.variantviews\.(\w+)' \| t/g)) expect(locales.ifcvo.variantviews[m[1]]).toBeTruthy()
   })
 
+  it('status texts: data-l-*, then shop labels, then the theme language, else English', () => {
+    expect(body).toContain('data-i18n="variantviews"')
+    const root = document.createElement('div')
+    expect(vv.statusText(root, 'lSaved')).toBe('Image saved.')
+    root.dataset.labels = JSON.stringify({ saved: 'Imagen guardada.' })
+    expect(vv.statusText(root, 'lSaved')).toBe('Imagen guardada.')
+    root.dataset.locale = 'es'
+    root.dataset.ifcvoLabels = JSON.stringify({ es: { variantviews_saved: 'Guardada' } })
+    expect(vv.statusText(root, 'lSaved')).toBe('Guardada')
+    root.dataset.lSaved = 'OK'
+    expect(vv.statusText(root, 'lSaved')).toBe('OK')
+  })
+
   it('buttons are real buttons and the status is announced', () => {
     expect(body).toMatch(/<button type="button"[^>]*data-ifcvo-copy-view/)
     expect(body).toMatch(/role="status"/)

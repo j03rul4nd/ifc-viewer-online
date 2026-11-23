@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC: viste per variante"
+    },
+    "quote_form": {
+      "name": "IFC: richiesta di preventivo"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "Limite di triangoli dei modelli creati",
-    "the_smallest_parts_are_left_out_above_it": "Oltre il limite vengono omesse le parti più piccole."
+    "the_smallest_parts_are_left_out_above_it": "Oltre il limite vengono omesse le parti più piccole.",
+    "ask_for_the_buyer_s_role": "Chiedi il ruolo dell'acquirente",
+    "ask_for_the_project_name_and_location": "Chiedi nome e luogo del progetto",
+    "ask_for_a_quantity": "Chiedi una quantità",
+    "also_create_a_customer_with_these_tags": "Crea anche un cliente con questi tag",
+    "show_ask_about_this_element": "Mostra \"Chiedi di questo elemento\""
   }
 }

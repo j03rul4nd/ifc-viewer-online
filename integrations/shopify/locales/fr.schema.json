@@ -59,6 +59,9 @@
     },
     "variant_views": {
       "name": "IFC : vues par variante"
+    },
+    "quote_form": {
+      "name": "IFC : demande de devis"
     }
   },
   "settings": {
@@ -346,6 +349,11 @@
     "x_2": "中文",
     "x_3": "日本語",
     "triangle_limit_for_made_models": "Limite de triangles des modèles créés",
-    "the_smallest_parts_are_left_out_above_it": "Au-delà, les plus petites pièces sont omises."
+    "the_smallest_parts_are_left_out_above_it": "Au-delà, les plus petites pièces sont omises.",
+    "ask_for_the_buyer_s_role": "Demander le profil de l'acheteur",
+    "ask_for_the_project_name_and_location": "Demander le nom et le lieu du projet",
+    "ask_for_a_quantity": "Demander une quantité",
+    "also_create_a_customer_with_these_tags": "Créer aussi un client avec ces balises",
+    "show_ask_about_this_element": "Afficher \"Poser une question sur cet élément\""
   }
 }
