@@ -1,0 +1,78 @@
+{%- liquid
+assign s = block.settings
+assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
+assign shop_labels = shop.metafields.ifcvo.labels.value
+assign iso = request.locale.iso_code | downcase
+assign lang = iso | split: '-' | first
+assign shop_l = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
+assign t_heading = 'ifcvo.planview.heading' | t
+assign t_tabs = 'ifcvo.planview.tabs' | t
+assign t_all = 'ifcvo.planview.all' | t
+assign t_waiting = 'ifcvo.planview.waiting' | t
+assign t_open = 'ifcvo.planview.open' | t
+assign t_loading = 'ifcvo.planview.loading' | t
+assign t_none = 'ifcvo.planview.none' | t
+assign t_error = 'ifcvo.planview.error' | t
+assign t_rooms = 'ifcvo.planview.rooms' | t
+assign t_room = 'ifcvo.planview.room' | t
+assign t_area = 'ifcvo.planview.area' | t
+assign t_showing = 'ifcvo.planview.showing' | t
+assign t_preview = 'ifcvo.planview.preview' | t
+assign l_heading = s.title | default: shop_l.planview_heading | default: t_heading
+assign l_tabs = shop_l.planview_tabs | default: t_tabs
+assign l_all = shop_l.planview_all | default: t_all
+assign l_waiting = shop_l.planview_waiting | default: t_waiting
+assign l_open = shop_l.planview_open | default: t_open
+assign l_loading = shop_l.planview_loading | default: t_loading
+assign l_none = shop_l.planview_none | default: t_none
+assign l_error = shop_l.planview_error | default: t_error
+assign l_rooms = shop_l.planview_rooms | default: t_rooms
+assign l_room = shop_l.planview_room | default: t_room
+assign l_area = shop_l.planview_area | default: t_area
+assign l_showing = shop_l.planview_showing | default: t_showing
+assign l_preview = shop_l.planview_preview | default: t_preview
+assign wm = s.watermark | strip | default: shop.name
+assign protect_mode = 'on'
+if s.allow_properties
+assign protect_mode = 'properties'
+endif
+-%}
+{%- capture ifcvo_style -%}
+{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+--ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{%- if plan == 'free' -%}
+{%- if request.design_mode -%}
+<p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planview', plan: 'starter' | escape }}</p>
+{%- endif -%}
+{%- else -%}
+<div
+class="ifcvo-panel ifcvo-planview-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+data-ifcvo-planview
+data-ifcvo-tier="planview"
+data-ifcvo-plan="{{ plan | escape }}"
+data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
+{% if s.protect %}data-ifcvo-protect="{{ protect_mode | escape }}" data-watermark="{% if s.show_watermark %}{{ wm | escape }}{% endif %}" data-watermark-opacity="{{ s.watermark_opacity | divided_by: 100.0 | escape }}"{% endif %}
+data-start="{{ s.start | escape }}"
+data-rooms="{{ s.show_rooms | escape }}"
+data-locale="{{ request.locale.iso_code | escape }}"
+data-l-tabs="{{ l_tabs | escape }}" data-l-all="{{ l_all | escape }}" data-l-waiting="{{ l_waiting | escape }}" data-l-open="{{ l_open | escape }}"
+data-l-loading="{{ l_loading | escape }}" data-l-none="{{ l_none | escape }}" data-l-error="{{ l_error | escape }}" data-l-rooms="{{ l_rooms | escape }}"
+data-l-room="{{ l_room | escape }}" data-l-area="{{ l_area | escape }}" data-l-showing="{{ l_showing | escape }}"
+style="{{ ifcvo_style }}"
+{{ block.shopify_attributes }}
+>
+{%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
+{%- if s.protect -%}<p class="ifcvo-muted ifcvo-planview-note">{{ l_preview | escape }}</p>{%- endif -%}
+<div class="ifcvo-body ifcvo-planview-body" data-ifcvo-planview-body>
+<div class="ifcvo-views" role="tablist" aria-label="{{ l_tabs | escape }}" data-ifcvo-planview-tabs></div>
+<div role="tabpanel" tabindex="0" class="ifcvo-planview-panel" data-ifcvo-planview-panel></div>
+</div>
+<p class="ifcvo-caption" data-ifcvo-planview-status role="status"></p>
+<noscript><p class="ifcvo-muted">{{ l_waiting | escape }}</p></noscript>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-planview.js' | asset_url }}"></script>
+{%- endif -%}
+{%- render 'ifcvo-diag', feature: 'planview', block: 'ifc-plan-view', ns: '', keys: '' -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0fky","target":"section","settings":[{"type":"paragraph","content":"t:k.1hd5"},{"type":"text","id":"title","label":"t:k.17pa","info":"t:k.1ft1"},{"type":"select","id":"start","label":"t:k.0slg","default":"3d","options":[{"value":"3d","label":"t:k.0oij"},{"value":"first","label":"t:k.06xc"}]},{"type":"checkbox","id":"show_rooms","label":"t:k.1nv0","default":true},{"type":"header","content":"t:k.0jcd"},{"type":"paragraph","content":"t:k.1jip"},{"type":"checkbox","id":"protect","label":"t:k.0jcd","default":false},{"type":"checkbox","id":"show_watermark","label":"t:k.0uzt","default":true},{"type":"text","id":"watermark","label":"t:k.0vi3","info":"t:k.1h65"},{"type":"range","id":"watermark_opacity","label":"t:k.0ffk","min":5,"max":60,"step":5,"unit":"%","default":20},{"type":"checkbox","id":"allow_properties","label":"t:k.1pks","default":false,"info":"t:k.0601"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

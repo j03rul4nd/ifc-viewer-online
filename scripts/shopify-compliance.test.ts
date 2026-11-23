@@ -5,14 +5,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, init, LABELS, NBS_MANUAL, NBS_CLASSES, config, typeCheck, withTypeCheck, refresh, render, runChecks, safeIdsUrl, summarize, withTimeout,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-compliance.js'
-import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compliance.js'
+import { FEATURE_TIERS, I18N_GROUPS } from '../integrations/shopify/build-extension.mjs'
 import { NBS_BOS_MANUAL } from '../src/lib/eir/eir-profile-nbs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-compliance.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-compliance.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
-const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 
 const spec = (name: string, status: 'pass' | 'fail' | 'na') => ({ name, status, applicableCount: 1, passedCount: 0, failedCount: 0, failures: [], unsupported: [] })
@@ -70,7 +72,8 @@ describe('ifc-compliance block (Liquid)', () => {
   })
 
   it('every label key exists in the locale file and in the JS defaults', () => {
-    const keys = [...block.matchAll(/"(\w+)":\{\{ 'ifcvo\.compliance\.(\w+)' \| t \| json \}\}/g)]
+    expect(block).toContain('data-i18n="compliance"')
+    const keys = Object.entries(I18N_GROUPS.compliance as Record<string, string>).map(([js, key]) => ['', js, key.replace('ifcvo.compliance.', '')])
     expect(keys.length).toBe(Object.keys(LABELS).length)
     for (const [, js, loc] of keys) {
       expect(LABELS).toHaveProperty(js)

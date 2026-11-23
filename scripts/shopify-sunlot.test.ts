@@ -5,13 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, applySun, bestFit, buildable, negatives, fitLot, footprintOf, footprintPoints, fromMetres, init, labelsOf, lengthText, locate, normDeg, onViewer, parseSite, rotatedBox, toMetres, LABELS,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-sunlot.js'
-import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-sunlot.js'
+import { FEATURE_TIERS, I18N_GROUPS, withTiers } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-sun-lot.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-sun-lot.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
-const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 
 describe('units', () => {
@@ -90,7 +92,7 @@ describe('block and gate', () => {
     expect(schema.settings.length).toBeLessThanOrEqual(25)
     for (const k of Object.keys(LABELS)) {
       expect(locale.ifcvo.sunlot[k]).toBe(LABELS[k])
-      expect(block).toContain(`'ifcvo.sunlot.${k}' | t | json`)
+      expect((I18N_GROUPS.sunlot as Record<string, string>)[k]).toBe(`ifcvo.sunlot.${k}`)
     }
   })
   it('escapes every data attribute', () => {

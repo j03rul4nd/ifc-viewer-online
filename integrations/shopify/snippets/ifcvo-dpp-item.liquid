@@ -1,0 +1,16 @@
+{% comment %}
+  One line of the DPP readiness checklist (blocks/ifc-dpp.liquid).
+  Params: item (dop, ce, gwp, instructions, substances, identifier, manufacturer),
+  value (what the product page has; blank = missing), link (https link shown as
+  "open" instead of the value), quiet (true: say ready without printing the value).
+  Texts: ifcvo.dpp.item_<item>, and ifcvo.dpp.hint_<item> while it is missing.
+{% endcomment %}
+{%- liquid
+  assign ifcvo_ok = false
+  if value != blank or link != blank
+    assign ifcvo_ok = true
+  endif
+  assign ifcvo_k = 'ifcvo.dpp.item_' | append: item
+  assign ifcvo_h = 'ifcvo.dpp.hint_' | append: item
+-%}
+<li data-item="{{ item }}" data-state="{% if ifcvo_ok %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if ifcvo_ok %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if ifcvo_ok %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ ifcvo_k | t | escape }}{% if link != blank %} — <a href="{{ link | escape }}" rel="noopener nofollow" target="_blank">{{ 'ifcvo.dpp.open' | t | escape }}</a>{% elsif ifcvo_ok and quiet != true %} — {{ value | escape }}{% elsif ifcvo_ok == false %} <span class="ifcvo-muted">{{ ifcvo_h | t | escape }}</span>{% endif %}</li>

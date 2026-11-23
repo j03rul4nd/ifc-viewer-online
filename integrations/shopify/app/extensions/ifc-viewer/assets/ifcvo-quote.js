@@ -5,6 +5,7 @@
 // CSV element list made in the visitor's browser from the IFC by the viewer.
 // No server: Shopify's own cart and contact form do the rest.
 // Talks to ifcvo.js only through window.IFCVO (viewer, open, subscribe).
+import './ifcvo-i18n.js'
 
 const MAX_ITEMS = 50
 const NOT_ELEMENTS = /^IFC(PROPERTY|QUANTITY|ELEMENTQUANTITY|MATERIAL|REL|OWNERHISTORY|PERSON|ORGANIZATION|APPLICATION|PROJECT$|OPENINGELEMENT|COMPLEXPROPERTY|.*TYPE$|.*STYLE$|.*PROFILE|.*CONTEXT|.*REPRESENTATION|.*UNIT)/i

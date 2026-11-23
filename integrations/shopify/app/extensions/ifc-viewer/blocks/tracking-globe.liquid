@@ -1,47 +1,12 @@
-{% comment %}
-  Tracking Globe section. Copy to your theme's sections/ folder, then add
-  "Tracking globe" in the theme editor and paste the configuration value from
-  https://www.ifcvieweronline.eu/tracking-globe/
-{% endcomment %}
 {%- liquid
-  assign s = section.settings
-  if block
-    assign s = block.settings
-  endif
+assign s = section.settings
+if block
+assign s = block.settings
+endif
 -%}
 <div class="page-width">
-  <tracking-globe config="{{ s.config | escape }}" style="display:block;height:{{ s.height }}px"></tracking-globe>
+<tracking-globe config="{{ s.config | escape }}" style="display:block;height:{{ s.height }}px"></tracking-globe>
 </div>
 <script src="{{ s.base | escape }}tracker.js" async></script>
-
 {%- render 'ifcvo-diag', feature: 'tracking', block: 'tracking-globe' -%}
-
-{% schema %}
-{
-  "name": "t:blocks.tracking_globe.name",
-  "settings": [
-    {
-      "type": "textarea",
-      "id": "config",
-      "label": "t:settings.configuration_value"
-    },
-    {
-      "type": "range",
-      "id": "height",
-      "label": "t:settings.height",
-      "min": 300,
-      "max": 900,
-      "step": 20,
-      "unit": "px",
-      "default": 560
-    },
-    {
-      "type": "text",
-      "id": "base",
-      "label": "t:settings.script_address",
-      "default": "https://www.ifcvieweronline.eu/track/v1/"
-    }
-  ],
-  "target": "section"
-}
-{% endschema %}
+{% schema %}{"name":"t:k.0acy","settings":[{"type":"textarea","id":"config","label":"t:k.03eg"},{"type":"range","id":"height","label":"t:k.1854","min":300,"max":900,"step":20,"unit":"px","default":560},{"type":"text","id":"base","label":"t:k.1mgj","default":"https://www.ifcvieweronline.eu/track/v1/"}],"target":"section"}{% endschema %}

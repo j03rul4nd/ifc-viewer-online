@@ -3,14 +3,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain JS asset without types
-import { _reset, init, onChange, resolve, select, selectedVariant, urlVariant } from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-planset.js'
+import { _reset, init, onChange, resolve, select, selectedVariant, urlVariant } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planset.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-plan-set.liquid'), 'utf8')
-const item = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-planset-item.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-plan-set.liquid'), 'utf8')
+const item = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-planset-item.liquid'), 'utf8')
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
-const locales = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locales = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const body = block.replace(/\{% schema %\}[\s\S]*$/, '').replace(/\{% comment %\}[\s\S]*?\{% endcomment %\}/g, '')
 
@@ -76,7 +78,7 @@ describe('ifc-plan-set block (Liquid)', () => {
   it('every label has an English default and a shop override', () => {
     for (const m of body.matchAll(/'ifcvo\.planset\.(\w+)' \| t/g)) {
       expect(locales.ifcvo.planset[m[1]]).toBeTruthy()
-      expect(body).toContain(`L.planset_${m[1]}`)
+      expect(body).toContain(`shop_l.planset_${m[1]}`)
     }
   })
 })

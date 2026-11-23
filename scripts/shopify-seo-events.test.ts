@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EVENTS, bindAll, fileName, publish, sanitize } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-events.js'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
 const read = (p: string) => fs.readFileSync(path.join(EXT, p), 'utf8')
 
 /** Crude Liquid stand-in: loops run once, output tags become JSON strings, tags vanish. */
@@ -50,13 +52,14 @@ describe('ifcvo-noscript snippet', () => {
   const src = read('snippets/ifcvo-noscript.liquid')
   it('wraps everything in noscript with alt text, link and spec table', () => {
     expect(src).toMatch(/<noscript>[\s\S]*<\/noscript>/)
-    expect(src).toMatch(/alt="\{\{ ifcvo_alt \| escape \}\}"/)
+    // image_tag writes width, height and the escaped alt (Theme Check: ImgWidthAndHeight).
+    expect(src).toMatch(/image_url: width: 800 \| image_tag: alt: ifcvo_alt/)
     expect(src).toMatch(/<table class="ifcvo-specs">/)
     expect(src).toMatch(/download rel="noopener"/)
   })
   it('escapes every output', () => {
     const body = src.replace(/\{%-?\s*comment[\s\S]*?endcomment\s*-?%\}/, '')
-    for (const o of body.match(/\{\{[\s\S]*?\}\}/g) || []) expect(o).toMatch(/\|\s*(escape|image_url: width: \d+)\s*\}\}$/)
+    for (const o of body.match(/\{\{[\s\S]*?\}\}/g) || []) expect(o).toMatch(/\|\s*(escape|image_url: width: \d+|image_tag: alt: ifcvo_alt, loading: 'lazy')\s*\}\}$/)
   })
 })
 

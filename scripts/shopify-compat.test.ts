@@ -5,13 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_APPS, RULE_LABELS, authoringApp, decodeStep, stripComments, _reset, ruleLabel, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
   // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-data/assets/ifcvo-compat.js'
-import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compat.js'
+import { FEATURE_TIERS, I18N_GROUPS, withTiers } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-data')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-compat.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-compat.liquid'), 'utf8')
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
-const locales = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locales = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const body = block.replace(/\{% schema %\}[\s\S]*$/, '').replace(/\{% comment %\}[\s\S]*?\{% endcomment %\}/g, '')
 
@@ -262,7 +264,8 @@ describe('rule labels', () => {
   })
   it('every mapped rule has a locale key', () => {
     for (const k of Object.keys(RULE_LABELS)) expect(locales.ifcvo.compat.rules[k], k).toBeTruthy()
-    expect(block).toContain(Object.keys(RULE_LABELS).join(','))
+    expect(I18N_GROUPS.compat_rules).toBe('ifcvo.compat.rules.')
+    expect(block).toContain('data-i18n-rule-labels="compat_rules"')
   })
 })
 

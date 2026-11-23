@@ -1,0 +1,130 @@
+{%- liquid
+assign s = block.settings
+assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
+assign ns = s.specs_ns | strip | default: 'bim'
+assign m = product.metafields[ns]
+assign epd_url = m.epd_url.value | append: '' | strip
+assign h = epd_url | slice: 0, 8 | downcase
+if h != 'https://'
+assign epd_url = ''
+endif
+assign dop_url = m.dop_url.value | append: '' | strip
+assign h = dop_url | slice: 0, 8 | downcase
+if h != 'https://'
+assign dop_url = ''
+endif
+assign unit = m.declared_unit.value | append: '' | strip
+if m.instructions_languages.type contains 'list.'
+assign langs = m.instructions_languages.value | join: ', '
+else
+assign langs = m.instructions_languages.value | append: '' | strip
+endif
+if m.substances_of_concern.type contains 'list.'
+assign soc = m.substances_of_concern.value | join: ', '
+else
+assign soc = m.substances_of_concern.value | append: '' | strip
+endif
+assign gtin = m.gtin.value | append: '' | strip
+if gtin == blank
+assign gtin = product.selected_or_first_available_variant.barcode | append: '' | strip
+endif
+assign ce = m.ce_marking.value | append: '' | strip
+assign contact = m.manufacturer_contact.value | append: '' | strip
+assign gwp_a = m.gwp_a1a3.value | append: '' | strip
+assign gwp_t = m.gwp_total.value | append: '' | strip
+assign has_gwp = false
+if gwp_a != blank or gwp_t != blank
+assign has_gwp = true
+endif
+assign ready = 0
+if dop_url != blank
+assign ready = ready | plus: 1
+endif
+if ce != blank
+assign ready = ready | plus: 1
+endif
+if has_gwp
+assign ready = ready | plus: 1
+endif
+if langs != blank
+assign ready = ready | plus: 1
+endif
+if soc != blank
+assign ready = ready | plus: 1
+endif
+if gtin != blank
+assign ready = ready | plus: 1
+endif
+if contact != blank
+assign ready = ready | plus: 1
+endif
+-%}
+{%- capture ifcvo_style -%}
+{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+--ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{%- if plan != 'business' and plan != '' -%}
+{%- if request.design_mode -%}
+<p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'Business' | escape }}</p>
+{%- endif -%}
+{%- else -%}
+<section
+class="ifcvo-panel ifcvo-dpp-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+data-ifcvo-dpp
+data-ifcvo-tier="dpp"
+data-show-model="{{ s.show_model }}"
+data-i18n="dpp"
+data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+data-locale="{{ request.locale.iso_code | escape }}"
+data-labels-override="{{ s.labels | escape }}"
+aria-label="{{ s.title | default: 'Sustainability and product passport' | escape }}"
+style="{{ ifcvo_style }}"
+{{ block.shopify_attributes }}
+>
+{%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+{%- if s.show_epd -%}
+<h4>{{ 'ifcvo.dpp.epd' | t | escape }}</h4>
+<table class="ifcvo-specs ifcvo-dpp-epd" data-ifcvo-epd>
+<tbody>
+<tr data-key="gwp_a1a3" data-source="{% if gwp_a != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp_a1a3' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e' %}</td></tr>
+<tr data-key="gwp" data-source="{% if gwp_t != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.gwp' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: gwp_t, unit: m.gwp_unit.value, fallback: 'kg CO₂e' %}</td></tr>
+{%- assign v = m.energy.value | append: '' | strip -%}
+<tr data-key="energy" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.energy' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: v, unit: m.energy_unit.value, fallback: 'MJ' %}</td></tr>
+{%- assign v = m.water.value | append: '' | strip -%}
+<tr data-key="water" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.water' | t | escape }}</th><td>{% render 'ifcvo-dpp-value', value: v, unit: m.water_unit.value, fallback: 'm³' %}</td></tr>
+<tr data-key="declared_unit" data-source="{% if unit != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.declared_unit' | t | escape }}</th><td>{% if unit != blank %}{{ unit | escape }}{% else %}—{% endif %}</td></tr>
+{%- assign v = m.epd_programme.value | append: '' | strip -%}
+<tr data-key="epd_programme" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_programme' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
+{%- assign v = m.epd_number.value | append: '' | strip -%}
+<tr data-key="epd_number" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_number' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
+{%- assign v = m.epd_valid_until.value | append: '' | strip -%}
+<tr data-key="epd_valid_until" data-source="{% if v != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_valid_until' | t | escape }}</th><td>{% if v != blank %}{{ v | escape }}{% else %}—{% endif %}</td></tr>
+<tr data-key="epd_url" data-source="{% if epd_url != blank %}metafield{% else %}none{% endif %}"><th scope="row">{{ 'ifcvo.dpp.epd_link' | t | escape }}</th><td>{% if epd_url != blank %}<a href="{{ epd_url | escape }}" rel="noopener nofollow" target="_blank">{{ 'ifcvo.dpp.open_epd' | t | escape }}</a>{% else %}—{% endif %}</td></tr>
+</tbody>
+</table>
+{%- endif -%}
+{%- if s.show_checklist -%}
+<h4>{{ 'ifcvo.dpp.checklist' | t | escape }}</h4>
+<ul class="ifcvo-dpp-list" data-ifcvo-checklist>
+{%- render 'ifcvo-dpp-item', item: 'dop', link: dop_url -%}
+{%- render 'ifcvo-dpp-item', item: 'ce', value: ce -%}
+{%- assign v = gwp_a | append: gwp_t -%}
+{%- render 'ifcvo-dpp-item', item: 'gwp', value: v, quiet: true -%}
+{%- render 'ifcvo-dpp-item', item: 'instructions', value: langs -%}
+{%- render 'ifcvo-dpp-item', item: 'substances', value: soc -%}
+{%- render 'ifcvo-dpp-item', item: 'identifier', value: gtin -%}
+{%- render 'ifcvo-dpp-item', item: 'manufacturer', value: contact -%}
+</ul>
+<p class="ifcvo-dpp-score" data-ifcvo-dpp-score data-ready="{{ ready }}" data-total="7"><strong>{{ 'ifcvo.dpp.score' | t: ready: ready, total: 7 | escape }}</strong></p>
+{%- endif -%}
+<p class="ifcvo-muted ifcvo-dpp-disclaimer">{{ 'ifcvo.dpp.disclaimer' | t | escape }}</p>
+{%- if request.design_mode and m == blank -%}
+<p class="ifcvo-muted">{{ 'ifcvo.editor.dpp' | t: ns: ns | escape }}</p>
+{%- endif -%}
+<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
+</section>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
+{%- endif -%}
+{%- render 'ifcvo-diag', feature: 'dpp', block: 'ifc-dpp', ns: ns, keys: 'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1ngz","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.12p5"},{"type":"checkbox","id":"show_epd","label":"t:k.044u","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.0g5j","default":true},{"type":"checkbox","id":"show_model","label":"t:k.0u0u","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0fau"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

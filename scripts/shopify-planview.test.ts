@@ -3,15 +3,17 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain JS asset without types
-import * as pv from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-planview.js'
+import * as pv from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planview.js'
 // @ts-expect-error plain JS asset without types
-import { protectOptions } from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo.js'
+import { protectOptions } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-plan-view.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-plan-view.liquid'), 'utf8')
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
-const locales = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locales = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const body = block.replace(/\{% schema %\}[\s\S]*$/, '').replace(/\{% comment %\}[\s\S]*?\{% endcomment %\}/g, '')
 
@@ -71,7 +73,7 @@ describe('ifc-plan-view block (Liquid)', () => {
     expect(keys.length).toBeGreaterThan(8)
     for (const k of keys) {
       expect(locales.ifcvo.planview[k]).toBeTruthy()
-      expect(body).toContain(`L.planview_${k}`)
+      expect(body).toContain(`shop_l.planview_${k}`)
     }
   })
 
@@ -180,9 +182,9 @@ describe('preview mode', () => {
   })
 })
 
-const viewerBlock = fs.readFileSync(path.join(EXT, '../ifc-viewer/blocks/product-ifc-viewer.liquid'), 'utf8')
-const dlBlock = fs.readFileSync(path.join(EXT, '../ifc-viewer/blocks/ifc-downloads.liquid'), 'utf8')
-const quote = fs.readFileSync(path.join(EXT, '../ifc-viewer/assets/ifcvo-quote.js'), 'utf8')
+const viewerBlock = fs.readFileSync(path.join(SRC, 'blocks/product-ifc-viewer.liquid'), 'utf8')
+const dlBlock = fs.readFileSync(path.join(SRC, 'blocks/ifc-downloads.liquid'), 'utf8')
+const quote = fs.readFileSync(path.join(EXT, 'assets/ifcvo-quote.js'), 'utf8')
 
 describe('preview mode across the product page', () => {
   it('removes every download: viewer links, IFC downloads block, GLB/CSV buttons', () => {
@@ -211,7 +213,7 @@ describe('preview mode across the product page', () => {
     expect(quote).toMatch(/querySelector\('\[data-ifcvo-protect\]'\)\) return/)
     // The help text is a t: key; its English lives in the schema locale.
     const key = (block.match(/"(?:info|content)": "t:settings\.(for_plan_sellers[\w]*)"/) || [])[1]
-    const en = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.schema.json'), 'utf8'))
+    const en = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.schema.json'), 'utf8'))
     expect(en.settings[key as string]).toMatch(/URL stays reachable/)
   })
 })

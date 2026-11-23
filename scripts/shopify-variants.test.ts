@@ -7,14 +7,16 @@ import * as vv from '../integrations/shopify/app/extensions/ifc-viewer/assets/if
 // @ts-expect-error plain JS asset without types
 import * as shared from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-variant.js'
 // @ts-expect-error plain JS asset without types
-import * as planset from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-planset.js'
-import * as plansShared from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-variant.js'
+import * as planset from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-planset.js'
+import * as plansShared from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-variant.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-variant-views.liquid'), 'utf8')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-variant-views.liquid'), 'utf8')
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
-const locales = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locales = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const body = block.replace(/\{% schema %\}[\s\S]*$/, '').replace(/\{% comment %\}[\s\S]*?\{% endcomment %\}/g, '')
 

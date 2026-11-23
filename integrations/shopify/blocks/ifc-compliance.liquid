@@ -1,0 +1,159 @@
+{% comment %}
+  Compliance (Business plan): badges for the product's IFC, checked in the
+  visitor's browser once the 3D model has loaded, in idle time — never blocks
+  the page.
+  - NBS BIM Object Standard: how many of its machine-checkable clauses pass
+    (IFC common property set + Reference, classification / Uniclass 2015,
+    manufacturer data), plus a type-object count checked outside IDS.
+  - IDS: pass or fail against the merchant's .ids file. The https URL comes
+    from the block setting, else the product metafield `<ns>.ids_url`.
+  - Health Score.
+  A list names what did not pass. The note says it is a self-check computed
+  now, not a certification. Reads the model of the first "Product IFC model"
+  block on the page.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.specs_ns | strip | default: 'bim'
+  assign ids_url = s.ids_url | strip
+  if ids_url == blank
+    assign ids_url = product.metafields[ns].ids_url.value | strip
+  endif
+  assign ids_head = ids_url | slice: 0, 8 | downcase
+  unless ids_head == 'https://'
+    assign ids_url = ''
+  endunless
+-%}
+{%- capture ifcvo_style -%}
+  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+  --ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+
+<div
+  class="ifcvo-panel ifcvo-compliance-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-compliance
+  data-ifcvo-tier="compliance"
+  data-show-nbs="{{ s.show_nbs }}"
+  data-show-ids="{{ s.show_ids }}"
+  data-show-score="{{ s.show_score }}"
+  data-show-details="{{ s.show_details }}"
+  data-show-manual="{{ s.show_manual }}"
+  data-ids-url="{{ ids_url | escape }}"
+  data-timeout="{{ s.timeout | escape }}"
+  data-i18n="compliance"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  style="{{ ifcvo_style }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
+  {%- if s.show_ids and ids_url == blank and request.design_mode -%}
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns | escape }}</p>
+  {%- endif -%}
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-compliance.js' | asset_url }}"></script>
+
+{%- render 'ifcvo-diag', feature: 'compliance', block: 'ifc-compliance', ns: ns, keys: 'ids_url' -%}
+
+{% schema %}
+{
+  "stylesheet": "ifcvo.css",
+  "name": "t:blocks.compliance.name",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Compliance"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_nbs",
+      "label": "t:settings.show_the_nbs_bim_object_standard_badge",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_ids",
+      "label": "t:settings.show_the_ids_badge",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "ids_url",
+      "label": "t:settings.ids_file_link_https",
+      "info": "t:settings.empty_uses_the_product_metafield_ids_url"
+    },
+    {
+      "type": "text",
+      "id": "specs_ns",
+      "label": "t:settings.metafield_namespace",
+      "default": "bim"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_score",
+      "label": "t:settings.show_the_health_score_badge",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_details",
+      "label": "t:settings.list_what_did_not_pass",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_manual",
+      "label": "t:settings.list_the_nbs_clauses_that_need_a_manual",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "timeout",
+      "label": "t:settings.time_limit_per_check",
+      "min": 10,
+      "max": 120,
+      "step": 10,
+      "unit": "s",
+      "default": 30
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_nbs_nbsnone_ids"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

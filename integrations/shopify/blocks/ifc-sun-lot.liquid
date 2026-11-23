@@ -1,0 +1,191 @@
+{% comment %}
+  Sun and lot fit, for house plans and prefab homes: the buyer sets the lot's
+  latitude / longitude (typed, "Use my location" after a press, or the
+  merchant's default site), a date and a time, and the page's viewer shows
+  real shadows (SDK setSolar). The lot form compares the model footprint with
+  the buyer's lot width, depth and setbacks, with a top-view drawing. All in
+  the visitor's browser; nothing is sent anywhere. Reads the model of the
+  first "Product IFC model" block on the page.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+-%}
+{%- capture ifcvo_style -%}
+  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+  --ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+
+<div
+  class="ifcvo-panel ifcvo-sunlot-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-sunlot
+  data-ifcvo-tier="sunlot"
+  data-block-id="{{ block.id | escape }}"
+  data-sun="{{ s.show_sun }}"
+  data-lot="{{ s.show_lot }}"
+  data-lat="{{ s.lat | escape }}"
+  data-lon="{{ s.lon | escape }}"
+  data-date="{{ s.date | escape }}"
+  data-units="{{ s.units | escape }}"
+  data-lot-width="{{ s.lot_width | escape }}"
+  data-lot-depth="{{ s.lot_depth | escape }}"
+  data-front="{{ s.front | escape }}"
+  data-side="{{ s.side | escape }}"
+  data-rear="{{ s.rear | escape }}"
+  data-i18n="sunlot"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  style="{{ ifcvo_style }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body ifcvo-sunlot-live" data-ifcvo-live>
+    <noscript><p class="ifcvo-muted">{{ 'ifcvo.sunlot.waiting' | t | escape }}</p></noscript>
+  </div>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-sunlot.js' | asset_url }}"></script>
+
+{%- render 'ifcvo-diag', feature: 'sunlot', block: 'ifc-sun-lot', ns: '', keys: '' -%}
+
+{% schema %}
+{
+  "stylesheet": "ifcvo.css",
+  "name": "t:blocks.sun_lot.name",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading",
+      "default": "Sun and lot fit"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_sun",
+      "label": "t:settings.sun_study",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "lat",
+      "label": "t:settings.default_latitude",
+      "info": "t:settings.decimal_degrees_e_g_40_4168_empty_uses_t"
+    },
+    {
+      "type": "text",
+      "id": "lon",
+      "label": "t:settings.default_longitude",
+      "info": "t:settings.decimal_degrees_e_g_3_7038"
+    },
+    {
+      "type": "select",
+      "id": "date",
+      "label": "t:settings.default_date",
+      "default": "06-21",
+      "options": [
+        {
+          "value": "03-20",
+          "label": "t:settings.march_equinox"
+        },
+        {
+          "value": "06-21",
+          "label": "t:settings.june_solstice"
+        },
+        {
+          "value": "09-22",
+          "label": "t:settings.september_equinox"
+        },
+        {
+          "value": "12-21",
+          "label": "t:settings.december_solstice"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_lot",
+      "label": "t:settings.lot_fit",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "units",
+      "label": "t:settings.lot_units",
+      "default": "m",
+      "options": [
+        {
+          "value": "m",
+          "label": "t:settings.metres"
+        },
+        {
+          "value": "ft",
+          "label": "t:settings.feet"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "lot_width",
+      "label": "t:settings.example_lot_m_width",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units_2"
+    },
+    {
+      "type": "text",
+      "id": "lot_depth",
+      "label": "t:settings.example_lot_m_depth",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "text",
+      "id": "front",
+      "label": "t:settings.front_setback_m",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "text",
+      "id": "side",
+      "label": "t:settings.side_setback_each_side_m",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "text",
+      "id": "rear",
+      "label": "t:settings.rear_setback_m",
+      "info": "t:settings.always_in_metres_whatever_the_lot_units"
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_title_sun_lat_lon_loc"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.brand"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "t:settings.accent_colour",
+      "info": "t:settings.empty_uses_the_theme_s_button_colour"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "t:settings.corner_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

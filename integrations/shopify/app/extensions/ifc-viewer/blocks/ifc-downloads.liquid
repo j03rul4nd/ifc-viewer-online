@@ -1,170 +1,38 @@
-{% comment %}
-  Downloads for the product's IFC model, anywhere on the product page: the
-  original IFC, a GLB and a CSV made in the visitor's browser from it, and the
-  extra files metafield. "Logged-in customers only" hides the links from
-  guests; it does not protect the files (their links are not secret).
-  Turn off the download link in the "Product IFC model" block to avoid two lists.
-{% endcomment %}
 {%- liquid
-  assign s = block.settings
-  assign ns = s.namespace | strip | default: 'custom'
-  assign key = s.key | strip | default: 'ifc_model'
-  assign current = product.selected_or_first_available_variant
-  assign vfield = current.metafields[ns][key].value
-  assign dl_model = vfield.url | default: vfield | strip
-  if dl_model == ''
-    assign field = product.metafields[ns][key].value
-    assign dl_model = field.url | default: field | strip
-  endif
-  assign files = ''
-  assign files_key = s.files_key | strip
-  if files_key != ''
-    assign files = product.metafields[ns][files_key].value
-  endif
-  comment
-    Preview mode of an "IFC plan view" block in this section: no download links (also not in noscript).
-  endcomment
-  assign ifcvo_protected = false
-  assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
-  comment
-    planview is a starter feature: only a plan that includes it may hide downloads.
-  endcomment
-  if pv_plan == 'free'
-    assign pv_ok = false
-  else
-    assign pv_ok = true
-  endif
-  for b in section.blocks
-    if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
-      assign ifcvo_protected = true
-    endif
-  endfor
+assign s = block.settings
+assign ns = s.namespace | strip | default: 'custom'
+assign key = s.key | strip | default: 'ifc_model'
+assign current = product.selected_or_first_available_variant
+assign vfield = current.metafields[ns][key].value
+assign dl_model = vfield.url | default: vfield | strip
+if dl_model == ''
+assign field = product.metafields[ns][key].value
+assign dl_model = field.url | default: field | strip
+endif
+assign files = ''
+assign files_key = s.files_key | strip
+if files_key != ''
+assign files = product.metafields[ns][files_key].value
+endif
+assign ifcvo_protected = false
+assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
+if pv_plan == 'free'
+assign pv_ok = false
+else
+assign pv_ok = true
+endif
+for b in section.blocks
+if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
+assign ifcvo_protected = true
+endif
+endfor
 -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
-  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
-  {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
+{%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+{%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
 </div>
-{%- comment -%} Always loaded: GLB/CSV need the viewer, and link clicks are reported to the viewer's customer events. {%- endcomment -%}
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>
-
 {%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},{{ block.settings.files_key }}{%- endcapture -%}
 {%- render 'ifcvo-diag', feature: 'files', block: 'ifc-downloads', ns: ns, keys: dg_keys -%}{%- endif -%}
-
-{% schema %}
-{
-  "name": "t:blocks.downloads.name",
-  "target": "section",
-  "enabled_on": {
-    "templates": [
-      "product"
-    ]
-  },
-  "settings": [
-    {
-      "type": "text",
-      "id": "title",
-      "label": "t:settings.heading",
-      "default": "Downloads"
-    },
-    {
-      "type": "text",
-      "id": "namespace",
-      "label": "t:settings.metafield_namespace",
-      "default": "custom"
-    },
-    {
-      "type": "text",
-      "id": "key",
-      "label": "t:settings.metafield_key",
-      "default": "ifc_model"
-    },
-    {
-      "type": "checkbox",
-      "id": "ifc",
-      "label": "t:settings.original_ifc_file",
-      "default": true
-    },
-    {
-      "type": "text",
-      "id": "ifc_label",
-      "label": "t:settings.ifc_link_text",
-      "placeholder": "t:settings.download_bim_model_ifc",
-      "info": "t:settings.blank_the_store_language_text"
-    },
-    {
-      "type": "checkbox",
-      "id": "glb",
-      "label": "t:settings.glb_made_in_the_browser",
-      "default": false,
-      "info": "t:settings.opens_the_3d_viewer_to_build_the_file_on"
-    },
-    {
-      "type": "text",
-      "id": "glb_label",
-      "label": "t:settings.glb_button_text",
-      "placeholder": "t:settings.3d_model_glb",
-      "info": "t:settings.blank_the_store_language_text"
-    },
-    {
-      "type": "checkbox",
-      "id": "csv",
-      "label": "t:settings.csv_element_list_made_in_the_browser",
-      "default": false
-    },
-    {
-      "type": "text",
-      "id": "csv_label",
-      "label": "t:settings.csv_button_text",
-      "placeholder": "t:settings.element_list_csv",
-      "info": "t:settings.blank_the_store_language_text"
-    },
-    {
-      "type": "text",
-      "id": "files_key",
-      "label": "t:settings.more_files_metafield_key",
-      "default": "bim_files"
-    },
-    {
-      "type": "header",
-      "content": "t:settings.who_sees_them"
-    },
-    {
-      "type": "select",
-      "id": "gate",
-      "label": "t:settings.show_the_downloads_to",
-      "default": "none",
-      "info": "t:settings.this_hides_the_links_it_does_not_protect",
-      "options": [
-        {
-          "value": "none",
-          "label": "t:settings.everyone"
-        },
-        {
-          "value": "customer",
-          "label": "t:settings.logged_in_customers_only"
-        },
-        {
-          "value": "tag",
-          "label": "t:settings.customers_with_a_tag"
-        }
-      ]
-    },
-    {
-      "type": "text",
-      "id": "tag",
-      "label": "t:settings.customer_tag",
-      "default": "trade",
-      "visible_if": "{{ block.settings.gate == 'tag' }}"
-    },
-    {
-      "type": "text",
-      "id": "login_label",
-      "label": "t:settings.text_for_guests",
-      "placeholder": "t:settings.log_in_to_see_the_downloads",
-      "info": "t:settings.blank_the_store_language_text"
-    }
-  ]
-}
-{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1fms","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Downloads"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"key","label":"t:k.0p0n","default":"ifc_model"},{"type":"checkbox","id":"ifc","label":"t:k.07oz","default":true},{"type":"text","id":"ifc_label","label":"t:k.0l0x","placeholder":"t:k.0mkz","info":"t:k.1jik"},{"type":"checkbox","id":"glb","label":"t:k.1ytf","default":false,"info":"t:k.0lzi"},{"type":"text","id":"glb_label","label":"t:k.1cfq","placeholder":"t:k.0ak9","info":"t:k.1jik"},{"type":"checkbox","id":"csv","label":"t:k.1qov","default":false},{"type":"text","id":"csv_label","label":"t:k.1man","placeholder":"t:k.16hv","info":"t:k.1jik"},{"type":"text","id":"files_key","label":"t:k.1lw6","default":"bim_files"},{"type":"header","content":"t:k.1wr9"},{"type":"select","id":"gate","label":"t:k.09ts","default":"none","info":"t:k.1jki","options":[{"value":"none","label":"t:k.06gg"},{"value":"customer","label":"t:k.1o96"},{"value":"tag","label":"t:k.0j6b"}]},{"type":"text","id":"tag","label":"t:k.1gu8","default":"trade","visible_if":"{{ block.settings.gate == 'tag' }}"},{"type":"text","id":"login_label","label":"t:k.0ray","placeholder":"t:k.0fp4","info":"t:k.1jik"}]}{% endschema %}

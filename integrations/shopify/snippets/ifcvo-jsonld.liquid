@@ -1,0 +1,77 @@
+{% comment %}
+  Structured data for the product's IFC model, rendered server side so search
+  engines read it without JavaScript.
+
+  The theme already prints its own Product JSON-LD, so this snippet never adds
+  a second Product: it describes the file as a 3DModel (a CreativeWork) that is
+  "about" the product, referenced by @id only. When `augment` is true it also
+  prints a Product node with the SAME @id as the theme convention
+  (canonical_url#product) carrying only additionalProperty from the spec
+  metafields; parsers merge nodes that share an @id instead of counting two.
+
+  Params:
+    product   – the product (required)
+    model     – https URL of the .ifc file (required; nothing renders if empty)
+    poster    – image URL for the model (optional, defaults to featured image)
+    specs_ns  – metafield namespace with the spec rows (optional)
+    augment   – true to print the additionalProperty Product node (optional)
+
+  Usage:
+    {% render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns %}
+{% endcomment %}
+{%- liquid
+  assign ifcvo_model = model | strip
+  assign ifcvo_head = ifcvo_model | slice: 0, 8 | downcase
+  if ifcvo_head != 'https://'
+    assign ifcvo_model = ''
+  endif
+  assign ifcvo_poster = poster | default: product.featured_image
+  assign ifcvo_product_id = canonical_url | append: '#product'
+  assign ifcvo_model_id = canonical_url | append: '#ifc-model'
+  assign ifcvo_model_name = product.title | append: ' (IFC model)'
+-%}
+{%- if ifcvo_model != '' -%}
+<script type="application/ld+json" data-ifcvo-jsonld>
+{
+  "@context": "https://schema.org",
+  "@type": "3DModel",
+  "@id": {{ ifcvo_model_id | json }},
+  "name": {{ ifcvo_model_name | json }},
+  "encodingFormat": "application/x-step",
+  "contentUrl": {{ ifcvo_model | json }},
+  "url": {{ canonical_url | json }},
+  {%- if ifcvo_poster != blank %}
+  "image": {{ ifcvo_poster | image_url: width: 1200 | prepend: 'https:' | json }},
+  {%- endif %}
+  "about": { "@id": {{ ifcvo_product_id | json }} }
+}
+</script>
+{%- if augment and specs_ns != blank and product.metafields[specs_ns] != blank -%}
+<script type="application/ld+json" data-ifcvo-jsonld-specs>
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "@id": {{ ifcvo_product_id | json }},
+  "subjectOf": { "@id": {{ ifcvo_model_id | json }} },
+  "additionalProperty": [
+    {%- assign ifcvo_sep = '' -%}
+    {%- for pair in product.metafields[specs_ns] -%}
+    {%- if pair[1].type contains 'list.' -%}{%- assign ifcvo_pv = pair[1].value | join: ', ' -%}{%- else -%}{%- assign ifcvo_pv = pair[1].value | append: '' | strip -%}{%- endif %}
+    {%- comment -%} URL-like values (bim.epd_url, dop_url, type url, anything with a scheme) go out only when https://. {%- endcomment -%}
+    {%- assign ifcvo_k = pair[0] | downcase -%}
+    {%- assign ifcvo_pvl = ifcvo_pv | downcase -%}
+    {%- assign ifcvo_urlish = false -%}
+    {%- assign ifcvo_k_end = ifcvo_k | slice: -4, 4 -%}
+    {%- assign ifcvo_k_end5 = ifcvo_k | slice: -5, 5 -%}
+    {%- if ifcvo_k_end == '_url' or ifcvo_k_end5 == '_link' or ifcvo_k == 'url' or pair[1].type contains 'url' or ifcvo_pvl contains '://' or ifcvo_pvl contains 'javascript:' or ifcvo_pvl contains 'data:' -%}{%- assign ifcvo_urlish = true -%}{%- endif -%}
+    {%- assign ifcvo_head = ifcvo_pvl | slice: 0, 8 -%}
+    {%- if ifcvo_urlish and ifcvo_head != 'https://' -%}{%- continue -%}{%- endif %}
+    {%- if ifcvo_sep != '' -%},{%- endif %}
+    { "@type": "PropertyValue", "name": {{ pair[0] | replace: '_', ' ' | capitalize | json }}, "value": {{ ifcvo_pv | json }} }
+    {%- assign ifcvo_sep = ',' -%}
+    {%- endfor %}
+  ]
+}
+</script>
+{%- endif -%}
+{%- endif -%}

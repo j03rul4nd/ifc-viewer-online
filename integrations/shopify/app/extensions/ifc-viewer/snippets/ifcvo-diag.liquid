@@ -1,45 +1,33 @@
-{% comment %}
-  Theme editor only (request.design_mode): what this block found, read by
-  assets/ifcvo-diagnostics.js. Buyers never get this markup or the script.
-
-  Params:
-    feature – FEATURE_TIERS name of the block (viewer, rooms, takeoff...)
-    block   – block file name (ifc-rooms...)
-    ns      – metafield namespace the block reads (optional)
-    keys    – comma list of metafield keys the block reads (optional)
-    model   – the model URL this block found (optional)
-    scope   – 'variant' to check the selected variant's metafields (default: product)
-{% endcomment %}
 {%- if request.design_mode -%}
-  {%- liquid
-    assign dg_ns = ns | strip
-    assign dg_present = ''
-    assign dg_missing = ''
-    assign dg_keys = keys | split: ','
-    for k in dg_keys
-      assign kk = k | strip
-      if kk == blank or dg_ns == blank
-        continue
-      endif
-      assign dg_val = product.metafields[dg_ns][kk]
-      if scope == 'variant'
-        assign dg_val = product.selected_or_first_available_variant.metafields[dg_ns][kk]
-      endif
-      if dg_val != blank
-        assign dg_present = dg_present | append: kk | append: ','
-      else
-        assign dg_missing = dg_missing | append: kk | append: ','
-      endif
-    endfor
-    assign dg_any = false
-    if dg_ns != blank and product.metafields[dg_ns] != blank
-      assign dg_any = true
-    endif
-    assign dg_product = false
-    if product != blank
-      assign dg_product = true
-    endif
-  -%}
-  <script type="application/json" data-ifcvo-diag>{"feature":{{ feature | json }},"block":{{ block | json }},"ns":{{ dg_ns | json }},"present":{{ dg_present | split: ',' | json }},"missing":{{ dg_missing | split: ',' | json }},"any":{{ dg_any }},"model":{{ model | default: '' | json }},"product":{{ dg_product }},"scope":{{ scope | default: 'product' | json }}}</script>
-  <script type="module" src="{{ 'ifcvo-diagnostics.js' | asset_url }}"></script>
+{%- liquid
+assign dg_ns = ns | strip
+assign dg_present = ''
+assign dg_missing = ''
+assign dg_keys = keys | split: ','
+for k in dg_keys
+assign kk = k | strip
+if kk == blank or dg_ns == blank
+continue
+endif
+assign dg_val = product.metafields[dg_ns][kk]
+if scope == 'variant'
+assign dg_val = product.selected_or_first_available_variant.metafields[dg_ns][kk]
+endif
+if dg_val != blank
+assign dg_present = dg_present | append: kk | append: ','
+else
+assign dg_missing = dg_missing | append: kk | append: ','
+endif
+endfor
+assign dg_any = false
+if dg_ns != blank and product.metafields[dg_ns] != blank
+assign dg_any = true
+endif
+assign dg_product = false
+if product != blank
+assign dg_product = true
+endif
+-%}
+<script type="application/json" data-ifcvo-diag>{"feature":{{ feature | json }},"block":{{ block | json }},"ns":{{ dg_ns | json }},"present":{{ dg_present | split: ',' | json }},"missing":{{ dg_missing | split: ',' | json }},"any":{{ dg_any }},"model":{{ model | default: '' | json }},"product":{{ dg_product }},"scope":{{ scope | default: 'product' | json }}}</script>
+<script type="module" src="{{ 'ifcvo-diagnostics.js' | asset_url }}"></script>
 {%- endif -%}
