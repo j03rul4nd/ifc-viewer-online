@@ -10,8 +10,7 @@ embedded = false
 # customer_read_orders: "My models & files" lists the signed-in buyer's orders
 # (Customer Account API, from the extension). unauthenticated_read_product_listings:
 # the UI extensions read product / variant metafields through the Storefront API.
-# write_products: the admin "Publish new version" action saves ifcvo.* product metafields.
-scopes = "customer_read_orders,unauthenticated_read_product_listings,write_products"
+scopes = "customer_read_orders,unauthenticated_read_product_listings"
 
 [auth]
 redirect_urls = [ "https://www.ifcvieweronline.eu/" ]

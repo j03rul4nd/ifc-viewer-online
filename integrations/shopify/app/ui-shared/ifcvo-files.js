@@ -239,37 +239,6 @@ export function stepUrl(info, shopUrl, step, source) {
   return base + '&ifcvo-view=' + encodeURIComponent(step.view)
 }
 
-/** Today as YYYY-MM-DD in the given time (local calendar of the browser). */
-export function localDay(date) {
-  const d = date instanceof Date ? date : new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
-/** Admin API mutation used by the "Publish new version" admin action. */
-export const RELEASE_MUTATION = `mutation IfcvoRelease($m:[MetafieldsSetInput!]!){metafieldsSet(metafields:$m){metafields{key value}userErrors{field message}}}`
-
-/**
- * `metafieldsSet` inputs for a new release on a product or variant: version,
- * updated_at (the release day) and release notes. Throws Error(field) on bad input.
- */
-export function releaseInputs(ownerId, release) {
-  const version = String((release && release.version) || '').trim()
-  const day = String((release && release.date) || '').trim()
-  const notes = String((release && release.notes) || '').trim()
-  if (!/^gid:\/\/shopify\/(Product|ProductVariant)\/\d+$/.test(String(ownerId || ''))) throw new Error('owner')
-  if (!version || version.length > 50) throw new Error('version')
-  if (addMonths(day, 0) !== day) throw new Error('date')
-  // Notes are required: an old note must never be shown under a new version.
-  if (!notes || notes.length > 2000) throw new Error('notes')
-  const out = [
-    { ownerId, namespace: 'ifcvo', key: 'version', type: 'single_line_text_field', value: version },
-    { ownerId, namespace: 'ifcvo', key: 'updated_at', type: 'date', value: day },
-    { ownerId, namespace: 'ifcvo', key: 'release_notes', type: 'multi_line_text_field', value: notes },
-  ]
-  return out
-}
-
 /** The product page URL: `onlineStoreUrl`, else `<shop>/products/<handle>`, else ''. */
 export function productPageUrl(info, shopUrl) {
   if (info && isHttps(info.productUrl)) return info.productUrl
