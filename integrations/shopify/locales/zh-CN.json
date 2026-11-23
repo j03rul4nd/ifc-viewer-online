@@ -355,6 +355,28 @@
       "register": "创建免费账户以下载文件",
       "buyer": "已购买？文件在您的账户中。",
       "trade": "仅限贸易账户下载。请联系我们获取权限。"
+    },
+    "compare": {
+      "title": "比较款式",
+      "a": "款式 A",
+      "b": "款式 B",
+      "compare": "比较",
+      "close": "关闭比较",
+      "loading": "正在加载模型…",
+      "error": "无法加载此模型。",
+      "need": "请选择两个模型不同的款式。",
+      "spec": "规格",
+      "diff": "差异",
+      "same": "相同",
+      "elements": "构件",
+      "rooms": "房间",
+      "area": "使用面积",
+      "bedrooms": "卧室",
+      "bathrooms": "浴室",
+      "storeys": "楼层",
+      "size": "外形尺寸（宽 × 深 × 高）",
+      "volume": "体积",
+      "weight": "重量"
     }
   }
 }

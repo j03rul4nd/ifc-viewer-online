@@ -1,0 +1,28 @@
+{% comment %}
+  Compare variants (Starter, T-326 F9): two variants' models side by side with a
+  table of key specs read in the browser; tabs on small screens. The models come
+  from the Product IFC model block's variant map; this only adds the variant
+  titles. Everything else is assets/ifcvo-compare.js (texts: group "compare").
+{% endcomment %}
+{%- assign s = block.settings -%}
+{%- capture c -%}{%- for x in product.variants -%}{%- unless forloop.first -%},{%- endunless -%}"{{ x.id }}":{{ x.title | json }}{%- endfor -%}{%- endcapture -%}
+<div class="ifcvo-panel ifcvo-compare{% unless s.frame %} ifcvo-flat{% endunless %}" data-ifcvo-compare data-i18n="compare" data-variants="{{ c | escape }}" style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;" {{ block.shopify_attributes }}>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body"></div>
+</div>
+{%- render 'ifcvo-runtime', js: 'ifcvo-compare.js' -%}
+
+{% schema %}
+{
+  "stylesheet": "ifcvo.css",
+  "name": "t:blocks.compare.name",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "title", "label": "t:settings.heading" },
+    { "type": "color", "id": "accent", "label": "t:settings.accent_colour", "info": "t:settings.empty_uses_the_theme_s_button_colour" },
+    { "type": "range", "id": "radius", "label": "t:settings.corner_radius", "min": 0, "max": 24, "step": 2, "unit": "px", "default": 12 },
+    { "type": "checkbox", "id": "frame", "label": "t:settings.show_a_frame_around_the_block", "default": true }
+  ]
+}
+{% endschema %}

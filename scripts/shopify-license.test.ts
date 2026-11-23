@@ -27,6 +27,7 @@ describe('Shopify plan table (T-325 G1, approved 2026-11-23)', () => {
     viewer: 'free', download: 'free', specs: 'free', rooms: 'free', explorer: 'free', views: 'free',
     files: 'starter', details: 'starter', quote: 'starter', gateddownloads: 'starter', capture: 'starter', score: 'starter', quantities: 'starter',
     tour: 'starter', planset: 'starter', compat: 'starter', planview: 'starter', ar: 'starter', classification: 'starter', variantviews: 'starter',
+    compare: 'starter', review: 'starter',
     takeoff: 'business', dpp: 'business', sunlot: 'business', compliance: 'business', roi: 'business', bulk: 'business', intent: 'business',
   }
   it('each feature sits in the approved tier', () => {

@@ -355,6 +355,28 @@
       "register": "Crea un account gratuito per scaricare i file",
       "buyer": "Già acquistato? I tuoi file sono nel tuo account.",
       "trade": "Download per account professionali. Contattaci per ottenere l'accesso."
+    },
+    "compare": {
+      "title": "Confronta varianti",
+      "a": "Variante A",
+      "b": "Variante B",
+      "compare": "Confronta",
+      "close": "Chiudi il confronto",
+      "loading": "Caricamento del modello…",
+      "error": "Impossibile caricare questo modello.",
+      "need": "Scegli due varianti con modelli diversi.",
+      "spec": "Dato",
+      "diff": "Differenza",
+      "same": "Uguale",
+      "elements": "Elementi",
+      "rooms": "Locali",
+      "area": "Superficie utile",
+      "bedrooms": "Camere da letto",
+      "bathrooms": "Bagni",
+      "storeys": "Piani",
+      "size": "Ingombro esterno (L × P × H)",
+      "volume": "Volume",
+      "weight": "Peso"
     }
   }
 }

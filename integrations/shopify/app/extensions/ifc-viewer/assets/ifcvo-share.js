@@ -7,13 +7,19 @@
 // opens the viewer at once, scrolls to it and, when the model changed since that
 // version, says so. No Liquid and no server: everything is built here. Any hash
 // part that does not parse is ignored.
+// `ifcvo-view=<id>` (assembly steps, T-326 F8) opens the viewer at a saved view:
+// an id of the product's `ifcvo.views` metafield, a preset (iso, top, …) or six
+// numbers. `#ifc-review` (review request emails, T-326 F10, Starter) opens the
+// viewer at its hero view: `ifcvo.views.hero`, else the block's starting view.
 import { pickLang } from './ifcvo-i18n.js'
 
 const MAX_HASH = 2048
 const MAX_LINK = 2000
 const CAM = 'ifcvo-cam'
 const here = import.meta.url
-const OWN = /^ifcvo-(cam|sel|lvl|open|v)=/
+const OWN = /^ifcvo-(cam|sel|lvl|open|v|view)=|^ifc-review$/
+const PRESETS = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right']
+const VIEW_ID = /^[A-Za-z0-9_.:,-]{1,100}$/
 
 const LABELS = {
   share: 'Share this view',
@@ -22,6 +28,13 @@ const LABELS = {
   manual: 'Copy this link:',
   error: 'This view could not be read.',
   updated: 'Updated since your purchase',
+}
+
+function camera6(raw) {
+  const n = String(raw).split(',')
+  if (n.length !== 6 || !n.every((x) => x.trim() !== '' && Number.isFinite(Number(x)) && Math.abs(Number(x)) < 1e9)) return null
+  const m = n.map(Number)
+  return { position: m.slice(0, 3), target: m.slice(3) }
 }
 
 const r3 = (n) => Math.round(n * 1000) / 1000
@@ -38,13 +51,14 @@ function decode(s) {
 
 /**
  * The view state in a URL hash, each part null when missing or malformed:
- * { open, version, camera: { position, target }, selection: { modelId, expressId }, level }.
+ * { open, version, camera: { position, target }, selection: { modelId, expressId }, level, view, review }.
  */
 export function parseHash(hash) {
-  const out = { open: false, version: null, camera: null, selection: null, level: null }
+  const out = { open: false, version: null, camera: null, selection: null, level: null, view: null, review: false }
   const h = String(hash == null ? '' : hash)
   if (!h || h.length > MAX_HASH) return out
   for (const part of h.replace(/^#/, '').split('&')) {
+    if (part === 'ifc-review') { out.review = true; continue }
     const eq = part.indexOf('=')
     if (eq < 1) continue
     const key = part.slice(0, eq)
@@ -55,11 +69,9 @@ export function parseHash(hash) {
       const v = raw.trim()
       if (v && v.length <= 64 && !/[\u0000-\u001f<>]/.test(v)) out.version = v
     } else if (key === CAM) {
-      const n = raw.split(',')
-      if (n.length === 6 && n.every((x) => x.trim() !== '' && Number.isFinite(Number(x)) && Math.abs(Number(x)) < 1e9)) {
-        const m = n.map(Number)
-        out.camera = { position: m.slice(0, 3), target: m.slice(3) }
-      }
+      out.camera = camera6(raw)
+    } else if (key === 'ifcvo-view') {
+      if (VIEW_ID.test(raw)) out.view = raw
     } else if (key === 'ifcvo-sel') {
       const m = /^([A-Za-z0-9_.:-]{1,64})~(\d{1,10})$/.exec(raw)
       if (m && Number(m[2]) > 0 && Number(m[2]) < 2 ** 31) out.selection = { modelId: m[1], expressId: Number(m[2]) }
@@ -72,7 +84,7 @@ export function parseHash(hash) {
 
 /** True when the hash asks for the viewer: an after-sale link or a shared view. */
 export function wantsViewer(state) {
-  return !!(state && (state.open || state.camera || state.selection || state.level != null))
+  return !!(state && (state.open || state.review || state.view || state.camera || state.selection || state.level != null))
 }
 
 /** The hash parts for a view (camera required), in a fixed order. */
@@ -112,10 +124,54 @@ export function isUpdated(bought, current) {
   return !!(a && b && a !== b)
 }
 
-/** Restores a parsed view on `viewer`: storey, then selection, then camera. Each step may fail alone. */
-export async function applyState(viewer, state) {
+/**
+ * A saved view id → { preset } or { camera }, or null. Looks in `views` (the
+ * `ifcvo.views` metafield: `{ "<id>": "top" | { position, target } | "x,y,z,tx,ty,tz" }`),
+ * then takes the id itself as a preset or six numbers.
+ */
+export function resolveView(id, views) {
+  if (id == null || id === '') return null
+  const map = views && typeof views === 'object' && !Array.isArray(views) ? views : {}
+  const own = Object.prototype.hasOwnProperty.call(map, id) ? map[id] : undefined
+  const from = (v) => {
+    if (typeof v === 'string') {
+      const t = v.trim().toLowerCase()
+      if (PRESETS.includes(t)) return { preset: t }
+      const c = camera6(v)
+      return c ? { camera: c } : null
+    }
+    if (v && typeof v === 'object') {
+      const p = vec3(v.position)
+      const t = vec3(v.target)
+      if (p && t) return { camera: { position: p, target: t } }
+      if (typeof v.view === 'string') return from(v.view)
+    }
+    return null
+  }
+  return own !== undefined ? from(own) : from(String(id))
+}
+
+/** The `ifcvo.views` metafield the viewer block printed (data-ifcvo-views), or {}. */
+export function viewsOf(root) {
+  try {
+    const v = JSON.parse((root && root.dataset && root.dataset.ifcvoViews) || 'null')
+    return typeof v === 'string' ? JSON.parse(v) : v || {}
+  } catch (e) { return {} }
+}
+
+/**
+ * Restores a parsed view on `viewer`: saved view (or the hero view for a review
+ * link), then storey, selection and camera. Each step may fail alone.
+ */
+export async function applyState(viewer, state, views = {}) {
   if (!viewer || !state) return false
   let done = false
+  const saved = resolveView(state.view, views) || (state.review ? resolveView('hero', views) : null)
+  if (saved && saved.preset && typeof viewer.setView === 'function') {
+    try { await viewer.setView(saved.preset); done = true } catch (e) { /* refused */ }
+  } else if (saved && saved.camera && !state.camera && typeof viewer.lookAt === 'function') {
+    try { await viewer.lookAt(saved.camera.position, saved.camera.target, false); done = true } catch (e) { /* refused */ }
+  }
   if (state.level != null && typeof viewer.addSection === 'function') {
     try { await viewer.addSection({ level: state.level }); done = true; announceLevel(state.level) } catch (e) { /* no such storey */ }
   }
@@ -247,12 +303,14 @@ export function init(doc = document) {
   mountShare(root).catch(() => {})
   let state = { open: false }
   try { state = parseHash(location.hash) } catch (e) { /* ignored */ }
+  // Review links are a Starter feature (T-326 F10): on Free the hash is ignored.
+  if (state.review && typeof a.allowed === 'function' && !a.allowed('review', a.plan)) state.review = false
   if (state.open && isUpdated(state.version, root.dataset.ifcvoVersion)) showUpdated(root).catch(() => {})
-  let pending = wantsViewer(state) && (state.camera || state.selection || state.level != null) ? state : null
+  let pending = wantsViewer(state) && (state.view || state.review || state.camera || state.selection || state.level != null) ? state : null
   a.subscribe(root, (type, e) => {
     if (type === 'model-loaded') {
       live.selection = null; live.level = null
-      if (pending) { const s = pending; pending = null; const v = a.viewer; if (v) setTimeout(() => { applyState(v, s).catch(() => {}) }, 0) }
+      if (pending) { const s = pending; pending = null; const v = a.viewer; if (v) setTimeout(() => { applyState(v, s, viewsOf(root)).catch(() => {}) }, 0) }
     }
     if (type === 'element-selected') {
       live.selection = e && Number.isInteger(e.expressId) && e.expressId > 0 ? { modelId: String(e.modelId == null ? '' : e.modelId), expressId: e.expressId } : null

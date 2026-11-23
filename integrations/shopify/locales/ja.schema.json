@@ -62,6 +62,9 @@
     },
     "quote_form": {
       "name": "IFC: 見積もり依頼"
+    },
+    "compare": {
+      "name": "IFC: バリエーション比較"
     }
   },
   "settings": {

@@ -355,6 +355,28 @@
       "register": "Crea un compte gratuït per descarregar els fitxers",
       "buyer": "Ja l'has comprat? Els teus fitxers són al teu compte.",
       "trade": "Descàrregues per a comptes professionals. Contacta'ns per obtenir accés."
+    },
+    "compare": {
+      "title": "Comparar variants",
+      "a": "Variant A",
+      "b": "Variant B",
+      "compare": "Compara",
+      "close": "Tanca la comparació",
+      "loading": "Carregant el model…",
+      "error": "No s'ha pogut carregar aquest model.",
+      "need": "Tria dues variants amb models diferents.",
+      "spec": "Dada",
+      "diff": "Diferència",
+      "same": "Igual",
+      "elements": "Elements",
+      "rooms": "Estances",
+      "area": "Superfície útil",
+      "bedrooms": "Dormitoris",
+      "bathrooms": "Banys",
+      "storeys": "Plantes",
+      "size": "Mida exterior (Am × Fo × Al)",
+      "volume": "Volum",
+      "weight": "Pes"
     }
   }
 }

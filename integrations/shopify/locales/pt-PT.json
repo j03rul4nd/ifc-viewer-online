@@ -355,6 +355,28 @@
       "register": "Crie uma conta gratuita para transferir os ficheiros",
       "buyer": "Já comprou? Os seus ficheiros estão na sua conta.",
       "trade": "Transferências para contas profissionais. Contacte-nos para obter acesso."
+    },
+    "compare": {
+      "title": "Comparar variantes",
+      "a": "Variante A",
+      "b": "Variante B",
+      "compare": "Comparar",
+      "close": "Fechar comparação",
+      "loading": "A carregar o modelo…",
+      "error": "Não foi possível carregar este modelo.",
+      "need": "Escolha duas variantes com modelos diferentes.",
+      "spec": "Dado",
+      "diff": "Diferença",
+      "same": "Igual",
+      "elements": "Elementos",
+      "rooms": "Divisões",
+      "area": "Área útil",
+      "bedrooms": "Quartos",
+      "bathrooms": "Casas de banho",
+      "storeys": "Pisos",
+      "size": "Dimensões exteriores (L × P × A)",
+      "volume": "Volume",
+      "weight": "Peso"
     }
   }
 }

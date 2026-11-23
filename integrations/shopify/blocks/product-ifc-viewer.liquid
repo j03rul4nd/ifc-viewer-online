@@ -90,7 +90,7 @@
     data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}" data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
     data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
     data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
-    data-size-mb="{{ size_mb | escape }}" data-ifcvo-version="{{ current.metafields.ifcvo.version.value | default: product.metafields.ifcvo.version.value | escape }}"
+    data-size-mb="{{ size_mb | escape }}" data-ifcvo-version="{{ current.metafields.ifcvo.version.value | default: product.metafields.ifcvo.version.value | escape }}" data-ifcvo-views="{{ current.metafields.ifcvo.views.value | default: product.metafields.ifcvo.views.value | json | escape }}"
     data-product-id="{{ product.id | escape }}" data-variant-id="{{ current.id | escape }}" data-block-id="{{ block.id | escape }}">
     {%- render 'ifcvo-facade', ns: ns, model: current_model, title: title, aspect: s.aspect, height: s.height, radius: s.radius, stage_bg: stage_bg, open_label: s.open_label, eager: eager -%}
     {%- comment -%} Gate and browser-made formats come from the shop's ifcvo.config (this block is at the 25-setting limit), or use the "IFC downloads" block. {%- endcomment -%}

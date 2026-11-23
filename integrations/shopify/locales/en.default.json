@@ -355,6 +355,28 @@
       "register": "Create a free account to download the files",
       "buyer": "Bought it? Your files are in your account.",
       "trade": "Downloads for trade accounts. Contact us to get access."
+    },
+    "compare": {
+      "title": "Compare variants",
+      "a": "Variant A",
+      "b": "Variant B",
+      "compare": "Compare",
+      "close": "Close comparison",
+      "loading": "Loading the model…",
+      "error": "This model could not be loaded.",
+      "need": "Pick two variants with different models.",
+      "spec": "Spec",
+      "diff": "Difference",
+      "same": "Same",
+      "elements": "Elements",
+      "rooms": "Rooms",
+      "area": "Floor area",
+      "bedrooms": "Bedrooms",
+      "bathrooms": "Bathrooms",
+      "storeys": "Storeys",
+      "size": "Outer size (W × D × H)",
+      "volume": "Volume",
+      "weight": "Weight"
     }
   }
 }

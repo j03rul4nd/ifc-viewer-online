@@ -1,0 +1,8 @@
+{%-assign s=block.settings -%}
+{%-capture c -%}{%-for x in product.variants -%}{%-unless forloop.first -%},{%-endunless -%}"{{x.id}}":{{x.title|json}}{%-endfor -%}{%-endcapture -%}
+<div class="ifcvo-panel ifcvo-compare{%unless s.frame%} ifcvo-flat{%endunless%}" data-ifcvo-compare data-i18n="compare" data-variants="{{c|escape}}" style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;" {{block.shopify_attributes}}>
+{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
+<div class="ifcvo-body"></div>
+</div>
+{%-render 'ifcvo-runtime',js:'ifcvo-compare.js' -%}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.aez","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.dks"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

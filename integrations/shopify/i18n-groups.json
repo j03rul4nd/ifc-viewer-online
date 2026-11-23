@@ -224,5 +224,6 @@
     "question": "ifcvo.lead.question",
     "view": "ifcvo.lead.view",
     "asking": "ifcvo.lead.asking"
-  }
+  },
+  "compare": "ifcvo.compare."
 }
