@@ -1,0 +1,21 @@
+{
+  "name": "My models & files",
+  "description": "A customer account page with every IFC model and file the buyer bought.",
+  "title": "My models & files",
+  "intro": "Every model and file from your orders, always the latest version.",
+  "loading": "Loading your models",
+  "error": "Your models could not be loaded. Try again in a moment.",
+  "empty": "Models and files from your orders will appear here.",
+  "linkIntro": {
+    "one": "This order has {{count}} model with files.",
+    "other": "This order has {{count}} models with files."
+  },
+  "linkCta": "See all my models & files",
+  "version": "Version {{version}}",
+  "updated": "Updated {{date}}",
+  "order": "Order {{order}}",
+  "newVersion": "New version",
+  "open3d": "Open in 3D",
+  "addonsTitle": "Goes well with it",
+  "addToCart": "Add to cart"
+}

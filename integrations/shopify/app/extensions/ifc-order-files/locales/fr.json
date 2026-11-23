@@ -1,0 +1,13 @@
+{
+  "name": "Fichiers du modèle IFC",
+  "description": "Le modèle IFC acheté, ses fichiers et un lien pour l’ouvrir en 3D sur les pages de remerciement et de suivi de commande.",
+  "title": "Votre modèle et vos fichiers",
+  "intro": "Téléchargez vos fichiers maintenant ou ouvrez le modèle en 3D. Ils restent sur la page de votre commande.",
+  "version": "Version {{version}}",
+  "updated": "Mis à jour le {{date}}",
+  "order": "Commande {{order}}",
+  "newVersion": "Nouvelle version",
+  "open3d": "Ouvrir en 3D",
+  "addonsTitle": "Se marie bien avec",
+  "addToCart": "Ajouter au panier"
+}

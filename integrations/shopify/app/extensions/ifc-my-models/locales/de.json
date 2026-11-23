@@ -1,0 +1,21 @@
+{
+  "name": "Meine Modelle & Dateien",
+  "description": "Eine Kundenkontoseite mit allen gekauften IFC-Modellen und Dateien.",
+  "title": "Meine Modelle & Dateien",
+  "intro": "Alle Modelle und Dateien aus Ihren Bestellungen, immer in der neuesten Version.",
+  "loading": "Ihre Modelle werden geladen",
+  "error": "Ihre Modelle konnten nicht geladen werden. Versuchen Sie es gleich noch einmal.",
+  "empty": "Modelle und Dateien aus Ihren Bestellungen erscheinen hier.",
+  "linkIntro": {
+    "one": "Diese Bestellung enthält {{count}} Modell mit Dateien.",
+    "other": "Diese Bestellung enthält {{count}} Modelle mit Dateien."
+  },
+  "linkCta": "Alle meine Modelle & Dateien ansehen",
+  "version": "Version {{version}}",
+  "updated": "Aktualisiert am {{date}}",
+  "order": "Bestellung {{order}}",
+  "newVersion": "Neue Version",
+  "open3d": "In 3D öffnen",
+  "addonsTitle": "Passt gut dazu",
+  "addToCart": "In den Warenkorb"
+}

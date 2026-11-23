@@ -46,8 +46,23 @@ key pasted in the shop metafield `ifcvo.license` (signed for the shop's
 `*.myshopify.com` domain, with an expiry date); otherwise Free. In the theme editor a
 block that needs a higher plan shows a note naming that plan; visitors see nothing.
 
+After the sale (UI extensions, hosted by Shopify, no app server):
+
+| Plan | After-sale features |
+|---|---|
+| Free | **Thank you and Order status block:** the bought product's model and files, plus an "Open in 3D" link to the product page |
+| Starter | Add-on cards in that block (`ifcvo.addons`, tagged `_ifcvo_touch`), plus a **"My models & files"** page in the customer account. The page lists every bought model and file, with version, updated date and a "New version" badge |
+
+These extensions are not gated yet, because UI extensions cannot read the theme's
+licence key. A block setting turns add-ons off. "My models & files" and the Order
+status blocks need the new customer accounts.
+
 Notes for the submission form:
 - The app has one theme app extension with all 20 blocks (Shopify allows one per app).
+  It also has two UI extensions: `ifc-order-files` (Thank you and Order status) and
+  `ifc-my-models` (a customer account page). They use the scopes `customer_read_orders`
+  and `unauthenticated_read_product_listings`. Reading orders needs protected customer
+  data access at level 1, so request it in the Partner Dashboard before review.
 - Free is intended for 1–3 products. The product count is not enforced until the app
   has billing; until then Free is limited by features only.
 - Loading, the IFC download, error messages and accessibility are never limited by plan.

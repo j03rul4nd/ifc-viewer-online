@@ -33,7 +33,11 @@ function hashTree(root: string): Record<string, string> {
 
 describe('extension layout', () => {
   it('the app has exactly one theme app extension, ifc-viewer', () => {
-    const exts = list(gen.EXTENSIONS_DIR).filter((e) => fs.existsSync(path.join(gen.EXTENSIONS_DIR, e, 'shopify.extension.toml')))
+    // UI extensions (type "ui_extension": thank-you, customer account) sit next to it.
+    const exts = list(gen.EXTENSIONS_DIR).filter((e) => {
+      const toml = path.join(gen.EXTENSIONS_DIR, e, 'shopify.extension.toml')
+      return fs.existsSync(toml) && /type = "theme"/.test(fs.readFileSync(toml, 'utf8'))
+    })
     expect(exts).toEqual(['ifc-viewer'])
     expect(Object.keys(gen.EXTENSIONS)).toEqual(['ifc-viewer'])
     expect(fs.readFileSync(path.join(dir, 'shopify.extension.toml'), 'utf8')).toMatch(/type = "theme"/)

@@ -1,0 +1,11 @@
+{
+  "name": "ifc-my-models",
+  "private": true,
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@preact/signals": "^2.3.0",
+    "@shopify/ui-extensions": "2026.10.2",
+    "preact": "^10.27.0"
+  }
+}

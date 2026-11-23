@@ -1,0 +1,21 @@
+{
+  "name": "Els meus models i fitxers",
+  "description": "Una pàgina al compte del client amb tots els models IFC i fitxers comprats.",
+  "title": "Els meus models i fitxers",
+  "intro": "Tots els models i fitxers de les teves comandes, sempre en l’última versió.",
+  "loading": "Carregant els teus models",
+  "error": "No s’han pogut carregar els teus models. Torna-ho a provar d’aquí a un moment.",
+  "empty": "Aquí apareixeran els models i fitxers de les teves comandes.",
+  "linkIntro": {
+    "one": "Aquesta comanda té {{count}} model amb fitxers.",
+    "other": "Aquesta comanda té {{count}} models amb fitxers."
+  },
+  "linkCta": "Mostra tots els meus models i fitxers",
+  "version": "Versió {{version}}",
+  "updated": "Actualitzat el {{date}}",
+  "order": "Comanda {{order}}",
+  "newVersion": "Nova versió",
+  "open3d": "Obre en 3D",
+  "addonsTitle": "Combina bé amb",
+  "addToCart": "Afegeix a la cistella"
+}

@@ -1,0 +1,45 @@
+# Customer account: "My models & files" full page, plus an Order status block that
+# links to it. Shopify-hosted, no app server (Customer Account API + Storefront query).
+api_version = "2026-10"
+
+[[extensions]]
+name = "t:name"
+description = "t:description"
+handle = "ifc-my-models"
+type = "ui_extension"
+
+[[extensions.targeting]]
+module = "./src/MyModels.jsx"
+target = "customer-account.page.render"
+
+[[extensions.targeting]]
+module = "./src/OrderStatusLink.jsx"
+target = "customer-account.order-status.block.render"
+
+[extensions.capabilities]
+api_access = true
+network_access = false
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "model"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "files"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "version"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "updated_at"
+
+[[extensions.metafields]]
+namespace = "custom"
+key = "ifc_model"
+
+[[extensions.metafields]]
+namespace = "custom"
+key = "bim_files"

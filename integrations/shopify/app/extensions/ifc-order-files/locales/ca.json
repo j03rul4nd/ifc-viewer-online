@@ -1,0 +1,13 @@
+{
+  "name": "Fitxers del model IFC",
+  "description": "El model IFC comprat, els seus fitxers i un enllaç per obrir-lo en 3D a les pàgines d’agraïment i d’estat de la comanda.",
+  "title": "El teu model i els teus fitxers",
+  "intro": "Descarrega els teus fitxers ara o obre el model en 3D. Es queden a la pàgina de la comanda.",
+  "version": "Versió {{version}}",
+  "updated": "Actualitzat el {{date}}",
+  "order": "Comanda {{order}}",
+  "newVersion": "Nova versió",
+  "open3d": "Obre en 3D",
+  "addonsTitle": "Combina bé amb",
+  "addToCart": "Afegeix a la cistella"
+}

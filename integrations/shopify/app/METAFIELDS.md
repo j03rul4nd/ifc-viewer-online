@@ -63,6 +63,68 @@ All URLs must start with `https://`. Files on your own server need
 `Access-Control-Allow-Origin` (`*` or the shop's domain); files uploaded to
 **Content → Files** already work. The setup check tests both.
 
+## After the sale: Thank you, Order status and "My models & files"
+
+Two UI extensions, hosted by Shopify and with no app server, read these product
+and variant metafields through the Storefront API:
+- `ifc-order-files` is a block for the **Thank you** page and the **Order status** page.
+- `ifc-my-models` is a **customer account page**, plus an Order status block that links to it.
+
+The namespace is fixed. UI extensions declare their metafields in their TOML, so the
+namespace cannot be a setting. The `custom.*` keys used by the theme blocks are the fallback.
+
+| Namespace.key | Owner | Type | What it does | Plan |
+|---|---|---|---|---|
+| `ifcvo.model` (else `custom.ifc_model`) | product, variant | file or URL | The model file, listed first | Free |
+| `ifcvo.files` (else `custom.bim_files`) | product, variant | list of files, list of URLs, or one URL per line | Other downloads, such as plans, RFA or PDF | Free |
+| `ifcvo.version` | product, variant | single line text | Shows "Version 2.1"; added to the Open in 3D link as `ifcvo-v` | Starter (My models & files) |
+| `ifcvo.updated_at` | product, variant | date | "Updated on …" date. If empty, the date the model metafield was last changed. When it is later than the order date, the item shows a **New version** badge | Starter (My models & files) |
+| `ifcvo.addons` | product | list of product references | Add-on cards on the Thank you page and the Order status page. Each card links to `/cart/<variant>:1?attributes[_ifcvo_touch]=…_addon` | Starter |
+
+The variant value wins over the product value. An item is shown only when it has
+a model or at least one file.
+
+**Storefront access is required.** UI extensions read metafields through the
+Storefront API, so every definition above needs **Storefronts: read** turned on
+(`access: { storefront: PUBLIC_READ }`). Without it the blocks show nothing.
+
+"Open in 3D" goes to the product page with the bought variant:
+`?variant=<id>&utm_source=ifc_thankyou|ifc_order_status|ifc_account#ifcvo-open=1&ifcvo-v=<version>`.
+The extensions cannot run WebGL, so they show no 3D themselves.
+
+**Plans.** UI extensions cannot read the theme's licence key, so these extensions
+are **not gated** for now. The merchant can turn add-ons off with the block setting
+"Show add-ons" in the checkout and accounts editor. The plans above are what the
+listing promises once billing exists.
+
+**Customer accounts.** "My models & files" and the Order status blocks need the
+**new customer accounts**. The Thank you block works on every store.
+
+```graphql
+mutation {
+  model: metafieldDefinitionCreate(definition: {
+    name: "IFC model", namespace: "ifcvo", key: "model", ownerType: PRODUCT, type: "file_reference",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  files: metafieldDefinitionCreate(definition: {
+    name: "IFC files", namespace: "ifcvo", key: "files", ownerType: PRODUCT, type: "list.file_reference",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  version: metafieldDefinitionCreate(definition: {
+    name: "Model version", namespace: "ifcvo", key: "version", ownerType: PRODUCT, type: "single_line_text_field",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  updated: metafieldDefinitionCreate(definition: {
+    name: "Model updated", namespace: "ifcvo", key: "updated_at", ownerType: PRODUCT, type: "date",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  addons: metafieldDefinitionCreate(definition: {
+    name: "Add-ons after purchase", namespace: "ifcvo", key: "addons", ownerType: PRODUCT, type: "list.product_reference",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+}
+```
+
 ## Shop metafields
 
 ### `ifcvo.config` (JSON)
