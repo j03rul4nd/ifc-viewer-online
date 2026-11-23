@@ -929,7 +929,7 @@ export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): voi
  */
 export type ServerProcessingSource = 'failure' | 'precheck'
 
-export function trackServerProcessingInterest(props: { file_size_mb: number; source?: ServerProcessingSource }): void {
+export function trackServerProcessingInterest(props: { file_size_mb: number; source?: ServerProcessingSource; step?: 'email_left' }): void {
   noteFeedbackSignal('large_file')
   track('server_processing_interest', props)
 }

@@ -59,5 +59,14 @@
   "requirements": {
     "invalid": "Questo link di requisiti è danneggiato o proviene da una versione più recente. Chiedine uno nuovo al mittente.",
     "idsInvalid": "Impossibile leggere l’IDS di questo link di requisiti."
+  },
+  "largeFileDoor": {
+    "title": "Questo file è troppo grande per il browser",
+    "body": "Il tuo file da {{size}} MB non si è aperto qui. I file grandi non vengono ancora elaborati su un server: lascia la tua email e lo elaborerò con te a mano, e ti avviserò quando i file grandi si apriranno direttamente.",
+    "notifyLabel": "La tua email",
+    "submit": "Invia",
+    "thanks": "Grazie — ti scriverò per questo file.",
+    "error": "Impossibile salvare. Riprova.",
+    "dismiss": "Non ora"
   }
 }
