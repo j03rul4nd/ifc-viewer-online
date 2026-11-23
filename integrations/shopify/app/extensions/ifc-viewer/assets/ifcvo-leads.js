@@ -39,8 +39,9 @@ export function consented(win = window) {
  * `email` is the logged-in customer's (from Liquid) or '' for a guest.
  */
 export async function onOpen({ handle, email, storage, win, fetchFn }) {
+  if (!consented(win)) return '' // without consent nothing is written, not even the counter
   const n = countOpen(storage, handle)
-  if (n < WARM_AT || !consented(win)) return ''
+  if (n < WARM_AT) return ''
   const root = (win.Shopify && win.Shopify.routes && win.Shopify.routes.root) || '/'
   if (email) {
     const done = readMap(storage, DONE)
