@@ -912,6 +912,13 @@ export function trackDashboardCta(props: {
   track('dashboard_cta_clicked', props)
 }
 
+/** Where a signed-in user tapped "Reserve Pro" while billing is off. No email, no ids (INV-5). */
+export type ProReserveSurface = 'account' | 'dashboard' | 'welcome'
+
+export function trackProReserveClicked(props: { surface: ProReserveSurface }): void {
+  track('pro_reserve_clicked', props)
+}
+
 export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): void {
   track('checkout_started', { ...props, source: lastProSource ?? 'unknown' })
 }

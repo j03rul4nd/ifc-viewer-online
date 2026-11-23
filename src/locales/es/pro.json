@@ -29,6 +29,20 @@
   "billing": {
     "notYet": "Los pagos aún no están activados — Pro llegará muy pronto."
   },
+  "reserve": {
+    "title": "Reserva Pro a precio de lanzamiento",
+    "body": "Pro cuesta 19 €/mes. Los pagos aún no están abiertos: resérvalo ahora y conserva la oferta de fundador (−40 % en el plan anual para los 20 primeros equipos). Sin tarjeta ni compromiso.",
+    "cta": "Reservar Pro",
+    "sending": "Guardando…",
+    "done": "Estás en la lista: te escribiré cuando abra Pro.",
+    "failed": "No se ha podido guardar ahora. Inténtalo de nuevo en un momento."
+  },
+  "welcomeNew": {
+    "title": "Bienvenido: tu cuenta está lista",
+    "freeTitle": "Lo que te da hoy tu cuenta gratuita:",
+    "call": "Reservar una llamada de 15 minutos",
+    "dismiss": "Cerrar"
+  },
   "keys": {
     "title": "API keys",
     "hint": "Para la futura API verify-batch. La clave se muestra solo una vez — guárdala en un lugar seguro.",

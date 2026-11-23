@@ -29,6 +29,20 @@
   "billing": {
     "notYet": "Zahlungen sind noch nicht aktiviert — Pro kommt bald."
   },
+  "reserve": {
+    "title": "Pro zum Einführungspreis reservieren",
+    "body": "Pro kostet 19 €/Monat. Zahlungen sind noch nicht geöffnet — reservieren Sie jetzt und sichern Sie sich das Gründerangebot (−40 % auf den Jahresplan für die ersten 20 Teams). Ohne Karte, ohne Verpflichtung.",
+    "cta": "Pro reservieren",
+    "sending": "Wird gespeichert…",
+    "done": "Sie stehen auf der Liste — ich schreibe Ihnen, sobald Pro startet.",
+    "failed": "Gerade konnte nichts gespeichert werden. Bitte gleich noch einmal versuchen."
+  },
+  "welcomeNew": {
+    "title": "Willkommen — Ihr Konto ist bereit",
+    "freeTitle": "Was Ihr kostenloses Konto Ihnen heute bietet:",
+    "call": "15-Minuten-Gespräch buchen",
+    "dismiss": "Schließen"
+  },
   "keys": {
     "title": "API-Schlüssel",
     "hint": "Für die kommende verify-batch-API. Der Schlüssel wird nur einmal angezeigt — bewahren Sie ihn sicher auf.",

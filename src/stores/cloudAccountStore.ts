@@ -25,6 +25,8 @@ interface CloudAccountState {
   userId: string | null
   /** Display-only (shown to the signed-in user themself; never sent anywhere). */
   email: string | null
+  /** Account creation time (ms epoch) from Clerk — drives the once-only welcome. */
+  createdAt?: number | null
   /** Clerk publicMetadata cache — instant, no network (PATTERNS §1.1). */
   planCache: PlanCache | null
   /** Session JWT getter, injected by the bridge. */
@@ -43,7 +45,7 @@ interface CloudAccountState {
   featureRequestPreset: FeatureRequestPreset
 
   // ── Writers (bridge only) ────────────────────────────────────────────────
-  setSession: (s: Pick<CloudAccountState, 'status' | 'userId' | 'email' | 'planCache' | 'getToken' | 'signOut'>) => void
+  setSession: (s: Pick<CloudAccountState, 'status' | 'userId' | 'email' | 'planCache' | 'getToken' | 'signOut'> & { createdAt?: number | null }) => void
   /** refresh() result lands here so every consumer re-renders. */
   setPlanCache: (p: PlanCache | null) => void
   setAccountModalOpen: (open: boolean) => void
@@ -78,6 +80,7 @@ export const useCloudAccountStore = create<CloudAccountState>()((set) => ({
   status: isAccountEnabled() ? 'loading' : 'disabled',
   userId: null,
   email: null,
+  createdAt: null,
   planCache: null,
   getToken: null,
   signOut: null,
