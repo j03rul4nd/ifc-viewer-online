@@ -1,10 +1,6 @@
 {%- liquid
 assign s = block.settings
 -%}
-{%- capture ifcvo_style -%}
-{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
---ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 <div
 class="ifcvo-panel ifcvo-sunlot-block{% unless s.frame %} ifcvo-flat{% endunless %}"
 data-ifcvo-sunlot
@@ -22,10 +18,9 @@ data-front="{{ s.front | escape }}"
 data-side="{{ s.side | escape }}"
 data-rear="{{ s.rear | escape }}"
 data-i18n="sunlot"
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-data-locale="{{ request.locale.iso_code | escape }}"
+{% render 'ifcvo-shop-labels' %}
 data-labels-override="{{ s.labels | escape }}"
-style="{{ ifcvo_style }}"
+style="{% render 'ifcvo-style', s: s %}"
 {{ block.shopify_attributes }}
 >
 {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -33,7 +28,7 @@ style="{{ ifcvo_style }}"
 <noscript><p class="ifcvo-muted">{{ 'ifcvo.sunlot.waiting' | t | escape }}</p></noscript>
 </div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-sunlot.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'sunlot', block: 'ifc-sun-lot', ns: '', keys: '' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.11u2","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sun and lot fit"},{"type":"checkbox","id":"show_sun","label":"t:k.1mpq","default":true},{"type":"text","id":"lat","label":"t:k.0ry7","info":"t:k.14ty"},{"type":"text","id":"lon","label":"t:k.1yo1","info":"t:k.00nm"},{"type":"select","id":"date","label":"t:k.0j0l","default":"06-21","options":[{"value":"03-20","label":"t:k.1hej"},{"value":"06-21","label":"t:k.0c6v"},{"value":"09-22","label":"t:k.1tbc"},{"value":"12-21","label":"t:k.0ma4"}]},{"type":"checkbox","id":"show_lot","label":"t:k.0us7","default":true},{"type":"select","id":"units","label":"t:k.0uo2","default":"m","options":[{"value":"m","label":"t:k.186o"},{"value":"ft","label":"t:k.12fc"}]},{"type":"text","id":"lot_width","label":"t:k.081y","info":"t:k.0nka"},{"type":"text","id":"lot_depth","label":"t:k.0mq3","info":"t:k.0rul"},{"type":"text","id":"front","label":"t:k.1ox0","info":"t:k.0rul"},{"type":"text","id":"side","label":"t:k.1huf","info":"t:k.0rul"},{"type":"text","id":"rear","label":"t:k.0l4f","info":"t:k.0rul"},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1sr0"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.11u2","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sun and lot fit"},{"type":"checkbox","id":"show_sun","label":"t:k.1mpq","default":true},{"type":"text","id":"lat","label":"t:k.0ry7","info":"Decimal degrees, e.g. 40.4168. Empty uses the model's own location, or the buyer's."},{"type":"text","id":"lon","label":"t:k.1yo1","info":"Decimal degrees, e.g. -3.7038."},{"type":"select","id":"date","label":"t:k.0j0l","default":"06-21","options":[{"value":"03-20","label":"t:k.1hej"},{"value":"06-21","label":"t:k.0c6v"},{"value":"09-22","label":"t:k.1tbc"},{"value":"12-21","label":"t:k.0ma4"}]},{"type":"checkbox","id":"show_lot","label":"t:k.0us7","default":true},{"type":"select","id":"units","label":"t:k.0uo2","default":"m","options":[{"value":"m","label":"t:k.186o"},{"value":"ft","label":"t:k.12fc"}]},{"type":"text","id":"lot_width","label":"t:k.081y","info":"Always in metres, whatever the lot units. The buyer can change it."},{"type":"text","id":"lot_depth","label":"t:k.0mq3","info":"Always in metres, whatever the lot units."},{"type":"text","id":"front","label":"t:k.1ox0","info":"Always in metres, whatever the lot units."},{"type":"text","id":"side","label":"t:k.1huf","info":"Always in metres, whatever the lot units."},{"type":"text","id":"rear","label":"t:k.0l4f","info":"Always in metres, whatever the lot units."},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1sr0"},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

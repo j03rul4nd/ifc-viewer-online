@@ -14,10 +14,6 @@
   assign ns = s.specs_ns | strip | default: 'bim'
   assign mf = product.metafields[ns]
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 
 <div
   class="ifcvo-panel ifcvo-takeoff-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -35,10 +31,9 @@
   data-cart-currency="{{ cart.currency.iso_code | escape }}"
   data-product="{{ product.title | escape }}"
   data-i18n="takeoff"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
+  {% render 'ifcvo-shop-labels' %}
   data-labels-override="{{ s.labels | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -62,7 +57,7 @@
   {%- endif -%}
   <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-takeoff.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'takeoff', block: 'ifc-takeoff', ns: ns, keys: 'boq,unit_prices' -%}

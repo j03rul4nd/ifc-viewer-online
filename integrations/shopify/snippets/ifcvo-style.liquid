@@ -1,0 +1,5 @@
+{% comment %}
+  Inline style of a panel block: accent colour (if set) and corner radius.
+  Params: s (the block's settings). Used as style="{% render 'ifcvo-style', s: block.settings %}".
+{% endcomment %}
+{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;

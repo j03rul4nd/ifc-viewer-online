@@ -91,7 +91,7 @@ describe('Shopify product block (app only)', () => {
   })
 
   it('loads the shared runtime and marks itself as the page viewer', () => {
-    expect(source).toContain("'ifcvo.js' | asset_url")
+    expect(source).toContain("render 'ifcvo-runtime'")
     expect(source).toContain('data-ifcvo-viewer')
   })
 
@@ -112,7 +112,7 @@ describe('Shopify product block (app only)', () => {
     expect(source).toContain('data-variant-id="{{ current.id | escape }}"')
     expect(source).toContain('data-block-id="{{ block.id | escape }}"')
     // The noscript fallback sits inside the viewer root.
-    expect(source.indexOf("render 'ifcvo-noscript'")).toBeLessThan(source.indexOf("'ifcvo.js' | asset_url"))
+    expect(source.indexOf("render 'ifcvo-noscript'")).toBeLessThan(source.indexOf("render 'ifcvo-runtime'"))
   })
 
   it('leaves opens, loads, errors and downloads to ifcvo-events.js (no double counting)', () => {
@@ -140,7 +140,7 @@ describe('Shopify companion blocks (app only)', () => {
       expect(ids).toEqual(expect.arrayContaining(['accent', 'radius', 'frame']))
       const panel = source.match(/data-ifcvo-panel="([a-z]+)"/)![1]
       expect(panels).toContain(panel)
-      expect(source).toContain("'ifcvo.js' | asset_url")
+      expect(source).toContain("render 'ifcvo-runtime'")
       expect(source).not.toMatch(/\{\{[^}]*'[{}]'/)
     })
   }

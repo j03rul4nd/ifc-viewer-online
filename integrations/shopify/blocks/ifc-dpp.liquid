@@ -85,10 +85,6 @@
     assign ready = ready | plus: 1
   endif
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 
 {%- if plan != 'business' and plan != '' -%}
   {%- if request.design_mode -%}
@@ -101,11 +97,10 @@
   data-ifcvo-tier="dpp"
   data-show-model="{{ s.show_model }}"
   data-i18n="dpp"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
+  {% render 'ifcvo-shop-labels' %}
   data-labels-override="{{ s.labels | escape }}"
   aria-label="{{ s.title | default: 'Sustainability and product passport' | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -150,7 +145,7 @@
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </section>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
 {%- endif -%}
 

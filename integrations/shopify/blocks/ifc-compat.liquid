@@ -25,10 +25,6 @@
   endif
   assign app_list = apps | newline_to_br | split: '<br />'
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 <section
   class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-compat
@@ -41,7 +37,7 @@
   data-labels-override="{{ s.labels | escape }}"
   data-locale="{{ request.locale.iso_code | escape }}"
   data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {% if s.title != blank %}aria-label="{{ s.title | escape }}"{% endif %}
   {{ block.shopify_attributes }}
 >
@@ -70,7 +66,7 @@
     {%- endif -%}
   </div>
 </section>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-compat.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'compat', block: 'ifc-compat', ns: ns, keys: 'compatible_with,ifc_size_mb' -%}

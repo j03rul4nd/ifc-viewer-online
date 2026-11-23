@@ -13,10 +13,6 @@
   assign ns = s.specs_ns | strip | default: 'bim'
   assign mf = product.metafields[ns]
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 
 <div
   class="ifcvo-panel ifcvo-rooms-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -27,10 +23,9 @@
   data-show-chips="{{ s.show_chips }}"
   data-highlight="{{ s.highlight }}"
   data-i18n="rooms"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
+  {% render 'ifcvo-shop-labels' %}
   data-labels-override="{{ s.labels | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -48,7 +43,7 @@
   {%- endif -%}
   <div class="ifcvo-body ifcvo-rooms-live" data-ifcvo-live aria-live="polite"></div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-rooms.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'rooms', block: 'ifc-rooms', ns: ns, keys: 'area,storeys,bedrooms,bathrooms,dimensions' -%}

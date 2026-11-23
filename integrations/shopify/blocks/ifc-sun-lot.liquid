@@ -10,10 +10,6 @@
 {%- liquid
   assign s = block.settings
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 
 <div
   class="ifcvo-panel ifcvo-sunlot-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -32,10 +28,9 @@
   data-side="{{ s.side | escape }}"
   data-rear="{{ s.rear | escape }}"
   data-i18n="sunlot"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
+  {% render 'ifcvo-shop-labels' %}
   data-labels-override="{{ s.labels | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -43,7 +38,7 @@
     <noscript><p class="ifcvo-muted">{{ 'ifcvo.sunlot.waiting' | t | escape }}</p></noscript>
   </div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-sunlot.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'sunlot', block: 'ifc-sun-lot', ns: '', keys: '' -%}

@@ -52,10 +52,6 @@ endfor
 endfor
 assign name_list = names | split: sep
 -%}
-{%- capture ifcvo_style -%}
-{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
---ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 {%- if plan == 'free' -%}
 {%- if request.design_mode -%}
 <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'Starter' | escape }}</p>
@@ -68,7 +64,7 @@ data-ifcvo-tier="planset"
 data-ifcvo-plan="{{ plan | escape }}"
 data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
 data-variant-id="{{ current.id | escape }}"
-style="{{ ifcvo_style }}"
+style="{% render 'ifcvo-style', s: s %}"
 {{ block.shopify_attributes }}
 >
 {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
@@ -152,8 +148,8 @@ endfor
 </div>
 <p class="ifcvo-sr" data-ifcvo-planset-status role="status" data-label="{{ l_selected | escape }}"></p>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-planset.js' | asset_url }}"></script>
 {%- endif -%}
 {%- render 'ifcvo-diag', feature: 'planset', block: 'ifc-plan-set', ns: ns, keys: 'plan_set,license_type,license_terms', scope: 'variant' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0tr9","target":"section","settings":[{"type":"paragraph","content":"t:k.1p9x"},{"type":"text","id":"title","label":"t:k.17pa","info":"t:k.1ft1"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"default_license","label":"t:k.1yrt","default":"Single-build license","info":"t:k.1p0q"},{"type":"textarea","id":"default_terms","label":"t:k.0qkm","info":"t:k.1img"},{"type":"textarea","id":"default_set","label":"t:k.1h2t","default":"Floor plans|PDF\nElevations|PDF\nSections|PDF\nFoundation plan|PDF\n3D model|IFC","info":"t:k.0pty"},{"type":"checkbox","id":"show_matrix","label":"t:k.0eja","default":true},{"type":"checkbox","id":"show_model","label":"t:k.1ldv","default":true},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0tr9","target":"section","settings":[{"type":"paragraph","content":"One card per variant (license). Variant metafields: license_type, license_terms, plan_set (JSON or list), ifc_model."},{"type":"text","id":"title","label":"t:k.17pa","info":"Empty uses the translated default."},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"default_license","label":"t:k.1yrt","default":"Single-build license","info":"Used when a variant has no license_type."},{"type":"textarea","id":"default_terms","label":"t:k.0qkm","info":"Used when a variant has no license_terms."},{"type":"textarea","id":"default_set","label":"t:k.1h2t","default":"Floor plans|PDF\nElevations|PDF\nSections|PDF\nFoundation plan|PDF\n3D model|IFC","info":"One per line: Name|FORMAT|sheets|size. Used when a variant has no plan_set."},{"type":"checkbox","id":"show_matrix","label":"t:k.0eja","default":true},{"type":"checkbox","id":"show_model","label":"t:k.1ldv","default":true},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

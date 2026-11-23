@@ -4,16 +4,12 @@
   Attaches to the first "Product IFC model" block on the page; works in any
   section or column, so it can sit beside the product form or below the fold.
 {% endcomment %}
-{%- capture ifcvo_style -%}
-  {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
-  --ifcvo-radius:{{ block.settings.radius }}px;
-{%- endcapture -%}
-<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="explorer" style="{{ ifcvo_style }}" data-open-label="{{ block.settings.open_label | escape }}" data-max="{{ block.settings.max }}" data-only="{{ block.settings.only_label | escape }}" data-show-all="{{ block.settings.all_label | escape }}" {{ block.shopify_attributes }}>
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="explorer" style="{% render 'ifcvo-style', s: block.settings %}" data-open-label="{{ block.settings.open_label | escape }}" data-max="{{ block.settings.max }}" data-only="{{ block.settings.only_label | escape }}" data-show-all="{{ block.settings.all_label | escape }}" {{ block.shopify_attributes }}>
   {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
   {%- if block.settings.search -%}<input type="search" class="ifcvo-search" placeholder="{{ block.settings.search_label | escape }}" aria-label="{{ block.settings.search_label | escape }}">{%- endif -%}
   <div class="ifcvo-body" style="--ifcvo-max-height:{{ block.settings.max_height }}px"></div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 
 {%- render 'ifcvo-diag', feature: 'explorer', block: 'ifc-explorer', ns: '', keys: '' -%}
 

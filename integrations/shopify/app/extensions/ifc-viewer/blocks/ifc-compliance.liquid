@@ -10,10 +10,6 @@ unless ids_head == 'https://'
 assign ids_url = ''
 endunless
 -%}
-{%- capture ifcvo_style -%}
-{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
---ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 <div
 class="ifcvo-panel ifcvo-compliance-block{% unless s.frame %} ifcvo-flat{% endunless %}"
 data-ifcvo-compliance
@@ -26,10 +22,9 @@ data-show-manual="{{ s.show_manual }}"
 data-ids-url="{{ ids_url | escape }}"
 data-timeout="{{ s.timeout | escape }}"
 data-i18n="compliance"
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-data-locale="{{ request.locale.iso_code | escape }}"
+{% render 'ifcvo-shop-labels' %}
 data-labels-override="{{ s.labels | escape }}"
-style="{{ ifcvo_style }}"
+style="{% render 'ifcvo-style', s: s %}"
 {{ block.shopify_attributes }}
 >
 {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -38,7 +33,7 @@ style="{{ ifcvo_style }}"
 <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns | escape }}</p>
 {%- endif -%}
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-compliance.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'compliance', block: 'ifc-compliance', ns: ns, keys: 'ids_url' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.087x","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Compliance"},{"type":"checkbox","id":"show_nbs","label":"t:k.0tw1","default":true},{"type":"checkbox","id":"show_ids","label":"t:k.0tsq","default":true},{"type":"text","id":"ids_url","label":"t:k.06um","info":"t:k.01yd"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim"},{"type":"checkbox","id":"show_score","label":"t:k.1yox","default":true},{"type":"checkbox","id":"show_details","label":"t:k.0whu","default":true},{"type":"checkbox","id":"show_manual","label":"t:k.1ers","default":false},{"type":"range","id":"timeout","label":"t:k.1582","min":10,"max":120,"step":10,"unit":"s","default":30},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.181l"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.087x","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Compliance"},{"type":"checkbox","id":"show_nbs","label":"t:k.0tw1","default":true},{"type":"checkbox","id":"show_ids","label":"t:k.0tsq","default":true},{"type":"text","id":"ids_url","label":"t:k.06um","info":"Empty uses the product metafield \"ids_url\" in the namespace below."},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim"},{"type":"checkbox","id":"show_score","label":"t:k.1yox","default":true},{"type":"checkbox","id":"show_details","label":"t:k.0whu","default":true},{"type":"checkbox","id":"show_manual","label":"t:k.1ers","default":false},{"type":"range","id":"timeout","label":"t:k.1582","min":10,"max":120,"step":10,"unit":"s","default":30},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.181l"},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

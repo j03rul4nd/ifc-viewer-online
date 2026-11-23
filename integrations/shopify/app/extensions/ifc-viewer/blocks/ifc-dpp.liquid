@@ -59,10 +59,6 @@ if contact != blank
 assign ready = ready | plus: 1
 endif
 -%}
-{%- capture ifcvo_style -%}
-{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
---ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 {%- if plan != 'business' and plan != '' -%}
 {%- if request.design_mode -%}
 <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'Business' | escape }}</p>
@@ -74,11 +70,10 @@ data-ifcvo-dpp
 data-ifcvo-tier="dpp"
 data-show-model="{{ s.show_model }}"
 data-i18n="dpp"
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-data-locale="{{ request.locale.iso_code | escape }}"
+{% render 'ifcvo-shop-labels' %}
 data-labels-override="{{ s.labels | escape }}"
 aria-label="{{ s.title | default: 'Sustainability and product passport' | escape }}"
-style="{{ ifcvo_style }}"
+style="{% render 'ifcvo-style', s: s %}"
 {{ block.shopify_attributes }}
 >
 {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -123,8 +118,8 @@ style="{{ ifcvo_style }}"
 {%- endif -%}
 <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </section>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
 {%- endif -%}
 {%- render 'ifcvo-diag', feature: 'dpp', block: 'ifc-dpp', ns: ns, keys: 'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1ngz","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.12p5"},{"type":"checkbox","id":"show_epd","label":"t:k.044u","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.0g5j","default":true},{"type":"checkbox","id":"show_model","label":"t:k.0u0u","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0fau"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1ngz","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… in this namespace are shown as HTML and win over the model."},{"type":"checkbox","id":"show_epd","label":"t:k.044u","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.0g5j","default":true},{"type":"checkbox","id":"show_model","label":"t:k.0u0u","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0fau"},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

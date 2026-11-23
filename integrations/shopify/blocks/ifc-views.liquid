@@ -4,11 +4,7 @@
   Attaches to the first "Product IFC model" block on the page; works in any
   section or column, so it can sit beside the product form or below the fold.
 {% endcomment %}
-{%- capture ifcvo_style -%}
-  {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
-  --ifcvo-radius:{{ block.settings.radius }}px;
-{%- endcapture -%}
-<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{{ ifcvo_style }}" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{% render 'ifcvo-style', s: block.settings %}" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
   {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-views">
     {%- for i in (1..4) -%}
@@ -22,7 +18,7 @@
   </div>
   <p class="ifcvo-caption" aria-live="polite"></p>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 
 {%- render 'ifcvo-diag', feature: 'views', block: 'ifc-views', ns: '', keys: '' -%}
 

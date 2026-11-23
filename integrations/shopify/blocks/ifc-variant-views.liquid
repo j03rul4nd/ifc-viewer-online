@@ -57,10 +57,6 @@
   assign current = product.selected_or_first_available_variant
   assign filename = product.handle | default: 'model'
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
     <p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'variantviews', plan: 'Starter' | escape }}</p>
@@ -76,7 +72,7 @@
   data-current="{{ current.id | escape }}"
   data-filename="{{ filename | escape }}"
   data-l-copied="{{ l_copied | escape }}" data-l-copy-manual="{{ l_manual | escape }}" data-l-saved="{{ l_saved | escape }}" data-l-error="{{ l_error | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
@@ -87,7 +83,7 @@
   <input type="text" class="ifcvo-variants-link" readonly hidden aria-label="{{ l_link | escape }}" data-ifcvo-view-link>
   <p class="ifcvo-caption" data-ifcvo-variants-status role="status" aria-live="polite"></p>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-variants.js' | asset_url }}"></script>
 {%- endif -%}
 
