@@ -116,7 +116,9 @@
 {%- endif -%}
 
 {%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},ifc_size_mb,ifc_poster,{{ block.settings.files_key }}{%- endcapture -%}
-{%- render 'ifcvo-diag', feature: 'viewer', block: 'product-ifc-viewer', ns: ns, keys: dg_keys, model: current_model -%}{%- endif -%}
+{%- render 'ifcvo-diag', feature: 'viewer', block: 'product-ifc-viewer', ns: ns, keys: dg_keys, model: current_model -%}
+<script type="application/json" data-ifcvo-wizard>{"ns":{{ ns | json | replace: '</', '<\/' }},"key":{{ key | json | replace: '</', '<\/' }},"model":{{ current_model | default: '' | json | replace: '</', '<\/' }},"aspect":{{ s.aspect | json | replace: '</', '<\/' }},"product":{{ product.id | json | replace: '</', '<\/' }},"handle":{{ product.handle | json | replace: '</', '<\/' }},"shop":{{ shop.permanent_domain | json | replace: '</', '<\/' }}}</script>
+<script type="module" src="{{ 'ifcvo-wizard.js' | asset_url }}"></script>{%- endif -%}
 
 {% schema %}
 {
