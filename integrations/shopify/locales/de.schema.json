@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "Nach einer Menge fragen",
     "also_create_a_customer_with_these_tags": "Auch einen Kunden mit diesen Tags anlegen",
     "show_ask_about_this_element": "\"Frage zu diesem Element\" zeigen"
+  },
+  "leads": {
+    "name": "IFC: Modell per E-Mail",
+    "intent": "Interessierte Besucher taggen (Business)",
+    "intent_info": "Drittes Öffnen des Modells: angemeldete Kunden erhalten das Tag ifc-warm:<handle>, Gäste das Warenkorb-Attribut _ifc_views. Nur mit Marketing-Einwilligung.",
+    "buyers": "Käufer (Dateien im Kundenkonto)"
   }
 }

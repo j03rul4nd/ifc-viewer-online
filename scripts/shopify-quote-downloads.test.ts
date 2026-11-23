@@ -305,7 +305,7 @@ describe('Liquid: downloads snippet and blocks', () => {
   it('gates on the customer object and is honest that it only hides links', () => {
     expect(snippet).toContain("dl_gate == 'customer' and customer == nil")
     expect(snippet).toContain('customer.tags contains dl_tag')
-    expect(snippet).toContain('routes.account_login_url')
+    expect(snippet).toContain('routes.account_register_url')
     expect(snippet).toMatch(/ifcvo.editor.gated_downloads/)
     expect(JSON.parse(read('locales/en.default.json')).ifcvo.editor.gated_downloads).toMatch(/not protected/)
     expect(schemaOf(downloads).settings.find((s) => s.id === 'gate')!.default).toBe('none')

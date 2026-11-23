@@ -346,6 +346,15 @@
       "question": "Domanda su",
       "view": "Vista",
       "asking": "La tua domanda riguarda {name}. Scrivila qui sotto e inviala."
+    },
+    "leads": {
+      "title": "Inviami questo modello",
+      "consent": "Voglio ricevere novità e offerte via email",
+      "submit": "Inviami la scheda tecnica",
+      "sent": "Grazie. Controlla la posta: trovi la scheda tecnica e il link al modello.",
+      "register": "Crea un account gratuito per scaricare i file",
+      "buyer": "Già acquistato? I tuoi file sono nel tuo account.",
+      "trade": "Download per account professionali. Contattaci per ottenere l'accesso."
     }
   }
 }

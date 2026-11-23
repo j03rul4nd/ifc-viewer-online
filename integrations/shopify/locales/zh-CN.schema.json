@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "询问数量",
     "also_create_a_customer_with_these_tags": "同时用这些标签创建客户",
     "show_ask_about_this_element": "显示“咨询此构件”"
+  },
+  "leads": {
+    "name": "IFC：邮件发送此模型",
+    "intent": "标记高意向访客（Business）",
+    "intent_info": "第三次打开模型时：已登录客户获得标签 ifc-warm:<handle>，访客获得购物车属性 _ifc_views。仅在获得营销同意时。",
+    "buyers": "买家（文件在客户账户中）"
   }
 }

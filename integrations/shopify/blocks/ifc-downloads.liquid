@@ -34,6 +34,13 @@
   else
     assign pv_ok = true
   endif
+  comment
+    Gated downloads (customers, tag, buyers) are a Starter feature (T-325 G5).
+  endcomment
+  assign dl_gate = s.gate
+  if pv_plan == 'free'
+    assign dl_gate = 'none'
+  endif
   for b in section.blocks
     if pv_ok and b.type contains '/blocks/ifc-plan-view/' and b.settings.protect
       assign ifcvo_protected = true
@@ -42,7 +49,7 @@
 -%}
 <div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
-  {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
+  {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: dl_gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
 </div>
 {%- comment -%} Always loaded: GLB/CSV need the viewer, and link clicks are reported to the viewer's customer events. {%- endcomment -%}
 {%- render 'ifcvo-runtime', js: 'ifcvo-quote.js' -%}
@@ -147,6 +154,10 @@
         {
           "value": "tag",
           "label": "t:settings.customers_with_a_tag"
+        },
+        {
+          "value": "buyer",
+          "label": "t:leads.buyers"
         }
       ]
     },

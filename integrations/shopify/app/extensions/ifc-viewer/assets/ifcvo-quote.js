@@ -477,7 +477,9 @@ export function onDownloadClick(ev) {
   const a = ev.target && ev.target.closest ? ev.target.closest('[data-ifcvo-downloads] a[download]') : null
   if (!a || a.closest('[data-ifcvo-viewer]')) return
   const file = a.dataset.file || (a.getAttribute('href') || '').split(/[?#]/)[0].split('/').pop()
-  signal('ifcvo:download', { file })
+  const box = a.closest('[data-ifcvo-downloads]')
+  // A gated list (customers, tag, buyers) only shows links to who passed the gate: a lead (T-325 G5).
+  signal('ifcvo:download', { file, gated: !!(box && box.dataset.gate && box.dataset.gate !== 'none') })
 }
 
 export function initAll(api = typeof window !== 'undefined' ? window.IFCVO : null) {

@@ -346,6 +346,15 @@
       "question": "Pregunta sobre",
       "view": "Vista",
       "asking": "La teva pregunta és sobre {name}. Escriu-la a sota i envia-la."
+    },
+    "leads": {
+      "title": "Envia'm aquest model",
+      "consent": "Vull rebre novetats i ofertes per correu",
+      "submit": "Envia'm la fitxa tècnica",
+      "sent": "Gràcies. Revisa el correu: hi tens la fitxa tècnica i l'enllaç al model.",
+      "register": "Crea un compte gratuït per descarregar els fitxers",
+      "buyer": "Ja l'has comprat? Els teus fitxers són al teu compte.",
+      "trade": "Descàrregues per a comptes professionals. Contacta'ns per obtenir accés."
     }
   }
 }
