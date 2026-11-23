@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "Preguntar una quantitat",
     "also_create_a_customer_with_these_tags": "Crear també un client amb aquestes etiquetes",
     "show_ask_about_this_element": "Mostrar \"Preguntar per aquest element\""
+  },
+  "leads": {
+    "name": "IFC: envia'm aquest model",
+    "intent": "Etiqueta visitants interessats (Business)",
+    "intent_info": "Tercera obertura del model: els clients amb sessió reben l'etiqueta ifc-warm:<handle>; els convidats, l'atribut de cistella _ifc_views. Només amb consentiment de màrqueting.",
+    "buyers": "Compradors (fitxers al compte del client)"
   }
 }

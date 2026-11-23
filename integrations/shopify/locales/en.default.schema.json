@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "Ask for a quantity",
     "also_create_a_customer_with_these_tags": "Also create a customer with these tags",
     "show_ask_about_this_element": "Show \"Ask about this element\""
+  },
+  "leads": {
+    "name": "IFC: email me this model",
+    "intent": "Tag warm viewers (Business)",
+    "intent_info": "Third model open: logged-in customers get the tag ifc-warm:<handle>, guests the cart attribute _ifc_views. Only with marketing consent.",
+    "buyers": "Buyers (files in the customer account)"
   }
 }

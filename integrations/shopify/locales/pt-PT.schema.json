@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "Perguntar uma quantidade",
     "also_create_a_customer_with_these_tags": "Criar também um cliente com estas etiquetas",
     "show_ask_about_this_element": "Mostrar \"Perguntar sobre este elemento\""
+  },
+  "leads": {
+    "name": "IFC: enviem-me este modelo",
+    "intent": "Etiquetar visitantes interessados (Business)",
+    "intent_info": "Terceira abertura do modelo: clientes com sessão recebem a etiqueta ifc-warm:<handle>, visitantes o atributo de carrinho _ifc_views. Só com consentimento de marketing.",
+    "buyers": "Compradores (ficheiros na conta do cliente)"
   }
 }

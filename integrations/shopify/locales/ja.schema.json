@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "数量を尋ねる",
     "also_create_a_customer_with_these_tags": "これらのタグで顧客も作成する",
     "show_ask_about_this_element": "「この部材について質問」を表示"
+  },
+  "leads": {
+    "name": "IFC: モデルをメールで受け取る",
+    "intent": "関心の高い訪問者にタグ付け（Business）",
+    "intent_info": "モデルを3回開くと、ログイン中の顧客にタグ ifc-warm:<handle>、ゲストにカート属性 _ifc_views を付けます。マーケティング同意がある場合のみ。",
+    "buyers": "購入者（ファイルは顧客アカウント内）"
   }
 }

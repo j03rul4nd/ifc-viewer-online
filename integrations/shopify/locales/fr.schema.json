@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "Demander une quantité",
     "also_create_a_customer_with_these_tags": "Créer aussi un client avec ces balises",
     "show_ask_about_this_element": "Afficher \"Poser une question sur cet élément\""
+  },
+  "leads": {
+    "name": "IFC : recevoir ce modèle",
+    "intent": "Étiqueter les visiteurs intéressés (Business)",
+    "intent_info": "Troisième ouverture du modèle : les clients connectés reçoivent l'étiquette ifc-warm:<handle>, les invités l'attribut de panier _ifc_views. Uniquement avec consentement marketing.",
+    "buyers": "Acheteurs (fichiers dans le compte client)"
   }
 }

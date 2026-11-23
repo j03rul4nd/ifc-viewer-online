@@ -346,6 +346,15 @@
       "question": "Question sur",
       "view": "Vue",
       "asking": "Votre question porte sur {name}. Écrivez-la ci-dessous et envoyez-la."
+    },
+    "leads": {
+      "title": "Recevoir ce modèle par e-mail",
+      "consent": "Je veux recevoir les nouveautés et offres par e-mail",
+      "submit": "Recevoir la fiche technique",
+      "sent": "Merci. La fiche technique et le lien du modèle sont dans votre boîte mail.",
+      "register": "Créez un compte gratuit pour télécharger les fichiers",
+      "buyer": "Déjà acheté ? Vos fichiers sont dans votre compte.",
+      "trade": "Téléchargements réservés aux comptes professionnels. Contactez-nous pour y accéder."
     }
   }
 }

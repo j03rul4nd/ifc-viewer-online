@@ -346,6 +346,15 @@
       "question": "Question about",
       "view": "View",
       "asking": "Your question is about {name}. Write it below and send it."
+    },
+    "leads": {
+      "title": "Email me this model",
+      "consent": "Send me news and offers by email",
+      "submit": "Email me the spec sheet",
+      "sent": "Thanks. Check your inbox for the spec sheet and model link.",
+      "register": "Create a free account to download the files",
+      "buyer": "Bought it? Your files are in your account.",
+      "trade": "Downloads for trade accounts. Contact us to get access."
     }
   }
 }

@@ -29,8 +29,8 @@ export const LOCALE_LIMIT = 15 * 1000
 export const BLOCK_LIMIT = 30
 /** Translation keys per locale file: Shopify's deploy validation rejects more than 250. */
 export const SCHEMA_KEY_LIMIT = 250
-/** What the generator aims for, leaving room for new settings. */
-export const SCHEMA_KEY_BUDGET = 240
+/** What the generator aims for, leaving room for new settings (242 since T-325 G5 / T-326 F1+F7). */
+export const SCHEMA_KEY_BUDGET = 242
 export const SECTIONS = ['ifc-viewer.liquid', 'tracking-globe.liquid']
 /** The one extension and its block handles (sections + blocks/). */
 export const EXTENSIONS = {
@@ -109,6 +109,7 @@ export const FEATURE_TIERS = {
   details: 'starter',
   quote: 'starter',
   gateddownloads: 'starter',
+  capture: 'starter',
   score: 'starter',
   quantities: 'starter',
   tour: 'starter',
@@ -124,6 +125,7 @@ export const FEATURE_TIERS = {
   compliance: 'business',
   roi: 'business',
   bulk: 'business',
+  intent: 'business',
 }
 /** Features that must stay free whatever the plan table says. */
 export const ALWAYS_FREE = ['viewer', 'download', 'specs', 'rooms']

@@ -346,6 +346,15 @@
       "question": "Frage zu",
       "view": "Ansicht",
       "asking": "Ihre Frage betrifft {name}. Schreiben Sie sie unten und senden Sie sie ab."
+    },
+    "leads": {
+      "title": "Dieses Modell per E-Mail senden",
+      "consent": "Ich möchte Neuigkeiten und Angebote per E-Mail erhalten",
+      "submit": "Datenblatt per E-Mail senden",
+      "sent": "Danke. Datenblatt und Modell-Link sind in Ihrem Posteingang.",
+      "register": "Kostenloses Konto erstellen, um die Dateien herunterzuladen",
+      "buyer": "Schon gekauft? Ihre Dateien finden Sie in Ihrem Konto.",
+      "trade": "Downloads für Fachhandelskonten. Kontaktieren Sie uns für den Zugang."
     }
   }
 }

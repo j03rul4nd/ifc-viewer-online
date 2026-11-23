@@ -1,0 +1,56 @@
+{% comment %}
+  Leads without a server (T-326 F1 + F7).
+  F1 "Email me this model": Shopify's native customer form. The customer is
+  created or updated with the tags ifc-spec-request and ifc-interest:<handle>;
+  a Shopify Flow on "customer tags added" sends the spec sheet and model link
+  (app/docs/FLOW-LEADS.md). Marketing consent is the visitor's own checkbox.
+  Works without JavaScript.
+  F7 "Warm viewers" (Business, off by default): assets/ifcvo-leads.js counts
+  model opens per product in localStorage and, on the third, tags the logged-in
+  customer ifc-warm:<handle> once, or writes the cart attribute _ifc_views for
+  guests. Nothing is written without the visitor's marketing consent.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
+-%}
+{%- if plan == 'free' -%}
+  {%- if request.design_mode -%}<p class="ifcvo-upsell" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'capture', plan: 'Starter' | escape }}</p>{%- endif -%}
+{%- else -%}
+<div class="ifcvo-panel ifcvo-lead" data-ifcvo-capture data-ifcvo-gate="capture" data-handle="{{ product.handle | escape }}"{% if s.intent %} data-intent="{% if customer %}{{ customer.email | escape }}{% else %}-{% endif %}"{% endif %} {{ block.shopify_attributes }}>
+    <h3>{{ 'ifcvo.leads.title' | t | escape }}</h3>
+    {%- form 'customer', id: 'ifcvo-capture' -%}
+      {%- if form.posted_successfully? -%}<p class="ifcvo-lead-ok" role="status">{{ 'ifcvo.leads.sent' | t | escape }}</p>{%- endif -%}
+      {{ form.errors | default_errors }}
+      <input type="hidden" name="contact[tags]" value="ifc-spec-request,ifc-interest:{{ product.handle | escape }}">
+      <label>{{ 'ifcvo.lead.email' | t | escape }}<input type="email" name="contact[email]" value="{{ customer.email | escape }}" autocomplete="email" required></label>
+      {%- comment -%} Unchecked sends "false": the last value wins, so the box alone decides. {%- endcomment -%}
+      <input type="hidden" name="contact[accepts_marketing]" value="false">
+      <label><input type="checkbox" name="contact[accepts_marketing]" value="true"> {{ 'ifcvo.leads.consent' | t | escape }}</label>
+      <button type="submit" class="ifcvo-btn">{{ 'ifcvo.leads.submit' | t | escape }}</button>
+    {%- endform -%}
+</div>
+{%- render 'ifcvo-runtime', js: 'ifcvo-leads.js' -%}
+{%- endif -%}
+
+{% schema %}
+{
+  "stylesheet": "ifcvo.css",
+  "name": "t:leads.name",
+  "target": "section",
+  "enabled_on": {
+    "templates": [
+      "product"
+    ]
+  },
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "intent",
+      "label": "t:leads.intent",
+      "default": false,
+      "info": "t:leads.intent_info"
+    }
+  ]
+}
+{% endschema %}

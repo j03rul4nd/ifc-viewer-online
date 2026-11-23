@@ -59,14 +59,14 @@ export function bind(root) {
     const t = ev.target && ev.target.closest ? ev.target : null
     if (!t) return
     const dl = t.closest('a.ifcvo-download, a[data-file]')
-    if (dl && root.contains(dl)) { publish('ifcvo_download', { ...context(root), file: fileName(dl.getAttribute('href')) || dl.dataset.file }); return }
+    if (dl && root.contains(dl)) { const g = dl.closest('[data-gate]'); publish('ifcvo_download', { ...context(root), file: fileName(dl.getAttribute('href')) || dl.dataset.file, gated: !!(g && g.dataset.gate !== 'none') }); return }
     const q = t.closest('[data-ifcvo-quote]')
     if (q && root.contains(q)) publish('ifcvo_quote_click', context(root))
   })
   // Contract for the runtime: dispatch these on the root when the viewer reports.
   root.addEventListener('ifcvo:loaded', (ev) => publish('ifcvo_model_loaded', { ...context(root), ...(ev.detail || {}) }))
   // Companion blocks outside the root (quote list, browser-made downloads) report here.
-  root.addEventListener('ifcvo:download', (ev) => publish('ifcvo_download', { ...context(root), file: ev.detail && ev.detail.file }))
+  root.addEventListener('ifcvo:download', (ev) => publish('ifcvo_download', { ...context(root), file: ev.detail && ev.detail.file, gated: !!(ev.detail && ev.detail.gated) }))
   root.addEventListener('ifcvo:quote', () => publish('ifcvo_quote_click', context(root)))
   // Quote request form (blocks/ifc-quote.liquid): element count, role and quote|expert. Never name, email or text.
   root.addEventListener('ifcvo:quote-submit', (ev) => { const x = ev.detail || {}; publish('ifcvo_quote_submit', { ...context(root), elements: x.elements, role: x.role, kind: x.kind }) })

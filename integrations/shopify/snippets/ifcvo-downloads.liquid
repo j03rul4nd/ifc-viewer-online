@@ -13,7 +13,10 @@
     show_ifc – show the IFC link (default true)
     glb      – offer a GLB made in the browser (default false)
     csv      – offer a CSV element list made in the browser (default false)
-    gate     – 'none' | 'customer' | 'tag' (default 'none')
+    gate     – 'none' | 'customer' | 'tag' | 'buyer' (default 'none'). Guests get
+               "create a free account" (register, back to this page): each
+               download becomes a customer record. 'buyer': the files are in
+               the customer account (order page), never on the product page.
     tag      – customer tag required when gate is 'tag' (e.g. trade)
     ifc_label, glb_label, csv_label, login_label – texts (optional)
 
@@ -32,14 +35,19 @@
   if dl_gate == 'customer' and customer == nil
     assign dl_open = false
   endif
+  assign dl_trade = false
   if dl_gate == 'tag'
     if customer == nil
       assign dl_open = false
     elsif dl_tag != ''
       unless customer.tags contains dl_tag
         assign dl_open = false
+        assign dl_trade = true
       endunless
     endif
+  endif
+  if dl_gate == 'buyer'
+    assign dl_open = false
   endif
   assign dl_show_ifc = true
   if show_ifc == false
@@ -82,7 +90,12 @@
       </ul>
       <p class="ifcvo-make-status ifcvo-muted" role="status" aria-live="polite"></p>
     {%- else -%}
-      <p class="ifcvo-muted" style="margin:8px 0 0"><a href="{{ routes.account_login_url | escape }}">{%- assign dl_t = 'ifcvo.downloads.login' | t -%}{{ login_label | default: dl_t | escape }}</a></p>
+      {%- comment -%} Guests register (Shopify's own form, with its marketing consent) and come back here. {%- endcomment -%}
+      <p class="ifcvo-muted" style="margin:8px 0 0">
+      {%- if dl_trade -%}{{ 'ifcvo.leads.trade' | t | escape }}
+      {%- elsif dl_gate == 'buyer' -%}<a href="{{ routes.account_url | escape }}">{{ 'ifcvo.leads.buyer' | t | escape }}</a>
+      {%- else -%}<a href="{{ routes.account_register_url | escape }}?return_url={{ product.url | url_encode | escape }}">{%- assign dl_t = 'ifcvo.leads.register' | t -%}{{ login_label | default: dl_t | escape }}</a>
+      {%- endif -%}</p>
     {%- endif -%}
     {%- if request.design_mode and dl_gate != 'none' -%}
       <p class="ifcvo-upsell">{% if dl_gate == 'tag' %}{{ 'ifcvo.editor.gated_downloads_tag' | t: tag: dl_tag | escape }}{% else %}{{ 'ifcvo.editor.gated_downloads' | t | escape }}{% endif %}</p>

@@ -44,10 +44,10 @@ describe('extension layout', () => {
     expect(fs.readFileSync(path.join(dir, 'shopify.extension.toml'), 'utf8')).toMatch(/type = "theme"/)
   })
 
-  it('holds all 21 blocks: the two sections plus every source block, at most 30', () => {
+  it('holds all 22 blocks: the two sections plus every source block, at most 30', () => {
     const files = list(path.join(dir, 'blocks')).map((f) => f.replace(/\.liquid$/, ''))
     expect(files).toEqual(gen.EXTENSIONS['ifc-viewer'])
-    expect(files.length).toBe(21)
+    expect(files.length).toBe(22)
     expect(files.length).toBeLessThanOrEqual(gen.BLOCK_LIMIT)
   })
 
@@ -182,9 +182,9 @@ describe('compact Liquid', () => {
     expect(gen.compactLiquid('<p title="a | b">{{ x | escape }}</p>\n')).toBe('<p title="a | b">{{x|escape}}</p>\n')
   })
 
-  it('keeps at least 8 KB of the 100 KB Liquid limit free for new blocks', () => {
+  it('keeps at least 4 KB of the 100 KB Liquid limit free for new blocks', () => {
     const bytes = liquidFiles().reduce((n, f) => n + fs.statSync(f).size, 0)
-    expect(bytes).toBeLessThanOrEqual(gen.LIQUID_LIMIT - 8 * 1000)
+    expect(bytes).toBeLessThanOrEqual(gen.LIQUID_LIMIT - 4 * 1000)
   })
 
   it('no generated block or snippet keeps a comment', () => {

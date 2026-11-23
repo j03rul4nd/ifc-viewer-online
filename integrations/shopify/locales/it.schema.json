@@ -355,5 +355,11 @@
     "ask_for_a_quantity": "Chiedi una quantità",
     "also_create_a_customer_with_these_tags": "Crea anche un cliente con questi tag",
     "show_ask_about_this_element": "Mostra \"Chiedi di questo elemento\""
+  },
+  "leads": {
+    "name": "IFC: inviami questo modello",
+    "intent": "Tagga i visitatori interessati (Business)",
+    "intent_info": "Terza apertura del modello: i clienti connessi ricevono il tag ifc-warm:<handle>, gli ospiti l'attributo carrello _ifc_views. Solo con consenso marketing.",
+    "buyers": "Acquirenti (file nell'account cliente)"
   }
 }
