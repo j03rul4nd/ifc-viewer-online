@@ -20,5 +20,4 @@ redirect_urls = [ "https://www.ifcvieweronline.eu/" ]
 api_version = "2027-01"
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
