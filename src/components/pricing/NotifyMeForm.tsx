@@ -4,7 +4,9 @@ import { subscribeEmail } from '../../lib/subscribe'
 import { trackEmailCaptured } from '../../lib/analytics'
 
 /** "Not available yet — tell me when it is" capture behind every fake door. */
-export default function NotifyMeForm({ source, label, compact = false, text, onDone }: {
+export default function NotifyMeForm({ source, label, compact = false, text, onDone, initialEmail }: {
+  /** Prefill (e.g. the signed-in account's email) so it is one tap. */
+  initialEmail?: string | null
   /** Subscriber source tag, e.g. `pricing:pro` — lets us segment the list later. */
   source: string
   label: string
@@ -16,7 +18,7 @@ export default function NotifyMeForm({ source, label, compact = false, text, onD
 }) {
   const copy = text ?? { submit: 'Notify me', thanks: "Thanks — we'll email you once, when it launches.", error: 'Could not save it. Try again.' }
   const { i18n } = useTranslation()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail ?? '')
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
 
   async function submit(e: FormEvent) {

@@ -59,5 +59,14 @@
   "requirements": {
     "invalid": "This requirements link is damaged or from a newer version. Ask the sender for a new one.",
     "idsInvalid": "The IDS in this requirements link could not be read."
+  },
+  "largeFileDoor": {
+    "title": "This file is too big for the browser",
+    "body": "Your {{size}} MB file did not open here. Big files are not handled on a server yet — leave your email and I will process this file with you by hand, and tell you when large files open directly.",
+    "notifyLabel": "Your email",
+    "submit": "Send",
+    "thanks": "Thanks — I will write to you about this file.",
+    "error": "Could not save it. Try again.",
+    "dismiss": "Not now"
   }
 }

@@ -904,7 +904,7 @@ export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): voi
  * Fake door: a large file failed in the browser and the user asked for server
  * processing, which does not exist yet. Size only — never the file name.
  */
-export function trackServerProcessingInterest(props: { file_size_mb: number }): void {
+export function trackServerProcessingInterest(props: { file_size_mb: number; step?: 'email_left' }): void {
   noteFeedbackSignal('large_file')
   track('server_processing_interest', props)
 }

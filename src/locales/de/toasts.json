@@ -59,5 +59,14 @@
   "requirements": {
     "invalid": "Dieser Anforderungslink ist beschädigt oder stammt aus einer neueren Version. Bitten Sie den Absender um einen neuen.",
     "idsInvalid": "Die IDS in diesem Anforderungslink konnte nicht gelesen werden."
+  },
+  "largeFileDoor": {
+    "title": "Diese Datei ist zu groß für den Browser",
+    "body": "Ihre {{size}}-MB-Datei ließ sich hier nicht öffnen. Große Dateien werden noch nicht auf einem Server verarbeitet — hinterlassen Sie Ihre E-Mail, dann bearbeite ich diese Datei manuell mit Ihnen und sage Bescheid, sobald große Dateien direkt öffnen.",
+    "notifyLabel": "Ihre E-Mail",
+    "submit": "Senden",
+    "thanks": "Danke — ich schreibe Ihnen zu dieser Datei.",
+    "error": "Konnte nicht gespeichert werden. Bitte erneut versuchen.",
+    "dismiss": "Nicht jetzt"
   }
 }

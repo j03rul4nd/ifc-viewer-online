@@ -59,5 +59,14 @@
   "requirements": {
     "invalid": "Ce lien d’exigences est endommagé ou provient d’une version plus récente. Demandez-en un nouveau à l’expéditeur.",
     "idsInvalid": "L’IDS de ce lien d’exigences n’a pas pu être lu."
+  },
+  "largeFileDoor": {
+    "title": "Ce fichier est trop volumineux pour le navigateur",
+    "body": "Votre fichier de {{size}} Mo ne s'est pas ouvert ici. Les gros fichiers ne sont pas encore traités sur un serveur — laissez votre e-mail et je traiterai ce fichier avec vous à la main, puis je vous préviendrai quand les gros fichiers s'ouvriront directement.",
+    "notifyLabel": "Votre e-mail",
+    "submit": "Envoyer",
+    "thanks": "Merci — je vous écrirai au sujet de ce fichier.",
+    "error": "Échec de l'enregistrement. Réessayez.",
+    "dismiss": "Pas maintenant"
   }
 }
