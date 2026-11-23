@@ -90,8 +90,8 @@ this is **on hold until there is revenue**. What is ready:
 - App name: **IFC Viewer Online — 3D BIM models**
 - Tagline: Sell the model, not a picture of it.
 - Description, plan table and notes: [`listing/LISTING.md`](listing/LISTING.md).
-- Plans: Free (viewer, downloads, specs, details, explorer, views, Health Score, rooms),
-  Starter $4.99/month with a 14-day trial, Business $19/month. The source of truth is
+- Plans: Free (viewer, IFC download, specs, rooms, explorer, views; licence keys: `license/sign.mjs`),
+  Starter $9/month with a 14-day trial, Business $29/month. The source of truth is
   `FEATURE_TIERS` in `build-extension.mjs`.
 - Metafields and shop settings: [`app/METAFIELDS.md`](app/METAFIELDS.md).
 - Category: Store design → Product display / 3D & AR.

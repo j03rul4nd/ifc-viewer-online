@@ -83,3 +83,6 @@ __pycache__/
 
 # DeltaDTM tile cache of scripts/bake-shanghai-ground.mjs
 .tmp-terrain/
+
+# Shopify licence signing key (T-325): never commit
+integrations/shopify/license/private/

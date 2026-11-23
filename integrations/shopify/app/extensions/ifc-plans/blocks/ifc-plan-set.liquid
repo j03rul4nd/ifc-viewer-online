@@ -14,7 +14,7 @@
 {%- liquid
   assign s = block.settings
   assign ns = s.namespace | strip | default: 'custom'
-  assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
   assign current = product.selected_or_first_available_variant
   assign shop_labels = shop.metafields.ifcvo.labels.value
   assign iso = request.locale.iso_code | downcase
@@ -80,7 +80,7 @@
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'starter' | escape }}</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'Starter' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <div
@@ -88,6 +88,7 @@
   data-ifcvo-planset
   data-ifcvo-tier="planset"
   data-ifcvo-plan="{{ plan | escape }}"
+  data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
   data-variant-id="{{ current.id | escape }}"
   style="{{ ifcvo_style }}"
   {{ block.shopify_attributes }}

@@ -110,8 +110,16 @@ clash with the viewer texts.
 
 ### `ifcvo.plan` (app metafield)
 
-Written by the app when billing exists (`free` \| `starter` \| `business`). Until
-then it is empty and every block runs as `business`. Merchants do not edit it.
+Written by the app when billing exists (`free` \| `starter` \| `business`). Merchants
+do not edit it. When set it wins over the licence key below; when empty the shop
+runs on its licence key, or on Free without one.
+
+### `ifcvo.license` (shop metafield, single line text)
+
+A licence key for the shop: `node integrations/shopify/license/sign.mjs sign
+<shop>.myshopify.com <starter|business> [days]`. The runtime checks its Ed25519
+signature in the browser (WebCrypto) against the public key built into `ifcvo.js`;
+a key for another shop, expired, altered, or a browser without Ed25519 means Free.
 
 ## Copy-paste definitions (GraphQL Admin API)
 

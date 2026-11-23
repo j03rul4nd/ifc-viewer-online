@@ -182,7 +182,7 @@ describe('Shopify config and plan gate', () => {
 
   it('every feature has a known tier, every panel a feature, and loading stays free', () => {
     for (const t of Object.values(tiers)) expect(PLANS).toContain(t)
-    expect(DEFAULT_PLAN).toBe('business')
+    expect(DEFAULT_PLAN).toBe('free')
     for (const f of ALWAYS_FREE as string[]) expect(tiers[f]).toBe('free')
     const panels = runtime.match(/const PANELS = \{ ([^}]+) \}/)![1].split(', ')
     for (const p of panels) expect(tiers[p]).toBeDefined()
@@ -196,7 +196,8 @@ describe('Shopify config and plan gate', () => {
 
   it('the product block hands the plan, shop config and labels to the runtime', () => {
     const source = fs.readFileSync(path.join(ext, 'blocks/product-ifc-viewer.liquid'), 'utf8')
-    expect(source).toContain("app.metafields.ifcvo.plan.value | default: 'business'")
+    expect(source).toContain('data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}"')
+    expect(source).toContain('data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"')
     expect(source).toContain('shop.metafields.ifcvo.config.value | json')
     expect(source).toContain('shop.metafields.ifcvo.labels.value | json')
   })
@@ -220,12 +221,12 @@ describe('Shopify config and plan gate', () => {
     expect(r.labelsFor({ en: { a: 'A', b: 'B' }, es: { a: 'Á' }, 'es-mx': { b: 'Bé' } }, 'es-MX')).toEqual({ a: 'Á', b: 'Bé' })
   })
 
-  it('gate(): the default plan allows all; a lower plan hides the block, with a note only in the editor', async () => {
+  it('gate(): no plan means free; a lower plan hides the block, with a note only in the editor', async () => {
     const r = await load()
     document.body.innerHTML = '<div id="x"></div>'
     const x = document.getElementById('x')!
-    expect(r.normalizePlan('weird')).toBe('business')
-    expect(r.gate('tour', x)).toBe(true)
+    expect(r.normalizePlan('weird')).toBe('free')
+    expect(r.gate('tour', x, 'starter')).toBe(true)
     expect(r.allowed('tour', 'free')).toBe(false)
     expect(r.allowed('viewer', 'free')).toBe(true)
     expect(r.allowed('unknown-feature', 'free')).toBe(true)
@@ -249,7 +250,7 @@ describe('Shopify config and plan gate', () => {
   })
 
   it('re-running init or reloading a section never mounts twice, and unload frees listeners', async () => {
-    const block = '<div data-ifcvo-viewer data-model="https://a.com/x.ifc"><div class="ifcvo-stage"></div></div><div data-ifcvo-panel="details"><div class="ifcvo-body"></div></div>'
+    const block = '<div data-ifcvo-viewer data-ifcvo-plan="starter" data-model="https://a.com/x.ifc"><div class="ifcvo-stage"></div></div><div data-ifcvo-panel="details"><div class="ifcvo-body"></div></div>'
     document.body.innerHTML = `<section id="s1">${block}</section>`
     const r = await load()
     expect(r._state().listeners).toBe(1)
