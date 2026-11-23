@@ -132,7 +132,7 @@ stand-ins for Shopify-only tags) into a demo product page of a neutral store,
 each model through the SDK and adds one headline. Re-run (from `integrations/shopify`):
 
 ```
-python -m http.server 8731 --bind 127.0.0.1
+node listing/v3/harness/serve.mjs . <folder with the owner-supplied Wukang IFC>
 LIQUIDJS=file:///<dir>/node_modules/liquidjs/dist/liquid.node.mjs node listing/v3/harness/render.mjs
 PW=file:///C:/repo/ifc/node_modules/playwright-core/index.mjs node listing/v3/harness/shoot.mjs
 ```
@@ -144,14 +144,18 @@ alt text: drop `frame()` in `shoot.mjs`.
 | Slot | File | Alt text |
 |---|---|---|
 | App icon (1200×1200) | `icon-1200x1200.png` | — |
-| Feature image (1600×900) | `feature-1600x900.png` | Product page of a building product with its interactive 3D BIM model |
-| Screenshot 1 | `desktop-1-explore.png` | Product page of a duplex house kit with the interactive 3D IFC model next to a rooms table read from the model |
-| Screenshot 2 | `desktop-2-data.png` | Structural frame product page with the 3D model and a bill of quantities grouped by type |
+| Feature image (1600×900) | `feature-1600x900.png` | Interactive 3D IFC model of a historic apartment building, Wukang Mansion |
+| Screenshot 1 | `desktop-1-explore.png` | Product page of the Wukang Mansion IFC model in an interactive 3D viewer, next to the rooms and areas read from the model |
+| Screenshot 2 | `desktop-2-data.png` | Steel portal frame hall product page with the 3D model and a bill of quantities with steel by profile |
 | Screenshot 3 | `desktop-3-quote.png` | Hotel block product page: a curtain wall selected in 3D and a quote form that lists the selected element |
-| Screenshot 4 | `desktop-4-downloads.png` | Downloads block asking guests to create an account for the IFC, GLB and CSV files, and an email-me-this-model form |
-| Screenshot 5 | `desktop-5-compare.png` | Compare variants block showing a tram stop and a bench with lamps side by side in 3D |
-| Screenshot 6 | `desktop-6-planset.png` | Plan set block listing the drawings and model included with each licence, and a View in your space button |
-| Mobile 1–3 (optional) | `mobile-1-explore.png`, `mobile-2-quote.png`, `mobile-3-downloads.png` (900×1600) | as their desktop counterparts, on a phone |
+| Screenshot 4 | `desktop-4-downloads.png` | Shanghai Tower model with a downloads block asking guests to create an account, and an email-me-this-model form |
+| Screenshot 5 | `desktop-5-compare.png` | Compare variants block with an office tower and a hotel side by side in 3D |
+| Screenshot 6 | `desktop-6-planset.png` | Oriental Pearl Tower model with a plan set block listing drawings and model per licence, and a View in your space button |
+| Mobile 1–3 (optional) | `mobile-1-explore.png`, `mobile-2-quote.png`, `mobile-3-downloads.png` (900×1600) | Wukang Mansion with its rooms; hotel block quote with a selected curtain wall; World Financial Center with gated downloads |
+
+The previous image set is kept in `previous/`. Wukang Mansion is an owner-supplied IFC that is
+not public: the harness opens the page on a tiny public file and swaps the Wukang file in through
+the SDK (as a visitor dropping a file would); everything else on the page is the real block.
 
 Not made here: a screenshot of the after-sale "My models & files" page. It is a
 Shopify customer-account UI extension and only renders inside a real store; capture it
