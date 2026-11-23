@@ -1,6 +1,10 @@
 {
   "name": "ifc-viewer-online-shopify",
   "private": true,
+  "workspaces": [
+    "extensions/ifc-order-files",
+    "extensions/ifc-my-models"
+  ],
   "scripts": {
     "build:blocks": "node ../build-extension.mjs",
     "config:link": "shopify app config link",

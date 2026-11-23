@@ -1,0 +1,21 @@
+{
+  "name": "Mis modelos y archivos",
+  "description": "Una página en la cuenta del cliente con todos los modelos IFC y archivos que ha comprado.",
+  "title": "Mis modelos y archivos",
+  "intro": "Todos los modelos y archivos de tus pedidos, siempre en su última versión.",
+  "loading": "Cargando tus modelos",
+  "error": "No se han podido cargar tus modelos. Vuelve a intentarlo en un momento.",
+  "empty": "Aquí aparecerán los modelos y archivos de tus pedidos.",
+  "linkIntro": {
+    "one": "Este pedido tiene {{count}} modelo con archivos.",
+    "other": "Este pedido tiene {{count}} modelos con archivos."
+  },
+  "linkCta": "Ver todos mis modelos y archivos",
+  "version": "Versión {{version}}",
+  "updated": "Actualizado el {{date}}",
+  "order": "Pedido {{order}}",
+  "newVersion": "Nueva versión",
+  "open3d": "Abrir en 3D",
+  "addonsTitle": "Combina bien con",
+  "addToCart": "Añadir al carrito"
+}

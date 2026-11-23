@@ -1,0 +1,13 @@
+{
+  "name": "IFC model files",
+  "description": "The bought IFC model, its files and an Open in 3D link on the Thank you and Order status pages.",
+  "title": "Your model and files",
+  "intro": "Download your files now or open the model in 3D. They stay on your order page.",
+  "version": "Version {{version}}",
+  "updated": "Updated {{date}}",
+  "order": "Order {{order}}",
+  "newVersion": "New version",
+  "open3d": "Open in 3D",
+  "addonsTitle": "Goes well with it",
+  "addToCart": "Add to cart"
+}

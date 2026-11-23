@@ -1,0 +1,57 @@
+# Thank you + Order status block: the bought products' IFC model and files,
+# "Open in 3D" and add-ons. Shopify-hosted, no app server (see METAFIELDS.md).
+api_version = "2026-10"
+
+[[extensions]]
+name = "t:name"
+description = "t:description"
+handle = "ifc-order-files"
+type = "ui_extension"
+
+[[extensions.targeting]]
+module = "./src/ThankYou.jsx"
+target = "purchase.thank-you.block.render"
+
+[[extensions.targeting]]
+module = "./src/OrderStatus.jsx"
+target = "customer-account.order-status.block.render"
+
+[extensions.capabilities]
+api_access = true
+network_access = false
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "model"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "files"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "version"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "updated_at"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "addons"
+
+[[extensions.metafields]]
+namespace = "custom"
+key = "ifc_model"
+
+[[extensions.metafields]]
+namespace = "custom"
+key = "bim_files"
+
+[extensions.settings]
+
+[[extensions.settings.fields]]
+key = "show_addons"
+type = "boolean"
+name = "Show add-ons (Starter)"
+description = "Products in the ifcvo.addons metafield, each with a link that adds it to the cart."
