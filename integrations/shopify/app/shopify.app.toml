@@ -2,21 +2,34 @@
 
 client_id = "26585d50b4fa74c8e9d5c80614822560"
 name = "IFC Viewer Online"
-application_url = "https://www.ifcvieweronline.eu/"
-embedded = false
+# Billing Worker (D-327, integrations/shopify/worker): embedded admin page with the
+# current plan and a link to Shopify's hosted plan page. Deploy the Worker BEFORE
+# `shopify app deploy` (worker/DEPLOY.md), or the app home and webhooks fail.
+application_url = "https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/app"
+embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 # customer_read_orders: "My models & files" lists the signed-in buyer's orders
 # (Customer Account API, from the extension). unauthenticated_read_product_listings:
 # the UI extensions read product / variant metafields through the Storefront API.
+# Billing needs no extra scope: currentAppInstallation and app-owned metafields are
+# always available to the app itself.
 scopes = "customer_read_orders,unauthenticated_read_product_listings"
 
 [auth]
-redirect_urls = [ "https://www.ifcvieweronline.eu/" ]
+redirect_urls = [ "https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/app" ]
 
 [webhooks]
 api_version = "2027-01"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app_subscriptions/update", "app/uninstalled" ]
+  uri = "https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/webhooks"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/webhooks"
 
 [build]
 automatically_update_urls_on_dev = true

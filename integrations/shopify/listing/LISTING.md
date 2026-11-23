@@ -41,9 +41,8 @@ BIM. Give them the model itself on the product page, not a render.
 | Starter | $9/month, 14-day trial | Everything in Free, plus element details, quote / lead requests, downloads for customers only, Health Score badge, extra download formats (GLB, CSV, extra files), quantities table, guided tour, plan set and licence, compatibility (schema, authoring app, file weight), floor plan view with preview mode, view in your space (AR), classification (Uniclass / OmniClass / MasterFormat), per-variant 3D views (camera, highlighted elements, shareable view links) |
 | Business | $29/month | Everything in Starter, plus takeoff / bill of quantities with steel by profile and CSV, sales impact kit, bulk import, EPD and product passport readiness, sun and lot fit, NBS / IDS compliance self-check |
 
-How a shop gets its plan: the `ifcvo.plan` app metafield if set; otherwise a licence
-key pasted in the shop metafield `ifcvo.license` (signed for the shop's
-`*.myshopify.com` domain, with an expiry date); otherwise Free. In the theme editor a
+How a shop gets its plan: Shopify App Pricing charges it; the billing Worker writes the
+`ifcvo.plan` app metafield, which the theme reads; no plan means Free. In the theme editor a
 block that needs a higher plan shows a note naming that plan; visitors see nothing.
 
 After the sale (UI extensions, hosted by Shopify, no app server):
@@ -53,8 +52,7 @@ After the sale (UI extensions, hosted by Shopify, no app server):
 | Free | **Thank you and Order status block:** the bought product's model and files, plus an "Open in 3D" link to the product page |
 | Starter | Add-on cards in that block (`ifcvo.addons`, tagged `_ifcvo_touch`), plus a **"My models & files"** page in the customer account. The page lists every bought model and file, with version, updated date and a "New version" badge |
 
-These extensions are not gated yet, because UI extensions cannot read the theme's
-licence key. A block setting turns add-ons off. "My models & files" and the Order
+These extensions are not gated yet, because UI extensions do not read the plan yet. A block setting turns add-ons off. "My models & files" and the Order
 status blocks need the new customer accounts.
 
 Notes for the submission form:

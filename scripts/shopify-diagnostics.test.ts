@@ -165,7 +165,7 @@ describe('diagnostics: panel', () => {
   it('the editor panel has a Report a problem link filled from the page', async () => {
     const m = await load(diagPath)
     page()
-    document.body.insertAdjacentHTML('beforeend', '<i hidden data-ifcvo-license="" data-ifcvo-shop="demo.myshopify.com"></i>')
+    document.body.insertAdjacentHTML('beforeend', '<i hidden data-ifcvo-plan="" data-ifcvo-shop="demo.myshopify.com"></i>')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(window as any).Shopify = { designMode: true, theme: { name: 'Dawn', id: 42 } }
     const panel = await m.render(document, { api, fetchImpl })
