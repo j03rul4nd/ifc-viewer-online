@@ -86,3 +86,11 @@ describe('buildImport', () => {
     expect(out.length).toBeGreaterThan(0)
   })
 })
+
+describe('list.url output', () => {
+  it('writes files as a semicolon list, the format Shopify product import expects', () => {
+    const r = buildImport(parseCsv(EXPORT), [{ key: 'steel-beam', modelUrl: 'https://x/b.ifc', files: ['https://x/a.rfa', 'https://x/a.pdf'] }])
+    const col = r.table.header.indexOf('Metafield: custom.bim_files [list.url]')
+    expect(r.table.rows[2][col]).toBe('https://x/a.rfa; https://x/a.pdf')
+  })
+})

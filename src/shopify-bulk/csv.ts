@@ -207,7 +207,7 @@ export function buildImport(
     const r = rows[firstRow.get(handle)!]
     r[cMod] = e.modelUrl
     if (e.posterUrl) r[cPos] = e.posterUrl
-    if (e.files?.length) r[cFil] = JSON.stringify(e.files)
+    if (e.files?.length) r[cFil] = e.files.join('; ')
     matched.push({ handle, key: e.key, by })
     done.add(handle)
   }
