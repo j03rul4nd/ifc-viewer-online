@@ -117,6 +117,26 @@ describe('every documented bundle limit', () => {
     expect(gen.SCHEMA_KEY_LIMIT).toBe(250)
   })
 
+  // Deploy validation 2026-11-23: paragraph setting content max 500 characters, inline or translated.
+  it('paragraph setting content at most 500 characters, inline and in every schema locale', () => {
+    const too: string[] = []
+    const locales = list(path.join(dir, 'locales')).filter((f) => f.endsWith('.schema.json'))
+      .map((f) => [f, JSON.parse(fs.readFileSync(path.join(dir, 'locales', f), 'utf8'))] as const)
+    const lookup = (o: Record<string, unknown>, key: string) =>
+      key.split('.').reduce<unknown>((a, k) => (a && typeof a === 'object' ? (a as Record<string, unknown>)[k] : undefined), o)
+    for (const [b, s] of schemas()) {
+      for (const st of (s.settings ?? []) as { type: string; content?: string }[]) {
+        if (st.type !== 'paragraph' || !st.content) continue
+        if (!st.content.startsWith('t:')) { if ([...st.content].length > 500) too.push(`${b}: ${st.content.length}`); continue }
+        for (const [f, j] of locales) {
+          const v = lookup(j, st.content.slice(2))
+          if (typeof v === 'string' && [...v].length > 500) too.push(`${b} ${f}: ${v.length}`)
+        }
+      }
+    }
+    expect(too).toEqual([])
+  })
+
   it('every translation value at most 1000 characters; at most 3400 per locale file (theme locales)', () => {
     for (const f of list(path.join(dir, 'locales'))) {
       const values = flatValues(JSON.parse(fs.readFileSync(path.join(dir, 'locales', f), 'utf8')))
