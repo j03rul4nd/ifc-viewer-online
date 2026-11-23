@@ -5,8 +5,10 @@
 // Routes
 //   GET  /app        embedded admin page (App Bridge): plan + link to Shopify's plan page
 //   POST /api/plan   ID token → sync plan → { plan, plansUrl }
-//   POST /webhooks   app_subscriptions/update, app/uninstalled, GDPR topics (HMAC)
-//   cron             optional: Partner API subscription events of the last day → resync
+//   POST /webhooks   app/uninstalled, GDPR topics (HMAC). App Pricing sends no
+//                    app_subscriptions/update since 2026-04-28 (README.md).
+//   cron (hourly)    rotating batch of stored shops → refresh token → resync; or, if the
+//                    optional Partner API secrets are set, the shops with subscription events
 //
 // Bindings: KV SHOPS; secrets SHOPIFY_API_KEY, SHOPIFY_API_SECRET; optional secrets
 // PARTNER_API_TOKEN, PARTNER_ORG_ID, APP_GID; vars ADMIN_API_VERSION, APP_HANDLE, HELP_URL.
@@ -19,8 +21,13 @@ import {
 const DAY = 86400 * 1000
 /** Per-isolate throttle for /api/plan: a reload storm costs no Shopify calls and no KV. */
 const THROTTLE_MS = 15000
-/** Cron: at most this many shops per run (3 subrequests each; Free plan allows 50). */
+/** Partner-API cron: at most this many shops per run (3 subrequests each; Free plan allows 50). */
 export const MAX_CRON_SHOPS = 15
+/** Rotating cron: KV keys listed per run (one page; the KV cursor rotates over runs). */
+export const CRON_BATCH = 10
+/** Rotating cron: subrequests (fetch + KV ops) per invocation, under the Free limit of 50. */
+export const SUBREQ_BUDGET = 45
+export const CURSOR_KEY = 'cron:cursor'
 const recent = new Map()
 
 const kvKey = (shop) => `shop:${shop}`
@@ -39,6 +46,15 @@ const cfg = (env) => ({
 export async function readShop(env, shop) {
   const v = await env.SHOPS.get(kvKey(shop))
   return v ? JSON.parse(v) : null
+}
+
+/**
+ * One KV write. The record is also stored as the key's metadata (≤ 1024 bytes) so the
+ * cron reads it from `list()` without a `get` per shop.
+ */
+export async function saveShop(env, shop, rec) {
+  const v = JSON.stringify(rec)
+  await env.SHOPS.put(kvKey(shop), v, v.length <= 1000 ? { metadata: rec } : undefined)
 }
 
 /**
@@ -65,16 +81,26 @@ export async function syncPlan(env, shop, token, rec, { fetchImpl = fetch } = {}
 }
 
 /** Background sync (webhook, cron): refresh the expiring offline token, rotate it in KV, sync. */
-export async function backgroundSync(env, shop, { fetchImpl = fetch, now = Date.now() } = {}) {
-  const rec = await readShop(env, shop)
+export async function backgroundSync(env, shop, { fetchImpl = fetch, now = Date.now(), rec: known } = {}) {
+  const rec = known || (await readShop(env, shop))
   if (!rec || !rec.refresh || (rec.refreshExp && rec.refreshExp < now)) return { skipped: 'no-token' }
   const c = cfg(env)
-  const t = await refreshToken(shop, rec.refresh, { apiKey: c.apiKey, secret: c.secret, fetchImpl })
+  let t
+  try {
+    t = await refreshToken(shop, rec.refresh, { apiKey: c.apiKey, secret: c.secret, fetchImpl })
+  } catch (e) {
+    // 400/401: the grant is gone (uninstall webhook missed). Drop the record: one write.
+    if (/token (400|401)/.test(String(e && e.message))) {
+      await env.SHOPS.delete(kvKey(shop))
+      return { removed: true }
+    }
+    throw e
+  }
   const base = { ...rec, refresh: t.refresh_token || rec.refresh, refreshExp: t.refresh_token_expires_in ? now + t.refresh_token_expires_in * 1000 : rec.refreshExp }
   const r = await syncPlan(env, shop, t.access_token, base, { fetchImpl })
   // The refresh token rotates, so this is one write even when the plan did not change.
-  await env.SHOPS.put(kvKey(shop), JSON.stringify(r.rec))
-  return { plan: r.plan }
+  await saveShop(env, shop, r.rec)
+  return { plan: r.plan, changed: r.dirty }
 }
 
 /** POST /api/plan: the embedded page asks with its ID token. */
@@ -102,7 +128,7 @@ export async function apiPlan(request, env, { fetchImpl = fetch, now = Date.now(
     token = (await exchangeToken(shop, idToken, { apiKey: c.apiKey, secret: c.secret, online: true, fetchImpl })).access_token
   }
   const r = await syncPlan(env, shop, token, base, { fetchImpl })
-  if (dirty || r.dirty) await env.SHOPS.put(kvKey(shop), JSON.stringify(r.rec))
+  if (dirty || r.dirty) await saveShop(env, shop, r.rec)
   recent.set(shop, { t: now, plan: r.plan })
   if (recent.size > 500) recent.clear()
   return json({ plan: r.plan, plansUrl: plansUrl(shop, c.appHandle) })
@@ -130,12 +156,6 @@ export async function webhook(request, env, ctx, { fetchImpl = fetch } = {}) {
     case 'customers/redact':
       // No customer data is stored by this app.
       return text('ok', 200)
-    case 'app_subscriptions/update': {
-      const job = backgroundSync(env, shop, { fetchImpl }).catch((e) => console.log('sync failed', shop, String(e)))
-      if (ctx && ctx.waitUntil) ctx.waitUntil(job)
-      else await job
-      return text('ok', 200)
-    }
     default:
       return text('ok', 200)
   }
@@ -143,9 +163,73 @@ export async function webhook(request, env, ctx, { fetchImpl = fetch } = {}) {
 
 export const EVENTS_QUERY = `query IfcvoEvents($appId: ID!, $since: DateTime!) { events(filter: { subjectId: $appId, occurredAtMin: $since, eventTypes: [SUBSCRIPTION_CREATED, SUBSCRIPTION_UPDATED, SUBSCRIPTION_CANCELED, SUBSCRIPTION_FROZEN, SUBSCRIPTION_UNFROZEN] }, first: 50) { edges { node { shop { myshopifyDomain } } } } }`
 
-/** Cron: shops with subscription events in the last 26 h (Partner API), resynced. Off without Partner secrets. */
-export async function scheduled(env, { fetchImpl = fetch, now = Date.now() } = {}) {
-  if (!env.PARTNER_API_TOKEN || !env.PARTNER_ORG_ID || !env.APP_GID) return { skipped: 'no-partner-api' }
+/**
+ * Rotating cron (no Partner API). One KV page of CRON_BATCH shops per run, resumed from a
+ * cursor kept in KV, so every stored shop is checked once per ceil(shops / CRON_BATCH) runs.
+ * Free shops are skipped without any call: upgrades always come back through the welcome
+ * link (/app syncs them), so only paid plans can lapse silently (cancel, freeze, uninstall).
+ * Per paid shop: refresh (1) + plan query (1) + metafieldsSet only if changed (1) + the
+ * rotated refresh token saved (1 KV write) [+ 1 get for records stored before metadata].
+ * Fixed: cursor get + list + cursor put. A shop that would cross SUBREQ_BUDGET is left for
+ * the next run, and the cursor then stays on this page.
+ */
+export async function rotateSync(env, { fetchImpl = fetch, now = Date.now(), budget = SUBREQ_BUDGET, batch = CRON_BATCH } = {}) {
+  let used = 0
+  const stats = { listed: 0, checked: 0, changed: 0, removed: 0, skipped: 0, failed: 0, writes: 0, subrequests: 0, complete: false }
+  const prev = (await env.SHOPS.get(CURSOR_KEY)) || ''
+  used++
+  const page = await env.SHOPS.list({ prefix: 'shop:', limit: batch, ...(prev ? { cursor: prev } : {}) })
+  used++
+  const reserve = 1 // the cursor put at the end
+  let stopped = false
+  for (const k of page.keys || []) {
+    stats.listed++
+    const shop = k.name.slice(5)
+    let rec = k.metadata && typeof k.metadata === 'object' && k.metadata.refresh ? k.metadata : null
+    const needGet = !rec
+    if (!isShop(shop) || (rec && (rec.plan === 'free' || !rec.plan))) { stats.skipped++; continue }
+    if (used + (needGet ? 1 : 0) + 4 + reserve > budget) { stopped = true; break }
+    if (needGet) {
+      used++
+      rec = await readShop(env, shop)
+      if (!rec || !rec.plan || rec.plan === 'free') { stats.skipped++; continue }
+    }
+    if (!rec.refresh || (rec.refreshExp && rec.refreshExp < now)) { stats.skipped++; continue }
+    try {
+      const r = await backgroundSync(env, shop, { fetchImpl, now, rec })
+      used += r.removed ? 2 : 3 + (r.changed ? 1 : 0)
+      stats.writes++
+      if (r.removed) stats.removed++
+      else { stats.checked++; if (r.changed) stats.changed++ }
+    } catch (e) {
+      used += 3 // refresh, query and at most the metafieldsSet before the failure
+      stats.failed++
+      console.log('cron sync failed', shop, String(e))
+    }
+  }
+  const next = stopped ? prev : page.list_complete ? '' : page.cursor || ''
+  stats.complete = !stopped && !!page.list_complete
+  if (next !== prev) {
+    used++
+    stats.writes++
+    if (next) await env.SHOPS.put(CURSOR_KEY, next)
+    else await env.SHOPS.delete(CURSOR_KEY)
+  }
+  stats.subrequests = used
+  return stats
+}
+
+/**
+ * Cron entry. With the optional Partner API secrets: shops with subscription events in the
+ * last 26 h. Without them (the default): the rotating batch above.
+ */
+export async function scheduled(env, opts = {}) {
+  if (!env.PARTNER_API_TOKEN || !env.PARTNER_ORG_ID || !env.APP_GID) return rotateSync(env, opts)
+  return partnerSync(env, opts)
+}
+
+/** Optional Partner API path (needs PARTNER_API_TOKEN, PARTNER_ORG_ID, APP_GID). */
+export async function partnerSync(env, { fetchImpl = fetch, now = Date.now() } = {}) {
   const r = await fetchImpl(`https://partners.shopify.com/${env.PARTNER_ORG_ID}/api/${env.PARTNER_API_VERSION || '2026-10'}/graphql.json`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-shopify-access-token': env.PARTNER_API_TOKEN },

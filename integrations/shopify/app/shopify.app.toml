@@ -24,7 +24,9 @@ redirect_urls = [ "https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/a
 api_version = "2027-01"
 
   [[webhooks.subscriptions]]
-  topics = [ "app_subscriptions/update", "app/uninstalled" ]
+  # Only app/uninstalled: Shopify App Pricing stopped sending app_subscriptions/update on
+  # 2026-04-28 (shopify.dev managed-pricing); the hourly cron catches cancels and freezes.
+  topics = [ "app/uninstalled" ]
   uri = "https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/webhooks"
 
   [[webhooks.subscriptions]]

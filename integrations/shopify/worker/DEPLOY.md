@@ -1,5 +1,7 @@
 # Deploy the billing Worker and Shopify App Pricing (owner steps)
 
+Launch day: follow `../LAUNCH.md` (Spanish, one ordered runbook); this file is the detail.
+
 Order matters: Worker first, then Partner Dashboard pricing, then `shopify app deploy`
 (the app config points at the Worker). Design and cost table: [README.md](README.md) (D-327).
 
@@ -9,7 +11,7 @@ Order matters: Worker first, then Partner Dashboard pricing, then `shopify app d
       Do **not** click "Upgrade to Paid" (USD 5/month and usage billing).
 - [ ] **Billing → Subscriptions**: no Workers Paid. R2 Paid is already active on the account
       for the `besco-*` buckets; this Worker does **not** bind R2, so it adds nothing there.
-- [ ] `wrangler.jsonc` has only `kv_namespaces`, `triggers.crons` (1), `vars`,
+- [ ] `wrangler.jsonc` has only `kv_namespaces`, `triggers.crons` (1, hourly), `vars`,
       `workers_dev: true`. No `routes`, `r2_buckets`, `d1_databases`, `durable_objects`,
       `queues`, `ai`, `analytics_engine_datasets`, `limits`, `usage_model`
       (a test in `scripts/shopify-billing-worker.test.ts` fails if any appears).
@@ -45,7 +47,8 @@ workers.dev subdomain differs, change the three URLs in `../app/shopify.app.toml
 Check: `curl -i https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/app` → 401
 ("Open IFC Viewer Online from your Shopify admin"); `curl -i -X POST …/webhooks` → 401.
 
-Optional (daily resync of cancellations/freezes): Partner Dashboard → Settings →
+Cancellations and freezes are picked up by the hourly cron without any extra secret
+(README.md). **Optional, not needed:** Partner API event-driven resync: Partner Dashboard → Settings →
 Partner API clients → create one with "Manage apps" → then
 `npx wrangler secret put PARTNER_API_TOKEN`, `PARTNER_ORG_ID` (the number in
 partners.shopify.com/<id>/…) and `APP_GID` (`gid://shopify/App/<app id>`).

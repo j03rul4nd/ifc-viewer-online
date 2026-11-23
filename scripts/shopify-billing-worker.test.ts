@@ -146,22 +146,18 @@ describe('webhooks', () => {
     expect((await webhook(await hook('app/uninstalled', {}), env(store), null)).status).toBe(200)
     expect(store.deletes).toBe(1) // nothing left: no second delete
   })
-  it('app_subscriptions/update resyncs through the refresh token and writes the new plan', async () => {
+  it('app_subscriptions/update is not subscribed (App Pricing stopped it) and is a no-op', async () => {
+    const store = kv({ [`shop:${SHOP}`]: { refresh: 'r0', refreshExp: Date.now() + 80 * 86400e3, plan: 'starter', installationId: INST } })
+    const res = await worker.fetch(await hook('app_subscriptions/update', {}), env(store), { waitUntil: () => {} })
+    expect(res.status).toBe(200)
+    expect(store.writes).toBe(0)
+  })
+  it('background resync refreshes the token, writes the new plan and rotates the refresh token', async () => {
     const store = kv({ [`shop:${SHOP}`]: { refresh: 'r0', refreshExp: Date.now() + 80 * 86400e3, plan: 'starter', installationId: INST } })
     const sh = shopify([{ name: 'Business', status: 'ACTIVE' }])
-    const env2 = env(store)
-    const waits: Promise<unknown>[] = []
-    // Route through the default export to check routing too; fetch is patched globally for this call.
-    const orig = globalThis.fetch
-    globalThis.fetch = sh.fetchImpl as unknown as typeof fetch
-    try {
-      const res = await worker.fetch(await hook('app_subscriptions/update', { app_subscription: { name: 'Business', status: 'ACTIVE' } }), env2, { waitUntil: (p: Promise<unknown>) => waits.push(p) })
-      expect(res.status).toBe(200)
-      await Promise.all(waits)
-    } finally { globalThis.fetch = orig }
+    expect(await backgroundSync(env(store), SHOP, { fetchImpl: sh.fetchImpl })).toEqual({ plan: 'business', changed: true })
     expect(new URLSearchParams(sh.calls[0].body).get('grant_type')).toBe('refresh_token')
-    const rec = JSON.parse(store.m.get(`shop:${SHOP}`)!)
-    expect(rec).toMatchObject({ plan: 'business', refresh: 'r-1' })
+    expect(JSON.parse(store.m.get(`shop:${SHOP}`)!)).toMatchObject({ plan: 'business', refresh: 'r-1' })
     expect(store.writes).toBe(1)
   })
   it('a shop that never opened the app is skipped (no token, no writes)', async () => {
@@ -172,8 +168,7 @@ describe('webhooks', () => {
 })
 
 describe('cron and admin page', () => {
-  it('cron is off without Partner API secrets and caps the shops per run', async () => {
-    expect(await scheduled(env())).toEqual({ skipped: 'no-partner-api' })
+  it('Partner API cron (optional) caps the shops per run', async () => {
     const edges = Array.from({ length: 40 }, (_, i) => ({ node: { shop: { myshopifyDomain: `s${i}.myshopify.com` } } }))
     const calls: string[] = []
     const fetchImpl = async (url: string) => { calls.push(url); return Response.json({ data: { events: { edges } } }) }
@@ -206,7 +201,7 @@ describe('Free-plan only configuration', () => {
     const t = fs.readFileSync(path.join(root, 'app/shopify.app.toml'), 'utf8')
     expect(t).toMatch(/embedded = true/)
     expect(t).toMatch(/application_url = "https:\/\/ifcvo-shopify-billing\.[a-z0-9-]+\.workers\.dev\/app"/)
-    expect(t).toContain('app_subscriptions/update')
+    expect(t).not.toMatch(/topics = \[[^\]]*app_subscriptions\/update/)
     expect(t).toContain('app/uninstalled')
     expect(t).toMatch(/compliance_topics = \[\s*"customers\/data_request",\s*"customers\/redact",\s*"shop\/redact"\s*\]/)
     expect(t).toContain('scopes = "customer_read_orders,unauthenticated_read_product_listings"')
