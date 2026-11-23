@@ -124,6 +124,7 @@ describe('poster (G7)', () => {
     const out = await m.encodePoster('data:image/png;base64,x', { aspect: 16 / 9, doc })
     expect(out.type).toBe('image/webp')
     expect(out.blob.size).toBeLessThanOrEqual(200 * 1024)
+    expect(out.over).toBe(false)
     expect([out.w, out.h]).toEqual([1200, 675])
     expect(sizes.length).toBeGreaterThan(1)
   })
@@ -148,5 +149,48 @@ describe('design mode only', () => {
     const section = m.mount(body, { win: { Shopify: { designMode: true, shop: 's.myshopify.com' }, localStorage: window.localStorage, navigator, URL }, api: { FEATURE_TIERS: {} } })
     expect(section).not.toBeNull()
     expect(body.querySelector('details')!.open).toBe(true) // no model yet → opened
+  })
+
+  it('the private viewer is disposed when mount rebuilds and when the wizard closes', async () => {
+    const m = await load()
+    document.body.innerHTML = '<script type="application/json" data-ifcvo-wizard>{"ns":"custom","key":"ifc_model","model":"https://x/a.ifc"}</script><div id="b"></div>'
+    const body = document.getElementById('b')!
+    const disposed: number[] = []
+    let n = 0
+    class FakeViewer {
+      id = ++n
+      constructor(stage: HTMLElement) { stage.append(document.createElement('iframe')) }
+      whenReady() { return Promise.resolve() }
+      getStats() { return Promise.resolve({ elementCount: 1, models: [{ categories: [{ type: 'IfcFurniture', count: 1 }] }] }) }
+      dispose() { disposed.push(this.id) }
+    }
+    const res = { status: 200, ok: true, headers: { get: () => null }, text: async () => "ISO-10303-21;FILE_SCHEMA(('IFC4'));" }
+    const win = { Shopify: { designMode: true }, localStorage: window.localStorage, navigator, URL }
+    const api = { FEATURE_TIERS: {}, loadSdk: async () => ({ IfcViewer: FakeViewer }) }
+    const opts = { win, api, fetchImpl: async () => res }
+    const read = async () => {
+      const btn = [...body.querySelectorAll('button')].find((b) => b.textContent === m.WIZARD_LABELS.read)!
+      btn.click()
+      await vi.waitFor(() => expect(body.querySelector('[data-step="suggest"]')!.textContent).not.toBe(''))
+    }
+    m.mount(body, opts)
+    await read()
+    expect(body.querySelector('[data-ifcvo-wizard-stage] iframe')).not.toBeNull()
+    m.mount(body, opts) // panel rebuilt
+    expect(disposed).toEqual([1])
+    await read()
+    const details = body.querySelector('details')!
+    details.open = false
+    details.dispatchEvent(new Event('toggle'))
+    expect(disposed).toEqual([1, 2])
+    expect(m.release()).toBe(false)
+  })
+
+  it('the wizard JSON cannot close its script tag', () => {
+    const liquid = read('blocks/product-ifc-viewer.liquid')
+    const tag = liquid.slice(liquid.indexOf('data-ifcvo-wizard>'), liquid.indexOf('</script>', liquid.indexOf('data-ifcvo-wizard>')))
+    const outs = tag.match(/\{\{[^}]*\}\}/g)!
+    expect(outs.length).toBe(7)
+    for (const o of outs) expect(o).toContain("| json | replace: '</', '<\\/'")
   })
 })

@@ -31,6 +31,7 @@ export const WIZARD_LABELS = {
   poster: 'Make poster from model',
   posterMaking: 'Making the poster…',
   posterDone: 'Poster ready ({kb} KB, {w}×{h}). Upload it in Content → Files and set the product metafield {ns}.ifc_poster to it.',
+  posterBig: 'The poster is still over 200 KB ({kb} KB). It works, but compress it before uploading, or use a simpler view.',
   posterFail: 'Could not take a picture of the model. Open the 3D view or read the model first.',
   profile: '{schema} · {app} · {elements} elements · {spaces} spaces · {storeys} storeys · {mb}',
   quantities: 'Quantities: {v}',
@@ -197,7 +198,7 @@ export async function encodePoster(dataUrl, { aspect = 4 / 3, width = 1200, maxB
   let { w, h } = posterSize(aspect, width)
   let type = 'image/webp'
   let blob = null
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; pass < 6; pass++) {
     const canvas = doc.createElement('canvas')
     canvas.width = w
     canvas.height = h
@@ -208,12 +209,12 @@ export async function encodePoster(dataUrl, { aspect = 4 / 3, width = 1200, maxB
     for (const q of [0.85, 0.75, 0.62, 0.5, 0.4]) {
       blob = await toBlob(canvas, type, q)
       if (blob && blob.type !== type) { type = 'image/jpeg'; blob = await toBlob(canvas, type, q) }
-      if (blob && blob.size <= maxBytes) return { blob, w, h, type }
+      if (blob && blob.size <= maxBytes) return { blob, w, h, type, over: false }
     }
     w = Math.round(w * 0.8)
     h = Math.round(h * 0.8)
   }
-  return { blob, w, h, type }
+  return { blob, w, h, type, over: !blob || blob.size > maxBytes }
 }
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
@@ -239,6 +240,19 @@ export function readConfig(doc = document) {
 /** Products first seen on this page load: the wizard stays open across panel rebuilds. */
 const FIRST = new Set()
 
+/** The wizard's own viewer (one per page at most): freed on rebuild and on close. */
+const PRIVATE = { current: null }
+
+/** Disposes the private viewer and empties its stage, so the iframe and its WebGL context go. */
+export function release() {
+  const c = PRIVATE.current
+  PRIVATE.current = null
+  if (!c) return false
+  try { if (typeof c.v.dispose === 'function') c.v.dispose(); else if (typeof c.v.destroy === 'function') c.v.destroy() } catch (e) { /* already gone */ }
+  try { c.stage.replaceChildren() } catch (e) { /* detached */ }
+  return true
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 /**
@@ -250,6 +264,7 @@ export function mount(body, { doc = document, win = window, api = win.IFCVO, fet
   const cfg = readConfig(doc)
   if (!cfg || !body) return null
   body.querySelector('[data-ifcvo-wizard-ui]')?.remove()
+  release()
   const L = WIZARD_LABELS
   const tiers = (api && api.FEATURE_TIERS) || {}
   const shop = (win.Shopify && win.Shopify.shop) || cfg.shop || ''
@@ -296,12 +311,13 @@ export function mount(body, { doc = document, win = window, api = win.IFCVO, fet
     if (live && root && root.dataset.model === url) return live
     if (state.viewer && state.viewer.url === url) return state.viewer.v
     if (!api || typeof api.loadSdk !== 'function') return null
-    if (state.viewer) { try { state.viewer.v.destroy && state.viewer.v.destroy() } catch (e) { /* gone */ } }
+    release()
     stage.style.display = 'block'
     stage.replaceChildren()
     const { IfcViewer } = await api.loadSdk()
     const v = new IfcViewer(stage, { model: url, ui: 'embed', toolbar: false, background: '#ffffff', height: '100%', validate: false })
     state.viewer = { url, v }
+    PRIVATE.current = { v, stage }
     await v.whenReady()
     return v
   }
@@ -356,7 +372,9 @@ export function mount(body, { doc = document, win = window, api = win.IFCVO, fet
       a.click()
       a.remove()
       setTimeout(() => win.URL.revokeObjectURL(href), 10000)
-      posterOut.textContent = fill(L.posterDone, { kb: Math.round(out.blob.size / 1024), w: out.w, h: out.h, ns: cfg.ns || 'custom' })
+      const kb = Math.round(out.blob.size / 1024)
+      posterOut.textContent = fill(L.posterDone, { kb, w: out.w, h: out.h, ns: cfg.ns || 'custom' }) + (out.over ? ' ' + fill(L.posterBig, { kb }) : '')
+      if (out.over) posterOut.dataset.kind = 'warn'
     } catch (e) {
       posterOut.textContent = L.posterFail
     }
@@ -372,6 +390,8 @@ export function mount(body, { doc = document, win = window, api = win.IFCVO, fet
     t('h4', L.step4), pasteOut,
     el(doc, 'p', {}, btn(L.poster, poster)), posterOut)
   if (!cfg.model || firstTime) details.open = true
+  // Closing the wizard frees its private viewer (WebGL context, WASM memory).
+  details.addEventListener('toggle', () => { if (!details.open) { release(); state.viewer = null; stage.style.display = 'none' } })
   const section = el(doc, 'section', { 'data-ifcvo-wizard-ui': '' })
   details.removeAttribute('data-ifcvo-wizard-ui')
   section.append(details)
