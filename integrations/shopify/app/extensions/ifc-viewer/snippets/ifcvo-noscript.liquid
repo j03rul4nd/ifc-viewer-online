@@ -1,40 +1,27 @@
-{% comment %}
-  What a visitor (or crawler) without JavaScript gets instead of the 3D viewer:
-  a poster with descriptive alt text, a plain download link and the spec table.
-
-  Params:
-    product   – the product (required)
-    model     – https URL of the .ifc file (optional; no link if empty)
-    specs_ns  – metafield namespace with the spec rows (optional)
-    download_label – link text (optional, defaults to "Download IFC model")
-
-  Usage:
-    {% render 'ifcvo-noscript', product: product, model: current_model, specs_ns: specs_ns %}
-{% endcomment %}
 {%- liquid
-  assign ifcvo_model = model | strip
-  assign ifcvo_head = ifcvo_model | slice: 0, 8 | downcase
-  if ifcvo_head != 'https://'
-    assign ifcvo_model = ''
-  endif
-  assign ifcvo_alt = product.title | append: ': 3D BIM model (IFC) preview'
-  assign ifcvo_label = download_label | default: 'Download IFC model'
+assign ifcvo_model = model | strip
+assign ifcvo_head = ifcvo_model | slice: 0, 8 | downcase
+if ifcvo_head != 'https://'
+assign ifcvo_model = ''
+endif
+assign ifcvo_alt = product.title | append: ': 3D BIM model (IFC) preview'
+assign ifcvo_label = download_label | default: 'Download IFC model'
 -%}
 <noscript>
-  <div class="ifcvo-noscript">
-    {%- if product.featured_image != blank -%}
-      <img src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ ifcvo_alt | escape }}" width="800" loading="lazy">
-    {%- endif -%}
-    {%- if ifcvo_model != '' -%}
-      <p><a href="{{ ifcvo_model | escape }}" download rel="noopener">{{ ifcvo_label | escape }}</a></p>
-    {%- endif -%}
-    {%- if specs_ns != blank and product.metafields[specs_ns] != blank -%}
-      <table class="ifcvo-specs">
-        <caption>{{ product.title | escape }}</caption>
-        {%- for pair in product.metafields[specs_ns] -%}
-          <tr><th scope="row">{{ pair[0] | replace: '_', ' ' | capitalize | escape }}</th><td>{{ pair[1].value | escape }}</td></tr>
-        {%- endfor -%}
-      </table>
-    {%- endif -%}
-  </div>
+<div class="ifcvo-noscript">
+{%- if product.featured_image != blank -%}
+<img src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ ifcvo_alt | escape }}" width="800" loading="lazy">
+{%- endif -%}
+{%- if ifcvo_model != '' -%}
+<p><a href="{{ ifcvo_model | escape }}" download rel="noopener">{{ ifcvo_label | escape }}</a></p>
+{%- endif -%}
+{%- if specs_ns != blank and product.metafields[specs_ns] != blank -%}
+<table class="ifcvo-specs">
+<caption>{{ product.title | escape }}</caption>
+{%- for pair in product.metafields[specs_ns] -%}
+<tr><th scope="row">{{ pair[0] | replace: '_', ' ' | capitalize | escape }}</th><td>{{ pair[1].value | escape }}</td></tr>
+{%- endfor -%}
+</table>
+{%- endif -%}
+</div>
 </noscript>

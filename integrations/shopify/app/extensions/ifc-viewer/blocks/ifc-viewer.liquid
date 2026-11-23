@@ -1,265 +1,74 @@
-{% comment %}
-  IFC Viewer section. Copy to your theme's sections/ folder, then add
-  "3D IFC model" in the theme editor. Upload the .ifc in Content > Files and
-  paste its link, or paste any public https link to an .ifc file or a scene.
-  Reference: https://www.ifcvieweronline.eu/sdk/ (embed parameters).
-{% endcomment %}
-{%- comment -%} viewer-url:start {%- endcomment -%}
 {%- liquid
-  assign s = section.settings
-  if block
-    assign s = block.settings
-  endif
-  assign query = 'embed=1'
-  assign models = ''
-  assign parts = s.model | split: ','
-  for part in parts
-    assign url = part | strip
-    assign head = url | slice: 0, 8 | downcase
-    if head == 'https://'
-      if models != ''
-        assign models = models | append: ','
-      endif
-      assign models = models | append: url
-    endif
-  endfor
-  assign scene = s.scene | strip
-  assign scene_head = scene | slice: 0, 8 | downcase
-  if scene_head != 'https://'
-    assign scene = ''
-  endif
-  if models != ''
-    assign enc = models | url_encode
-    assign query = query | append: '&model=' | append: enc
-  endif
-  if scene != ''
-    assign enc = scene | url_encode
-    assign query = query | append: '&scene=' | append: enc
-  endif
-  if s.ui != 'minimal'
-    assign query = query | append: '&ui=' | append: s.ui
-  endif
-  if s.view != 'iso' or scene == ''
-    assign query = query | append: '&view=' | append: s.view
-  endif
-  if s.validate == false
-    assign query = query | append: '&validate=0'
-  endif
-  if s.map != 'off'
-    assign query = query | append: '&map=' | append: s.map
-  endif
-  if s.drawings
-    assign query = query | append: '&drawings=plan'
-  endif
-  if s.lang != 'auto'
-    assign query = query | append: '&lang=' | append: s.lang
-  endif
-  assign accent = s.accent | remove: '#' | strip | downcase
-  if accent.size == 6
-    assign accent_ok = true
-    assign chars = accent | split: ''
-    for c in chars
-      unless '0123456789abcdef' contains c
-        assign accent_ok = false
-      endunless
-    endfor
-    if accent_ok
-      assign query = query | append: '&accent=' | append: accent
-    endif
-  endif
-  assign viewer_src = 'https://www.ifcvieweronline.eu/?' | append: query
-  assign title = s.title | default: 'Interactive 3D IFC model'
+assign s = section.settings
+if block
+assign s = block.settings
+endif
+assign query = 'embed=1'
+assign models = ''
+assign parts = s.model | split: ','
+for part in parts
+assign url = part | strip
+assign head = url | slice: 0, 8 | downcase
+if head == 'https://'
+if models != ''
+assign models = models | append: ','
+endif
+assign models = models | append: url
+endif
+endfor
+assign scene = s.scene | strip
+assign scene_head = scene | slice: 0, 8 | downcase
+if scene_head != 'https://'
+assign scene = ''
+endif
+if models != ''
+assign enc = models | url_encode
+assign query = query | append: '&model=' | append: enc
+endif
+if scene != ''
+assign enc = scene | url_encode
+assign query = query | append: '&scene=' | append: enc
+endif
+if s.ui != 'minimal'
+assign query = query | append: '&ui=' | append: s.ui
+endif
+if s.view != 'iso' or scene == ''
+assign query = query | append: '&view=' | append: s.view
+endif
+if s.validate == false
+assign query = query | append: '&validate=0'
+endif
+if s.map != 'off'
+assign query = query | append: '&map=' | append: s.map
+endif
+if s.drawings
+assign query = query | append: '&drawings=plan'
+endif
+if s.lang != 'auto'
+assign query = query | append: '&lang=' | append: s.lang
+endif
+assign accent = s.accent | remove: '#' | strip | downcase
+if accent.size == 6
+assign accent_ok = true
+assign chars = accent | split: ''
+for c in chars
+unless '0123456789abcdef' contains c
+assign accent_ok = false
+endunless
+endfor
+if accent_ok
+assign query = query | append: '&accent=' | append: accent
+endif
+endif
+assign viewer_src = 'https://www.ifcvieweronline.eu/?' | append: query
+assign title = s.title | default: 'Interactive 3D IFC model'
 -%}
-{%- comment -%} viewer-url:end {%- endcomment -%}
 <div class="page-width">
-  {%- if models != '' or scene != '' -%}
-    <iframe src="{{ viewer_src | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
-  {%- elsif request.design_mode -%}
-    <p>{{ 'ifcvo.editor.viewer_link' | t | escape }}</p>
-  {%- endif -%}
+{%- if models != '' or scene != '' -%}
+<iframe src="{{ viewer_src | escape }}" width="100%" height="{{ s.height }}" style="border:0;border-radius:12px;max-width:100%;display:block" loading="lazy" allow="fullscreen" title="{{ title | escape }}"></iframe>
+{%- elsif request.design_mode -%}
+<p>{{ 'ifcvo.editor.viewer_link' | t | escape }}</p>
+{%- endif -%}
 </div>
-
 {%- render 'ifcvo-diag', feature: 'viewer', block: 'ifc-viewer', model: block.settings.model -%}
-
-{% schema %}
-{
-  "name": "t:blocks.ifc_viewer.name",
-  "settings": [
-    {
-      "type": "text",
-      "id": "model",
-      "label": "t:settings.ifc_file_link",
-      "info": "t:settings.https_link_to_an_ifc_file_several_links"
-    },
-    {
-      "type": "text",
-      "id": "scene",
-      "label": "t:settings.scene_link",
-      "info": "t:settings.optional_a_saved_scene_brings_its_own_mo"
-    },
-    {
-      "type": "text",
-      "id": "title",
-      "label": "t:settings.accessible_title",
-      "default": "Interactive 3D IFC model"
-    },
-    {
-      "type": "range",
-      "id": "height",
-      "label": "t:settings.height",
-      "min": 300,
-      "max": 900,
-      "step": 20,
-      "unit": "px",
-      "default": 600
-    },
-    {
-      "type": "select",
-      "id": "ui",
-      "label": "t:settings.viewer_layout",
-      "default": "article",
-      "options": [
-        {
-          "value": "article",
-          "label": "t:settings.article_clean_scroll_friendly"
-        },
-        {
-          "value": "minimal",
-          "label": "t:settings.minimal"
-        },
-        {
-          "value": "full",
-          "label": "t:settings.full_viewer"
-        },
-        {
-          "value": "client",
-          "label": "t:settings.client_review"
-        },
-        {
-          "value": "kiosk",
-          "label": "t:settings.kiosk_model_only"
-        }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "view",
-      "label": "t:settings.starting_view",
-      "default": "iso",
-      "options": [
-        {
-          "value": "iso",
-          "label": "t:settings.isometric"
-        },
-        {
-          "value": "top",
-          "label": "t:settings.top"
-        },
-        {
-          "value": "front",
-          "label": "t:settings.front"
-        },
-        {
-          "value": "left",
-          "label": "t:settings.left"
-        },
-        {
-          "value": "right",
-          "label": "t:settings.right"
-        }
-      ]
-    },
-    {
-      "type": "checkbox",
-      "id": "validate",
-      "label": "t:settings.show_the_health_score",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "drawings",
-      "label": "t:settings.show_the_floor_plan_beside_the_model",
-      "default": false
-    },
-    {
-      "type": "select",
-      "id": "map",
-      "label": "t:settings.place_the_model_on_the_map",
-      "default": "off",
-      "options": [
-        {
-          "value": "off",
-          "label": "t:settings.off"
-        },
-        {
-          "value": "1",
-          "label": "t:settings.map"
-        },
-        {
-          "value": "terrain,buildings",
-          "label": "t:settings.map_with_terrain_and_buildings"
-        }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "lang",
-      "label": "t:settings.language",
-      "default": "auto",
-      "options": [
-        {
-          "value": "auto",
-          "label": "t:settings.visitor_s_language"
-        },
-        {
-          "value": "en",
-          "label": "t:settings.english"
-        },
-        {
-          "value": "es",
-          "label": "t:settings.espa_ol"
-        },
-        {
-          "value": "ca",
-          "label": "t:settings.catal"
-        },
-        {
-          "value": "de",
-          "label": "t:settings.deutsch"
-        },
-        {
-          "value": "fr",
-          "label": "t:settings.fran_ais"
-        },
-        {
-          "value": "it",
-          "label": "t:settings.italiano"
-        },
-        {
-          "value": "pt",
-          "label": "t:settings.portugu_s"
-        },
-        {
-          "value": "ja",
-          "label": "t:settings.x_3"
-        },
-        {
-          "value": "zh",
-          "label": "t:settings.x_2"
-        },
-        {
-          "value": "th",
-          "label": "t:settings.x"
-        }
-      ]
-    },
-    {
-      "type": "text",
-      "id": "accent",
-      "label": "t:settings.accent_colour",
-      "info": "t:settings.optional_hex_colour_e_g_2f6f5e"
-    }
-  ],
-  "target": "section"
-}
-{% endschema %}
+{% schema %}{"name":"t:k.1uug","settings":[{"type":"text","id":"model","label":"t:k.1h9o","info":"t:k.1fb6"},{"type":"text","id":"scene","label":"t:k.0kdp","info":"t:k.10bo"},{"type":"text","id":"title","label":"t:k.036e","default":"Interactive 3D IFC model"},{"type":"range","id":"height","label":"t:k.1854","min":300,"max":900,"step":20,"unit":"px","default":600},{"type":"select","id":"ui","label":"t:k.0ma9","default":"article","options":[{"value":"article","label":"t:k.1neg"},{"value":"minimal","label":"t:k.09vy"},{"value":"full","label":"t:k.17mr"},{"value":"client","label":"t:k.06so"},{"value":"kiosk","label":"t:k.15h0"}]},{"type":"select","id":"view","label":"t:k.0ap4","default":"iso","options":[{"value":"iso","label":"t:k.15a6"},{"value":"top","label":"t:k.03q0"},{"value":"front","label":"t:k.16ni"},{"value":"left","label":"t:k.1617"},{"value":"right","label":"t:k.1s4z"}]},{"type":"checkbox","id":"validate","label":"t:k.0218","default":true},{"type":"checkbox","id":"drawings","label":"t:k.1w9a","default":false},{"type":"select","id":"map","label":"t:k.0p9e","default":"off","options":[{"value":"off","label":"t:k.1qhl"},{"value":"1","label":"t:k.1baj"},{"value":"terrain,buildings","label":"t:k.1j70"}]},{"type":"select","id":"lang","label":"t:k.1wrc","default":"auto","options":[{"value":"auto","label":"t:k.16d2"},{"value":"en","label":"t:k.1obb"},{"value":"es","label":"t:k.0s9g"},{"value":"ca","label":"t:k.0y00"},{"value":"de","label":"t:k.1e3g"},{"value":"fr","label":"t:k.04kl"},{"value":"it","label":"t:k.0yx8"},{"value":"pt","label":"t:k.0jjs"},{"value":"ja","label":"t:k.1wet"},{"value":"zh","label":"t:k.1wot"},{"value":"th","label":"t:k.0ebu"}]},{"type":"text","id":"accent","label":"t:k.0j05","info":"t:k.1d2j"}],"target":"section"}{% endschema %}

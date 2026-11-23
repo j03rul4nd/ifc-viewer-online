@@ -1,0 +1,71 @@
+{%- liquid
+assign s = block.settings
+assign ns = s.specs_ns | strip | default: 'bim'
+assign mf = product.metafields[ns].classification
+assign lines = ''
+if mf != blank
+if mf.type contains 'list.'
+assign lines = mf.value | join: '~~~'
+else
+assign lines = mf.value | newline_to_br | strip_newlines | replace: '<br />', '~~~'
+endif
+endif
+assign rows = lines | split: '~~~'
+assign systems = ''
+for line in rows
+assign parts = line | split: '|'
+capture sys
+render 'ifcvo-cls-system', name: parts[0]
+endcapture
+if sys != blank and parts[1] != blank
+assign systems = systems | append: sys | append: '~~~'
+endif
+endfor
+assign systems = systems | split: '~~~' | uniq
+-%}
+{%- capture ifcvo_style -%}
+{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
+--ifcvo-radius:{{ s.radius }}px;
+{%- endcapture -%}
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div
+class="ifcvo-panel ifcvo-classification-block{% unless s.frame %} ifcvo-flat{% endunless %}"
+data-ifcvo-classification
+data-ifcvo-tier="classification"
+data-show-model="{{ s.show_model }}"
+data-show-counts="{{ s.show_counts }}"
+data-i18n="classification"
+data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+data-locale="{{ request.locale.iso_code | escape }}"
+data-labels-override="{{ s.labels | escape }}"
+style="{{ ifcvo_style }}"
+{{ block.shopify_attributes }}
+>
+{%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+<div class="ifcvo-cls-tables" data-ifcvo-cls-tables>
+{%- for sys in systems -%}
+<table class="ifcvo-specs ifcvo-cls" data-system="{{ sys | escape }}">
+<caption>{{ sys | escape }}</caption>
+<thead><tr><th scope="col">{{ 'ifcvo.classification.code' | t | escape }}</th><th scope="col">{{ 'ifcvo.classification.name' | t | escape }}</th></tr></thead>
+<tbody>
+{%- for line in rows -%}
+{%- assign parts = line | split: '|' -%}
+{%- capture lsys -%}{%- render 'ifcvo-cls-system', name: parts[0] -%}{%- endcapture -%}
+{%- if lsys == sys and parts[1] != blank -%}
+{%- assign ltitle = parts | slice: 2, 99 | join: '|' -%}
+<tr data-source="metafield" data-system="{{ lsys | escape }}" data-code="{{ parts[1] | strip | escape }}"><td><code>{{ parts[1] | strip | escape }}</code></td><td>{{ ltitle | strip | escape }}</td></tr>
+{%- endif -%}
+{%- endfor -%}
+</tbody>
+</table>
+{%- endfor -%}
+</div>
+{%- if mf == blank and request.design_mode -%}
+<p class="ifcvo-muted">{{ 'ifcvo.editor.classification' | t: ns: ns | escape }}</p>
+{%- endif -%}
+<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-classification.js' | asset_url }}"></script>
+{%- render 'ifcvo-diag', feature: 'classification', block: 'ifc-classification', ns: ns, keys: 'classification' -%}
+{% schema %}{"name":"t:k.1xmi","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Classification"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.0vjl"},{"type":"checkbox","id":"show_model","label":"t:k.01j3","default":true},{"type":"checkbox","id":"show_counts","label":"t:k.1k1g","default":false},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0pfz"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

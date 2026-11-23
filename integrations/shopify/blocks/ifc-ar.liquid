@@ -1,0 +1,136 @@
+{% comment %}
+  View in your space (AR). Uses, in order: the merchant's AR files
+  (metafields `custom.ar_usdz` / `custom.ar_glb`, a file or an https URL), then
+  the product's Shopify 3D model media, then — if turned on — a model made from
+  the IFC in the visitor's browser (iPhone/iPad only: Android's Scene Viewer
+  needs a file hosted on the web). On a computer it shows a QR code of the page.
+{% endcomment %}
+{%- liquid
+  assign s = block.settings
+  assign ns = s.namespace | strip | default: 'custom'
+  assign glb_field = product.metafields[ns].ar_glb.value
+  assign ar_glb = glb_field.url | default: glb_field | strip
+  assign usdz_field = product.metafields[ns].ar_usdz.value
+  assign ar_usdz = usdz_field.url | default: usdz_field | strip
+  if s.use_media
+    for m in product.media
+      if m.media_type == 'model'
+        for src in m.sources
+          if src.format == 'glb' and ar_glb == ''
+            assign ar_glb = src.url
+          endif
+          if src.format == 'usdz' and ar_usdz == ''
+            assign ar_usdz = src.url
+          endif
+        endfor
+        break
+      endif
+    endfor
+  endif
+-%}
+
+{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
+<div
+  class="ifcvo-panel ifcvo-ar{% unless s.frame %} ifcvo-flat{% endunless %}"
+  data-ifcvo-ar
+  data-ifcvo-tier="ar"
+  data-glb="{{ ar_glb | escape }}"
+  data-usdz="{{ ar_usdz | escape }}"
+  data-generate="{{ s.generate }}"
+  data-limit-mb="{{ s.limit_mb | escape }}"
+  data-max-triangles="{{ s.max_triangles | escape }}"
+  data-include-site="{{ s.include_site }}"
+  data-title="{{ product.title | escape }}"
+  data-page="{{ canonical_url | escape }}"
+  data-i18n="ar"
+  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
+  data-locale="{{ request.locale.iso_code | escape }}"
+  data-labels-override="{{ s.labels | escape }}"
+  {{ block.shopify_attributes }}
+>
+  {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
+  <div class="ifcvo-body" data-ifcvo-ar-body>
+    <noscript><p class="ifcvo-muted">{{ 'ifcvo.ar.no_ar' | t | escape }}</p></noscript>
+  </div>
+  {%- if ar_glb == '' and ar_usdz == '' and request.design_mode -%}
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.ar' | t: ns: ns | escape }}</p>
+  {%- endif -%}
+</div>
+<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+<script type="module" src="{{ 'ifcvo-ar.js' | asset_url }}"></script>
+
+{%- render 'ifcvo-diag', feature: 'ar', block: 'ifc-ar', ns: ns, keys: 'ar_glb,ar_usdz' -%}
+
+{% schema %}
+{
+  "name": "t:blocks.ar.name",
+  "target": "section",
+  "enabled_on": {
+    "templates": [
+      "product"
+    ]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:settings.heading"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "t:settings.metafield_namespace",
+      "default": "custom",
+      "info": "t:settings.ar_usdz_iphone_ipad_and_ar_glb_android_i"
+    },
+    {
+      "type": "checkbox",
+      "id": "use_media",
+      "label": "t:settings.use_the_product_s_3d_model_media",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "generate",
+      "label": "t:settings.make_the_ar_model_from_the_ifc_when_ther",
+      "default": true,
+      "info": "t:settings.made_on_the_visitor_s_iphone_or_ipad_fro"
+    },
+    {
+      "type": "range",
+      "id": "limit_mb",
+      "label": "t:settings.largest_made_model_on_phones",
+      "min": 10,
+      "max": 50,
+      "step": 5,
+      "unit": "MB",
+      "default": 50
+    },
+    {
+      "type": "number",
+      "id": "max_triangles",
+      "label": "t:settings.triangle_limit_for_made_models",
+      "default": 500000,
+      "info": "t:settings.the_smallest_parts_are_left_out_above_it"
+    },
+    {
+      "type": "checkbox",
+      "id": "include_site",
+      "label": "t:settings.include_the_site_and_terrain_in_made_mod",
+      "default": false
+    },
+    {
+      "type": "textarea",
+      "id": "labels",
+      "label": "t:settings.labels",
+      "info": "t:settings.key_value_per_line_button_making_error_t"
+    },
+    {
+      "type": "checkbox",
+      "id": "frame",
+      "label": "t:settings.show_a_frame_around_the_block",
+      "default": false
+    }
+  ]
+}
+{% endschema %}
