@@ -43,3 +43,19 @@ key = "ifc_model"
 [[extensions.metafields]]
 namespace = "custom"
 key = "bim_files"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "release_notes"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "handover"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "assembly_views"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "warranty_months"

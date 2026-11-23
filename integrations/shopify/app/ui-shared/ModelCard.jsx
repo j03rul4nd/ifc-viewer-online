@@ -27,6 +27,12 @@ export function ModelCard({ info, shopUrl, t, formatDate, source, showAddons, sh
         </s-stack>
         {info.updatedSincePurchase ? <s-badge>{t('newVersion')}</s-badge> : null}
       </s-stack>
+      {info.updatedSincePurchase && info.releaseNotes ? (
+        <s-stack gap="none">
+          <s-text type="strong">{t('whatChanged')}</s-text>
+          <s-text>{info.releaseNotes}</s-text>
+        </s-stack>
+      ) : null}
       {files.length ? (
         <s-stack gap="small-300">
           {files.map((f) => (

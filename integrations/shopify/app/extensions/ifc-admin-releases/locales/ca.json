@@ -1,0 +1,21 @@
+{
+  "name": "Publica una versió nova",
+  "description": "Acció de l'admin que publica una versió nova del model IFC d'un producte amb notes.",
+  "heading": "Publica una versió nova",
+  "intro": "Qui ha comprat aquest producte veu la insígnia \"Versió nova\" i aquestes notes a Els meus models i fitxers. Puja abans els fitxers nous al producte.",
+  "version": "Versió",
+  "date": "Data de publicació",
+  "dateHelp": "AAAA-MM-DD. Qui va comprar abans d'aquest dia veu la insígnia.",
+  "notes": "Què ha canviat",
+  "notesHelp": "Ho veuen els compradors. Obligatori.",
+  "publish": "Publica",
+  "close": "Tanca",
+  "done": "Versió publicada.",
+  "error": {
+    "owner": "Obre-ho des de la pàgina d'un producte.",
+    "version": "Escriu una versió (fins a 50 caràcters).",
+    "date": "Escriu una data vàlida AAAA-MM-DD.",
+    "notes": "Escriu què ha canviat (fins a 2000 caràcters).",
+    "save": "No s'ha pogut desar la versió. Torna-ho a provar."
+  }
+}

@@ -6,6 +6,7 @@ import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { ORDERS_QUERY, PRODUCTS_QUERY, idsFor, modelCards, purchasedItems, shopUrlOf } from '../../../ui-shared/ifcvo-files.js'
 import { ModelCard } from '../../../ui-shared/ModelCard.jsx'
+import { Handover } from '../../../ui-shared/Handover.jsx'
 
 const CUSTOMER_API = 'shopify://customer-account/api/2026-10/graphql.json'
 
@@ -51,6 +52,7 @@ function MyModels() {
               <s-stack key={c.productId + c.variantId} gap="large">
                 {i ? <s-divider /> : null}
                 <ModelCard info={c} shopUrl={state.shopUrl} t={t} formatDate={formatDate} source="ifc_account" showOrder />
+                <Handover info={c} shopUrl={state.shopUrl} t={t} formatDate={formatDate} source="ifc_handover" />
               </s-stack>
             ))}
           </s-stack>

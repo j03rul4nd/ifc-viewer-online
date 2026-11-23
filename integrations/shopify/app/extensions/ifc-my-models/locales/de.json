@@ -17,5 +17,12 @@
   "newVersion": "Neue Version",
   "open3d": "In 3D öffnen",
   "addonsTitle": "Passt gut dazu",
-  "addToCart": "In den Warenkorb"
+  "addToCart": "In den Warenkorb",
+  "whatChanged": "Was sich geändert hat",
+  "handoverTitle": "Übergabe",
+  "warrantyUntil": "Garantie bis {{date}}",
+  "stepOf": "Schritt {{step}} von {{total}}",
+  "stepPrev": "Zurück",
+  "stepNext": "Weiter",
+  "stepOpen": "Diesen Schritt in 3D öffnen"
 }

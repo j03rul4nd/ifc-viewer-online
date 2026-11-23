@@ -1,0 +1,14 @@
+# Admin: "Publish new version" action on the product page. Writes ifcvo.version,
+# ifcvo.updated_at and ifcvo.release_notes with the Admin API straight from the
+# extension (Shopify-hosted, no app server).
+api_version = "2026-10"
+
+[[extensions]]
+name = "t:name"
+description = "t:description"
+handle = "ifc-admin-releases"
+type = "ui_extension"
+
+[[extensions.targeting]]
+module = "./src/PublishRelease.jsx"
+target = "admin.product-details.action.render"

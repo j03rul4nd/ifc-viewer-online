@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "extensions/ifc-order-files",
-    "extensions/ifc-my-models"
+    "extensions/ifc-my-models",
+    "extensions/ifc-admin-releases"
   ],
   "scripts": {
     "build:blocks": "node ../build-extension.mjs",

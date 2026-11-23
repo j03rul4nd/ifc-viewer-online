@@ -17,5 +17,12 @@
   "newVersion": "Nova versió",
   "open3d": "Obre en 3D",
   "addonsTitle": "Combina bé amb",
-  "addToCart": "Afegeix a la cistella"
+  "addToCart": "Afegeix a la cistella",
+  "whatChanged": "Què ha canviat",
+  "handoverTitle": "Lliurament",
+  "warrantyUntil": "Garantia fins al {{date}}",
+  "stepOf": "Pas {{step}} de {{total}}",
+  "stepPrev": "Anterior",
+  "stepNext": "Següent",
+  "stepOpen": "Obrir aquest pas en 3D"
 }
