@@ -32,9 +32,11 @@ const fill = (dest, params) => dest.replace(/:(\w+)/g, (all, k) => (k in params 
 // 2026-11-13..16 several production deploys did, and PostHog fell from ~460 to
 // ~10 users a day while Search Console stayed flat. Refuse to deploy it.
 // Set ALLOW_NO_ANALYTICS=1 to deploy such a build on purpose.
+// Any chunk counts: the key moved from index-*.js to main-*.js once the bundle
+// was split, and an index-only scan refused a correct build.
 {
   const assets = join(dist, 'assets')
-  const entries = existsSync(assets) ? readdirSync(assets).filter((f) => /^index-.*\.js$/.test(f)) : []
+  const entries = existsSync(assets) ? readdirSync(assets).filter((f) => f.endsWith('.js')) : []
   const hasKey = entries.some((f) => /phc_[A-Za-z0-9]{20,}/.test(readFileSync(join(assets, f), 'utf8')))
   if (!hasKey && process.env.ALLOW_NO_ANALYTICS !== '1') {
     throw new Error('dist/ has no PostHog key: build with VITE_POSTHOG_KEY set (.env.production.local), or set ALLOW_NO_ANALYTICS=1')
