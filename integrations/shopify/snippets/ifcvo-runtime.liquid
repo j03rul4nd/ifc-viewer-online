@@ -3,10 +3,12 @@
   module (js: 'ifcvo-rooms.js'). One line per block instead of two full tags, to
   stay within Shopify's 100 KB of Liquid per extension. The shop's ifcvo.labels
   are printed here once for assets/ifcvo-i18n.js, which hands them (and the
-  theme locale) to every block marked data-i18n. The licence token sits here once
-  too (assets/ifcvo.js reads the first [data-ifcvo-license] on the page).
+  theme locale) to every block marked data-i18n. The shop's plan sits here once
+  too: the ifcvo.plan app metafield, written by the billing Worker from the
+  Shopify App Pricing subscription (D-327). assets/ifcvo.js reads the first
+  non-empty [data-ifcvo-plan]; empty means Free. No call to any server.
 {% endcomment %}
-<i hidden data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"></i>
+<i hidden data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"></i>
 <script type="application/json" data-ifcvo-shop-labels>{{ shop.metafields.ifcvo.labels.value | json | replace: '</', '<\/' }}</script>
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 {%- if js != blank %}

@@ -118,7 +118,7 @@ Storefront API, so every definition above needs **Storefronts: read** turned on
 `?variant=<id>&utm_source=ifc_thankyou|ifc_order_status|ifc_account#ifcvo-open=1&ifcvo-v=<version>`.
 The extensions cannot run WebGL, so they show no 3D themselves.
 
-**Plans.** UI extensions cannot read the theme's licence key, so these extensions
+**Plans.** These UI extensions do not read the plan yet, so they
 are **not gated** for now. The merchant can turn add-ons off with the block setting
 "Show add-ons" in the checkout and accounts editor. The plans above are what the
 listing promises once billing exists.
@@ -214,16 +214,9 @@ clash with the viewer texts.
 
 ### `ifcvo.plan` (app metafield)
 
-Written by the app when billing exists (`free` \| `starter` \| `business`). Merchants
-do not edit it. When set it wins over the licence key below; when empty the shop
-runs on its licence key, or on Free without one.
-
-### `ifcvo.license` (shop metafield, single line text)
-
-A licence key for the shop: `node integrations/shopify/license/sign.mjs sign
-<shop>.myshopify.com <starter|business> [days]`. The runtime checks its Ed25519
-signature in the browser (WebCrypto) against the public key built into `ifcvo.js`;
-a key for another shop, expired, altered, or a browser without Ed25519 means Free.
+Written by the billing Worker (`worker/`, D-327) from the shop's Shopify App Pricing
+subscription: `free` | `starter` | `business`. Merchants do not edit it; empty means Free.
+The theme reads it in Liquid (`app.metafields.ifcvo.plan`), so storefronts never call the Worker.
 
 ## Copy-paste definitions (GraphQL Admin API)
 

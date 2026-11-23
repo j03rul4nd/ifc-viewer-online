@@ -75,7 +75,7 @@ export function initAll(api = window.IFCVO, doc = document) {
     if (form) form.addEventListener('submit', () => publish('ifcvo_spec_request', { product: handle }))
     if (box.dataset.intent === undefined) continue
     const email = box.dataset.intent === '-' ? '' : box.dataset.intent
-    Promise.resolve(api.license).then(() => {
+    Promise.resolve().then(() => {
       if (!api.allowed('intent', api.plan)) return
       let seen = false
       for (const root of doc.querySelectorAll('[data-ifcvo-viewer]')) {

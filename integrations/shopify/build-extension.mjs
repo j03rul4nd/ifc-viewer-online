@@ -88,8 +88,8 @@ export function toAppBlock(source) {
  * Plan gate: the one table that says which plan unlocks each feature. The
  * runtime gets a copy between the TIERS markers in assets/ifcvo.js (rewritten
  * by this script). Loading, the IFC download, errors and accessibility are never
- * gated. The shop's plan: the `ifcvo.plan` app metafield if set, else a signed
- * licence token in the shop metafield `ifcvo.license` (license/sign.mjs), else free.
+ * gated. The shop's plan: the `ifcvo.plan` app metafield, written by the billing
+ * Worker from the Shopify App Pricing subscription (worker/README.md, D-327), else free.
  * Re-tier approved 2026-11-23 (T-325 G1). quote, gateddownloads, quantities, roi
  * and bulk are enforced by their own blocks (T-325 G2/G3/G5/G6).
  */
@@ -132,12 +132,6 @@ export const FEATURE_TIERS = {
 /** Features that must stay free whatever the plan table says. */
 export const ALWAYS_FREE = ['viewer', 'download', 'specs', 'rooms']
 
-/** Ed25519 public key (raw, base64url) that licence tokens are checked against (license/sign.mjs writes it). */
-export const LICENSE_KEY_FILE = path.join(here, 'license', 'public-key.txt')
-export function licenseKey() {
-  return fs.existsSync(LICENSE_KEY_FILE) ? fs.readFileSync(LICENSE_KEY_FILE, 'utf8').trim() : ''
-}
-
 const TIERS_RE = /(\/\/ TIERS:start[^\n]*\n)[\s\S]*?(\/\/ TIERS:end)/
 const LANGS_RE = /(\/\/ LANGS:start[^\n]*\n)[\s\S]*?(\/\/ LANGS:end)/
 
@@ -148,8 +142,7 @@ export function withTiers(runtime) {
     `const DEFAULT_PLAN = '${DEFAULT_PLAN}'\n` +
     `const FEATURE_TIERS = ${JSON.stringify(FEATURE_TIERS)}\n` +
     `const PLAN_NAMES = ${JSON.stringify(PLAN_NAMES)}\n` +
-    `const PLANS_URL = '${PLANS_URL}'\n` +
-    `const LICENSE_KEY = '${licenseKey()}'\n`
+    `const PLANS_URL = '${PLANS_URL}'\n`
   if (!TIERS_RE.test(runtime)) throw new Error('ifcvo.js has no TIERS markers')
   return runtime.replace(TIERS_RE, (_, start, end) => start + table + end)
 }
