@@ -59,5 +59,14 @@
   "requirements": {
     "invalid": "Este enlace de requisitos está dañado o es de una versión más nueva. Pide uno nuevo a quien te lo envió.",
     "idsInvalid": "No se pudo leer el IDS de este enlace de requisitos."
+  },
+  "largeFileDoor": {
+    "title": "Este archivo es demasiado grande para el navegador",
+    "body": "Tu archivo de {{size}} MB no se ha podido abrir aquí. Los archivos grandes aún no se procesan en un servidor: deja tu email y lo procesaré contigo a mano, y te avisaré cuando los archivos grandes abran directamente.",
+    "notifyLabel": "Tu email",
+    "submit": "Enviar",
+    "thanks": "Gracias — te escribiré sobre este archivo.",
+    "error": "No se pudo guardar. Inténtalo de nuevo.",
+    "dismiss": "Ahora no"
   }
 }

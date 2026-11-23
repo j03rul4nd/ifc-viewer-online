@@ -167,14 +167,16 @@ h3{font-size:var(--t-l)}
 .faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
 .faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
 
-dialog{margin:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(440px,calc(100% - 32px))}
-dialog::backdrop{background:var(--scrim)}
-dialog h3{margin-bottom:6px}
-dialog label{display:block;font-size:var(--t-s);color:var(--text-2);margin:14px 0 6px}
-dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-.msg{font-size:var(--t-s);margin-top:12px;min-height:1.4em}
+.wl{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;max-width:420px}
+.wl label{font-size:var(--t-s);color:var(--text-2)}
+.wl-row{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.wl input{flex:1 1 160px;min-width:0;min-height:40px;font:inherit;font-size:var(--t-b);color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.wl input:hover{border-color:var(--text-3)}
+.wl .btn{flex:1 1 auto;min-width:0;max-width:100%;white-space:normal;text-align:center}
+.cmp .wl .btn{flex-basis:100%}
+.msg{font-size:var(--t-s);min-height:1.4em;color:var(--text-2)}
 .msg.ok{color:var(--accent-text)}
+.wl.done .wl-row{display:none}
 
 .foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
 .foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
@@ -230,14 +232,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
             <span class="plan-name">Pro</span>
             <p class="price"><strong>39 € / mois, facturé à l’année</strong></p><p class="meta">468 € par an · 47 € / mois en paiement mensuel</p>
             <p class="meta who">Une personne</p>
-            <button type="button" class="btn btn-main" data-plan="pro">Rejoindre la liste</button>
+            <form class="wl" data-plan="pro"><label for="wl-pro">E-mail professionnel</label><span class="wl-row"><input id="wl-pro" name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr" /><button type="submit" class="btn btn-main">Réserver le prix de lancement</button></span><span class="msg" role="status"></span></form>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">Correspond à votre activité</span>
             <span class="plan-name">Team</span>
             <p class="price"><strong>59 € par éditeur / mois, facturé à l’année</strong></p><p class="meta">708 € par an · 71 € / mois en paiement mensuel</p><p class="meta">3 éditeurs minimum</p>
             <p class="meta who">Agences et bureaux d’études</p>
-            <button type="button" class="btn btn-main" data-plan="team">Rejoindre la liste</button>
+            <form class="wl" data-plan="team"><label for="wl-team">E-mail professionnel</label><span class="wl-row"><input id="wl-team" name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr" /><button type="submit" class="btn btn-main">Réserver le prix de lancement</button></span><span class="msg" role="status"></span></form>
           </th>
         </tr></thead>
         <tbody class="grp" id="g-files">
@@ -302,7 +304,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <p class="price"><strong>À partir de 290 € / mois par chantier actif, jusqu’à 15 sous-traitants</strong></p>
           <p class="meta">Portefeuille : à partir de 790 € / mois, chantiers et sous-traitants illimités</p>
           <p class="body">Arrêtez de recevoir des modèles à renvoyer. Vos sous-traitants vérifient gratuitement leurs fichiers par rapport à vos exigences avant l’envoi ; vous ne recevez que ce qui est conforme et vous voyez qui livre bien.</p>
-          <button type="button" class="btn btn-main" data-plan="reception">Nous contacter</button>
+          <form class="wl" data-plan="reception"><label for="wl-reception">E-mail professionnel</label><span class="wl-row"><input id="wl-reception" name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr" /><button type="submit" class="btn btn-main">Nous contacter</button></span><span class="msg" role="status"></span></form>
         </div>
         <ol><li><strong>Publiez vos exigences</strong> en lien ou QR code pour les appels d’offres et contrats : IDS, règles, note minimale, nommage.</li><li><strong>Les sous-traitants vérifient gratuitement</strong> dans leur navigateur et corrigent avant d’envoyer.</li><li><strong>Une boîte de réception</strong> revérifie chaque fichier, garde la version et l’accepte ou la refuse avec des issues BCF.</li><li><strong>Un historique par sous-traitant :</strong> livraisons, acceptées du premier coup, évolution de la note.</li><li><strong>Un rapport de fin de chantier</strong> sur les informations reçues, prêt pour l’exploitation.</li></ol>
       </div>
@@ -312,9 +314,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
       <h2 id="more-h">Développer par-dessus, ou tout un portefeuille</h2>
       <dl class="rows">
         <div class="row" id="row-developer"><dt><span class="pick-tag">Correspond à votre activité</span>Developer<span class="meta">149 € / mois, facturé à l’année, + usage</span></dt>
-          <dd><p>Le SDK client est gratuit. Developer ajoute une API de validation hébergée pour plateformes, CDE et automatisations.</p><button type="button" class="btn btn-main" data-plan="developer">Rejoindre la liste</button></dd></div>
+          <dd><p>Le SDK client est gratuit. Developer ajoute une API de validation hébergée pour plateformes, CDE et automatisations.</p><form class="wl" data-plan="developer"><label for="wl-developer">E-mail professionnel</label><span class="wl-row"><input id="wl-developer" name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr" /><button type="submit" class="btn btn-main">Réserver le prix de lancement</button></span><span class="msg" role="status"></span></form></dd></div>
         <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">À partir de 15 000 € / an</span></dt>
-          <dd><p>Réception sur tout un portefeuille, authentification unique, accord de sous-traitance et une option sur site sans accès à internet. <a href="/on-premise-ifc-validator/">Validateur sur site</a></p><button type="button" class="btn btn-main" data-plan="enterprise">Nous contacter</button></dd></div>
+          <dd><p>Réception sur tout un portefeuille, authentification unique, accord de sous-traitance et une option sur site sans accès à internet. <a href="/on-premise-ifc-validator/">Validateur sur site</a></p><form class="wl" data-plan="enterprise"><label for="wl-enterprise">E-mail professionnel</label><span class="wl-row"><input id="wl-enterprise" name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr" /><button type="submit" class="btn btn-main">Nous contacter</button></span><span class="msg" role="status"></span></form></dd></div>
       </dl>
     </section>
 
@@ -324,33 +326,12 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     </section>
   </main>
 
-  <dialog id="waitlist" aria-labelledby="wl-title">
-    <form id="wl-form" method="dialog">
-      <h3 id="wl-title">Liste d’attente </h3>
-      <p class="meta">Nous écrivons une fois, à l’ouverture de cette offre. Pas de newsletter.</p>
-      <label for="wl-email">E-mail professionnel</label>
-      <input id="wl-email" name="email" type="email" required autocomplete="email" placeholder="vous@entreprise.fr" />
-      <label for="wl-role">Surtout, vous</label>
-      <select id="wl-role" name="role">
-        <option value="deliver">Livrez des modèles à des clients</option>
-        <option value="receive">Recevez des modèles de sous-traitants</option>
-        <option value="build">Développez un logiciel par-dessus</option>
-        <option value="other">Autre</option>
-      </select>
-      <p class="msg" id="wl-msg" role="status"></p>
-      <div class="actions">
-        <button type="button" class="btn btn-quiet" id="wl-cancel">Fermer</button>
-        <button type="submit" class="btn btn-main" id="wl-submit">M’inscrire</button>
-      </div>
-    </form>
-  </dialog>
-
   <footer class="wrap foot">
     <nav aria-label="Offre" class="langs"><a href="/pricing/" hreflang="en" lang="en">English</a><a href="/es/precios/" hreflang="es" lang="es">Español</a><a href="/de/preise/" hreflang="de" lang="de">Deutsch</a><span aria-current="page">Français</span><a href="/pt/precos/" hreflang="pt" lang="pt">Português</a><a href="/it/prezzi/" hreflang="it" lang="it">Italiano</a><a href="/ca/preus/" hreflang="ca" lang="ca">Català</a><a href="/zh/pricing/" hreflang="zh" lang="zh">中文</a><a href="/ja/pricing/" hreflang="ja" lang="ja">日本語</a><a href="/th/pricing/" hreflang="th" lang="th">ไทย</a></nav>
     <p><a href="/fr/">IFC Viewer Online</a><a href="/fr/validateur-ifc-en-ligne/">Validateur</a><a href="/on-premise-ifc-validator/">Sur site</a><a href="/fr/pour-entreprises-generales/">Pour les entreprises</a><a href="/fr/pour-bureaux-etudes/">Pour les bureaux d’études</a><a href="/sdk/">SDK</a><a href="/privacy">Confidentialité</a><a href="/terms">Conditions</a></p>
   </footer>
 
-  <script type="application/json" id="pricing-i18n">{"names":{"free":"Gratuit","pro":"Pro","team":"Team","reception":"Réception","developer":"Developer","enterprise":"Enterprise"},"title":"Liste d’attente {plan}","titleTalk":"Parlons de {plan}","saving":"Enregistrement…","ok":"Vous êtes sur la liste. Nous écrirons une fois, à l’ouverture.","err":"Enregistrement impossible. Réessayez dans un instant."}</script>
+  <script type="application/json" id="pricing-i18n">{"saving":"Enregistrement…","ok":"Vous êtes sur la liste. Nous écrirons une fois, à l’ouverture.","err":"Enregistrement impossible. Réessayez dans un instant."}</script>
   <script>(function(){
 var LANG='fr';
 var T=JSON.parse(document.getElementById('pricing-i18n').textContent);
@@ -402,22 +383,20 @@ document.querySelectorAll('[data-cta]').forEach(function(a){a.addEventListener('
 
 // Waitlist: the email Worker the app's forms use, tagged by plan and role.
 var ENDPOINT='https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe';
-var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-form'),msg=document.getElementById('wl-msg'),
-    submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
-document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
-  plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
-  roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
-  msg.textContent='';msg.className='msg';submit.disabled=false;
-  track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});
-  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');document.getElementById('wl-email').focus()})});
-document.getElementById('wl-cancel').addEventListener('click',function(){dlg.close?dlg.close():dlg.removeAttribute('open')});
-form.addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('wl-email').value.trim();if(!email)return;
-  submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
-  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'pricing:'+plan+':'+roleSel.value,locale:LANG})})
-   .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
-   .then(function(res){if(res.ok||res.d.already){msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:'pricing:'+plan,already_subscribed:!!res.d.already})}else{throw new Error()}})
-   .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false})});
+// One field on each paid plan. The role is the one picked above, if any (never required).
+function role(){var r=document.querySelector('.pick input:checked');return r?r.value:'none'}
+document.querySelectorAll('form.wl').forEach(function(form){
+  var plan=form.dataset.plan,input=form.querySelector('input'),submit=form.querySelector('button'),msg=form.querySelector('.msg'),focused=false;
+  input.addEventListener('focus',function(){if(focused)return;focused=true;
+    track('pricing_email_focus',{plan:plan});track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'})});
+  form.addEventListener('submit',function(e){e.preventDefault();var email=input.value.trim();
+    if(!email||(input.checkValidity&&!input.checkValidity())){msg.className='msg';msg.textContent=T.err;input.focus();return}
+    var source='pricing:'+plan+':'+role();
+    submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:source,locale:LANG})})
+     .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
+     .then(function(res){if(res.ok||res.d.already){form.classList.add('done');msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:source,already_subscribed:!!res.d.already})}else{throw new Error()}})
+     .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false;track('pricing_email_error',{plan:plan})})})});
 })();</script>
 </body>
 </html>

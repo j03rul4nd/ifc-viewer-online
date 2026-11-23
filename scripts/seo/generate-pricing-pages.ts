@@ -62,8 +62,14 @@ function priceHead(lang: PricingLang, c: PricingCopy, plan: TablePlan): string {
 
 function ctaFor(c: PricingCopy, plan: Plan, lang: PricingLang): string {
   if (plan === 'free') return `<a class="btn btn-quiet" href="${lang === 'en' ? '/' : `/${lang}/`}" data-cta="table_free" hreflang="${lang}">${esc(c.cta.free)}</a>`
-  const label = plan === 'enterprise' || plan === 'reception' ? c.cta.talk : c.cta.waitlist
-  return `<button type="button" class="btn btn-main" data-plan="${plan}">${esc(label)}</button>`
+  // The email field sits on the plan itself: one field and one button, no dialog.
+  const label = plan === 'enterprise' || plan === 'reception' ? c.cta.talk : c.cta.reserve
+  const id = `wl-${plan}`
+  return `<form class="wl" data-plan="${plan}">`
+    + `<label for="${id}">${esc(c.dialog.email)}</label>`
+    + `<span class="wl-row"><input id="${id}" name="email" type="email" required autocomplete="email" placeholder="${esc(c.dialog.emailPh)}" />`
+    + `<button type="submit" class="btn btn-main">${esc(label)}</button></span>`
+    + `<span class="msg" role="status"></span></form>`
 }
 
 function cell(c: PricingCopy, rowId: keyof PricingCopy['rows'], v: Cell): string {
@@ -156,31 +162,6 @@ function faq(c: PricingCopy): string {
     </section>`
 }
 
-function dialog(c: PricingCopy): string {
-  const d = c.dialog
-  return `
-  <dialog id="waitlist" aria-labelledby="wl-title">
-    <form id="wl-form" method="dialog">
-      <h3 id="wl-title">${esc(fill(d.title, { plan: '' }))}</h3>
-      <p class="meta">${esc(d.desc)}</p>
-      <label for="wl-email">${esc(d.email)}</label>
-      <input id="wl-email" name="email" type="email" required autocomplete="email" placeholder="${esc(d.emailPh)}" />
-      <label for="wl-role">${esc(d.role)}</label>
-      <select id="wl-role" name="role">
-        <option value="deliver">${esc(d.roles.deliver)}</option>
-        <option value="receive">${esc(d.roles.receive)}</option>
-        <option value="build">${esc(d.roles.build)}</option>
-        <option value="other">${esc(d.roles.other)}</option>
-      </select>
-      <p class="msg" id="wl-msg" role="status"></p>
-      <div class="actions">
-        <button type="button" class="btn btn-quiet" id="wl-cancel">${esc(d.close)}</button>
-        <button type="submit" class="btn btn-main" id="wl-submit">${esc(d.join)}</button>
-      </div>
-    </form>
-  </dialog>`
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function renderPricingPage(lang: PricingLang): string {
@@ -197,7 +178,6 @@ export function renderPricingPage(lang: PricingLang): string {
   }
   // Strings the script needs, already in this language.
   const i18n = {
-    names: c.names, title: c.dialog.title, titleTalk: c.dialog.titleTalk,
     saving: c.dialog.saving, ok: c.dialog.ok, err: c.dialog.err,
   }
   const blog = lang === 'en' ? '/blog/' : `/${lang}/blog/`
@@ -258,7 +238,6 @@ ${reception(lang, c)}
 ${more(lang, c)}
 ${faq(c)}
   </main>
-${dialog(c)}
 
   <footer class="wrap foot">
     <nav aria-label="${esc(c.plans.show)}" class="langs">${PRICING_LANGS.map((l) => l === lang
@@ -415,14 +394,16 @@ h3{font-size:var(--t-l)}
 .faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
 .faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
 
-dialog{margin:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(440px,calc(100% - 32px))}
-dialog::backdrop{background:var(--scrim)}
-dialog h3{margin-bottom:6px}
-dialog label{display:block;font-size:var(--t-s);color:var(--text-2);margin:14px 0 6px}
-dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-.msg{font-size:var(--t-s);margin-top:12px;min-height:1.4em}
+.wl{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;max-width:420px}
+.wl label{font-size:var(--t-s);color:var(--text-2)}
+.wl-row{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.wl input{flex:1 1 160px;min-width:0;min-height:40px;font:inherit;font-size:var(--t-b);color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.wl input:hover{border-color:var(--text-3)}
+.wl .btn{flex:1 1 auto;min-width:0;max-width:100%;white-space:normal;text-align:center}
+.cmp .wl .btn{flex-basis:100%}
+.msg{font-size:var(--t-s);min-height:1.4em;color:var(--text-2)}
 .msg.ok{color:var(--accent-text)}
+.wl.done .wl-row{display:none}
 
 .foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
 .foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
@@ -488,22 +469,20 @@ document.querySelectorAll('[data-cta]').forEach(function(a){a.addEventListener('
 
 // Waitlist: the email Worker the app's forms use, tagged by plan and role.
 var ENDPOINT='https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe';
-var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-form'),msg=document.getElementById('wl-msg'),
-    submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
-document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
-  plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
-  roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
-  msg.textContent='';msg.className='msg';submit.disabled=false;
-  track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});
-  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');document.getElementById('wl-email').focus()})});
-document.getElementById('wl-cancel').addEventListener('click',function(){dlg.close?dlg.close():dlg.removeAttribute('open')});
-form.addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('wl-email').value.trim();if(!email)return;
-  submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
-  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'pricing:'+plan+':'+roleSel.value,locale:LANG})})
-   .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
-   .then(function(res){if(res.ok||res.d.already){msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:'pricing:'+plan,already_subscribed:!!res.d.already})}else{throw new Error()}})
-   .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false})});
+// One field on each paid plan. The role is the one picked above, if any (never required).
+function role(){var r=document.querySelector('.pick input:checked');return r?r.value:'none'}
+document.querySelectorAll('form.wl').forEach(function(form){
+  var plan=form.dataset.plan,input=form.querySelector('input'),submit=form.querySelector('button'),msg=form.querySelector('.msg'),focused=false;
+  input.addEventListener('focus',function(){if(focused)return;focused=true;
+    track('pricing_email_focus',{plan:plan});track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'})});
+  form.addEventListener('submit',function(e){e.preventDefault();var email=input.value.trim();
+    if(!email||(input.checkValidity&&!input.checkValidity())){msg.className='msg';msg.textContent=T.err;input.focus();return}
+    var source='pricing:'+plan+':'+role();
+    submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:source,locale:LANG})})
+     .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
+     .then(function(res){if(res.ok||res.d.already){form.classList.add('done');msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:source,already_subscribed:!!res.d.already})}else{throw new Error()}})
+     .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false;track('pricing_email_error',{plan:plan})})})});
 })();`
 
 // ── Write ─────────────────────────────────────────────────────────────────────

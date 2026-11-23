@@ -37,7 +37,7 @@ describe('pricing page analytics', () => {
     const role = doc.querySelector<HTMLInputElement>('.pick input[value="solo"]')!
     role.checked = true
     role.dispatchEvent(new dom.window.Event('change'))
-    doc.querySelector<HTMLElement>('[data-plan]')!.click()
+    doc.querySelector<HTMLInputElement>('form.wl input')!.dispatchEvent(new dom.window.Event('focus'))
     doc.querySelector<HTMLElement>('[data-cta]')!.click()
 
     for (const name of ['$pageview', 'pricing_viewed', 'pricing_role_picked', 'pricing_intent', 'pricing_cta_clicked']) {

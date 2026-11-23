@@ -59,5 +59,14 @@
   "requirements": {
     "invalid": "Aquest enllaç de requisits està malmès o és d'una versió més nova. Demana'n un de nou a qui te l'ha enviat.",
     "idsInvalid": "No s'ha pogut llegir l'IDS d'aquest enllaç de requisits."
+  },
+  "largeFileDoor": {
+    "title": "Aquest fitxer és massa gran per al navegador",
+    "body": "El teu fitxer de {{size}} MB no s'ha pogut obrir aquí. Els fitxers grans encara no es processen en un servidor: deixa el teu correu i el processaré amb tu a mà, i t'avisaré quan els fitxers grans s'obrin directament.",
+    "notifyLabel": "El teu correu",
+    "submit": "Envia",
+    "thanks": "Gràcies — t'escriuré sobre aquest fitxer.",
+    "error": "No s'ha pogut desar. Torna-ho a provar.",
+    "dismiss": "Ara no"
   }
 }

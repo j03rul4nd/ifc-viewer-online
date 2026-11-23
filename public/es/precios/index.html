@@ -167,14 +167,16 @@ h3{font-size:var(--t-l)}
 .faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
 .faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
 
-dialog{margin:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(440px,calc(100% - 32px))}
-dialog::backdrop{background:var(--scrim)}
-dialog h3{margin-bottom:6px}
-dialog label{display:block;font-size:var(--t-s);color:var(--text-2);margin:14px 0 6px}
-dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-.msg{font-size:var(--t-s);margin-top:12px;min-height:1.4em}
+.wl{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;max-width:420px}
+.wl label{font-size:var(--t-s);color:var(--text-2)}
+.wl-row{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.wl input{flex:1 1 160px;min-width:0;min-height:40px;font:inherit;font-size:var(--t-b);color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.wl input:hover{border-color:var(--text-3)}
+.wl .btn{flex:1 1 auto;min-width:0;max-width:100%;white-space:normal;text-align:center}
+.cmp .wl .btn{flex-basis:100%}
+.msg{font-size:var(--t-s);min-height:1.4em;color:var(--text-2)}
 .msg.ok{color:var(--accent-text)}
+.wl.done .wl-row{display:none}
 
 .foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
 .foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
@@ -230,14 +232,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
             <span class="plan-name">Pro</span>
             <p class="price"><strong>39 € / mes, pago anual</strong></p><p class="meta">468 € al año · 47 € / mes si pagas mes a mes</p>
             <p class="meta who">Una persona</p>
-            <button type="button" class="btn btn-main" data-plan="pro">Apuntarme a la lista</button>
+            <form class="wl" data-plan="pro"><label for="wl-pro">Correo de trabajo</label><span class="wl-row"><input id="wl-pro" name="email" type="email" required autocomplete="email" placeholder="tu@empresa.com" /><button type="submit" class="btn btn-main">Reservar precio de lanzamiento</button></span><span class="msg" role="status"></span></form>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">Encaja con lo que haces</span>
             <span class="plan-name">Team</span>
             <p class="price"><strong>59 € por editor / mes, pago anual</strong></p><p class="meta">708 € al año · 71 € / mes si pagas mes a mes</p><p class="meta">Mínimo 3 editores</p>
             <p class="meta who">Estudios e ingenierías</p>
-            <button type="button" class="btn btn-main" data-plan="team">Apuntarme a la lista</button>
+            <form class="wl" data-plan="team"><label for="wl-team">Correo de trabajo</label><span class="wl-row"><input id="wl-team" name="email" type="email" required autocomplete="email" placeholder="tu@empresa.com" /><button type="submit" class="btn btn-main">Reservar precio de lanzamiento</button></span><span class="msg" role="status"></span></form>
           </th>
         </tr></thead>
         <tbody class="grp" id="g-files">
@@ -302,7 +304,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <p class="price"><strong>Desde 290 € / mes por obra activa, hasta 15 subcontratas</strong></p>
           <p class="meta">Cartera: desde 790 € / mes, obras y subcontratas ilimitadas</p>
           <p class="body">Deja de recibir modelos que tienes que devolver. Tus subcontratas comprueban sus archivos gratis contra tus requisitos antes de enviarlos; solo recibes lo que cumple y ves quién entrega bien.</p>
-          <button type="button" class="btn btn-main" data-plan="reception">Hablar con nosotros</button>
+          <form class="wl" data-plan="reception"><label for="wl-reception">Correo de trabajo</label><span class="wl-row"><input id="wl-reception" name="email" type="email" required autocomplete="email" placeholder="tu@empresa.com" /><button type="submit" class="btn btn-main">Hablar con nosotros</button></span><span class="msg" role="status"></span></form>
         </div>
         <ol><li><strong>Publica tus requisitos</strong> como enlace o QR para licitaciones y contratos: IDS, reglas, nota mínima y nomenclatura.</li><li><strong>Las subcontratas comprueban gratis</strong> en su navegador y corrigen antes de enviar.</li><li><strong>Una bandeja de entregas</strong> vuelve a comprobar cada archivo, guarda la versión y la acepta o rechaza con issues BCF.</li><li><strong>Un historial por subcontrata:</strong> entregas, aceptadas a la primera y evolución de la nota.</li><li><strong>Un informe de cierre</strong> de la información recibida, listo para mantenimiento.</li></ol>
       </div>
@@ -312,9 +314,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
       <h2 id="more-h">Para integrar, o para toda una cartera</h2>
       <dl class="rows">
         <div class="row" id="row-developer"><dt><span class="pick-tag">Encaja con lo que haces</span>Developer<span class="meta">149 € / mes, pago anual, + consumo</span></dt>
-          <dd><p>El SDK de cliente es gratis. Developer añade una API de validación alojada para plataformas, CDE y automatizaciones.</p><button type="button" class="btn btn-main" data-plan="developer">Apuntarme a la lista</button></dd></div>
+          <dd><p>El SDK de cliente es gratis. Developer añade una API de validación alojada para plataformas, CDE y automatizaciones.</p><form class="wl" data-plan="developer"><label for="wl-developer">Correo de trabajo</label><span class="wl-row"><input id="wl-developer" name="email" type="email" required autocomplete="email" placeholder="tu@empresa.com" /><button type="submit" class="btn btn-main">Reservar precio de lanzamiento</button></span><span class="msg" role="status"></span></form></dd></div>
         <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">Desde 15.000 € / año</span></dt>
-          <dd><p>Recepción en toda la cartera, inicio de sesión único, contrato de encargo de tratamiento y una opción en tus servidores sin acceso a internet. <a href="/on-premise-ifc-validator/">Validador en tus servidores</a></p><button type="button" class="btn btn-main" data-plan="enterprise">Hablar con nosotros</button></dd></div>
+          <dd><p>Recepción en toda la cartera, inicio de sesión único, contrato de encargo de tratamiento y una opción en tus servidores sin acceso a internet. <a href="/on-premise-ifc-validator/">Validador en tus servidores</a></p><form class="wl" data-plan="enterprise"><label for="wl-enterprise">Correo de trabajo</label><span class="wl-row"><input id="wl-enterprise" name="email" type="email" required autocomplete="email" placeholder="tu@empresa.com" /><button type="submit" class="btn btn-main">Hablar con nosotros</button></span><span class="msg" role="status"></span></form></dd></div>
       </dl>
     </section>
 
@@ -324,33 +326,12 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     </section>
   </main>
 
-  <dialog id="waitlist" aria-labelledby="wl-title">
-    <form id="wl-form" method="dialog">
-      <h3 id="wl-title">Lista de espera de </h3>
-      <p class="meta">Te escribimos una vez, cuando abra este plan. Sin boletines.</p>
-      <label for="wl-email">Correo de trabajo</label>
-      <input id="wl-email" name="email" type="email" required autocomplete="email" placeholder="tu@empresa.com" />
-      <label for="wl-role">Sobre todo</label>
-      <select id="wl-role" name="role">
-        <option value="deliver">Entrego modelos a clientes</option>
-        <option value="receive">Recibo modelos de subcontratas</option>
-        <option value="build">Desarrollo software encima</option>
-        <option value="other">Otro</option>
-      </select>
-      <p class="msg" id="wl-msg" role="status"></p>
-      <div class="actions">
-        <button type="button" class="btn btn-quiet" id="wl-cancel">Cerrar</button>
-        <button type="submit" class="btn btn-main" id="wl-submit">Apuntarme</button>
-      </div>
-    </form>
-  </dialog>
-
   <footer class="wrap foot">
     <nav aria-label="Plan" class="langs"><a href="/pricing/" hreflang="en" lang="en">English</a><span aria-current="page">Español</span><a href="/de/preise/" hreflang="de" lang="de">Deutsch</a><a href="/fr/tarifs/" hreflang="fr" lang="fr">Français</a><a href="/pt/precos/" hreflang="pt" lang="pt">Português</a><a href="/it/prezzi/" hreflang="it" lang="it">Italiano</a><a href="/ca/preus/" hreflang="ca" lang="ca">Català</a><a href="/zh/pricing/" hreflang="zh" lang="zh">中文</a><a href="/ja/pricing/" hreflang="ja" lang="ja">日本語</a><a href="/th/pricing/" hreflang="th" lang="th">ไทย</a></nav>
     <p><a href="/es/">IFC Viewer Online</a><a href="/es/ifc-validador/">Validador</a><a href="/on-premise-ifc-validator/">En tus servidores</a><a href="/es/para-constructoras/">Para constructoras</a><a href="/es/para-ingenierias/">Para ingenierías</a><a href="/sdk/">SDK</a><a href="/privacy">Privacidad</a><a href="/terms">Condiciones</a></p>
   </footer>
 
-  <script type="application/json" id="pricing-i18n">{"names":{"free":"Gratis","pro":"Pro","team":"Team","reception":"Recepción","developer":"Developer","enterprise":"Enterprise"},"title":"Lista de espera de {plan}","titleTalk":"Hablemos de {plan}","saving":"Guardando…","ok":"Ya estás en la lista. Te escribiremos una vez, cuando abra.","err":"No se ha podido guardar. Inténtalo de nuevo en un momento."}</script>
+  <script type="application/json" id="pricing-i18n">{"saving":"Guardando…","ok":"Ya estás en la lista. Te escribiremos una vez, cuando abra.","err":"No se ha podido guardar. Inténtalo de nuevo en un momento."}</script>
   <script>(function(){
 var LANG='es';
 var T=JSON.parse(document.getElementById('pricing-i18n').textContent);
@@ -402,22 +383,20 @@ document.querySelectorAll('[data-cta]').forEach(function(a){a.addEventListener('
 
 // Waitlist: the email Worker the app's forms use, tagged by plan and role.
 var ENDPOINT='https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe';
-var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-form'),msg=document.getElementById('wl-msg'),
-    submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
-document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
-  plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
-  roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
-  msg.textContent='';msg.className='msg';submit.disabled=false;
-  track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});
-  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');document.getElementById('wl-email').focus()})});
-document.getElementById('wl-cancel').addEventListener('click',function(){dlg.close?dlg.close():dlg.removeAttribute('open')});
-form.addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('wl-email').value.trim();if(!email)return;
-  submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
-  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'pricing:'+plan+':'+roleSel.value,locale:LANG})})
-   .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
-   .then(function(res){if(res.ok||res.d.already){msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:'pricing:'+plan,already_subscribed:!!res.d.already})}else{throw new Error()}})
-   .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false})});
+// One field on each paid plan. The role is the one picked above, if any (never required).
+function role(){var r=document.querySelector('.pick input:checked');return r?r.value:'none'}
+document.querySelectorAll('form.wl').forEach(function(form){
+  var plan=form.dataset.plan,input=form.querySelector('input'),submit=form.querySelector('button'),msg=form.querySelector('.msg'),focused=false;
+  input.addEventListener('focus',function(){if(focused)return;focused=true;
+    track('pricing_email_focus',{plan:plan});track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'})});
+  form.addEventListener('submit',function(e){e.preventDefault();var email=input.value.trim();
+    if(!email||(input.checkValidity&&!input.checkValidity())){msg.className='msg';msg.textContent=T.err;input.focus();return}
+    var source='pricing:'+plan+':'+role();
+    submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:source,locale:LANG})})
+     .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
+     .then(function(res){if(res.ok||res.d.already){form.classList.add('done');msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:source,already_subscribed:!!res.d.already})}else{throw new Error()}})
+     .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false;track('pricing_email_error',{plan:plan})})})});
 })();</script>
 </body>
 </html>

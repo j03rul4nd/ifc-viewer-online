@@ -41,7 +41,7 @@ export interface PricingCopy {
   rows: Record<RowId, { label: string; note?: string; pro?: string; team?: string }>
   included: string
   notIncluded: string
-  cta: { free: string; waitlist: string; talk: string }
+  cta: { free: string; waitlist: string; talk: string; reserve: string }
   reception: {
     h2: string; sub: string; perProject: string; unlimited: string; body: string
     steps: { b: string; t: string }[]
@@ -115,7 +115,7 @@ const en: PricingCopy = {
   },
   included: 'Included',
   notIncluded: 'Not included',
-  cta: { free: 'Open the viewer', waitlist: 'Join the waitlist', talk: 'Talk to us' },
+  cta: { free: 'Open the viewer', waitlist: 'Join the waitlist', talk: 'Talk to us', reserve: 'Reserve launch price' },
   reception: {
     h2: 'For people who receive models',
     sub: 'Contractors, developers, owners and facility managers who collect models from many suppliers.',
@@ -216,7 +216,7 @@ const es: PricingCopy = {
   },
   included: 'Incluido',
   notIncluded: 'No incluido',
-  cta: { free: 'Abrir el visor', waitlist: 'Apuntarme a la lista', talk: 'Hablar con nosotros' },
+  cta: { free: 'Abrir el visor', waitlist: 'Apuntarme a la lista', talk: 'Hablar con nosotros', reserve: 'Reservar precio de lanzamiento' },
   reception: {
     h2: 'Para quien recibe modelos',
     sub: 'Constructoras, promotoras, propiedades y gestores de activos que reciben modelos de muchas subcontratas.',
@@ -317,7 +317,7 @@ const de: PricingCopy = {
   },
   included: 'Enthalten',
   notIncluded: 'Nicht enthalten',
-  cta: { free: 'Viewer öffnen', waitlist: 'Auf die Warteliste', talk: 'Kontakt aufnehmen' },
+  cta: { free: 'Viewer öffnen', waitlist: 'Auf die Warteliste', talk: 'Kontakt aufnehmen', reserve: 'Startpreis sichern' },
   reception: {
     h2: 'Für alle, die Modelle erhalten',
     sub: 'Bauunternehmen, Projektentwickler, Bauherren und Facility Manager, die Modelle vieler Nachunternehmer sammeln.',
@@ -418,7 +418,7 @@ const fr: PricingCopy = {
   },
   included: 'Inclus',
   notIncluded: 'Non inclus',
-  cta: { free: 'Ouvrir la visionneuse', waitlist: 'Rejoindre la liste', talk: 'Nous contacter' },
+  cta: { free: 'Ouvrir la visionneuse', waitlist: 'Rejoindre la liste', talk: 'Nous contacter', reserve: 'Réserver le prix de lancement' },
   reception: {
     h2: 'Pour ceux qui reçoivent des modèles',
     sub: 'Entreprises générales, promoteurs, maîtres d’ouvrage et exploitants qui collectent les modèles de nombreux sous-traitants.',
@@ -519,7 +519,7 @@ const pt: PricingCopy = {
   },
   included: 'Incluído',
   notIncluded: 'Não incluído',
-  cta: { free: 'Abrir o visualizador', waitlist: 'Entrar na lista', talk: 'Fale conosco' },
+  cta: { free: 'Abrir o visualizador', waitlist: 'Entrar na lista', talk: 'Fale conosco', reserve: 'Reservar preço de lançamento' },
   reception: {
     h2: 'Para quem recebe modelos',
     sub: 'Construtoras, incorporadoras, proprietários e gestores de ativos que recebem modelos de muitos subempreiteiros.',
@@ -620,7 +620,7 @@ const it: PricingCopy = {
   },
   included: 'Incluso',
   notIncluded: 'Non incluso',
-  cta: { free: 'Apri il visualizzatore', waitlist: 'Iscriviti alla lista', talk: 'Contattaci' },
+  cta: { free: 'Apri il visualizzatore', waitlist: 'Iscriviti alla lista', talk: 'Contattaci', reserve: 'Prenota il prezzo di lancio' },
   reception: {
     h2: 'Per chi riceve modelli',
     sub: 'Imprese, sviluppatori immobiliari, committenti e facility manager che raccolgono modelli da molti subappaltatori.',
@@ -721,7 +721,7 @@ const ca: PricingCopy = {
   },
   included: 'Inclòs',
   notIncluded: 'No inclòs',
-  cta: { free: 'Obrir el visor', waitlist: 'Apuntar-me a la llista', talk: 'Parlar amb nosaltres' },
+  cta: { free: 'Obrir el visor', waitlist: 'Apuntar-me a la llista', talk: 'Parlar amb nosaltres', reserve: 'Reservar preu de llançament' },
   reception: {
     h2: 'Per a qui rep models',
     sub: 'Constructores, promotores, propietats i gestors d’actius que reben models de moltes subcontractes.',
@@ -822,7 +822,7 @@ const zh: PricingCopy = {
   },
   included: '包含',
   notIncluded: '不包含',
-  cta: { free: '打开查看器', waitlist: '加入候补名单', talk: '联系我们' },
+  cta: { free: '打开查看器', waitlist: '加入候补名单', talk: '联系我们', reserve: '锁定首发价格' },
   reception: {
     h2: '面向接收模型的人',
     sub: '从众多分包商收集模型的总包、开发商、业主和设施管理者。',
@@ -923,7 +923,7 @@ const ja: PricingCopy = {
   },
   included: '含まれる',
   notIncluded: '含まれない',
-  cta: { free: 'ビューアを開く', waitlist: 'ウェイティングリストに登録', talk: 'お問い合わせ' },
+  cta: { free: 'ビューアを開く', waitlist: 'ウェイティングリストに登録', talk: 'お問い合わせ', reserve: '発売記念価格を予約' },
   reception: {
     h2: 'モデルを受け取る方へ',
     sub: '多くの協力会社からモデルを集めるゼネコン、デベロッパー、発注者、施設管理者。',
@@ -1024,7 +1024,7 @@ const th: PricingCopy = {
   },
   included: 'รวมอยู่',
   notIncluded: 'ไม่รวม',
-  cta: { free: 'เปิดตัวดู', waitlist: 'เข้ารายชื่อรอ', talk: 'ติดต่อเรา' },
+  cta: { free: 'เปิดตัวดู', waitlist: 'เข้ารายชื่อรอ', talk: 'ติดต่อเรา', reserve: 'จองราคาเปิดตัว' },
   reception: {
     h2: 'สำหรับผู้รับโมเดล',
     sub: 'ผู้รับเหมาหลัก ผู้พัฒนาโครงการ เจ้าของอาคาร และผู้จัดการอาคาร ที่รวบรวมโมเดลจากผู้รับเหมาช่วงจำนวนมาก',

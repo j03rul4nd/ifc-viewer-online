@@ -28,6 +28,8 @@ import { toast } from '../../stores/toastStore'
 import { authAppearance } from './authAppearance'
 import { useTheme } from '../../theme'
 import { SheetGrip } from '../mobile/SheetGrip'
+import { isBillingEnabled, isBillingOffCode } from '../../lib/cloud/pro-reserve'
+import { ProReserveBlock, WelcomeCard, useFirstWelcome } from './ProReserve'
 
 interface AccountModalProps {
   onClose: () => void
@@ -84,6 +86,11 @@ export default function AccountModal({ onClose }: AccountModalProps) {
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState<HistoryState>({ phase: 'loading' })
   const [branding, setBranding] = useState<BrandingState>({ phase: 'loading' })
+  // Billing off (flag unset, or the Worker said so): reserve Pro, never a toast.
+  const [billingOff, setBillingOff] = useState(() => !isBillingEnabled())
+  const firstWelcome = useFirstWelcome()
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false)
+  const showWelcome = firstWelcome && !welcomeDismissed
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -204,8 +211,8 @@ export default function AccountModal({ onClose }: AccountModalProps) {
     setBusy(null)
     if (r.ok) {
       window.location.href = r.value.url // full-page redirect to Stripe — never embedded
-    } else if (r.error.code === 'service_disabled') {
-      toast(t('billing.notYet'), 'info', { duration: 6000 })
+    } else if (isBillingOffCode(r.error.code)) {
+      setBillingOff(true)
     } else {
       toast(t('errors.generic'), 'error')
     }
@@ -304,6 +311,18 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                 </div>
               </section>
 
+              {showWelcome && (
+                <WelcomeCard
+                  showReserve={entitlement.plan === 'free' && billingOff}
+                  onDismiss={() => setWelcomeDismissed(true)}
+                  onCall={() => {
+                    window.history.pushState(null, '', '/call')
+                    window.dispatchEvent(new PopStateEvent('popstate'))
+                    onClose()
+                  }}
+                />
+              )}
+
               {/* ── Request a feature ────────────────────────────────────────── */}
               <section className="rounded-xl border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -342,14 +361,18 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                       <li>{t('plan.benefitSync')}</li>
                       <li>{t('plan.benefitBranding')}</li>
                     </ul>
-                    <button
-                      onClick={() => void handleCheckout()}
-                      disabled={busy === 'checkout'}
-                      className="self-start h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
-                      style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
-                    >
-                      {busy === 'checkout' ? t('plan.redirecting') : t('plan.upgrade')}
-                    </button>
+                    {billingOff ? (
+                      !showWelcome && <ProReserveBlock surface="account" />
+                    ) : (
+                      <button
+                        onClick={() => void handleCheckout()}
+                        disabled={busy === 'checkout'}
+                        className="self-start h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
+                        style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
+                      >
+                        {busy === 'checkout' ? t('plan.redirecting') : t('plan.upgrade')}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <button onClick={() => void handlePortal()} disabled={busy === 'portal'} className={`self-start ${smallBtn}`}>

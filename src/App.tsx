@@ -86,7 +86,6 @@ const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 const LazyFeatureRequestModal = React.lazy(() => import('./components/account/FeatureRequestModal'))
 const LazyFeedbackAdminView = React.lazy(() => import('./components/dashboard/FeedbackAdminView'))
 const LazyCallBookingView = React.lazy(() => import('./components/account/CallBookingView'))
-const LazyRequestNudge = React.lazy(() => import('./components/account/RequestNudge'))
 const LazyRequestUpdates = React.lazy(() => import('./components/account/RequestUpdates'))
 // /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
 // image markup) never costs the landing or the viewer a byte.
@@ -121,6 +120,7 @@ import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
 import BatchFolderDoor from './components/pricing/BatchFolderDoor'
+import LargeFileDoor from './components/pricing/LargeFileDoor'
 import { batchCountBucket, shouldOfferBatchFolder } from './lib/batch-folder-door'
 import { useCompareStore } from './stores/compareStore'
 import { planCompareOverlay } from './lib/compare/overlay'
@@ -315,7 +315,6 @@ import {
   trackFileOpenFailed,
   errorKindOf,
   trackRequirementsLinkOpened,
-  trackServerProcessingInterest,
   trackServerProcessingOffered,
   trackBatchFolderInterest,
   trackIdsFileLoaded,
@@ -1109,6 +1108,21 @@ export default function App() {
     quiet: Boolean(effectiveChrome.quiet),
   })
 
+  // The large-file door follows the same surface rules but does not need
+  // accounts (email capture only). Read from the load callbacks via a ref.
+  const largeFileDoorOkRef = useRef(false)
+  largeFileDoorOkRef.current = feedbackAllowed({
+    route,
+    embedded: isEmbedded(),
+    embedParam: embedChrome.embed,
+    clientMode,
+    tourPlaying: tourMode === 'playing',
+    studioOpen: clipStudioOpen || coverStudioOpen,
+    quiet: Boolean(effectiveChrome.quiet),
+  })
+  const [largeFileDoorMb, setLargeFileDoorMb] = useState<number | null>(null)
+  const largeFileDoorShownRef = useRef(false)
+
   // An answer chosen before signing in comes back after it, ready to send.
   // OAuth sign-in reloads the page (often onto the landing), so this listens
   // on every route, not only the viewer.
@@ -1796,25 +1810,16 @@ export default function App() {
       const reason = error.code === 'http'
         ? i18n.t('loading:error.http', { status: error.httpStatus ?? '?' })
         : i18n.t(`loading:error.${error.code}`)
-      // Fake door (docs-planning/12 §7): a large file the browser could not
-      // take is the strongest intent to pay we measure. Server processing does
-      // not exist yet; the click only counts demand.
+      // A large file the browser could not take is the strongest intent to pay
+      // we measure. No server processing exists: an inline door (LargeFileDoor)
+      // asks for an email instead — once per session, full viewer only.
       const sizeMb = Math.round(job.sizeBytes / 1_048_576)
-      const serverProcessingDoor = sizeMb >= LARGE_FILE_FAKE_DOOR_MB && !isEmbedded()
-        ? {
-            label: tToasts('model.serverProcessingAction'),
-            run: () => {
-              trackServerProcessingInterest({ file_size_mb: sizeMb, source: 'failure' })
-              // Ask the one who just hit the wall what they need it for: the
-              // form starts on "large files" and records the size as context.
-              toast(tToasts('model.serverProcessingNoted'), 'info', isAccountEnabled()
-                ? { duration: 12000, action: { label: i18n.t('pro:requests.tellUs'), run: () => openFeatureRequest(`large_file:${sizeMb}`) } }
-                : { duration: 10000 })
-            },
-          }
-        : undefined
-      // Exposure, so zero clicks can be told apart from zero chances to click.
-      if (serverProcessingDoor) trackServerProcessingOffered({ file_size_mb: sizeMb, source: 'failure' })
+      if (sizeMb >= LARGE_FILE_FAKE_DOOR_MB && largeFileDoorOkRef.current && !largeFileDoorShownRef.current) {
+        largeFileDoorShownRef.current = true
+        setLargeFileDoorMb(sizeMb)
+        // Exposure, so zero emails can be told apart from zero chances.
+        trackServerProcessingOffered({ file_size_mb: sizeMb, source: 'failure' })
+      }
       // The geometry did not fit (a 300–400 MB model, typically) but the file is
       // readable IFC: offer the Health Score without the 3D instead of a dead end.
       const source = getLoadManager().failedSource(job.id)
@@ -1829,8 +1834,7 @@ export default function App() {
               toast(i18n.t('loading:validationOnly.running', { fileName: job.displayName }), 'info')
               validateWithout3d(source!, job.fileName).then(
                 // Validated, but still no 3D: the moment server processing would help.
-                () => toast(i18n.t('loading:validationOnly.done', { fileName: job.displayName }), 'success',
-                  serverProcessingDoor ? { duration: 0, action: serverProcessingDoor } : undefined),
+                () => toast(i18n.t('loading:validationOnly.done', { fileName: job.displayName }), 'success'),
                 (err: unknown) => toast(i18n.t('loading:validationOnly.failed', {
                   fileName: job.displayName, reason: err instanceof Error ? err.message : String(err),
                 }), 'error'),
@@ -1838,13 +1842,9 @@ export default function App() {
             },
           },
         })
-        // The failure toast holds one action (validation only): the door gets
-        // its own, or nobody who skips validation-only ever sees it.
-        if (serverProcessingDoor) toast(tToasts('model.serverProcessingOffer'), 'info', { duration: 0, action: serverProcessingDoor })
         return
       }
-      toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error',
-        serverProcessingDoor ? { duration: 0, action: serverProcessingDoor } : undefined)
+      toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error')
     },
 
     onLoadCancelled: (job) => {
@@ -5866,6 +5866,9 @@ export default function App() {
       {batchDoorCount !== null && (
         <BatchFolderDoor fileCount={batchDoorCount} onClose={() => setBatchDoorCount(null)} />
       )}
+      {largeFileDoorMb !== null && batchDoorCount === null && !showIdsModal && (
+        <LargeFileDoor sizeMb={largeFileDoorMb} onClose={() => setLargeFileDoorMb(null)} />
+      )}
 
       {/* ── Version comparison (sets of IFCs, IDS across versions, BCF sync) ── */}
       {showCompareModal && (
@@ -5985,14 +5988,6 @@ export default function App() {
         <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
       )}
 
-      {/* "What would help you most?" — anyone (signed in or not) in the
-          full viewer, after real use of a validated model; the card paces
-          itself (lib/feedback-gate). Never next to the invite's own nudge. */}
-      {feedbackSurfaceOk && result && !feedbackNudgeOpen && (
-        <React.Suspense fallback={null}>
-          <LazyRequestNudge />
-        </React.Suspense>
-      )}
 
       {/* "One of your requests moved" — signed-in users who have asked before. */}
       {accountStatus === 'signed-in' && feedbackSurfaceOk && (
