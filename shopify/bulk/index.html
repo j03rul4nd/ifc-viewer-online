@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopify bulk import builder — IFC Viewer Online</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <style>
+    :root { color-scheme: light dark; --fg:#e7e9ee; --bg:#0d0f13; --mut:#9aa1ad; --line:#262a33; --acc:#4f8cff; }
+    @media (prefers-color-scheme: light) { :root { --fg:#14161a; --bg:#fff; --mut:#5b6270; --line:#e3e6eb; } }
+    body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.55 Inter, system-ui, sans-serif; }
+    main { max-width:760px; margin:0 auto; padding:48px 20px 80px; }
+    h1 { font-size:26px; margin:0 0 8px; } h2 { font-size:16px; margin:32px 0 8px; }
+    p, li { color:var(--mut); } code { font-size:13px; }
+    fieldset { border:1px solid var(--line); border-radius:8px; padding:16px; margin:16px 0; }
+    legend { padding:0 6px; font-weight:600; }
+    input[type=url] { width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; }
+    button { padding:10px 16px; border-radius:6px; border:0; background:var(--acc); color:#fff; font-weight:600; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:default; }
+    #report { white-space:pre-wrap; font-size:13px; border-top:1px solid var(--line); margin-top:24px; padding-top:16px; }
+    .err { color:#e5484d; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Shopify bulk import builder</h1>
+  <p>Add 3D models to many products at once. Files stay on your computer: nothing is uploaded.</p>
+  <ol>
+    <li>In Shopify, go to <b>Products → Export</b> and download the CSV.</li>
+    <li>Pick that CSV and your model list below.</li>
+    <li>Download the result and import it with <b>Products → Import</b>, ticking "Overwrite products with matching handles".</li>
+  </ol>
+
+  <fieldset>
+    <legend>1. Shopify product export</legend>
+    <input type="file" id="export" accept=".csv,text/csv" />
+  </fieldset>
+
+  <fieldset>
+    <legend>2. Models</legend>
+    <p>Either a CSV with <code>SKU,model_url[,poster_url,files]</code> (SKU or handle; separate files with <code>;</code>)…</p>
+    <input type="file" id="mapping" accept=".csv,text/csv" />
+    <p>…or a folder of models (<code>.ifc</code>, <code>.ifczip</code>, <code>.frag</code>; images with the same name become posters) plus the public address where you host them.</p>
+    <input type="file" id="folder" webkitdirectory multiple />
+    <p><input type="url" id="base" placeholder="https://cdn.shopify.com/s/files/1/…/files/" /></p>
+    <label><input type="checkbox" id="fuzzy" /> Match file names to SKUs loosely (e.g. <code>CH_001 v2.ifc</code> → <code>CH-001</code>)</label>
+  </fieldset>
+
+  <button id="run" disabled>Build import CSV</button>
+  <div id="report" aria-live="polite"></div>
+</main>
+<script type="module" src="/src/shopify-bulk/main.ts"></script>
+</body>
+</html>
