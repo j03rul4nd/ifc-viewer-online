@@ -355,6 +355,28 @@
       "register": "Crea una cuenta gratuita para descargar los archivos",
       "buyer": "¿Ya lo compraste? Tus archivos están en tu cuenta.",
       "trade": "Descargas para cuentas profesionales. Contáctanos para obtener acceso."
+    },
+    "compare": {
+      "title": "Comparar variantes",
+      "a": "Variante A",
+      "b": "Variante B",
+      "compare": "Comparar",
+      "close": "Cerrar comparación",
+      "loading": "Cargando el modelo…",
+      "error": "No se ha podido cargar este modelo.",
+      "need": "Elige dos variantes con modelos distintos.",
+      "spec": "Dato",
+      "diff": "Diferencia",
+      "same": "Igual",
+      "elements": "Elementos",
+      "rooms": "Estancias",
+      "area": "Superficie útil",
+      "bedrooms": "Dormitorios",
+      "bathrooms": "Baños",
+      "storeys": "Plantas",
+      "size": "Tamaño exterior (An × Fo × Al)",
+      "volume": "Volumen",
+      "weight": "Peso"
     }
   }
 }

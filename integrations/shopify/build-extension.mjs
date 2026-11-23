@@ -119,6 +119,8 @@ export const FEATURE_TIERS = {
   ar: 'starter',
   classification: 'starter',
   variantviews: 'starter',
+  compare: 'starter',
+  review: 'starter',
   takeoff: 'business',
   dpp: 'business',
   sunlot: 'business',

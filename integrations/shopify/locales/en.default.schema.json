@@ -62,6 +62,9 @@
     },
     "quote_form": {
       "name": "IFC: quote request"
+    },
+    "compare": {
+      "name": "IFC: compare variants"
     }
   },
   "settings": {

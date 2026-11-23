@@ -355,6 +355,28 @@
       "register": "Créez un compte gratuit pour télécharger les fichiers",
       "buyer": "Déjà acheté ? Vos fichiers sont dans votre compte.",
       "trade": "Téléchargements réservés aux comptes professionnels. Contactez-nous pour y accéder."
+    },
+    "compare": {
+      "title": "Comparer les variantes",
+      "a": "Variante A",
+      "b": "Variante B",
+      "compare": "Comparer",
+      "close": "Fermer la comparaison",
+      "loading": "Chargement du modèle…",
+      "error": "Ce modèle n'a pas pu être chargé.",
+      "need": "Choisissez deux variantes avec des modèles différents.",
+      "spec": "Donnée",
+      "diff": "Différence",
+      "same": "Identique",
+      "elements": "Éléments",
+      "rooms": "Pièces",
+      "area": "Surface habitable",
+      "bedrooms": "Chambres",
+      "bathrooms": "Salles de bain",
+      "storeys": "Niveaux",
+      "size": "Dimensions hors tout (L × P × H)",
+      "volume": "Volume",
+      "weight": "Poids"
     }
   }
 }

@@ -62,6 +62,9 @@
     },
     "quote_form": {
       "name": "IFC：报价申请"
+    },
+    "compare": {
+      "name": "IFC：比较款式"
     }
   },
   "settings": {

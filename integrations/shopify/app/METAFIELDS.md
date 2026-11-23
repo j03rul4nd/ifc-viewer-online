@@ -55,9 +55,23 @@ rooms), **Starter** (+ tour, plan set, compatibility, plan view, AR, classificat
 | `bim.gtin` | product | single line text | `08412345678905` (else the first variant's barcode) | IFC EPD and product passport | Business |
 | `bim.manufacturer_contact` | product | multi-line text | name and postal or web address | IFC EPD and product passport | Business |
 | `bim.ids_url` | product | URL (https) or file | `requirements.ids` | IFC compliance (the block setting wins) | Business |
+| `ifcvo.views` | product, variant | JSON | `{"hero":"iso","base-frame":{"position":[8,6,8],"target":[0,1,0]}}` (a value is a preset `iso`/`top`/`front`/…, `{position,target}` or `"x,y,z,tx,ty,tz"`) | Product IFC model: saved views that links open with `#ifcvo-view=<id>` (assembly steps) and `#ifc-review` (id `hero`) | Free (review link: Starter) |
 
 Blocks that read only the 3D model and need no metafield: IFC element details,
 IFC model explorer, IFC views and tour, IFC Health Score, IFC plan view, IFC sun & lot fit.
+
+**IFC: compare variants** (Starter) needs no metafield of its own: it compares the
+variants whose `custom.ifc_model` differ (at least two), read from the Product IFC
+model block on the same page.
+
+### Links that open the viewer
+
+The Product IFC model block reads these URL hash parts (any that do not parse are
+ignored): `#ifcvo-open=1` (open now), `ifcvo-v=<version>` ("Updated since your
+purchase" when it differs from `ifcvo.version`), `ifcvo-view=<id>` (a saved view of
+`ifcvo.views`, a preset name or six numbers), `#ifc-review` (opens at the `hero`
+view, else the block's starting view; Starter; see `listing/recipes/review-request-flow.md`),
+and the "Share this view" parts `ifcvo-cam`, `ifcvo-sel`, `ifcvo-lvl`.
 
 All URLs must start with `https://`. Files on your own server need
 `Access-Control-Allow-Origin` (`*` or the shop's domain); files uploaded to

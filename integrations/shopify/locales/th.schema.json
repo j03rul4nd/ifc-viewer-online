@@ -62,6 +62,9 @@
     },
     "quote_form": {
       "name": "IFC: ขอใบเสนอราคา"
+    },
+    "compare": {
+      "name": "IFC: เปรียบเทียบตัวเลือก"
     }
   },
   "settings": {

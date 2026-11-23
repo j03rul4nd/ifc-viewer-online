@@ -355,6 +355,28 @@
       "register": "Kostenloses Konto erstellen, um die Dateien herunterzuladen",
       "buyer": "Schon gekauft? Ihre Dateien finden Sie in Ihrem Konto.",
       "trade": "Downloads für Fachhandelskonten. Kontaktieren Sie uns für den Zugang."
+    },
+    "compare": {
+      "title": "Varianten vergleichen",
+      "a": "Variante A",
+      "b": "Variante B",
+      "compare": "Vergleichen",
+      "close": "Vergleich schließen",
+      "loading": "Modell wird geladen…",
+      "error": "Dieses Modell konnte nicht geladen werden.",
+      "need": "Wählen Sie zwei Varianten mit unterschiedlichen Modellen.",
+      "spec": "Angabe",
+      "diff": "Unterschied",
+      "same": "Gleich",
+      "elements": "Elemente",
+      "rooms": "Räume",
+      "area": "Wohnfläche",
+      "bedrooms": "Schlafzimmer",
+      "bathrooms": "Badezimmer",
+      "storeys": "Geschosse",
+      "size": "Außenmaße (B × T × H)",
+      "volume": "Volumen",
+      "weight": "Gewicht"
     }
   }
 }

@@ -44,10 +44,10 @@ describe('extension layout', () => {
     expect(fs.readFileSync(path.join(dir, 'shopify.extension.toml'), 'utf8')).toMatch(/type = "theme"/)
   })
 
-  it('holds all 22 blocks: the two sections plus every source block, at most 30', () => {
+  it('holds all 23 blocks: the two sections plus every source block, at most 30', () => {
     const files = list(path.join(dir, 'blocks')).map((f) => f.replace(/\.liquid$/, ''))
     expect(files).toEqual(gen.EXTENSIONS['ifc-viewer'])
-    expect(files.length).toBe(22)
+    expect(files.length).toBe(23)
     expect(files.length).toBeLessThanOrEqual(gen.BLOCK_LIMIT)
   })
 

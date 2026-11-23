@@ -14,7 +14,7 @@ const CAM = { position: [1.23456, 2, 3], target: [0, 0.5, -1] }
 describe('parseHash', () => {
   it('reads every part of a shared view and an after-sale link', () => {
     const s = share.parseHash('#ifcvo-open=1&ifcvo-v=2.1&ifcvo-cam=1,2,3,4,5,6&ifcvo-sel=m1~42&ifcvo-lvl=3')
-    expect(s).toEqual({ open: true, version: '2.1', camera: { position: [1, 2, 3], target: [4, 5, 6] }, selection: { modelId: 'm1', expressId: 42 }, level: 3 })
+    expect(s).toEqual({ open: true, version: '2.1', camera: { position: [1, 2, 3], target: [4, 5, 6] }, selection: { modelId: 'm1', expressId: 42 }, level: 3, view: null, review: false })
     expect(share.wantsViewer(s)).toBe(true)
   })
 

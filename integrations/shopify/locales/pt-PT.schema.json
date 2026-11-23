@@ -62,6 +62,9 @@
     },
     "quote_form": {
       "name": "IFC: pedido de orçamento"
+    },
+    "compare": {
+      "name": "IFC: comparar variantes"
     }
   },
   "settings": {
