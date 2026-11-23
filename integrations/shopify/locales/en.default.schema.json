@@ -146,7 +146,7 @@
     "first_line_of_the_message": "First line of the message",
     "fixed_height": "Fixed height",
     "floor_plans_per_storey_of_the_model_in_t": "Floor plans per storey of the model in the \"Product IFC model\" block. One tab per storey; rooms and areas when the model has spaces.",
-    "for_plan_sellers_adds_a_watermark_opens": "For plan sellers. Adds a watermark, opens the viewer without toolbar, measuring or exports, and hides every model download (viewer links, IFC downloads block, GLB/CSV buttons) and the full-viewer link on this page. Honest limit: this stops casual copying, not a determined person. The model file's URL stays reachable in the page and a model shown in a browser is sent to that browser, so it can be extracted. For plans you must not leak, upload a simplified preview model and deliver the full set after purchase.",
+    "for_plan_sellers_adds_a_watermark_opens": "For plan sellers. Adds a watermark, opens the viewer without toolbar, measuring or exports, and hides every model download and the full-viewer link on this page. This stops casual copying, not a determined person: the model URL stays reachable and a model shown in a browser can be extracted. For plans that must not leak, upload a simplified preview model and deliver the full set after purchase.",
     "fran_ais": "Français",
     "front": "Front",
     "front_setback_m": "Front setback (m)",
