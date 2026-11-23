@@ -24,10 +24,6 @@
     assign ids_url = ''
   endunless
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 
 <div
   class="ifcvo-panel ifcvo-compliance-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -41,10 +37,9 @@
   data-ids-url="{{ ids_url | escape }}"
   data-timeout="{{ s.timeout | escape }}"
   data-i18n="compliance"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
+  {% render 'ifcvo-shop-labels' %}
   data-labels-override="{{ s.labels | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -53,7 +48,7 @@
     <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns | escape }}</p>
   {%- endif -%}
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-compliance.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'compliance', block: 'ifc-compliance', ns: ns, keys: 'ids_url' -%}

@@ -34,8 +34,7 @@ data-include-site="{{ s.include_site }}"
 data-title="{{ product.title | escape }}"
 data-page="{{ canonical_url | escape }}"
 data-i18n="ar"
-data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-data-locale="{{ request.locale.iso_code | escape }}"
+{% render 'ifcvo-shop-labels' %}
 data-labels-override="{{ s.labels | escape }}"
 {{ block.shopify_attributes }}
 >
@@ -47,7 +46,7 @@ data-labels-override="{{ s.labels | escape }}"
 <p class="ifcvo-muted">{{ 'ifcvo.editor.ar' | t: ns: ns | escape }}</p>
 {%- endif -%}
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-ar.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'ar', block: 'ifc-ar', ns: ns, keys: 'ar_glb,ar_usdz' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1l5z","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom","info":"t:k.0bhl"},{"type":"checkbox","id":"use_media","label":"t:k.0k8f","default":true},{"type":"checkbox","id":"generate","label":"t:k.1cv1","default":true,"info":"t:k.1k90"},{"type":"range","id":"limit_mb","label":"t:k.0h7i","min":10,"max":50,"step":5,"unit":"MB","default":50},{"type":"number","id":"max_triangles","label":"t:k.0kkk","default":500000,"info":"t:k.0dm5"},{"type":"checkbox","id":"include_site","label":"t:k.10t7","default":false},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.16f9"},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":false}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1l5z","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom","info":"ar_usdz (iPhone/iPad) and ar_glb (Android) in this namespace: a file or an https link."},{"type":"checkbox","id":"use_media","label":"t:k.0k8f","default":true},{"type":"checkbox","id":"generate","label":"t:k.1cv1","default":true,"info":"Made on the visitor's iPhone or iPad from the \"Product IFC model\" block. Android needs a hosted file."},{"type":"range","id":"limit_mb","label":"t:k.0h7i","min":10,"max":50,"step":5,"unit":"MB","default":50},{"type":"number","id":"max_triangles","label":"t:k.0kkk","default":500000,"info":"The smallest parts are left out above it."},{"type":"checkbox","id":"include_site","label":"t:k.10t7","default":false},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"key=value per line: button, making, error, too_large, scan, no_ar, hosted, no_viewer."},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":false}]}{% endschema %}

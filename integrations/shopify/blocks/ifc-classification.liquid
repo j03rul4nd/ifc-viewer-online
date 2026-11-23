@@ -36,10 +36,6 @@
   endfor
   assign systems = systems | split: '~~~' | uniq
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 
 <div
   class="ifcvo-panel ifcvo-classification-block{% unless s.frame %} ifcvo-flat{% endunless %}"
@@ -48,10 +44,9 @@
   data-show-model="{{ s.show_model }}"
   data-show-counts="{{ s.show_counts }}"
   data-i18n="classification"
-  data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  data-locale="{{ request.locale.iso_code | escape }}"
+  {% render 'ifcvo-shop-labels' %}
   data-labels-override="{{ s.labels | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -78,7 +73,7 @@
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-classification.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'classification', block: 'ifc-classification', ns: ns, keys: 'classification' -%}

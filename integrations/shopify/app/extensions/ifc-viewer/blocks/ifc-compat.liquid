@@ -17,10 +17,6 @@ endif
 endif
 assign app_list = apps | newline_to_br | split: '<br />'
 -%}
-{%- capture ifcvo_style -%}
-{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
---ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 <section
 class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
 data-ifcvo-compat
@@ -33,7 +29,7 @@ data-unavailable="{{ t_unavailable | escape }}"
 data-labels-override="{{ s.labels | escape }}"
 data-locale="{{ request.locale.iso_code | escape }}"
 data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-style="{{ ifcvo_style }}"
+style="{% render 'ifcvo-style', s: s %}"
 {% if s.title != blank %}aria-label="{{ s.title | escape }}"{% endif %}
 {{ block.shopify_attributes }}
 >
@@ -62,7 +58,7 @@ style="{{ ifcvo_style }}"
 {%- endif -%}
 </div>
 </section>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-compat.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'compat', block: 'ifc-compat', ns: ns, keys: 'compatible_with,ifc_size_mb' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0unk","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Compatibility"},{"type":"text","id":"ns","label":"t:k.0qyu","default":"bim","info":"t:k.14bm"},{"type":"checkbox","id":"show_compat","label":"t:k.005a","default":true},{"type":"checkbox","id":"show_weight","label":"t:k.08s4","default":true,"info":"t:k.155a"},{"type":"checkbox","id":"show_health","label":"t:k.1x6b","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1x0p"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0unk","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Compatibility"},{"type":"text","id":"ns","label":"t:k.0qyu","default":"bim","info":"compatible_with (apps and versions you tested) wins over the typical list; ifc_size_mb gives the size."},{"type":"checkbox","id":"show_compat","label":"t:k.005a","default":true},{"type":"checkbox","id":"show_weight","label":"t:k.08s4","default":true,"info":"Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more."},{"type":"checkbox","id":"show_health","label":"t:k.1x6b","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"key=value per line: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.0j05","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

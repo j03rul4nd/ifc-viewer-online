@@ -36,8 +36,11 @@ Never edit `app/extensions/ifc-viewer/blocks`, `snippets` or `locales` by hand; 
   keys its Liquid prints (the no-JS markup); the texts only the scripts need go to
   `assets/ifcvo-i18n-<lang>.json`, grouped as in `i18n-groups.json` and loaded by
   `assets/ifcvo-i18n.js` (the Liquid marks the element with `data-i18n="<group>"`).
-- A theme-editor (schema) locale that would pass 15 KB is left out; the editor shows English
-  for that language. Today: Japanese and Thai.
+- Shopify also rejects a locale file with more than 250 keys. The generator keeps the theme-editor
+  keys at SCHEMA_KEY_BUDGET (230-250): it writes some placeholders, headers and info help texts
+  in English straight into the block (shortest first; labels and block names stay translated).
+  A schema locale that would still pass 15 KB is left out (the editor shows English). Today: none.
+- Every known bundle limit, with its source, is a test in scripts/shopify-extensions.test.ts.
 - The JS and CSS assets in `app/extensions/ifc-viewer/assets/` are edited in place.
 
 ```bash

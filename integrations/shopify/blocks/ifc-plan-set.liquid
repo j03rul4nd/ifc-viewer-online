@@ -71,10 +71,6 @@
   endfor
   assign name_list = names | split: sep
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
     <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'Starter' | escape }}</p>
@@ -87,7 +83,7 @@
   data-ifcvo-plan="{{ plan | escape }}"
   data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
   data-variant-id="{{ current.id | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
@@ -172,7 +168,7 @@
   </div>
   <p class="ifcvo-sr" data-ifcvo-planset-status role="status" data-label="{{ l_selected | escape }}"></p>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-planset.js' | asset_url }}"></script>
 {%- endif -%}
 

@@ -27,6 +27,10 @@ export const MAIN_EXTENSION = EXTENSION
 export const LIQUID_LIMIT = 100 * 1000
 export const LOCALE_LIMIT = 15 * 1000
 export const BLOCK_LIMIT = 30
+/** Translation keys per locale file: Shopify's deploy validation rejects more than 250. */
+export const SCHEMA_KEY_LIMIT = 250
+/** What the generator aims for, leaving room for new settings. */
+export const SCHEMA_KEY_BUDGET = 240
 export const SECTIONS = ['ifc-viewer.liquid', 'tracking-globe.liquid']
 /** The one extension and its block handles (sections + blocks/). */
 export const EXTENSIONS = {
@@ -241,9 +245,49 @@ export function compiledLiquid() {
   for (const name of listLiquid(SRC_BLOCKS_DIR)) blocks[name] = compactLiquid(readText(path.join(SRC_BLOCKS_DIR, name)))
   const snippets = {}
   for (const name of listLiquid(SRC_SNIPPETS_DIR)) snippets[name] = compactLiquid(readText(path.join(SRC_SNIPPETS_DIR, name)))
+  const inline = keysToInline(blocks)
+  const en = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, 'en.default.schema.json'), 'utf8'))
+  for (const n of Object.keys(blocks)) {
+    blocks[n] = blocks[n].replace(/"t:([A-Za-z0-9_.]+)"/g, (all, k) => (inline.has(k) ? JSON.stringify(lookupKey(en, k)) : all))
+  }
   const short = shortKeys(keysUsed(Object.values(blocks).join('\n')).schema)
   for (const n of Object.keys(blocks)) blocks[n] = blocks[n].replace(/"t:([A-Za-z0-9_.]+)"/g, (_, k) => `"t:${short[k]}"`)
-  return { blocks, snippets, short }
+  return { blocks, snippets, short, inline: [...inline].sort() }
+}
+
+/**
+ * Schema keys written in English into the block instead of a t: key, so each schema
+ * locale stays within SCHEMA_KEY_BUDGET keys (Shopify rejects more than 250). Only
+ * keys used solely as a placeholder, a header or an info help text qualify, in that
+ * order, shortest English text first; labels and block names stay translated.
+ */
+export function keysToInline(blocks) {
+  const uses = {}
+  for (const text of Object.values(blocks)) {
+    const m = text.match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)
+    if (!m) continue
+    const walk = (o, field) => {
+      if (typeof o === 'string') { if (o.startsWith('t:')) (uses[o.slice(2)] ||= new Set()).add(field) }
+      else if (Array.isArray(o)) o.forEach((x) => walk(x, field))
+      else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) walk(v, k)
+    }
+    walk(JSON.parse(m[1]), 'other')
+  }
+  const en = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, 'en.default.schema.json'), 'utf8'))
+  const rank = { placeholder: 0, content: 1, info: 2 }
+  const candidates = Object.entries(uses)
+    .filter(([, f]) => [...f].every((x) => x in rank))
+    .map(([k, f]) => [k, Math.max(...[...f].map((x) => rank[x])), Buffer.byteLength(String(lookupKey(en, k) || ''))])
+    .sort((a, b) => a[1] - b[1] || a[2] - b[2] || (a[0] < b[0] ? -1 : 1))
+  const out = new Set()
+  let count = Object.keys(uses).length
+  for (const [k] of candidates) {
+    if (count <= SCHEMA_KEY_BUDGET) break
+    out.add(k)
+    count--
+  }
+  if (count > SCHEMA_KEY_LIMIT) throw new Error(`${count} schema keys; Shopify allows ${SCHEMA_KEY_LIMIT}`)
+  return out
 }
 
 /** Storefront keys (`'ifcvo.x.y' | t`, or a prefix ending in "." for appended keys) and `t:` schema keys. */

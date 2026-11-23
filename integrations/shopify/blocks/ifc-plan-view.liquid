@@ -48,10 +48,6 @@
     assign protect_mode = 'properties'
   endif
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
     <p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planview', plan: 'starter' | escape }}</p>
@@ -70,7 +66,7 @@
   data-l-tabs="{{ l_tabs | escape }}" data-l-all="{{ l_all | escape }}" data-l-waiting="{{ l_waiting | escape }}" data-l-open="{{ l_open | escape }}"
   data-l-loading="{{ l_loading | escape }}" data-l-none="{{ l_none | escape }}" data-l-error="{{ l_error | escape }}" data-l-rooms="{{ l_rooms | escape }}"
   data-l-room="{{ l_room | escape }}" data-l-area="{{ l_area | escape }}" data-l-showing="{{ l_showing | escape }}"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}
@@ -82,7 +78,7 @@
   <p class="ifcvo-caption" data-ifcvo-planview-status role="status"></p>
   <noscript><p class="ifcvo-muted">{{ l_waiting | escape }}</p></noscript>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-planview.js' | asset_url }}"></script>
 {%- endif -%}
 

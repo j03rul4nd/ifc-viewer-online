@@ -106,7 +106,7 @@
     {%- assign ns_model = current_model -%}{%- if ifcvo_protected -%}{%- assign ns_model = '' -%}{%- endif -%}
     {% render 'ifcvo-noscript', product: product, model: ns_model, specs_ns: specs_ns, download_label: s.download_label %}
   </div>
-  <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+  {%- render 'ifcvo-runtime' -%}
   {% render 'ifcvo-jsonld', product: product, model: current_model, specs_ns: specs_ns, augment: true %}
   <script type="module" src="{{ 'ifcvo-events.js' | asset_url }}"></script>
   {%- if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}

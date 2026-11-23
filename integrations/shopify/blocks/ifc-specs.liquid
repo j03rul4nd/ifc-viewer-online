@@ -58,10 +58,6 @@
     assign groups = groups | append: 'totals,'
   endif
 -%}
-{%- capture ifcvo_style -%}
-  {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
-  --ifcvo-radius:{{ s.radius }}px;
-{%- endcapture -%}
 <div
   class="ifcvo-panel ifcvo-specs-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-specs
@@ -73,7 +69,7 @@
   data-labels-override="{{ s.labels | escape }}"
   data-csv="{{ s.csv }}"
   data-file="{{ product.handle | escape }}-specs.csv"
-  style="{{ ifcvo_style }}"
+  style="{% render 'ifcvo-style', s: s %}"
   {{ block.shopify_attributes }}
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
@@ -94,7 +90,7 @@
   <div class="ifcvo-body ifcvo-specs-live" data-ifcvo-live aria-live="polite">
   </div>
 </div>
-<script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
+{%- render 'ifcvo-runtime' -%}
 <script type="module" src="{{ 'ifcvo-specs.js' | asset_url }}"></script>
 
 {%- render 'ifcvo-diag', feature: 'specs', block: 'ifc-specs', ns: specs_ns, keys: '' -%}

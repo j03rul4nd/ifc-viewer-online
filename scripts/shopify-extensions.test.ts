@@ -5,6 +5,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import zlib from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import * as gen from '../integrations/shopify/build-extension.mjs'
 
@@ -79,6 +80,68 @@ describe('Shopify size limits', () => {
     const files = list(path.join(dir, 'locales'))
     for (const f of list(gen.LOCALES_DIR).filter((x) => x.endsWith('.json') && !x.endsWith('.schema.json'))) expect(files).toContain(f)
     expect(files).toContain('en.default.schema.json')
+  })
+})
+
+// Every bundle limit we know of, with its source. Re-read before adding blocks.
+// shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration#file-and-content-size-limits
+// shopify.dev/docs/storefronts/themes/architecture/locales#requirements-and-limitations
+// Deploy validation 2026-11-23 (not in the docs): one theme app extension per app; ≤250 keys per locale file.
+const MB = 1024 * 1024
+const flatValues = (o: unknown): string[] =>
+  typeof o === 'string' ? [o] : o && typeof o === 'object' ? Object.values(o).flatMap(flatValues) : []
+const schemas = () =>
+  list(path.join(dir, 'blocks')).map((f) => [f, JSON.parse(fs.readFileSync(path.join(dir, 'blocks', f), 'utf8').match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)![1])] as const)
+const gzip = (f: string) => zlib.gzipSync(fs.readFileSync(f)).length
+
+describe('every documented bundle limit', () => {
+  it('all files together at most 10 MB (enforced)', () => {
+    let bytes = 0
+    const walk = (d: string) => { for (const f of list(d)) { const p = path.join(d, f); if (fs.statSync(p).isDirectory()) walk(p); else bytes += fs.statSync(p).size } }
+    walk(dir)
+    expect(bytes).toBeLessThanOrEqual(10 * MB)
+  })
+
+  it('at most 100 locale files (enforced)', () => {
+    expect(list(path.join(dir, 'locales')).length).toBeLessThanOrEqual(100)
+  })
+
+  it(`at most ${gen.SCHEMA_KEY_LIMIT} translation keys in every locale file (deploy validation), and the generator aims for ${gen.SCHEMA_KEY_BUDGET}`, () => {
+    const over: string[] = []
+    for (const f of list(path.join(dir, 'locales'))) {
+      const n = flatValues(JSON.parse(fs.readFileSync(path.join(dir, 'locales', f), 'utf8'))).length
+      if (n > gen.SCHEMA_KEY_LIMIT) over.push(`${f}: ${n}`)
+      if (f.endsWith('.schema.json')) expect(n, f).toBeLessThanOrEqual(gen.SCHEMA_KEY_BUDGET)
+    }
+    expect(over).toEqual([])
+    expect(gen.SCHEMA_KEY_LIMIT).toBe(250)
+  })
+
+  it('every translation value at most 1000 characters; at most 3400 per locale file (theme locales)', () => {
+    for (const f of list(path.join(dir, 'locales'))) {
+      const values = flatValues(JSON.parse(fs.readFileSync(path.join(dir, 'locales', f), 'utf8')))
+      expect(values.length, f).toBeLessThanOrEqual(3400)
+      for (const v of values) expect([...v].length, f).toBeLessThanOrEqual(1000)
+    }
+  })
+
+  it('CSS referenced by a schema at most 100 KB and JS at most 10 KB, compressed (suggested)', () => {
+    for (const [f, s] of schemas()) {
+      if (s.stylesheet) expect(gzip(path.join(dir, 'assets', s.stylesheet)), f).toBeLessThanOrEqual(100 * 1024)
+      if (s.javascript) expect(gzip(path.join(dir, 'assets', s.javascript)), f).toBeLessThanOrEqual(10 * 1024)
+    }
+  })
+
+  it('every block schema is valid for the theme editor: unique ids, range ≤ 101 steps, resource lists ≤ 50', () => {
+    for (const [f, s] of schemas()) {
+      expect(s.target, f).toMatch(/^(section|content|head|body|compliance_head)$/)
+      const ids = (s.settings || []).filter((x: { id?: string }) => x.id).map((x: { id: string }) => x.id)
+      expect(new Set(ids).size, f).toBe(ids.length)
+      for (const st of s.settings || []) {
+        if (st.type === 'range') expect((st.max - st.min) / (st.step || 1), `${f} ${st.id}`).toBeLessThanOrEqual(100)
+        if (st.limit) expect(st.limit, `${f} ${st.id}`).toBeLessThanOrEqual(50)
+      }
+    }
   })
 })
 

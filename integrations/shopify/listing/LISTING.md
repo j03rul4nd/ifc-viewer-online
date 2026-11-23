@@ -28,8 +28,8 @@ BIM. Give them the model itself on the product page, not a render.
   metafields, element data, rooms and key specs, and the file's Health Score.
 - **Fits your theme.** Blocks inherit the theme's font and colours and can go in any
   section or column. Storefront texts in 10 languages: English, Spanish, Catalan,
-  German, French, Italian, Portuguese, Japanese, Chinese (Simplified) and Thai. Theme editor settings in the same languages except Japanese and
-  Thai, which show the settings in English (Shopify caps each locale file at 15 KB).
+  German, French, Italian, Portuguese, Japanese, Chinese (Simplified) and Thai. Theme editor settings in the same languages
+  (some help texts in English).
 - **Setup check in the theme editor.** Shows, per block, whether the model URL is
   reachable, its size and IFC schema, and which metafields are missing. Buyers never see it.
 
