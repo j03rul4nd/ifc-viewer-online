@@ -78,7 +78,7 @@ describe('ifc-plan-set block (Liquid)', () => {
   it('every label has an English default and a shop override', () => {
     for (const m of body.matchAll(/'ifcvo\.planset\.(\w+)' \| t/g)) {
       expect(locales.ifcvo.planset[m[1]]).toBeTruthy()
-      expect(body).toContain(`L.planset_${m[1]}`)
+      expect(body).toContain(`shop_l.planset_${m[1]}`)
     }
   })
 })

@@ -97,7 +97,7 @@ clash with the viewer texts.
 | Keys | Block |
 |---|---|
 | `loading`, `ready`, `retry`, `open_full`, `error`, `offline`, `too_large`, `no_webgl` | Product IFC model (viewer overlay) |
-| the keys of the `LABELS` table in `extensions/ifc-data/assets/ifcvo-<block>.js` (rooms, takeoff, classification, compat, specs) or `extensions/ifc-plans/assets/ifcvo-<block>.js` (dpp, compliance, ar, sunlot, planview) | that block |
+| the keys of the `LABELS` table in `extensions/ifc-viewer/assets/ifcvo-<block>.js` (rooms, takeoff, classification, compat, specs, dpp, compliance, ar, sunlot, planview) | that block |
 | `quote.title`, `quote.pick`, `quote.cart`, `quote.contact`, `quote.empty`, `quote.qty`, `quote.remove`, `quote.full`, `quote.no_form`, `quote.filled`, `quote.added`, `quote.error`, `quote.intro`, `quote.element`, `quote.product`, `quote.variant`, `quote.page` | IFC element details (quote list) |
 | `downloads.making`, `downloads.made`, `downloads.makeError`, `downloads.noViewer`, `downloads.noGlb` | GLB / CSV buttons |
 

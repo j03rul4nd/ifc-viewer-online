@@ -28,6 +28,11 @@ export const LIQUID_LIMIT = 100 * 1000
 export const LOCALE_LIMIT = 15 * 1000
 export const BLOCK_LIMIT = 30
 export const SECTIONS = ['ifc-viewer.liquid', 'tracking-globe.liquid']
+/** The one extension and its block handles (sections + blocks/). */
+export const EXTENSIONS = {
+  [EXTENSION]: [...SECTIONS, ...(fs.existsSync(SRC_BLOCKS_DIR) ? fs.readdirSync(SRC_BLOCKS_DIR) : [])]
+    .filter((f) => f.endsWith('.liquid')).map((f) => f.replace(/\.liquid$/, '')).sort(),
+}
 
 /**
  * Texts the block scripts read from data-labels (or data-<attr>), per group:

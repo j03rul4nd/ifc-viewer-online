@@ -73,7 +73,7 @@ describe('ifc-plan-view block (Liquid)', () => {
     expect(keys.length).toBeGreaterThan(8)
     for (const k of keys) {
       expect(locales.ifcvo.planview[k]).toBeTruthy()
-      expect(body).toContain(`L.planview_${k}`)
+      expect(body).toContain(`shop_l.planview_${k}`)
     }
   })
 

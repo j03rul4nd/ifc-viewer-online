@@ -5,7 +5,9 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ext = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
-const read = (p: string): string => fs.readFileSync(path.join(ext, p), 'utf8')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const src = path.resolve(__dirname, '../integrations/shopify')
+const read = (p: string): string => fs.readFileSync(path.join(/^(blocks|snippets|locales)\//.test(p) ? src : ext, p), 'utf8')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Mod = Record<string, any>
 const diagPath = '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-diagnostics.js'
@@ -187,9 +189,9 @@ describe('quote and downloads texts from locales', () => {
   })
 
   it('the element details and downloads markup pass the locale texts', () => {
-    expect(read('blocks/ifc-element-details.liquid')).toMatch(/data-labels="\{\{ q_labels \| escape \}\}"/)
+    expect(read('blocks/ifc-element-details.liquid')).toContain('data-i18n="quote"')
     const dl = read('snippets/ifcvo-downloads.liquid')
-    expect(dl).toMatch(/data-labels="\{\{ dl_labels \| escape \}\}"/)
+    expect(dl).toContain('data-i18n="downloads"')
     expect(dl).not.toMatch(/default: 'Download BIM model/)
   })
 })

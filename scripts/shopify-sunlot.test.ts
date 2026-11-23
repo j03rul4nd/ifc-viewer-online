@@ -6,7 +6,7 @@ import {
   _reset, applySun, bestFit, buildable, negatives, fitLot, footprintOf, footprintPoints, fromMetres, init, labelsOf, lengthText, locate, normDeg, onViewer, parseSite, rotatedBox, toMetres, LABELS,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-sunlot.js'
-import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
+import { FEATURE_TIERS, I18N_GROUPS, withTiers } from '../integrations/shopify/build-extension.mjs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
 /** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
@@ -92,7 +92,7 @@ describe('block and gate', () => {
     expect(schema.settings.length).toBeLessThanOrEqual(25)
     for (const k of Object.keys(LABELS)) {
       expect(locale.ifcvo.sunlot[k]).toBe(LABELS[k])
-      expect(block).toContain(`'ifcvo.sunlot.${k}' | t | json`)
+      expect((I18N_GROUPS.sunlot as Record<string, string>)[k]).toBe(`ifcvo.sunlot.${k}`)
     }
   })
   it('escapes every data attribute', () => {

@@ -6,7 +6,7 @@ import {
   _reset, init, labelsOf, merge, onViewer, parseMetafield, render, serverRows,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-classification.js'
-import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
+import { FEATURE_TIERS, I18N_GROUPS } from '../integrations/shopify/build-extension.mjs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
 /** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
@@ -65,7 +65,9 @@ describe('ifc-classification block (Liquid)', () => {
   })
 
   it('every label key used exists in the locale file and in the JS defaults', () => {
-    const keys = [...block.matchAll(/'ifcvo\.classification\.([a-z]+)' \| t/g)].map((m) => m[1])
+    // Texts printed by Liquid, plus the ones the script gets from assets/ifcvo-i18n-<lang>.json.
+    const keys = [...new Set([...[...block.matchAll(/'ifcvo\.classification\.([a-z]+)' \| t/g)].map((m) => m[1]), ...Object.keys(I18N_GROUPS.classification)])]
+    expect(block).toContain('data-i18n="classification"')
     expect(keys.length).toBeGreaterThan(5)
     for (const k of keys) {
       expect(locale.ifcvo.classification[k], k).toBeTruthy()

@@ -6,7 +6,7 @@ import {
   _reset, init, LABELS, NBS_MANUAL, NBS_CLASSES, config, typeCheck, withTypeCheck, refresh, render, runChecks, safeIdsUrl, summarize, withTimeout,
 // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compliance.js'
-import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
+import { FEATURE_TIERS, I18N_GROUPS } from '../integrations/shopify/build-extension.mjs'
 import { NBS_BOS_MANUAL } from '../src/lib/eir/eir-profile-nbs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
@@ -72,7 +72,8 @@ describe('ifc-compliance block (Liquid)', () => {
   })
 
   it('every label key exists in the locale file and in the JS defaults', () => {
-    const keys = [...block.matchAll(/"(\w+)":\{\{ 'ifcvo\.compliance\.(\w+)' \| t \| json \}\}/g)]
+    expect(block).toContain('data-i18n="compliance"')
+    const keys = Object.entries(I18N_GROUPS.compliance as Record<string, string>).map(([js, key]) => ['', js, key.replace('ifcvo.compliance.', '')])
     expect(keys.length).toBe(Object.keys(LABELS).length)
     for (const [, js, loc] of keys) {
       expect(LABELS).toHaveProperty(js)

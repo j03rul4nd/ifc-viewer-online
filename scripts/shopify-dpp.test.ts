@@ -16,6 +16,7 @@ const js = fs.readFileSync(path.join(EXT, 'assets/ifcvo-dpp.js'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
+const itemSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-dpp-item.liquid'), 'utf8')
 const valueSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-dpp-value.liquid'), 'utf8')
 const jsonld = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-jsonld.liquid'), 'utf8')
 
@@ -86,7 +87,8 @@ describe('ifc-dpp block (Liquid)', () => {
       expect(block).toContain(`m.${k}.`)
     }
     expect(block).toMatch(/selected_or_first_available_variant\.barcode/)
-    for (const k of ITEMS) expect(block).toContain(`data-item="${k}"`)
+    for (const k of ITEMS) expect(block).toContain(`'ifcvo-dpp-item', item: '${k}'`)
+    expect(itemSnippet).toContain('data-item="{{ item }}"')
     expect(block).toMatch(/'ifcvo\.dpp\.score' \| t: ready: ready, total: 7/)
     expect(block).toContain('data-ifcvo-tier="dpp"')
   })

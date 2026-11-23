@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest'
 // with only the keys its Liquid uses (checked in shopify-extensions.test.ts).
 const shopify = path.resolve(__dirname, '../integrations/shopify')
 const locales = path.join(shopify, 'locales')
-const EXTS = ['ifc-viewer', 'ifc-data', 'ifc-plans'].map((e) => path.join(shopify, 'app/extensions', e))
-const filesIn = (d: string, ext = '') => EXTS.flatMap((e) => (fs.existsSync(path.join(e, d)) ? fs.readdirSync(path.join(e, d)) : []).filter((f) => f.endsWith(ext)).map((f) => path.join(e, d, f)))
+// Blocks and snippets: the readable sources (the extension gets compact copies with short t: keys).
+// The two blocks made from the copy-paste sections are checked in shopify-integration.test.ts.
+const dirsFor = (d: string) => (d === 'assets' ? [path.join(shopify, 'app/extensions/ifc-viewer')] : [shopify])
+const filesIn = (d: string, ext = '') => dirsFor(d).flatMap((e) => (fs.existsSync(path.join(e, d)) ? fs.readdirSync(path.join(e, d)) : []).filter((f) => f.endsWith(ext)).map((f) => path.join(e, d, f)))
 const LANGS = ['es', 'ca', 'de', 'fr', 'it', 'pt-PT', 'pt-BR', 'ja', 'zh-CN', 'th']
 
 type Tree = { [k: string]: string | Tree }

@@ -6,7 +6,7 @@ import {
   DEFAULT_APPS, RULE_LABELS, authoringApp, decodeStep, stripComments, _reset, ruleLabel, fetchHeader, init, normalizeSchema, parseHeader, renderCompat, renderHealth, renderWeight, topCategories, weightBand,
   // @ts-expect-error plain JS asset without types
 } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-compat.js'
-import { FEATURE_TIERS, withTiers } from '../integrations/shopify/build-extension.mjs'
+import { FEATURE_TIERS, I18N_GROUPS, withTiers } from '../integrations/shopify/build-extension.mjs'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
 /** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
@@ -264,7 +264,8 @@ describe('rule labels', () => {
   })
   it('every mapped rule has a locale key', () => {
     for (const k of Object.keys(RULE_LABELS)) expect(locales.ifcvo.compat.rules[k], k).toBeTruthy()
-    expect(block).toContain(Object.keys(RULE_LABELS).join(','))
+    expect(I18N_GROUPS.compat_rules).toBe('ifcvo.compat.rules.')
+    expect(block).toContain('data-i18n-rule-labels="compat_rules"')
   })
 })
 

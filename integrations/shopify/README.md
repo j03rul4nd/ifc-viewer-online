@@ -22,30 +22,35 @@ Two ways to put IFC Viewer Online on a Shopify store.
 
 ## 2. Theme app extension (for the Shopify App Store)
 
-`app/` is a theme-only Shopify CLI app (no backend, no scopes) with three theme app
-extensions, because Shopify allows at most 100 KB of Liquid per extension and 15 KB
-per locale file:
+`app/` is a theme-only Shopify CLI app (no backend, no scopes) with ONE theme app
+extension, `app/extensions/ifc-viewer/`, holding all 20 blocks. Shopify allows one theme
+app extension per app (a deploy with three failed), at most 100 KB of Liquid in total,
+15 KB per locale file and 30 blocks.
 
-- `app/extensions/ifc-viewer/`: product viewer, element details, downloads, variant views,
-  explorer, views, health score, and the two blocks built from the sections above;
-- `app/extensions/ifc-data/`: specs, rooms, classification, takeoff, compatibility;
-- `app/extensions/ifc-plans/`: plan set, plan view, AR, compliance, sun and lot, product passport.
+Never edit `app/extensions/ifc-viewer/blocks`, `snippets` or `locales` by hand; they are generated:
 
-The full translations live in `locales/`; never edit an extension's `locales/` by hand.
-The generator builds the section blocks, copies the shared assets (`ifcvo.js`, `ifcvo.css`,
-`ifcvo-variant.js`, `ifcvo-events.js`, `ifcvo-diagnostics.js`) and shared snippets from
-`ifc-viewer` into the other two, and cuts each extension's locales to the keys its Liquid uses:
+- `blocks/` and `snippets/` (here) are the readable Liquid sources; the two section files
+  above become the `ifc-viewer` and `tracking-globe` app blocks. The extension gets a compact
+  copy: no comments, minified schema, no indentation, and short theme-editor keys (`t:k.xxxx`).
+- `locales/` holds the full translations. The extension's storefront locales keep only the
+  keys its Liquid prints (the no-JS markup); the texts only the scripts need go to
+  `assets/ifcvo-i18n-<lang>.json`, grouped as in `i18n-groups.json` and loaded by
+  `assets/ifcvo-i18n.js` (the Liquid marks the element with `data-i18n="<group>"`).
+- A theme-editor (schema) locale that would pass 15 KB is left out; the editor shows English
+  for that language. Today: Japanese and Thai.
+- The JS and CSS assets in `app/extensions/ifc-viewer/assets/` are edited in place.
 
 ```bash
 node integrations/shopify/build-extension.mjs
 ```
 
-`scripts/shopify-integration.test.ts` checks the blocks are up to date; `scripts/shopify-extensions.test.ts`
-checks the size limits, the locale keys and that the shared files match.
+It prints the Liquid total, the largest locale file and the schema locales left out.
+`scripts/shopify-extensions.test.ts` checks there is a single extension, the limits, the
+locale keys and that a second build changes nothing.
 
 ### Product block (app only)
 
-`app/extensions/ifc-viewer/blocks/product-ifc-viewer.liquid` reads the IFC file
+`blocks/product-ifc-viewer.liquid` reads the IFC file
 from a product or variant metafield (default `custom.ifc_model`, type URL or file),
 so one block in the product template covers the whole catalogue. Changing the
 variant swaps the model and the **Download BIM model (IFC)** link. Create the

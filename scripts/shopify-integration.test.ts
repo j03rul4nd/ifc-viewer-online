@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { parseAppUrlParams } from '../src/lib/url-params'
 // @ts-expect-error plain .mjs build script without types
-import { SECTIONS, blockPath, toAppBlock, withTiers, FEATURE_TIERS, ALWAYS_FREE, PLANS, DEFAULT_PLAN, assetPath } from '../integrations/shopify/build-extension.mjs'
+import { SECTIONS, blockPath, compiledLiquid, toAppBlock, withTiers, FEATURE_TIERS, ALWAYS_FREE, PLANS, DEFAULT_PLAN, assetPath } from '../integrations/shopify/build-extension.mjs'
 
 const dir = path.resolve(__dirname, '../integrations/shopify')
 
@@ -30,7 +30,8 @@ describe('Shopify sections', () => {
       const block = fs.readFileSync(blockPath(name), 'utf8')
       // Git may check the files out with CRLF line endings.
       const lf = (t: string) => t.replace(/\r\n/g, '\n')
-      expect(lf(block)).toBe(lf(toAppBlock(source)))
+      expect(lf(block)).toBe(compiledLiquid().blocks[name])
+      expect(toAppBlock(source)).toContain('"target": "section"')
       expect(schemaOf(block).target).toBe('section')
       expect(schemaOf(block).presets).toBeUndefined()
     })

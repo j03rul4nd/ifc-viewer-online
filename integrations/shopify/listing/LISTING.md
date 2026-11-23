@@ -28,7 +28,8 @@ BIM. Give them the model itself on the product page, not a render.
   metafields, element data, rooms and key specs, and the file's Health Score.
 - **Fits your theme.** Blocks inherit the theme's font and colours and can go in any
   section or column. Storefront texts in 10 languages: English, Spanish, Catalan,
-  German, French, Italian, Portuguese, Japanese, Chinese (Simplified) and Thai.
+  German, French, Italian, Portuguese, Japanese, Chinese (Simplified) and Thai. Theme editor settings in the same languages except Japanese and
+  Thai, which show the settings in English (Shopify caps each locale file at 15 KB).
 - **Setup check in the theme editor.** Shows, per block, whether the model URL is
   reachable, its size and IFC schema, and which metafields are missing. Buyers never see it.
 
@@ -46,6 +47,7 @@ key pasted in the shop metafield `ifcvo.license` (signed for the shop's
 block that needs a higher plan shows a note naming that plan; visitors see nothing.
 
 Notes for the submission form:
+- The app has one theme app extension with all 20 blocks (Shopify allows one per app).
 - Free is intended for 1–3 products. The product count is not enforced until the app
   has billing; until then Free is limited by features only.
 - Loading, the IFC download, error messages and accessibility are never limited by plan.
