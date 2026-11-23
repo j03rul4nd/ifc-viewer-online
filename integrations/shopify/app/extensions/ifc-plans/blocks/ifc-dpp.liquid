@@ -26,7 +26,7 @@
 {% endcomment %}
 {%- liquid
   assign s = block.settings
-  assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
   assign ns = s.specs_ns | strip | default: 'bim'
   assign m = product.metafields[ns]
   assign epd_url = m.epd_url.value | append: '' | strip
@@ -91,9 +91,9 @@
 {%- endcapture -%}
 {%- capture dpp_labels -%}{"title":{{ 'ifcvo.dpp.title' | t | json }},"epd":{{ 'ifcvo.dpp.epd' | t | json }},"gwp_a1a3":{{ 'ifcvo.dpp.gwp_a1a3' | t | json }},"gwp":{{ 'ifcvo.dpp.gwp' | t | json }},"energy":{{ 'ifcvo.dpp.energy' | t | json }},"water":{{ 'ifcvo.dpp.water' | t | json }},"declared_unit":{{ 'ifcvo.dpp.declared_unit' | t | json }},"epd_number":{{ 'ifcvo.dpp.epd_number' | t | json }},"epd_link":{{ 'ifcvo.dpp.epd_link' | t | json }},"from_model":{{ 'ifcvo.dpp.from_model' | t | json }},"from_pset":{{ 'ifcvo.dpp.from_pset' | t | json }},"score":{{ 'ifcvo.dpp.score' | t | json }},"missing":{{ 'ifcvo.dpp.missing' | t | json }},"ready":{{ 'ifcvo.dpp.ready' | t | json }},"not_ready":{{ 'ifcvo.dpp.not_ready' | t | json }},"loading":{{ 'ifcvo.dpp.loading' | t | json }},"error":{{ 'ifcvo.dpp.error' | t | json }},"varies":{{ 'ifcvo.dpp.varies' | t | json }}}{%- endcapture -%}
 {{ 'ifcvo.css' | asset_url | stylesheet_tag }}
-{%- if plan != 'business' -%}
+{%- if plan != 'business' and plan != '' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'business' | escape }}</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'Business' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <section

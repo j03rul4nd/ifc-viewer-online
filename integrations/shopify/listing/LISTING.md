@@ -36,14 +36,19 @@ BIM. Give them the model itself on the product page, not a render.
 
 | Plan | Price | Blocks |
 |---|---|---|
-| Free | $0 | Product IFC model (per product and variant), poster image, IFC and extra file downloads, specs and quantities, element details, model explorer, camera views, Health Score, rooms and key specs |
-| Starter | $4.99/month, 14-day trial | Everything in Free, plus guided tour, plan set and licence, compatibility (schema, authoring app, file weight), floor plan view with preview mode, view in your space (AR), classification (Uniclass / OmniClass / MasterFormat), per-variant 3D views (camera, highlighted elements, shareable view links) |
-| Business | $19/month | Everything in Starter, plus takeoff / bill of quantities with steel by profile, EPD and product passport readiness, sun and lot fit, NBS / IDS compliance self-check |
+| Free | $0 | Product IFC model (per product and variant), poster image, IFC download, specs table, rooms and key specs, model explorer, camera views, product structured data (JSON-LD) |
+| Starter | $9/month, 14-day trial | Everything in Free, plus element details, quote / lead requests, downloads for customers only, Health Score badge, extra download formats (GLB, CSV, extra files), quantities table, guided tour, plan set and licence, compatibility (schema, authoring app, file weight), floor plan view with preview mode, view in your space (AR), classification (Uniclass / OmniClass / MasterFormat), per-variant 3D views (camera, highlighted elements, shareable view links) |
+| Business | $29/month | Everything in Starter, plus takeoff / bill of quantities with steel by profile and CSV, sales impact kit, bulk import, EPD and product passport readiness, sun and lot fit, NBS / IDS compliance self-check |
+
+How a shop gets its plan: the `ifcvo.plan` app metafield if set; otherwise a licence
+key pasted in the shop metafield `ifcvo.license` (signed for the shop's
+`*.myshopify.com` domain, with an expiry date); otherwise Free. In the theme editor a
+block that needs a higher plan shows a note naming that plan; visitors see nothing.
 
 Notes for the submission form:
 - Free is intended for 1–3 products. The product count is not enforced until the app
   has billing; until then Free is limited by features only.
-- Loading, downloads, error messages and accessibility are never limited by plan.
+- Loading, the IFC download, error messages and accessibility are never limited by plan.
 - The compliance and product passport blocks are self-checks and readiness guides;
   they do not certify a product.
 

@@ -111,8 +111,9 @@ describe('ifc-dpp block (Liquid)', () => {
 
 describe('plan gate, units, JSON-LD', () => {
   it('whole panel is server-gated to business; editor sees the upsell note', () => {
-    expect(block).toMatch(/assign plan = app\.metafields\.ifcvo\.plan\.value \| default: 'business'/)
-    const gate = block.indexOf("{%- if plan != 'business' -%}")
+    // An empty metafield means the plan comes from the licence: the runtime gate decides.
+    expect(block).toMatch(/assign plan = app\.metafields\.ifcvo\.plan\.value \| default: ''/)
+    const gate = block.indexOf("{%- if plan != 'business' and plan != '' -%}")
     expect(gate).toBeGreaterThan(0)
     expect(gate).toBeLessThan(block.indexOf('<section'))
     expect(block).toMatch(/request\.design_mode -%\}\s*<p class="ifcvo-upsell" data-ifcvo-upsell="dpp"/)
