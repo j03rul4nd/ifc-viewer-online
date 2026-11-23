@@ -394,12 +394,12 @@ h3{font-size:var(--t-l)}
 .faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
 .faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
 
-.wl{display:grid;gap:6px;max-width:420px}
+.wl{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;max-width:420px}
 .wl label{font-size:var(--t-s);color:var(--text-2)}
-.wl-row{display:flex;flex-wrap:wrap;gap:8px}
+.wl-row{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
 .wl input{flex:1 1 160px;min-width:0;min-height:40px;font:inherit;font-size:var(--t-b);color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
 .wl input:hover{border-color:var(--text-3)}
-.wl .btn{flex:1 1 auto;white-space:normal;text-align:center}
+.wl .btn{flex:1 1 auto;min-width:0;max-width:100%;white-space:normal;text-align:center}
 .cmp .wl .btn{flex-basis:100%}
 .msg{font-size:var(--t-s);min-height:1.4em;color:var(--text-2)}
 .msg.ok{color:var(--accent-text)}
