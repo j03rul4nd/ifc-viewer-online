@@ -20,9 +20,7 @@
   assign t = 'ifcvo.lead.title' | t
 -%}
 {%- if plan == 'free' -%}
-  {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="quote" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'quote', plan: 'Starter' | escape }}</p>
-  {%- endif -%}
+  {%- render 'ifcvo-upsell', feature: 'quote', plan: 'Starter', block: block -%}
 {%- else -%}
 <div
   class="ifcvo-panel ifcvo-lead{% unless s.frame %} ifcvo-flat{% endunless %}"

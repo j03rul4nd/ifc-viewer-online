@@ -1,4 +1,4 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign ns=s.specs_ns|strip|default:'bim'
 assign mf=product.metafields[ns].classification
@@ -22,8 +22,7 @@ assign systems=systems|append:sys|append:'~~~'
 endif
 endfor
 assign systems=systems|split:'~~~'|uniq
--%}
-<div
+%}<div
 class="ifcvo-panel ifcvo-classification-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-classification
 data-ifcvo-tier="classification"
@@ -31,33 +30,11 @@ data-show-model="{{s.show_model}}"
 data-show-counts="{{s.show_counts}}"
 data-i18n="classification"
 data-labels-override="{{s.labels|escape}}"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {{block.shopify_attributes}}
->
-{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
-<div class="ifcvo-cls-tables" data-ifcvo-cls-tables>
-{%-for sys in systems -%}
-<table class="ifcvo-specs ifcvo-cls" data-system="{{sys|escape}}">
+>{%if s.title != blank%}<h3>{{s.title|escape}}</h3>{%endif%}<div class="ifcvo-cls-tables" data-ifcvo-cls-tables>{%for sys in systems%}<table class="ifcvo-specs ifcvo-cls" data-system="{{sys|escape}}">
 <caption>{{sys|escape}}</caption>
 <thead><tr><th scope="col">{{'ifcvo.classification.code'|t|escape}}</th><th scope="col">{{'ifcvo.classification.name'|t|escape}}</th></tr></thead>
-<tbody>
-{%-for line in rows -%}
-{%-assign parts=line|split:'|' -%}
-{%-capture lsys -%}{%-render 'ifcvo-cls-system',name:parts[0] -%}{%-endcapture -%}
-{%-if lsys == sys and parts[1] != blank -%}
-{%-assign ltitle=parts|slice:2,99|join:'|' -%}
-<tr data-source="metafield" data-system="{{lsys|escape}}" data-code="{{parts[1]|strip|escape}}"><td><code>{{parts[1]|strip|escape}}</code></td><td>{{ltitle|strip|escape}}</td></tr>
-{%-endif -%}
-{%-endfor -%}
-</tbody>
-</table>
-{%-endfor -%}
-</div>
-{%-if mf == blank and request.design_mode -%}
-<p class="ifcvo-muted">{{'ifcvo.editor.classification'|t:ns:ns|escape}}</p>
-{%-endif -%}
-<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
-</div>
-{%-render 'ifcvo-runtime',js:'ifcvo-classification.js' -%}
-{%-render 'ifcvo-diag',feature:'classification',block:'ifc-classification',ns:ns,keys:'classification' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.aq8","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Classification"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"\"classification\" in this namespace (System|Code|Title per line) is shown as HTML and wins over the model."},{"type":"checkbox","id":"show_model","label":"t:k.bo5","default":true},{"type":"checkbox","id":"show_counts","label":"t:k.230","default":false},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+<tbody>{%for line in rows%}{%assign parts=line|split:'|'%}{%capture lsys%}{%render 'ifcvo-cls-system',name:parts[0]%}{%endcapture%}{%if lsys == sys and parts[1] != blank%}{%assign ltitle=parts|slice:2,99|join:'|'%}<tr data-source="metafield" data-system="{{lsys|escape}}" data-code="{{parts[1]|strip|escape}}"><td><code>{{parts[1]|strip|escape}}</code></td><td>{{ltitle|strip|escape}}</td></tr>{%endif%}{%endfor%}</tbody>
+</table>{%endfor%}</div>{%if mf == blank and request.design_mode%}<p class="ifcvo-muted">{{'ifcvo.editor.classification'|t:ns:ns|escape}}</p>{%endif%}<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
+</div>{%render 'ifcvo-runtime',js:'ifcvo-classification.js'%}{%render 'ifcvo-diag',feature:'classification',block:'ifc-classification',ns:ns,keys:'classification'%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.aq8","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Classification"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"\"classification\" in this namespace (System|Code|Title per line) is shown as HTML and wins over the model."},{"type":"checkbox","id":"show_model","label":"t:k.bo5","default":true},{"type":"checkbox","id":"show_counts","label":"t:k.230","default":false},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, system, code, name, elements, waiting, loading, none, error, pset, truncated, coverage."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

@@ -1,9 +1,8 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign ns=s.specs_ns|strip|default:'bim'
 assign mf=product.metafields[ns]
--%}
-<div
+%}<div
 class="ifcvo-panel ifcvo-takeoff-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-takeoff
 data-ifcvo-tier="takeoff"
@@ -20,30 +19,8 @@ data-cart-currency="{{cart.currency.iso_code|escape}}"
 data-product="{{product.title|escape}}"
 data-i18n="takeoff"
 data-labels-override="{{s.labels|escape}}"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {{block.shopify_attributes}}
->
-{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
-{%-if mf.boq != blank -%}
-{%-assign boq_lines=mf.boq.value|newline_to_br|split:'<br />' -%}
-<table class="ifcvo-specs ifcvo-takeoff" data-ifcvo-boq-static>
-<caption>{{'ifcvo.takeoff.title'|t|escape}}</caption>
-{%-for line in boq_lines -%}
-{%-assign row=line|strip -%}
-{%-if row == blank -%}{%-continue -%}{%-endif -%}
-{%-assign cells=row|split:'|' -%}
-<tr>
-{%-for c in cells -%}
-{%-if forloop.parentloop.first -%}<th scope="col">{{c|strip|escape}}</th>{%-elsif forloop.first -%}<th scope="row">{{c|strip|escape}}</th>{%-else -%}<td>{{c|strip|escape}}</td>{%-endif -%}
-{%-endfor -%}
-</tr>
-{%-endfor -%}
-</table>
-{%-elsif request.design_mode -%}
-<p class="ifcvo-muted">{{'ifcvo.editor.takeoff'|t:ns:ns|escape}}</p>
-{%-endif -%}
-<div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
-</div>
-{%-render 'ifcvo-runtime',js:'ifcvo-takeoff.js' -%}
-{%-render 'ifcvo-diag',feature:'takeoff',block:'ifc-takeoff',ns:ns,keys:'boq,unit_prices' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.rue","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Quantities"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"boq (text, cells split by |) is shown as HTML. unit_prices (JSON) maps a profile, type, material or IFC class to a price, or to {\"price\": 2.1, \"per\": \"kg\"} with per = each, m, m2, m3 or kg; it adds an indicative total."},{"type":"select","id":"units","label":"t:k.d9h","default":"metric","options":[{"value":"metric","label":"t:k.yr5"},{"value":"imperial","label":"t:k.mdv"}]},{"type":"select","id":"group","label":"t:k.f5z","default":"type","options":[{"value":"type","label":"t:k.g1u"},{"value":"material","label":"t:k.8qv"},{"value":"storey","label":"t:k.fum"}]},{"type":"checkbox","id":"show_steel","label":"t:k.i0k","default":true},{"type":"checkbox","id":"csv","label":"t:k.a5f","default":true},{"type":"checkbox","id":"quote","label":"t:k.t4w","default":true,"info":"Fills the page's contact form."},{"type":"text","id":"form","label":"t:k.hqj","info":"Empty finds the first contact form."},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, group, type, material, storey, profile, count, length, area, volume, weight, price, total, steel, csv, quote, indicative, waiting, none, truncated."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+>{%if s.title != blank%}<h3>{{s.title|escape}}</h3>{%endif%}{%if mf.boq != blank%}{%assign boq_lines=mf.boq.value|newline_to_br|split:'<br />'%}<table class="ifcvo-specs ifcvo-takeoff" data-ifcvo-boq-static>
+<caption>{{'ifcvo.takeoff.title'|t|escape}}</caption>{%for line in boq_lines%}{%assign row=line|strip%}{%if row == blank%}{%continue%}{%endif%}{%assign cells=row|split:'|'%}<tr>{%for c in cells%}{%if forloop.parentloop.first%}<th scope="col">{{c|strip|escape}}</th>{%elsif forloop.first%}<th scope="row">{{c|strip|escape}}</th>{%else%}<td>{{c|strip|escape}}</td>{%endif%}{%endfor%}</tr>{%endfor%}</table>{%elsif request.design_mode%}<p class="ifcvo-muted">{{'ifcvo.editor.takeoff'|t:ns:ns|escape}}</p>{%endif%}<div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
+</div>{%render 'ifcvo-runtime',js:'ifcvo-takeoff.js'%}{%render 'ifcvo-diag',feature:'takeoff',block:'ifc-takeoff',ns:ns,keys:'boq,unit_prices'%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.rue","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Quantities"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"t:k.zez"},{"type":"select","id":"units","label":"t:k.d9h","default":"metric","options":[{"value":"metric","label":"t:k.yr5"},{"value":"imperial","label":"t:k.mdv"}]},{"type":"select","id":"group","label":"t:k.f5z","default":"type","options":[{"value":"type","label":"t:k.g1u"},{"value":"material","label":"t:k.8qv"},{"value":"storey","label":"t:k.fum"}]},{"type":"checkbox","id":"show_steel","label":"t:k.i0k","default":true},{"type":"checkbox","id":"csv","label":"t:k.a5f","default":true},{"type":"checkbox","id":"quote","label":"t:k.t4w","default":true,"info":"Fills the page's contact form."},{"type":"text","id":"form","label":"t:k.hqj","info":"Empty finds the first contact form."},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"t:k.fiw"},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

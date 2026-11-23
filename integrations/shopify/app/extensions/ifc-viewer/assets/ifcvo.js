@@ -295,8 +295,17 @@ export function withTimeout(promise, ms) {
 
 const show = (node, on) => { if (node) node.hidden = !on }
 
+/** The shop's ifcvo.labels: on the block, else printed once by snippets/ifcvo-runtime.liquid. */
+export function pageLabels(root) {
+  const own = root && root.dataset.ifcvoLabels
+  if (own) return own
+  const doc = (root && root.ownerDocument) || (typeof document !== 'undefined' ? document : null)
+  const src = doc && doc.querySelector('script[data-ifcvo-shop-labels]')
+  return src ? src.textContent.trim() : ''
+}
+
 function labelsOf(root) {
-  return { ...labelsFor(readJson(root.dataset.ifcvoLabels), root.dataset.locale), ...parseLabels(root.dataset.labelsOverride) }
+  return { ...labelsFor(readJson(pageLabels(root)), root.dataset.locale), ...parseLabels(root.dataset.labelsOverride) }
 }
 
 const MSG = { loading: 'msgLoading', ready: 'msgReady', error: 'msgError', offline: 'msgOffline', large: 'msgLarge', webgl: 'msgWebgl' }

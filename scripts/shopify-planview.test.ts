@@ -63,7 +63,7 @@ describe('ifc-plan-view block (Liquid)', () => {
   })
 
   it('gates on the plan server-side and is starter in FEATURE_TIERS (runtime copy in sync)', () => {
-    expect(body).toMatch(/if plan == 'free'[\s\S]*request\.design_mode[\s\S]*ifcvo-upsell/)
+    expect(body).toMatch(/if plan == 'free'[\s\S]*render 'ifcvo-upsell', feature: 'planview'/)
     expect(FEATURE_TIERS.planview).toBe('starter')
     expect(runtime).toContain('"planview":"starter"')
   })

@@ -117,12 +117,14 @@ describe('ifc-dpp block (Liquid)', () => {
 
 describe('plan gate, units, JSON-LD', () => {
   it('whole panel is server-gated to business; editor sees the upsell note', () => {
+    const upsell = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-upsell.liquid'), 'utf8')
+    expect(upsell).toMatch(/request\.design_mode -%\}\s*<p class="ifcvo-upsell" data-ifcvo-upsell="\{\{ feature \}\}" \{\{ block\.shopify_attributes \}\}>/)
     // An empty metafield means the plan comes from the licence: the runtime gate decides.
     expect(block).toMatch(/assign plan = app\.metafields\.ifcvo\.plan\.value \| default: ''/)
     const gate = block.indexOf("{%- if plan != 'business' and plan != '' -%}")
     expect(gate).toBeGreaterThan(0)
     expect(gate).toBeLessThan(block.indexOf('<section'))
-    expect(block).toMatch(/request\.design_mode -%\}\s*<p class="ifcvo-upsell" data-ifcvo-upsell="dpp"/)
+    expect(block).toMatch(/render 'ifcvo-upsell', feature: 'dpp', plan: 'Business', block: block/)
     expect(block.indexOf('{%- else -%}', gate)).toBeLessThan(block.indexOf('<section'))
     expect(block.lastIndexOf('{%- endif -%}')).toBeGreaterThan(block.indexOf("js: 'ifcvo-dpp.js'"))
   })

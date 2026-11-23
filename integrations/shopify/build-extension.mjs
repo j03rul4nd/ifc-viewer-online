@@ -29,8 +29,8 @@ export const LOCALE_LIMIT = 15 * 1000
 export const BLOCK_LIMIT = 30
 /** Translation keys per locale file: Shopify's deploy validation rejects more than 250. */
 export const SCHEMA_KEY_LIMIT = 250
-/** What the generator aims for, leaving room for new settings (242 since T-325 G5 / T-326 F1+F7). */
-export const SCHEMA_KEY_BUDGET = 242
+/** What the generator aims for, leaving room for new settings (234 since T-325 G8: 16 keys of headroom). */
+export const SCHEMA_KEY_BUDGET = 234
 export const SECTIONS = ['ifc-viewer.liquid', 'tracking-globe.liquid']
 /** The one extension and its block handles (sections + blocks/). */
 export const EXTENSIONS = {
@@ -210,6 +210,24 @@ export function compactLiquid(source) {
 }
 
 /**
+ * Whitespace control done at build time (same output, fewer bytes): whitespace that a
+ * `-%}` / `-}}` or a `{%-` / `{{-` would trim is removed from the source, and a dash
+ * left with no whitespace next to it (a no-op) is dropped. The schema stays as it is.
+ */
+export function dropTrimmed(liquid) {
+  const at = liquid.indexOf('{% schema %}')
+  const body = at < 0 ? liquid : liquid.slice(0, at)
+  const rest = at < 0 ? '' : liquid.slice(at)
+  const ws = (c) => c === undefined || /\s/.test(c)
+  let out = body
+    .replace(/(-%\}|-\}\})\s+/g, '$1')
+    .replace(/\s+(\{%-|\{\{-)/g, '$1')
+  out = out.replace(/\{(%|\{)-/g, (m, k, i) => (ws(out[i - 1]) && i > 0 ? m : `{${k}`))
+  out = out.replace(/( ?)-(%\}|\}\})/g, (m, sp, close, i) => (ws(out[i + m.length]) && i + m.length < out.length ? m : close))
+  return out + rest
+}
+
+/**
  * Inside a Liquid tag or output, outside quoted strings: no spaces around `|`, `:`,
  * `,` and an assignment's `=`, none after the opening delimiter and none before the
  * closing one (one is kept before `-%}` / `-}}` so `x-` is never read as a name).
@@ -265,10 +283,10 @@ export function shortTree(tree, short) {
 /** Every block and snippet of the extension: name → compact Liquid (schema keys shortened). */
 export function compiledLiquid() {
   const blocks = {}
-  for (const name of SECTIONS) blocks[name] = compactLiquid(toAppBlock(readText(path.join(here, name))))
-  for (const name of listLiquid(SRC_BLOCKS_DIR)) blocks[name] = compactLiquid(readText(path.join(SRC_BLOCKS_DIR, name)))
+  for (const name of SECTIONS) blocks[name] = dropTrimmed(compactLiquid(toAppBlock(readText(path.join(here, name)))))
+  for (const name of listLiquid(SRC_BLOCKS_DIR)) blocks[name] = dropTrimmed(compactLiquid(readText(path.join(SRC_BLOCKS_DIR, name))))
   const snippets = {}
-  for (const name of listLiquid(SRC_SNIPPETS_DIR)) snippets[name] = compactLiquid(readText(path.join(SRC_SNIPPETS_DIR, name)))
+  for (const name of listLiquid(SRC_SNIPPETS_DIR)) snippets[name] = dropTrimmed(compactLiquid(readText(path.join(SRC_SNIPPETS_DIR, name))))
   const inline = keysToInline(blocks)
   const en = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, 'en.default.schema.json'), 'utf8'))
   for (const n of Object.keys(blocks)) {
@@ -287,11 +305,14 @@ export function compiledLiquid() {
  */
 export function keysToInline(blocks) {
   const uses = {}
+  const times = {}
   for (const text of Object.values(blocks)) {
     const m = text.match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)
     if (!m) continue
     const walk = (o, field) => {
-      if (typeof o === 'string') { if (o.startsWith('t:')) (uses[o.slice(2)] ||= new Set()).add(field) }
+      if (typeof o === 'string') {
+        if (o.startsWith('t:')) { (uses[o.slice(2)] ||= new Set()).add(field); times[o.slice(2)] = (times[o.slice(2)] || 0) + 1 }
+      }
       else if (Array.isArray(o)) o.forEach((x) => walk(x, field))
       else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) walk(v, k)
     }
@@ -301,11 +322,21 @@ export function keysToInline(blocks) {
   const rank = { placeholder: 0, content: 1, info: 2 }
   const candidates = Object.entries(uses)
     .filter(([, f]) => [...f].every((x) => x in rank))
-    .map(([k, f]) => [k, Math.max(...[...f].map((x) => rank[x])), Buffer.byteLength(String(lookupKey(en, k) || ''))])
+    // Within a rank, the fewest Liquid bytes first: the English text once per block using it.
+    .map(([k, f]) => [k, Math.max(...[...f].map((x) => rank[x])), Buffer.byteLength(String(lookupKey(en, k) || '')) * times[k]])
     .sort((a, b) => a[1] - b[1] || a[2] - b[2] || (a[0] < b[0] ? -1 : 1))
-  const out = new Set()
-  let count = Object.keys(uses).length
+  // A text that reads the same in every schema locale (language endonyms, "16:9", "m²")
+  // needs no key at all: written straight into the block, nothing changes in any editor.
+  const schemaLocales = fs.readdirSync(LOCALES_DIR).filter((f) => f.endsWith('.schema.json'))
+    .map((f) => JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, f), 'utf8')))
+  const same = Object.keys(uses).filter((k) => {
+    const v = lookupKey(en, k)
+    return typeof v === 'string' && schemaLocales.every((l) => lookupKey(l, k) === v)
+  }).sort()
+  const out = new Set(same)
+  let count = Object.keys(uses).length - same.length
   for (const [k] of candidates) {
+    if (out.has(k)) continue
     if (count <= SCHEMA_KEY_BUDGET) break
     out.add(k)
     count--

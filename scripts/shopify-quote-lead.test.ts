@@ -47,7 +47,7 @@ describe('quote request block (Liquid)', () => {
 
   it('is a Starter feature: Liquid hides it on Free, IFCVO.gate on the licence', () => {
     expect(gen.FEATURE_TIERS.quote).toBe('starter')
-    expect(block).toMatch(/if plan == 'free'[\s\S]*request\.design_mode[\s\S]*data-ifcvo-upsell="quote"/)
+    expect(block).toMatch(/if plan == 'free'[\s\S]*render 'ifcvo-upsell', feature: 'quote'/)
     expect(block).toContain('data-ifcvo-gate="quote"')
     expect(block).toContain("render 'ifcvo-runtime', js: 'ifcvo-quote.js'")
   })
@@ -71,7 +71,7 @@ describe('quote request block (Liquid)', () => {
   })
 
   it('the compiled block keeps the form and the server texts', () => {
-    expect(compiled).toContain("{%-form 'contact',id:'ifcvo-lead' -%}")
+    expect(compiled).toMatch(/{%-?form 'contact',id:'ifcvo-lead'( -)?%}/)
     expect(compiled).toContain("'ifcvo.lead.role_'|append:r|t|escape")
   })
 

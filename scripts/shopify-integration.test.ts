@@ -198,9 +198,12 @@ describe('Shopify config and plan gate', () => {
   it('the product block hands the plan, shop config and labels to the runtime', () => {
     const source = fs.readFileSync(path.join(dir, 'blocks/product-ifc-viewer.liquid'), 'utf8')
     expect(source).toContain('data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}"')
-    expect(source).toContain('data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"')
     expect(source).toContain('shop.metafields.ifcvo.config.value | json')
-    expect(source).toContain('shop.metafields.ifcvo.labels.value | json')
+    // Licence token and shop labels: printed once per page by the runtime snippet (T-325 G8).
+    const runtime = fs.readFileSync(path.join(dir, 'snippets/ifcvo-runtime.liquid'), 'utf8')
+    expect(runtime).toContain('data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"')
+    expect(runtime).toContain('shop.metafields.ifcvo.labels.value | json')
+    expect(source).toContain("render 'ifcvo-runtime'")
   })
 
   it('config precedence: block over shop JSON over defaults; empty values do not count', async () => {

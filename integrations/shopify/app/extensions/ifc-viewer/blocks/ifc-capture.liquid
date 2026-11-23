@@ -1,22 +1,10 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign plan=app.metafields.ifcvo.plan.value|default:''|strip|downcase
--%}
-{%-if plan == 'free' -%}
-{%-if request.design_mode -%}<p class="ifcvo-upsell" {{block.shopify_attributes}}>{{'ifcvo.editor.gated'|t:feature:'capture',plan:'Starter'|escape}}</p>{%-endif -%}
-{%-else -%}
-<div class="ifcvo-panel ifcvo-lead" data-ifcvo-capture data-ifcvo-gate="capture" data-handle="{{product.handle|escape}}"{%if s.intent%} data-intent="{%if customer%}{{customer.email|escape}}{%else%}-{%endif%}"{%endif%} {{block.shopify_attributes}}>
-<h3>{{'ifcvo.leads.title'|t|escape}}</h3>
-{%-form 'customer',id:'ifcvo-capture' -%}
-{%-if form.posted_successfully? -%}<p class="ifcvo-lead-ok" role="status">{{'ifcvo.leads.sent'|t|escape}}</p>{%-endif -%}
-{{form.errors|default_errors}}
+%}{%if plan == 'free'%}{%render 'ifcvo-upsell',feature:'capture',plan:'Starter',block:block%}{%else%}<div class="ifcvo-panel ifcvo-lead" data-ifcvo-capture data-ifcvo-gate="capture" data-handle="{{product.handle|escape}}"{%if s.intent%} data-intent="{%if customer%}{{customer.email|escape}}{%else%}-{%endif%}"{%endif%} {{block.shopify_attributes}}>
+<h3>{{'ifcvo.leads.title'|t|escape}}</h3>{%form 'customer',id:'ifcvo-capture'%}{%if form.posted_successfully?%}<p class="ifcvo-lead-ok" role="status">{{'ifcvo.leads.sent'|t|escape}}</p>{%endif%}{{form.errors|default_errors}}
 <input type="hidden" name="contact[tags]" value="ifc-spec-request,ifc-interest:{{product.handle|escape}}">
 <label>{{'ifcvo.lead.email'|t|escape}}<input type="email" name="contact[email]" value="{{customer.email|escape}}" autocomplete="email" required></label>
 <input type="hidden" name="contact[accepts_marketing]" value="false">
 <label><input type="checkbox" name="contact[accepts_marketing]" value="true"> {{'ifcvo.leads.consent'|t|escape}}</label>
-<button type="submit" class="ifcvo-btn">{{'ifcvo.leads.submit'|t|escape}}</button>
-{%-endform -%}
-</div>
-{%-render 'ifcvo-runtime',js:'ifcvo-leads.js' -%}
-{%-endif -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.vcd","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"checkbox","id":"intent","label":"t:k.k0s","default":false,"info":"Third model open: logged-in customers get the tag ifc-warm:<handle>, guests the cart attribute _ifc_views. Only with marketing consent."}]}{% endschema %}
+<button type="submit" class="ifcvo-btn">{{'ifcvo.leads.submit'|t|escape}}</button>{%endform%}</div>{%render 'ifcvo-runtime',js:'ifcvo-leads.js'%}{%endif%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.vcd","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"checkbox","id":"intent","label":"t:k.k0s","default":false,"info":"Third model open: logged-in customers get the tag ifc-warm:<handle>, guests the cart attribute _ifc_views. Only with marketing consent."}]}{% endschema %}

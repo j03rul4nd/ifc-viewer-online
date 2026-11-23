@@ -1,4 +1,4 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign plan=app.metafields.ifcvo.plan.value|default:''|strip|downcase
 assign shop_cfg=shop.metafields.ifcvo.config.value
@@ -33,34 +33,18 @@ endfor
 assign map='{'|append:map|append:'}'
 assign current=product.selected_or_first_available_variant
 assign filename=product.handle|default:'model'
--%}
-{%-if plan == 'free' -%}
-{%-if request.design_mode -%}
-<p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{block.shopify_attributes}}>{{'ifcvo.editor.gated'|t:feature:'variantviews',plan:'Starter'|escape}}</p>
-{%-endif -%}
-{%-else -%}
-<div
+%}{%if plan == 'free'%}{%render 'ifcvo-upsell',feature:'variantviews',plan:'Starter',block:block%}{%else%}<div
 class="ifcvo-panel ifcvo-variants-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-variants
 data-ifcvo-tier="variantviews"
 data-ifcvo-plan="{{plan|escape}}"
-data-ifcvo-license="{{shop.metafields.ifcvo.license.value|escape}}" data-ifcvo-shop="{{shop.permanent_domain|escape}}"
 data-views="{{map|escape}}"
 data-current="{{current.id|escape}}"
 data-filename="{{filename|escape}}"
 data-i18n="variantviews"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {{block.shopify_attributes}}
->
-{%-if l_heading != blank -%}<h3>{{l_heading|escape}}</h3>{%-endif -%}
-<div class="ifcvo-body ifcvo-views" data-ifcvo-variants-body>
-{%-if s.show_copy -%}<button type="button" class="ifcvo-btn" data-ifcvo-copy-view>{{l_copy|escape}}</button>{%-endif -%}
-{%-if s.show_image -%}<button type="button" class="ifcvo-btn" data-ifcvo-save-image>{{l_image|escape}}</button>{%-endif -%}
-</div>
+>{%if l_heading != blank%}<h3>{{l_heading|escape}}</h3>{%endif%}<div class="ifcvo-body ifcvo-views" data-ifcvo-variants-body>{%if s.show_copy%}<button type="button" class="ifcvo-btn" data-ifcvo-copy-view>{{l_copy|escape}}</button>{%endif%}{%if s.show_image%}<button type="button" class="ifcvo-btn" data-ifcvo-save-image>{{l_image|escape}}</button>{%endif%}</div>
 <input type="text" class="ifcvo-variants-link" readonly hidden aria-label="{{l_link|escape}}" data-ifcvo-view-link>
 <p class="ifcvo-caption" data-ifcvo-variants-status role="status" aria-live="polite"></p>
-</div>
-{%-render 'ifcvo-runtime',js:'ifcvo-variants.js' -%}
-{%-endif -%}
-{%-if request.design_mode -%}{%-assign dg_keys=view_key|append:","|append:hl_key -%}{%-render 'ifcvo-diag',feature:'variantviews',block:'ifc-variant-views',ns:ns,keys:dg_keys,scope:'variant' -%}{%-endif -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.9la","target":"section","settings":[{"type":"paragraph","content":"Per-variant camera and highlighted elements for the \"Product IFC model\" block. Variant metafields: custom.ifc_view (\"top\", {\"view\":\"iso\"} or {\"position\":[x,y,z],\"target\":[x,y,z]}) and custom.ifc_highlight (\"IfcBeam\", GlobalIds or {\"classes\":[],\"guids\":[]})."},{"type":"text","id":"title","label":"t:k.dks","info":"Empty uses the translated default."},{"type":"text","id":"namespace","label":"t:k.6ld","default":"custom"},{"type":"text","id":"view_key","label":"t:k.30j","info":"Empty uses ifcvo.config variantViewKey, then ifc_view."},{"type":"text","id":"highlight_key","label":"t:k.uuu","info":"Empty uses ifcvo.config variantHighlightKey, then ifc_highlight."},{"type":"checkbox","id":"show_copy","label":"t:k.mtp","default":true},{"type":"checkbox","id":"show_image","label":"t:k.hc3","default":true},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+</div>{%render 'ifcvo-runtime',js:'ifcvo-variants.js'%}{%endif%}{%if request.design_mode%}{%assign dg_keys=view_key|append:","|append:hl_key%}{%render 'ifcvo-diag',feature:'variantviews',block:'ifc-variant-views',ns:ns,keys:dg_keys,scope:'variant'%}{%endif%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.9la","target":"section","settings":[{"type":"paragraph","content":"Per-variant camera and highlighted elements for the \"Product IFC model\" block. Variant metafields: custom.ifc_view (\"top\", {\"view\":\"iso\"} or {\"position\":[x,y,z],\"target\":[x,y,z]}) and custom.ifc_highlight (\"IfcBeam\", GlobalIds or {\"classes\":[],\"guids\":[]})."},{"type":"text","id":"title","label":"t:k.dks","info":"Empty uses the translated default."},{"type":"text","id":"namespace","label":"t:k.6ld","default":"custom"},{"type":"text","id":"view_key","label":"t:k.30j","info":"Empty uses ifcvo.config variantViewKey, then ifc_view."},{"type":"text","id":"highlight_key","label":"t:k.uuu","info":"Empty uses ifcvo.config variantHighlightKey, then ifc_highlight."},{"type":"checkbox","id":"show_copy","label":"t:k.mtp","default":true},{"type":"checkbox","id":"show_image","label":"t:k.hc3","default":true},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

@@ -15,7 +15,7 @@
   assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
 -%}
 {%- if plan == 'free' -%}
-  {%- if request.design_mode -%}<p class="ifcvo-upsell" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'capture', plan: 'Starter' | escape }}</p>{%- endif -%}
+  {%- render 'ifcvo-upsell', feature: 'capture', plan: 'Starter', block: block -%}
 {%- else -%}
 <div class="ifcvo-panel ifcvo-lead" data-ifcvo-capture data-ifcvo-gate="capture" data-handle="{{ product.handle | escape }}"{% if s.intent %} data-intent="{% if customer %}{{ customer.email | escape }}{% else %}-{% endif %}"{% endif %} {{ block.shopify_attributes }}>
     <h3>{{ 'ifcvo.leads.title' | t | escape }}</h3>

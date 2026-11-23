@@ -182,9 +182,34 @@ describe('compact Liquid', () => {
     expect(gen.compactLiquid('<p title="a | b">{{ x | escape }}</p>\n')).toBe('<p title="a | b">{{x|escape}}</p>\n')
   })
 
-  it('keeps at least 4 KB of the 100 KB Liquid limit free for new blocks', () => {
+  // T-325 G8 freed 4 KB+ (build-time whitespace control, shared snippets) and moved the
+  // guard from 96,000 to 92,000 bytes: 8 KB of the 100 KB limit stays free for new blocks.
+  it('keeps at least 8 KB of the 100 KB Liquid limit free for new blocks', () => {
     const bytes = liquidFiles().reduce((n, f) => n + fs.statSync(f).size, 0)
-    expect(bytes).toBeLessThanOrEqual(gen.LIQUID_LIMIT - 4 * 1000)
+    expect(bytes).toBeLessThanOrEqual(gen.LIQUID_LIMIT - 8 * 1000)
+  })
+
+  it('keeps at least 16 of the 250 schema keys free for new settings', () => {
+    expect(gen.SCHEMA_KEY_BUDGET).toBeLessThanOrEqual(gen.SCHEMA_KEY_LIMIT - 16)
+    const n = flatValues(JSON.parse(fs.readFileSync(path.join(dir, 'locales', 'en.default.schema.json'), 'utf8'))).length
+    expect(n).toBeLessThanOrEqual(gen.SCHEMA_KEY_LIMIT - 16)
+  })
+
+  it('build-time whitespace control: drops what a dash would trim, then the no-op dashes', () => {
+    expect(gen.dropTrimmed('{%-liquid\nassign a=1\n-%}\n<p>{{a}}</p>\n{%-if a -%}\n x {%-endif -%}\n')).toBe('{%liquid\nassign a=1\n%}<p>{{a}}</p>{%if a%}x{%endif%}')
+    // The trimmed space goes, so the dash is a no-op too; the untrimmed space after stays.
+    expect(gen.dropTrimmed('<p> {{- a }} </p>')).toBe('<p>{{ a }} </p>')
+    expect(gen.dropTrimmed('a {%-if x%} b')).toBe('a{%if x%} b')
+    // The schema is left alone.
+    expect(gen.dropTrimmed('{%-if x -%}\n{% schema %}{"a":"-%} "}{% endschema %}')).toBe('{%if x%}{% schema %}{"a":"-%} "}{% endschema %}')
+  })
+
+  it('texts that read the same in every schema locale are written into the block, never a key', () => {
+    const { short, inline } = gen.compiledLiquid()
+    for (const k of ['settings.english', 'settings.deutsch', 'settings.16_9']) {
+      expect(inline).toContain(k)
+      expect(short[k]).toBeUndefined()
+    }
   })
 
   it('no generated block or snippet keeps a comment', () => {

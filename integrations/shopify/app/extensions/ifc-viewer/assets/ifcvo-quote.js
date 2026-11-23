@@ -132,7 +132,9 @@ const viewerRoot = () => document.querySelector('[data-ifcvo-viewer]')
 
 function shopLabels() {
   const r = viewerRoot()
-  return r ? shopLabelsFor(readJson(r.dataset.ifcvoLabels), r.dataset.locale) : {}
+  const src = document.querySelector('script[data-ifcvo-shop-labels]')
+  const own = (r && r.dataset.ifcvoLabels) || (src ? src.textContent.trim() : '')
+  return r ? shopLabelsFor(readJson(own), r.dataset.locale) : {}
 }
 
 /** The quote list texts for one block root. */

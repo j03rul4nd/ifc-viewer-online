@@ -1,4 +1,4 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign plan=app.metafields.ifcvo.plan.value|default:''|strip|downcase
 assign ns=s.specs_ns|strip|default:'bim'
@@ -50,13 +50,7 @@ endif
 if contact != blank
 assign ready=ready|plus:1
 endif
--%}
-{%-if plan != 'business' and plan != '' -%}
-{%-if request.design_mode -%}
-<p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{block.shopify_attributes}}>{{'ifcvo.editor.gated'|t:feature:'dpp',plan:'Business'|escape}}</p>
-{%-endif -%}
-{%-else -%}
-<section
+%}{%if plan != 'business' and plan != ''%}{%render 'ifcvo-upsell',feature:'dpp',plan:'Business',block:block%}{%else%}<section
 class="ifcvo-panel ifcvo-dpp-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-dpp
 data-ifcvo-tier="dpp"
@@ -64,47 +58,12 @@ data-show-model="{{s.show_model}}"
 data-i18n="dpp"
 data-labels-override="{{s.labels|escape}}"
 aria-label="{{s.title|default:'Sustainability and product passport'|escape}}"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {{block.shopify_attributes}}
->
-{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
-{%-if s.show_epd -%}
-<h4>{{'ifcvo.dpp.epd'|t|escape}}</h4>
+>{%if s.title != blank%}<h3>{{s.title|escape}}</h3>{%endif%}{%if s.show_epd%}<h4>{{'ifcvo.dpp.epd'|t|escape}}</h4>
 <table class="ifcvo-specs ifcvo-dpp-epd" data-ifcvo-epd>
-<tbody>
-{%-render 'ifcvo-dpp-row',key:'gwp_a1a3',label:'ifcvo.dpp.gwp_a1a3',value:gwp_a,unit:m.gwp_unit.value,fallback:'kg CO₂e' -%}
-{%-render 'ifcvo-dpp-row',key:'gwp',label:'ifcvo.dpp.gwp',value:gwp_t,unit:m.gwp_unit.value,fallback:'kg CO₂e' -%}
-{%-render 'ifcvo-dpp-row',key:'energy',label:'ifcvo.dpp.energy',value:m.energy.value,unit:m.energy_unit.value,fallback:'MJ' -%}
-{%-render 'ifcvo-dpp-row',key:'water',label:'ifcvo.dpp.water',value:m.water.value,unit:m.water_unit.value,fallback:'m³' -%}
-{%-render 'ifcvo-dpp-row',key:'declared_unit',label:'ifcvo.dpp.declared_unit',value:unit -%}
-{%-render 'ifcvo-dpp-row',key:'epd_programme',label:'ifcvo.dpp.epd_programme',value:m.epd_programme.value -%}
-{%-render 'ifcvo-dpp-row',key:'epd_number',label:'ifcvo.dpp.epd_number',value:m.epd_number.value -%}
-{%-render 'ifcvo-dpp-row',key:'epd_valid_until',label:'ifcvo.dpp.epd_valid_until',value:m.epd_valid_until.value -%}
-{%-render 'ifcvo-dpp-row',key:'epd_url',label:'ifcvo.dpp.epd_link',value:epd_url,link:true -%}
-</tbody>
-</table>
-{%-endif -%}
-{%-if s.show_checklist -%}
-<h4>{{'ifcvo.dpp.checklist'|t|escape}}</h4>
-<ul class="ifcvo-dpp-list" data-ifcvo-checklist>
-{%-render 'ifcvo-dpp-item',item:'dop',link:dop_url -%}
-{%-render 'ifcvo-dpp-item',item:'ce',value:ce -%}
-{%-assign v=gwp_a|append:gwp_t -%}
-{%-render 'ifcvo-dpp-item',item:'gwp',value:v,quiet:true -%}
-{%-render 'ifcvo-dpp-item',item:'instructions',value:langs -%}
-{%-render 'ifcvo-dpp-item',item:'substances',value:soc -%}
-{%-render 'ifcvo-dpp-item',item:'identifier',value:gtin -%}
-{%-render 'ifcvo-dpp-item',item:'manufacturer',value:contact -%}
-</ul>
-<p class="ifcvo-dpp-score" data-ifcvo-dpp-score data-ready="{{ready}}" data-total="7"><strong>{{'ifcvo.dpp.score'|t:ready:ready,total:7|escape}}</strong></p>
-{%-endif -%}
-<p class="ifcvo-muted ifcvo-dpp-disclaimer">{{'ifcvo.dpp.disclaimer'|t|escape}}</p>
-{%-if request.design_mode and m == blank -%}
-<p class="ifcvo-muted">{{'ifcvo.editor.dpp'|t:ns:ns|escape}}</p>
-{%-endif -%}
-<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
-</section>
-{%-render 'ifcvo-runtime',js:'ifcvo-dpp.js' -%}
-{%-endif -%}
-{%-render 'ifcvo-diag',feature:'dpp',block:'ifc-dpp',ns:ns,keys:'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.jzi","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… in this namespace are shown as HTML and win over the model."},{"type":"checkbox","id":"show_epd","label":"t:k.ymk","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.ecd","default":true},{"type":"checkbox","id":"show_model","label":"t:k.j8r","default":true},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, epd, gwp_a1a3, gwp, energy, water, declared_unit, epd_number, epd_link, from_model, from_pset, score, missing, ready, not_ready, loading, error, varies."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+<tbody>{%render 'ifcvo-dpp-row',key:'gwp_a1a3',label:'ifcvo.dpp.gwp_a1a3',value:gwp_a,unit:m.gwp_unit.value,fallback:'kg CO₂e'%}{%render 'ifcvo-dpp-row',key:'gwp',label:'ifcvo.dpp.gwp',value:gwp_t,unit:m.gwp_unit.value,fallback:'kg CO₂e'%}{%render 'ifcvo-dpp-row',key:'energy',label:'ifcvo.dpp.energy',value:m.energy.value,unit:m.energy_unit.value,fallback:'MJ'%}{%render 'ifcvo-dpp-row',key:'water',label:'ifcvo.dpp.water',value:m.water.value,unit:m.water_unit.value,fallback:'m³'%}{%render 'ifcvo-dpp-row',key:'declared_unit',label:'ifcvo.dpp.declared_unit',value:unit%}{%render 'ifcvo-dpp-row',key:'epd_programme',label:'ifcvo.dpp.epd_programme',value:m.epd_programme.value%}{%render 'ifcvo-dpp-row',key:'epd_number',label:'ifcvo.dpp.epd_number',value:m.epd_number.value%}{%render 'ifcvo-dpp-row',key:'epd_valid_until',label:'ifcvo.dpp.epd_valid_until',value:m.epd_valid_until.value%}{%render 'ifcvo-dpp-row',key:'epd_url',label:'ifcvo.dpp.epd_link',value:epd_url,link:true%}</tbody>
+</table>{%endif%}{%if s.show_checklist%}<h4>{{'ifcvo.dpp.checklist'|t|escape}}</h4>
+<ul class="ifcvo-dpp-list" data-ifcvo-checklist>{%render 'ifcvo-dpp-item',item:'dop',link:dop_url%}{%render 'ifcvo-dpp-item',item:'ce',value:ce%}{%assign v=gwp_a|append:gwp_t%}{%render 'ifcvo-dpp-item',item:'gwp',value:v,quiet:true%}{%render 'ifcvo-dpp-item',item:'instructions',value:langs%}{%render 'ifcvo-dpp-item',item:'substances',value:soc%}{%render 'ifcvo-dpp-item',item:'identifier',value:gtin%}{%render 'ifcvo-dpp-item',item:'manufacturer',value:contact%}</ul>
+<p class="ifcvo-dpp-score" data-ifcvo-dpp-score data-ready="{{ready}}" data-total="7"><strong>{{'ifcvo.dpp.score'|t:ready:ready,total:7|escape}}</strong></p>{%endif%}<p class="ifcvo-muted ifcvo-dpp-disclaimer">{{'ifcvo.dpp.disclaimer'|t|escape}}</p>{%if request.design_mode and m == blank%}<p class="ifcvo-muted">{{'ifcvo.editor.dpp'|t:ns:ns|escape}}</p>{%endif%}<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
+</section>{%render 'ifcvo-runtime',js:'ifcvo-dpp.js'%}{%endif%}{%render 'ifcvo-diag',feature:'dpp',block:'ifc-dpp',ns:ns,keys:'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact'%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.jzi","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim","info":"epd_url, epd_number, gwp_a1a3, declared_unit, dop_url, ce_marking… in this namespace are shown as HTML and win over the model."},{"type":"checkbox","id":"show_epd","label":"t:k.ymk","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.ecd","default":true},{"type":"checkbox","id":"show_model","label":"t:k.j8r","default":true},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"t:k.r8g"},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

@@ -1,4 +1,4 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign ns=s.specs_ns|strip|default:'bim'
 assign ids_url=s.ids_url|strip
@@ -9,8 +9,7 @@ assign ids_head=ids_url|slice:0,8|downcase
 unless ids_head == 'https://'
 assign ids_url=''
 endunless
--%}
-<div
+%}<div
 class="ifcvo-panel ifcvo-compliance-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-compliance
 data-ifcvo-tier="compliance"
@@ -23,15 +22,6 @@ data-ids-url="{{ids_url|escape}}"
 data-timeout="{{s.timeout|escape}}"
 data-i18n="compliance"
 data-labels-override="{{s.labels|escape}}"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {{block.shopify_attributes}}
->
-{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
-<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
-{%-if s.show_ids and ids_url == blank and request.design_mode -%}
-<p class="ifcvo-muted">{{'ifcvo.editor.compliance'|t:ns:ns|escape}}</p>
-{%-endif -%}
-</div>
-{%-render 'ifcvo-runtime',js:'ifcvo-compliance.js' -%}
-{%-render 'ifcvo-diag',feature:'compliance',block:'ifc-compliance',ns:ns,keys:'ids_url' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.aut","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Compliance"},{"type":"checkbox","id":"show_nbs","label":"t:k.n20","default":true},{"type":"checkbox","id":"show_ids","label":"t:k.4aq","default":true},{"type":"text","id":"ids_url","label":"t:k.s9u","info":"Empty uses the product metafield \"ids_url\" in the namespace below."},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim"},{"type":"checkbox","id":"show_score","label":"t:k.lbb","default":true},{"type":"checkbox","id":"show_details","label":"t:k.buj","default":true},{"type":"checkbox","id":"show_manual","label":"t:k.62r","default":false},{"type":"range","id":"timeout","label":"t:k.k20","min":10,"max":120,"step":10,"unit":"s","default":30},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+>{%if s.title != blank%}<h3>{{s.title|escape}}</h3>{%endif%}<div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>{%if s.show_ids and ids_url == blank and request.design_mode%}<p class="ifcvo-muted">{{'ifcvo.editor.compliance'|t:ns:ns|escape}}</p>{%endif%}</div>{%render 'ifcvo-runtime',js:'ifcvo-compliance.js'%}{%render 'ifcvo-diag',feature:'compliance',block:'ifc-compliance',ns:ns,keys:'ids_url'%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.aut","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Compliance"},{"type":"checkbox","id":"show_nbs","label":"t:k.n20","default":true},{"type":"checkbox","id":"show_ids","label":"t:k.4aq","default":true},{"type":"text","id":"ids_url","label":"t:k.s9u","info":"Empty uses the product metafield \"ids_url\" in the namespace below."},{"type":"text","id":"specs_ns","label":"t:k.6ld","default":"bim"},{"type":"checkbox","id":"show_score","label":"t:k.lbb","default":true},{"type":"checkbox","id":"show_details","label":"t:k.buj","default":true},{"type":"checkbox","id":"show_manual","label":"t:k.62r","default":false},{"type":"range","id":"timeout","label":"t:k.k20","min":10,"max":120,"step":10,"unit":"s","default":30},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, nbs, nbsNone, idsPass, idsFail, idsNone, score, waiting, running, error, details, allPass, manual, note, more, typed, untyped, sampled."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

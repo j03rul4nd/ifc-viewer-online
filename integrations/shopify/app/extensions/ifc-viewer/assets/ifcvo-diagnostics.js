@@ -48,7 +48,20 @@ export const DIAG_LABELS = {
   minAgo: '{n} min ago',
   hAgo: '{n} h ago',
   pixelNote: 'The pixel only forwards to your own GA4 or Meta; figures come from your reports.',
+  report: 'Report a problem',
+  reportNote: 'Opens your email with the shop, theme, blocks and error code filled in. Add what you saw.',
+  reviewAsk: 'The 3D model loaded. If the app helps your store, a short review on the Shopify App Store helps a lot.',
+  review: 'Write a review',
+  dismiss: 'Not now',
+  mailAsk: 'What happened, and on which product:',
+  mailCode: 'Error code: {code}',
 }
+
+/** Where "Report a problem" writes to (the address the site already answers from). */
+export const SUPPORT_EMAIL = 'hola@ifcvieweronline.eu'
+export const REVIEW_URL = 'https://apps.shopify.com/ifc-viewer-online/reviews'
+/** localStorage: '' never loaded · 'ask' a model loaded · 'dismissed' · 'reviewed'. */
+export const REVIEW_KEY = 'ifcvo-review'
 
 const FEATURE_LABELS = {
   viewer: 'Product IFC model', files: 'IFC downloads', specs: 'IFC specs & quantities', details: 'IFC element details',
@@ -211,6 +224,53 @@ export function roiReport(cookie, now = Date.now(), labels = DIAG_LABELS) {
   return [{ kind: 'ok', text: fill(L.pixelSeen, { ago }) }, { kind: 'info', text: L.pixelNote }]
 }
 
+/** Short error code for the support mail: the last viewer error, else the model probe. */
+export function errorCode(probe, lastError = '') {
+  if (lastError) return String(lastError).slice(0, 60)
+  if (!probe || !probe.url) return 'no_model'
+  if (!probe.https) return 'not_https'
+  if (!probe.cors) return 'cors'
+  if (!probe.ok) return `http_${probe.status}`
+  if (probe.step === false) return 'not_ifc'
+  if (probe.mb != null && probe.mb > 100) return 'heavy'
+  return 'none'
+}
+
+/**
+ * mailto: for "Report a problem". Only the shop domain, theme, block names, error code and
+ * SDK version: no customer data, no model URL.
+ */
+export function reportMailto({ shop = '', theme = '', blocks = [], code = 'none', sdk = '', email = SUPPORT_EMAIL } = {}) {
+  const subject = `IFC Viewer Online (Shopify): ${shop || 'shop'} · ${code}`
+  const body = [
+    DIAG_LABELS.mailAsk,
+    '',
+    '',
+    '---',
+    `Shop: ${shop || '?'}`,
+    `Theme: ${theme || '?'}`,
+    `Blocks: ${blocks.join(', ') || '?'}`,
+    fill(DIAG_LABELS.mailCode, { code }),
+    `Viewer SDK: ${sdk || '?'}`,
+  ].join('\n')
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
+/** The review prompt's state from storage ('' when unset or storage is off). */
+export function readReview(win = typeof window !== 'undefined' ? window : undefined) {
+  try { return (win && win.localStorage.getItem(REVIEW_KEY)) || '' } catch (e) { return '' }
+}
+
+function saveReview(value) {
+  try { window.localStorage.setItem(REVIEW_KEY, value) } catch (e) { /* storage off */ }
+}
+
+/** After the first model load in the editor: ask once, until reviewed or dismissed. */
+export function markLoaded(win = typeof window !== 'undefined' ? window : undefined) {
+  if (readReview(win) === '') { try { win.localStorage.setItem(REVIEW_KEY, 'ask') } catch (e) { /* storage off */ } }
+  return readReview(win)
+}
+
 // ── DOM ──────────────────────────────────────────────────────────────────────
 
 function el(tag, attrs = {}, ...children) {
@@ -291,10 +351,55 @@ export async function render(doc = document, { api = window.IFCVO, fetchImpl, fo
     body.append(el('section', { 'data-feature': r.feature }, el('h4', {}, `${r.name} (${r.tier})`), list(r.lines)))
   }
   const key = viewerDiag && (viewerDiag.present || []).concat(viewerDiag.missing || []).filter(Boolean)[0]
+  const reportBox = el('section', { 'data-ifcvo-report': '' })
+  body.append(reportBox)
+  watchViewers(doc)
+  showReview(doc)
   const probe = url ? await checkModel(url, fetchImpl) : null
   modelBox.replaceChildren(el('h4', {}, L.model), url ? el('p', { class: 'ifcvo-muted' }, url) : null,
     list(modelReport(probe, { ns: (viewerDiag && viewerDiag.ns) || 'custom', key: key || 'ifc_model' })))
+  const shopNode = doc.querySelector('[data-ifcvo-shop]')
+  const sh = window.Shopify || {}
+  const theme = sh.theme ? [sh.theme.name, sh.theme.id && `#${sh.theme.id}`].filter(Boolean).join(' ') : ''
+  const href = () => reportMailto({
+    shop: (shopNode && shopNode.dataset.ifcvoShop) || sh.shop || '',
+    theme,
+    blocks: diags.map((d) => d.block || d.feature),
+    code: errorCode(probe, lastError),
+    sdk: sdkVersion(api && api.sdk),
+  })
+  // The code is read on click, so a viewer error after the panel was drawn is included.
+  const link = el('a', { class: 'ifcvo-chip', href: href(), 'data-ifcvo-report-link': '', onclick: () => { link.href = href() } }, L.report)
+  reportBox.append(link, el('p', { class: 'ifcvo-muted' }, L.reportNote))
   return panel
+}
+
+/** Last viewer error code on the page (ifcvo:error), for the support mail. */
+let lastError = ''
+const watched = new WeakSet()
+
+/** Listens to every viewer on the page for errors and the first successful model load. */
+function watchViewers(doc) {
+  for (const root of doc.querySelectorAll('[data-ifcvo-viewer]')) {
+    if (root.dataset.ifcvoState === 'ready') markLoaded(window)
+    if (watched.has(root)) continue
+    watched.add(root)
+    root.addEventListener('ifcvo:error', (e) => { lastError = (e.detail && e.detail.code) || 'error' })
+    root.addEventListener('ifcvo:loaded', () => { lastError = ''; markLoaded(window); showReview(doc) })
+  }
+}
+
+/** The review prompt, in the editor panel only, once a model has loaded and until answered. */
+function showReview(doc) {
+  const body = doc.querySelector('[data-ifcvo-diag-panel] .ifcvo-diag-body')
+  if (!body || readReview() !== 'ask' || body.querySelector('[data-ifcvo-review]')) return
+  const L = DIAG_LABELS
+  const box = el('section', { 'data-ifcvo-review': '' },
+    el('p', {}, L.reviewAsk),
+    el('a', { class: 'ifcvo-chip', href: REVIEW_URL, target: '_blank', rel: 'noopener', onclick: () => { saveReview('reviewed'); box.remove() } }, L.review),
+    ' ',
+    el('button', { type: 'button', class: 'ifcvo-chip', 'data-ifcvo-review-dismiss': '', onclick: () => { saveReview('dismissed'); box.remove() } }, L.dismiss))
+  body.prepend(box)
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined' && !window.__ifcvoDiag) {
