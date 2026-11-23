@@ -6,6 +6,7 @@ api_version = "2026-10"
 name = "t:name"
 description = "t:description"
 handle = "ifc-my-models"
+uid = "e4d82d30-3d97-4430-dc4f-72fb8fda1dbf198f4aa7"
 type = "ui_extension"
 
 [[extensions.targeting]]

@@ -6,6 +6,7 @@ api_version = "2026-10"
 name = "t:name"
 description = "t:description"
 handle = "ifc-order-files"
+uid = "8ba0f34d-0219-bfd9-5f5a-4107e5ea9982dbecaa3a"
 type = "ui_extension"
 
 [[extensions.targeting]]
