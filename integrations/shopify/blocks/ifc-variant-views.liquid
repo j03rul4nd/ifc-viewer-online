@@ -12,7 +12,7 @@
 {% endcomment %}
 {%- liquid
   assign s = block.settings
-  assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
   assign shop_cfg = shop.metafields.ifcvo.config.value
   assign shop_labels = shop.metafields.ifcvo.labels.value
   assign iso = request.locale.iso_code | downcase
@@ -63,7 +63,7 @@
 {%- endcapture -%}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'variantviews', plan: 'starter' | escape }}</p>
+    <p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'variantviews', plan: 'Starter' | escape }}</p>
   {%- endif -%}
 {%- else -%}
 <div
@@ -71,6 +71,7 @@
   data-ifcvo-variants
   data-ifcvo-tier="variantviews"
   data-ifcvo-plan="{{ plan | escape }}"
+  data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
   data-views="{{ map | escape }}"
   data-current="{{ current.id | escape }}"
   data-filename="{{ filename | escape }}"

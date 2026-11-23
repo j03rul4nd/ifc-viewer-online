@@ -25,7 +25,7 @@
     Preview mode of an "IFC plan view" block in this section: no download links (also not in noscript).
   endcomment
   assign ifcvo_protected = false
-  assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+  assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
   comment
     planview is a starter feature: only a plan that includes it may hide downloads.
   endcomment

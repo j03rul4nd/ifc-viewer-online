@@ -15,7 +15,7 @@ if files_key != ''
 assign files = product.metafields[ns][files_key].value
 endif
 assign ifcvo_protected = false
-assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
 if pv_plan == 'free'
 assign pv_ok = false
 else

@@ -1,6 +1,6 @@
 {%- liquid
 assign s = block.settings
-assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
 assign shop_labels = shop.metafields.ifcvo.labels.value
 assign iso = request.locale.iso_code | downcase
 assign lang = iso | split: '-' | first
@@ -51,6 +51,7 @@ class="ifcvo-panel ifcvo-planview-block{% unless s.frame %} ifcvo-flat{% endunle
 data-ifcvo-planview
 data-ifcvo-tier="planview"
 data-ifcvo-plan="{{ plan | escape }}"
+data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
 {% if s.protect %}data-ifcvo-protect="{{ protect_mode | escape }}" data-watermark="{% if s.show_watermark %}{{ wm | escape }}{% endif %}" data-watermark-opacity="{{ s.watermark_opacity | divided_by: 100.0 | escape }}"{% endif %}
 data-start="{{ s.start | escape }}"
 data-rooms="{{ s.show_rooms | escape }}"

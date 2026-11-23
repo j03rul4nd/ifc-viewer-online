@@ -1,6 +1,6 @@
 {%- liquid
 assign s = block.settings
-assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+assign plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
 assign ns = s.specs_ns | strip | default: 'bim'
 assign m = product.metafields[ns]
 assign epd_url = m.epd_url.value | append: '' | strip
@@ -63,9 +63,9 @@ endif
 {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
 --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{%- if plan != 'business' -%}
+{%- if plan != 'business' and plan != '' -%}
 {%- if request.design_mode -%}
-<p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'business' | escape }}</p>
+<p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'Business' | escape }}</p>
 {%- endif -%}
 {%- else -%}
 <section

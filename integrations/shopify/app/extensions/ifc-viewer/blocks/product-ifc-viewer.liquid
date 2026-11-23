@@ -52,7 +52,7 @@ when 'brand'
 assign stage_bg = s.bg_bottom | default: s.bg_top
 endcase
 assign ifcvo_protected = false
-assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
+assign pv_plan = app.metafields.ifcvo.plan.value | default: '' | strip | downcase
 if pv_plan == 'free'
 assign pv_ok = false
 else
@@ -69,7 +69,7 @@ endfor
 data-load="{{ s.load | escape }}" data-title="{{ title | escape }}" data-ui="{{ s.ui | escape }}" data-view="{{ s.view | escape }}"
 data-validate="{% if s.validate %}1{% else %}0{% endif %}" data-lang="{% if s.lang != 'auto' %}{{ s.lang }}{% endif %}"
 data-accent="{{ s.accent | remove: '#' | escape }}" data-bg="{{ s.background | escape }}" data-bg-top="{{ s.bg_top | escape }}" data-bg-bottom="{{ s.bg_bottom | escape }}"
-data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | default: 'business' | escape }}"
+data-ifcvo-plan="{{ app.metafields.ifcvo.plan.value | escape }}" data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
 data-ifcvo-config="{{ shop.metafields.ifcvo.config.value | json | escape }}"
 data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
 data-size-mb="{{ size_mb | escape }}"

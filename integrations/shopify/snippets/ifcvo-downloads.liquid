@@ -69,15 +69,15 @@
           <li><a class="ifcvo-download" href="{{ dl_model | escape }}" download rel="noopener" data-file="{{ dl_name | escape }}">{%- assign dl_t = 'ifcvo.downloads.ifc' | t -%}{{ ifc_label | default: dl_t | escape }}</a></li>
         {%- endif -%}
         {%- if dl_model != '' and glb -%}
-          <li><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="glb">{%- assign dl_t = 'ifcvo.downloads.glb' | t -%}{{ glb_label | default: dl_t | escape }}</button></li>
+          <li data-ifcvo-gate="files"><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="glb">{%- assign dl_t = 'ifcvo.downloads.glb' | t -%}{{ glb_label | default: dl_t | escape }}</button></li>
         {%- endif -%}
         {%- if dl_model != '' and csv -%}
-          <li><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="csv">{%- assign dl_t = 'ifcvo.downloads.csv' | t -%}{{ csv_label | default: dl_t | escape }}</button></li>
+          <li data-ifcvo-gate="files"><button type="button" class="ifcvo-btn ifcvo-make" data-ifcvo-make="csv">{%- assign dl_t = 'ifcvo.downloads.csv' | t -%}{{ csv_label | default: dl_t | escape }}</button></li>
         {%- endif -%}
         {%- for f in files -%}
           {%- assign furl = f.url | default: f | strip -%}
           {%- assign fname = furl | split: '?' | first | split: '/' | last -%}
-          <li><a href="{{ furl | escape }}" download rel="noopener" data-file="{{ fname | escape }}">{{ fname | escape }}</a></li>
+          <li data-ifcvo-gate="files"><a href="{{ furl | escape }}" download rel="noopener" data-file="{{ fname | escape }}">{{ fname | escape }}</a></li>
         {%- endfor -%}
       </ul>
       <p class="ifcvo-make-status ifcvo-muted" role="status" aria-live="polite"></p>

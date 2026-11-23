@@ -78,21 +78,30 @@ export function toAppBlock(source) {
 /**
  * Plan gate: the one table that says which plan unlocks each feature. The
  * runtime gets a copy between the TIERS markers in assets/ifcvo.js (rewritten
- * by this script). Loading, downloads, errors and accessibility are never gated.
- * Until billing exists the shop's plan defaults to "business", so all is on.
+ * by this script). Loading, the IFC download, errors and accessibility are never
+ * gated. The shop's plan: the `ifcvo.plan` app metafield if set, else a signed
+ * licence token in the shop metafield `ifcvo.license` (license/sign.mjs), else free.
+ * Re-tier approved 2026-11-23 (T-325 G1). quote, gateddownloads, quantities, roi
+ * and bulk are enforced by their own blocks (T-325 G2/G3/G5/G6).
  */
 export const PLANS = ['free', 'starter', 'business']
-export const DEFAULT_PLAN = 'business'
+export const DEFAULT_PLAN = 'free'
+/** Names shown to merchants in theme-editor notes; prices are in listing/LISTING.md. */
+export const PLAN_NAMES = { free: 'Free', starter: 'Starter ($9/month)', business: 'Business ($29/month)' }
+export const PLANS_URL = 'https://apps.shopify.com/ifc-viewer-online'
 export const FEATURE_TIERS = {
   viewer: 'free',
   download: 'free',
-  files: 'free',
   specs: 'free',
-  details: 'free',
+  rooms: 'free',
   explorer: 'free',
   views: 'free',
-  score: 'free',
-  rooms: 'free',
+  files: 'starter',
+  details: 'starter',
+  quote: 'starter',
+  gateddownloads: 'starter',
+  score: 'starter',
+  quantities: 'starter',
   tour: 'starter',
   planset: 'starter',
   compat: 'starter',
@@ -104,9 +113,17 @@ export const FEATURE_TIERS = {
   dpp: 'business',
   sunlot: 'business',
   compliance: 'business',
+  roi: 'business',
+  bulk: 'business',
 }
 /** Features that must stay free whatever the plan table says. */
-export const ALWAYS_FREE = ['viewer', 'download', 'files']
+export const ALWAYS_FREE = ['viewer', 'download', 'specs', 'rooms']
+
+/** Ed25519 public key (raw, base64url) that licence tokens are checked against (license/sign.mjs writes it). */
+export const LICENSE_KEY_FILE = path.join(here, 'license', 'public-key.txt')
+export function licenseKey() {
+  return fs.existsSync(LICENSE_KEY_FILE) ? fs.readFileSync(LICENSE_KEY_FILE, 'utf8').trim() : ''
+}
 
 const TIERS_RE = /(\/\/ TIERS:start[^\n]*\n)[\s\S]*?(\/\/ TIERS:end)/
 const LANGS_RE = /(\/\/ LANGS:start[^\n]*\n)[\s\S]*?(\/\/ LANGS:end)/
@@ -116,7 +133,10 @@ export function withTiers(runtime) {
   const table =
     `const PLANS = ${JSON.stringify(PLANS)}\n` +
     `const DEFAULT_PLAN = '${DEFAULT_PLAN}'\n` +
-    `const FEATURE_TIERS = ${JSON.stringify(FEATURE_TIERS)}\n`
+    `const FEATURE_TIERS = ${JSON.stringify(FEATURE_TIERS)}\n` +
+    `const PLAN_NAMES = ${JSON.stringify(PLAN_NAMES)}\n` +
+    `const PLANS_URL = '${PLANS_URL}'\n` +
+    `const LICENSE_KEY = '${licenseKey()}'\n`
   if (!TIERS_RE.test(runtime)) throw new Error('ifcvo.js has no TIERS markers')
   return runtime.replace(TIERS_RE, (_, start, end) => start + table + end)
 }
