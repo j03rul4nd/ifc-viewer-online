@@ -330,6 +330,10 @@ function mountViewer(root) {
       background: background(root),
       title: c.title,
       height: '100%',
+      // Shop ifcvo.config: {"grid": false} hides the floor grid; {"finish": "daylight"|"clay"}
+      // lights the model for a light page (IFC colours, or one sober matte tone).
+      ...(c.grid === false ? { grid: false } : {}),
+      ...(c.finish === 'clay' || c.finish === 'daylight' ? { finish: c.finish } : {}),
       ...protectOptions(),
     })
     viewer = v

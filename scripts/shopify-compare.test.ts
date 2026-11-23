@@ -14,6 +14,13 @@ describe('compare viewers follow the product viewer look', () => {
       .toEqual({ background: { top: '#fbfaf7', bottom: '#e9e5db' }, accent: '2f5d50' })
     expect(cmp.lookOf({ bg: 'paper' })).toEqual({ background: 'paper' })
     expect(cmp.lookOf({})).toEqual({})
+    expect(cmp.lookOf({ ifcvoConfig: '{"grid":false,"finish":"daylight"}' })).toEqual({ grid: false, finish: 'daylight' })
+  })
+
+  it('the spec table is never clipped by the panel body scroll box', () => {
+    const css = fs.readFileSync(path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo.css'), 'utf8')
+    expect(css).toMatch(/\.ifcvo-compare \.ifcvo-body \{ max-height: none; overflow: visible; \}/)
+    expect(css).toMatch(/\.ifcvo-compare-split\[hidden\], \.ifcvo-compare-tabs\[hidden\], \.ifcvo-compare-pane\[hidden\] \{ display: none; \}/)
   })
 })
 

@@ -217,6 +217,9 @@ describe('Shopify config and plan gate', () => {
     root.dataset.view = 'iso'
     root.dataset.validate = '0'
     expect(r.viewerConfig(root)).toMatchObject({ view: 'iso', lang: 'de', validate: false })
+    // Shop-wide look without a block setting (the viewer block is at Shopify's setting limit).
+    root.dataset.ifcvoConfig = '{"grid":false,"finish":"clay"}'
+    expect(r.viewerConfig(root)).toMatchObject({ grid: false, finish: 'clay' })
   })
 
   it('label overrides and locale fallback', async () => {

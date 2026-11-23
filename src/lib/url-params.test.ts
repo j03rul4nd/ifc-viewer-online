@@ -553,6 +553,17 @@ describe('article presentation (v1.14)', () => {
   })
 })
 
+describe('grid and finish (v1.20)', () => {
+  it('reads grid=0 and finish=clay, ignores anything else', () => {
+    expect(parseAppUrlParams('?embed=1&grid=0').grid).toBe(false)
+    expect(parseAppUrlParams('?embed=1&grid=1').grid).toBe(true)
+    expect(parseAppUrlParams('?embed=1').grid).toBeUndefined()
+    expect(parseAppUrlParams('?embed=1&finish=clay').finish).toBe('clay')
+    expect(parseAppUrlParams('?embed=1&finish=Daylight').finish).toBe('daylight')
+    expect(parseAppUrlParams('?embed=1&finish=neon').finish).toBeUndefined()
+  })
+})
+
 describe('turntable (v1.15)', () => {
   it('reads on, off and a speed, capped', () => {
     expect(parseAppUrlParams('?embed=1&turntable=1').turntable).toBe(6)

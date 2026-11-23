@@ -229,6 +229,13 @@ export interface IfcViewerOptions {
   aspectRatio?: string
   /** Slow idle orbit once the model is in (`true` = 6°/s, or degrees per second). Stops at the first touch. */
   turntable?: boolean | number
+  /** `false` hides the ground grid under the model. Default: shown. Since v1.20. */
+  grid?: boolean
+  /**
+   * `'daylight'`: the IFC colours under soft daylight; `'clay'`: one sober matte
+   * tone, same light. Default `'original'`: as authored, studio light. Since v1.20.
+   */
+  finish?: 'clay' | 'daylight' | 'original'
   /**
    * Stop rendering while the figure is off screen — a post with several
    * viewers stays light. Default `true` with `ui: 'article'`.
@@ -3010,6 +3017,8 @@ export class IfcViewer {
     if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
     if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
     if (this.opts.turntable) url.searchParams.set('turntable', this.opts.turntable === true ? '1' : String(this.opts.turntable))
+    if (this.opts.grid === false) url.searchParams.set('grid', '0')
+    if (this.opts.finish === 'clay' || this.opts.finish === 'daylight') url.searchParams.set('finish', this.opts.finish)
     if (this.opts.rule) url.searchParams.set('rule', this.opts.rule)
     if (this.opts.flood) url.searchParams.set('flood', this.opts.flood)
     if (this.opts.analysis) url.searchParams.set('analysis', this.opts.analysis)

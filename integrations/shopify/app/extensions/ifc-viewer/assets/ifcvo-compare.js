@@ -145,12 +145,16 @@ function dispose(slot) {
 }
 
 /** Loads `url` in the slot's stage (disposing what was there) and returns its key specs, or null. */
-/** The product viewer's background and accent, so both compare viewers match it. */
+/** The product viewer's background, accent, grid and finish, so both compare viewers match it. */
 export function lookOf(d = {}) {
   const look = {}
   if (d.bg === 'brand') look.background = { top: d.bgTop || '#ffffff', bottom: d.bgBottom || d.bgTop || '#ffffff' }
   else if (d.bg) look.background = d.bg
   if (d.accent) look.accent = d.accent
+  // Shop ifcvo.config grid / finish, as on the product viewer.
+  const cfg = readJson(d.ifcvoConfig, {}) || {}
+  if (cfg.grid === false) look.grid = false
+  if (cfg.finish === 'clay' || cfg.finish === 'daylight') look.finish = cfg.finish
   return look
 }
 

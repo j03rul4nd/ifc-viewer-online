@@ -175,6 +175,8 @@
 .ifcvo-compare-note:empty, .ifcvo-compare-status:empty { display: none; }
 .ifcvo-compare-tabs { display: flex; gap: 6px; margin-top: 12px; }
 .ifcvo-compare-split[hidden], .ifcvo-compare-tabs[hidden], .ifcvo-compare-pane[hidden] { display: none; }
+/* The comparison is two stages plus the spec table: never clip it to the 420 px panel body (the table sat below the fold, inside a scroll box). */
+.ifcvo-compare .ifcvo-body { max-height: none; overflow: visible; }
 .ifcvo-compare-tab { flex: 1; border: 1px solid currentColor; background: none; border-radius: 6px; opacity: .7; }
 .ifcvo-compare-tab[aria-selected="true"] { opacity: 1; font-weight: 600; }
 .ifcvo-compare-table table { width: 100%; border-collapse: collapse; margin-top: 12px; }
