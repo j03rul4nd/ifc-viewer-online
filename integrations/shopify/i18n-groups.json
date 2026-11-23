@@ -191,5 +191,13 @@
     "makeError": "ifcvo.downloads.make_error",
     "noViewer": "ifcvo.downloads.no_viewer",
     "noGlb": "ifcvo.downloads.no_glb"
+  },
+  "share": {
+    "share": "ifcvo.share.share",
+    "shared": "ifcvo.share.shared",
+    "copied": "ifcvo.share.copied",
+    "manual": "ifcvo.share.manual",
+    "error": "ifcvo.share.error",
+    "updated": "ifcvo.share.updated"
   }
 }

@@ -318,6 +318,14 @@
       "takeoff": "Add a product metafield \"{{ ns }}.boq\" (one row per line, cells split by |) for a table that shows before the 3D model loads, and \"{{ ns }}.unit_prices\" (JSON) for an indicative total.",
       "viewer_link": "IFC Viewer Online: paste an https link to an .ifc file (Content > Files) or to a scene.",
       "product_link": "IFC Viewer Online: add an https link to an .ifc file in the product metafield {{ ns }}.{{ key }} (URL or file)."
+    },
+    "share": {
+      "share": "Share this view",
+      "shared": "Link to this view shared.",
+      "copied": "Link copied. It opens the model at this view.",
+      "manual": "Copy this link:",
+      "error": "This view could not be read.",
+      "updated": "Updated since your purchase"
     }
   }
 }

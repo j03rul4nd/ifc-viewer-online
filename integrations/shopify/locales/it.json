@@ -318,6 +318,14 @@
       "takeoff": "Aggiungi un metafield di prodotto \"{{ ns }}.boq\" (una riga per voce, celle separate da |) per una tabella visibile prima del caricamento del modello 3D, e \"{{ ns }}.unit_prices\" (JSON) per un totale indicativo.",
       "viewer_link": "IFC Viewer Online: incolla un link https a un file .ifc (Contenuti > File) o a una scena.",
       "product_link": "IFC Viewer Online: aggiungi un link https a un file .ifc nel metafield di prodotto {{ ns }}.{{ key }} (URL o file)."
+    },
+    "share": {
+      "share": "Condividi questa vista",
+      "shared": "Link a questa vista condiviso.",
+      "copied": "Link copiato. Apre il modello in questa vista.",
+      "manual": "Copia questo link:",
+      "error": "Impossibile leggere questa vista.",
+      "updated": "Aggiornato dopo il tuo acquisto"
     }
   }
 }
