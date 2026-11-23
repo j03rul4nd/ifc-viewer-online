@@ -19,7 +19,8 @@ export const STORE = {
   accent: '#2f5d50',
   announce: 'Architectural BIM models · IFC for specifiers and studios',
   nav: ['Heritage buildings', 'Landmark towers', 'Hotels', 'Steel structures', 'For specifiers'],
-  config: {},
+  // Shop ifcvo.config: no floor grid, the models' own IFC colours under daylight.
+  config: { grid: false, finish: 'daylight' },
 }
 
 // The viewer backdrop is the store's own paper tone, so model and page read as one.
@@ -46,7 +47,7 @@ export const SCENES = [
   { id: 'd2-data', product: hall, blocks: [viewer({ height: 660 }), ['ifc-takeoff', {}, 'info']], cta: false },
   { id: 'd3-quote', product: hotel, blocks: [viewer({ height: 660 }), ['ifc-quote', {}, 'info']], cta: false },
   { id: 'd4-downloads', product: shanghai, blocks: [viewer({ height: 660 }), ['ifc-downloads', { gate: 'customer', glb: true, csv: true }, 'info'], ['ifc-capture', {}, 'info']] },
-  { id: 'd5-compare', product: blocks, blocks: [['ifc-compare', {}], viewer({ height: 300, load: 'click' })], cta: false, css: '.media .ifcvo-product{display:none} .ifcvo-compare .ifcvo-compare-stage{height:420px}' },
+  { id: 'd5-compare', product: blocks, blocks: [['ifc-compare', {}], viewer({ height: 300, load: 'click' })], cta: false, css: '.media .ifcvo-product{display:none} .ifcvo-compare .ifcvo-compare-stage{height:300px} .pp{padding-bottom:900px}' },
   { id: 'd6-planset', product: pearl, blocks: [viewer({ height: 660 }), ['ifc-plan-set', {}, 'info'], ['ifc-ar', {}, 'info']], cta: false },
   { id: 'm1-explore', mobile: true, product: wukang, blocks: [viewer({ height: 460 }), ['ifc-rooms', {}, 'info']] },
   { id: 'm2-quote', mobile: true, product: hotel, blocks: [viewer({ height: 360 }), ['ifc-quote', {}, 'info']], cta: false },

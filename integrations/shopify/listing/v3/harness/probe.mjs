@@ -8,11 +8,12 @@ page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') 
 await page.goto(`http://127.0.0.1:8732/listing/v3/harness/out/${scene}.html`)
 await page.waitForTimeout(4000)
 await page.locator('[data-ifcvo-compare] button').filter({ hasText: /^Compare$/ }).first().click()
-await page.waitForTimeout(90000)
+await page.waitForTimeout(150000)
 console.log(await page.evaluate(async () => {
   const out = { n: window.__cmp.length, status: document.querySelector('.ifcvo-compare-status')?.textContent, notes: [...document.querySelectorAll('.ifcvo-compare-note')].map((n) => n.textContent) }
   try { const d = await window.__cmp[0].getProductData({ maxElements: 20000 }); out.keys = Object.keys(d || {}) } catch (e) { out.err = String(e) }
   out.stageH = getComputedStyle(document.querySelector('.ifcvo-compare-stage')).height
+  const t = document.querySelector('.ifcvo-compare-table'); out.table = t ? t.innerHTML.slice(0, 300) : 'none'; out.tableDisp = t ? getComputedStyle(t).display : ''
   return JSON.stringify(out)
 }))
 await browser.close()

@@ -77,7 +77,7 @@ const SHOTS = {
   'd1-explore': {
     title: 'Buyers explore the real BIM model on the product page',
     alt: 'Product page of the Wukang Mansion IFC model in an interactive 3D viewer, next to the rooms and areas read from the model',
-    run: async (p) => { await loadLocal(p); await frameModel(p, { azimuth: 220, elevation: 22 }, 10000) },
+    run: async (p) => { await loadLocal(p); await frameModel(p, { azimuth: 220, elevation: 30, fill: 1 }, 10000) },
   },
   'd2-data': {
     title: 'Quantities and steel by profile, read from the model',
@@ -101,12 +101,17 @@ const SHOTS = {
       await wait(4000)
       await p.locator('[data-ifcvo-compare] button').filter({ hasText: /^Compare$/ }).first().click()
       await p.waitForFunction(() => window.__cmp.length >= 2, null, { timeout: 90000 })
-      await p.waitForSelector('.ifcvo-compare-table table', { timeout: 200000 }).catch(() => console.log('compare: no spec table'))
+      await p.waitForSelector('.ifcvo-compare-table table', { timeout: 300000 }).then(() => console.log('compare: table in')).catch(() => console.log('compare: no spec table'))
       await wait(5000)
       // Same camera for both, so the two models compare at a glance.
-      await p.evaluate(async (o) => { for (const v of window.__cmp.slice(-2)) { await v.setRenderQuality('quality').catch(() => {}); await v.frame({ view: 'iso', animate: false, ...o }).catch(() => {}) } }, { ...CAM, elevation: 18, fill: 0.92 })
-      await wait(4000)
-      await scrollTo(p, '.pp', 0)
+      const frameBoth = (o) => p.evaluate(async (o) => { for (const v of window.__cmp.slice(-2)) { await v.setRenderQuality('quality').catch(() => {}); await v.frame({ view: 'iso', animate: false, ...o }).catch((e) => console.warn('frame', String(e))) } }, o)
+      await frameBoth({ ...CAM, elevation: 20, fill: 0.9 })
+      await wait(3000)
+      await frameBoth({ ...CAM, elevation: 20, fill: 0.9 })
+      await wait(3000)
+      // Stages and the spec table in one view.
+      await scrollTo(p, '[data-ifcvo-compare]', 8)
+      console.log('compare table rows:', await p.evaluate(() => document.querySelectorAll('.ifcvo-compare-table tr').length))
     },
   },
   'd6-planset': {
@@ -117,7 +122,7 @@ const SHOTS = {
   'm1-explore': {
     title: 'The model opens on the phone too', mobile: true,
     alt: 'Phone product page with the 3D model of the Wukang Mansion and its rooms below',
-    run: async (p) => { await loadLocal(p); await frameModel(p, { azimuth: 220, elevation: 22 }, 10000) },
+    run: async (p) => { await loadLocal(p); await frameModel(p, { azimuth: 220, elevation: 30, fill: 1 }, 10000) },
   },
   'm2-quote': {
     title: 'Quote requests from the phone', mobile: true,
@@ -153,7 +158,7 @@ async function feature(stage) {
     <h1 style="margin:0;${FONT};font-weight:500;font-size:60px;line-height:1.08;color:${INK}">The BIM model, on the product page.</h1>
     <p style="margin:0;font:400 24px/1.5 'Segoe UI',system-ui,sans-serif;color:#5f645f">Buyers explore it in 3D before they ask for a quote.</p>
   </div>
-  <div style="display:flex;align-items:center;padding:64px 64px 64px 0"><img src="${stage}" style="width:100%;height:772px;object-fit:cover;object-position:center 70%;border-radius:12px;box-shadow:0 0 0 1px #d8d3c7"></div></body>`, { waitUntil: 'load' })
+  <div style="display:flex;align-items:center;padding:64px 64px 64px 0"><div style="width:100%;height:772px;overflow:hidden;border-radius:12px;box-shadow:0 0 0 1px #d8d3c7"><img src="${stage}" style="width:100%;height:100%;object-fit:cover;transform:scale(1.32);transform-origin:56% 40%"></div></div></body>`, { waitUntil: 'load' })
   await fp.screenshot({ path: join(out, 'feature-1600x900.png') })
   await fp.close()
   console.log('saved feature-1600x900.png')

@@ -16,6 +16,8 @@ const ext = join(here, '../../../app/extensions/ifc-viewer')
 const out = join(here, 'out')
 mkdirSync(out, { recursive: true })
 const ASSETS = '/app/extensions/ifc-viewer/assets/'
+// LOCAL_APP=http://127.0.0.1:5199/ runs the viewer from `vite` in this repo instead of the live site.
+const LOCAL_APP = process.env.LOCAL_APP || ''
 const en = JSON.parse(readFileSync(join(ext, 'locales/en.default.json'), 'utf8'))
 
 const engine = new Liquid({ root: [join(ext, 'snippets')], extname: '.liquid', strictVariables: false, jsTruthy: false })
@@ -100,8 +102,15 @@ const hook = setInterval(() => {
   if (!api || !api.loadSdk || api.__hooked) return
   clearInterval(hook); api.__hooked = true
   const load = api.loadSdk.bind(api)
-  api.loadSdk = async () => { const sdk = await load(); return { ...sdk, IfcViewer: class extends sdk.IfcViewer { constructor(...a) { super(...a); window.__cmp.push(this) } } } }
-}, 20)</script><div class="bar">${STORE.announce}</div>
+  api.loadSdk = async () => { const sdk = await load(); return { ...sdk, IfcViewer: class extends sdk.IfcViewer { constructor(...a) { super(...a); window.__cmp.push(this) } async getProductData(o) { try { const r = await super.getProductData(o); console.warn('gpd ok', r && r.elementCount); return r } catch (e) { console.warn('gpd err', String(e)); throw e } } } } }
+}, 20)</script>${LOCAL_APP ? `<script type="module">
+// Capture only: run the viewer from a local build of this repo (unreleased grid/finish options).
+import { _setSdk } from '${ASSETS}ifcvo.js'
+_setSdk(async () => {
+  const m = await import('${LOCAL_APP}src/sdk/ifc-viewer-sdk.ts')
+  return { ...m, IfcViewer: class extends m.IfcViewer { constructor(el, o = {}) { super(el, { baseUrl: '${LOCAL_APP}', ...o }) } } }
+})
+</script>` : ''}<div class="bar">${STORE.announce}</div>
 <header><span class="brand">${STORE.name}</span><nav>${STORE.nav.map((n) => `<a>${n}</a>`).join('')}</nav><span class="icons">Search&nbsp;&nbsp;Account&nbsp;&nbsp;Cart</span></header>
 <main class="pp"><section class="media">${media.join('\n')}</section>
 <section class="info"><p class="crumb">${sc.product.collection}</p><h1>${sc.product.title}</h1><p class="lede">${sc.product.lede}</p>

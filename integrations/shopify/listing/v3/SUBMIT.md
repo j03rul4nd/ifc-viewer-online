@@ -153,6 +153,13 @@ alt text: drop `frame()` in `shoot.mjs`.
 | Screenshot 6 | `desktop-6-planset.png` | Oriental Pearl Tower model with a plan set block listing drawings and model per licence, and a View in your space button |
 | Mobile 1–3 (optional) | `mobile-1-explore.png`, `mobile-2-quote.png`, `mobile-3-downloads.png` (900×1600) | Wukang Mansion with its rooms; hotel block quote with a selected curtain wall; World Financial Center with gated downloads |
 
+The screenshots use the shop setting `ifcvo.config = {"grid": false, "finish": "daylight"}`
+(no floor grid; IFC colours under soft daylight). That option is new in this PR: it needs the
+viewer deployed and SDK 1.20 published and pinned in `assets/ifcvo.js` before a live store shows
+it (the images were captured with `LOCAL_APP` pointing the harness at `vite` in this repo).
+Until then a store renders the grid and studio light, as before. Set the same config on the
+review dev store so the reviewer sees what the screenshots show.
+
 The previous image set is kept in `previous/`. Wukang Mansion is an owner-supplied IFC that is
 not public: the harness opens the page on a tiny public file and swaps the Wukang file in through
 the SDK (as a visitor dropping a file would); everything else on the page is the real block.
