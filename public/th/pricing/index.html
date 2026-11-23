@@ -167,14 +167,16 @@ h3{font-size:var(--t-l)}
 .faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
 .faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
 
-dialog{margin:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);padding:24px;width:min(440px,calc(100% - 32px))}
-dialog::backdrop{background:var(--scrim)}
-dialog h3{margin-bottom:6px}
-dialog label{display:block;font-size:var(--t-s);color:var(--text-2);margin:14px 0 6px}
-dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
-.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-.msg{font-size:var(--t-s);margin-top:12px;min-height:1.4em}
+.wl{display:grid;gap:6px;max-width:420px}
+.wl label{font-size:var(--t-s);color:var(--text-2)}
+.wl-row{display:flex;flex-wrap:wrap;gap:8px}
+.wl input{flex:1 1 160px;min-width:0;min-height:40px;font:inherit;font-size:var(--t-b);color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.wl input:hover{border-color:var(--text-3)}
+.wl .btn{flex:1 1 auto;white-space:normal;text-align:center}
+.cmp .wl .btn{flex-basis:100%}
+.msg{font-size:var(--t-s);min-height:1.4em;color:var(--text-2)}
 .msg.ok{color:var(--accent-text)}
+.wl.done .wl-row{display:none}
 
 .foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
 .foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
@@ -230,14 +232,14 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
             <span class="plan-name">Pro</span>
             <p class="price"><strong>€39 / เดือน เมื่อชำระรายปี</strong></p><p class="meta">€468 ต่อปี · €47 / เดือน หากชำระรายเดือน</p>
             <p class="meta who">หนึ่งคน</p>
-            <button type="button" class="btn btn-main" data-plan="pro">เข้ารายชื่อรอ</button>
+            <form class="wl" data-plan="pro"><label for="wl-pro">อีเมลที่ทำงาน</label><span class="wl-row"><input id="wl-pro" name="email" type="email" required autocomplete="email" placeholder="you@company.com" /><button type="submit" class="btn btn-main">จองราคาเปิดตัว</button></span><span class="msg" role="status"></span></form>
           </th>
           <th scope="col" class="c-team" id="h-team">
             <span class="pick-tag">เหมาะกับงานของคุณ</span>
             <span class="plan-name">Team</span>
             <p class="price"><strong>€59 ต่อผู้ใช้สิทธิ์แก้ไข / เดือน เมื่อชำระรายปี</strong></p><p class="meta">€708 ต่อปี · €71 / เดือน หากชำระรายเดือน</p><p class="meta">ขั้นต่ำ 3 ผู้ใช้สิทธิ์แก้ไข</p>
             <p class="meta who">สำนักงานออกแบบและบริษัทวิศวกรรม</p>
-            <button type="button" class="btn btn-main" data-plan="team">เข้ารายชื่อรอ</button>
+            <form class="wl" data-plan="team"><label for="wl-team">อีเมลที่ทำงาน</label><span class="wl-row"><input id="wl-team" name="email" type="email" required autocomplete="email" placeholder="you@company.com" /><button type="submit" class="btn btn-main">จองราคาเปิดตัว</button></span><span class="msg" role="status"></span></form>
           </th>
         </tr></thead>
         <tbody class="grp" id="g-files">
@@ -302,7 +304,7 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
           <p class="price"><strong>เริ่มต้น €290 / เดือน ต่อโครงการที่ดำเนินอยู่ สูงสุด 15 ผู้รับเหมาช่วง</strong></p>
           <p class="meta">พอร์ตโฟลิโอ: เริ่มต้น €790 / เดือน ไม่จำกัดโครงการและผู้รับเหมาช่วง</p>
           <p class="body">เลิกรับโมเดลที่ต้องส่งกลับไปแก้ ผู้รับเหมาช่วงตรวจไฟล์ของตนตามข้อกำหนดของคุณฟรีก่อนส่ง คุณได้รับเฉพาะงานที่ผ่าน และเห็นว่าใครส่งงานได้ดี</p>
-          <button type="button" class="btn btn-main" data-plan="reception">ติดต่อเรา</button>
+          <form class="wl" data-plan="reception"><label for="wl-reception">อีเมลที่ทำงาน</label><span class="wl-row"><input id="wl-reception" name="email" type="email" required autocomplete="email" placeholder="you@company.com" /><button type="submit" class="btn btn-main">ติดต่อเรา</button></span><span class="msg" role="status"></span></form>
         </div>
         <ol><li><strong>เผยแพร่ข้อกำหนดของคุณ</strong> เป็นลิงก์หรือ QR สำหรับการประมูลและสัญญา: IDS กฎ คะแนนขั้นต่ำ การตั้งชื่อ</li><li><strong>ผู้รับเหมาช่วงตรวจฟรี</strong> ในเบราว์เซอร์และแก้ไขก่อนส่ง</li><li><strong>กล่องรับงานส่งมอบ</strong> ตรวจทุกไฟล์ซ้ำ เก็บเวอร์ชัน และตรวจรับหรือตีกลับพร้อมรายการปัญหา BCF</li><li><strong>ประวัติของผู้รับเหมาช่วงแต่ละราย:</strong> จำนวนการส่ง การผ่านในครั้งแรก แนวโน้มคะแนน</li><li><strong>รายงานส่งมอบเมื่อจบโครงการ</strong> สรุปข้อมูลที่ได้รับ พร้อมใช้สำหรับงานบำรุงรักษา</li></ol>
       </div>
@@ -312,9 +314,9 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
       <h2 id="more-h">พัฒนาต่อยอด หรือใช้ทั้งพอร์ตโฟลิโอ</h2>
       <dl class="rows">
         <div class="row" id="row-developer"><dt><span class="pick-tag">เหมาะกับงานของคุณ</span>Developer<span class="meta">€149 / เดือน เมื่อชำระรายปี + ตามการใช้งาน</span></dt>
-          <dd><p>SDK ฝั่งไคลเอนต์ใช้ฟรี Developer เพิ่ม API ตรวจสอบแบบโฮสต์สำหรับแพลตฟอร์ม CDE และระบบอัตโนมัติ</p><button type="button" class="btn btn-main" data-plan="developer">เข้ารายชื่อรอ</button></dd></div>
+          <dd><p>SDK ฝั่งไคลเอนต์ใช้ฟรี Developer เพิ่ม API ตรวจสอบแบบโฮสต์สำหรับแพลตฟอร์ม CDE และระบบอัตโนมัติ</p><form class="wl" data-plan="developer"><label for="wl-developer">อีเมลที่ทำงาน</label><span class="wl-row"><input id="wl-developer" name="email" type="email" required autocomplete="email" placeholder="you@company.com" /><button type="submit" class="btn btn-main">จองราคาเปิดตัว</button></span><span class="msg" role="status"></span></form></dd></div>
         <div class="row" id="row-enterprise"><dt>Enterprise<span class="meta">เริ่มต้น €15,000 / ปี</span></dt>
-          <dd><p>แผนตรวจรับทั้งพอร์ตโฟลิโอ Single Sign-On (SSO) ข้อตกลงการประมวลผลข้อมูล และตัวเลือกติดตั้งในองค์กรโดยไม่ต้องเชื่อมอินเทอร์เน็ต <a href="/on-premise-ifc-validator/">ตัวตรวจสอบแบบติดตั้งในองค์กร</a></p><button type="button" class="btn btn-main" data-plan="enterprise">ติดต่อเรา</button></dd></div>
+          <dd><p>แผนตรวจรับทั้งพอร์ตโฟลิโอ Single Sign-On (SSO) ข้อตกลงการประมวลผลข้อมูล และตัวเลือกติดตั้งในองค์กรโดยไม่ต้องเชื่อมอินเทอร์เน็ต <a href="/on-premise-ifc-validator/">ตัวตรวจสอบแบบติดตั้งในองค์กร</a></p><form class="wl" data-plan="enterprise"><label for="wl-enterprise">อีเมลที่ทำงาน</label><span class="wl-row"><input id="wl-enterprise" name="email" type="email" required autocomplete="email" placeholder="you@company.com" /><button type="submit" class="btn btn-main">ติดต่อเรา</button></span><span class="msg" role="status"></span></form></dd></div>
       </dl>
     </section>
 
@@ -324,33 +326,12 @@ dialog input,dialog select{width:100%;min-height:44px;font:inherit;color:var(--t
     </section>
   </main>
 
-  <dialog id="waitlist" aria-labelledby="wl-title">
-    <form id="wl-form" method="dialog">
-      <h3 id="wl-title">รายชื่อรอ </h3>
-      <p class="meta">เราจะเขียนถึงคุณครั้งเดียวเมื่อแผนนี้เปิด ไม่มีจดหมายข่าว</p>
-      <label for="wl-email">อีเมลที่ทำงาน</label>
-      <input id="wl-email" name="email" type="email" required autocomplete="email" placeholder="you@company.com" />
-      <label for="wl-role">งานหลักของคุณ</label>
-      <select id="wl-role" name="role">
-        <option value="deliver">ส่งมอบโมเดลให้ลูกค้า</option>
-        <option value="receive">รับโมเดลจากผู้รับเหมาช่วง</option>
-        <option value="build">พัฒนาซอฟต์แวร์ต่อยอด</option>
-        <option value="other">อื่น ๆ</option>
-      </select>
-      <p class="msg" id="wl-msg" role="status"></p>
-      <div class="actions">
-        <button type="button" class="btn btn-quiet" id="wl-cancel">ปิด</button>
-        <button type="submit" class="btn btn-main" id="wl-submit">เข้ารายชื่อ</button>
-      </div>
-    </form>
-  </dialog>
-
   <footer class="wrap foot">
     <nav aria-label="แผน" class="langs"><a href="/pricing/" hreflang="en" lang="en">English</a><a href="/es/precios/" hreflang="es" lang="es">Español</a><a href="/de/preise/" hreflang="de" lang="de">Deutsch</a><a href="/fr/tarifs/" hreflang="fr" lang="fr">Français</a><a href="/pt/precos/" hreflang="pt" lang="pt">Português</a><a href="/it/prezzi/" hreflang="it" lang="it">Italiano</a><a href="/ca/preus/" hreflang="ca" lang="ca">Català</a><a href="/zh/pricing/" hreflang="zh" lang="zh">中文</a><a href="/ja/pricing/" hreflang="ja" lang="ja">日本語</a><span aria-current="page">ไทย</span></nav>
     <p><a href="/th/">IFC Viewer Online</a><a href="/th/ifc-validator-online/">ตัวตรวจสอบ</a><a href="/on-premise-ifc-validator/">ติดตั้งในองค์กร</a><a href="/th/for-contractors/">สำหรับผู้รับเหมาหลัก</a><a href="/th/for-engineering/">สำหรับบริษัทวิศวกรรม</a><a href="/sdk/">SDK</a><a href="/privacy">ความเป็นส่วนตัว</a><a href="/terms">ข้อกำหนด</a></p>
   </footer>
 
-  <script type="application/json" id="pricing-i18n">{"names":{"free":"ฟรี","pro":"Pro","team":"Team","reception":"ตรวจรับ","developer":"Developer","enterprise":"Enterprise"},"title":"รายชื่อรอ {plan}","titleTalk":"คุยกับเราเรื่อง {plan}","saving":"กำลังบันทึก…","ok":"คุณอยู่ในรายชื่อแล้ว เราจะเขียนถึงคุณครั้งเดียวเมื่อเปิด","err":"บันทึกไม่สำเร็จ ลองอีกครั้งในอีกสักครู่"}</script>
+  <script type="application/json" id="pricing-i18n">{"saving":"กำลังบันทึก…","ok":"คุณอยู่ในรายชื่อแล้ว เราจะเขียนถึงคุณครั้งเดียวเมื่อเปิด","err":"บันทึกไม่สำเร็จ ลองอีกครั้งในอีกสักครู่"}</script>
   <script>(function(){
 var LANG='th';
 var T=JSON.parse(document.getElementById('pricing-i18n').textContent);
@@ -402,22 +383,20 @@ document.querySelectorAll('[data-cta]').forEach(function(a){a.addEventListener('
 
 // Waitlist: the email Worker the app's forms use, tagged by plan and role.
 var ENDPOINT='https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/subscribe';
-var dlg=document.getElementById('waitlist'),form=document.getElementById('wl-form'),msg=document.getElementById('wl-msg'),
-    submit=document.getElementById('wl-submit'),roleSel=document.getElementById('wl-role'),plan=null;
-document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){
-  plan=b.dataset.plan;
-  document.getElementById('wl-title').textContent=((plan==='enterprise'||plan==='reception')?T.titleTalk:T.title).replace('{plan}',T.names[plan]);
-  roleSel.value=plan==='reception'||plan==='enterprise'?'receive':plan==='developer'?'build':'deliver';
-  msg.textContent='';msg.className='msg';submit.disabled=false;
-  track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'});
-  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');document.getElementById('wl-email').focus()})});
-document.getElementById('wl-cancel').addEventListener('click',function(){dlg.close?dlg.close():dlg.removeAttribute('open')});
-form.addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('wl-email').value.trim();if(!email)return;
-  submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
-  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'pricing:'+plan+':'+roleSel.value,locale:LANG})})
-   .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
-   .then(function(res){if(res.ok||res.d.already){msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:'pricing:'+plan,already_subscribed:!!res.d.already})}else{throw new Error()}})
-   .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false})});
+// One field on each paid plan. The role is the one picked above, if any (never required).
+function role(){var r=document.querySelector('.pick input:checked');return r?r.value:'none'}
+document.querySelectorAll('form.wl').forEach(function(form){
+  var plan=form.dataset.plan,input=form.querySelector('input'),submit=form.querySelector('button'),msg=form.querySelector('.msg'),focused=false;
+  input.addEventListener('focus',function(){if(focused)return;focused=true;
+    track('pricing_email_focus',{plan:plan});track('pricing_intent',{kind:'plan',item:plan,surface:'pricing_page'})});
+  form.addEventListener('submit',function(e){e.preventDefault();var email=input.value.trim();
+    if(!email||(input.checkValidity&&!input.checkValidity())){msg.className='msg';msg.textContent=T.err;input.focus();return}
+    var source='pricing:'+plan+':'+role();
+    submit.disabled=true;msg.className='msg';msg.textContent=T.saving;
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:source,locale:LANG})})
+     .then(function(r){return r.json().then(function(d){return{ok:r.ok||d.ok,d:d}})})
+     .then(function(res){if(res.ok||res.d.already){form.classList.add('done');msg.className='msg ok';msg.textContent=T.ok;track('email_captured',{source:source,already_subscribed:!!res.d.already})}else{throw new Error()}})
+     .catch(function(){msg.className='msg';msg.textContent=T.err;submit.disabled=false;track('pricing_email_error',{plan:plan})})})});
 })();</script>
 </body>
 </html>
