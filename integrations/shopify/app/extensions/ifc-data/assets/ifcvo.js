@@ -589,6 +589,8 @@ export function _state() {
 if (typeof window !== 'undefined' && !window.IFCVO) {
   window.IFCVO = { get plan() { return currentPlan() }, gate, allowed, init, destroy, FEATURE_TIERS, sdk: SDK,
     labels: labelsOf, probe,
+    // For the theme-editor setup wizard: a second, private viewer for the model it checks.
+    loadSdk: () => loadSdk(),
     // For the companion modules (quote, downloads): the live viewer, opening it, and its events.
     get viewer() { return viewer }, open: () => (opener ? opener() : Promise.resolve(null)), subscribe: listen,
     unsubscribe: (cb) => { listeners.delete(cb); for (const cbs of owned.values()) { const i = cbs.indexOf(cb); if (i >= 0) cbs.splice(i, 1) } } }

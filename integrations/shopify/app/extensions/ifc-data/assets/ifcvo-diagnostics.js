@@ -66,6 +66,24 @@ export function parseSchema(head) {
   return m ? m[1].toUpperCase().replace(/^IFC4X/, 'IFC4X') : ''
 }
 
+/** The authoring tool from FILE_NAME (6th field, originating_system); '' when absent. */
+export function parseAuthoring(head) {
+  const m = /FILE_NAME\s*\(([\s\S]*?)\)\s*;/i.exec(String(head || ''))
+  if (!m) return ''
+  // Top-level fields: strings and (lists); the 6th is the originating system.
+  const fields = []
+  let depth = 0, cur = '', q = false
+  for (const ch of m[1]) {
+    if (ch === "'") q = !q
+    if (!q && ch === '(') depth++
+    if (!q && ch === ')') depth--
+    if (!q && depth === 0 && ch === ',') { fields.push(cur.trim()); cur = '' } else cur += ch
+  }
+  fields.push(cur.trim())
+  const v = (fields[5] || '').replace(/^'|'$/g, '').trim()
+  return v === '$' ? '' : v.slice(0, 120)
+}
+
 /** Whether the bytes look like a STEP (ISO-10303-21) file. */
 export function isStep(head) {
   return /^\s*ISO-10303-21\s*;/.test(String(head || ''))
@@ -98,7 +116,7 @@ export function allowedOn(tier, plan) {
  * 2 KB for the IFC schema. A thrown fetch means CORS (or the network) blocks it.
  */
 export async function checkModel(url, fetchImpl = (...a) => fetch(...a)) {
-  const out = { url, https: /^https:\/\//i.test(url || ''), ok: false, status: 0, cors: false, mb: null, schema: '', step: null }
+  const out = { url, https: /^https:\/\//i.test(url || ''), ok: false, status: 0, cors: false, mb: null, schema: '', step: null, app: '' }
   if (!url || !out.https) return out
   try {
     const res = await fetchImpl(url, { method: 'HEAD', mode: 'cors', cache: 'no-store' })
@@ -116,6 +134,7 @@ export async function checkModel(url, fetchImpl = (...a) => fetch(...a)) {
     const head = (await res.text()).slice(0, 2048)
     out.step = isStep(head)
     out.schema = parseSchema(head)
+    out.app = parseAuthoring(head)
   } catch (e) { /* header unreadable */ }
   return out
 }
@@ -217,6 +236,8 @@ export async function render(doc = document, { api = window.IFCVO, fetchImpl, fo
     body)
   body.append(el('p', { class: 'ifcvo-muted' }, L.note), el('p', {}, fill(L.plan, { plan })))
   doc.body.append(panel)
+  // The setup wizard (assets/ifcvo-wizard.js, product block only) adds its section here.
+  doc.dispatchEvent(new CustomEvent('ifcvo:diag-panel', { detail: { body } }))
 
   const viewerDiag = diags.find((d) => d.feature === 'viewer')
   const root = doc.querySelector('[data-ifcvo-viewer]')
