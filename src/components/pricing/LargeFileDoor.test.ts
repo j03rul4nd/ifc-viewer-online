@@ -38,7 +38,7 @@ describe('LargeFileDoor', () => {
     expect(subscribeEmail).toHaveBeenCalled()
     expect(subscribeEmail.mock.calls[0].slice(0, 2)).toEqual(['a@b.co', 'large_file:420'])
     expect(document.querySelector('[role="status"]')).not.toBeNull()
-    expect(trackInterest).toHaveBeenCalledWith({ file_size_mb: 420, step: 'email_left' })
+    expect(trackInterest).toHaveBeenCalledWith({ file_size_mb: 420, source: 'failure', step: 'email_left' })
   })
 
   it('prefills the signed-in email', () => {
