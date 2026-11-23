@@ -12,50 +12,7 @@ type = "ui_extension"
 module = "./src/MyModels.jsx"
 target = "customer-account.page.render"
 
-[[extensions.targeting]]
-module = "./src/OrderStatusLink.jsx"
-target = "customer-account.order-status.block.render"
-
 [extensions.capabilities]
 api_access = true
 network_access = false
 
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "model"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "files"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "version"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "updated_at"
-
-[[extensions.metafields]]
-namespace = "custom"
-key = "ifc_model"
-
-[[extensions.metafields]]
-namespace = "custom"
-key = "bim_files"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "release_notes"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "handover"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "assembly_views"
-
-[[extensions.metafields]]
-namespace = "ifcvo"
-key = "warranty_months"

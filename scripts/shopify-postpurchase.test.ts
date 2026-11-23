@@ -130,15 +130,14 @@ describe('ifcvo-files helpers', () => {
 })
 
 describe('post-purchase UI extensions', () => {
-  it.each(EXTS)('%s is a ui_extension with api_access, no network access, and the metafields', (ext) => {
+  it.each(EXTS)('%s is a ui_extension with api_access, no network access, metafields read by query only', (ext) => {
     const toml = fs.readFileSync(path.join(APP, 'extensions', ext, 'shopify.extension.toml'), 'utf8')
     expect(toml).toMatch(/type = "ui_extension"/)
     expect(toml).toMatch(/api_version = "20\d\d-\d\d"/)
     expect(toml).toMatch(/api_access = true/)
     expect(toml).toMatch(/network_access = false/)
-    for (const m of f.METAFIELDS.filter((x: { key: string }) => ext === 'ifc-order-files' || x.key !== 'addons')) {
-      expect(toml).toContain(`namespace = "${m.namespace}"\nkey = "${m.key}"`)
-    }
+    // Shopify caps declared entries at 8; the Storefront query reads the metafields instead.
+    expect(toml).not.toContain('[[extensions.metafields]]')
   })
 
   it('ifc-order-files targets Thank you and Order status; ifc-my-models a full page', () => {
@@ -147,6 +146,8 @@ describe('post-purchase UI extensions', () => {
     expect(a).toContain('target = "customer-account.order-status.block.render"')
     const b = fs.readFileSync(path.join(APP, 'extensions/ifc-my-models/shopify.extension.toml'), 'utf8')
     expect(b).toContain('target = "customer-account.page.render"')
+    // a full page cannot be combined with any other target
+    expect(b.match(/^target = /gm)).toHaveLength(1)
   })
 
   it.each(EXTS)('%s has the same translation keys in 7 languages', (ext) => {
