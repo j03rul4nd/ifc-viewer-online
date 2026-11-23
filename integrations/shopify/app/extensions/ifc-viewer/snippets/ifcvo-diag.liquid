@@ -1,5 +1,4 @@
-{%-if request.design_mode -%}
-{%-liquid
+{%if request.design_mode%}{%liquid
 assign dg_ns=ns|strip
 assign dg_present=''
 assign dg_missing=''
@@ -27,7 +26,5 @@ assign dg_product=false
 if product != blank
 assign dg_product=true
 endif
--%}
-<script type="application/json" data-ifcvo-diag>{"feature":{{feature|json}},"block":{{block|json}},"ns":{{dg_ns|json}},"present":{{dg_present|split:','|json}},"missing":{{dg_missing|split:','|json}},"any":{{dg_any}},"model":{{model|default:''|json}},"product":{{dg_product}},"scope":{{scope|default:'product'|json}}}</script>
-<script type="module" src="{{'ifcvo-diagnostics.js'|asset_url}}"></script>
-{%-endif -%}
+%}<script type="application/json" data-ifcvo-diag>{"feature":{{feature|json}},"block":{{block|json}},"ns":{{dg_ns|json}},"present":{{dg_present|split:','|json}},"missing":{{dg_missing|split:','|json}},"any":{{dg_any}},"model":{{model|default:''|json}},"product":{{dg_product}},"scope":{{scope|default:'product'|json}}}</script>
+<script type="module" src="{{'ifcvo-diagnostics.js'|asset_url}}"></script>{%endif%}

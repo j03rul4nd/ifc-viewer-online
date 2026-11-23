@@ -1,7 +1,6 @@
-{%-liquid
+{%liquid
 assign s=block.settings
--%}
-<div
+%}<div
 class="ifcvo-panel ifcvo-sunlot-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-sunlot
 data-ifcvo-tier="sunlot"
@@ -19,14 +18,9 @@ data-side="{{s.side|escape}}"
 data-rear="{{s.rear|escape}}"
 data-i18n="sunlot"
 data-labels-override="{{s.labels|escape}}"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {{block.shopify_attributes}}
->
-{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
-<div class="ifcvo-body ifcvo-sunlot-live" data-ifcvo-live>
+>{%if s.title != blank%}<h3>{{s.title|escape}}</h3>{%endif%}<div class="ifcvo-body ifcvo-sunlot-live" data-ifcvo-live>
 <noscript><p class="ifcvo-muted">{{'ifcvo.sunlot.waiting'|t|escape}}</p></noscript>
 </div>
-</div>
-{%-render 'ifcvo-runtime',js:'ifcvo-sunlot.js' -%}
-{%-render 'ifcvo-diag',feature:'sunlot',block:'ifc-sun-lot',ns:'',keys:'' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.pso","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Sun and lot fit"},{"type":"checkbox","id":"show_sun","label":"t:k.ry2","default":true},{"type":"text","id":"lat","label":"t:k.f8w","info":"Decimal degrees, e.g. 40.4168. Empty uses the model's own location, or the buyer's."},{"type":"text","id":"lon","label":"t:k.qdh","info":"Decimal degrees, e.g. -3.7038."},{"type":"select","id":"date","label":"t:k.7mc","default":"06-21","options":[{"value":"03-20","label":"t:k.7of"},{"value":"06-21","label":"t:k.sen"},{"value":"09-22","label":"t:k.q37"},{"value":"12-21","label":"t:k.f1e"}]},{"type":"checkbox","id":"show_lot","label":"t:k.c09","default":true},{"type":"select","id":"units","label":"t:k.07x","default":"m","options":[{"value":"m","label":"t:k.noi"},{"value":"ft","label":"t:k.9oq"}]},{"type":"text","id":"lot_width","label":"t:k.coz","info":"Always in metres, whatever the lot units. The buyer can change it."},{"type":"text","id":"lot_depth","label":"t:k.zri","info":"Always in metres, whatever the lot units."},{"type":"text","id":"front","label":"t:k.2w9","info":"Always in metres, whatever the lot units."},{"type":"text","id":"side","label":"t:k.btf","info":"Always in metres, whatever the lot units."},{"type":"text","id":"rear","label":"t:k.73g","info":"Always in metres, whatever the lot units."},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, sun, lat, lon, locate, date, time, lot, lotWidth, lotDepth, front, side, rear, orientation, fits, noFit, waiting."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+</div>{%render 'ifcvo-runtime',js:'ifcvo-sunlot.js'%}{%render 'ifcvo-diag',feature:'sunlot',block:'ifc-sun-lot',ns:'',keys:''%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.pso","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Sun and lot fit"},{"type":"checkbox","id":"show_sun","label":"t:k.ry2","default":true},{"type":"text","id":"lat","label":"t:k.f8w","info":"Decimal degrees, e.g. 40.4168. Empty uses the model's own location, or the buyer's."},{"type":"text","id":"lon","label":"t:k.qdh","info":"Decimal degrees, e.g. -3.7038."},{"type":"select","id":"date","label":"t:k.7mc","default":"06-21","options":[{"value":"03-20","label":"t:k.7of"},{"value":"06-21","label":"t:k.sen"},{"value":"09-22","label":"t:k.q37"},{"value":"12-21","label":"t:k.f1e"}]},{"type":"checkbox","id":"show_lot","label":"t:k.c09","default":true},{"type":"select","id":"units","label":"t:k.07x","default":"m","options":[{"value":"m","label":"t:k.noi"},{"value":"ft","label":"t:k.9oq"}]},{"type":"text","id":"lot_width","label":"t:k.coz","info":"Always in metres, whatever the lot units. The buyer can change it."},{"type":"text","id":"lot_depth","label":"t:k.zri","info":"t:k.i03"},{"type":"text","id":"front","label":"t:k.2w9","info":"t:k.i03"},{"type":"text","id":"side","label":"t:k.btf","info":"t:k.i03"},{"type":"text","id":"rear","label":"t:k.73g","info":"t:k.i03"},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: title, sun, lat, lon, locate, date, time, lot, lotWidth, lotDepth, front, side, rear, orientation, fits, noFit, waiting."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

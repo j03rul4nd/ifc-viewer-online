@@ -72,16 +72,13 @@
   assign name_list = names | split: sep
 -%}
 {%- if plan == 'free' -%}
-  {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'Starter' | escape }}</p>
-  {%- endif -%}
+  {%- render 'ifcvo-upsell', feature: 'planset', plan: 'Starter', block: block -%}
 {%- else -%}
 <div
   class="ifcvo-panel ifcvo-planset-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-planset
   data-ifcvo-tier="planset"
   data-ifcvo-plan="{{ plan | escape }}"
-  data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
   data-variant-id="{{ current.id | escape }}"
   style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}

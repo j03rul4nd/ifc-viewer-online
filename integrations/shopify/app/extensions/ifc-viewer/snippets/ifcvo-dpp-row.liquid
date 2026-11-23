@@ -1,8 +1,1 @@
-{%-assign ifcvo_v=value|append:''|strip -%}
-<tr data-key="{{key}}" data-source="{%if ifcvo_v != blank%}metafield{%else%}none{%endif%}"><th scope="row">{{label|t|escape}}</th><td>
-{%-if fallback != blank -%}{%render 'ifcvo-dpp-value',value:ifcvo_v,unit:unit,fallback:fallback%}
-{%-elsif ifcvo_v == blank -%}—
-{%-elsif link -%}<a href="{{ifcvo_v|escape}}" rel="noopener nofollow" target="_blank">{{'ifcvo.dpp.open_epd'|t|escape}}</a>
-{%-else -%}{{ifcvo_v|escape}}
-{%-endif -%}
-</td></tr>
+{%assign ifcvo_v=value|append:''|strip%}<tr data-key="{{key}}" data-source="{%if ifcvo_v != blank%}metafield{%else%}none{%endif%}"><th scope="row">{{label|t|escape}}</th><td>{%if fallback != blank%}{%render 'ifcvo-dpp-value',value:ifcvo_v,unit:unit,fallback:fallback%}{%elsif ifcvo_v == blank%}—{%elsif link%}<a href="{{ifcvo_v|escape}}" rel="noopener nofollow" target="_blank">{{'ifcvo.dpp.open_epd'|t|escape}}</a>{%else%}{{ifcvo_v|escape}}{%endif%}</td></tr>

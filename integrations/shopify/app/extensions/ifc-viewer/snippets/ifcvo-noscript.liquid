@@ -1,4 +1,4 @@
-{%-liquid
+{%liquid
 assign ifcvo_model=model|strip
 assign ifcvo_head=ifcvo_model|slice:0,8|downcase
 if ifcvo_head != 'https://'
@@ -6,22 +6,7 @@ assign ifcvo_model=''
 endif
 assign ifcvo_alt=product.title|append:': 3D BIM model (IFC) preview'
 assign ifcvo_label=download_label|default:'Download IFC model'
--%}
-<noscript>
-<div class="ifcvo-noscript">
-{%-if product.featured_image != blank -%}
-{{product.featured_image|image_url:width:800|image_tag:alt:ifcvo_alt,loading:'lazy'}}
-{%-endif -%}
-{%-if ifcvo_model != '' -%}
-<p><a href="{{ifcvo_model|escape}}" download rel="noopener">{{ifcvo_label|escape}}</a></p>
-{%-endif -%}
-{%-if specs_ns != blank and product.metafields[specs_ns] != blank -%}
-<table class="ifcvo-specs">
-<caption>{{product.title|escape}}</caption>
-{%-for pair in product.metafields[specs_ns] -%}
-<tr><th scope="row">{{pair[0]|replace:'_',' '|capitalize|escape}}</th><td>{{pair[1].value|escape}}</td></tr>
-{%-endfor -%}
-</table>
-{%-endif -%}
-</div>
+%}<noscript>
+<div class="ifcvo-noscript">{%if product.featured_image != blank%}{{product.featured_image|image_url:width:800|image_tag:alt:ifcvo_alt,loading:'lazy'}}{%endif%}{%if ifcvo_model != ''%}<p><a href="{{ifcvo_model|escape}}" download rel="noopener">{{ifcvo_label|escape}}</a></p>{%endif%}{%if specs_ns != blank and product.metafields[specs_ns] != blank%}<table class="ifcvo-specs">
+<caption>{{product.title|escape}}</caption>{%for pair in product.metafields[specs_ns]%}<tr><th scope="row">{{pair[0]|replace:'_',' '|capitalize|escape}}</th><td>{{pair[1].value|escape}}</td></tr>{%endfor%}</table>{%endif%}</div>
 </noscript>

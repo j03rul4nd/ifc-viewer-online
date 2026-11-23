@@ -1,4 +1,4 @@
-{%-liquid
+{%liquid
 assign s=block.settings
 assign ns=s.ns|strip|default:'bim'
 assign cw=product.metafields[ns].compatible_with
@@ -16,8 +16,7 @@ assign apps=cw.value
 endif
 endif
 assign app_list=apps|newline_to_br|split:'<br />'
--%}
-<section
+%}<section
 class="ifcvo-panel ifcvo-compat-block{%unless s.frame%} ifcvo-flat{%endunless%}"
 data-ifcvo-compat
 data-ifcvo-tier="compat"
@@ -27,35 +26,10 @@ data-i18n-rule-labels="compat_rules"
 data-i18n="compat"
 data-unavailable="{{t_unavailable|escape}}"
 data-labels-override="{{s.labels|escape}}"
-style="{%-if s.accent != blank -%}--ifcvo-accent:{{s.accent}};{%-endif -%}--ifcvo-radius:{{s.radius}}px;"
+style="{%if s.accent != blank%}--ifcvo-accent:{{s.accent}};{%endif%}--ifcvo-radius:{{s.radius}}px;"
 {%if s.title != blank%}aria-label="{{s.title|escape}}"{%endif%}
 {{block.shopify_attributes}}
->
-{%-if s.title != blank -%}<h3>{{s.title|escape}}</h3>{%-endif -%}
-<div class="ifcvo-body" data-ifcvo-compat-body>
-{%-if s.show_compat -%}
-<div data-ifcvo-compat-header aria-live="polite"><p class="ifcvo-muted">{{t_waiting|escape}}</p></div>
-<div data-ifcvo-compat-apps{%if apps != blank%} data-merchant="1"{%endif%}>
-{%-if apps != blank -%}
-<h4>{{t_works|escape}}</h4>
-<ul class="ifcvo-compat-apps">
-{%-for a in app_list -%}{%-assign a=a|strip -%}{%-if a != blank -%}<li>{{a|escape}}</li>{%-endif -%}{%-endfor -%}
-</ul>
-{%-elsif request.design_mode -%}
-<p class="ifcvo-muted">{{'ifcvo.editor.compat'|t:ns:ns|escape}}</p>
-{%-endif -%}
-</div>
-{%-endif -%}
-{%-if s.show_weight -%}
-<div data-ifcvo-compat-weight aria-live="polite">
-{%-if size_mb != blank -%}<h4>{{t_weight|escape}}</h4><p>{{size_mb|escape}} MB</p>{%-endif -%}
-</div>
-{%-endif -%}
-{%-if s.show_health -%}
-<div data-ifcvo-compat-health aria-live="polite"></div>
-{%-endif -%}
-</div>
-</section>
-{%-render 'ifcvo-runtime',js:'ifcvo-compat.js' -%}
-{%-render 'ifcvo-diag',feature:'compat',block:'ifc-compat',ns:ns,keys:'compatible_with,ifc_size_mb' -%}
-{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.ym6","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Compatibility"},{"type":"text","id":"ns","label":"t:k.6ld","default":"bim","info":"compatible_with (apps and versions you tested) wins over the typical list; ifc_size_mb gives the size."},{"type":"checkbox","id":"show_compat","label":"t:k.9rs","default":true},{"type":"checkbox","id":"show_weight","label":"t:k.lph","default":true,"info":"Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more."},{"type":"checkbox","id":"show_health","label":"t:k.u48","default":true},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"Empty uses the theme's button colour."},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}
+>{%if s.title != blank%}<h3>{{s.title|escape}}</h3>{%endif%}<div class="ifcvo-body" data-ifcvo-compat-body>{%if s.show_compat%}<div data-ifcvo-compat-header aria-live="polite"><p class="ifcvo-muted">{{t_waiting|escape}}</p></div>
+<div data-ifcvo-compat-apps{%if apps != blank%} data-merchant="1"{%endif%}>{%if apps != blank%}<h4>{{t_works|escape}}</h4>
+<ul class="ifcvo-compat-apps">{%for a in app_list%}{%assign a=a|strip%}{%if a != blank%}<li>{{a|escape}}</li>{%endif%}{%endfor%}</ul>{%elsif request.design_mode%}<p class="ifcvo-muted">{{'ifcvo.editor.compat'|t:ns:ns|escape}}</p>{%endif%}</div>{%endif%}{%if s.show_weight%}<div data-ifcvo-compat-weight aria-live="polite">{%if size_mb != blank%}<h4>{{t_weight|escape}}</h4><p>{{size_mb|escape}} MB</p>{%endif%}</div>{%endif%}{%if s.show_health%}<div data-ifcvo-compat-health aria-live="polite"></div>{%endif%}</div>
+</section>{%render 'ifcvo-runtime',js:'ifcvo-compat.js'%}{%render 'ifcvo-diag',feature:'compat',block:'ifc-compat',ns:ns,keys:'compatible_with,ifc_size_mb'%}{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.ym6","target":"section","settings":[{"type":"text","id":"title","label":"t:k.dks","default":"Compatibility"},{"type":"text","id":"ns","label":"t:k.6ld","default":"bim","info":"compatible_with (apps and versions you tested) wins over the typical list; ifc_size_mb gives the size."},{"type":"checkbox","id":"show_compat","label":"t:k.9rs","default":true},{"type":"checkbox","id":"show_weight","label":"t:k.lph","default":true,"info":"Light: under 20 MB and 5,000 elements. Heavy: 100 MB or 50,000 elements and more."},{"type":"checkbox","id":"show_health","label":"t:k.u48","default":true},{"type":"textarea","id":"labels","label":"t:k.xc1","info":"key=value per line: schema, mvd, app, worksWith, typical, weight, light, medium, heavy, thresholds, health, issues, noIssues, unknown."},{"type":"header","content":"Brand"},{"type":"color","id":"accent","label":"t:k.z95","info":"t:k.h9i"},{"type":"range","id":"radius","label":"t:k.b2y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.0vh","default":true}]}{% endschema %}

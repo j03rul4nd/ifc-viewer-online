@@ -1,6 +1,5 @@
-{%-liquid
+{%liquid
 assign ifcvo_v=value|append:''|strip
 assign ifcvo_rest=ifcvo_v|remove:'0'|remove:'1'|remove:'2'|remove:'3'|remove:'4'|remove:'5'|remove:'6'|remove:'7'|remove:'8'|remove:'9'|remove:'.'|remove:','|remove:'-'|remove:'+'|remove:' '
 assign ifcvo_u=unit|append:''|strip|default:fallback
--%}
-{%-if ifcvo_v == blank -%}—{%-elsif ifcvo_rest == blank -%}{{ifcvo_v|escape}} {{ifcvo_u|escape}}{%-else -%}{{ifcvo_v|escape}}{%-endif -%}
+%}{%if ifcvo_v == blank%}—{%elsif ifcvo_rest == blank%}{{ifcvo_v|escape}} {{ifcvo_u|escape}}{%else%}{{ifcvo_v|escape}}{%endif%}

@@ -72,7 +72,7 @@ describe('ifc-plan-set block (Liquid)', () => {
   })
 
   it('gates on the plan server-side with the upsell note in design mode', () => {
-    expect(body).toMatch(/if plan == 'free'[\s\S]*request\.design_mode[\s\S]*ifcvo-upsell/)
+    expect(body).toMatch(/if plan == 'free'[\s\S]*render 'ifcvo-upsell', feature: 'planset'/)
   })
 
   it('every label has an English default and a shop override', () => {

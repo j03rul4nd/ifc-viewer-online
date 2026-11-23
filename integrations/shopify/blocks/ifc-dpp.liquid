@@ -80,9 +80,7 @@
 -%}
 
 {%- if plan != 'business' and plan != '' -%}
-  {%- if request.design_mode -%}
-    <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'Business' | escape }}</p>
-  {%- endif -%}
+  {%- render 'ifcvo-upsell', feature: 'dpp', plan: 'Business', block: block -%}
 {%- else -%}
 <section
   class="ifcvo-panel ifcvo-dpp-block{% unless s.frame %} ifcvo-flat{% endunless %}"

@@ -68,7 +68,7 @@ describe('F1: email me this model', () => {
   })
   it('is Starter, with an editor-only note on the free plan', () => {
     expect(gen.FEATURE_TIERS.capture).toBe('starter')
-    expect(capture).toMatch(/plan == 'free'[\s\S]*request\.design_mode[\s\S]*ifcvo\.editor\.gated/)
+    expect(capture).toMatch(/plan == 'free'[\s\S]*render 'ifcvo-upsell', feature: 'capture'/)
   })
   it('never calls a non-Shopify host', () => {
     expect(leadsJs).not.toMatch(/https?:\/\//)

@@ -1,12 +1,9 @@
-{%-liquid
+{%liquid
 assign s=section.settings
 if block
 assign s=block.settings
 endif
--%}
-<div class="page-width">
+%}<div class="page-width">
 <tracking-globe config="{{s.config|escape}}" style="display:block;height:{{s.height}}px"></tracking-globe>
 </div>
-<script src="{{s.base|escape}}tracker.js" async></script>
-{%-render 'ifcvo-diag',feature:'tracking',block:'tracking-globe' -%}
-{% schema %}{"name":"t:k.j5h","settings":[{"type":"textarea","id":"config","label":"t:k.3pe"},{"type":"range","id":"height","label":"t:k.d41","min":300,"max":900,"step":20,"unit":"px","default":560},{"type":"text","id":"base","label":"t:k.moq","default":"https://www.ifcvieweronline.eu/track/v1/"}],"target":"section"}{% endschema %}
+<script src="{{s.base|escape}}tracker.js" async></script>{%render 'ifcvo-diag',feature:'tracking',block:'tracking-globe'%}{% schema %}{"name":"t:k.j5h","settings":[{"type":"textarea","id":"config","label":"t:k.3pe"},{"type":"range","id":"height","label":"t:k.d41","min":300,"max":900,"step":20,"unit":"px","default":560},{"type":"text","id":"base","label":"t:k.moq","default":"https://www.ifcvieweronline.eu/track/v1/"}],"target":"section"}{% endschema %}

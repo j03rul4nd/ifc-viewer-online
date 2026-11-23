@@ -134,6 +134,88 @@ describe('diagnostics: panel', () => {
     await m.render(document, { api, fetchImpl })
     expect(document.querySelectorAll('[data-ifcvo-diag-panel]').length).toBe(1)
   })
+
+  // T-325 G8: "Report a problem" and the review prompt (editor panel only).
+  it('error codes: probe first, the last viewer error wins', async () => {
+    const m = await load(diagPath)
+    expect(m.errorCode(null)).toBe('no_model')
+    expect(m.errorCode({ url: 'http://x', https: false })).toBe('not_https')
+    expect(m.errorCode({ url: 'https://x', https: true, cors: false })).toBe('cors')
+    expect(m.errorCode({ url: 'https://x', https: true, cors: true, ok: false, status: 404 })).toBe('http_404')
+    expect(m.errorCode({ url: 'https://x', https: true, cors: true, ok: true, step: false })).toBe('not_ifc')
+    expect(m.errorCode({ url: 'https://x', https: true, cors: true, ok: true, step: true, mb: 2 })).toBe('none')
+    expect(m.errorCode({ url: 'https://x', https: true, cors: true, ok: true, step: true, mb: 2 }, 'webgl')).toBe('webgl')
+  })
+
+  it('the mailto carries shop, theme, blocks and error code, and nothing about buyers', async () => {
+    const m = await load(diagPath)
+    const href = m.reportMailto({ shop: 'demo.myshopify.com', theme: 'Dawn #123', blocks: ['product-ifc-viewer', 'ifc-rooms'], code: 'cors', sdk: '1.19.0' })
+    expect(href.startsWith(`mailto:${m.SUPPORT_EMAIL}?subject=`)).toBe(true)
+    const body = decodeURIComponent(href.split('&body=')[1])
+    const subject = decodeURIComponent(href.split('subject=')[1].split('&')[0])
+    expect(subject).toContain('demo.myshopify.com')
+    expect(subject).toContain('cors')
+    expect(body).toContain('Shop: demo.myshopify.com')
+    expect(body).toContain('Theme: Dawn #123')
+    expect(body).toContain('Blocks: product-ifc-viewer, ifc-rooms')
+    expect(body).toContain('Error code: cors')
+    expect(body).not.toMatch(/customer|email:|\.ifc\b/i)
+  })
+
+  it('the editor panel has a Report a problem link filled from the page', async () => {
+    const m = await load(diagPath)
+    page()
+    document.body.insertAdjacentHTML('beforeend', '<i hidden data-ifcvo-license="" data-ifcvo-shop="demo.myshopify.com"></i>')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).Shopify = { designMode: true, theme: { name: 'Dawn', id: 42 } }
+    const panel = await m.render(document, { api, fetchImpl })
+    const a = panel.querySelector('[data-ifcvo-report-link]') as HTMLAnchorElement
+    expect(a.textContent).toBe('Report a problem')
+    const href = decodeURIComponent(a.getAttribute('href')!)
+    expect(href).toContain('Shop: demo.myshopify.com')
+    expect(href).toContain('Theme: Dawn #42')
+    expect(href).toContain('Blocks: product-ifc-viewer, ifc-rooms, ifc-takeoff')
+    expect(href).toContain('Error code: none')
+    // A viewer error after the panel was drawn is in the mail.
+    document.querySelector('[data-ifcvo-viewer]')!.dispatchEvent(new CustomEvent('ifcvo:error', { detail: { code: 'webgl' } }))
+    a.dispatchEvent(new MouseEvent('click', { cancelable: true }))
+    expect(decodeURIComponent(a.getAttribute('href')!)).toContain('Error code: webgl')
+  })
+
+  it('review prompt: only after a model loaded, in the editor panel, dismissible and remembered', async () => {
+    const m = await load(diagPath)
+    localStorage.removeItem(m.REVIEW_KEY)
+    page()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).Shopify = { designMode: true }
+    let panel = await m.render(document, { api, fetchImpl })
+    expect(panel.querySelector('[data-ifcvo-review]')).toBeNull()
+    document.querySelector('[data-ifcvo-viewer]')!.dispatchEvent(new CustomEvent('ifcvo:loaded', { detail: {} }))
+    expect(localStorage.getItem(m.REVIEW_KEY)).toBe('ask')
+    const box = panel.querySelector('[data-ifcvo-review]')!
+    expect(box.querySelector('a')!.getAttribute('href')).toBe(m.REVIEW_URL)
+    ;(box.querySelector('[data-ifcvo-review-dismiss]') as HTMLButtonElement).click()
+    expect(panel.querySelector('[data-ifcvo-review]')).toBeNull()
+    expect(localStorage.getItem(m.REVIEW_KEY)).toBe('dismissed')
+    // Remembered: a later load or re-render does not ask again.
+    panel = await m.render(document, { api, fetchImpl })
+    document.querySelector('[data-ifcvo-viewer]')!.dispatchEvent(new CustomEvent('ifcvo:loaded', { detail: {} }))
+    expect(panel.querySelector('[data-ifcvo-review]')).toBeNull()
+  })
+
+  it('review prompt never reaches buyers: no panel and no state outside the editor', async () => {
+    const m = await load(diagPath)
+    localStorage.removeItem(m.REVIEW_KEY)
+    page()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).Shopify = { designMode: false }
+    expect(await m.render(document, { api, fetchImpl })).toBeNull()
+    document.querySelector('[data-ifcvo-viewer]')!.dispatchEvent(new CustomEvent('ifcvo:loaded', { detail: {} }))
+    expect(localStorage.getItem(m.REVIEW_KEY)).toBeNull()
+    expect(document.querySelector('[data-ifcvo-review]')).toBeNull()
+    // Only the editor-only diagnostics script holds the prompt; the storefront runtime has none.
+    expect(read('assets/ifcvo.js')).not.toMatch(/REVIEW_URL|apps\.shopify\.com\/ifc-viewer-online\/reviews/)
+  })
 })
 
 describe('diagnostics: Liquid wiring', () => {

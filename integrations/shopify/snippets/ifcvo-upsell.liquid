@@ -1,0 +1,15 @@
+{% comment %}
+  Theme editor only: the note a block shows instead of itself when the shop's plan
+  does not include it. One snippet instead of the same paragraph in every gated block.
+
+  Params:
+    feature – tier feature name (planset, quote…), also data-ifcvo-upsell
+    plan    – plan that unlocks it (Starter, Business)
+    block   – the block, for its theme editor attributes
+
+  Usage:
+    {% render 'ifcvo-upsell', feature: 'quote', plan: 'Starter', block: block %}
+{% endcomment %}
+{%- if request.design_mode -%}
+  <p class="ifcvo-upsell" data-ifcvo-upsell="{{ feature }}" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: feature, plan: plan | escape }}</p>
+{%- endif -%}
