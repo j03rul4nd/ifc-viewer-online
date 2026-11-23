@@ -42,6 +42,12 @@ export const DIAG_LABELS = {
   yes: 'yes',
   no: 'no',
   checking: 'Checking…',
+  roi: 'ROI',
+  pixelSeen: 'ROI pixel detected (last event {ago}).',
+  pixelMissing: 'ROI pixel not detected yet. Paste the template from integrations/shopify/app/docs/ROI.md in Settings → Customer events, open a model on the live store, then reload.',
+  minAgo: '{n} min ago',
+  hAgo: '{n} h ago',
+  pixelNote: 'The pixel only forwards to your own GA4 or Meta; figures come from your reports.',
 }
 
 const FEATURE_LABELS = {
@@ -187,6 +193,24 @@ export function sdkReport(url, viewer, labels = DIAG_LABELS) {
   return lines
 }
 
+export const PIXEL_COOKIE = '_ifcvo_px'
+
+/** Timestamp (ms) the ROI pixel left in its first-party cookie, or 0. */
+export function pixelSeenAt(cookie = '') {
+  const m = String(cookie || '').match(/(?:^|;\s*)_ifcvo_px=(\d+)/)
+  return m ? Number(m[1]) : 0
+}
+
+/** Lines for the ROI setup checklist: is the merchant's custom pixel running? */
+export function roiReport(cookie, now = Date.now(), labels = DIAG_LABELS) {
+  const L = { ...DIAG_LABELS, ...labels }
+  const at = pixelSeenAt(cookie)
+  if (!at) return [{ kind: 'warn', text: L.pixelMissing }, { kind: 'info', text: L.pixelNote }]
+  const min = Math.max(0, Math.round((now - at) / 60000))
+  const ago = min < 60 ? fill(L.minAgo, { n: min }) : fill(L.hAgo, { n: Math.round(min / 60) })
+  return [{ kind: 'ok', text: fill(L.pixelSeen, { ago }) }, { kind: 'info', text: L.pixelNote }]
+}
+
 // ── DOM ──────────────────────────────────────────────────────────────────────
 
 function el(tag, attrs = {}, ...children) {
@@ -261,6 +285,7 @@ export async function render(doc = document, { api = window.IFCVO, fetchImpl, fo
   const modelBox = el('section', {}, el('h4', {}, L.model), el('p', { class: 'ifcvo-muted' }, L.checking))
   body.append(modelBox)
   body.append(el('section', {}, list(sdkReport(api && api.sdk, api && api.viewer))))
+  body.append(el('section', { 'data-feature': 'roi' }, el('h4', {}, L.roi), list(roiReport(doc.cookie))))
   for (const d of diags) {
     const r = blockReport(d, { plan, tiers })
     body.append(el('section', { 'data-feature': r.feature }, el('h4', {}, `${r.name} (${r.tier})`), list(r.lines)))
