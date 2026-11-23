@@ -8,6 +8,15 @@ import * as cmp from '../integrations/shopify/app/extensions/ifc-viewer/assets/i
 // @ts-expect-error plain JS asset without types
 import * as share from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-share.js'
 
+describe('compare viewers follow the product viewer look', () => {
+  it('copies the brand gradient, a preset background and the accent', () => {
+    expect(cmp.lookOf({ bg: 'brand', bgTop: '#fbfaf7', bgBottom: '#e9e5db', accent: '2f5d50' }))
+      .toEqual({ background: { top: '#fbfaf7', bottom: '#e9e5db' }, accent: '2f5d50' })
+    expect(cmp.lookOf({ bg: 'paper' })).toEqual({ background: 'paper' })
+    expect(cmp.lookOf({})).toEqual({})
+  })
+})
+
 const SRC = path.resolve(__dirname, '../integrations/shopify')
 const EXT = path.join(SRC, 'app/extensions/ifc-viewer')
 

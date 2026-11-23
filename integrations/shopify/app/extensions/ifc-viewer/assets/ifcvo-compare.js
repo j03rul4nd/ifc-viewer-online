@@ -145,11 +145,20 @@ function dispose(slot) {
 }
 
 /** Loads `url` in the slot's stage (disposing what was there) and returns its key specs, or null. */
-async function load(api, slot, url, L) {
+/** The product viewer's background and accent, so both compare viewers match it. */
+export function lookOf(d = {}) {
+  const look = {}
+  if (d.bg === 'brand') look.background = { top: d.bgTop || '#ffffff', bottom: d.bgBottom || d.bgTop || '#ffffff' }
+  else if (d.bg) look.background = d.bg
+  if (d.accent) look.accent = d.accent
+  return look
+}
+
+async function load(api, slot, url, L, look = {}) {
   dispose(slot)
   slot.note.textContent = L.loading
   const { IfcViewer } = await api.loadSdk()
-  const v = new IfcViewer(slot.stage, { model: url, ui: 'embed', toolbar: false, height: '100%', validate: false })
+  const v = new IfcViewer(slot.stage, { model: url, ui: 'embed', toolbar: false, height: '100%', validate: false, ...look })
   slot.viewer = v
   slot.url = url
   const loaded = typeof v.on === 'function'
@@ -172,6 +181,7 @@ export function mount(root, { api = window.IFCVO, doc = document, win = window }
   if (!canCompare(options) || !api || typeof api.loadSdk !== 'function') { root.hidden = true; return null }
   root.dataset.ifcvoCompareMounted = '1'
   const L = labelsOf(root)
+  const look = lookOf(viewerRoot ? viewerRoot.dataset : {})
   const locale = root.dataset.locale || ''
   const body = root.querySelector('.ifcvo-body') || root
 
@@ -229,7 +239,7 @@ export function mount(root, { api = window.IFCVO, doc = document, win = window }
     dispose(slots[1 - i])
     const s = slots[i]
     if (s.option && s.url !== s.option.url) {
-      const specs = await load(api, s, s.option.url, L)
+      const specs = await load(api, s, s.option.url, L, look)
       if (token === run && specs) { s.specs = specs; render() }
     }
   }
@@ -269,7 +279,7 @@ export function mount(root, { api = window.IFCVO, doc = document, win = window }
     try { win.Shopify && win.Shopify.analytics && win.Shopify.analytics.publish('ifc_variants_compared', { a: a.id, b: b.id }) } catch (e) { /* no pixels */ }
     if (narrow()) {
       // Specs of both, one model at a time: B first and freed, then A stays live.
-      const sb = await load(api, slots[1], b.url, L)
+      const sb = await load(api, slots[1], b.url, L, look)
       if (token !== run) return
       slots[1].specs = sb
       await showTab(0, token)
@@ -278,7 +288,7 @@ export function mount(root, { api = window.IFCVO, doc = document, win = window }
     // Desktop: one after the other, so two large models never parse at the same time.
     for (const s of slots) {
       s.pane.hidden = false
-      const specs = await load(api, s, s.option.url, L)
+      const specs = await load(api, s, s.option.url, L, look)
       if (token !== run) return
       s.specs = specs
       render()

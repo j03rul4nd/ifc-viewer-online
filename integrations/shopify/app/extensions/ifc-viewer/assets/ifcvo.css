@@ -152,7 +152,7 @@
 .ifcvo-actions { position: relative; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; max-width: 90%; }
 .ifcvo-open, .ifcvo-retry { min-height: 44px; padding: 12px 20px; border: 0; border-radius: 999px; background: #fff; color: #11161a; font: inherit; font-weight: 600; cursor: pointer; }
 .ifcvo-full { min-height: 44px; line-height: 44px; padding: 0 16px; border-radius: 999px; background: rgba(255,255,255,.9); color: #11161a; font: inherit; font-weight: 600; text-decoration: none; }
-.ifcvo-retry[hidden], .ifcvo-full[hidden] { display: none; }
+.ifcvo-facade[hidden], .ifcvo-open[hidden], .ifcvo-retry[hidden], .ifcvo-full[hidden] { display: none; }
 .ifcvo-status { margin: 6px 0 0; min-height: 1.4em; font: inherit; font-size: .9em; }
 .ifcvo-product > .ifcvo-specs { margin: 12px 0 0; border-collapse: collapse; width: 100%; }
 .ifcvo-product > .ifcvo-specs caption { text-align: left; font-weight: 600; padding-bottom: 4px; }

@@ -1,0 +1,10 @@
+// Opens one harness page and saves a raw screenshot: node probe.mjs <scene> <out.png> [w] [h] [waitMs]
+const { chromium } = await import(process.env.PW || 'playwright-core')
+const [scene, file, w = 1600, h = 790, ms = 30000] = process.argv.slice(2)
+const browser = await chromium.launch({ channel: 'msedge', args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] })
+const page = await browser.newPage({ viewport: { width: +w, height: +h } })
+page.on('console', (m) => { if (m.type() === 'error') console.log('console:', m.text().slice(0, 200)) })
+await page.goto(`http://127.0.0.1:8731/listing/v3/harness/out/${scene}.html`)
+await page.waitForTimeout(+ms)
+await page.screenshot({ path: file })
+await browser.close()

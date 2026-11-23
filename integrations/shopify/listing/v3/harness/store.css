@@ -1,0 +1,27 @@
+/* Demo store theme: a plain Dawn-style product page. One palette, two fonts. */
+:root { --bg: #fbfaf7; --ink: #1f2421; --muted: #5f645f; --line: #e2ded4; --accent: #2f5d50; --ifcvo-accent: #2f5d50; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 'Segoe UI', system-ui, sans-serif; }
+.bar { background: var(--accent); color: #f3f1ea; text-align: center; font-size: 13px; padding: 8px; letter-spacing: .02em; }
+header { display: flex; align-items: center; gap: 40px; padding: 18px 48px; border-bottom: 1px solid var(--line); }
+.brand { font: 600 25px/1 Georgia, 'Times New Roman', serif; letter-spacing: .01em; }
+nav { display: flex; gap: 26px; font-size: 15px; color: var(--muted); }
+.icons { margin-left: auto; font-size: 14px; color: var(--muted); }
+.pp { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 44px; padding: 28px 48px; }
+.crumb { margin: 0 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+h1 { margin: 0 0 10px; font: 500 34px/1.15 Georgia, serif; }
+.lede { margin: 0 0 18px; color: var(--muted); }
+.variants { border: 0; padding: 0; margin: 0 0 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+.variants legend { font-size: 14px; margin-bottom: 8px; }
+.variants label { border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; font-size: 14px; }
+.variants label.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.buy { width: 100%; padding: 14px; border: 1px solid var(--ink); background: transparent; color: var(--ink); font: 600 15px 'Segoe UI', sans-serif; margin-bottom: 18px; }
+.info > div, .info > table { margin-bottom: 16px; }
+.media > * + * { margin-top: 16px; }
+body.m header { padding: 14px 18px; gap: 0; }
+body.m nav { display: none; }
+body.m .icons { font-size: 13px; }
+body.m .pp { grid-template-columns: 1fr; padding: 0 0 24px; gap: 18px; }
+body.m .info { padding: 0 18px; }
+body.m h1 { font-size: 28px; }
+body.m .pp { padding-bottom: 1200px; } /* room to scroll a block to the top of the phone */
