@@ -41,7 +41,7 @@ describe('quote request block (Liquid)', () => {
     // No-JS fallback: the Selection field already names the product and the variant.
     expect(block).toMatch(/assign sel = product\.title[\s\S]*append: v\.title/)
     expect(block).toContain('value="{{ sel | escape }}"')
-    expect(block).toContain("assign roles = 'architect,contractor,owner,reseller'")
+    for (const r of ['architect', 'contractor', 'owner', 'reseller']) expect(block).toContain(`'ifcvo.lead.role_${r}' | t`)
     expect(block).toContain('value="ifcvo-lead" data-ifcvo-lead-tag')
   })
 
@@ -72,7 +72,7 @@ describe('quote request block (Liquid)', () => {
 
   it('the compiled block keeps the form and the server texts', () => {
     expect(compiled).toMatch(/{%-?form 'contact',id:'ifcvo-lead'( -)?%}/)
-    expect(compiled).toContain("'ifcvo.lead.role_'|append:r|t|escape")
+    expect(compiled).toContain("'ifcvo.lead.role_reseller'|t|escape")
   })
 
   it('the runtime snippet prints the shop labels once, safe inside a script tag', () => {
