@@ -55,3 +55,19 @@ key = "show_addons"
 type = "boolean"
 name = "Show add-ons (Starter)"
 description = "Products in the ifcvo.addons metafield, each with a link that adds it to the cart."
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "release_notes"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "handover"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "assembly_views"
+
+[[extensions.metafields]]
+namespace = "ifcvo"
+key = "warranty_months"

@@ -1,0 +1,21 @@
+{
+  "name": "Publicar nova versão",
+  "description": "Ação do admin que publica uma nova versão do modelo IFC de um produto com notas.",
+  "heading": "Publicar nova versão",
+  "intro": "Quem comprou este produto vê o selo \"Nova versão\" e estas notas em Meus modelos e arquivos. Envie antes os novos arquivos para o produto.",
+  "version": "Versão",
+  "date": "Data de lançamento",
+  "dateHelp": "AAAA-MM-DD. Quem pediu antes deste dia vê o selo.",
+  "notes": "O que mudou",
+  "notesHelp": "Visível para os compradores. Obrigatório.",
+  "publish": "Publicar",
+  "close": "Fechar",
+  "done": "Versão publicada.",
+  "error": {
+    "owner": "Abra a partir da página de um produto.",
+    "version": "Informe uma versão (até 50 caracteres).",
+    "date": "Informe uma data válida AAAA-MM-DD.",
+    "notes": "Descreva o que mudou (até 2000 caracteres).",
+    "save": "Não foi possível salvar a versão. Tente novamente."
+  }
+}

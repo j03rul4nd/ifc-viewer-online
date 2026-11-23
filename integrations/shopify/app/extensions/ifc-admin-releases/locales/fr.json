@@ -1,0 +1,21 @@
+{
+  "name": "Publier une nouvelle version",
+  "description": "Action d'admin qui publie une nouvelle version du modèle IFC d'un produit avec des notes.",
+  "heading": "Publier une nouvelle version",
+  "intro": "Les acheteurs de ce produit voient le badge « Nouvelle version » et ces notes dans Mes modèles et fichiers. Ajoutez d'abord les nouveaux fichiers au produit.",
+  "version": "Version",
+  "date": "Date de publication",
+  "dateHelp": "AAAA-MM-JJ. Les commandes antérieures à ce jour voient le badge.",
+  "notes": "Ce qui a changé",
+  "notesHelp": "Visible par les acheteurs. Obligatoire.",
+  "publish": "Publier",
+  "close": "Fermer",
+  "done": "Version publiée.",
+  "error": {
+    "owner": "Ouvrez-la depuis la page d'un produit.",
+    "version": "Saisissez une version (50 caractères max.).",
+    "date": "Saisissez une date valide AAAA-MM-JJ.",
+    "notes": "Décrivez ce qui a changé (2000 caractères max.).",
+    "save": "La version n'a pas pu être enregistrée. Réessayez."
+  }
+}

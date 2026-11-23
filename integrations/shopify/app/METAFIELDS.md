@@ -80,6 +80,17 @@ namespace cannot be a setting. The `custom.*` keys used by the theme blocks are 
 | `ifcvo.version` | product, variant | single line text | Shows "Version 2.1"; added to the Open in 3D link as `ifcvo-v` | Starter (My models & files) |
 | `ifcvo.updated_at` | product, variant | date | "Updated on …" date. If empty, the date the model metafield was last changed. When it is later than the order date, the item shows a **New version** badge | Starter (My models & files) |
 | `ifcvo.addons` | product | list of product references | Add-on cards on the Thank you page and the Order status page. Each card links to `/cart/<variant>:1?attributes[_ifcvo_touch]=…_addon` | Starter |
+| `ifcvo.release_notes` | product, variant | multi-line text | "What changed", shown under the **New version** badge (only to buyers who ordered before the release) | Starter |
+| `ifcvo.handover` | product, variant | list of files, list of URLs, or one URL per line | Handover pack in My models & files: as-built IFC, manuals, certificates. A file list, never a ZIP | Business |
+| `ifcvo.assembly_views` | product, variant | JSON | Assembly steps, in order: `[{"title":"Base frame","view":"<saved view id>","note":"..."}]` (or a list of titles). Each step has Previous / Next and opens the product page with `#…&ifcvo-view=<id>` | Business |
+| `ifcvo.warranty_months` | product, variant | integer (1–600) | "Warranty until <order date + months>", computed on the calendar (no timezone shift; 31 Jan + 1 month = 28 Feb) | Business |
+
+**Publish new version (admin).** The `ifc-admin-releases` action ("More actions →
+Publish new version" on a product) writes `ifcvo.version`, `ifcvo.updated_at` and
+`ifcvo.release_notes` on the **product** with the Admin API (scope `write_products`).
+Upload the new files first. If a variant has its own `ifcvo.version` / `ifcvo.updated_at`,
+the variant value still wins, so edit the variant by hand. Follow-up email and
+maintenance Flow: `listing/recipes/`.
 
 The variant value wins over the product value. An item is shown only when it has
 a model or at least one file.
@@ -120,6 +131,22 @@ mutation {
   }) { createdDefinition { id } userErrors { field message } }
   addons: metafieldDefinitionCreate(definition: {
     name: "Add-ons after purchase", namespace: "ifcvo", key: "addons", ownerType: PRODUCT, type: "list.product_reference",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  notes: metafieldDefinitionCreate(definition: {
+    name: "Release notes", namespace: "ifcvo", key: "release_notes", ownerType: PRODUCT, type: "multi_line_text_field",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  handover: metafieldDefinitionCreate(definition: {
+    name: "Handover pack", namespace: "ifcvo", key: "handover", ownerType: PRODUCT, type: "list.file_reference",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  steps: metafieldDefinitionCreate(definition: {
+    name: "Assembly steps", namespace: "ifcvo", key: "assembly_views", ownerType: PRODUCT, type: "json",
+    access: { storefront: PUBLIC_READ }
+  }) { createdDefinition { id } userErrors { field message } }
+  warranty: metafieldDefinitionCreate(definition: {
+    name: "Warranty (months)", namespace: "ifcvo", key: "warranty_months", ownerType: PRODUCT, type: "number_integer",
     access: { storefront: PUBLIC_READ }
   }) { createdDefinition { id } userErrors { field message } }
 }

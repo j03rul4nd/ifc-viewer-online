@@ -11,6 +11,10 @@ export const METAFIELDS = [
   { namespace: 'ifcvo', key: 'version' },
   { namespace: 'ifcvo', key: 'updated_at' },
   { namespace: 'ifcvo', key: 'addons' },
+  { namespace: 'ifcvo', key: 'release_notes' },
+  { namespace: 'ifcvo', key: 'handover' },
+  { namespace: 'ifcvo', key: 'assembly_views' },
+  { namespace: 'ifcvo', key: 'warranty_months' },
   { namespace: 'custom', key: 'ifc_model' },
   { namespace: 'custom', key: 'bim_files' },
 ]
@@ -162,7 +166,108 @@ export function modelInfo(product, variant) {
     version: text(pick('ifcvo.version')),
     updated,
     addons: addonsOf(p['ifcvo.addons']),
+    releaseNotes: text(pick('ifcvo.release_notes')).slice(0, 2000),
+    handover: metafieldUrls(pick('ifcvo.handover')).map((u) => ({ url: u, name: fileName(u), kind: fileKind(u) })),
+    steps: assemblySteps(pick('ifcvo.assembly_views')),
+    warrantyMonths: warrantyMonthsOf(pick('ifcvo.warranty_months')),
   }
+}
+
+/** Max assembly steps shown. */
+export const MAX_STEPS = 50
+
+/**
+ * Assembly steps from `ifcvo.assembly_views` (JSON): a list of
+ * `{ "title": "Base frame", "view": "<saved view id>", "note": "..." }` or of plain
+ * titles. Steps without a title are skipped; order is kept.
+ */
+export function assemblySteps(mf) {
+  const v = text(mf)
+  if (!v) return []
+  let arr
+  try { arr = JSON.parse(v) } catch (e) { arr = v.split(/\r?\n/) }
+  if (arr && !Array.isArray(arr) && Array.isArray(arr.steps)) arr = arr.steps
+  if (!Array.isArray(arr)) return []
+  const out = []
+  for (const s of arr) {
+    let o = null
+    if (typeof s === 'string') o = { title: s }
+    else if (s && typeof s === 'object') o = s
+    const title = o && typeof o.title === 'string' ? o.title.trim().slice(0, 200) : ''
+    if (!title) continue
+    out.push({
+      title,
+      view: typeof o.view === 'string' ? o.view.trim().slice(0, 100) : '',
+      note: typeof o.note === 'string' ? o.note.trim().slice(0, 1000) : '',
+    })
+    if (out.length >= MAX_STEPS) break
+  }
+  return out
+}
+
+/** Warranty length in whole months from `ifcvo.warranty_months` (1–600), else 0. */
+export function warrantyMonthsOf(mf) {
+  const n = Number(text(mf))
+  return Number.isInteger(n) && n > 0 && n <= 600 ? n : 0
+}
+
+/**
+ * `YYYY-MM-DD` plus whole months, on the calendar (no timezone involved). The day is
+ * clamped to the end of a shorter month: 2026-01-31 + 1 = 2026-02-28. '' when invalid.
+ */
+export function addMonths(day, months) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(day || ''))
+  if (!m || !Number.isInteger(months)) return ''
+  const total = Number(m[1]) * 12 + (Number(m[2]) - 1) + months
+  const y = Math.floor(total / 12)
+  const mo = total - y * 12
+  const last = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate()
+  const d = Math.min(Number(m[3]), last)
+  const pad = (n, w) => String(n).padStart(w, '0')
+  return `${pad(y, 4)}-${pad(mo + 1, 2)}-${pad(d, 2)}`
+}
+
+/** The warranty end day (order date + `ifcvo.warranty_months`), or '' when unknown. */
+export function warrantyUntil(info) {
+  return info && info.warrantyMonths && info.orderDate ? addMonths(info.orderDate, info.warrantyMonths) : ''
+}
+
+/** "Open in 3D" at one saved view: the Open in 3D link plus `ifcvo-view=<id>` in the hash. */
+export function stepUrl(info, shopUrl, step, source) {
+  const base = open3dUrl(info, shopUrl, source)
+  if (!base || !step || !step.view) return base
+  return base + '&ifcvo-view=' + encodeURIComponent(step.view)
+}
+
+/** Today as YYYY-MM-DD in the given time (local calendar of the browser). */
+export function localDay(date) {
+  const d = date instanceof Date ? date : new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Admin API mutation used by the "Publish new version" admin action. */
+export const RELEASE_MUTATION = `mutation IfcvoRelease($m:[MetafieldsSetInput!]!){metafieldsSet(metafields:$m){metafields{key value}userErrors{field message}}}`
+
+/**
+ * `metafieldsSet` inputs for a new release on a product or variant: version,
+ * updated_at (the release day) and release notes. Throws Error(field) on bad input.
+ */
+export function releaseInputs(ownerId, release) {
+  const version = String((release && release.version) || '').trim()
+  const day = String((release && release.date) || '').trim()
+  const notes = String((release && release.notes) || '').trim()
+  if (!/^gid:\/\/shopify\/(Product|ProductVariant)\/\d+$/.test(String(ownerId || ''))) throw new Error('owner')
+  if (!version || version.length > 50) throw new Error('version')
+  if (addMonths(day, 0) !== day) throw new Error('date')
+  // Notes are required: an old note must never be shown under a new version.
+  if (!notes || notes.length > 2000) throw new Error('notes')
+  const out = [
+    { ownerId, namespace: 'ifcvo', key: 'version', type: 'single_line_text_field', value: version },
+    { ownerId, namespace: 'ifcvo', key: 'updated_at', type: 'date', value: day },
+    { ownerId, namespace: 'ifcvo', key: 'release_notes', type: 'multi_line_text_field', value: notes },
+  ]
+  return out
 }
 
 /** The product page URL: `onlineStoreUrl`, else `<shop>/products/<handle>`, else ''. */
