@@ -72,7 +72,7 @@
   data-current="{{ current.id | escape }}"
   data-filename="{{ filename | escape }}"
   data-l-copied="{{ l_copied | escape }}" data-l-copy-manual="{{ l_manual | escape }}" data-l-saved="{{ l_saved | escape }}" data-l-error="{{ l_error | escape }}"
-  style="{% render 'ifcvo-style', s: s %}"
+  style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {{ block.shopify_attributes }}
 >
   {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}

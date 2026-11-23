@@ -37,7 +37,7 @@
   data-labels-override="{{ s.labels | escape }}"
   data-locale="{{ request.locale.iso_code | escape }}"
   data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}"
-  style="{% render 'ifcvo-style', s: s %}"
+  style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
   {% if s.title != blank %}aria-label="{{ s.title | escape }}"{% endif %}
   {{ block.shopify_attributes }}
 >

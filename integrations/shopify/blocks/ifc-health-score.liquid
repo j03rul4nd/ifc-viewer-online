@@ -5,7 +5,7 @@
   section or column, so it can sit beside the product form or below the fold.
 {% endcomment %}
 {%- capture ifcvo_labels -%}{"excellent":{{ block.settings.l_excellent | json }},"good":{{ block.settings.l_good | json }},"fair":{{ block.settings.l_fair | json }},"poor":{{ block.settings.l_poor | json }},"errors":{{ block.settings.l_errors | json }},"warnings":{{ block.settings.l_warnings | json }},"note":{{ block.settings.note | json }}}{%- endcapture -%}
-<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="score" style="{% render 'ifcvo-style', s: block.settings %}" data-open-label="{{ block.settings.open_label | escape }}" data-labels="{{ ifcvo_labels | escape }}" {{ block.shopify_attributes }}>
+<div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="score" style="{%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}--ifcvo-radius:{{ block.settings.radius }}px;" data-open-label="{{ block.settings.open_label | escape }}" data-labels="{{ ifcvo_labels | escape }}" {{ block.shopify_attributes }}>
   {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body"></div>
 </div>

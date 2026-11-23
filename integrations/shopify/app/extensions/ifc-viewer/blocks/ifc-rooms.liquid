@@ -12,9 +12,9 @@ data-show-table="{{ s.show_table }}"
 data-show-chips="{{ s.show_chips }}"
 data-highlight="{{ s.highlight }}"
 data-i18n="rooms"
-{% render 'ifcvo-shop-labels' %}
+data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
 data-labels-override="{{ s.labels | escape }}"
-style="{% render 'ifcvo-style', s: s %}"
+style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
 {{ block.shopify_attributes }}
 >
 {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}

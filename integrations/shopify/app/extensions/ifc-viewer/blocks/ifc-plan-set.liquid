@@ -64,7 +64,7 @@ data-ifcvo-tier="planset"
 data-ifcvo-plan="{{ plan | escape }}"
 data-ifcvo-license="{{ shop.metafields.ifcvo.license.value | escape }}" data-ifcvo-shop="{{ shop.permanent_domain | escape }}"
 data-variant-id="{{ current.id | escape }}"
-style="{% render 'ifcvo-style', s: s %}"
+style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
 {{ block.shopify_attributes }}
 >
 {%- if l_heading != blank -%}<h3>{{ l_heading | escape }}</h3>{%- endif -%}

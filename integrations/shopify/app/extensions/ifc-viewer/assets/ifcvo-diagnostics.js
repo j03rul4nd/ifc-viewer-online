@@ -215,6 +215,22 @@ export function readDiags(doc = document) {
   return [...seen.values()]
 }
 
+export const COLLAPSE_KEY = 'ifcvo-diag-collapsed'
+
+/** Whether the buyer-invisible panel was left collapsed in this tab. */
+export function readCollapsed(win = window) {
+  try { return win.sessionStorage.getItem(COLLAPSE_KEY) === '1' } catch (e) { return false }
+}
+
+function setCollapsed(panel, body, toggle, collapsed, save = true) {
+  body.hidden = collapsed
+  if (collapsed) panel.setAttribute('data-collapsed', '')
+  else panel.removeAttribute('data-collapsed')
+  toggle.textContent = collapsed ? DIAG_LABELS.show : DIAG_LABELS.hide
+  toggle.setAttribute('aria-expanded', String(!collapsed))
+  if (save) { try { window.sessionStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0') } catch (e) { /* storage off */ } }
+}
+
 /** Builds (or rebuilds) the panel. Returns the panel node, or null outside the theme editor. */
 export async function render(doc = document, { api = window.IFCVO, fetchImpl, force = false } = {}) {
   if (!force && !(window.Shopify && window.Shopify.designMode)) return null
@@ -227,13 +243,13 @@ export async function render(doc = document, { api = window.IFCVO, fetchImpl, fo
   const plan = String((planNode && planNode.dataset.ifcvoPlan) || (api && api.plan) || 'business').toLowerCase()
   const tiers = (api && api.FEATURE_TIERS) || {}
   const body = el('div', { class: 'ifcvo-diag-body' })
+  // Collapsed or not survives re-renders (section reloads rebuild the panel) for this tab.
+  const collapsed = readCollapsed()
+  const toggle = el('button', { type: 'button', class: 'ifcvo-chip', 'aria-expanded': String(!collapsed), onclick: () => setCollapsed(panel, body, toggle, !body.hidden) }, L.hide)
   const panel = el('aside', { class: 'ifcvo-diag', 'data-ifcvo-diag-panel': '', 'aria-label': L.title },
-    el('div', { class: 'ifcvo-diag-head' }, el('strong', {}, L.title),
-      el('button', { type: 'button', class: 'ifcvo-chip', onclick: (e) => {
-        body.hidden = !body.hidden
-        e.currentTarget.textContent = body.hidden ? L.show : L.hide
-      } }, L.hide)),
+    el('div', { class: 'ifcvo-diag-head' }, el('strong', {}, L.title), toggle),
     body)
+  setCollapsed(panel, body, toggle, collapsed, false)
   body.append(el('p', { class: 'ifcvo-muted' }, L.note), el('p', {}, fill(L.plan, { plan })))
   doc.body.append(panel)
   // The setup wizard (assets/ifcvo-wizard.js, product block only) adds its section here.

@@ -30,9 +30,9 @@ data-ifcvo-tier="classification"
 data-show-model="{{ s.show_model }}"
 data-show-counts="{{ s.show_counts }}"
 data-i18n="classification"
-{% render 'ifcvo-shop-labels' %}
+data-ifcvo-labels="{{ shop.metafields.ifcvo.labels.value | json | escape }}" data-locale="{{ request.locale.iso_code | escape }}"
 data-labels-override="{{ s.labels | escape }}"
-style="{% render 'ifcvo-style', s: s %}"
+style="{%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}--ifcvo-radius:{{ s.radius }}px;"
 {{ block.shopify_attributes }}
 >
 {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}

@@ -29,6 +29,7 @@ export const WIZARD_LABELS = {
   addBlock: 'Add “{name}” to the product page',
   plan: '{tier} plan',
   poster: 'Make poster from model',
+  clickToZoom: 'Click to zoom and turn the model',
   posterMaking: 'Making the poster…',
   posterDone: 'Poster ready ({kb} KB, {w}×{h}). Upload it in Content → Files and set the product metafield {ns}.ifc_poster to it.',
   posterBig: 'The poster is still over 200 KB ({kb} KB). It works, but compress it before uploading, or use a simpler view.',
@@ -253,6 +254,38 @@ export function release() {
   return true
 }
 
+/**
+ * Saves a blob through a temporary <a download>, never by navigating: the theme
+ * editor follows link clicks that reach the document and sends its preview to
+ * the blob: address, which Shopify cannot load. The anchor stays out of the
+ * document and its click never bubbles, so only the download happens.
+ */
+export function downloadBlob(blob, name, { doc = document, win = window } = {}) {
+  const href = win.URL.createObjectURL(blob)
+  const a = doc.createElement('a')
+  a.href = href
+  a.download = name
+  a.rel = 'noopener'
+  a.addEventListener('click', (e) => e.stopPropagation())
+  a.click()
+  setTimeout(() => win.URL.revokeObjectURL(href), 10000)
+  return a
+}
+
+/**
+ * A see-through cover over the wizard's small 3D view: the mouse wheel scrolls
+ * the editor until the merchant clicks the view, then the cover goes and the
+ * wheel zooms the model.
+ */
+export function wheelGuard(doc = document) {
+  const cover = doc.createElement('div')
+  cover.setAttribute('data-ifcvo-wheel-guard', '')
+  cover.title = WIZARD_LABELS.clickToZoom
+  cover.style.cssText = 'position:absolute;inset:0;z-index:2;cursor:pointer;background:transparent'
+  cover.addEventListener('click', () => cover.remove(), { once: true })
+  return cover
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 /**
@@ -316,9 +349,13 @@ export function mount(body, { doc = document, win = window, api = win.IFCVO, fet
     stage.replaceChildren()
     const { IfcViewer } = await api.loadSdk()
     const v = new IfcViewer(stage, { model: url, ui: 'embed', toolbar: false, background: '#ffffff', height: '100%', validate: false })
+    stage.append(wheelGuard(doc))
     state.viewer = { url, v }
     PRIVATE.current = { v, stage }
+    // whenReady() is the viewer, not the model: wait for model-loaded too, or it reads 0 elements.
+    const loaded = typeof v.on === 'function' ? new Promise((res) => { v.on('model-loaded', () => res()); v.on('model-error', () => res()) }) : null
     await v.whenReady()
+    if (loaded) await Promise.race([loaded, new Promise((res) => setTimeout(res, 60000))])
     return v
   }
 
@@ -366,12 +403,7 @@ export function mount(body, { doc = document, win = window, api = win.IFCVO, fet
       if (!shot) throw new Error('empty')
       const out = await encodePoster(shot, { aspect: aspectOf(cfg.aspect), doc })
       const ext = out.type === 'image/webp' ? 'webp' : 'jpg'
-      const href = win.URL.createObjectURL(out.blob)
-      const a = el(doc, 'a', { href, download: `${cfg.handle || 'product'}-poster.${ext}` })
-      doc.body.append(a)
-      a.click()
-      a.remove()
-      setTimeout(() => win.URL.revokeObjectURL(href), 10000)
+      downloadBlob(out.blob, `${cfg.handle || 'product'}-poster.${ext}`, { doc, win })
       const kb = Math.round(out.blob.size / 1024)
       posterOut.textContent = fill(L.posterDone, { kb, w: out.w, h: out.h, ns: cfg.ns || 'custom' }) + (out.over ? ' ' + fill(L.posterBig, { kb }) : '')
       if (out.over) posterOut.dataset.kind = 'warn'

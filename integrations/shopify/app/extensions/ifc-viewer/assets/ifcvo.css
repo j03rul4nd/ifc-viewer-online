@@ -137,6 +137,7 @@
 /* Setup check (theme editor only) */
 .ifcvo-diag { position: fixed; right: 12px; bottom: 12px; z-index: 2147483000; max-width: min(420px, calc(100vw - 24px)); max-height: 70vh; overflow: auto;
   font: 13px/1.4 system-ui, sans-serif; color: #111; background: #fff; border: 1px solid rgba(0,0,0,.2); border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.ifcvo-diag[data-collapsed] { max-width: max-content; padding-top: 6px; padding-bottom: 6px; }
 .ifcvo-diag-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .ifcvo-diag h4 { margin: 10px 0 4px; font-size: 13px; }
 .ifcvo-diag-lines { list-style: none; margin: 0; padding: 0; }
