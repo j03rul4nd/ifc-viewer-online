@@ -29,6 +29,20 @@
   "billing": {
     "notYet": "Els pagaments encara no estan activats — Pro arribarà molt aviat."
   },
+  "reserve": {
+    "title": "Reserva Pro a preu de llançament",
+    "body": "Pro costa 19 €/mes. Els pagaments encara no estan oberts: reserva'l ara i conserva l'oferta de fundador (−40 % al pla anual per als 20 primers equips). Sense targeta ni compromís.",
+    "cta": "Reservar Pro",
+    "sending": "Desant…",
+    "done": "Ets a la llista: t'escriuré quan obri Pro.",
+    "failed": "No s'ha pogut desar ara. Torna-ho a provar d'aquí a un moment."
+  },
+  "welcomeNew": {
+    "title": "Benvingut: el teu compte està a punt",
+    "freeTitle": "El que et dona avui el teu compte gratuït:",
+    "call": "Reservar una trucada de 15 minuts",
+    "dismiss": "Tancar"
+  },
   "keys": {
     "title": "Claus d'API",
     "hint": "Per a la futura API verify-batch. La clau només es mostra una vegada — desa-la en un lloc segur.",

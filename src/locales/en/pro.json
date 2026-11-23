@@ -29,6 +29,20 @@
   "billing": {
     "notYet": "Payments aren't enabled yet — Pro is coming soon."
   },
+  "reserve": {
+    "title": "Reserve Pro at launch price",
+    "body": "Pro is 19 €/month. Payments are not open yet — reserve now and keep the founder offer (−40 % on the annual plan for the first 20 teams). No card, no commitment.",
+    "cta": "Reserve Pro",
+    "sending": "Saving…",
+    "done": "You're on the list — I'll write to you when Pro opens.",
+    "failed": "Couldn't save it right now. Try again in a moment."
+  },
+  "welcomeNew": {
+    "title": "Welcome — your account is ready",
+    "freeTitle": "What your free account gives you today:",
+    "call": "Book a 15-minute call",
+    "dismiss": "Close"
+  },
   "keys": {
     "title": "API keys",
     "hint": "For the upcoming verify-batch API. The key is shown only once — store it somewhere safe.",

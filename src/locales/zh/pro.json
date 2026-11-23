@@ -29,6 +29,20 @@
   "billing": {
     "notYet": "支付功能尚未开通 — Pro 即将推出。"
   },
+  "reserve": {
+    "title": "以首发价预订 Pro",
+    "body": "Pro 为每月 19 €。付款尚未开放：现在预订即可保留创始优惠（前 20 个团队年付方案 −40 %）。无需银行卡，无需承诺。",
+    "cta": "预订 Pro",
+    "sending": "正在保存…",
+    "done": "您已在名单中，Pro 开放时我会写信给您。",
+    "failed": "暂时无法保存，请稍后重试。"
+  },
+  "welcomeNew": {
+    "title": "欢迎，您的账户已就绪",
+    "freeTitle": "您的免费账户今天可以使用：",
+    "call": "预约 15 分钟通话",
+    "dismiss": "关闭"
+  },
   "keys": {
     "title": "API 密钥",
     "hint": "用于即将推出的 verify-batch API。密钥仅显示一次 — 请妥善保存。",

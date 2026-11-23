@@ -37,13 +37,14 @@ export default function ClerkSessionBridge() {
   useEffect(() => {
     if (!isLoaded) return
     if (!user || !session) {
-      setSession({ status: 'anonymous', userId: null, email: null, planCache: null, getToken: null, signOut: null })
+      setSession({ status: 'anonymous', userId: null, email: null, createdAt: null, planCache: null, getToken: null, signOut: null })
       return
     }
     setSession({
       status: 'signed-in',
       userId: user.id,
       email: user.primaryEmailAddress?.emailAddress ?? null,
+      createdAt: user.createdAt ? new Date(user.createdAt).getTime() : null,
       planCache: planFromMetadata(user.publicMetadata),
       getToken: () => session.getToken(),
       signOut: () => clerk.signOut(),

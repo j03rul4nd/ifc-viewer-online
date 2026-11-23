@@ -29,6 +29,20 @@
   "billing": {
     "notYet": "Les paiements ne sont pas encore activés — Pro arrive bientôt."
   },
+  "reserve": {
+    "title": "Réservez Pro au prix de lancement",
+    "body": "Pro coûte 19 €/mois. Les paiements ne sont pas encore ouverts : réservez maintenant et gardez l'offre fondateur (−40 % sur l'abonnement annuel pour les 20 premières équipes). Sans carte, sans engagement.",
+    "cta": "Réserver Pro",
+    "sending": "Enregistrement…",
+    "done": "Vous êtes sur la liste — je vous écrirai à l'ouverture de Pro.",
+    "failed": "Impossible d'enregistrer pour le moment. Réessayez dans un instant."
+  },
+  "welcomeNew": {
+    "title": "Bienvenue — votre compte est prêt",
+    "freeTitle": "Ce que votre compte gratuit vous offre aujourd'hui :",
+    "call": "Réserver un appel de 15 minutes",
+    "dismiss": "Fermer"
+  },
   "keys": {
     "title": "Clés API",
     "hint": "Pour la future API verify-batch. La clé n'est affichée qu'une seule fois — conservez-la en lieu sûr.",

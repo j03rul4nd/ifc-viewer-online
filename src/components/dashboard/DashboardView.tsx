@@ -35,6 +35,8 @@ import { pricingPath } from '../../lib/pricing/pricing-paths'
 import { trackCheckoutStarted, trackDashboardCta } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
 import { pageState, type DashboardState } from './dashboard-state'
+import { isBillingEnabled, isBillingOffCode } from '../../lib/cloud/pro-reserve'
+import { ProReserveBlock, WelcomeCard, useFirstWelcome } from '../account/ProReserve'
 
 interface DashboardViewProps {
   onNavigateHome: () => void
@@ -117,8 +119,13 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
   const [branding, setBranding] = useState<{ phase: 'loading' | 'off' | 'ready'; logo?: string | null }>({ phase: 'loading' })
   const [busy, setBusy] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  // Billing off (flag unset, no cloud, or the Worker said so): reserve inline.
+  const [billingOff, setBillingOff] = useState(() => !isBillingEnabled() || !cloud)
+  const firstWelcome = useFirstWelcome()
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false)
 
   const signedIn = status === 'signed-in'
+  const showWelcome = firstWelcome && !welcomeDismissed
   const isPaid = entitlement.plan !== 'free'
 
   // Any failure here means "not available yet" — production runs with the
@@ -168,15 +175,15 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
   const openViewer = () => { cta('open_viewer'); onOpenViewer() }
   const handleCheckout = async () => {
     cta('checkout')
-    // Payments not open (no cloud, or billing switched off): the waiting list
-    // on /pricing/ is the honest next step, never a dead-end toast.
-    const toWaitlist = () => { toast(t('dash.plan.waitlist'), 'info', { duration: 5000 }); window.location.href = pricing('solo') }
+    // Payments not open: keep the interest inline (reserve block), never a
+    // dead-end toast or a redirect.
+    const toWaitlist = () => setBillingOff(true)
     const token = await getToken?.()
     if (!token || !cloud) { toWaitlist(); return }
     setBusy('checkout'); trackCheckoutStarted({ interval: 'year' })
     const r = await createCheckout(token, 'year'); setBusy(null)
     if (r.ok) window.location.href = r.value.url
-    else if (r.error.code === 'service_disabled' || r.error.code === 'cloud_disabled') toWaitlist()
+    else if (isBillingOffCode(r.error.code)) toWaitlist()
     else toast(t('errors.generic'), 'error')
   }
   const handlePortal = async () => {
@@ -298,10 +305,15 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
           items={[[t('dash.plan.team1'), false], [t('dash.plan.team2'), true], [t('dash.plan.team3'), true], [t('dash.plan.team4'), true]]} />
       </div>
       <div className="p-5 border-t flex flex-wrap items-center gap-x-5 gap-y-3" style={{ borderColor: 'var(--border)' }}>
-        {/* Free with history: the plan is the next step, so it gets the primary button. */}
-        <button onClick={() => void handleCheckout()} disabled={busy === 'checkout'} className={btn} style={state === 'free_active' ? S.primary : S.secondary}>
-          {busy === 'checkout' ? t('plan.redirecting') : t('dash.plan.cta')}
-        </button>
+        {/* Free with history: the plan is the next step, so it gets the primary button.
+            Billing off: one-tap reserve instead (email already known). */}
+        {billingOff ? (
+          !showWelcome && <div className="w-full"><ProReserveBlock surface="dashboard" /></div>
+        ) : (
+          <button onClick={() => void handleCheckout()} disabled={busy === 'checkout'} className={btn} style={state === 'free_active' ? S.primary : S.secondary}>
+            {busy === 'checkout' ? t('plan.redirecting') : t('dash.plan.cta')}
+          </button>
+        )}
         <a href={pricing('solo')} onClick={() => cta('compare_plans')} className={`${link} inline-flex items-center gap-1`} style={{ color: 'var(--text)' }}>{t('dash.plan.compare')} <Arrow /></a>
         <a href={pricing('team')} onClick={() => cta('compare_plans')} className={link} style={S.dim}>{t('dash.plan.forTeams')}</a>
         <button onClick={() => { cta('call'); onNavigate('/call') }} className={link} style={S.dim}>{t('dash.plan.call')}</button>
@@ -326,12 +338,20 @@ export default function DashboardView({ onNavigateHome, onOpenViewer, onNavigate
     </p>
   )
 
+  const welcomeBlock = showWelcome && (
+    <WelcomeCard
+      showReserve={!isPaid && billingOff}
+      onDismiss={() => setWelcomeDismissed(true)}
+      onCall={() => { cta('call'); onNavigate('/call') }}
+    />
+  )
+
   const overview = (() => {
     switch (state) {
-      case 'free_empty': return <>{startBlock}{planBlock}{feedbackLine}</>
-      case 'free_active': return <>{continueBlock}{planBlock}{feedbackLine}</>
+      case 'free_empty': return <>{welcomeBlock}{startBlock}{planBlock}{feedbackLine}</>
+      case 'free_active': return <>{welcomeBlock}{continueBlock}{planBlock}{feedbackLine}</>
       case 'past_due': return <>{continueBlock || startBlock}{feedbackLine}</>
-      default: return <>{continueBlock || startBlock}{teamUpsell}{feedbackLine}</>
+      default: return <>{welcomeBlock}{continueBlock || startBlock}{teamUpsell}{feedbackLine}</>
     }
   })()
 
