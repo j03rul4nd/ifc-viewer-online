@@ -5,13 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, areaText, chipValues, config, footprintText, highlight, init, labelsOf, onViewer, render, schedule,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-data/assets/ifcvo-rooms.js'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-rooms.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-data')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-rooms.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-rooms.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
-const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 
 const room = (o: Record<string, unknown>) => ({ modelId: 'm', expressId: 1, globalId: null, name: null, longName: null, number: null, label: '', area: null, areaSource: null, netArea: null, grossArea: null, height: null, storey: null, kind: null, ...o })

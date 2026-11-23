@@ -4,7 +4,7 @@ assign plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | do
 assign shop_labels = shop.metafields.ifcvo.labels.value
 assign iso = request.locale.iso_code | downcase
 assign lang = iso | split: '-' | first
-assign L = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
+assign shop_l = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
 assign t_heading = 'ifcvo.planview.heading' | t
 assign t_tabs = 'ifcvo.planview.tabs' | t
 assign t_all = 'ifcvo.planview.all' | t
@@ -18,19 +18,19 @@ assign t_room = 'ifcvo.planview.room' | t
 assign t_area = 'ifcvo.planview.area' | t
 assign t_showing = 'ifcvo.planview.showing' | t
 assign t_preview = 'ifcvo.planview.preview' | t
-assign l_heading = s.title | default: L.planview_heading | default: t_heading
-assign l_tabs = L.planview_tabs | default: t_tabs
-assign l_all = L.planview_all | default: t_all
-assign l_waiting = L.planview_waiting | default: t_waiting
-assign l_open = L.planview_open | default: t_open
-assign l_loading = L.planview_loading | default: t_loading
-assign l_none = L.planview_none | default: t_none
-assign l_error = L.planview_error | default: t_error
-assign l_rooms = L.planview_rooms | default: t_rooms
-assign l_room = L.planview_room | default: t_room
-assign l_area = L.planview_area | default: t_area
-assign l_showing = L.planview_showing | default: t_showing
-assign l_preview = L.planview_preview | default: t_preview
+assign l_heading = s.title | default: shop_l.planview_heading | default: t_heading
+assign l_tabs = shop_l.planview_tabs | default: t_tabs
+assign l_all = shop_l.planview_all | default: t_all
+assign l_waiting = shop_l.planview_waiting | default: t_waiting
+assign l_open = shop_l.planview_open | default: t_open
+assign l_loading = shop_l.planview_loading | default: t_loading
+assign l_none = shop_l.planview_none | default: t_none
+assign l_error = shop_l.planview_error | default: t_error
+assign l_rooms = shop_l.planview_rooms | default: t_rooms
+assign l_room = shop_l.planview_room | default: t_room
+assign l_area = shop_l.planview_area | default: t_area
+assign l_showing = shop_l.planview_showing | default: t_showing
+assign l_preview = shop_l.planview_preview | default: t_preview
 assign wm = s.watermark | strip | default: shop.name
 assign protect_mode = 'on'
 if s.allow_properties
@@ -41,7 +41,6 @@ endif
 {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
 --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
 {%- if request.design_mode -%}
 <p class="ifcvo-upsell" data-ifcvo-upsell="planview" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planview', plan: 'starter' | escape }}</p>
@@ -75,4 +74,4 @@ style="{{ ifcvo_style }}"
 <script type="module" src="{{ 'ifcvo-planview.js' | asset_url }}"></script>
 {%- endif -%}
 {%- render 'ifcvo-diag', feature: 'planview', block: 'ifc-plan-view', ns: '', keys: '' -%}
-{% schema %}{"name":"t:k.0fky","target":"section","settings":[{"type":"paragraph","content":"t:k.1hd5"},{"type":"text","id":"title","label":"t:k.17pa","info":"t:k.1ft1"},{"type":"select","id":"start","label":"t:k.0slg","default":"3d","options":[{"value":"3d","label":"t:k.0oij"},{"value":"first","label":"t:k.06xc"}]},{"type":"checkbox","id":"show_rooms","label":"t:k.1nv0","default":true},{"type":"header","content":"t:k.0jcd"},{"type":"paragraph","content":"t:k.1jip"},{"type":"checkbox","id":"protect","label":"t:k.0jcd","default":false},{"type":"checkbox","id":"show_watermark","label":"t:k.0uzt","default":true},{"type":"text","id":"watermark","label":"t:k.0vi3","info":"t:k.1h65"},{"type":"range","id":"watermark_opacity","label":"t:k.0ffk","min":5,"max":60,"step":5,"unit":"%","default":20},{"type":"checkbox","id":"allow_properties","label":"t:k.1pks","default":false,"info":"t:k.0601"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0fky","target":"section","settings":[{"type":"paragraph","content":"t:k.1hd5"},{"type":"text","id":"title","label":"t:k.17pa","info":"t:k.1ft1"},{"type":"select","id":"start","label":"t:k.0slg","default":"3d","options":[{"value":"3d","label":"t:k.0oij"},{"value":"first","label":"t:k.06xc"}]},{"type":"checkbox","id":"show_rooms","label":"t:k.1nv0","default":true},{"type":"header","content":"t:k.0jcd"},{"type":"paragraph","content":"t:k.1jip"},{"type":"checkbox","id":"protect","label":"t:k.0jcd","default":false},{"type":"checkbox","id":"show_watermark","label":"t:k.0uzt","default":true},{"type":"text","id":"watermark","label":"t:k.0vi3","info":"t:k.1h65"},{"type":"range","id":"watermark_opacity","label":"t:k.0ffk","min":5,"max":60,"step":5,"unit":"%","default":20},{"type":"checkbox","id":"allow_properties","label":"t:k.1pks","default":false,"info":"t:k.0601"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

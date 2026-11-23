@@ -5,13 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, init, labelsOf, merge, onViewer, parseMetafield, render, serverRows,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-data/assets/ifcvo-classification.js'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-classification.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-data')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-classification.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-classification.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
-const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
 
 const DATA = {
@@ -148,8 +150,8 @@ describe('viewer wiring', () => {
 })
 
 describe('verifier fixes', () => {
-  const jsonld = fs.readFileSync(path.join(EXT, '../ifc-viewer/snippets/ifcvo-jsonld.liquid'), 'utf8')
-  const sysSnippet = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-cls-system.liquid'), 'utf8')
+  const jsonld = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-jsonld.liquid'), 'utf8')
+  const sysSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-cls-system.liquid'), 'utf8')
 
   it('metafield system names use the model normaliser, so codes dedupe', () => {
     expect(parseMetafield('Uniclass|Ss_25_10_30|x')[0].system).toBe('Uniclass 2015')

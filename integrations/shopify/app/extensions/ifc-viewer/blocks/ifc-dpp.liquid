@@ -63,7 +63,6 @@ endif
 {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
 --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan != 'business' -%}
 {%- if request.design_mode -%}
 <p class="ifcvo-upsell" data-ifcvo-upsell="dpp" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'dpp', plan: 'business' | escape }}</p>
@@ -107,13 +106,14 @@ style="{{ ifcvo_style }}"
 {%- if s.show_checklist -%}
 <h4>{{ 'ifcvo.dpp.checklist' | t | escape }}</h4>
 <ul class="ifcvo-dpp-list" data-ifcvo-checklist>
-<li data-item="dop" data-state="{% if dop_url != blank %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if dop_url != blank %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if dop_url != blank %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_dop' | t | escape }}{% if dop_url != blank %} — <a href="{{ dop_url | escape }}" rel="noopener nofollow" target="_blank">{{ 'ifcvo.dpp.open' | t | escape }}</a>{% else %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_dop' | t | escape }}</span>{% endif %}</li>
-<li data-item="ce" data-state="{% if ce != blank %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if ce != blank %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if ce != blank %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_ce' | t | escape }}{% if ce != blank %} — {{ ce | escape }}{% else %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_ce' | t | escape }}</span>{% endif %}</li>
-<li data-item="gwp" data-state="{% if has_gwp %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if has_gwp %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if has_gwp %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_gwp' | t | escape }}{% unless has_gwp %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_gwp' | t | escape }}</span>{% endunless %}</li>
-<li data-item="instructions" data-state="{% if langs != blank %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if langs != blank %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if langs != blank %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_instructions' | t | escape }}{% if langs != blank %} — {{ langs | escape }}{% else %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_instructions' | t | escape }}</span>{% endif %}</li>
-<li data-item="substances" data-state="{% if soc != blank %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if soc != blank %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if soc != blank %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_substances' | t | escape }}{% if soc != blank %} — {{ soc | escape }}{% else %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_substances' | t | escape }}</span>{% endif %}</li>
-<li data-item="identifier" data-state="{% if gtin != blank %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if gtin != blank %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if gtin != blank %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_identifier' | t | escape }}{% if gtin != blank %} — {{ gtin | escape }}{% else %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_identifier' | t | escape }}</span>{% endif %}</li>
-<li data-item="manufacturer" data-state="{% if contact != blank %}ready{% else %}missing{% endif %}"><span aria-hidden="true">{% if contact != blank %}✓{% else %}○{% endif %}</span><span class="ifcvo-sr" data-sr>{% if contact != blank %}{{ 'ifcvo.dpp.ready' | t | escape }}{% else %}{{ 'ifcvo.dpp.not_ready' | t | escape }}{% endif %}: </span> {{ 'ifcvo.dpp.item_manufacturer' | t | escape }}{% if contact != blank %} — {{ contact | escape }}{% else %} <span class="ifcvo-muted">{{ 'ifcvo.dpp.hint_manufacturer' | t | escape }}</span>{% endif %}</li>
+{%- render 'ifcvo-dpp-item', item: 'dop', link: dop_url -%}
+{%- render 'ifcvo-dpp-item', item: 'ce', value: ce -%}
+{%- assign v = gwp_a | append: gwp_t -%}
+{%- render 'ifcvo-dpp-item', item: 'gwp', value: v, quiet: true -%}
+{%- render 'ifcvo-dpp-item', item: 'instructions', value: langs -%}
+{%- render 'ifcvo-dpp-item', item: 'substances', value: soc -%}
+{%- render 'ifcvo-dpp-item', item: 'identifier', value: gtin -%}
+{%- render 'ifcvo-dpp-item', item: 'manufacturer', value: contact -%}
 </ul>
 <p class="ifcvo-dpp-score" data-ifcvo-dpp-score data-ready="{{ ready }}" data-total="7"><strong>{{ 'ifcvo.dpp.score' | t: ready: ready, total: 7 | escape }}</strong></p>
 {%- endif -%}
@@ -127,4 +127,4 @@ style="{{ ifcvo_style }}"
 <script type="module" src="{{ 'ifcvo-dpp.js' | asset_url }}"></script>
 {%- endif -%}
 {%- render 'ifcvo-diag', feature: 'dpp', block: 'ifc-dpp', ns: ns, keys: 'gwp_a1a3,gwp_total,gwp_unit,energy,water,declared_unit,epd_programme,epd_number,epd_valid_until,epd_url,dop_url,ce_marking,instructions_languages,substances_of_concern,gtin,manufacturer_contact' -%}
-{% schema %}{"name":"t:k.1ngz","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.12p5"},{"type":"checkbox","id":"show_epd","label":"t:k.044u","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.0g5j","default":true},{"type":"checkbox","id":"show_model","label":"t:k.0u0u","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0fau"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1ngz","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Sustainability and product passport"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.12p5"},{"type":"checkbox","id":"show_epd","label":"t:k.044u","default":true},{"type":"checkbox","id":"show_checklist","label":"t:k.0g5j","default":true},{"type":"checkbox","id":"show_model","label":"t:k.0u0u","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.0fau"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

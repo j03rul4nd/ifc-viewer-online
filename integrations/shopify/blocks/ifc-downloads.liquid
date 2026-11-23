@@ -40,7 +40,6 @@
     endif
   endfor
 -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
@@ -54,6 +53,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.downloads.name",
   "target": "section",
   "enabled_on": {

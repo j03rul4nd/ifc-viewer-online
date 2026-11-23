@@ -19,7 +19,6 @@
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
 
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-takeoff-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-takeoff
@@ -70,6 +69,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.takeoff.name",
   "target": "section",
   "settings": [

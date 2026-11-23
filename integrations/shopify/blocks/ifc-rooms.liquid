@@ -18,7 +18,6 @@
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
 
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-rooms-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-rooms
@@ -56,6 +55,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.rooms.name",
   "target": "section",
   "settings": [

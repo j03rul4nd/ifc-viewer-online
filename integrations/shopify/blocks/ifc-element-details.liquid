@@ -8,7 +8,6 @@
   {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
   --ifcvo-radius:{{ block.settings.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="details" style="{{ ifcvo_style | escape }}" data-open-label="{{ block.settings.open_label | escape }}" data-empty="{{ block.settings.empty_label | escape }}" {{ block.shopify_attributes }}>
   {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body" style="--ifcvo-max-height:{{ block.settings.max_height }}px"></div>
@@ -36,6 +35,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.element_details.name",
   "target": "section",
   "settings": [

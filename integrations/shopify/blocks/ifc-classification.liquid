@@ -41,7 +41,6 @@
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
 
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-classification-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-classification
@@ -86,6 +85,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.classification.name",
   "target": "section",
   "settings": [

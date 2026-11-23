@@ -17,7 +17,7 @@
   assign shop_labels = shop.metafields.ifcvo.labels.value
   assign iso = request.locale.iso_code | downcase
   assign lang = iso | split: '-' | first
-  assign L = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
+  assign shop_l = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
 
   assign ns = s.namespace | strip | default: 'custom'
   assign view_key = s.view_key | strip | default: shop_cfg.variantViewKey | default: 'ifc_view'
@@ -31,14 +31,14 @@
   assign t_saved = 'ifcvo.variantviews.saved' | t
   assign t_error = 'ifcvo.variantviews.error' | t
   assign t_link = 'ifcvo.variantviews.link' | t
-  assign l_heading = s.title | default: L.variantviews_heading | default: t_heading
-  assign l_copy = L.variantviews_copy | default: t_copy
-  assign l_image = L.variantviews_image | default: t_image
-  assign l_copied = L.variantviews_copied | default: t_copied
-  assign l_manual = L.variantviews_manual | default: t_manual
-  assign l_saved = L.variantviews_saved | default: t_saved
-  assign l_error = L.variantviews_error | default: t_error
-  assign l_link = L.variantviews_link | default: t_link
+  assign l_heading = s.title | default: shop_l.variantviews_heading | default: t_heading
+  assign l_copy = shop_l.variantviews_copy | default: t_copy
+  assign l_image = shop_l.variantviews_image | default: t_image
+  assign l_copied = shop_l.variantviews_copied | default: t_copied
+  assign l_manual = shop_l.variantviews_manual | default: t_manual
+  assign l_saved = shop_l.variantviews_saved | default: t_saved
+  assign l_error = shop_l.variantviews_error | default: t_error
+  assign l_link = shop_l.variantviews_link | default: t_link
 
   assign map = ''
   for variant in product.variants
@@ -61,7 +61,6 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
     <p class="ifcvo-upsell" data-ifcvo-upsell="variantviews" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'variantviews', plan: 'starter' | escape }}</p>
@@ -95,6 +94,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.variant_views.name",
   "target": "section",
   "settings": [

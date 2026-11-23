@@ -13,7 +13,6 @@
   assign size_mb = product.metafields[ns].ifc_size_mb.value | default: ''
   assign t_works = 'ifcvo.compat.works_with' | t
   assign t_weight = 'ifcvo.compat.weight' | t
-  assign t_health = 'ifcvo.compat.health' | t
   assign t_waiting = 'ifcvo.compat.waiting' | t
   assign t_unavailable = 'ifcvo.compat.unavailable' | t
   assign apps = ''
@@ -30,7 +29,6 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <section
   class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-compat
@@ -79,6 +77,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.compat.name",
   "target": "section",
   "settings": [

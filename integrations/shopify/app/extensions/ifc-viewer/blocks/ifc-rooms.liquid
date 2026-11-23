@@ -7,7 +7,6 @@ assign mf = product.metafields[ns]
 {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
 --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
 class="ifcvo-panel ifcvo-rooms-block{% unless s.frame %} ifcvo-flat{% endunless %}"
 data-ifcvo-rooms
@@ -41,4 +40,4 @@ style="{{ ifcvo_style }}"
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-rooms.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'rooms', block: 'ifc-rooms', ns: ns, keys: 'area,storeys,bedrooms,bathrooms,dimensions' -%}
-{% schema %}{"name":"t:k.1hnw","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Rooms"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.1611"},{"type":"select","id":"units","label":"t:k.1qmm","default":"m2","options":[{"value":"m2","label":"t:k.0k5l"},{"value":"ft2","label":"t:k.0dtz"}]},{"type":"checkbox","id":"show_chips","label":"t:k.1aoz","default":true},{"type":"checkbox","id":"show_table","label":"t:k.08y0","default":true},{"type":"checkbox","id":"highlight","label":"t:k.16zx","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1vdl"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1hnw","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Rooms"},{"type":"text","id":"specs_ns","label":"t:k.0qyu","default":"bim","info":"t:k.1611"},{"type":"select","id":"units","label":"t:k.1qmm","default":"m2","options":[{"value":"m2","label":"t:k.0k5l"},{"value":"ft2","label":"t:k.0dtz"}]},{"type":"checkbox","id":"show_chips","label":"t:k.1aoz","default":true},{"type":"checkbox","id":"show_table","label":"t:k.08y0","default":true},{"type":"checkbox","id":"highlight","label":"t:k.16zx","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1vdl"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

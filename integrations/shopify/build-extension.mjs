@@ -168,7 +168,10 @@ export function compactLiquid(source) {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
-    .join('\n') + '\n'
+    .join('\n')
+    // comment … endcomment lines inside a {%- liquid %} tag, and `# …` comment lines there.
+    .replace(/^comment\n[\s\S]*?\nendcomment$\n?/gm, '')
+    .replace(/^# .*\n/gm, '') + '\n'
 }
 
 /**
@@ -229,10 +232,19 @@ export function keysUsed(liquid) {
 
 const lookupKey = (tree, key) => key.replace(/\.$/, '').split('.').reduce((o, p) => (o && typeof o === 'object' ? o[p] : undefined), tree)
 
+/** A key ending in "_" (`'ifcvo.dpp.item_' | append: x`) stands for every sibling key with that prefix. */
+export function expandPrefix(tree, key) {
+  if (!key.endsWith('_')) return [key]
+  const i = key.lastIndexOf('.')
+  const parent = lookupKey(tree, key.slice(0, i))
+  const leaf = key.slice(i + 1)
+  return parent && typeof parent === 'object' ? Object.keys(parent).filter((k) => k.startsWith(leaf)).map((k) => key.slice(0, i + 1) + k) : []
+}
+
 /** The part of `tree` under the given dotted keys (a key ending in "." keeps its whole subtree). */
 export function pickKeys(tree, keys) {
   const out = {}
-  for (const key of keys) {
+  for (const key of keys.flatMap((k) => expandPrefix(tree, k))) {
     const parts = key.replace(/\.$/, '').split('.')
     const src = lookupKey(tree, key)
     if (src === undefined) continue

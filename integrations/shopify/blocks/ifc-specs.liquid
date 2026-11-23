@@ -62,7 +62,6 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-specs-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-specs
@@ -102,6 +101,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.specs.name",
   "target": "section",
   "settings": [

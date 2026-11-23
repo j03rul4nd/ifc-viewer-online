@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EVENTS, bindAll, fileName, publish, sanitize } from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-events.js'
 
 const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
 const read = (p: string) => fs.readFileSync(path.join(EXT, p), 'utf8')
 
 /** Crude Liquid stand-in: loops run once, output tags become JSON strings, tags vanish. */

@@ -21,7 +21,6 @@ endif
 endfor
 endif
 -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
 class="ifcvo-panel ifcvo-ar{% unless s.frame %} ifcvo-flat{% endunless %}"
 data-ifcvo-ar
@@ -51,4 +50,4 @@ data-labels-override="{{ s.labels | escape }}"
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-ar.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'ar', block: 'ifc-ar', ns: ns, keys: 'ar_glb,ar_usdz' -%}
-{% schema %}{"name":"t:k.1l5z","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom","info":"t:k.0bhl"},{"type":"checkbox","id":"use_media","label":"t:k.0k8f","default":true},{"type":"checkbox","id":"generate","label":"t:k.1cv1","default":true,"info":"t:k.1k90"},{"type":"range","id":"limit_mb","label":"t:k.0h7i","min":10,"max":50,"step":5,"unit":"MB","default":50},{"type":"number","id":"max_triangles","label":"t:k.0kkk","default":500000,"info":"t:k.0dm5"},{"type":"checkbox","id":"include_site","label":"t:k.10t7","default":false},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.16f9"},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":false}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1l5z","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom","info":"t:k.0bhl"},{"type":"checkbox","id":"use_media","label":"t:k.0k8f","default":true},{"type":"checkbox","id":"generate","label":"t:k.1cv1","default":true,"info":"t:k.1k90"},{"type":"range","id":"limit_mb","label":"t:k.0h7i","min":10,"max":50,"step":5,"unit":"MB","default":50},{"type":"number","id":"max_triangles","label":"t:k.0kkk","default":500000,"info":"t:k.0dm5"},{"type":"checkbox","id":"include_site","label":"t:k.10t7","default":false},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.16f9"},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":false}]}{% endschema %}

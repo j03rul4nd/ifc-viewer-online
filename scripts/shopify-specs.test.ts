@@ -5,10 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   COLUMNS, _reset, attach, config, convert, csvCell, dimText, init, list, onViewer, parseDimensions, parseLabels, parseNumber, refresh, render, tables, toCsv,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-data/assets/ifcvo-specs.js'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-specs.js'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-data')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-specs.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-specs.liquid'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
 
 const DATA = {

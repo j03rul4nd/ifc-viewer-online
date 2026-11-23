@@ -5,17 +5,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   _reset, fill, httpsUrl, init, labelsOf, onViewer, render, score,
 // @ts-expect-error plain JS asset without types
-} from '../integrations/shopify/app/extensions/ifc-plans/assets/ifcvo-dpp.js'
+} from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-dpp.js'
 import { FEATURE_TIERS } from '../integrations/shopify/build-extension.mjs'
 
-const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-plans')
-const block = fs.readFileSync(path.join(EXT, 'blocks/ifc-dpp.liquid'), 'utf8')
+const EXT = path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer')
+/** Readable sources (blocks/, snippets/, full locales/); the extension gets compact copies. */
+const SRC = path.resolve(__dirname, '../integrations/shopify')
+const block = fs.readFileSync(path.join(SRC, 'blocks/ifc-dpp.liquid'), 'utf8')
 const js = fs.readFileSync(path.join(EXT, 'assets/ifcvo-dpp.js'), 'utf8')
 const schema = JSON.parse(/\{% schema %\}([\s\S]*?)\{% endschema %\}/.exec(block)![1])
-const locale = JSON.parse(fs.readFileSync(path.join(EXT, 'locales/en.default.json'), 'utf8'))
+const locale = JSON.parse(fs.readFileSync(path.join(SRC, 'locales/en.default.json'), 'utf8'))
 const runtime = fs.readFileSync(path.join(EXT, 'assets/ifcvo.js'), 'utf8')
-const valueSnippet = fs.readFileSync(path.join(EXT, 'snippets/ifcvo-dpp-value.liquid'), 'utf8')
-const jsonld = fs.readFileSync(path.join(EXT, '../ifc-viewer/snippets/ifcvo-jsonld.liquid'), 'utf8')
+const valueSnippet = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-dpp-value.liquid'), 'utf8')
+const jsonld = fs.readFileSync(path.join(SRC, 'snippets/ifcvo-jsonld.liquid'), 'utf8')
 
 /** Mirror of snippets/ifcvo-dpp-value.liquid (Liquid cannot run here): kept honest by the structure test below. */
 function liquidValue(value: string, unit: string | null, fallback: string): string {

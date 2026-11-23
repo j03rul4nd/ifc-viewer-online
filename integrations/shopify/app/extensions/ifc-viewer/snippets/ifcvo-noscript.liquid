@@ -10,7 +10,7 @@ assign ifcvo_label = download_label | default: 'Download IFC model'
 <noscript>
 <div class="ifcvo-noscript">
 {%- if product.featured_image != blank -%}
-<img src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ ifcvo_alt | escape }}" width="800" loading="lazy">
+{{ product.featured_image | image_url: width: 800 | image_tag: alt: ifcvo_alt, loading: 'lazy' }}
 {%- endif -%}
 {%- if ifcvo_model != '' -%}
 <p><a href="{{ ifcvo_model | escape }}" download rel="noopener">{{ ifcvo_label | escape }}</a></p>

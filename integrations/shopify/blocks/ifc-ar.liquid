@@ -29,7 +29,6 @@
   endif
 -%}
 
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-ar{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-ar
@@ -63,6 +62,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.ar.name",
   "target": "section",
   "enabled_on": {

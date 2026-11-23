@@ -14,14 +14,8 @@ assign files_key = s.files_key | strip
 if files_key != ''
 assign files = product.metafields[ns][files_key].value
 endif
-comment
-Preview mode of an "IFC plan view" block in this section: no download links (also not in noscript).
-endcomment
 assign ifcvo_protected = false
 assign pv_plan = app.metafields.ifcvo.plan.value | default: 'business' | strip | downcase
-comment
-planview is a starter feature: only a plan that includes it may hide downloads.
-endcomment
 if pv_plan == 'free'
 assign pv_ok = false
 else
@@ -33,7 +27,6 @@ assign ifcvo_protected = true
 endif
 endfor
 -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div class="ifcvo-panel ifcvo-flat" data-ifcvo-downloads-block {{ block.shopify_attributes }}>
 {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
 {%- unless ifcvo_protected -%}{%- render 'ifcvo-downloads', model: dl_model, files: files, show_ifc: s.ifc, ifc_label: s.ifc_label, glb: s.glb, glb_label: s.glb_label, csv: s.csv, csv_label: s.csv_label, gate: s.gate, tag: s.tag, login_label: s.login_label -%}{%- endunless -%}
@@ -42,4 +35,4 @@ endfor
 <script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>
 {%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},{{ block.settings.files_key }}{%- endcapture -%}
 {%- render 'ifcvo-diag', feature: 'files', block: 'ifc-downloads', ns: ns, keys: dg_keys -%}{%- endif -%}
-{% schema %}{"name":"t:k.1fms","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Downloads"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"key","label":"t:k.0p0n","default":"ifc_model"},{"type":"checkbox","id":"ifc","label":"t:k.07oz","default":true},{"type":"text","id":"ifc_label","label":"t:k.0l0x","placeholder":"t:k.0mkz","info":"t:k.1jik"},{"type":"checkbox","id":"glb","label":"t:k.1ytf","default":false,"info":"t:k.0lzi"},{"type":"text","id":"glb_label","label":"t:k.1cfq","placeholder":"t:k.0ak9","info":"t:k.1jik"},{"type":"checkbox","id":"csv","label":"t:k.1qov","default":false},{"type":"text","id":"csv_label","label":"t:k.1man","placeholder":"t:k.16hv","info":"t:k.1jik"},{"type":"text","id":"files_key","label":"t:k.1lw6","default":"bim_files"},{"type":"header","content":"t:k.1wr9"},{"type":"select","id":"gate","label":"t:k.09ts","default":"none","info":"t:k.1jki","options":[{"value":"none","label":"t:k.06gg"},{"value":"customer","label":"t:k.1o96"},{"value":"tag","label":"t:k.0j6b"}]},{"type":"text","id":"tag","label":"t:k.1gu8","default":"trade","visible_if":"{{ block.settings.gate == 'tag' }}"},{"type":"text","id":"login_label","label":"t:k.0ray","placeholder":"t:k.0fp4","info":"t:k.1jik"}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.1fms","target":"section","enabled_on":{"templates":["product"]},"settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Downloads"},{"type":"text","id":"namespace","label":"t:k.0qyu","default":"custom"},{"type":"text","id":"key","label":"t:k.0p0n","default":"ifc_model"},{"type":"checkbox","id":"ifc","label":"t:k.07oz","default":true},{"type":"text","id":"ifc_label","label":"t:k.0l0x","placeholder":"t:k.0mkz","info":"t:k.1jik"},{"type":"checkbox","id":"glb","label":"t:k.1ytf","default":false,"info":"t:k.0lzi"},{"type":"text","id":"glb_label","label":"t:k.1cfq","placeholder":"t:k.0ak9","info":"t:k.1jik"},{"type":"checkbox","id":"csv","label":"t:k.1qov","default":false},{"type":"text","id":"csv_label","label":"t:k.1man","placeholder":"t:k.16hv","info":"t:k.1jik"},{"type":"text","id":"files_key","label":"t:k.1lw6","default":"bim_files"},{"type":"header","content":"t:k.1wr9"},{"type":"select","id":"gate","label":"t:k.09ts","default":"none","info":"t:k.1jki","options":[{"value":"none","label":"t:k.06gg"},{"value":"customer","label":"t:k.1o96"},{"value":"tag","label":"t:k.0j6b"}]},{"type":"text","id":"tag","label":"t:k.1gu8","default":"trade","visible_if":"{{ block.settings.gate == 'tag' }}"},{"type":"text","id":"login_label","label":"t:k.0ray","placeholder":"t:k.0fp4","info":"t:k.1jik"}]}{% endschema %}

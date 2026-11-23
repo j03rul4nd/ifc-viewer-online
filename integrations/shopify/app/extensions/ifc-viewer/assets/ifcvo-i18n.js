@@ -36,6 +36,8 @@ export function fill(texts, root = document) {
 }
 
 let texts = null
+/** Folder of this asset (the i18n files sit next to it on the CDN). */
+const here = import.meta.url
 
 async function load() {
   if (typeof document === 'undefined') return
@@ -43,7 +45,7 @@ async function load() {
   if (!document.querySelector('[data-i18n]')) return
   const locale = (first && first.dataset.locale) || (window.Shopify && window.Shopify.locale) || document.documentElement.lang
   try {
-    const res = await fetch(new URL(`ifcvo-i18n-${pickLang(locale)}.json`, import.meta.url))
+    const res = await fetch(new URL(`ifcvo-i18n-${pickLang(locale)}.json`, here))
     if (res.ok) texts = await res.json()
   } catch (e) { /* English defaults */ }
   fill(texts)

@@ -15,7 +15,6 @@
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
 
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div
   class="ifcvo-panel ifcvo-sunlot-block{% unless s.frame %} ifcvo-flat{% endunless %}"
   data-ifcvo-sunlot
@@ -51,6 +50,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.sun_lot.name",
   "target": "section",
   "settings": [

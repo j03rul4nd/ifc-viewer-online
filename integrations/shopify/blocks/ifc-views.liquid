@@ -8,7 +8,6 @@
   {%- if block.settings.accent != blank -%}--ifcvo-accent:{{ block.settings.accent }};{%- endif -%}
   --ifcvo-radius:{{ block.settings.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <div class="ifcvo-panel{% unless block.settings.frame %} ifcvo-flat{% endunless %}" data-ifcvo-panel="views" style="{{ ifcvo_style }}" data-open-label="{{ block.settings.open_label | escape }}" data-template="{{ block.settings.template }}" data-pace="{{ block.settings.pace }}" data-play="{{ block.settings.tour_label | escape }}" data-stop="{{ block.settings.stop_label | escape }}" {{ block.shopify_attributes }}>
   {%- if block.settings.title != blank -%}<h3>{{ block.settings.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-views">
@@ -29,6 +28,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.views.name",
   "target": "section",
   "settings": [

@@ -5,7 +5,6 @@ assign cw = product.metafields[ns].compatible_with
 assign size_mb = product.metafields[ns].ifc_size_mb.value | default: ''
 assign t_works = 'ifcvo.compat.works_with' | t
 assign t_weight = 'ifcvo.compat.weight' | t
-assign t_health = 'ifcvo.compat.health' | t
 assign t_waiting = 'ifcvo.compat.waiting' | t
 assign t_unavailable = 'ifcvo.compat.unavailable' | t
 assign apps = ''
@@ -22,7 +21,6 @@ assign app_list = apps | newline_to_br | split: '<br />'
 {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
 --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 <section
 class="ifcvo-panel ifcvo-compat-block{% unless s.frame %} ifcvo-flat{% endunless %}"
 data-ifcvo-compat
@@ -67,4 +65,4 @@ style="{{ ifcvo_style }}"
 <script type="module" src="{{ 'ifcvo.js' | asset_url }}"></script>
 <script type="module" src="{{ 'ifcvo-compat.js' | asset_url }}"></script>
 {%- render 'ifcvo-diag', feature: 'compat', block: 'ifc-compat', ns: ns, keys: 'compatible_with,ifc_size_mb' -%}
-{% schema %}{"name":"t:k.0unk","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Compatibility"},{"type":"text","id":"ns","label":"t:k.0qyu","default":"bim","info":"t:k.14bm"},{"type":"checkbox","id":"show_compat","label":"t:k.005a","default":true},{"type":"checkbox","id":"show_weight","label":"t:k.08s4","default":true,"info":"t:k.155a"},{"type":"checkbox","id":"show_health","label":"t:k.1x6b","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1x0p"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}
+{% schema %}{"stylesheet":"ifcvo.css","name":"t:k.0unk","target":"section","settings":[{"type":"text","id":"title","label":"t:k.17pa","default":"Compatibility"},{"type":"text","id":"ns","label":"t:k.0qyu","default":"bim","info":"t:k.14bm"},{"type":"checkbox","id":"show_compat","label":"t:k.005a","default":true},{"type":"checkbox","id":"show_weight","label":"t:k.08s4","default":true,"info":"t:k.155a"},{"type":"checkbox","id":"show_health","label":"t:k.1x6b","default":true},{"type":"textarea","id":"labels","label":"t:k.0nkb","info":"t:k.1x0p"},{"type":"header","content":"t:k.1uk6"},{"type":"color","id":"accent","label":"t:k.0j05","info":"t:k.03mq"},{"type":"range","id":"radius","label":"t:k.034y","min":0,"max":24,"step":2,"unit":"px","default":12},{"type":"checkbox","id":"frame","label":"t:k.1qy9","default":true}]}{% endschema %}

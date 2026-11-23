@@ -19,30 +19,28 @@
   assign shop_labels = shop.metafields.ifcvo.labels.value
   assign iso = request.locale.iso_code | downcase
   assign lang = iso | split: '-' | first
-  assign L = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
+  assign shop_l = shop_labels[iso] | default: shop_labels[lang] | default: shop_labels.en
 
   assign t_heading = 'ifcvo.planset.heading' | t
   assign t_license = 'ifcvo.planset.license' | t
   assign t_terms = 'ifcvo.planset.terms' | t
   assign t_included = 'ifcvo.planset.included' | t
   assign t_compare = 'ifcvo.planset.compare' | t
-  assign t_files = 'ifcvo.planset.files' | t
   assign t_sheets = 'ifcvo.planset.sheets' | t
   assign t_model = 'ifcvo.planset.model' | t
   assign t_yes = 'ifcvo.planset.yes' | t
   assign t_no = 'ifcvo.planset.no' | t
   assign t_selected = 'ifcvo.planset.selected' | t
-  assign l_heading = s.title | default: L.planset_heading | default: t_heading
-  assign l_license = L.planset_license | default: t_license
-  assign l_terms = L.planset_terms | default: t_terms
-  assign l_included = L.planset_included | default: t_included
-  assign l_compare = L.planset_compare | default: t_compare
-  assign l_files = L.planset_files | default: t_files
-  assign l_sheets = L.planset_sheets | default: t_sheets
-  assign l_model = L.planset_model | default: t_model
-  assign l_yes = L.planset_yes | default: t_yes
-  assign l_no = L.planset_no | default: t_no
-  assign l_selected = L.planset_selected | default: t_selected
+  assign l_heading = s.title | default: shop_l.planset_heading | default: t_heading
+  assign l_license = shop_l.planset_license | default: t_license
+  assign l_terms = shop_l.planset_terms | default: t_terms
+  assign l_included = shop_l.planset_included | default: t_included
+  assign l_compare = shop_l.planset_compare | default: t_compare
+  assign l_sheets = shop_l.planset_sheets | default: t_sheets
+  assign l_model = shop_l.planset_model | default: t_model
+  assign l_yes = shop_l.planset_yes | default: t_yes
+  assign l_no = shop_l.planset_no | default: t_no
+  assign l_selected = shop_l.planset_selected | default: t_selected
 
   assign default_items = s.default_set | newline_to_br | split: '<br />'
 
@@ -77,7 +75,6 @@
   {%- if s.accent != blank -%}--ifcvo-accent:{{ s.accent }};{%- endif -%}
   --ifcvo-radius:{{ s.radius }}px;
 {%- endcapture -%}
-{{ 'ifcvo.css' | asset_url | stylesheet_tag }}
 {%- if plan == 'free' -%}
   {%- if request.design_mode -%}
     <p class="ifcvo-upsell" data-ifcvo-upsell="planset" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: 'planset', plan: 'starter' | escape }}</p>
@@ -182,6 +179,7 @@
 
 {% schema %}
 {
+  "stylesheet": "ifcvo.css",
   "name": "t:blocks.plan_set.name",
   "target": "section",
   "settings": [
