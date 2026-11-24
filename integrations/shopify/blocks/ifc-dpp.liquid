@@ -96,7 +96,7 @@
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   {%- if s.show_epd -%}
-  <h4>{{ 'ifcvo.dpp.epd' | t | escape }}</h4>
+  <h4>{{ 'ifcvo.dpp.epd' | t }}</h4>
   <table class="ifcvo-specs ifcvo-dpp-epd" data-ifcvo-epd>
     <tbody>
       {%- render 'ifcvo-dpp-row', key: 'gwp_a1a3', label: 'ifcvo.dpp.gwp_a1a3', value: gwp_a, unit: m.gwp_unit.value, fallback: 'kg CO₂e' -%}
@@ -112,7 +112,7 @@
   </table>
   {%- endif -%}
   {%- if s.show_checklist -%}
-  <h4>{{ 'ifcvo.dpp.checklist' | t | escape }}</h4>
+  <h4>{{ 'ifcvo.dpp.checklist' | t }}</h4>
   <ul class="ifcvo-dpp-list" data-ifcvo-checklist>
     {%- render 'ifcvo-dpp-item', item: 'dop', link: dop_url -%}
     {%- render 'ifcvo-dpp-item', item: 'ce', value: ce -%}
@@ -123,11 +123,11 @@
     {%- render 'ifcvo-dpp-item', item: 'identifier', value: gtin -%}
     {%- render 'ifcvo-dpp-item', item: 'manufacturer', value: contact -%}
   </ul>
-  <p class="ifcvo-dpp-score" data-ifcvo-dpp-score data-ready="{{ ready }}" data-total="7"><strong>{{ 'ifcvo.dpp.score' | t: ready: ready, total: 7 | escape }}</strong></p>
+  <p class="ifcvo-dpp-score" data-ifcvo-dpp-score data-ready="{{ ready }}" data-total="7"><strong>{{ 'ifcvo.dpp.score' | t: ready: ready, total: 7 }}</strong></p>
   {%- endif -%}
-  <p class="ifcvo-muted ifcvo-dpp-disclaimer">{{ 'ifcvo.dpp.disclaimer' | t | escape }}</p>
+  <p class="ifcvo-muted ifcvo-dpp-disclaimer">{{ 'ifcvo.dpp.disclaimer' | t }}</p>
   {%- if request.design_mode and m == blank -%}
-    <p class="ifcvo-muted">{{ 'ifcvo.editor.dpp' | t: ns: ns | escape }}</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.dpp' | t: ns: ns }}</p>
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </section>

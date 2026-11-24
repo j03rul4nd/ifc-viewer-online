@@ -31,15 +31,15 @@
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   {%- if s.show_chips -%}
     <ul class="ifcvo-chips" data-ifcvo-chips>
-      {%- if mf.area != blank -%}<li class="ifcvo-chip" data-key="area" data-source="metafield"><span>{{ 'ifcvo.rooms.area' | t | escape }}</span> <strong>{{ mf.area.value | escape }}</strong></li>{%- endif -%}
-      {%- if mf.storeys != blank -%}<li class="ifcvo-chip" data-key="storeys" data-source="metafield"><span>{{ 'ifcvo.rooms.storeys' | t | escape }}</span> <strong>{{ mf.storeys.value | escape }}</strong></li>{%- endif -%}
-      {%- if mf.bedrooms != blank -%}<li class="ifcvo-chip" data-key="bedrooms" data-source="metafield"><span>{{ 'ifcvo.rooms.bedrooms' | t | escape }}</span> <strong>{{ mf.bedrooms.value | escape }}</strong></li>{%- endif -%}
-      {%- if mf.bathrooms != blank -%}<li class="ifcvo-chip" data-key="bathrooms" data-source="metafield"><span>{{ 'ifcvo.rooms.bathrooms' | t | escape }}</span> <strong>{{ mf.bathrooms.value | escape }}</strong></li>{%- endif -%}
-      {%- if mf.dimensions != blank -%}<li class="ifcvo-chip" data-key="footprint" data-source="metafield"><span>{{ 'ifcvo.rooms.footprint' | t | escape }}</span> <strong>{{ mf.dimensions.value | escape }}</strong></li>{%- endif -%}
+      {%- if mf.area != blank -%}<li class="ifcvo-chip" data-key="area" data-source="metafield"><span>{{ 'ifcvo.rooms.area' | t }}</span> <strong>{{ mf.area.value | escape }}</strong></li>{%- endif -%}
+      {%- if mf.storeys != blank -%}<li class="ifcvo-chip" data-key="storeys" data-source="metafield"><span>{{ 'ifcvo.rooms.storeys' | t }}</span> <strong>{{ mf.storeys.value | escape }}</strong></li>{%- endif -%}
+      {%- if mf.bedrooms != blank -%}<li class="ifcvo-chip" data-key="bedrooms" data-source="metafield"><span>{{ 'ifcvo.rooms.bedrooms' | t }}</span> <strong>{{ mf.bedrooms.value | escape }}</strong></li>{%- endif -%}
+      {%- if mf.bathrooms != blank -%}<li class="ifcvo-chip" data-key="bathrooms" data-source="metafield"><span>{{ 'ifcvo.rooms.bathrooms' | t }}</span> <strong>{{ mf.bathrooms.value | escape }}</strong></li>{%- endif -%}
+      {%- if mf.dimensions != blank -%}<li class="ifcvo-chip" data-key="footprint" data-source="metafield"><span>{{ 'ifcvo.rooms.footprint' | t }}</span> <strong>{{ mf.dimensions.value | escape }}</strong></li>{%- endif -%}
     </ul>
   {%- endif -%}
   {%- if mf == blank and request.design_mode -%}
-    <p class="ifcvo-muted">{{ 'ifcvo.editor.rooms' | t: ns: ns | escape }}</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.rooms' | t: ns: ns }}</p>
   {%- endif -%}
   <div class="ifcvo-body ifcvo-rooms-live" data-ifcvo-live aria-live="polite"></div>
 </div>

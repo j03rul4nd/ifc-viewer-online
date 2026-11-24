@@ -45,7 +45,7 @@
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
   {%- if s.show_ids and ids_url == blank and request.design_mode -%}
-    <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns | escape }}</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.compliance' | t: ns: ns }}</p>
   {%- endif -%}
 </div>
 {%- render 'ifcvo-runtime', js: 'ifcvo-compliance.js' -%}

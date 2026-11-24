@@ -59,7 +59,7 @@ describe('ifc-takeoff block (Liquid)', () => {
       if (!/^s\.(show_steel|csv|quote)$|^ifcvo_style$|asset_url$/.test(m[1])) expect(m[1]).toMatch(/\| escape$/)
     }
     for (const m of block.matchAll(/\{\{\s*(c \|[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| escape$/)
-    for (const m of block.matchAll(/\{\{\s*('ifcvo\.takeoff\.[a-zA-Z]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| (escape|json)$/)
+    for (const m of block.matchAll(/\{\{\s*('ifcvo\.takeoff\.[a-zA-Z]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| t(: [^|]*)?$|\| json$/)
   })
 
   it('server-renders bim.boq as a table and reads bim.unit_prices', () => {

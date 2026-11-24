@@ -72,7 +72,7 @@ describe('quote request block (Liquid)', () => {
 
   it('the compiled block keeps the form and the server texts', () => {
     expect(compiled).toMatch(/{%-?form 'contact',id:'ifcvo-lead'( -)?%}/)
-    expect(compiled).toContain("'ifcvo.lead.role_reseller'|t|escape")
+    expect(compiled).toContain("'ifcvo.lead.role_reseller'|t")
   })
 
   it('the runtime snippet prints the shop labels once, safe inside a script tag', () => {

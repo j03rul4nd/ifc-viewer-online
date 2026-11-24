@@ -24,12 +24,12 @@ assign full_url='https://www.ifcvieweronline.eu/?model='|append:enc
 assign alt='ifcvo.facade.poster_alt'|t:title:title
 %}<div class="ifcvo-stage" style="{{box}};border-radius:{{radius}}px;background:{{stage_bg}}"
 data-ifcvo-state="idle" data-full="{{full_url|escape}}"
-data-msg-loading="{{'ifcvo.facade.loading'|t|escape}}"
-data-msg-error="{{'ifcvo.facade.error'|t|escape}}"
-data-msg-offline="{{'ifcvo.facade.offline'|t|escape}}"
-data-msg-large="{{'ifcvo.facade.too_large'|t|escape}}"
-data-msg-webgl="{{'ifcvo.facade.no_webgl'|t|escape}}"
-data-msg-ready="{{'ifcvo.facade.ready'|t|escape}}">
+data-msg-loading="{{'ifcvo.facade.loading'|t}}"
+data-msg-error="{{'ifcvo.facade.error'|t}}"
+data-msg-offline="{{'ifcvo.facade.offline'|t}}"
+data-msg-large="{{'ifcvo.facade.too_large'|t}}"
+data-msg-webgl="{{'ifcvo.facade.no_webgl'|t}}"
+data-msg-ready="{{'ifcvo.facade.ready'|t}}">
 <div class="ifcvo-facade">{%if poster_src != ''%}<img src="{{poster_src|escape}}" alt="{{alt|escape}}" width="1200" height="900"
 {%if eager%}fetchpriority="high"{%else%}loading="lazy" fetchpriority="low"{%endif%} decoding="async">{%else%}<svg role="img" aria-label="{{alt|escape}}" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet"><path d="M60 12 100 32v36L60 88 20 68V32Z M20 32l40 20 40-20 M60 52v36" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>{%endif%}<div class="ifcvo-actions">
 <button type="button" class="ifcvo-open">{{open_label|escape}}</button>

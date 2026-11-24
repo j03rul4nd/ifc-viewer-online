@@ -48,7 +48,7 @@ describe('ifc-ar block (Liquid)', () => {
     for (const m of block.matchAll(/="\{\{\s*([^}]*?)\s*\}\}"/g)) {
       if (!/^s\.(generate|include_site)$|asset_url$/.test(m[1])) expect(m[1], m[1]).toMatch(/\| escape$/)
     }
-    for (const m of block.matchAll(/\{\{\s*('ifcvo\.ar\.[a-z_]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| (escape|json)$/)
+    for (const m of block.matchAll(/\{\{\s*('ifcvo\.ar\.[a-z_]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| t(: [^|]*)?$|\| json$/)
   })
 
   it('reads merchant metafields first, then Shopify 3D model media', () => {

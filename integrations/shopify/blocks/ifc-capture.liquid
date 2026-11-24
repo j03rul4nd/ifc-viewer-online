@@ -18,16 +18,16 @@
   {%- render 'ifcvo-upsell', feature: 'capture', plan: 'Starter', block: block -%}
 {%- else -%}
 <div class="ifcvo-panel ifcvo-lead" data-ifcvo-capture data-ifcvo-gate="capture" data-handle="{{ product.handle | escape }}"{% if s.intent %} data-intent="{% if customer %}{{ customer.email | escape }}{% else %}-{% endif %}"{% endif %} {{ block.shopify_attributes }}>
-    <h3>{{ 'ifcvo.leads.title' | t | escape }}</h3>
+    <h3>{{ 'ifcvo.leads.title' | t }}</h3>
     {%- form 'customer', id: 'ifcvo-capture' -%}
-      {%- if form.posted_successfully? -%}<p class="ifcvo-lead-ok" role="status">{{ 'ifcvo.leads.sent' | t | escape }}</p>{%- endif -%}
+      {%- if form.posted_successfully? -%}<p class="ifcvo-lead-ok" role="status">{{ 'ifcvo.leads.sent' | t }}</p>{%- endif -%}
       {{ form.errors | default_errors }}
       <input type="hidden" name="contact[tags]" value="ifc-spec-request,ifc-interest:{{ product.handle | escape }}">
-      <label>{{ 'ifcvo.lead.email' | t | escape }}<input type="email" name="contact[email]" value="{{ customer.email | escape }}" autocomplete="email" required></label>
+      <label>{{ 'ifcvo.lead.email' | t }}<input type="email" name="contact[email]" value="{{ customer.email | escape }}" autocomplete="email" required></label>
       {%- comment -%} Unchecked sends "false": the last value wins, so the box alone decides. {%- endcomment -%}
       <input type="hidden" name="contact[accepts_marketing]" value="false">
-      <label><input type="checkbox" name="contact[accepts_marketing]" value="true"> {{ 'ifcvo.leads.consent' | t | escape }}</label>
-      <button type="submit" class="ifcvo-btn">{{ 'ifcvo.leads.submit' | t | escape }}</button>
+      <label><input type="checkbox" name="contact[accepts_marketing]" value="true"> {{ 'ifcvo.leads.consent' | t }}</label>
+      <button type="submit" class="ifcvo-btn">{{ 'ifcvo.leads.submit' | t }}</button>
     {%- endform -%}
 </div>
 {%- render 'ifcvo-runtime', js: 'ifcvo-leads.js' -%}

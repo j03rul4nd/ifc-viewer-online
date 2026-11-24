@@ -74,7 +74,7 @@ describe('ifc-dpp block (Liquid)', () => {
       if (!/^s\.show_model$|^ifcvo_style$|asset_url$|^ready$/.test(m[1])) expect(m[1]).toMatch(/\| escape/)
     }
     for (const m of block.matchAll(/\{\{\s*((?:v|ce|langs|soc|gtin|contact|unit|gwp_a|gwp_t|ns|epd_url|dop_url)\b[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| escape$/)
-    for (const m of block.matchAll(/\{\{\s*('ifcvo\.dpp\.[a-z_0-9]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| (escape|json)$/)
+    for (const m of block.matchAll(/\{\{\s*('ifcvo\.dpp\.[a-z_0-9]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| t(: [^|]*)?$|\| json$/)
   })
 
   it('links only when they start with https://', () => {
@@ -101,7 +101,7 @@ describe('ifc-dpp block (Liquid)', () => {
     expect(locale.ifcvo.dpp.disclaimer).toMatch(/not legal advice/)
     expect(locale.ifcvo.dpp.disclaimer).toMatch(/2024\/3110/)
     expect(locale.ifcvo.dpp.disclaimer).toMatch(/still being adopted/)
-    expect(block).toContain("'ifcvo.dpp.disclaimer' | t | escape")
+    expect(block).toContain("'ifcvo.dpp.disclaimer' | t")
   })
 
   it('every label key used exists in the locale file; JS defaults are locale keys', () => {

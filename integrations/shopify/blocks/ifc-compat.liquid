@@ -52,7 +52,7 @@
             {%- for a in app_list -%}{%- assign a = a | strip -%}{%- if a != blank -%}<li>{{ a | escape }}</li>{%- endif -%}{%- endfor -%}
           </ul>
         {%- elsif request.design_mode -%}
-          <p class="ifcvo-muted">{{ 'ifcvo.editor.compat' | t: ns: ns | escape }}</p>
+          <p class="ifcvo-muted">{{ 'ifcvo.editor.compat' | t: ns: ns }}</p>
         {%- endif -%}
       </div>
     {%- endif -%}
