@@ -35,7 +35,7 @@
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body ifcvo-sunlot-live" data-ifcvo-live>
-    <noscript><p class="ifcvo-muted">{{ 'ifcvo.sunlot.waiting' | t | escape }}</p></noscript>
+    <noscript><p class="ifcvo-muted">{{ 'ifcvo.sunlot.waiting' | t }}</p></noscript>
   </div>
 </div>
 {%- render 'ifcvo-runtime', js: 'ifcvo-sunlot.js' -%}

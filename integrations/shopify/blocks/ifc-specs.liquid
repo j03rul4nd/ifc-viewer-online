@@ -54,7 +54,7 @@
         </tbody>
       </table>
     {%- elsif request.design_mode -%}
-      <p class="ifcvo-muted">{{ 'ifcvo.editor.specs' | t: ns: specs_ns | escape }}</p>
+      <p class="ifcvo-muted">{{ 'ifcvo.editor.specs' | t: ns: specs_ns }}</p>
     {%- endif -%}
   </div>
   <div class="ifcvo-body ifcvo-specs-live" data-ifcvo-live aria-live="polite">

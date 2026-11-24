@@ -54,7 +54,7 @@
     {%- for sys in systems -%}
       <table class="ifcvo-specs ifcvo-cls" data-system="{{ sys | escape }}">
         <caption>{{ sys | escape }}</caption>
-        <thead><tr><th scope="col">{{ 'ifcvo.classification.code' | t | escape }}</th><th scope="col">{{ 'ifcvo.classification.name' | t | escape }}</th></tr></thead>
+        <thead><tr><th scope="col">{{ 'ifcvo.classification.code' | t }}</th><th scope="col">{{ 'ifcvo.classification.name' | t }}</th></tr></thead>
         <tbody>
           {%- for line in rows -%}
             {%- assign parts = line | split: '|' -%}
@@ -69,7 +69,7 @@
     {%- endfor -%}
   </div>
   {%- if mf == blank and request.design_mode -%}
-    <p class="ifcvo-muted">{{ 'ifcvo.editor.classification' | t: ns: ns | escape }}</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.classification' | t: ns: ns }}</p>
   {%- endif -%}
   <div class="ifcvo-body" data-ifcvo-live aria-live="polite"></div>
 </div>

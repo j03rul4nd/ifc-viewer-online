@@ -111,7 +111,7 @@
   <script type="module" src="{{ 'ifcvo-events.js' | asset_url }}"></script>
   {%- if shop_cfg.downloadsGlb or shop_cfg.downloadsCsv -%}<script type="module" src="{{ 'ifcvo-quote.js' | asset_url }}"></script>{%- endif -%}
 {%- elsif request.design_mode -%}
-  <p>{{ 'ifcvo.editor.product_link' | t: ns: ns, key: key | escape }}</p>
+  <p>{{ 'ifcvo.editor.product_link' | t: ns: ns, key: key }}</p>
 {%- endif -%}
 
 {%- if request.design_mode -%}{%- capture dg_keys -%}{{ block.settings.key }},ifc_size_mb,ifc_poster,{{ block.settings.files_key }}{%- endcapture -%}

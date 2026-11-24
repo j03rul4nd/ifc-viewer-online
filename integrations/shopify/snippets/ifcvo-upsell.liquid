@@ -11,5 +11,5 @@
     {% render 'ifcvo-upsell', feature: 'quote', plan: 'Starter', block: block %}
 {% endcomment %}
 {%- if request.design_mode -%}
-  <p class="ifcvo-upsell" data-ifcvo-upsell="{{ feature }}" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: feature, plan: plan | escape }}</p>
+  <p class="ifcvo-upsell" data-ifcvo-upsell="{{ feature }}" {{ block.shopify_attributes }}>{{ 'ifcvo.editor.gated' | t: feature: feature, plan: plan }}</p>
 {%- endif -%}

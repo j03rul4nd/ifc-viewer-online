@@ -55,7 +55,7 @@ describe('ifc-rooms block (Liquid)', () => {
       if (!/^s\.(show_table|show_chips|highlight)$|^ifcvo_style$|asset_url$/.test(m[1])) expect(m[1]).toMatch(/\| escape/)
     }
     for (const m of block.matchAll(/\{\{\s*(mf\.[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| escape$/)
-    for (const m of block.matchAll(/\{\{\s*('ifcvo\.rooms\.[a-z]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| (escape|json)$/)
+    for (const m of block.matchAll(/\{\{\s*('ifcvo\.rooms\.[a-z]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| t(: [^|]*)?$|\| json$/)
   })
 
   it('server-renders chips from bim.area / bedrooms / bathrooms / storeys', () => {

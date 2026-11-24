@@ -62,7 +62,7 @@ describe('ifc-compliance block (Liquid)', () => {
     for (const m of block.matchAll(/\{\{\s*([^}]*?)\s*\}\}/g)) {
       const expr = m[1]
       if (/^s\.(show_\w+|radius|accent)$|^ifcvo_style$|asset_url|^block\.shopify_attributes$|^'ifcvo\.compliance\.\w+' \| t \| json$/.test(expr)) continue
-      expect(expr, expr).toMatch(/\| (escape|json \| escape)$/)
+      expect(expr, expr).toMatch(/\| (escape|json \| escape)$|^'ifcvo\.[a-z_.]+' \| t(: [^|]*)?$/)
     }
   })
 

@@ -92,13 +92,13 @@
     {%- else -%}
       {%- comment -%} Guests register (Shopify's own form, with its marketing consent) and come back here. {%- endcomment -%}
       <p class="ifcvo-muted" style="margin:8px 0 0">
-      {%- if dl_trade -%}{{ 'ifcvo.leads.trade' | t | escape }}
-      {%- elsif dl_gate == 'buyer' -%}<a href="{{ routes.account_url | escape }}">{{ 'ifcvo.leads.buyer' | t | escape }}</a>
+      {%- if dl_trade -%}{{ 'ifcvo.leads.trade' | t }}
+      {%- elsif dl_gate == 'buyer' -%}<a href="{{ routes.account_url | escape }}">{{ 'ifcvo.leads.buyer' | t }}</a>
       {%- else -%}<a href="{{ routes.account_register_url | escape }}?return_url={{ product.url | url_encode | escape }}">{%- assign dl_t = 'ifcvo.leads.register' | t -%}{{ login_label | default: dl_t | escape }}</a>
       {%- endif -%}</p>
     {%- endif -%}
     {%- if request.design_mode and dl_gate != 'none' -%}
-      <p class="ifcvo-upsell">{% if dl_gate == 'tag' %}{{ 'ifcvo.editor.gated_downloads_tag' | t: tag: dl_tag | escape }}{% else %}{{ 'ifcvo.editor.gated_downloads' | t | escape }}{% endif %}</p>
+      <p class="ifcvo-upsell">{% if dl_gate == 'tag' %}{{ 'ifcvo.editor.gated_downloads_tag' | t: tag: dl_tag }}{% else %}{{ 'ifcvo.editor.gated_downloads' | t }}{% endif %}</p>
     {%- endif -%}
   </div>
 {%- endif -%}

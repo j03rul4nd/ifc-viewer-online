@@ -48,10 +48,10 @@
 >
   {%- if s.title != blank -%}<h3>{{ s.title | escape }}</h3>{%- endif -%}
   <div class="ifcvo-body" data-ifcvo-ar-body>
-    <noscript><p class="ifcvo-muted">{{ 'ifcvo.ar.no_ar' | t | escape }}</p></noscript>
+    <noscript><p class="ifcvo-muted">{{ 'ifcvo.ar.no_ar' | t }}</p></noscript>
   </div>
   {%- if ar_glb == '' and ar_usdz == '' and request.design_mode -%}
-    <p class="ifcvo-muted">{{ 'ifcvo.editor.ar' | t: ns: ns | escape }}</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.ar' | t: ns: ns }}</p>
   {%- endif -%}
 </div>
 {%- render 'ifcvo-runtime', js: 'ifcvo-ar.js' -%}

@@ -36,12 +36,12 @@
 -%}
 <div class="ifcvo-stage" style="{{ box }};border-radius:{{ radius }}px;background:{{ stage_bg }}"
   data-ifcvo-state="idle" data-full="{{ full_url | escape }}"
-  data-msg-loading="{{ 'ifcvo.facade.loading' | t | escape }}"
-  data-msg-error="{{ 'ifcvo.facade.error' | t | escape }}"
-  data-msg-offline="{{ 'ifcvo.facade.offline' | t | escape }}"
-  data-msg-large="{{ 'ifcvo.facade.too_large' | t | escape }}"
-  data-msg-webgl="{{ 'ifcvo.facade.no_webgl' | t | escape }}"
-  data-msg-ready="{{ 'ifcvo.facade.ready' | t | escape }}">
+  data-msg-loading="{{ 'ifcvo.facade.loading' | t }}"
+  data-msg-error="{{ 'ifcvo.facade.error' | t }}"
+  data-msg-offline="{{ 'ifcvo.facade.offline' | t }}"
+  data-msg-large="{{ 'ifcvo.facade.too_large' | t }}"
+  data-msg-webgl="{{ 'ifcvo.facade.no_webgl' | t }}"
+  data-msg-ready="{{ 'ifcvo.facade.ready' | t }}">
   <div class="ifcvo-facade">
     {%- if poster_src != '' -%}
       <img src="{{ poster_src | escape }}" alt="{{ alt | escape }}" width="1200" height="900"

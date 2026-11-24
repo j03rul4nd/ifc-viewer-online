@@ -53,7 +53,7 @@ describe('ifc-classification block (Liquid)', () => {
       if (!/^s\.(show_model|show_counts)$|^ifcvo_style$|asset_url$/.test(m[1])) expect(m[1]).toMatch(/\| escape/)
     }
     for (const m of block.matchAll(/\{\{\s*((?:parts|sys|lsys|ns)\b[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| escape$/)
-    for (const m of block.matchAll(/\{\{\s*('ifcvo\.classification\.[a-z]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| (escape|json)$/)
+    for (const m of block.matchAll(/\{\{\s*('ifcvo\.classification\.[a-z]+' \| t[^}]*?)\s*\}\}/g)) expect(m[1]).toMatch(/\| t(: [^|]*)?$|\| json$/)
   })
 
   it('server-renders bim.classification grouped by system, list or multi-line', () => {

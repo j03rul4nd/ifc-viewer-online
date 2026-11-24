@@ -64,7 +64,7 @@ export function toAppBlock(source) {
   source = source.replace(/\r\n/g, '\n')
   // Theme-editor note: the app block has the extension's locales, the copy-paste section does not.
   source = source.replace('<p>IFC Viewer Online: paste an https link to an .ifc file (Content &gt; Files) or to a scene.</p>',
-    "<p>{{ 'ifcvo.editor.viewer_link' | t | escape }}</p>")
+    "<p>{{ 'ifcvo.editor.viewer_link' | t }}</p>")
   // Setup check (theme editor only): what the block found, for assets/ifcvo-diagnostics.js.
   const diag = source.includes('"id": "model"')
     ? "{%- render 'ifcvo-diag', feature: 'viewer', block: 'ifc-viewer', model: block.settings.model -%}"

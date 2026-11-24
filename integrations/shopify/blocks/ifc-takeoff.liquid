@@ -40,7 +40,7 @@
   {%- if mf.boq != blank -%}
     {%- assign boq_lines = mf.boq.value | newline_to_br | split: '<br />' -%}
     <table class="ifcvo-specs ifcvo-takeoff" data-ifcvo-boq-static>
-      <caption>{{ 'ifcvo.takeoff.title' | t | escape }}</caption>
+      <caption>{{ 'ifcvo.takeoff.title' | t }}</caption>
       {%- for line in boq_lines -%}
         {%- assign row = line | strip -%}
         {%- if row == blank -%}{%- continue -%}{%- endif -%}
@@ -53,7 +53,7 @@
       {%- endfor -%}
     </table>
   {%- elsif request.design_mode -%}
-    <p class="ifcvo-muted">{{ 'ifcvo.editor.takeoff' | t: ns: ns | escape }}</p>
+    <p class="ifcvo-muted">{{ 'ifcvo.editor.takeoff' | t: ns: ns }}</p>
   {%- endif -%}
   <div class="ifcvo-body ifcvo-takeoff-live" data-ifcvo-live aria-live="polite"></div>
 </div>
