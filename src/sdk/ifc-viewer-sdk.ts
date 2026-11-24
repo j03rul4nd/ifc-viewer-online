@@ -12,7 +12,7 @@
 // "just works". Override with the `baseUrl` option if you serve it elsewhere.
 //
 // Pin a version in production — the file at a versioned path never changes:
-//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js"
+//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js"
 
 import { appBaseUrlFor } from './base-url'
 
@@ -229,6 +229,13 @@ export interface IfcViewerOptions {
   aspectRatio?: string
   /** Slow idle orbit once the model is in (`true` = 6°/s, or degrees per second). Stops at the first touch. */
   turntable?: boolean | number
+  /** `false` hides the ground grid under the model. Default: shown. Since v1.20. */
+  grid?: boolean
+  /**
+   * `'daylight'`: the IFC colours under soft daylight; `'clay'`: one sober matte
+   * tone, same light. Default `'original'`: as authored, studio light. Since v1.20.
+   */
+  finish?: 'clay' | 'daylight' | 'original'
   /**
    * Stop rendering while the figure is off screen — a post with several
    * viewers stays light. Default `true` with `ui: 'article'`.
@@ -1466,7 +1473,7 @@ type Listener<T> = (payload: T) => void
 // of EN 14351-1 windows and external doors — and EIR rules gain `where`
 // (only elements with a property value) and `optional`. Pinned builds at
 // /sdk/<version>/.
-const SDK_VERSION = '1.19.0'
+const SDK_VERSION = '1.20.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -3010,6 +3017,8 @@ export class IfcViewer {
     if (this.opts.fill !== undefined) url.searchParams.set('fill', String(this.opts.fill))
     if (this.opts.wheel) url.searchParams.set('wheel', this.opts.wheel)
     if (this.opts.turntable) url.searchParams.set('turntable', this.opts.turntable === true ? '1' : String(this.opts.turntable))
+    if (this.opts.grid === false) url.searchParams.set('grid', '0')
+    if (this.opts.finish === 'clay' || this.opts.finish === 'daylight') url.searchParams.set('finish', this.opts.finish)
     if (this.opts.rule) url.searchParams.set('rule', this.opts.rule)
     if (this.opts.flood) url.searchParams.set('flood', this.opts.flood)
     if (this.opts.analysis) url.searchParams.set('analysis', this.opts.analysis)

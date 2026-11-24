@@ -324,6 +324,7 @@ import {
 // Re-exported from the component so the ref type has one definition; see
 // ModelTree.tsx for what the outcome means and why there is one.
 import type { ModelTreeHandle, RevealOutcome } from './components/ModelTree'
+import { LIGHTS } from './lib/cover/lighting'
 export type { ModelTreeHandle, RevealOutcome }
 
 /**
@@ -593,6 +594,9 @@ function blogUrlBase(lang: string): string {
   const prefix = lang !== 'en' ? `${lang}/` : ''
   return base.endsWith('/') ? `${base}${prefix}blog/` : `${base}/${prefix}blog/`
 }
+
+/** The `?finish=clay` base: white, as in the cover 'clay' look; the scene lighting greys it. */
+const CLAY_FINISH = '#FFFFFF'
 
 export default function App() {
   const { t: tToasts } = useTranslation('toasts')
@@ -1522,6 +1526,22 @@ export default function App() {
       if (urlParams.turntable) api.setTurntable(true, urlParams.turntable)
     }, 400)
     return () => window.clearTimeout(timer)
+  }, [loadsActive, urlParams])
+  // `?grid=0` / `?finish=clay` (product pages): applied each time the loads
+  // settle, so models added later by the SDK get the same treatment.
+  useEffect(() => {
+    if (loadsActive) return
+    if (urlParams.grid !== false && !urlParams.finish) return
+    if (useSceneStore.getState().models.length === 0) return
+    const api = viewerApiRef.current
+    if (!api) return
+    if (urlParams.finish === 'clay') {
+      void api.setPresentationLook({ base: 'clay', baseColor: CLAY_FINISH, baseOpacity: 1, focusTypes: [], focusColor: null, hideGrid: urlParams.grid === false })
+    } else if (urlParams.grid === false) {
+      api.setGridVisible(false)
+    }
+    // Soft daylight: the default studio light's navy ground bounce turns every wall blue on a light page.
+    if (urlParams.finish) api.setLighting(LIGHTS.morning.light)
   }, [loadsActive, urlParams])
   // Auto-frame (every embed, SDK 1.18): each time the loads settle with a
   // different set of models, frame them all from iso with a margin. The

@@ -100,6 +100,8 @@
 					text( 'tools', __( 'Toolbar tools', 'bimo-ifc-viewer' ), __( 'validate, measure (comma-separated), or none.', 'bimo-ifc-viewer' ) ),
 					text( 'panels', __( 'Side panels', 'bimo-ifc-viewer' ), __( 'properties, scene, measurement, section, plans, map, solar, flood, devices, pointcloud, mesh (comma-separated), or none.', 'bimo-ifc-viewer' ) ),
 					el( c.ToggleControl, { label: __( 'Frame the model when it loads', 'bimo-ifc-viewer' ), checked: a.autoframe !== '0', onChange: function ( v ) { set( { autoframe: v ? '' : '0' } ); } } ),
+					el( c.ToggleControl, { label: __( 'Show the ground grid', 'bimo-ifc-viewer' ), checked: a.grid !== '0', onChange: function ( v ) { set( { grid: v ? '' : '0' } ); } } ),
+					el( c.SelectControl, { label: __( 'Finish', 'bimo-ifc-viewer' ), value: a.finish, options: [ { label: __( 'Original', 'bimo-ifc-viewer' ), value: '' }, { label: __( 'Daylight', 'bimo-ifc-viewer' ), value: 'daylight' }, { label: __( 'Clay', 'bimo-ifc-viewer' ), value: 'clay' } ], onChange: function ( v ) { set( { finish: v } ); } } ),
 					text( 'fill', __( 'Share of the frame the model fills', 'bimo-ifc-viewer' ), __( 'From 0.2 to 0.98, for example 0.85.', 'bimo-ifc-viewer' ) ),
 					text( 'rule', __( 'Open on a validation rule', 'bimo-ifc-viewer' ), __( 'A rule id such as RULE_MISSING_NAME.', 'bimo-ifc-viewer' ) ),
 					el( c.ToggleControl, { label: __( 'Full-screen button', 'bimo-ifc-viewer' ), checked: a.fullscreen === '1', onChange: function ( v ) { set( { fullscreen: v ? '1' : '' } ); } } )

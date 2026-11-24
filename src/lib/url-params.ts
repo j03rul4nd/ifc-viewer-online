@@ -195,6 +195,17 @@ export interface AppUrlParams {
    */
   turntable?: number
   /**
+   * `?grid=0` — no ground grid under the model (product pages, catalogue shots).
+   * Undefined = the viewer's default (grid on).
+   */
+  grid?: boolean
+  /**
+   * `?finish=daylight` — the IFC colours under soft daylight (the default studio
+   * light bounces navy off the ground, which turns walls blue on a light page);
+   * `?finish=clay` — one sober matte tone, same light. Default: as authored, studio light.
+   */
+  finish?: 'clay' | 'daylight'
+  /**
    * `?camera=px,py,pz,tx,ty,tz` — open on this exact camera (scene metres, Y
    * up: eye then orbit target), once the models are in. Wins over `view`.
    */
@@ -301,6 +312,11 @@ export interface EmbedChrome {
 // `?embed` (no value) reads as "" via URLSearchParams.get and means true.
 const TRUTHY = new Set(['1', 'true', 'yes', 'on', ''])
 const FALSY  = new Set(['0', 'false', 'no', 'off'])
+
+function parseFinish(v: string | null): 'clay' | 'daylight' | undefined {
+  const f = (v ?? '').trim().toLowerCase()
+  return f === 'clay' || f === 'daylight' ? f : undefined
+}
 
 function parseBool(v: string | null): boolean | undefined {
   if (v == null) return undefined
@@ -455,6 +471,8 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     wheel: parseWheel(p.get('wheel')) ?? (preset === 'article' && embed ? 'ctrl' : undefined),
     explore: parseBool(p.get('explore')),
     turntable: parseTurntable(p.get('turntable')),
+    grid: parseBool(p.get('grid')),
+    finish: parseFinish(p.get('finish')),
     camera: parseCamera(p.get('camera')),
     hideFeatures: (p.get('hide') ?? '').split(',').map((x) => x.trim()).filter((x) => /^[nwr]\d{1,15}$/.test(x)).slice(0, 200),
     sceneUrl: [p.get('scene') ?? ''].map((u) => u.trim()).find(isLoadableUrl),

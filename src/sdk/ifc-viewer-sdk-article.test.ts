@@ -145,6 +145,19 @@ describe('IfcViewer article kit', () => {
     v.dispose()
   })
 
+  it('grid: false and finish: clay go on the URL; defaults add nothing', () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE, grid: false, finish: 'clay' })
+    const q = new URL(v.iframe.src).searchParams
+    expect(q.get('grid')).toBe('0')
+    expect(q.get('finish')).toBe('clay')
+    v.dispose()
+    const d = new IfcViewer('#mount', { baseUrl: BASE, grid: true, finish: 'original' })
+    const dq = new URL(d.iframe.src).searchParams
+    expect(dq.has('grid')).toBe(false)
+    expect(dq.has('finish')).toBe(false)
+    d.dispose()
+  })
+
   it('fullscreenButton draws an expand button in the corner', () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE, fullscreenButton: true })
     expect(v.box!.querySelector('button[aria-label="Full screen"]')).not.toBeNull()

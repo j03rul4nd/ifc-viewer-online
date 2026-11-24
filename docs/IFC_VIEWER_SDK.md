@@ -14,7 +14,7 @@ WASM weight is loaded by the iframe, not your bundle.
   `public/sdk/<version>/ifc-viewer.es.js`, and `public/sdk/versions.json` (also runs as part of `npm run build`)
 - Live demo + web docs: `/<base>/sdk/` (served from `public/sdk/index.html`)
 
-> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js`.
+> **Pin a version in production:** `https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js`.
 > See [Versions, caching and compatibility](#versions-caching-and-compatibility).
 
 ## Quick start
@@ -96,6 +96,8 @@ const viewer = await IfcViewer.create("#viewer", { model: url })
 | `site`     | `{ lat, lon }`                        | the model's | Study sun and climate at this place. Mirrors `?site=` (v1.19). |
 | `explore`  | boolean                               | preset      | Show or hide the scene explorer over the canvas. Mirrors `?explore=` (v1.19). |
 | `drawings` | `true` \| `'plan'`                    | —           | Open the technical-drawings pane beside the model; `'plan'` also cuts the first floor plan. Mirrors `?drawings=` (v1.19). |
+| `grid`     | boolean                               | `true`      | `false` hides the ground grid under the model. Mirrors `?grid=0` (v1.20). |
+| `finish`   | `'daylight'` \| `'clay'`               | —           | Bright daylight or neutral clay instead of the model's colours. Mirrors `?finish=` (v1.20). |
 | `loadTimeout` | number                             | `120000`    | Reject `add()`/`addFromUrl()` after N ms (`0` disables). A backstop: the viewer now answers every load it accepts with `model-loaded` or `model-error`, including parse failures and cancellations. |
 | `onReady` / `onModelLoaded` / `onModelError` / `onProgress` | function | — | Convenience callbacks (same as `.on(...)`). |
 
@@ -564,6 +566,9 @@ viewer.on("element-selected", (e) => {
   paths). Self-hosting elsewhere needs the same two rules.
 
 ### Changelog
+
+- **1.20.0** — `grid: false` hides the ground grid; `finish: 'daylight' | 'clay'` changes the look. Same names as URL
+  parameters and `<ifc-viewer>` attributes.
 
 - **1.19.0** — deep links as options: `rule`, `flood`, `analysis`, `site`,
   `explore`, `drawings`, and `map: ['xray' | 'cut']` for the underground view,

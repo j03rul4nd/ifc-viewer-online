@@ -14,9 +14,9 @@ const params = (v: IfcViewer): URLSearchParams => new URL(v.iframe.src).searchPa
 describe('SDK 1.19 — deep links', () => {
   beforeEach(mount)
 
-  it('is version 1.19.0', () => {
+  it('is version 1.20.0', () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
-    expect(v.version).toBe('1.19.0')
+    expect(v.version).toBe('1.20.0')
     v.dispose()
   })
 

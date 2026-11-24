@@ -2,7 +2,7 @@
 // block mounts the viewer through the SDK; the explorer, element details, views
 // and Health Score blocks can sit anywhere else on the page and drive it.
 // One page, one viewer: the companion blocks attach to the first one.
-const SDK = 'https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js'
+const SDK = 'https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js'
 
 const listeners = new Set()
 /** Listeners per block root, so a removed section takes its own with it. */
@@ -330,6 +330,10 @@ function mountViewer(root) {
       background: background(root),
       title: c.title,
       height: '100%',
+      // Shop ifcvo.config: {"grid": false} hides the floor grid; {"finish": "daylight"|"clay"}
+      // lights the model for a light page (IFC colours, or one sober matte tone).
+      ...(c.grid === false ? { grid: false } : {}),
+      ...(c.finish === 'clay' || c.finish === 'daylight' ? { finish: c.finish } : {}),
       ...protectOptions(),
     })
     viewer = v

@@ -122,6 +122,38 @@ precios abierta; guarda primero la ficha (paso F1) y vuelve aquí.
 
 ---
 
+## Paso C2 — Publicar el visor y el SDK 1.20
+
+La extensión carga `https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js` y usa
+`?grid=0&finish=daylight`; las dos cosas tienen que estar en producción **antes** de
+`shopify app deploy`. Requisito: esta rama ya fusionada en `main`. **Nunca dos builds a
+la vez** en `C:\repo\ifc-cf-pages` (vite vacía `dist/`): si otra sesión está
+construyendo, espera.
+
+```powershell
+cd C:\repo\ifc-cf-pages
+git fetch
+git checkout -- public
+git checkout --detach origin/main
+npm ci
+$env:NODE_OPTIONS="--max-old-space-size=8192"; npm run build; if ($LASTEXITCODE -eq 0 -and (Test-Path dist\de\preise\index.html)) { npm run deploy:pages }
+```
+
+(`deploy:pages` no construye: sube lo que haya en `dist/`, por eso va en la misma línea
+que el build y solo si este acabó bien.)
+
+**Comprobar:**
+
+1. `curl.exe -sI https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js` →
+   **`HTTP/1.1 200`** y `content-type: ...javascript`. Un 404 = el deploy no subió
+   `public/sdk/1.20.0/`.
+2. Abre `https://www.ifcvieweronline.eu/?ui=article&grid=0&finish=daylight&model=https://www.ifcvieweronline.eu/Ifc2x3_Duplex_Architecture.ifc`.
+   **Esperado:** el modelo con luz de día y **sin
+   rejilla** en el suelo. Con `grid=1` la rejilla vuelve.
+3. `curl.exe -s https://www.ifcvieweronline.eu/sdk/versions.json` → `"latest": "1.20.0"`.
+
+---
+
 ## Paso D — Desplegar la app (`shopify app deploy`)
 
 ```powershell
@@ -166,6 +198,14 @@ tres temas GDPR (ya no `app_subscriptions/update`, ver abajo).
    → Worker → Settings → Triggers → Cron → "Trigger" lanza el cron a mano.)
 7. Desinstala la app → `npx wrangler kv key list --binding SHOPS --remote` ya no lista
    `shop:<tienda>` (una sola llamada; las listas son 1.000/día en Free).
+
+8. Ajuste de la tienda para el revisor (las capturas de la ficha se hicieron así): admin →
+   **Settings → Metafields and metaobjects (Custom data) → Shop** → *Add definition* →
+   "Namespace and key" `ifcvo.config`,
+   tipo **JSON** → guarda y pon el valor
+   `{"grid": false, "finish": "daylight"}`. **Esperado:** el visor de la ficha de
+   producto sale con luz de día y sin rejilla, igual que en las capturas. Si ya existe la
+   definición, solo edita el valor (conserva las otras claves que tenga).
 
 **Si el plan no cambia en el tema:** recarga la página de la app (sincroniza al abrir),
 y comprueba que los nombres de los planes son exactamente Free / Starter / Business.

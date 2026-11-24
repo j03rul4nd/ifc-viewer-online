@@ -8,6 +8,22 @@ import * as cmp from '../integrations/shopify/app/extensions/ifc-viewer/assets/i
 // @ts-expect-error plain JS asset without types
 import * as share from '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo-share.js'
 
+describe('compare viewers follow the product viewer look', () => {
+  it('copies the brand gradient, a preset background and the accent', () => {
+    expect(cmp.lookOf({ bg: 'brand', bgTop: '#fbfaf7', bgBottom: '#e9e5db', accent: '2f5d50' }))
+      .toEqual({ background: { top: '#fbfaf7', bottom: '#e9e5db' }, accent: '2f5d50' })
+    expect(cmp.lookOf({ bg: 'paper' })).toEqual({ background: 'paper' })
+    expect(cmp.lookOf({})).toEqual({})
+    expect(cmp.lookOf({ ifcvoConfig: '{"grid":false,"finish":"daylight"}' })).toEqual({ grid: false, finish: 'daylight' })
+  })
+
+  it('the spec table is never clipped by the panel body scroll box', () => {
+    const css = fs.readFileSync(path.resolve(__dirname, '../integrations/shopify/app/extensions/ifc-viewer/assets/ifcvo.css'), 'utf8')
+    expect(css).toMatch(/\.ifcvo-compare \.ifcvo-body \{ max-height: none; overflow: visible; \}/)
+    expect(css).toMatch(/\.ifcvo-compare-split\[hidden\], \.ifcvo-compare-tabs\[hidden\], \.ifcvo-compare-pane\[hidden\] \{ display: none; \}/)
+  })
+})
+
 const SRC = path.resolve(__dirname, '../integrations/shopify')
 const EXT = path.join(SRC, 'app/extensions/ifc-viewer')
 
