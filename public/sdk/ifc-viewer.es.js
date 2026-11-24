@@ -1,9 +1,9 @@
-var k = Object.defineProperty;
-var x = (a, t, e) => t in a ? k(a, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[t] = e;
-var u = (a, t, e) => x(a, typeof t != "symbol" ? t + "" : t, e);
-const E = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
-function P(a) {
-  const t = new URL(a), e = t.pathname.split("/").slice(0, -1), r = e[e.length - 1] ?? "", s = E.test(r) && e[e.length - 2] === "sdk" ? "../../" : "../";
+var x = Object.defineProperty;
+var P = (a, t, e) => t in a ? x(a, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[t] = e;
+var u = (a, t, e) => P(a, typeof t != "symbol" ? t + "" : t, e);
+const k = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+function E(a) {
+  const t = new URL(a), e = t.pathname.split("/").slice(0, -1), r = e[e.length - 1] ?? "", s = k.test(r) && e[e.length - 2] === "sdk" ? "../../" : "../";
   return new URL(s, t).href;
 }
 const q = [
@@ -17,7 +17,7 @@ const q = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], _ = "1.19.0", C = 12e4, S = 3e4, g = q.map((a) => a.code);
+], _ = "1.20.0", C = 12e4, S = 3e4, g = q.map((a) => a.code);
 function b(a) {
   const { source: t, type: e, requestId: r, ...s } = a;
   return s;
@@ -43,7 +43,7 @@ async function T(a, t = 16e3) {
 }
 function I() {
   try {
-    return P(import.meta.url);
+    return E(import.meta.url);
   } catch {
     return "/";
   }
@@ -441,6 +441,19 @@ const f = class f {
    */
   findElements(t = {}) {
     return this.request("ifcviewer:find-elements", { ...t });
+  }
+  /**
+   * Specs and quantities of the loaded model(s) for a product page: counts per
+   * IFC class, one row per type with key properties, materials, and length /
+   * area / volume / weight (base quantities, then authoring-tool psets, then
+   * volume x 7850 for steel only). Read in batches inside the viewer.
+   *
+   * ```js
+   * const data = await viewer.getProductData({ properties: ['FireRating'] })
+   * ```
+   */
+  getProductData(t = {}) {
+    return this.request("ifcviewer:get-product-data", { ...t }, 12e4);
   }
   /**
    * The validation result on screen, or null.
@@ -1045,6 +1058,24 @@ const f = class f {
   exportPresentation(t = {}) {
     return this.request("ifcviewer:export-presentation", { ...t }, 30 * 6e4);
   }
+  /**
+   * Export a loaded model as GLB, built in the visitor's browser from the IFC
+   * geometry (no server). Defaults to the first model. Since v1.19.0.
+   * `{ ar: true }` makes a phone-sized AR model; `{ format: 'usdz' }` the iOS
+   * Quick Look file of it.
+   *
+   *   const { bytes, fileName } = await viewer.exportModel()
+   */
+  exportModel(t = {}) {
+    const e = t.format ?? "glb";
+    return this.request("ifcviewer:export-model", {
+      format: e,
+      modelId: t.modelId,
+      ar: e === "usdz" || t.ar === !0,
+      maxTriangles: t.maxTriangles,
+      includeSite: t.includeSite === !0
+    }, 5 * 6e4);
+  }
   /** Close Clip Studio (the generated project is kept until the next one). */
   closePresentation() {
     return this.request("ifcviewer:close-presentation").then(() => {
@@ -1199,7 +1230,7 @@ const f = class f {
       const r = this.opts.background, s = typeof r == "string" ? r : "preset" in r ? r.preset : r.bottom ? `${r.top},${r.bottom}` : r.top;
       t.searchParams.set("bg", s.replace(/#/g, ""));
     }
-    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.layers && t.searchParams.set("layers", this.opts.layers), this.opts.scene && t.searchParams.set("scene", this.opts.scene), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), this.opts.turntable && t.searchParams.set("turntable", this.opts.turntable === !0 ? "1" : String(this.opts.turntable)), this.opts.rule && t.searchParams.set("rule", this.opts.rule), this.opts.flood && t.searchParams.set("flood", this.opts.flood), this.opts.analysis && t.searchParams.set("analysis", this.opts.analysis), this.opts.site && t.searchParams.set("site", `${this.opts.site.lat},${this.opts.site.lon}`), this.opts.explore !== void 0 && t.searchParams.set("explore", this.opts.explore ? "1" : "0"), this.opts.drawings && t.searchParams.set("drawings", this.opts.drawings === !0 ? "1" : this.opts.drawings), t.toString();
+    return this.opts.map && t.searchParams.set("map", this.opts.map === !0 || this.opts.map.length === 0 ? "1" : this.opts.map.join(",")), this.opts.solar && t.searchParams.set("solar", this.opts.solar), this.opts.moon && t.searchParams.set("moon", "1"), this.opts.scans?.length && t.searchParams.set("scan", this.opts.scans.join(",")), this.opts.layers && t.searchParams.set("layers", this.opts.layers), this.opts.scene && t.searchParams.set("scene", this.opts.scene), this.opts.view && t.searchParams.set("view", this.opts.view), this.opts.fill !== void 0 && t.searchParams.set("fill", String(this.opts.fill)), this.opts.wheel && t.searchParams.set("wheel", this.opts.wheel), this.opts.turntable && t.searchParams.set("turntable", this.opts.turntable === !0 ? "1" : String(this.opts.turntable)), this.opts.grid === !1 && t.searchParams.set("grid", "0"), (this.opts.finish === "clay" || this.opts.finish === "daylight") && t.searchParams.set("finish", this.opts.finish), this.opts.rule && t.searchParams.set("rule", this.opts.rule), this.opts.flood && t.searchParams.set("flood", this.opts.flood), this.opts.analysis && t.searchParams.set("analysis", this.opts.analysis), this.opts.site && t.searchParams.set("site", `${this.opts.site.lat},${this.opts.site.lon}`), this.opts.explore !== void 0 && t.searchParams.set("explore", this.opts.explore ? "1" : "0"), this.opts.drawings && t.searchParams.set("drawings", this.opts.drawings === !0 ? "1" : this.opts.drawings), t.toString();
   }
   /** Queue a load so only one runs at a time; resolves with that load's result. */
   enqueueLoad(t) {
@@ -1490,6 +1521,9 @@ class F extends HTMLElement {
   findElements(e) {
     return this._viewer.findElements(e);
   }
+  getProductData(e) {
+    return this._viewer.getProductData(e);
+  }
   isolate(e) {
     this._viewer?.isolate(e);
   }
@@ -1627,6 +1661,9 @@ class F extends HTMLElement {
   }
   exportPresentation(e) {
     return this._viewer.exportPresentation(e);
+  }
+  exportModel(e) {
+    return this._viewer.exportModel(e);
   }
   createCover(e) {
     return this._viewer.createCover(e);

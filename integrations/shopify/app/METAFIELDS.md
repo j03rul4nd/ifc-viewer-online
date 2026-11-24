@@ -182,6 +182,8 @@ browser-made downloads and gate are set **only** here (or use the IFC downloads 
 | `lang` | string | page language | viewer language |
 | `accent` | colour | theme button colour | viewer accent |
 | `validate` | boolean | `true` | compute the Health Score |
+| `grid` | boolean | `true` | `false` hides the floor grid under the model (SDK 1.20) |
+| `finish` | `"daylight"` \| `"clay"` | model colours | daylight or neutral clay look (SDK 1.20) |
 | `downloadsGlb` | boolean | `false` | Product IFC model: offer a GLB made in the browser |
 | `downloadsCsv` | boolean | `false` | Product IFC model: offer a CSV element list made in the browser |
 | `downloadsGate` | `"none"` \| `"customer"` \| `"tag"` | `none` | Product IFC model: hide downloads from guests (hides links, does not protect files) |

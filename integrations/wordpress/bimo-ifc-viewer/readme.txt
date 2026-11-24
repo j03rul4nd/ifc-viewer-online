@@ -89,7 +89,7 @@ Attributes:
 * `map` (1, or layers such as `terrain,buildings`), `look` (daylight, maquette, golden, night, blueprint, dawn).
 * `solar` (`MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM`, site time), `moon` (1), `analysis` (for example `year`, `year:passive`, `summer:sun`), `site` (`lat,lon`).
 * `drawings` (`plan`), `explore` (1, 0).
-* `toolbar` (1, 0), `tools` (`validate`, `measure`, both comma-separated, or `none`), `panels` (properties, scene, measurement, section, plans, map, solar, flood, devices, pointcloud, mesh, comma-separated, or `none`), `autoframe` (1, 0), `fill` (0.2–0.98, or a percentage 20–98), `layers` (https URL to a layers document), `rule` (a validation rule id such as `RULE_MISSING_NAME`), `flood` (`shower`, `storm`, `intense` or `extreme`, then optional `1m`/`2m`/`5m`, `free`/`closed`, `sealed`/`compacted`/`loam`/`sandy`), `fullscreen` (1: a full-screen button).
+* `toolbar` (1, 0), `tools` (`validate`, `measure`, both comma-separated, or `none`), `panels` (properties, scene, measurement, section, plans, map, solar, flood, devices, pointcloud, mesh, comma-separated, or `none`), `autoframe` (1, 0), `grid` (0: hide the ground grid), `finish` (`daylight`, `clay`), `fill` (0.2–0.98, or a percentage 20–98), `layers` (https URL to a layers document), `rule` (a validation rule id such as `RULE_MISSING_NAME`), `flood` (`shower`, `storm`, `intense` or `extreme`, then optional `1m`/`2m`/`5m`, `free`/`closed`, `sealed`/`compacted`/`loam`/`sandy`), `fullscreen` (1: a full-screen button).
 
 Click to load (no request to ifcvieweronline.eu until the visitor clicks):
 

@@ -209,6 +209,13 @@ export interface IfcViewerOptions {
     aspectRatio?: string;
     /** Slow idle orbit once the model is in (`true` = 6°/s, or degrees per second). Stops at the first touch. */
     turntable?: boolean | number;
+    /** `false` hides the ground grid under the model. Default: shown. Since v1.20. */
+    grid?: boolean;
+    /**
+     * `'daylight'`: the IFC colours under soft daylight; `'clay'`: one sober matte
+     * tone, same light. Default `'original'`: as authored, studio light. Since v1.20.
+     */
+    finish?: 'clay' | 'daylight' | 'original';
     /**
      * Stop rendering while the figure is off screen — a post with several
      * viewers stays light. Default `true` with `ui: 'article'`.
@@ -285,6 +292,226 @@ export interface ElementSelectedEvent {
     name: string;
     /** The element's IFC GlobalId — map a pick to your own records. Since v1.18.0. */
     globalId?: string | null;
+}
+/** Quantities in SI: metres, square metres, cubic metres, kilograms; null when the model gives none. */
+export interface ProductQuantities {
+    length: number | null;
+    area: number | null;
+    volume: number | null;
+    weight: number | null;
+}
+/** Outer width x depth x height in metres, and where it came from. */
+export interface ProductDimensions {
+    w: number | null;
+    d: number | null;
+    h: number | null;
+    unit: 'm';
+    source: 'metafield' | 'ifc' | 'bbox';
+}
+/** One row of getProductData(): the elements of one IFC class and type. */
+export interface ProductDataType extends ProductQuantities {
+    ifcClass: string;
+    type: string;
+    count: number;
+    missingWeight: number;
+    materials: string[];
+    /** "Pset.Property" → value. */
+    properties: Record<string, string>;
+    dimensions: ProductDimensions | null;
+}
+/** What getProductData() returns: specs and quantities of the loaded model(s). */
+export interface ProductData {
+    elementCount: number;
+    truncated: boolean;
+    classes: Array<{
+        ifcClass: string;
+        count: number;
+    }>;
+    types: ProductDataType[];
+    materials: Array<{
+        name: string;
+        count: number;
+    }>;
+    totals: ProductQuantities & {
+        count: number;
+    };
+    /** IFC base quantities / psets for a single element, else an oriented box of the geometry. */
+    dimensions: ProductDimensions | null;
+    units: {
+        length: 'm';
+        area: 'm2';
+        volume: 'm3';
+        weight: 'kg';
+    };
+    /** IfcSpace schedule per storey (since 1.19); null when the model has no spaces. */
+    rooms?: ProductRoomSchedule | null;
+    /** Classification codes (Uniclass 2015, OmniClass, MasterFormat…) by system (since 1.19); null when none. */
+    classifications?: ProductClassifications | null;
+    /** EPD / carbon indicators the model declares (Pset_EnvironmentalImpact*, manufacturer psets); null when none. */
+    sustainability?: ProductSustainability | null;
+    /** Bill of quantities and a steel table by profile. */
+    takeoff?: ProductTakeoff;
+}
+/** Where a takeoff length / weight came from; volume = volume x 7850 (steel only). */
+export type ProductTakeoffSource = 'qto' | 'tekla' | 'revit' | 'advance' | 'volume' | 'geometry';
+/** One BOQ row: elements of one class, type, material, steel profile and storey. SI units. */
+export interface ProductTakeoffRow extends ProductQuantities {
+    key: string;
+    ifcClass: string;
+    type: string;
+    material: string | null;
+    profile: string | null;
+    storey: string | null;
+    count: number;
+    /** Elements of the row with no value for each quantity. */
+    missing: {
+        length: number;
+        area: number;
+        volume: number;
+        weight: number;
+    };
+    sources: {
+        length: ProductTakeoffSource[];
+        weight: ProductTakeoffSource[];
+    };
+}
+/** Steel parts of one profile: count, metres, kg/m, kg. */
+export interface ProductSteelProfileRow {
+    /** null: no readable profile. */
+    profile: string | null;
+    count: number;
+    length: number;
+    kgPerM: number | null;
+    weight: number;
+    missingWeight: number;
+    missingLength: number;
+    /** Some weight is volume x 7850. */
+    estimated: boolean;
+}
+export interface ProductTakeoff {
+    rows: ProductTakeoffRow[];
+    steel: ProductSteelProfileRow[];
+    totals: ProductQuantities & {
+        count: number;
+    };
+    /** Rows past the cap (1000) are folded into one "(other)" row, or the element read was truncated. */
+    truncated: boolean;
+    units: {
+        length: 'm';
+        area: 'm2';
+        volume: 'm3';
+        weight: 'kg';
+    };
+}
+/** One code in getProductData().classifications. */
+export interface ProductClassificationEntry {
+    system: string;
+    code: string | null;
+    title: string | null;
+    /** Elements carrying this code. */
+    count: number;
+    /** ifc: IfcClassificationReference; pset: a tool parameter such as Revit "Assembly Code". */
+    source: 'ifc' | 'pset';
+    /** The system was guessed from the code's shape. */
+    systemGuessed?: boolean;
+}
+/** One indicator in getProductData().sustainability, as the file declares it (never estimated). */
+export interface ProductSustainabilityIndicator {
+    key: 'gwp' | 'gwpA1A3' | 'energy' | 'energyRenewable' | 'energyNonRenewable' | 'water' | 'wasteHazardous' | 'wasteNonHazardous' | 'acidification' | 'eutrophication' | 'ozoneDepletion';
+    value: number;
+    unit: string | null;
+    basis: 'perUnit' | 'element' | 'unknown';
+    stage: string | null;
+    /** ifc: Pset_EnvironmentalImpactIndicators/Values; pset: a manufacturer or LCA-tool parameter. */
+    source: 'ifc' | 'pset';
+    pset: string;
+    property: string;
+    count: number;
+    varies: boolean;
+}
+export interface ProductSustainability {
+    indicators: ProductSustainabilityIndicator[];
+    declaredUnit: string | null;
+    /** url is https-only. */
+    epd: {
+        number: string | null;
+        programme: string | null;
+        url: string | null;
+        validUntil: string | null;
+        source: 'ifc' | 'pset';
+    } | null;
+    materials: string[];
+    withData: number;
+    elements: number;
+    fromPsets: boolean;
+    truncated: boolean;
+}
+export interface ProductClassifications {
+    systems: Array<{
+        system: string;
+        edition: string | null;
+        count: number;
+        entries: ProductClassificationEntry[];
+    }>;
+    classified: number;
+    elements: number;
+    fromPsets: boolean;
+    /** More codes than kept (cap 1000) or the element read was truncated. */
+    truncated: boolean;
+}
+/** One IfcSpace in getProductData().rooms. Areas in m², heights in m. */
+export interface ProductRoom {
+    modelId: string | null;
+    expressId: number | null;
+    globalId: string | null;
+    name: string | null;
+    longName: string | null;
+    number: string | null;
+    label: string;
+    area: number | null;
+    /** net / gross: base quantities; pset: a property; geometry: the space's box footprint (an upper bound). */
+    areaSource: 'net' | 'gross' | 'pset' | 'geometry' | null;
+    netArea: number | null;
+    grossArea: number | null;
+    height: number | null;
+    storey: string | null;
+    /** Guessed from the names. */
+    kind: 'bedroom' | 'bathroom' | null;
+}
+export interface ProductRoomTotals {
+    count: number;
+    area: number | null;
+    netArea: number | null;
+    grossArea: number | null;
+}
+export interface ProductRoomSchedule {
+    storeys: Array<ProductRoomTotals & {
+        name: string | null;
+        elevation: number | null;
+        rooms: ProductRoom[];
+    }>;
+    totals: ProductRoomTotals;
+    bedrooms: number;
+    bathrooms: number;
+    /** The bedroom / bathroom counts are inferred from room names. */
+    inferred: true;
+    geometryAreas: boolean;
+    /** More spaces than were read (cap 2000). */
+    truncated: boolean;
+    /** A length unit could not be read; those values were left out rather than taken as metres. */
+    unknownUnits: boolean;
+    units: {
+        area: 'm2';
+        length: 'm';
+    };
+}
+export interface ProductDataQuery {
+    /** One model; default all loaded. */
+    modelId?: string;
+    /** Properties to keep per type, by name or "Pset.Name"; default Pset_*Common and manufacturer psets. */
+    properties?: string[];
+    /** Read at most this many elements (default 20000); `truncated` says when it cut. */
+    maxElements?: number;
 }
 /** An element as findElements() lists it. Since v1.18.0. */
 export interface ElementSummary {
@@ -460,8 +687,11 @@ export interface EirCondition {
  * the declared performance of EN 14351-1 windows and external doors (wind
  * load, watertightness, acoustics, U-value, g / τv, manufacturer and product
  * code) on standard IFC property sets; type properties count. Since v1.18.0.
+ * `builtin-nbs-bos` checks the machine-checkable information clauses of the
+ * NBS BIM Object Standard (Pset_<Class>Common + Reference, classification and
+ * Uniclass 2015, manufacturer data) per product class. Since v1.19.0.
  */
-export type BuiltinEirProfileId = 'builtin-hospital-lod300' | 'builtin-iso19650-delivery' | 'builtin-lod200' | 'builtin-lod400' | 'builtin-cobie' | 'builtin-simba21-general' | 'builtin-en14351-1';
+export type BuiltinEirProfileId = 'builtin-hospital-lod300' | 'builtin-iso19650-delivery' | 'builtin-lod200' | 'builtin-lod400' | 'builtin-cobie' | 'builtin-simba21-general' | 'builtin-en14351-1' | 'builtin-nbs-bos';
 /**
  * A single EIR validation rule. `entity` is the IFC class it applies to;
  * `where` narrows it to the elements with a property value, and `optional`
@@ -963,6 +1193,36 @@ export interface PresentationVideo {
     mimeType: string;
     sizeBytes: number;
 }
+/** A model exported by exportModel(): built in the visitor's browser. Since v1.19.0. */
+export interface ModelFile {
+    /** The file bytes. Transferred, not copied. */
+    bytes: ArrayBuffer;
+    mimeType: string;
+    sizeBytes: number;
+    /** The model's file name with the new extension, e.g. `chair.glb`. */
+    fileName: string;
+    /** For AR exports: meshes after merging by material, triangles, parts left out by the cap. */
+    stats?: {
+        meshes: number;
+        triangles: number;
+        droppedParts: number;
+    };
+}
+/** Options of exportModel(). `ar` and `usdz` since v1.19.0. */
+export interface ExportModelOptions {
+    /** `glb` (default) or `usdz` (iOS Quick Look; always the AR model). */
+    format?: 'glb' | 'usdz';
+    modelId?: string;
+    /**
+     * AR model for phones: visible physical elements only (no spaces/openings),
+     * one mesh per material, y-up metres, base centre at the origin.
+     */
+    ar?: boolean;
+    /** AR only: leave out the smallest parts until the model fits this many triangles. */
+    maxTriangles?: number;
+    /** AR only: keep IfcSite geometry (terrain). Default false. */
+    includeSite?: boolean;
+}
 export interface PresentationProgressEvent {
     stage: 'generate' | 'export';
     label?: string;
@@ -1402,7 +1662,7 @@ export declare class IfcViewer {
     static readonly SUPPORTED_LANGUAGES: string[];
     /** Create a viewer and resolve once it is ready to accept commands. */
     static create(target: string | HTMLElement, options?: IfcViewerOptions): Promise<IfcViewer>;
-    readonly version = "1.19.0";
+    readonly version = "1.20.0";
     readonly iframe: HTMLIFrameElement;
     /** The box the article kit draws around the frame (poster, aspect ratio, expand button), if any. */
     readonly box: HTMLDivElement | null;
@@ -1567,6 +1827,17 @@ export declare class IfcViewer {
      * ```
      */
     findElements(query?: ElementQuery): Promise<ElementSummary[]>;
+    /**
+     * Specs and quantities of the loaded model(s) for a product page: counts per
+     * IFC class, one row per type with key properties, materials, and length /
+     * area / volume / weight (base quantities, then authoring-tool psets, then
+     * volume x 7850 for steel only). Read in batches inside the viewer.
+     *
+     * ```js
+     * const data = await viewer.getProductData({ properties: ['FireRating'] })
+     * ```
+     */
+    getProductData(query?: ProductDataQuery): Promise<ProductData>;
     /**
      * The validation result on screen, or null.
      *
@@ -1942,6 +2213,15 @@ export declare class IfcViewer {
         resolution?: 720 | 1080 | 1440;
         music?: boolean;
     }): Promise<PresentationVideo>;
+    /**
+     * Export a loaded model as GLB, built in the visitor's browser from the IFC
+     * geometry (no server). Defaults to the first model. Since v1.19.0.
+     * `{ ar: true }` makes a phone-sized AR model; `{ format: 'usdz' }` the iOS
+     * Quick Look file of it.
+     *
+     *   const { bytes, fileName } = await viewer.exportModel()
+     */
+    exportModel(opts?: ExportModelOptions): Promise<ModelFile>;
     /** Close Clip Studio (the generated project is kept until the next one). */
     closePresentation(): Promise<void>;
     /** The recipes, templates, formats and palettes Cover Studio offers. */
@@ -2065,6 +2345,7 @@ export declare class IfcViewerElement extends HTMLElement {
     addFromUrl(url: string, name?: string): Promise<ModelLoadedEvent>;
     select(element: number | string, modelId?: string): void;
     findElements(query?: ElementQuery): Promise<ElementSummary[]>;
+    getProductData(query?: ProductDataQuery): Promise<ProductData>;
     isolate(ifcType?: string): void;
     activate(): void;
     frame(options?: FrameOptions): Promise<{
@@ -2142,6 +2423,7 @@ export declare class IfcViewerElement extends HTMLElement {
         resolution?: 720 | 1080 | 1440;
         music?: boolean;
     }): Promise<PresentationVideo>;
+    exportModel(opts?: ExportModelOptions): Promise<ModelFile>;
     createCover(opts?: CoverOptions): Promise<CoverState>;
     exportCover(opts?: {
         type?: 'png' | 'jpeg' | 'pdf' | 'pptx' | 'zip';

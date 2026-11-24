@@ -21,6 +21,7 @@ import { SDK_DOCS_V115 } from './sdk-docs-v115.mjs'
 import { SDK_DOCS_V117 } from './sdk-docs-v117.mjs'
 import { SDK_DOCS_V118 } from './sdk-docs-v118.mjs'
 import { SDK_DOCS_V119 } from './sdk-docs-v119.mjs'
+import { SDK_DOCS_V120 } from './sdk-docs-v120.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = resolve(ROOT, 'public/sdk')
@@ -553,6 +554,7 @@ for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V115[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V117[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V118[l])
 for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V119[l])
+for (const l of LANGS) Object.assign(T[l], SDK_DOCS_V120[l])
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -811,6 +813,8 @@ const OPTIONS = [
   ['site', '{ lat, lon }', '—', 'optSite'],
   ['explore', 'boolean', 'preset', 'optExplore'],
   ['drawings', "boolean | 'plan'", 'false', 'optDrawings'],
+  ['grid', 'boolean', 'true', 'optGrid'],
+  ['finish', "'daylight' | 'clay'", '—', 'optFinish'],
   ['lazy', "boolean | 'visible'", 'false', 'optLazy'],
   ['poster · posterTitle · posterText · launchLabel', 'string', '—', 'optPoster'],
   ['aspectRatio', "string ('16/10')", '—', 'optAspect'],
@@ -1328,6 +1332,7 @@ function page(lang) {
     callout(tr('verCompatT'), tr('verCompatB')) +
     (sriSnippet ? '<p class="card-t">' + esc(tr('verSriT')) + '</p><p class="muted">' + esc(tr('verSriB')) + '</p>' + code(sriSnippet, 'html', 'HTML') : '') +
     '<h3 id="changelog">' + esc(tr('chgTitle')) + '</h3>' +
+    '<p>' + esc(tr('chg120')) + '</p>' +
     '<p>' + esc(tr('chg119')) + '</p>' +
     '<p>' + esc(tr('chg118') + ' ' + tr('chgEn14351')) + '</p>' +
     '</section>'

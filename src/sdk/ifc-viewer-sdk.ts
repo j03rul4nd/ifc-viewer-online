@@ -12,7 +12,7 @@
 // "just works". Override with the `baseUrl` option if you serve it elsewhere.
 //
 // Pin a version in production — the file at a versioned path never changes:
-//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js"
+//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js"
 
 import { appBaseUrlFor } from './base-url'
 
@@ -1473,7 +1473,7 @@ type Listener<T> = (payload: T) => void
 // of EN 14351-1 windows and external doors — and EIR rules gain `where`
 // (only elements with a property value) and `optional`. Pinned builds at
 // /sdk/<version>/.
-const SDK_VERSION = '1.19.0'
+const SDK_VERSION = '1.20.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)

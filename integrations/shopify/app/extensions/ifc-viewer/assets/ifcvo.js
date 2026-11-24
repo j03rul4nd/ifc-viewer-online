@@ -2,7 +2,7 @@
 // block mounts the viewer through the SDK; the explorer, element details, views
 // and Health Score blocks can sit anywhere else on the page and drive it.
 // One page, one viewer: the companion blocks attach to the first one.
-const SDK = 'https://www.ifcvieweronline.eu/sdk/1.19.0/ifc-viewer.es.js'
+const SDK = 'https://www.ifcvieweronline.eu/sdk/1.20.0/ifc-viewer.es.js'
 
 const listeners = new Set()
 /** Listeners per block root, so a removed section takes its own with it. */
