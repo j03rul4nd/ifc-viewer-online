@@ -10,6 +10,7 @@
 
 import type { BlogPost } from '../blog-posts'
 import { INTEGRATION_POSTS_ES } from './integrations-es'
+import { LEAD_POSTS_ES } from './leads-es'
 
 export const BLOG_POSTS_ES_PACK: BlogPost[] = [
   {
@@ -22372,4 +22373,5 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
     translationKey: "common-ifc-model-errors",
   },
   ...INTEGRATION_POSTS_ES,
+  ...LEAD_POSTS_ES,
 ]

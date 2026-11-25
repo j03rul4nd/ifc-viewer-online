@@ -8,6 +8,7 @@
 
 import type { BlogPost } from '../blog-posts'
 import { INTEGRATION_POSTS_CA } from './integrations-ca'
+import { LEAD_POSTS_CA } from './leads-ca'
 
 export const BLOG_POSTS_CA: BlogPost[] = [
   {
@@ -24776,4 +24777,5 @@ export const BLOG_POSTS_CA: BlogPost[] = [
     ],
   },
   ...INTEGRATION_POSTS_CA,
+  ...LEAD_POSTS_CA,
 ]

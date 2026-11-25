@@ -114,6 +114,21 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'IFC PROPERTIES · REAL VIEWER', es: 'PROPIEDADES IFC · VISOR REAL' },
     shortTitle: 'IFC VS GLB',
   },
+  'bim-objects-manufacturer-website': {
+    source: 'integrations/shopify/listing/screenshot-5-variants.png',
+    badge: { en: 'MANUFACTURERS · YOUR OWN SITE', es: 'FABRICANTES · TU PROPIA WEB' },
+    shortTitle: 'BIM OBJECTS, YOUR SITE',
+  },
+  'share-ifc-model-with-client': {
+    source: 'public/blog/images/client-project-page.jpg',
+    badge: { en: 'FREE · NO BIM SOFTWARE', es: 'GRATIS · SIN SOFTWARE BIM' },
+    shortTitle: 'SHARE IFC WITH A CLIENT',
+  },
+  'ifc-viewer-sdk-embed-tutorial': {
+    source: 'integrations/shopify/listing/screenshot-2-inspect.png',
+    badge: { en: 'SDK 1.20 · TUTORIAL', es: 'SDK 1.20 · TUTORIAL' },
+    shortTitle: 'IFC VIEWER SDK',
+  },
   'ifc-point-cloud-scan-to-bim': {
     source: 'public/blog/images/scan-to-bim-ifc-point-cloud-alignment.jpg',
     publicCopy: 'cras-ifc-tls-point-cloud-real-alignment.jpg',

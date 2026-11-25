@@ -23,7 +23,10 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const root = resolve(__dirname, '..')
-const posts = readFileSync(resolve(root, 'src/lib/blog-posts.ts'), 'utf8')
+// Posts kept in their own source files are samples too.
+const posts = ['src/lib/blog-posts.ts', 'src/lib/blog-leads-en.ts']
+  .map((f) => readFileSync(resolve(root, f), 'utf8'))
+  .join(String.fromCharCode(10))
 const sdk = readFileSync(resolve(root, 'src/sdk/ifc-viewer-sdk.ts'), 'utf8')
 
 /** Every `viewer.<name>(` in the published samples. */
