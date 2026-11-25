@@ -1,7 +1,7 @@
 // Shopify billing Worker (D-327). Cloudflare Workers FREE plan only: see DEPLOY.md.
 // Nothing here needs Workers Paid: one KV namespace, one daily cron, workers.dev only.
 {
-  "name": "ifcvo-shopify-billing",
+  "name": "ifcvo-billing",
   "main": "src/index.js",
   "compatibility_date": "2026-10-23",
   // workers.dev only, no routes or custom domains, so no zone add-on can attach to it.
