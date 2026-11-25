@@ -7,6 +7,7 @@
 // file from app code, or the whole pack lands in the main bundle.
 
 import type { BlogPost } from '../blog-posts'
+import { INTEGRATION_POSTS_JA } from './integrations-ja'
 
 export const BLOG_POSTS_JA: BlogPost[] = [
   {
@@ -219,6 +220,8 @@ export const BLOG_POSTS_JA: BlogPost[] = [
         to: "bim-models-on-wordpress-website",
         why: "統合モデル、地図、日照検討、平面切断、施主向けプレゼンを、ショートコード例つきで。",
       },
+      { type: "related", to: "wordpress-bim-viewer-plugins-compared", why: "このプラグインと、WordPressでBIMを表示するほかの方法との比較。" },
+      { type: "related", to: "ifc-shopify-product-viewer", why: "同じビューアをShopifyの商品ページで、商品ごと・バリエーションごとに。" },
       { type: "tool", id: "embed", why: "WordPress以外でも、iframe 1つでどのサイトにもビューアを埋め込めます。" },
     ],
     lang: "ja",
@@ -431,6 +434,7 @@ export const BLOG_POSTS_JA: BlogPost[] = [
       },
       { type: "related", to: "ifc-viewer-wordpress-plugin", why: "プラグインのインストール、ブロック、ショートコード、データの送信先。" },
       { type: "related", to: "ifc-sun-shadow-study-online", why: "IFCモデルで日照・日影検討がどう機能するか。" },
+      { type: "related", to: "ifc-vs-glb-product-pages", why: "商品ページにGLBだけでなくIFCが必要な理由。" },
       { type: "tool", id: "viewer", why: "公開前に、ビューアでモデルを試してみましょう。" },
     ],
     lang: "ja",
@@ -22521,4 +22525,5 @@ export const BLOG_POSTS_JA: BlogPost[] = [
       },
     ],
   },
+  ...INTEGRATION_POSTS_JA,
 ]

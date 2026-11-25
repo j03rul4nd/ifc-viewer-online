@@ -7,6 +7,7 @@
 // file from app code, or the whole pack lands in the main bundle.
 
 import type { BlogPost } from '../blog-posts'
+import { INTEGRATION_POSTS_ZH } from './integrations-zh'
 
 export const BLOG_POSTS_ZH: BlogPost[] = [
   {
@@ -188,6 +189,8 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
         ],
       },
       { type: "related", to: "bim-models-on-wordpress-website", why: "整合模型、地图、日照分析、平面剖切和面向客户的展示，附简码示例。" },
+      { type: "related", to: "wordpress-bim-viewer-plugins-compared", why: "这个插件与在 WordPress 上展示 BIM 的其他方式对比。" },
+      { type: "related", to: "ifc-shopify-product-viewer", why: "同一个查看器用于 Shopify 商品页，按产品和变体展示。" },
       { type: "tool", id: "embed", why: "不用 WordPress？用一个 iframe 就能把查看器嵌入任何网站。" },
     ],
     lang: "zh",
@@ -388,6 +391,7 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       },
       { type: "related", to: "ifc-viewer-wordpress-plugin", why: "安装插件、区块、简码，以及数据发送到哪里。" },
       { type: "related", to: "ifc-sun-shadow-study-online", why: "IFC 模型的日照与阴影分析是如何实现的。" },
+      { type: "related", to: "ifc-vs-glb-product-pages", why: "为什么商品页需要 IFC，而不只是 GLB。" },
       { type: "tool", id: "viewer", why: "发布前，先在查看器中试试你的模型。" },
     ],
     lang: "zh",
@@ -21329,4 +21333,5 @@ export const BLOG_POSTS_ZH: BlogPost[] = [
       },
     ],
   },
+  ...INTEGRATION_POSTS_ZH,
 ]

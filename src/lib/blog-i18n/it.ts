@@ -7,6 +7,7 @@
 // file from app code, or the whole pack lands in the main bundle.
 
 import type { BlogPost } from '../blog-posts'
+import { INTEGRATION_POSTS_IT } from './integrations-it'
 
 export const BLOG_POSTS_IT: BlogPost[] = [
   {
@@ -234,6 +235,8 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         to: "bim-models-on-wordpress-website",
         why: "Modelli federati, mappa, studi solari, sezioni in pianta e presentazioni per il cliente, con ricette di shortcode.",
       },
+      { type: "related", to: "wordpress-bim-viewer-plugins-compared", why: "Come si confronta il plugin con gli altri modi per mostrare il BIM su WordPress." },
+      { type: "related", to: "ifc-shopify-product-viewer", why: "Lo stesso visualizzatore nelle pagine prodotto Shopify, per prodotto e variante." },
       {
         type: "tool",
         id: "embed",
@@ -482,6 +485,7 @@ export const BLOG_POSTS_IT: BlogPost[] = [
         to: "ifc-sun-shadow-study-online",
         why: "Come funzionano gli studi di sole e ombre su un modello IFC.",
       },
+      { type: "related", to: "ifc-vs-glb-product-pages", why: "Perché una pagina prodotto ha bisogno dell'IFC e non solo di un GLB." },
       { type: "tool", id: "viewer", why: "Prova il tuo modello nel visualizzatore prima di pubblicarlo." },
     ],
     lang: "it",
@@ -24826,4 +24830,5 @@ export const BLOG_POSTS_IT: BlogPost[] = [
       },
     ],
   },
+  ...INTEGRATION_POSTS_IT,
 ]

@@ -7,6 +7,7 @@
 // file from app code, or the whole pack lands in the main bundle.
 
 import type { BlogPost } from '../blog-posts'
+import { INTEGRATION_POSTS_TH } from './integrations-th'
 
 export const BLOG_POSTS_TH: BlogPost[] = [
   {
@@ -230,6 +231,8 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         to: "bim-models-on-wordpress-website",
         why: "รวมโมเดล แผนที่ การศึกษาแสงแดด ภาพตัดแปลน และการนำเสนอลูกค้า พร้อมสูตรชอร์ตโค้ด",
       },
+      { type: "related", to: "wordpress-bim-viewer-plugins-compared", why: "ปลั๊กอินนี้เทียบกับวิธีอื่นในการแสดง BIM บน WordPress อย่างไร" },
+      { type: "related", to: "ifc-shopify-product-viewer", why: "ตัวแสดงเดียวกันบนหน้าสินค้า Shopify แยกตามสินค้าและตัวเลือก" },
       {
         type: "tool",
         id: "embed",
@@ -475,6 +478,7 @@ export const BLOG_POSTS_TH: BlogPost[] = [
         to: "ifc-sun-shadow-study-online",
         why: "การศึกษาแสงแดดและเงาบนโมเดล IFC ทำงานอย่างไร",
       },
+      { type: "related", to: "ifc-vs-glb-product-pages", why: "ทำไมหน้าสินค้าต้องใช้ IFC ไม่ใช่แค่ GLB" },
       { type: "tool", id: "viewer", why: "ลองโมเดลของคุณในโปรแกรมดูก่อนเผยแพร่" },
     ],
     lang: "th",
@@ -24256,4 +24260,5 @@ export const BLOG_POSTS_TH: BlogPost[] = [
       },
     ],
   },
+  ...INTEGRATION_POSTS_TH,
 ]

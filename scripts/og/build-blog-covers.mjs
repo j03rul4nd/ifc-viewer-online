@@ -99,6 +99,21 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'WORDPRESS PLUGIN · ON THE MAP', es: 'PLUGIN DE WORDPRESS · EN EL MAPA' },
     shortTitle: 'BIM ON YOUR WEBSITE',
   },
+  'ifc-shopify-product-viewer': {
+    source: 'integrations/shopify/listing/screenshot-1-product-page.png',
+    badge: { en: 'SHOPIFY · IN APP STORE REVIEW', es: 'SHOPIFY · EN REVISIÓN' },
+    shortTitle: 'IFC ON SHOPIFY',
+  },
+  'wordpress-bim-viewer-plugins-compared': {
+    source: 'public/blog/images/wordpress-ifc-article-embed.jpg',
+    badge: { en: 'WORDPRESS · 4 OPTIONS COMPARED', es: 'WORDPRESS · 4 OPCIONES' },
+    shortTitle: 'BIM ON WORDPRESS',
+  },
+  'ifc-vs-glb-product-pages': {
+    source: 'integrations/shopify/listing/screenshot-2-inspect.png',
+    badge: { en: 'IFC PROPERTIES · REAL VIEWER', es: 'PROPIEDADES IFC · VISOR REAL' },
+    shortTitle: 'IFC VS GLB',
+  },
   'ifc-point-cloud-scan-to-bim': {
     source: 'public/blog/images/scan-to-bim-ifc-point-cloud-alignment.jpg',
     publicCopy: 'cras-ifc-tls-point-cloud-real-alignment.jpg',
