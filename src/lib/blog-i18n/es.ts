@@ -11,6 +11,7 @@
 import type { BlogPost } from '../blog-posts'
 import { INTEGRATION_POSTS_ES } from './integrations-es'
 import { LEAD_POSTS_ES } from './leads-es'
+import { MCP_TOOLS_POSTS_ES } from './mcp-tools-es'
 
 export const BLOG_POSTS_ES_PACK: BlogPost[] = [
   {
@@ -22374,4 +22375,5 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
   },
   ...INTEGRATION_POSTS_ES,
   ...LEAD_POSTS_ES,
+  ...MCP_TOOLS_POSTS_ES,
 ]

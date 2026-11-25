@@ -114,6 +114,21 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'IFC PROPERTIES · REAL VIEWER', es: 'PROPIEDADES IFC · VISOR REAL' },
     shortTitle: 'IFC VS GLB',
   },
+  'validate-ifc-locally-no-upload': {
+    source: 'public/blog/images/ifc-model-checker-health-score-issue-in-3d.jpg',
+    badge: { en: 'LOCAL · NOTHING UPLOADED', es: 'EN LOCAL · SIN SUBIR NADA' },
+    shortTitle: 'VALIDATE IFC LOCALLY',
+  },
+  'ids-check-local-workflow': {
+    source: 'public/blog/images/ifc-ids-check-walls-fire-rating-result.jpg',
+    badge: { en: 'IDS · EVERY DELIVERY', es: 'IDS · CADA ENTREGA' },
+    shortTitle: 'IDS ON EVERY DELIVERY',
+  },
+  'ifc-mcp-tools-reference': {
+    source: 'public/blog/images/ifc-mcp-server-drawings-floor-plan.jpg',
+    badge: { en: 'REFERENCE · 10 TOOLS', es: 'REFERENCIA · 10 HERRAMIENTAS' },
+    shortTitle: 'IFC-VIEWER-MCP TOOLS',
+  },
   'bim-objects-manufacturer-website': {
     source: 'integrations/shopify/listing/screenshot-5-variants.png',
     badge: { en: 'MANUFACTURERS · YOUR OWN SITE', es: 'FABRICANTES · TU PROPIA WEB' },
