@@ -9,6 +9,7 @@
 // file from app code, or the whole pack lands in the main bundle.
 
 import type { BlogPost } from '../blog-posts'
+import { INTEGRATION_POSTS_ES } from './integrations-es'
 
 export const BLOG_POSTS_ES_PACK: BlogPost[] = [
   {
@@ -236,6 +237,8 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         to: "bim-models-on-wordpress-website",
         why: "Modelos federados, el mapa, estudios solares, cortes en planta y presentaciones para clientes, con recetas de shortcode.",
       },
+      { type: "related", to: "wordpress-bim-viewer-plugins-compared", why: "Cómo se compara el plugin con las otras formas de mostrar BIM en WordPress." },
+      { type: "related", to: "ifc-shopify-product-viewer", why: "El mismo visor en fichas de producto de Shopify, por producto y variante." },
       {
         type: "tool",
         id: "embed",
@@ -484,6 +487,7 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
         to: "ifc-sun-shadow-study-online",
         why: "Cómo funcionan los estudios de sol y sombra sobre un modelo IFC.",
       },
+      { type: "related", to: "ifc-vs-glb-product-pages", why: "Por qué una ficha de producto necesita el IFC y no solo un GLB." },
       { type: "tool", id: "viewer", why: "Prueba tu modelo en el visor antes de publicarlo." },
     ],
     lang: "es",
@@ -22367,4 +22371,5 @@ export const BLOG_POSTS_ES_PACK: BlogPost[] = [
     lang: "es",
     translationKey: "common-ifc-model-errors",
   },
+  ...INTEGRATION_POSTS_ES,
 ]
