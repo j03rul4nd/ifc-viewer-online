@@ -75,7 +75,7 @@ describe('rendered page', () => {
 
 describe('generated files', () => {
   it.each(INTEGRATIONS_LANGS)('%s: public file is fresh (run npm run seo:integrations)', (lang) => {
-    const file = readFileSync(path.join(ROOT, 'public', integrationsPath(lang), 'index.html'), 'utf-8')
+    const file = readFileSync(path.join(ROOT, 'public', integrationsPath(lang), 'index.html'), 'utf-8').replace(/\r\n/g, '\n')
     expect(file).toBe(renderIntegrationsPage(lang))
   })
   it('sitemap lists every language with its alternates', () => {
