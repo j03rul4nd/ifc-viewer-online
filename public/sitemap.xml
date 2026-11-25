@@ -4795,4 +4795,176 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/pricing/" />
   </url>
   <!-- pricing:end -->
+  <!-- integrations:start (scripts/seo/generate-integrations-page.ts) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/integrations/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/es/integraciones/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/de/integrationen/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/fr/integrations/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/integracoes/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/integrazioni/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/integracions/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/integrations/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/integrations/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/integrations/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+    <xhtml:link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+    <xhtml:link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  </url>
+  <!-- integrations:end -->
 </urlset>

@@ -49,7 +49,8 @@
     "seo:core": "tsx scripts/seo/generate-core-landings.ts",
     "bench:map": "node scripts/geo/map-bench.mjs",
     "seo:solutions": "tsx scripts/seo/generate-solution-landings.ts",
-    "seo:help": "tsx scripts/seo/generate-help-pages.ts"
+    "seo:help": "tsx scripts/seo/generate-help-pages.ts",
+    "seo:integrations": "tsx scripts/seo/generate-integrations-page.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",

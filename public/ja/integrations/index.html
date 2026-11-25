@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>連携：WordPress・Shopify・SDK | IFC Viewer Online</title>
+  <meta name="description" content="IFC ビューアを WordPress、Shopify、自社アプリ、デスクトップツールに。各連携の機能、対象、インストール手順、制限をまとめました。" />
+  <meta name="robots" content="index, follow" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+  <link rel="alternate" hreflang="en" href="https://www.ifcvieweronline.eu/integrations/" />
+  <link rel="alternate" hreflang="es" href="https://www.ifcvieweronline.eu/es/integraciones/" />
+  <link rel="alternate" hreflang="de" href="https://www.ifcvieweronline.eu/de/integrationen/" />
+  <link rel="alternate" hreflang="fr" href="https://www.ifcvieweronline.eu/fr/integrations/" />
+  <link rel="alternate" hreflang="pt" href="https://www.ifcvieweronline.eu/pt/integracoes/" />
+  <link rel="alternate" hreflang="it" href="https://www.ifcvieweronline.eu/it/integrazioni/" />
+  <link rel="alternate" hreflang="ca" href="https://www.ifcvieweronline.eu/ca/integracions/" />
+  <link rel="alternate" hreflang="zh" href="https://www.ifcvieweronline.eu/zh/integrations/" />
+  <link rel="alternate" hreflang="ja" href="https://www.ifcvieweronline.eu/ja/integrations/" />
+  <link rel="alternate" hreflang="th" href="https://www.ifcvieweronline.eu/th/integrations/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/integrations/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/ja/integrations/" />
+  <meta property="og:title" content="連携：WordPress・Shopify・SDK | IFC Viewer Online" />
+  <meta property="og:description" content="IFC ビューアを WordPress、Shopify、自社アプリ、デスクトップツールに。各連携の機能、対象、インストール手順、制限をまとめました。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image-ja.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <script>try{var t=localStorage.getItem('lp-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://www.ifcvieweronline.eu/ja/integrations/","url":"https://www.ifcvieweronline.eu/ja/integrations/","name":"連携：WordPress・Shopify・SDK | IFC Viewer Online","description":"IFC ビューアを WordPress、Shopify、自社アプリ、デスクトップツールに。各連携の機能、対象、インストール手順、制限をまとめました。","inLanguage":"ja","isPartOf":{"@id":"https://www.ifcvieweronline.eu/"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ホーム","item":"https://www.ifcvieweronline.eu/ja/"},{"@type":"ListItem","position":2,"name":"連携","item":"https://www.ifcvieweronline.eu/ja/integrations/"}]},{"@type":"SoftwareApplication","@id":"https://www.ifcvieweronline.eu/ja/integrations/#wordpress","name":"Bimo IFC Viewer","description":"投稿や固定ページにインタラクティブな 3D IFC モデルを表示するブロックと [ifc_viewer] ショートコード。","applicationCategory":"WebApplication","operatingSystem":"WordPress","url":"https://wordpress.org/plugins/bimo-ifc-viewer/","inLanguage":"ja","publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu/"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}},{"@type":"SoftwareApplication","@id":"https://www.ifcvieweronline.eu/ja/integrations/#shopify","name":"IFC Viewer Online: Shopify アプリ","description":"商品やバリエーションごとの IFC モデル、モデルから読み取った仕様表、商品ページでのファイルダウンロード。","applicationCategory":"BusinessApplication","operatingSystem":"Shopify","url":"https://github.com/j03rul4nd/ifc-viewer-online/tree/main/integrations/shopify","inLanguage":"ja","publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu/"}},{"@type":"SoftwareApplication","@id":"https://www.ifcvieweronline.eu/ja/integrations/#sdk","name":"IFC Viewer Online: JavaScript SDK","description":"自社の Web アプリにビューアを組み込み、コードから IFC バイトを読み込む。選択・色・カメラのイベントと API 付き。","applicationCategory":"DeveloperApplication","operatingSystem":"Web browser","url":"https://www.ifcvieweronline.eu/sdk/","inLanguage":"ja","publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu/"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}},{"@type":"SoftwareApplication","@id":"https://www.ifcvieweronline.eu/ja/integrations/#embed","name":"IFC Viewer Online: 埋め込み（iframe）","description":"iframe を 1 つ貼るだけで任意のページにモデルを表示。カメラ、色、パネルは埋め込みビルダーで設定。","applicationCategory":"WebApplication","operatingSystem":"Web browser","url":"https://www.ifcvieweronline.eu/embed/","inLanguage":"ja","publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu/"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}},{"@type":"SoftwareApplication","@id":"https://www.ifcvieweronline.eu/ja/integrations/#mcp","name":"IFC Viewer Online: デスクトップツール用ローカルサーバー（MCP）","description":"Model Context Protocol に対応したデスクトップアプリやコードエディタから、IFC の検証、IDS チェック、3D 表示ができるローカルサーバー。","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","url":"https://github.com/j03rul4nd/ifc-viewer-online/tree/main/mcp","inLanguage":"ja","publisher":{"@type":"Organization","name":"IFC Viewer Online","url":"https://www.ifcvieweronline.eu/"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}]}</script>
+  <style>
+:root{
+  --canvas:#100f0c;--panel:#181714;--raised:#21201d;--line:#34332e;
+  --text-3:#94928d;--text-2:#b2b1ab;--text:#ecebe7;
+  --accent:#0a8481;--on-accent:#ffffff;--accent-text:#55cac3;--warn:#f2af48;
+  --pick:rgba(85,202,195,.08);--scrim:rgba(0,0,0,.6);
+  --t-s:13px;--t-b:16px;--t-l:18px;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --canvas:#f4f3f0;--panel:#fefdfc;--raised:#e9e8e4;--line:#d5d4d0;
+  --text-3:#65635e;--text-2:#4e4d48;--text:#1c1b16;
+  --accent:#00696a;--on-accent:#ffffff;--accent-text:#00696a;--warn:#915c08;
+  --pick:rgba(0,105,106,.07);--scrim:rgba(28,27,22,.45);
+}}
+:root[data-theme="light"]{
+  --canvas:#f4f3f0;--panel:#fefdfc;--raised:#e9e8e4;--line:#d5d4d0;
+  --text-3:#65635e;--text-2:#4e4d48;--text:#1c1b16;
+  --accent:#00696a;--on-accent:#ffffff;--accent-text:#00696a;--warn:#915c08;
+  --pick:rgba(0,105,106,.07);--scrim:rgba(28,27,22,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--canvas);color:var(--text);font:400 var(--t-b)/1.55 'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-text-size-adjust:100%}
+body{background:var(--canvas);min-height:100vh}
+a{color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:8px;z-index:9;background:var(--panel);padding:8px 12px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+@media (min-width:720px){.wrap{padding:0 28px}}
+h1,h2,h3{font-weight:650;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(28px,4.4vw,44px);max-width:22ch}
+h2{font-size:clamp(22px,2.6vw,28px)}
+h3{font-size:var(--t-l)}
+.meta,.sub,.note{color:var(--text-2);font-size:var(--t-s)}
+.sub{font-size:var(--t-b);max-width:62ch;margin-top:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border-radius:8px;font:inherit;font-size:var(--t-s);font-weight:600;text-decoration:none;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.btn-main{background:var(--accent);color:var(--on-accent)}
+.btn-main:hover{filter:brightness(1.08)}
+.btn-quiet{background:none;color:var(--text);border-color:var(--line)}
+.btn-quiet:hover{border-color:var(--text-3)}
+
+.top{border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px}
+.logo{color:var(--text);font-weight:650;text-decoration:none;font-size:var(--t-s)}
+.top nav{display:flex;align-items:center;gap:16px;font-size:var(--t-s)}
+.top nav a:not(.btn){color:var(--text-2);text-decoration:none}
+.top nav a:not(.btn):hover{color:var(--text)}
+.theme{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--text-2);cursor:pointer}
+@media (max-width:719px){.hide-s{display:none}}
+
+.hero{padding-top:56px;padding-bottom:8px}
+.lead{color:var(--text-2);max-width:62ch;margin-top:16px}
+.status{display:flex;gap:10px;align-items:baseline;margin-top:18px;font-size:var(--t-s);color:var(--text-2);max-width:62ch}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--warn);transform:translateY(-1px)}
+
+.pick{padding-top:36px}
+.pick fieldset{border:0}
+.pick legend{font-weight:650;font-size:var(--t-l);margin-bottom:12px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{position:relative}
+.opts input,.show input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.opts span{display:block;padding:9px 14px;border:1px solid var(--line);border-radius:999px;font-size:var(--t-s);color:var(--text-2);background:var(--panel)}
+.opts input:hover+span{border-color:var(--text-3);color:var(--text)}
+.opts input:checked+span{border-color:var(--accent-text);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent-text)}
+.opts input:focus-visible+span,.show input:focus-visible+span{outline:2px solid var(--accent-text);outline-offset:2px}
+.answers{min-height:24px;margin-top:14px}
+.answer{font-size:var(--t-b)}
+.answer a{white-space:nowrap;font-weight:600}
+
+.sec{padding-top:64px}
+.cmp{width:100%;border-collapse:separate;border-spacing:0;margin-top:24px;table-layout:fixed}
+.cmp col.c-label{width:34%}
+.cmp thead th,.cmp thead td{position:sticky;top:0;z-index:2;background:var(--canvas);vertical-align:top;text-align:left;padding:16px 14px 18px;border-bottom:1px solid var(--line)}
+.cmp thead th{font-weight:400}
+.plan-name{display:block;font-weight:650;font-size:var(--t-l)}
+.cmp .price{margin-top:4px;font-size:var(--t-b)}
+.cmp .price strong{font-weight:600}
+.cmp .who{margin:6px 0 14px}
+.cmp tbody th,.cmp td{padding:14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:var(--t-s)}
+.cmp tbody th{font-weight:500;color:var(--text)}
+.cmp td{color:var(--text)}
+.note{display:block;font-weight:400;margin-top:4px;max-width:46ch}
+.yes{color:var(--accent-text);font-weight:700}
+.no{color:var(--text-3)}
+.grp-h th{padding:28px 0 0!important;border-bottom:1px solid var(--line)!important}
+.grp-h button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;padding:0 14px 10px;font-weight:650;font-size:var(--t-s);color:var(--text-2);letter-spacing:.04em;text-transform:uppercase;box-sizing:border-box}
+.grp-h button:focus-visible{outline:2px solid var(--accent-text)}
+.grp-h button::before{content:'';width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.grp-h button[aria-expanded="false"]::before{transform:rotate(-45deg)}
+.pick-tag{display:none;font-size:var(--t-s);font-weight:600;color:var(--accent-text);margin-bottom:4px}
+.cmp[data-pick="free"] .c-free,.cmp[data-pick="pro"] .c-pro,.cmp[data-pick="team"] .c-team{background:var(--pick)}
+.cmp[data-pick="free"] thead .c-free,.cmp[data-pick="pro"] thead .c-pro,.cmp[data-pick="team"] thead .c-team{box-shadow:inset 0 3px 0 var(--accent-text);background:linear-gradient(var(--pick),var(--pick)),var(--canvas)}
+.cmp[data-pick="free"] thead .c-free .pick-tag,.cmp[data-pick="pro"] thead .c-pro .pick-tag,.cmp[data-pick="team"] thead .c-team .pick-tag{display:block}
+.founder{margin-top:14px;font-size:var(--t-s);color:var(--text-2)}
+.show{display:none;border:0}
+@media (max-width:719px){
+  .show{display:flex;gap:4px;margin-top:20px;padding:4px;border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:3;background:var(--canvas)}
+  .show legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .show label{position:relative;flex:1}
+  .show span{display:block;text-align:center;padding:9px 6px;border-radius:7px;font-size:var(--t-s);font-weight:600;color:var(--text-2)}
+  .show input:checked+span{background:var(--raised);color:var(--text)}
+  .cmp{margin-top:8px;table-layout:auto}
+  .cmp col{width:auto}
+  .cmp col.c-label{width:55%}
+  .cmp thead,.cmp thead tr,.cmp thead th{display:block;width:100%}
+  .cmp thead th,.cmp thead td{position:static;padding:16px 10px 18px}
+  .cmp thead .corner{display:none}
+  .cmp[data-show="free"] .c-pro,.cmp[data-show="free"] .c-team,
+  .cmp[data-show="pro"] .c-free,.cmp[data-show="pro"] .c-team,
+  .cmp[data-show="team"] .c-free,.cmp[data-show="team"] .c-pro{display:none}
+  .grp-h th{padding-top:22px!important}
+  .cmp tbody th,.cmp td{padding:12px 10px}
+  .note{display:none}
+}
+
+.recv{display:grid;gap:28px;margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+@media (min-width:720px){.recv{grid-template-columns:1fr 1fr;padding:28px}}
+.recv .price{margin-top:6px}
+.recv .body{color:var(--text-2);margin:14px 0 18px}
+.recv ol{padding-left:20px;display:grid;gap:10px;color:var(--text-2)}
+.recv ol strong{color:var(--text);font-weight:600}
+#reception.picked .recv{border-color:var(--accent-text);box-shadow:inset 0 3px 0 var(--accent-text)}
+#reception.picked .pick-tag,#row-developer.picked .pick-tag{display:block}
+
+.rows{margin-top:20px;border-top:1px solid var(--line)}
+.row{display:grid;gap:8px 28px;padding:20px 0;border-bottom:1px solid var(--line)}
+@media (min-width:720px){.row{grid-template-columns:240px 1fr}}
+.row dt{font-weight:650;font-size:var(--t-l)}
+.row dt .meta{display:block;font-weight:400;margin-top:2px}
+.row dd p{color:var(--text-2);margin-bottom:12px;max-width:62ch}
+.row.picked{box-shadow:inset 3px 0 0 var(--accent-text);padding-left:16px}
+
+.faq{margin-top:20px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;padding:16px 0;font-weight:600;list-style-position:outside;margin-left:18px}
+.faq p{color:var(--text-2);padding:0 0 18px 18px;max-width:68ch}
+
+.wl{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;max-width:420px}
+.wl label{font-size:var(--t-s);color:var(--text-2)}
+.wl-row{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.wl input{flex:1 1 160px;min-width:0;min-height:40px;font:inherit;font-size:var(--t-b);color:var(--text);background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.wl input:hover{border-color:var(--text-3)}
+.wl .btn{flex:1 1 auto;min-width:0;max-width:100%;white-space:normal;text-align:center}
+.cmp .wl .btn{flex-basis:100%}
+.msg{font-size:var(--t-s);min-height:1.4em;color:var(--text-2)}
+.msg.ok{color:var(--accent-text)}
+.wl.done .wl-row{display:none}
+
+.foot{margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--line);font-size:var(--t-s);color:var(--text-3)}
+.foot a{color:var(--text-2);text-decoration:none;margin-right:16px}
+.foot a:hover{color:var(--text)}
+.langs{display:flex;flex-wrap:wrap;gap:4px 0;margin-bottom:14px}
+.langs span{margin-right:16px;color:var(--text)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.crumbs{font-size:var(--t-s);color:var(--text-3);margin-bottom:14px}
+.crumbs a{color:var(--text-2);text-decoration:none}
+.toc{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:22px;font-size:var(--t-s)}
+.toc a{color:var(--text-2)}
+.integ-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+.badges{display:flex;gap:6px}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--text-2)}
+.b-available{color:var(--accent-text);border-color:var(--accent-text)}
+.b-review{color:var(--warn);border-color:var(--warn)}
+.steps{padding-left:20px;color:var(--text-2)}
+.steps li{margin-bottom:6px}
+.cta{margin-top:18px}
+.soon li{color:var(--text-2);margin:0 0 8px 20px}
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap bar">
+      <a href="/ja/" class="logo">IFC Viewer Online</a>
+      <nav aria-label="Main">
+        <a href="/ja/pricing/" class="hide-s">料金</a>
+        <a href="/sdk/" class="hide-s">SDK</a>
+        <a href="/ja/blog/" class="hide-s">ブログ</a>
+        <button type="button" class="theme" id="theme" aria-label="ライト／ダーク" title="ライト／ダーク"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+        <a href="/ja/" class="btn btn-quiet">ビューアを開く</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/ja/">ホーム</a> / <span aria-current="page">連携</span></nav>
+      <h1>連携</h1>
+      <p class="lead">同じブラウザビューアを、いつものツールの中で。モデルは閲覧者の端末で処理され、当社には何もアップロードされません。</p>
+      <nav class="toc" aria-label="このページの内容"><a href="#wordpress">WordPress プラグイン</a><a href="#shopify">Shopify アプリ</a><a href="#sdk">JavaScript SDK</a><a href="#embed">埋め込み（iframe）</a><a href="#mcp">デスクトップツール用ローカルサーバー（MCP）</a></nav>
+    </section>
+
+    <section class="sec wrap integ" id="wordpress" aria-labelledby="wordpress-h">
+      <div class="integ-head"><h2 id="wordpress-h">WordPress プラグイン</h2><p class="badges"><span class="badge b-available">利用可能</span> <span class="badge b-free">無料</span></p></div>
+      <dl class="rows">
+        <div class="row"><dt>できること</dt><dd><p>投稿や固定ページにインタラクティブな 3D IFC モデルを表示するブロックと [ifc_viewer] ショートコード。</p></dd></div>
+        <div class="row"><dt>対象</dt><dd><p>WordPress サイトでプロジェクトや製品を公開する建築家、エンジニア、メーカー。</p></dd></div>
+        <div class="row"><dt>インストール</dt><dd><ol class="steps"><li>WordPress で プラグイン → 新規追加 を開く。</li><li>「Bimo IFC Viewer」を検索してインストールし、有効化する。</li><li>IFC Viewer ブロックを追加するか、公開 IFC の URL で [ifc_viewer model=&quot;…&quot;] を貼り付ける。</li></ol></dd></div>
+        <div class="row"><dt>制限</dt><dd><p>IFC は URL でアクセスできる必要があります（メディアライブラリや公開リンク）。非常に大きなモデルはスマートフォンでは読み込みが遅くなります。</p></dd></div>
+      </dl>
+      <p class="cta"><a class="btn btn-main" href="https://wordpress.org/plugins/bimo-ifc-viewer/" target="_blank" rel="noopener" data-cta="wordpress">wordpress.org で入手</a></p>
+    </section>
+
+    <section class="sec wrap integ" id="shopify" aria-labelledby="shopify-h">
+      <div class="integ-head"><h2 id="shopify-h">Shopify アプリ</h2><p class="badges"><span class="badge b-review">審査中</span></p></div>
+      <dl class="rows">
+        <div class="row"><dt>できること</dt><dd><p>商品やバリエーションごとの IFC モデル、モデルから読み取った仕様表、商品ページでのファイルダウンロード。</p></dd></div>
+        <div class="row"><dt>対象</dt><dd><p>Shopify で製品を販売・掲載する建材メーカー。</p></dd></div>
+        <div class="row"><dt>インストール</dt><dd><ol class="steps"><li>承認後、Shopify App Store からアプリをインストールする。</li><li>商品またはバリエーションに IFC ファイルを紐づける。</li><li>テーマエディタで商品テンプレートにビューアブロックを追加する。</li></ol></dd></div>
+        <div class="row"><dt>制限</dt><dd><p>アプリは Shopify App Store に申請済みで審査中のため、まだインストールできません。プラン：Free、Starter、Business。現在は GitHub から無料のテーマセクションをコピーできます。</p></dd></div>
+      </dl>
+      <p class="cta"><a class="btn btn-main" href="https://github.com/j03rul4nd/ifc-viewer-online/tree/main/integrations/shopify" target="_blank" rel="noopener" data-cta="shopify">無料セクションを入手</a></p>
+    </section>
+
+    <section class="sec wrap integ" id="sdk" aria-labelledby="sdk-h">
+      <div class="integ-head"><h2 id="sdk-h">JavaScript SDK</h2><p class="badges"><span class="badge b-available">利用可能</span> <span class="badge b-free">無料</span></p></div>
+      <dl class="rows">
+        <div class="row"><dt>できること</dt><dd><p>自社の Web アプリにビューアを組み込み、コードから IFC バイトを読み込む。選択・色・カメラのイベントと API 付き。</p></dd></div>
+        <div class="row"><dt>対象</dt><dd><p>CDE、ポータル、社内ツールの開発者。</p></dd></div>
+        <div class="row"><dt>インストール</dt><dd><ol class="steps"><li>/sdk/ifc-viewer.es.js から SDK モジュールをインポートする。</li><li>ページの要素にビューアを作成する。</li><li>viewer.add() でアプリから IFC バイトを渡す。</li></ol></dd></div>
+        <div class="row"><dt>制限</dt><dd><p>ブラウザでのみ動作し、ホストするページが必要です。SDK はファイルを保存しません。</p></dd></div>
+      </dl>
+      <p class="cta"><a class="btn btn-main" href="/sdk/" data-cta="sdk">ドキュメントを読む</a></p>
+    </section>
+
+    <section class="sec wrap integ" id="embed" aria-labelledby="embed-h">
+      <div class="integ-head"><h2 id="embed-h">埋め込み（iframe）</h2><p class="badges"><span class="badge b-available">利用可能</span> <span class="badge b-free">無料</span></p></div>
+      <dl class="rows">
+        <div class="row"><dt>できること</dt><dd><p>iframe を 1 つ貼るだけで任意のページにモデルを表示。カメラ、色、パネルは埋め込みビルダーで設定。</p></dd></div>
+        <div class="row"><dt>対象</dt><dd><p>コードを書かずに Web サイト、ブログ、CMS で見せたい人。</p></dd></div>
+        <div class="row"><dt>インストール</dt><dd><ol class="steps"><li>埋め込みビルダーを開く。</li><li>公開 IFC の URL を貼り、ビューを設定する。</li><li>iframe をページにコピーする。</li></ol></dd></div>
+        <div class="row"><dt>制限</dt><dd><p>モデルの URL はクロスオリジン要求（CORS）を許可している必要があります。iframe には約 400 px の高さが必要です。</p></dd></div>
+      </dl>
+      <p class="cta"><a class="btn btn-main" href="/embed/" data-cta="embed">埋め込みビルダーを開く</a></p>
+    </section>
+
+    <section class="sec wrap integ" id="mcp" aria-labelledby="mcp-h">
+      <div class="integ-head"><h2 id="mcp-h">デスクトップツール用ローカルサーバー（MCP）</h2><p class="badges"><span class="badge b-available">利用可能</span> <span class="badge b-free">無料</span></p></div>
+      <dl class="rows">
+        <div class="row"><dt>できること</dt><dd><p>Model Context Protocol に対応したデスクトップアプリやコードエディタから、IFC の検証、IDS チェック、3D 表示ができるローカルサーバー。</p></dd></div>
+        <div class="row"><dt>対象</dt><dd><p>デスクトップツールで IFC を扱う BIM コーディネーターと開発者。</p></dd></div>
+        <div class="row"><dt>インストール</dt><dd><ol class="steps"><li>Node.js 18 以降をインストールする。</li><li>ツールの MCP 設定にサーバー「npx -y ifc-viewer-mcp」を追加する。</li><li>ツールを再起動し、ディスク上の IFC ファイルを指定する。</li></ol></dd></div>
+        <div class="row"><dt>制限</dt><dd><p>MCP 対応のデスクトップツールと Node.js が必要です。検証は手元の PC で実行され、3D 表示はブラウザで開きます。</p></dd></div>
+      </dl>
+      <p class="cta"><a class="btn btn-main" href="https://github.com/j03rul4nd/ifc-viewer-online/tree/main/mcp" target="_blank" rel="noopener" data-cta="mcp">ソースを見る</a></p>
+    </section>
+    <section class="sec wrap" id="soon" aria-labelledby="soon-h">
+      <div class="integ-head"><h2 id="soon-h">近日公開</h2><p class="badges"><span class="badge">近日公開</span></p></div>
+      <ul class="soon">
+        <li>SharePoint・OneDrive・Google Drive：プロジェクトフォルダに届くモデルをすべてチェック。</li>
+        <li>GitHub Actions：モデルが基準スコアを下回るとプルリクエストを止める。</li>
+      </ul>
+      <p class="sub">必要なものはビューアの機能リクエストフォームからお知らせください。 <a href="/ja/">ビューアを開く</a></p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <nav aria-label="Languages" class="langs"><a href="/integrations/" hreflang="en" lang="en">English</a><a href="/es/integraciones/" hreflang="es" lang="es">Español</a><a href="/de/integrationen/" hreflang="de" lang="de">Deutsch</a><a href="/fr/integrations/" hreflang="fr" lang="fr">Français</a><a href="/pt/integracoes/" hreflang="pt" lang="pt">Português</a><a href="/it/integrazioni/" hreflang="it" lang="it">Italiano</a><a href="/ca/integracions/" hreflang="ca" lang="ca">Català</a><a href="/zh/integrations/" hreflang="zh" lang="zh">中文</a><span aria-current="page">日本語</span><a href="/th/integrations/" hreflang="th" lang="th">ไทย</a></nav>
+    <p><a href="/ja/">IFC Viewer Online</a><a href="/ja/pricing/">料金</a><a href="/sdk/">SDK</a><a href="/privacy">プライバシー</a><a href="/terms">利用規約</a></p>
+  </footer>
+  <script>document.getElementById('theme').addEventListener('click',function(){var cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var next=cur==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('lp-theme',next)}catch(e){}})</script>
+</body>
+</html>

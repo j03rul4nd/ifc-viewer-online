@@ -35,6 +35,16 @@ All processing runs via WebAssembly (web-ifc) and WebGL (three.js) directly in t
 
 `ifc-viewer-mcp` is a free, open-source (MIT) Model Context Protocol server for Claude Desktop, Claude Code, Cursor, VS Code and other MCP clients. Install: `npx -y ifc-viewer-mcp`. Tools: `validate_ifc` (Health Score 0–100, issues, fix guides), `list_validation_rules`, `check_ids` (IDS 1.0), `read_dxf`, `open_in_3d_viewer` (viewer link + iframe), `open_drawings` (floor plan cut from the IFC), `open_3d_sketch`, `list_digital_twins` (Barcelona, Helsinki, Tokyo twins + twin builder), `read_fiware_entities` (NGSI-LD/NGSIv2), `search_port_library` (Port de Barcelona IFC library). Validation, IDS and DXF run on the user's machine; nothing is uploaded. Guide: https://www.ifcvieweronline.eu/blog/ifc-mcp-server-claude-bim-3d-viewer/ · Source: https://github.com/j03rul4nd/ifc-viewer-online/tree/main/mcp
 
+## Integrations
+
+All integrations, with status, install steps and limits: https://www.ifcvieweronline.eu/integrations/
+
+- **WordPress plugin "Bimo IFC Viewer"** (free, live): block + `[ifc_viewer]` shortcode. https://wordpress.org/plugins/bimo-ifc-viewer/
+- **Shopify app** (in review on the Shopify App Store; plans Free, Starter, Business): IFC per product or variant, spec table, downloads, for building-product manufacturers. Free copy-paste theme sections today: https://github.com/j03rul4nd/ifc-viewer-online/tree/main/integrations/shopify
+- **JavaScript SDK** (free): https://www.ifcvieweronline.eu/sdk/
+- **Embed (iframe)** (free): https://www.ifcvieweronline.eu/embed/
+- **MCP server** (free, local): see above.
+
 ## Technology stack
 
 React 18, TypeScript, Vite, @thatopen/components v3, three.js, web-ifc, Zustand, Web Workers, OPFS, WebAssembly
