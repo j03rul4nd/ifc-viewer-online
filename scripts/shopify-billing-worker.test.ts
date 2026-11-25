@@ -200,7 +200,12 @@ describe('Free-plan only configuration', () => {
   it('app config points at the Worker, embedded, with billing and GDPR webhooks and no new scopes', () => {
     const t = fs.readFileSync(path.join(root, 'app/shopify.app.toml'), 'utf8')
     expect(t).toMatch(/embedded = true/)
-    expect(t).toMatch(/application_url = "https:\/\/ifcvo-shopify-billing\.[a-z0-9-]+\.workers\.dev\/app"/)
+    expect(t).toMatch(/application_url = "https:\/\/ifcvo-billing\.[a-z0-9-]+\.workers\.dev\/app"/)
+    // App Store requirement: no app URL host may contain "shopify" or "example".
+    for (const m of t.matchAll(/https?:\/\/([^/"\s]+)/g)) {
+      if (m[1].endsWith('shopify.dev')) continue // doc links in comments
+      expect(m[1]).not.toMatch(/shopify|example/i)
+    }
     expect(t).not.toMatch(/topics = \[[^\]]*app_subscriptions\/update/)
     expect(t).toContain('app/uninstalled')
     expect(t).toMatch(/compliance_topics = \[\s*"customers\/data_request",\s*"customers\/redact",\s*"shop\/redact"\s*\]/)

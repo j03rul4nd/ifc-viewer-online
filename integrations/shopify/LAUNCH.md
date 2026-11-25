@@ -52,7 +52,7 @@ npx wrangler kv namespace create SHOPS
 `kv_namespaces[0].id` (sustituye `REPLACE_WITH_KV_NAMESPACE_ID`). No lo commitees si no
 quieres; solo hace falta en local para desplegar.
 **Si falla:** "already exists" → `npx wrangler kv namespace list` y copia el id de
-`ifcvo-shopify-billing-SHOPS` (o el que se llame SHOPS).
+`ifcvo-billing-SHOPS` (o el que se llame SHOPS).
 
 Secretos (los dos de la misma pantalla del **Dev Dashboard → Apps → IFC Viewer Online →
 Settings → Credentials**: *Client ID* = `26585d50…` y *Client secret*, botón de copiar):
@@ -74,7 +74,7 @@ npx wrangler deploy
 ```
 
 **Resultado esperado:** el dry-run lista solo `env.SHOPS (KV Namespace)` y 4 variables;
-el deploy imprime `https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev` y
+el deploy imprime `https://ifcvo-billing.joelbenitezdonari.workers.dev` y
 `schedule: 17 * * * *`.
 **Si falla:** subdominio distinto → cambia las tres URLs de
 `integrations/shopify/app/shopify.app.toml` (application_url, redirect_urls, webhooks)
@@ -83,8 +83,8 @@ antes del paso D.
 Comprobación:
 
 ```powershell
-curl.exe -i https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/app
-curl.exe -i -X POST https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/webhooks
+curl.exe -i https://ifcvo-billing.joelbenitezdonari.workers.dev/app
+curl.exe -i -X POST https://ifcvo-billing.joelbenitezdonari.workers.dev/webhooks
 ```
 
 **Esperado:** ambos `401` (el primero con "Open IFC Viewer Online from your Shopify admin").

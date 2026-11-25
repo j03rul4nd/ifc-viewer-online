@@ -41,10 +41,10 @@ npx wrangler deploy --dry-run --outdir dist  # check: no errors, no paid binding
 npx wrangler deploy
 ```
 
-The URL must be `https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev`. If the
+The URL must be `https://ifcvo-billing.joelbenitezdonari.workers.dev`. If the
 workers.dev subdomain differs, change the three URLs in `../app/shopify.app.toml`.
 
-Check: `curl -i https://ifcvo-shopify-billing.joelbenitezdonari.workers.dev/app` → 401
+Check: `curl -i https://ifcvo-billing.joelbenitezdonari.workers.dev/app` → 401
 ("Open IFC Viewer Online from your Shopify admin"); `curl -i -X POST …/webhooks` → 401.
 
 Cancellations and freezes are picked up by the hourly cron without any extra secret
