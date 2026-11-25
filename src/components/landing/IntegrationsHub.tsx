@@ -8,7 +8,7 @@ import * as Icons from '../Icons'
 import { homeLang } from './home-copy'
 import { highlight } from './highlight'
 import {
-  INTEGRATIONS, INTEGRATIONS_COPY, INTEGRATION_ORDER, SNIPPET_ORDER, SNIPPET_TABS, snippet,
+  INTEGRATIONS, INTEGRATIONS_COPY, allIntegrationsHref, INTEGRATION_ORDER, SNIPPET_ORDER, SNIPPET_TABS, snippet,
   type Integration, type IntegrationStatus, type SnippetId,
 } from './home-integrations'
 import { trackLandingIntegrationClick } from '../../lib/analytics'
@@ -213,6 +213,9 @@ export default function IntegrationsHub({ lang }: { lang: string }) {
             )
           })}
         </ul>
+        <p className="m-0 mt-5">
+          <a href={allIntegrationsHref(hl)} className={LINK_CLS}>{c.all} →</a>
+        </p>
       </div>
     </section>
   )

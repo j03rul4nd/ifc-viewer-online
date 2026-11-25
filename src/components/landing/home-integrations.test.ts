@@ -32,7 +32,7 @@ describe('integrations copy', () => {
   for (const l of HOME_LANGS) {
     it(`${l}: every string is filled in`, () => {
       const c = INTEGRATIONS_COPY[l]
-      for (const k of ['nav', 'label', 'title', 'body', 'sdkTitle', 'codeLabel', 'comment1', 'comment2', 'comment3', 'wpNote', 'notify'] as const)
+      for (const k of ['nav', 'label', 'title', 'body', 'sdkTitle', 'codeLabel', 'comment1', 'comment2', 'comment3', 'wpNote', 'all', 'notify'] as const)
         expect(c[k].trim(), `${l}.${k}`).not.toBe('')
       for (const s of ['available', 'review', 'soon'] as const) expect(c.status[s].trim(), `${l}.status.${s}`).not.toBe('')
       for (const id of INTEGRATION_ORDER) {
