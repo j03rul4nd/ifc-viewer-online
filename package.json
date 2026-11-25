@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:runner": "node server/validation-runner/build.mjs",
     "dev": "vite",
     "deploy:models": "node cf-models/deploy.mjs",
     "deploy:pages": "node cf-pages/prepare.mjs && cd cf-pages && npx --yes wrangler@4 pages deploy ../dist --project-name ifc-viewer-online --branch main",
